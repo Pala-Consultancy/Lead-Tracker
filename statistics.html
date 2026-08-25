@@ -237,9 +237,33 @@
   <footer>Reads the same data as your Lead Tracking System &middot; nothing leaves this page</footer>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  const STORAGE_KEY = "lead_ledger_data_v1";
+  // Paste the SAME firebaseConfig you used in the tracker (index.html) here.
+  const firebaseConfig = {
+    apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",
+    authDomain: "lead-tracker-c5c3a.firebaseapp.com",
+    projectId: "lead-tracker-c5c3a",
+    storageBucket: "lead-tracker-c5c3a.firebasestorage.app",
+    messagingSenderId: "720572896285",
+    appId: "1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"
+  };
+  let db = null;
+  let leadsCollection = null;
+  let firebaseConnected = false;
+  try{
+    if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      leadsCollection = db.collection('leads');
+      firebaseConnected = true;
+    }
+  }catch(e){
+    console.error("Firebase init failed", e);
+  }
+
   const CURRENCY_KEY = "lead_ledger_currency_v1";
   const SOURCE_COLORS = {
     LinkedIn: {bg:"#E3EEFA", fg:"#1D5FA8", dot:"#1D5FA8"},
@@ -270,9 +294,24 @@
 
   let leads = [];
   let currency = "EUR";
-  function loadLeads(){
-    try{ const raw = localStorage.getItem(STORAGE_KEY); leads = raw ? JSON.parse(raw) : []; }
-    catch(e){ leads = []; }
+  function initFirebaseSync(){
+    if(!firebaseConnected){
+      document.getElementById("content").innerHTML = `<div class="empty-state">
+        <h3>Not connected to shared database</h3>
+        <p>Add your Firebase project config near the top of this page's script (the same one used in the tracker) to see live statistics.</p>
+      </div>`;
+      return;
+    }
+    leadsCollection.onSnapshot(snapshot=>{
+      leads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
+      render();
+    }, err=>{
+      console.error("Firestore sync error", err);
+      document.getElementById("content").innerHTML = `<div class="empty-state">
+        <h3>Could not load data</h3>
+        <p>${esc(err.message)}</p>
+      </div>`;
+    });
   }
   function loadCurrency(){
     try{ currency = localStorage.getItem(CURRENCY_KEY) || "EUR"; } catch(e){ currency = "EUR"; }
@@ -575,9 +614,8 @@
     container.innerHTML = headlineHTML + kpiHTML + ringsHTML + funnelHTML + tablesHTML;
   }
 
-  loadLeads();
   loadCurrency();
-  render();
+  initFirebaseSync();
 })();
 </script>
 </body>
