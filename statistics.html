@@ -70,11 +70,29 @@
   }
   .btn:hover{background:#F3F8FD;transform:translateY(-1px);}
 
-  .section{margin-bottom:28px;}
+  .section{margin-bottom:30px;}
   .section-title{
     font-family:'Sora',sans-serif;font-size:16.5px;font-weight:700;color:var(--ink);
-    margin:0 0 14px;display:flex;align-items:center;gap:8px;
+    margin:0 0 14px;display:flex;align-items:center;gap:10px;
   }
+  .section-icon{
+    width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .section-icon svg{width:15px;height:15px;}
+
+  .headline-card{
+    background:linear-gradient(135deg, #1B59A5 0%, #123F78 100%);
+    border-radius:14px;padding:26px 30px;margin-bottom:28px;color:#fff;
+    box-shadow:0 4px 16px rgba(18,63,120,0.25), var(--shadow);
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;
+  }
+  .headline-text{font-family:'Sora',sans-serif;font-size:19px;font-weight:600;line-height:1.5;max-width:640px;}
+  .headline-text strong{color:#FFB338;font-weight:800;}
+  .headline-stats{display:flex;gap:26px;flex-wrap:wrap;}
+  .headline-stat{text-align:center;}
+  .headline-stat-value{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;}
+  .headline-stat-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,0.6);margin-top:2px;}
 
   .stats-grid{
     display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;
@@ -112,11 +130,13 @@
   .ring-card{
     background:var(--panel);border:1px solid var(--border);border-radius:12px;
     padding:16px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;
+    transition:transform .15s ease,box-shadow .15s ease;
   }
+  .ring-card:hover{transform:translateY(-4px);box-shadow:0 8px 18px rgba(27,36,48,0.14);}
   .ring{position:relative;width:56px;height:56px;flex-shrink:0;}
   .ring svg{width:56px;height:56px;transform:rotate(-90deg);}
   .ring .ring-bg{fill:none;stroke:#E1EAF5;stroke-width:5;}
-  .ring .ring-fg{fill:none;stroke-width:5;stroke-linecap:round;}
+  .ring .ring-fg{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .5s ease;}
   .ring .ring-value{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:700;color:var(--ink);
@@ -126,43 +146,66 @@
   .ring-sub{font-size:11.5px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;}
 
   .funnel{
-    background:var(--panel);border:1px solid var(--border);border-radius:12px;
-    box-shadow:var(--shadow);padding:22px 24px;
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    box-shadow:var(--shadow);padding:26px 28px;position:relative;overflow:hidden;
   }
-  .funnel-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .funnel::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,
+      #1D5FA8 0%, #1D5FA8 20%,
+      #A9660F 20%, #A9660F 40%,
+      #7A4FB5 40%, #7A4FB5 60%,
+      #1F5C4F 60%, #1F5C4F 80%,
+      #C0392B 80%, #C0392B 100%);
+  }
+  .funnel-row{display:flex;align-items:center;gap:16px;margin-bottom:14px;}
   .funnel-row:last-child{margin-bottom:0;}
-  .funnel-label{width:120px;flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--ink);}
-  .funnel-track{flex:1;height:26px;background:#EEF4FC;border-radius:6px;overflow:hidden;position:relative;}
-  .funnel-fill{height:100%;border-radius:6px;transition:width .4s ease;display:flex;align-items:center;padding-left:10px;}
-  .funnel-fill span{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;color:#fff;}
-  .funnel-count{width:100px;flex-shrink:0;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--slate);}
+  .funnel-label{width:110px;flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--ink);}
+  .funnel-track{
+    flex:1;height:32px;border-radius:7px;background:#F3F8FD;overflow:hidden;position:relative;
+  }
+  .funnel-fill{
+    height:100%;border-radius:7px;transition:width .5s ease;display:flex;align-items:center;
+    padding-left:12px;white-space:nowrap;min-width:2px;
+  }
+  .funnel-fill span{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#fff;}
+  .funnel-count{width:100px;flex-shrink:0;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--slate);}
 
   .table-wrap{
-    background:var(--panel);border:1px solid var(--border);border-radius:12px;
-    overflow:hidden;box-shadow:var(--shadow);
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    overflow:hidden;box-shadow:var(--shadow);position:relative;
   }
+  .table-wrap::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--table-accent, var(--teal));}
   table{width:100%;border-collapse:collapse;}
   thead th{
     text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;
-    color:var(--slate);font-weight:700;padding:12px 16px;border-bottom:1px solid var(--border);
-    background:#F3F8FD;
+    color:var(--slate);font-weight:700;padding:13px 16px 12px;border-bottom:1px solid var(--border);
+    background:#F8FBFE;
   }
   tbody td{
     padding:11px 16px;font-size:13.5px;border-bottom:1px solid #EEF4FC;vertical-align:middle;
   }
+  tbody tr:nth-child(even){background:#FBFDFF;}
   tbody tr:last-child td{border-bottom:none;}
-  tbody tr:hover{background:#F5F9FE;}
+  tbody tr:hover{background:#EEF5FC;}
   .name-cell{font-weight:700;display:flex;align-items:center;gap:8px;}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-  .bar-cell{display:flex;align-items:center;gap:8px;}
+  .bar-cell{display:flex;align-items:center;gap:10px;}
   .bar-track{flex:1;height:6px;background:#EEF4FC;border-radius:3px;overflow:hidden;max-width:120px;}
-  .bar-fill{height:100%;border-radius:3px;}
+  .bar-fill{height:100%;border-radius:3px;transition:width .4s ease;}
   .mono{font-family:'IBM Plex Mono',monospace;}
+  .rank-badge{
+    width:20px;height:20px;border-radius:50%;background:#F3F8FD;color:var(--slate);
+    display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;
+    font-family:'IBM Plex Mono',monospace;flex-shrink:0;
+  }
+  .rank-badge.gold{background:#FFF1DC;color:#A9660F;}
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
   @media (max-width:900px){
     .two-col{grid-template-columns:1fr;}
     .stats-grid{grid-template-columns:repeat(2, 1fr);}
     .ring-row{grid-template-columns:repeat(2, 1fr);}
+    .headline-card{flex-direction:column;align-items:flex-start;}
   }
   .empty-state{
     text-align:center;padding:80px 20px;color:var(--slate);
@@ -312,9 +355,21 @@
     const winRate = total>0 ? Math.round((wonCount/total)*100) : null;
     const lostRate = total>0 ? Math.round((lostCount/total)*100) : null;
 
+    // Headline
+    const headlineHTML = `<div class="headline-card">
+      <div class="headline-text">
+        You've closed <strong>${wonCount} of ${total}</strong> leads (<strong>${winRate??0}%</strong>) worth <strong>${formatMoney(totalRevenue)}</strong> in total revenue.
+      </div>
+      <div class="headline-stats">
+        <div class="headline-stat"><div class="headline-stat-value">${activeCount}</div><div class="headline-stat-label">Still active</div></div>
+        <div class="headline-stat"><div class="headline-stat-value">${acceptRate??"—"}${acceptRate!==null?"%":""}</div><div class="headline-stat-label">Accept rate</div></div>
+        <div class="headline-stat"><div class="headline-stat-value">${showUpRate??"—"}${showUpRate!==null?"%":""}</div><div class="headline-stat-label">Show up rate</div></div>
+      </div>
+    </div>`;
+
     // KPI row
     const kpiHTML = `<div class="section">
-      <h2 class="section-title">Overview</h2>
+      <h2 class="section-title"><div class="section-icon" style="background:#E3EEFA;color:#1B59A5">${ICONS.users}</div>Overview</h2>
       <div class="stats-grid">
         ${statCard({icon:"users", accent:"#1B59A5", accentSoft:"#E3EEFA", label:"Total leads", value:total})}
         ${statCard({icon:"funnel", accent:"#FF9D00", accentSoft:"#FFF1DC", label:"Active pipeline", value:activeCount, sub:"New · Contacted · Call booked"})}
@@ -330,7 +385,7 @@
 
     // Rings
     const ringsHTML = `<div class="section">
-      <h2 class="section-title">Outreach performance</h2>
+      <h2 class="section-title"><div class="section-icon" style="background:#EFE5FA;color:#7A4FB5">${ICONS.tag}</div>Outreach performance</h2>
       <div class="ring-row">
         ${ringCard({pct:acceptRate, accent:"#1B59A5", accentSoft:"#E3EEFA", label:"Accept rate", sub:`${acceptedCount}/${sentCount} sent`})}
         ${ringCard({pct:replyRate, accent:"#FF9D00", accentSoft:"#FFF1DC", label:"Reply rate", sub:`${repliedCount}/${contactedCount} contacted`})}
@@ -348,17 +403,18 @@
       {label:"Lost", count: lostCount, color:"#C0392B"}
     ];
     const maxStage = Math.max(1, ...stages.map(s=>s.count));
+    const funnelRowsHTML = stages.map(s=>{
+      const widthPct = Math.max(Math.round((s.count/maxStage)*100), s.count>0?4:0);
+      return `<div class="funnel-row">
+        <div class="funnel-label">${s.label}</div>
+        <div class="funnel-track"><div class="funnel-fill" style="width:${widthPct}%;background:${s.color}"><span>${s.count>0?s.count:""}</span></div></div>
+        <div class="funnel-count">${total>0?Math.round((s.count/total)*100):0}% of total</div>
+      </div>`;
+    }).join("");
     const funnelHTML = `<div class="section">
-      <h2 class="section-title">Pipeline funnel</h2>
+      <h2 class="section-title"><div class="section-icon" style="background:#FFF1DC;color:#A9660F">${ICONS.funnel}</div>Pipeline funnel</h2>
       <div class="funnel">
-        ${stages.map(s=>{
-          const pct = Math.round((s.count/maxStage)*100);
-          return `<div class="funnel-row">
-            <div class="funnel-label">${s.label}</div>
-            <div class="funnel-track"><div class="funnel-fill" style="width:${Math.max(pct,s.count>0?6:0)}%;background:${s.color}"><span>${s.count>0?s.count:""}</span></div></div>
-            <div class="funnel-count">${total>0?Math.round((s.count/total)*100):0}% of total</div>
-          </div>`;
-        }).join("")}
+        ${funnelRowsHTML}
       </div>
     </div>`;
 
@@ -452,10 +508,10 @@
     // Top won deals
     const topWon = leads.filter(l=>l.status==="Won" && parseFloat(l.revenue)>0)
       .sort((a,b)=>(parseFloat(b.revenue)||0)-(parseFloat(a.revenue)||0)).slice(0,8);
-    const topWonHTML = topWon.length>0 ? topWon.map(l=>{
+    const topWonHTML = topWon.length>0 ? topWon.map((l,i)=>{
       const sc = SOURCE_COLORS[l.source]||SOURCE_COLORS.Other;
       return `<tr>
-        <td><div class="name-cell">${esc(l.name)||"Unnamed"}</div></td>
+        <td><div class="name-cell"><span class="rank-badge${i===0?' gold':''}">${i+1}</span>${esc(l.name)||"Unnamed"}</div></td>
         <td>${esc(l.company)||"—"}</td>
         <td><div class="name-cell"><span class="dot" style="background:${sc.dot}"></span>${esc(l.source)}</div></td>
         <td class="mono">${formatMoney(l.revenue)}</td>
@@ -464,8 +520,8 @@
 
     const tablesHTML = `
       <div class="section">
-        <h2 class="section-title">Revenue by month</h2>
-        <div class="table-wrap">
+        <h2 class="section-title"><div class="section-icon" style="background:#E3EEFA;color:#1B59A5">${ICONS.coin}</div>Revenue by month</h2>
+        <div class="table-wrap" style="--table-accent:#1B59A5">
           <table>
             <thead><tr><th>Month</th><th>Leads</th><th>Revenue</th><th>Closing rate</th></tr></thead>
             <tbody>${monthTableHTML}</tbody>
@@ -475,8 +531,8 @@
 
       <div class="section two-col">
         <div>
-          <h2 class="section-title">By source</h2>
-          <div class="table-wrap">
+          <h2 class="section-title"><div class="section-icon" style="background:#E3EEFA;color:#1B59A5">${ICONS.tag}</div>By source</h2>
+          <div class="table-wrap" style="--table-accent:#1B59A5">
             <table>
               <thead><tr><th>Source</th><th>Leads</th><th>Revenue</th><th>Win rate</th></tr></thead>
               <tbody>${sourceTableHTML}</tbody>
@@ -484,8 +540,8 @@
           </div>
         </div>
         <div>
-          <h2 class="section-title">By industry</h2>
-          <div class="table-wrap">
+          <h2 class="section-title"><div class="section-icon" style="background:#EFE5FA;color:#7A4FB5">${ICONS.tag}</div>By industry</h2>
+          <div class="table-wrap" style="--table-accent:#7A4FB5">
             <table>
               <thead><tr><th>Industry</th><th>Leads</th><th>Revenue</th></tr></thead>
               <tbody>${industryTableHTML}</tbody>
@@ -496,8 +552,8 @@
 
       <div class="section two-col">
         <div>
-          <h2 class="section-title">Top countries</h2>
-          <div class="table-wrap">
+          <h2 class="section-title"><div class="section-icon" style="background:#FFF1DC;color:#A9660F">${ICONS.tag}</div>Top countries</h2>
+          <div class="table-wrap" style="--table-accent:#FF9D00">
             <table>
               <thead><tr><th>Country</th><th>Leads</th><th>Revenue</th></tr></thead>
               <tbody>${countryTableHTML}</tbody>
@@ -505,8 +561,8 @@
           </div>
         </div>
         <div>
-          <h2 class="section-title">Top won deals</h2>
-          <div class="table-wrap">
+          <h2 class="section-title"><div class="section-icon" style="background:#DEF0EA;color:#1F5C4F">${ICONS.check}</div>Top won deals</h2>
+          <div class="table-wrap" style="--table-accent:#1F5C4F">
             <table>
               <thead><tr><th>Lead</th><th>Company</th><th>Source</th><th>Revenue</th></tr></thead>
               <tbody>${topWonHTML}</tbody>
@@ -516,7 +572,7 @@
       </div>
     `;
 
-    container.innerHTML = kpiHTML + ringsHTML + funnelHTML + tablesHTML;
+    container.innerHTML = headlineHTML + kpiHTML + ringsHTML + funnelHTML + tablesHTML;
   }
 
   loadLeads();
