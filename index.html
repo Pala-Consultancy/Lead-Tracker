@@ -857,9 +857,37 @@
 
 <div class="toast-stack" id="toastStack"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  const STORAGE_KEY = "lead_ledger_data_v1";
+  // ====== FIREBASE SETUP ======
+  // 1. Go to https://console.firebase.google.com, create a free project.
+  // 2. In the project, click "Firestore Database" -> "Create database" (start in test mode is fine to begin).
+  // 3. Click the gear icon -> Project settings -> scroll to "Your apps" -> add a Web app.
+  // 4. Copy the firebaseConfig object it gives you and paste it below, replacing the placeholder values.
+  const firebaseConfig = {
+    apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",
+    authDomain: "lead-tracker-c5c3a.firebaseapp.com",
+    projectId: "lead-tracker-c5c3a",
+    storageBucket: "lead-tracker-c5c3a.firebasestorage.app",
+    messagingSenderId: "720572896285",
+    appId: "1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"
+  };
+  let db = null;
+  let leadsCollection = null;
+  let firebaseConnected = false;
+  try{
+    if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      leadsCollection = db.collection('leads');
+      firebaseConnected = true;
+    }
+  }catch(e){
+    console.error("Firebase init failed", e);
+  }
+
   const CURRENCY_KEY = "lead_ledger_currency_v1";
   const SOURCE_COLORS = {
     LinkedIn: {bg:"#E3EEFA", fg:"#1D5FA8", dot:"#1D5FA8"},
@@ -889,20 +917,30 @@
   const selectedIds = new Set();
   let activeStatusGroup = null;
 
-  function loadLeads(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      leads = raw ? JSON.parse(raw) : [];
-    }catch(e){
-      leads = [];
+  function initFirebaseSync(){
+    if(!firebaseConnected){
+      document.getElementById('tallyStrip').innerHTML = `<div class="empty-state" style="grid-column:1/-1;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)">
+        <h3>Not connected to shared database</h3>
+        <p>This tracker is set up to sync through Firebase, but the connection details haven't been filled in yet. Open this file and add your Firebase project config near the top of the script.</p>
+      </div>`;
+      return;
     }
-  }
-  function saveLeads(){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-    }catch(e){
-      console.error("Could not save to localStorage", e);
-    }
+    leadsCollection.onSnapshot(snapshot=>{
+      leads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
+      render();
+      if(currentView==='board') renderBoard();
+      if(currentView==='monthly') renderMonthlyView();
+      if(drawerLeadId){
+        const stillExists = leads.find(l=>l.id===drawerLeadId);
+        const notesEl = document.getElementById('drawerNotes');
+        const isTypingNotes = notesEl && document.activeElement === notesEl;
+        if(!stillExists) closeDrawer();
+        else if(!isTypingNotes) openDrawer(drawerLeadId);
+      }
+    }, err=>{
+      console.error("Firestore sync error", err);
+      showToast('Lost connection to the shared database.', true);
+    });
   }
   function loadCurrency(){
     try{
@@ -919,7 +957,6 @@
       console.error("Could not save currency preference", e);
     }
   }
-  function uid(){ return 'l_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
   function todayISO(){ return new Date().toISOString().slice(0,10); }
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
   function formatMoney(n){
@@ -1075,18 +1112,19 @@
       showedUp: document.getElementById('f-showedUp').checked
     };
     const wasEditing = !!editingId;
-    if(editingId){
-      const idx = leads.findIndex(l=>l.id===editingId);
-      if(idx>-1) leads[idx] = {...leads[idx], ...data};
-    } else {
-      leads.push({id:uid(), ...data});
+    if(!firebaseConnected){
+      showToast('Not connected to the shared database — check your Firebase setup.', true);
+      return;
     }
-    saveLeads();
-    showToast(wasEditing ? 'Lead updated' : 'Lead added');
-    clearForm();
-    render();
-    if(currentView==='board') renderBoard();
-    if(currentView==='monthly') renderMonthlyView();
+    const savePromise = wasEditing
+      ? leadsCollection.doc(editingId).update(data)
+      : leadsCollection.add(data);
+    savePromise.then(()=>{
+      showToast(wasEditing ? 'Lead updated' : 'Lead added');
+      clearForm();
+    }).catch(err=>{
+      showToast('Could not save lead: ' + err.message, true);
+    });
   });
 
   function editLead(id){
@@ -1117,46 +1155,40 @@
     window.scrollTo({top:0, behavior:'smooth'});
   }
   function deleteLead(id){
-    const idx = leads.findIndex(l=>l.id===id);
-    if(idx===-1) return;
-    const removed = leads[idx];
-    const removedIdx = idx;
-    leads.splice(idx,1);
-    saveLeads();
-    selectedIds.delete(id);
+    const l = leads.find(x=>x.id===id);
+    if(!l) return;
+    const removedData = {...l};
+    delete removedData.id;
     if(drawerLeadId===id) closeDrawer();
-    render();
-    if(currentView==='board') renderBoard();
-    if(currentView==='monthly') renderMonthlyView();
-    showToast(`Deleted ${removed.name||'lead'}`, true, ()=>{
-      leads.splice(Math.min(removedIdx, leads.length),0,removed);
-      saveLeads();
-      render();
-      if(currentView==='board') renderBoard();
-      if(currentView==='monthly') renderMonthlyView();
+    selectedIds.delete(id);
+    leadsCollection.doc(id).delete().then(()=>{
+      showToast(`Deleted ${l.name||'lead'}`, true, ()=>{
+        leadsCollection.doc(id).set(removedData).catch(err=>{
+          showToast('Could not undo delete: ' + err.message, true);
+        });
+      });
+    }).catch(err=>{
+      showToast('Could not delete lead: ' + err.message, true);
     });
   }
   function updateStatus(id, status){
-    const l = leads.find(x=>x.id===id);
-    if(!l) return;
-    l.status = status;
-    saveLeads();
-    render();
-    if(currentView==='board') renderBoard();
-    if(currentView==='monthly') renderMonthlyView();
-    if(drawerLeadId===id) openDrawer(id);
+    leadsCollection.doc(id).update({status}).catch(err=>{
+      showToast('Could not update status: ' + err.message, true);
+    });
   }
   function toggleOutreach(id, field){
     const l = leads.find(x=>x.id===id);
     if(!l) return;
-    l[field] = !l[field];
-    if(field==='requestAccepted' && l[field]) l.requestSent = true;
-    if(field==='requestSent' && !l[field]) l.requestAccepted = false;
-    if(field==='replied' && l[field]) l.contacted = true;
-    if(field==='contacted' && !l[field]){ l.replied = false; l.showedUp = false; }
-    if(field==='showedUp' && l[field]) l.contacted = true;
-    saveLeads();
-    render();
+    const updates = {};
+    updates[field] = !l[field];
+    if(field==='requestAccepted' && updates[field]) updates.requestSent = true;
+    if(field==='requestSent' && !updates[field]) updates.requestAccepted = false;
+    if(field==='replied' && updates[field]) updates.contacted = true;
+    if(field==='contacted' && !updates[field]){ updates.replied = false; updates.showedUp = false; }
+    if(field==='showedUp' && updates[field]) updates.contacted = true;
+    leadsCollection.doc(id).update(updates).catch(err=>{
+      showToast('Could not update lead: ' + err.message, true);
+    });
   }
 
   // ---------- Filtering / sorting ----------
@@ -1424,34 +1456,35 @@
     const ids = Array.from(selectedIds);
     if(ids.length===0) return;
     if(!confirm(`Delete ${ids.length} selected lead${ids.length===1?'':'s'}? This cannot be undone.`)) return;
-    const removed = leads.filter(l=>ids.includes(l.id));
-    leads = leads.filter(l=>!ids.includes(l.id));
-    selectedIds.clear();
-    saveLeads();
-    showToast(`Deleted ${removed.length} lead${removed.length===1?'':'s'}`, true, ()=>{
-      leads = leads.concat(removed);
-      saveLeads();
-      render();
-      if(currentView==='board') renderBoard();
-      if(currentView==='monthly') renderMonthlyView();
+    const removed = leads.filter(l=>ids.includes(l.id)).map(l=>{
+      const data = {...l}; delete data.id; return {id:l.id, data};
     });
-    render();
-    if(currentView==='board') renderBoard();
-    if(currentView==='monthly') renderMonthlyView();
+    const batch = db.batch();
+    ids.forEach(id=>batch.delete(leadsCollection.doc(id)));
+    batch.commit().then(()=>{
+      selectedIds.clear();
+      showToast(`Deleted ${removed.length} lead${removed.length===1?'':'s'}`, true, ()=>{
+        const restoreBatch = db.batch();
+        removed.forEach(r=>restoreBatch.set(leadsCollection.doc(r.id), r.data));
+        restoreBatch.commit().catch(err=>{
+          showToast('Could not undo: ' + err.message, true);
+        });
+      });
+    }).catch(err=>{
+      showToast('Could not delete leads: ' + err.message, true);
+    });
   }
   function bulkSetStatus(status){
     if(!status) return;
     const ids = Array.from(selectedIds);
-    ids.forEach(id=>{
-      const l = leads.find(x=>x.id===id);
-      if(l) l.status = status;
+    const batch = db.batch();
+    ids.forEach(id=>batch.update(leadsCollection.doc(id), {status}));
+    batch.commit().then(()=>{
+      showToast(`Moved ${ids.length} lead${ids.length===1?'':'s'} to ${status}`);
+      document.getElementById('bulkStatusSelect').value = '';
+    }).catch(err=>{
+      showToast('Could not update leads: ' + err.message, true);
     });
-    saveLeads();
-    showToast(`Moved ${ids.length} lead${ids.length===1?'':'s'} to ${status}`);
-    document.getElementById('bulkStatusSelect').value = '';
-    render();
-    if(currentView==='board') renderBoard();
-    if(currentView==='monthly') renderMonthlyView();
   }
   function bulkExportSelected(){
     const ids = Array.from(selectedIds);
@@ -1586,7 +1619,7 @@
       if(rows.length < 2){ showToast('No data rows found in that CSV.', true); return; }
       const header = rows[0].map(h=>h.trim().toLowerCase());
       const imported = rows.slice(1).map(r=>{
-        const obj = {id: uid()};
+        const obj = {};
         header.forEach((h,idx)=>{
           const key = CSV_COLS.find(c=>c.toLowerCase()===h) || h;
           let val = (r[idx]||'').trim();
@@ -1600,10 +1633,18 @@
         BOOL_COLS.forEach(k=>{ if(typeof obj[k] !== 'boolean') obj[k] = false; });
         return obj;
       });
-      leads = leads.concat(imported);
-      saveLeads();
-      render();
-      showToast(`Imported ${imported.length} lead${imported.length===1?'':'s'}.`);
+      const chunkSize = 400;
+      const chunks = [];
+      for(let i=0;i<imported.length;i+=chunkSize) chunks.push(imported.slice(i,i+chunkSize));
+      Promise.all(chunks.map(chunk=>{
+        const batch = db.batch();
+        chunk.forEach(obj=>batch.set(leadsCollection.doc(), obj));
+        return batch.commit();
+      })).then(()=>{
+        showToast(`Imported ${imported.length} lead${imported.length===1?'':'s'}.`);
+      }).catch(err=>{
+        showToast('Could not import leads: ' + err.message, true);
+      });
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -1836,8 +1877,15 @@
       </div>
     `;
     document.getElementById('drawerNotes').addEventListener('blur', (e)=>{
-      const lead = leads.find(x=>x.id===drawerLeadId);
-      if(lead){ lead.notes = e.target.value.trim(); saveLeads(); showToast('Note saved'); }
+      const noteId = drawerLeadId;
+      const value = e.target.value.trim();
+      const lead = leads.find(x=>x.id===noteId);
+      if(lead && lead.notes === value) return;
+      leadsCollection.doc(noteId).update({notes: value}).then(()=>{
+        showToast('Note saved');
+      }).catch(err=>{
+        showToast('Could not save note: ' + err.message, true);
+      });
     });
     drawerOverlay.classList.add('open');
     leadDrawer.classList.add('open');
@@ -1933,12 +1981,12 @@
         const newStatus = col.dataset.status;
         const l = leads.find(x=>x.id===dragLeadId);
         if(l && l.status!==newStatus){
-          l.status = newStatus;
-          saveLeads();
-          showToast(`Moved ${l.name||'lead'} to ${newStatus}`);
+          leadsCollection.doc(l.id).update({status:newStatus}).then(()=>{
+            showToast(`Moved ${l.name||'lead'} to ${newStatus}`);
+          }).catch(err=>{
+            showToast('Could not update status: ' + err.message, true);
+          });
         }
-        renderBoard();
-        renderTally();
       });
     });
 
@@ -2002,7 +2050,6 @@
   document.getElementById('bulkClearBtn').addEventListener('click', clearSelection);
 
   // ---------- Init ----------
-  loadLeads();
   loadCurrency();
   const currencySelect = document.getElementById('currencySelect');
   currencySelect.value = currency;
@@ -2010,8 +2057,11 @@
     currency = e.target.value;
     saveCurrency();
     render();
+    if(currentView==='board') renderBoard();
+    if(currentView==='monthly') renderMonthlyView();
   });
-  render();
+  initFirebaseSync();
+  if(firebaseConnected) render();
 })();
 </script>
 </body>
