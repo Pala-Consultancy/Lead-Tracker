@@ -728,7 +728,9 @@
       const submitBtn = e.target.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
-      auth.signInWithEmailAndPassword(email, password).catch(err=>{
+      auth.signInWithEmailAndPassword(email, password).then(()=>{
+        location.href = 'index.html';
+      }).catch(err=>{
         showLoginError(t('incorrectLogin'));
       }).finally(()=>{
         submitBtn.disabled = false;
