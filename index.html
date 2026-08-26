@@ -438,6 +438,10 @@
           <option>Other</option>
         </select>
       </div>
+      <div class="field">
+        <label for="boardCreatedBy">Created by <span class="optional-tag">(optional)</span></label>
+        <input id="boardCreatedBy" type="text" placeholder="e.g. Gabriele">
+      </div>
       <div class="field span-full" style="flex:0">
         <button type="submit" class="btn btn-primary">+ Create board</button>
       </div>
@@ -509,6 +513,10 @@
           <option>Referral</option>
           <option>Other</option>
         </select>
+      </div>
+      <div class="field">
+        <label for="editBoardCreatedBy">Created by <span class="optional-tag">(optional)</span></label>
+        <input id="editBoardCreatedBy" type="text" placeholder="e.g. Gabriele">
       </div>
       <div class="modal-actions">
         <button type="button" class="btn" id="editBoardCancel">Cancel</button>
@@ -616,6 +624,9 @@
       ${boards.map((b, i)=>{
         const accent = accents[i % accents.length];
         const created = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : '';
+        const metaParts = [];
+        if(created) metaParts.push('Created ' + created);
+        if(b.createdByName) metaParts.push('by ' + b.createdByName);
         const plainTags = [b.defaultCountry, b.defaultCity, b.defaultIndustry, b.defaultJobTitle].filter(Boolean);
         const sourceStyle = b.defaultSource ? SOURCE_STYLES[b.defaultSource] : null;
         const sourceTagHTML = b.defaultSource
@@ -631,7 +642,7 @@
           </div>
           <div class="board-icon">${ICONS_FOLDER}</div>
           <div class="board-name">${esc(b.name)}</div>
-          <div class="board-meta">${created ? 'Created ' + created : ''}</div>
+          <div class="board-meta">${esc(metaParts.join(' · '))}</div>
           ${tagsHTML}
           <div class="board-count" id="count-${b.id}">— leads</div>
         </a>`;
@@ -678,6 +689,7 @@
       document.getElementById('editBoardIndustry').value = data.defaultIndustry || '';
       document.getElementById('editBoardJobTitle').value = data.defaultJobTitle || '';
       document.getElementById('editBoardSource').value = data.defaultSource || '';
+      document.getElementById('editBoardCreatedBy').value = data.createdByName || '';
       editBoardOverlay.classList.add('open');
     }).catch(err=>{
       showToast('Could not load board: ' + err.message, true);
@@ -707,7 +719,8 @@
       defaultCity: document.getElementById('editBoardCity').value.trim(),
       defaultIndustry: document.getElementById('editBoardIndustry').value,
       defaultJobTitle: document.getElementById('editBoardJobTitle').value.trim(),
-      defaultSource: document.getElementById('editBoardSource').value
+      defaultSource: document.getElementById('editBoardSource').value,
+      createdByName: document.getElementById('editBoardCreatedBy').value.trim()
     }).then(()=>{
       showToast('Board updated');
       closeEditBoard();
@@ -792,6 +805,7 @@
         defaultIndustry: document.getElementById('boardIndustry').value,
         defaultJobTitle: document.getElementById('boardJobTitle').value.trim(),
         defaultSource: document.getElementById('boardSource').value,
+        createdByName: document.getElementById('boardCreatedBy').value.trim(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: user ? user.email : null
       }).then(doc=>{
