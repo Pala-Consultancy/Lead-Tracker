@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PALA CONSULTANCY - Your Boards</title>
+<title>PALA CONSULTANCY - Manage Team</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -29,7 +29,7 @@
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
   }
-  .app{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
+  .app{max-width:900px;margin:0 auto;padding:28px 24px 80px;}
 
   /* ---------- Page loader ---------- */
   #pageLoader{
@@ -152,26 +152,6 @@
   .sub{
     color:rgba(255,255,255,0.6);font-size:13px;font-weight:500;margin-top:3px;
   }
-  .header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
-  .live-badge{
-    display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
-    color:var(--slate);background:#F3F8FD;border:1px solid var(--border);
-    padding:6px 12px;border-radius:20px;font-family:'IBM Plex Mono',monospace;
-  }
-  .live-dot{
-    width:8px;height:8px;border-radius:50%;background:#E0453A;flex-shrink:0;
-    box-shadow:0 0 0 0 rgba(224,69,58,0.6);
-    animation:live-pulse 1.8s ease-in-out infinite;
-  }
-  @keyframes live-pulse{
-    0%{opacity:0.4;box-shadow:0 0 0 0 rgba(224,69,58,0.5);}
-    50%{opacity:1;box-shadow:0 0 0 5px rgba(224,69,58,0);}
-    100%{opacity:0.4;box-shadow:0 0 0 0 rgba(224,69,58,0);}
-  }
-  .count-pill{
-    font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--slate);
-    background:#EFEBE2;padding:6px 10px;border-radius:20px;
-  }
   button{font-family:'Inter',sans-serif;cursor:pointer;border:none;}
   .btn{
     padding:9px 16px;border-radius:7px;font-size:13.5px;font-weight:600;
@@ -184,182 +164,68 @@
   .btn:active{transform:scale(.98);}
   .btn-primary{background:var(--teal);color:#fff;border-color:var(--teal);}
   .btn-primary:hover{background:var(--teal-dark);}
+  .btn-primary:disabled{opacity:.6;cursor:default;}
 
-  /* ---------- Create board ---------- */
-  .create-board-card{
+  /* ---------- Invite card ---------- */
+  .invite-card{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
     box-shadow:var(--shadow);padding:22px 24px;margin-bottom:26px;position:relative;overflow:hidden;
   }
-  .create-board-card::before{
+  .invite-card::before{
     content:"";position:absolute;top:0;left:0;right:0;height:3px;
     background:linear-gradient(90deg, #1B59A5, #7A4FB5, #FF9D00);
   }
-  #createBoardForm{display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:end;}
-  #createBoardForm .field{display:flex;flex-direction:column;gap:6px;}
-  #createBoardForm .span-full{grid-column:1/-1;}
-  #createBoardForm label{
+  .invite-card h2{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;margin:0 0 4px;color:var(--ink);}
+  .invite-card .invite-sub{font-size:12.5px;color:var(--slate);margin-bottom:16px;}
+  #inviteForm{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  #inviteForm .field{flex:1;min-width:220px;}
+  #inviteForm label{
     font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
+    display:block;margin-bottom:6px;
   }
-  .optional-tag{text-transform:none;font-weight:500;color:var(--slate-light);letter-spacing:normal;}
-  #createBoardForm input, #createBoardForm select{
+  #inviteForm input{
     font-family:'Inter',sans-serif;font-size:14.5px;padding:10px 13px;
     border:1px solid var(--border);border-radius:7px;background:#F6FAFE;color:var(--ink);width:100%;
   }
-  #createBoardForm input:focus, #createBoardForm select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
-  .create-board-hint{font-size:12px;color:var(--slate-light);margin-top:14px;}
-  @media (max-width:900px){
-    #createBoardForm{grid-template-columns:repeat(2, 1fr);}
-  }
-  @media (max-width:560px){
-    #createBoardForm{grid-template-columns:1fr;}
-  }
+  #inviteForm input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
 
-  /* ---------- Board grid ---------- */
+  /* ---------- Team list ---------- */
   .section-title{
     font-family:'Sora',sans-serif;font-size:16.5px;font-weight:700;color:var(--ink);
     margin:0 0 14px;
   }
-  .boards-grid{
-    display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:14px;
+  .team-list{display:flex;flex-direction:column;gap:10px;}
+  .team-row{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px 18px;box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
   }
-  .board-card{
-    background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    padding:20px 20px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;
-    cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;
-    text-decoration:none;color:inherit;display:block;
-  }
-  .board-card:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(27,36,48,0.14);}
-  .board-card::before{
-    content:"";position:absolute;top:0;left:0;right:0;height:3px;
-    background:var(--board-accent, linear-gradient(90deg, #1B59A5, #7A4FB5));
-  }
-  .board-icon{
-    width:38px;height:38px;border-radius:9px;background:#E3EEFA;color:#1B59A5;
-    display:flex;align-items:center;justify-content:center;margin-bottom:14px;
-  }
-  .board-icon svg{width:19px;height:19px;}
-  .board-name{
-    font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--ink);
-    margin-bottom:4px;word-break:break-word;
-  }
-  .board-meta{font-size:12px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;}
-  .board-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
-  .board-tag{
-    font-size:10.5px;font-weight:600;color:var(--slate);background:#F3F8FD;
-    border:1px solid var(--border);padding:2px 8px;border-radius:20px;
-  }
-  .board-tag.source-tag{
-    display:inline-flex;align-items:center;gap:4px;border-color:transparent;
-  }
-  .source-tag-icon{width:13px;height:13px;flex-shrink:0;display:flex;}
-  .source-tag-icon svg{width:100%;height:100%;}
-  .board-count{
-    display:inline-flex;align-items:center;gap:5px;margin-top:12px;
-    font-size:12px;font-weight:700;color:var(--teal-dark);background:#E3EEFA;
-    padding:4px 10px;border-radius:20px;font-family:'IBM Plex Mono',monospace;
-  }
-  .board-card-actions{
-    position:absolute;top:14px;right:14px;display:flex;gap:4px;
-    opacity:0;transition:opacity .15s;
-  }
-  .board-card:hover .board-card-actions{opacity:1;}
-  .board-action-btn{
-    background:none;border:none;color:var(--slate-light);
-    font-size:13px;padding:5px 7px;border-radius:6px;cursor:pointer;
-    transition:background .15s, color .15s;
-  }
-  .board-action-btn:hover{background:#E3EEFA;color:var(--teal);}
-  .board-action-btn.danger:hover{background:#FBE4E2;color:var(--red);}
-
-  .icon-btn-settings{font-size:15px;padding:9px 12px;}
-
-  /* ---------- Settings slide panel ---------- */
-  .settings-overlay{
-    position:fixed;inset:0;background:rgba(27,36,48,0.4);z-index:95;
-    opacity:0;visibility:hidden;transition:opacity .2s ease;
-  }
-  .settings-overlay.open{opacity:1;visibility:visible;}
-  .settings-panel{
-    position:fixed;top:0;right:0;height:100%;width:340px;max-width:90vw;
-    background:var(--panel);z-index:96;box-shadow:-8px 0 30px rgba(27,36,48,0.18);
-    transform:translateX(100%);transition:transform .25s ease;
-    display:flex;flex-direction:column;
-  }
-  .settings-panel.open{transform:translateX(0);}
-  .settings-panel-header{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:20px 22px;border-bottom:1px solid var(--border);
-  }
-  .settings-panel-header h3{font-family:'Sora',sans-serif;font-size:17px;margin:0;color:var(--ink);}
-  .settings-panel-body{padding:22px;}
-  .settings-user-block{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
-  .settings-avatar{
-    width:46px;height:46px;border-radius:50%;background:#E3EEFA;color:var(--teal);
+  .team-avatar{
+    width:44px;height:44px;border-radius:50%;background:#E3EEFA;color:var(--teal);
     display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;
-    font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden;
+    font-size:15px;font-weight:700;flex-shrink:0;overflow:hidden;
   }
-  .settings-avatar img{width:100%;height:100%;object-fit:cover;}
-  .settings-user-name{font-weight:700;font-size:14px;color:var(--ink);}
-  .settings-user-email{font-size:12px;color:var(--slate);word-break:break-word;}
-  .settings-user-role{font-size:11.5px;color:var(--teal);font-weight:600;margin:1px 0;}
-  .settings-item{
-    display:flex;align-items:center;gap:12px;width:100%;
-    padding:13px 14px;border-radius:9px;background:none;border:1px solid var(--border);
-    font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer;
-    margin-bottom:10px;transition:background .15s;
+  .team-avatar img{width:100%;height:100%;object-fit:cover;}
+  .team-info{flex:1;min-width:160px;}
+  .team-name{font-weight:700;font-size:14px;color:var(--ink);}
+  .team-email{font-size:12px;color:var(--slate);}
+  .team-you-badge{
+    font-size:10px;font-weight:700;color:var(--teal);background:#E3EEFA;
+    padding:2px 8px;border-radius:20px;margin-left:6px;text-transform:uppercase;letter-spacing:.03em;
   }
-  .settings-item:hover{background:#F3F8FD;}
-  .settings-item.danger{color:var(--red);}
-  .settings-item.danger:hover{background:#FBE4E2;}
-  .settings-item-icon{font-size:16px;}
-  .settings-item-arrow{margin-left:auto;color:var(--slate-light);}
-
-  /* ---------- Edit board modal ---------- */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(27,36,48,0.45);z-index:90;
-    display:none;align-items:center;justify-content:center;padding:20px;
+  .team-role-select{
+    font-family:'Inter',sans-serif;font-size:13px;padding:8px 11px;
+    border:1px solid var(--border);border-radius:7px;background:#F6FAFE;color:var(--ink);
+    min-width:170px;
   }
-  .modal-overlay.open{display:flex;}
-  .modal-card{
-    background:var(--panel);border-radius:16px;box-shadow:0 20px 50px rgba(18,63,120,0.2);
-    width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative;
-  }
-  .modal-card::before{
-    content:"";position:absolute;top:0;left:0;right:0;height:4px;
-    background:linear-gradient(90deg, #1B59A5, #7A4FB5, #FF9D00);
-  }
-  .modal-header{
-    padding:22px 26px 4px;display:flex;justify-content:space-between;align-items:center;
-  }
-  .modal-header h3{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--ink);margin:0;}
-  .modal-close{background:none;border:none;color:var(--slate-light);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;}
-  .modal-close:hover{background:#F3F8FD;color:var(--ink);}
-  #editBoardForm{padding:16px 26px 26px;display:grid;grid-template-columns:repeat(2, 1fr);gap:14px;}
-  #editBoardForm .span-full{grid-column:1/-1;}
-  #editBoardForm .field{display:flex;flex-direction:column;gap:6px;}
-  #editBoardForm label{
-    font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
-  }
-  #editBoardForm input, #editBoardForm select{
-    font-family:'Inter',sans-serif;font-size:14.5px;padding:10px 13px;
-    border:1px solid var(--border);border-radius:7px;background:#F6FAFE;color:var(--ink);width:100%;
-  }
-  #editBoardForm input:focus, #editBoardForm select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
-  .modal-actions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
-  @media (max-width:560px){
-    #editBoardForm{grid-template-columns:1fr;}
-  }
-
+  .team-company{font-size:11.5px;color:var(--slate-light);margin-top:2px;}
   .empty-state{
-    text-align:center;padding:60px 20px;color:var(--slate);
+    text-align:center;padding:50px 20px;color:var(--slate);
     background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);
   }
-  .empty-state h3{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--ink);margin:0 0 6px;}
-  .empty-state p{font-size:13.5px;margin:0;}
+  .empty-state h3{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin:0 0 6px;}
+  .empty-state p{font-size:13px;margin:0;}
 
-  footer{text-align:center;color:var(--slate-light);font-size:12px;margin-top:36px;}
-
-  /* ---------- Toasts ---------- */
   .toast-stack{
     position:fixed;bottom:20px;right:20px;z-index:80;display:flex;flex-direction:column;gap:8px;
   }
@@ -372,8 +238,11 @@
   .toast.danger{background:var(--red);}
   @keyframes toast-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-  @media (max-width:640px){
-    .boards-grid{grid-template-columns:1fr 1fr;}
+  footer{text-align:center;color:var(--slate-light);font-size:12px;margin-top:36px;}
+
+  @media (max-width:560px){
+    .team-row{flex-direction:column;align-items:flex-start;}
+    .team-role-select{width:100%;}
   }
 </style>
 </head>
@@ -416,189 +285,31 @@
         <div class="title-divider"></div>
         <div class="title-text">
           <div class="eyebrow">PALA CONSULTANCY</div>
-          <h1>Your Boards</h1>
-          <div class="sub">Pick a board to start tracking leads, or create a new one</div>
+          <h1>Manage Team</h1>
+          <div class="sub">Invite people and manage everyone's role</div>
         </div>
       </div>
     </div>
-    <div class="header-right">
-      <span class="live-badge"><span class="live-dot"></span>Real-time updates</span>
-      <span class="count-pill" id="currentUserPill" style="display:none"></span>
-      <button class="btn icon-btn-settings" id="settingsBtn" title="Settings">⚙️</button>
-    </div>
+    <a class="btn" href="index.html">← Back to boards</a>
   </header>
 
-  <div class="create-board-card">
-    <form id="createBoardForm">
-      <div class="field span-full">
-        <label for="boardNameInput">New board name</label>
-        <input id="boardNameInput" type="text" placeholder="e.g. Leads from Belgium" required maxlength="80">
-      </div>
+  <div class="invite-card">
+    <h2>Invite a team member</h2>
+    <div class="invite-sub">They'll get an email with a link to join — no password needed to get started.</div>
+    <form id="inviteForm">
       <div class="field">
-        <label for="boardCountry">Country <span class="optional-tag">(optional)</span></label>
-        <input id="boardCountry" type="text" placeholder="e.g. Belgium">
+        <label for="inviteEmail">Email address</label>
+        <input id="inviteEmail" type="email" placeholder="colleague@pala-consultancy.com" required>
       </div>
-      <div class="field">
-        <label for="boardCity">City <span class="optional-tag">(optional)</span></label>
-        <input id="boardCity" type="text" placeholder="e.g. Brussels">
-      </div>
-      <div class="field">
-        <label for="boardIndustry">Industry <span class="optional-tag">(optional)</span></label>
-        <select id="boardIndustry">
-          <option value="">Any industry</option>
-          <option>Technology</option>
-          <option>Finance</option>
-          <option>Healthcare</option>
-          <option>Retail & E-commerce</option>
-          <option>Real Estate</option>
-          <option>Manufacturing</option>
-          <option>Education</option>
-          <option>Marketing & Advertising</option>
-          <option>Consulting</option>
-          <option>Hospitality & Travel</option>
-          <option>Construction</option>
-          <option>Transportation & Logistics</option>
-          <option>Legal</option>
-          <option>Media & Entertainment</option>
-          <option>Non-profit</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="boardJobTitle">Job title <span class="optional-tag">(optional)</span></label>
-        <input id="boardJobTitle" type="text" placeholder="e.g. Marketing Manager">
-      </div>
-      <div class="field">
-        <label for="boardSource">Lead source <span class="optional-tag">(optional)</span></label>
-        <select id="boardSource">
-          <option value="">Any source</option>
-          <option>LinkedIn</option>
-          <option>YouTube</option>
-          <option>Instagram</option>
-          <option>TikTok</option>
-          <option>Website</option>
-          <option>Referral</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="boardCreatedBy">Created by <span class="optional-tag">(optional)</span></label>
-        <input id="boardCreatedBy" type="text" placeholder="e.g. Tom">
-      </div>
-      <div class="field span-full" style="flex:0">
-        <button type="submit" class="btn btn-primary">+ Create board</button>
-      </div>
+      <button type="submit" class="btn btn-primary" id="inviteSendBtn">Send invite</button>
     </form>
-    <div class="create-board-hint">These become the default values pre-filled whenever someone adds a new lead inside this board — still editable per lead.</div>
   </div>
 
-  <h2 class="section-title">Your boards</h2>
-  <div id="boardsContainer"></div>
+  <h2 class="section-title">Team members</h2>
+  <div id="teamListContainer"></div>
 
   <footer>© 2026 by Pala Consultancy BV. - All Rights Reserved</footer>
 </div>
-</div>
-
-<div class="modal-overlay" id="editBoardOverlay">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3>Edit board</h3>
-      <button class="modal-close" id="editBoardClose" title="Close">✕</button>
-    </div>
-    <form id="editBoardForm">
-      <div class="field span-full">
-        <label for="editBoardName">Board name</label>
-        <input id="editBoardName" type="text" required maxlength="80">
-      </div>
-      <div class="field">
-        <label for="editBoardCountry">Country <span class="optional-tag">(optional)</span></label>
-        <input id="editBoardCountry" type="text" placeholder="e.g. Belgium">
-      </div>
-      <div class="field">
-        <label for="editBoardCity">City <span class="optional-tag">(optional)</span></label>
-        <input id="editBoardCity" type="text" placeholder="e.g. Brussels">
-      </div>
-      <div class="field">
-        <label for="editBoardIndustry">Industry <span class="optional-tag">(optional)</span></label>
-        <select id="editBoardIndustry">
-          <option value="">Any industry</option>
-          <option>Technology</option>
-          <option>Finance</option>
-          <option>Healthcare</option>
-          <option>Retail & E-commerce</option>
-          <option>Real Estate</option>
-          <option>Manufacturing</option>
-          <option>Education</option>
-          <option>Marketing & Advertising</option>
-          <option>Consulting</option>
-          <option>Hospitality & Travel</option>
-          <option>Construction</option>
-          <option>Transportation & Logistics</option>
-          <option>Legal</option>
-          <option>Media & Entertainment</option>
-          <option>Non-profit</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="editBoardJobTitle">Job title <span class="optional-tag">(optional)</span></label>
-        <input id="editBoardJobTitle" type="text" placeholder="e.g. Marketing Manager">
-      </div>
-      <div class="field">
-        <label for="editBoardSource">Lead source <span class="optional-tag">(optional)</span></label>
-        <select id="editBoardSource">
-          <option value="">Any source</option>
-          <option>LinkedIn</option>
-          <option>YouTube</option>
-          <option>Instagram</option>
-          <option>TikTok</option>
-          <option>Website</option>
-          <option>Referral</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="editBoardCreatedBy">Created by <span class="optional-tag">(optional)</span></label>
-        <input id="editBoardCreatedBy" type="text" placeholder="e.g. Tom">
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn" id="editBoardCancel">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="settings-overlay" id="settingsOverlay"></div>
-<div class="settings-panel" id="settingsPanel">
-  <div class="settings-panel-header">
-    <h3>Settings</h3>
-    <button class="modal-close" id="settingsClose" title="Close">✕</button>
-  </div>
-  <div class="settings-panel-body">
-    <div class="settings-user-block">
-      <div class="settings-avatar" id="settingsAvatar">?</div>
-      <div>
-        <div class="settings-user-name" id="settingsUserName">—</div>
-        <div class="settings-user-role" id="settingsUserRole" style="display:none"></div>
-        <div class="settings-user-email" id="settingsUserEmail">—</div>
-      </div>
-    </div>
-    <a class="settings-item" href="account.html">
-      <span class="settings-item-icon">👤</span>
-      <span>Manage account</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <a class="settings-item" href="team.html">
-      <span class="settings-item-icon">👥</span>
-      <span>Manage team</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <button class="settings-item danger" id="signOutItem">
-      <span class="settings-item-icon">🚪</span>
-      <span>Sign out</span>
-    </button>
-  </div>
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
@@ -608,7 +319,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script>
 (function(){
-  // Paste the SAME firebaseConfig you used in the tracker (dashboard.html) here.
   const firebaseConfig = {
     apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",
     authDomain: "lead-tracker-c5c3a.firebaseapp.com",
@@ -618,14 +328,14 @@
     appId: "1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"
   };
   let db = null;
-  let boardsCollection = null;
+  let usersCollection = null;
   let auth = null;
   let firebaseConnected = false;
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
-      boardsCollection = db.collection('boards');
+      usersCollection = db.collection('users');
       auth = firebase.auth();
       firebaseConnected = true;
     }
@@ -650,181 +360,92 @@
     }, 3200);
   }
 
-  const ICONS_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+  const ROLE_OPTIONS = ["Founder","Co-Founder","CEO","Managing Director","Sales Manager","Sales Representative","Business Development","Marketing Manager","Account Manager","Consultant","Operations","Intern","Other"];
 
-  const SOURCE_STYLES = {
-    LinkedIn: {
-      bg:"#E3EEFA", fg:"#1D5FA8",
-      icon:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><path fill="#E3EEFA" d="M7.2 9.8h2.6v7.4H7.2zM8.5 8.7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM11.3 9.8h2.5v1h.03c.35-.66 1.2-1.36 2.47-1.36 2.64 0 3.13 1.74 3.13 4v3.76h-2.6v-3.34c0-.8-.02-1.83-1.12-1.83-1.12 0-1.29.87-1.29 1.77v3.4h-2.6z"/></svg>'
-    },
-    YouTube: {
-      bg:"#FBE4E2", fg:"#C0392B",
-      icon:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="5" width="20" height="14" rx="4"/><path fill="#FBE4E2" d="M10 8.6 16 12l-6 3.4z"/></svg>'
-    },
-    Instagram: {
-      bg:"#F6E3F0", fg:"#A6338B",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>'
-    },
-    TikTok: {
-      bg:"#E9E9E9", fg:"#222222",
-      icon:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 3c.3 1.9 1.6 3.3 3.5 3.6v2.5c-1.3 0-2.5-.4-3.5-1.1v6.1a5 5 0 1 1-5-5c.2 0 .5 0 .7.05v2.6a2.4 2.4 0 1 0 1.8 2.3V3z"/></svg>'
-    },
-    Website: {
-      bg:"#DEF0EA", fg:"#1F5C4F",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9s1.3-6.5 3.8-9z"/></svg>'
-    },
-    Referral: {
-      bg:"#FBEEDC", fg:"#A9660F",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
-    },
-    Other: {
-      bg:"#EDEDED", fg:"#5A5A5A",
-      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83a2 2 0 0 0-1.42-.58H4a1 1 0 0 0-1 1v5.58a2 2 0 0 0 .58 1.42l9.59 9.59a2 2 0 0 0 2.82 0l5.6-5.6a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1"/></svg>'
-    }
-  };
+  let unsubscribeTeam = null;
+  let currentUid = null;
 
-  let unsubscribeBoards = null;
+  function initials(name, email){
+    const source = (name || email || '?').trim();
+    const parts = source.split(/\s+/);
+    return parts.length >= 2 ? (parts[0][0]+parts[1][0]).toUpperCase() : source.slice(0,2).toUpperCase();
+  }
 
-  function renderBoards(boards){
-    const container = document.getElementById('boardsContainer');
-    if(boards.length === 0){
+  function renderTeam(members){
+    const container = document.getElementById('teamListContainer');
+    if(members.length === 0){
       container.innerHTML = `<div class="empty-state">
-        <h3>No boards yet</h3>
-        <p>Create your first board above to start tracking leads.</p>
+        <h3>No team members yet</h3>
+        <p>Invite your first teammate using the form above.</p>
       </div>`;
       return;
     }
-    const accents = ['#1B59A5, #7A4FB5', '#7A4FB5, #FF9D00', '#FF9D00, #1F5C4F', '#1F5C4F, #1B59A5', '#C0392B, #FF9D00'];
-    container.innerHTML = `<div class="boards-grid">
-      ${boards.map((b, i)=>{
-        const accent = accents[i % accents.length];
-        const created = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : '';
-        const metaParts = [];
-        if(created) metaParts.push('Created ' + created);
-        if(b.createdByName) metaParts.push('by ' + b.createdByName);
-        const plainTags = [b.defaultCountry, b.defaultCity, b.defaultIndustry, b.defaultJobTitle].filter(Boolean);
-        const sourceStyle = b.defaultSource ? SOURCE_STYLES[b.defaultSource] : null;
-        const sourceTagHTML = b.defaultSource
-          ? `<span class="board-tag source-tag" style="background:${sourceStyle?sourceStyle.bg:'#EDEDED'};color:${sourceStyle?sourceStyle.fg:'#5A5A5A'}">
-              <span class="source-tag-icon">${sourceStyle?sourceStyle.icon:''}</span>${esc(b.defaultSource)}
-            </span>`
-          : '';
-        const tagsHTML = (plainTags.length || sourceTagHTML) ? `<div class="board-tags">${plainTags.map(t=>`<span class="board-tag">${esc(t)}</span>`).join('')}${sourceTagHTML}</div>` : '';
-        return `<a class="board-card" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
-          <div class="board-card-actions">
-            <button class="board-action-btn" title="Edit board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.editBoard('${b.id}')">✎</button>
-            <button class="board-action-btn danger" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
+    container.innerHTML = `<div class="team-list">
+      ${members.map(m=>{
+        const isYou = m.id === currentUid;
+        const roleOptionsHtml = ['<option value="">No role set</option>'].concat(
+          ROLE_OPTIONS.map(r=>`<option value="${r}" ${m.role===r?'selected':''}>${r}</option>`)
+        ).join('');
+        return `<div class="team-row">
+          <div class="team-avatar">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
+          <div class="team-info">
+            <div class="team-name">${esc(m.name || m.email || 'Team member')}${isYou ? '<span class="team-you-badge">You</span>' : ''}</div>
+            <div class="team-email">${esc(m.email || '')}</div>
+            ${m.company ? `<div class="team-company">${esc(m.company)}</div>` : ''}
           </div>
-          <div class="board-icon">${ICONS_FOLDER}</div>
-          <div class="board-name">${esc(b.name)}</div>
-          <div class="board-meta">${esc(metaParts.join(' · '))}</div>
-          ${tagsHTML}
-          <div class="board-count" id="count-${b.id}">— leads</div>
-        </a>`;
+          <select class="team-role-select" onchange="window.__teamActions.updateRole('${m.id}', this.value)">
+            ${roleOptionsHtml}
+          </select>
+        </div>`;
       }).join('')}
     </div>`;
-
-    boards.forEach(b=>{
-      boardsCollection.doc(b.id).collection('leads').get().then(snap=>{
-        const el = document.getElementById(`count-${b.id}`);
-        if(el) el.textContent = `${snap.size} lead${snap.size===1?'':'s'}`;
-      }).catch(()=>{});
-    });
   }
 
-  function deleteBoard(boardId, boardName){
-    if(!confirm(`Delete "${boardName}" and all its leads? This cannot be undone.`)) return;
-    const boardRef = boardsCollection.doc(boardId);
-    boardRef.collection('leads').get().then(snap=>{
-      const batch = db.batch();
-      snap.docs.forEach(doc=>batch.delete(doc.ref));
-      batch.delete(boardRef);
-      return batch.commit();
-    }).then(()=>{
-      showToast(`Deleted "${boardName}"`, true);
+  function updateRole(uid, role){
+    usersCollection.doc(uid).set({ role }, {merge:true}).then(()=>{
+      showToast('Role updated');
     }).catch(err=>{
-      showToast('Could not delete board: ' + err.message, true);
+      showToast('Could not update role: ' + err.message, true);
     });
   }
+  window.__teamActions = { updateRole };
 
-  // ---------- Edit board modal ----------
-  let editingBoardId = null;
-  const editBoardOverlay = document.getElementById('editBoardOverlay');
-  function openEditBoard(boardId){
-    boardsCollection.doc(boardId).get().then(doc=>{
-      if(!doc.exists){
-        showToast('This board no longer exists.', true);
-        return;
-      }
-      const data = doc.data();
-      editingBoardId = boardId;
-      document.getElementById('editBoardName').value = data.name || '';
-      document.getElementById('editBoardCountry').value = data.defaultCountry || '';
-      document.getElementById('editBoardCity').value = data.defaultCity || '';
-      document.getElementById('editBoardIndustry').value = data.defaultIndustry || '';
-      document.getElementById('editBoardJobTitle').value = data.defaultJobTitle || '';
-      document.getElementById('editBoardSource').value = data.defaultSource || '';
-      document.getElementById('editBoardCreatedBy').value = data.createdByName || '';
-      editBoardOverlay.classList.add('open');
-    }).catch(err=>{
-      showToast('Could not load board: ' + err.message, true);
-    });
-  }
-  function closeEditBoard(){
-    editBoardOverlay.classList.remove('open');
-    editingBoardId = null;
-  }
-  document.getElementById('editBoardClose').addEventListener('click', closeEditBoard);
-  document.getElementById('editBoardCancel').addEventListener('click', closeEditBoard);
-  editBoardOverlay.addEventListener('click', (e)=>{
-    if(e.target === editBoardOverlay) closeEditBoard();
-  });
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape' && editBoardOverlay.classList.contains('open')) closeEditBoard();
-  });
-  document.getElementById('editBoardForm').addEventListener('submit', (e)=>{
-    e.preventDefault();
-    const name = document.getElementById('editBoardName').value.trim();
-    if(!name || !editingBoardId) return;
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    boardsCollection.doc(editingBoardId).update({
-      name,
-      defaultCountry: document.getElementById('editBoardCountry').value.trim(),
-      defaultCity: document.getElementById('editBoardCity').value.trim(),
-      defaultIndustry: document.getElementById('editBoardIndustry').value,
-      defaultJobTitle: document.getElementById('editBoardJobTitle').value.trim(),
-      defaultSource: document.getElementById('editBoardSource').value,
-      createdByName: document.getElementById('editBoardCreatedBy').value.trim()
-    }).then(()=>{
-      showToast('Board updated');
-      closeEditBoard();
-    }).catch(err=>{
-      showToast('Could not update board: ' + err.message, true);
-    }).finally(()=>{
-      submitBtn.disabled = false;
-    });
-  });
-
-  window.__boardActions = { deleteBoard, editBoard: openEditBoard };
-
-  function initBoardsSync(){
-    if(!firebaseConnected) return;
-    unsubscribeBoards = boardsCollection.orderBy('createdAt','desc').onSnapshot(snapshot=>{
-      const boards = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
-      renderBoards(boards);
+  function initTeamSync(){
+    unsubscribeTeam = usersCollection.onSnapshot(snapshot=>{
+      const members = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
+      members.sort((a,b)=>(a.name||a.email||'').localeCompare(b.name||b.email||''));
+      renderTeam(members);
     }, err=>{
-      console.error('Boards sync error', err);
+      console.error('Team sync error', err);
       showToast('Lost connection to the shared database.', true);
     });
   }
+
+  document.getElementById('inviteForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('inviteEmail').value.trim();
+    if(!email) return;
+    const sendBtn = document.getElementById('inviteSendBtn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+    const boardsPath = location.pathname.substring(0, location.pathname.lastIndexOf('/')+1);
+    const redirectUrl = location.origin + boardsPath + 'index.html';
+    auth.sendSignInLinkToEmail(email, { url: redirectUrl, handleCodeInApp: true }).then(()=>{
+      showToast(`Invite sent to ${email}`);
+      document.getElementById('inviteEmail').value = '';
+    }).catch(err=>{
+      showToast('Could not send invite: ' + err.message, true);
+    }).finally(()=>{
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send invite';
+    });
+  });
 
   // ---------- Authentication gate ----------
   const pageLoader = document.getElementById('pageLoader');
   const loginScreen = document.getElementById('loginScreen');
   const appRoot = document.getElementById('appRoot');
   const loginError = document.getElementById('loginError');
-  const currentUserPill = document.getElementById('currentUserPill');
 
   function showLoginError(msg){
     loginError.textContent = msg;
@@ -839,7 +460,7 @@
     pageLoader.style.display = 'none';
     loginScreen.innerHTML = `<div class="login-card fade-in" style="padding:34px 34px 30px">
       <div class="login-title">Not connected</div>
-      <div class="login-sub" style="margin-top:8px;line-height:1.5">This page isn't connected to Firebase yet. Add your Firebase project config near the top of this file's script.</div>
+      <div class="login-sub" style="margin-top:8px;line-height:1.5">This page isn't connected to Firebase yet.</div>
     </div>`;
     loginScreen.style.display = 'flex';
     appRoot.style.display = 'none';
@@ -859,135 +480,24 @@
         submitBtn.textContent = 'Sign in';
       });
     });
-    // ---------- Settings panel ----------
-    const settingsOverlay = document.getElementById('settingsOverlay');
-    const settingsPanel = document.getElementById('settingsPanel');
-    function openSettings(){
-      settingsOverlay.classList.add('open');
-      settingsPanel.classList.add('open');
-    }
-    function closeSettings(){
-      settingsOverlay.classList.remove('open');
-      settingsPanel.classList.remove('open');
-    }
-    document.getElementById('settingsBtn').addEventListener('click', openSettings);
-    document.getElementById('settingsClose').addEventListener('click', closeSettings);
-    settingsOverlay.addEventListener('click', closeSettings);
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape') closeSettings();
-    });
-    document.getElementById('signOutItem').addEventListener('click', ()=>{
-      if(unsubscribeBoards){ unsubscribeBoards(); unsubscribeBoards = null; }
-      auth.signOut().then(()=>{
-        closeSettings();
-        showToast('Signed out');
-      });
-    });
-
-    // ---------- Complete email-link sign-in (for invited team members) ----------
-    if(auth.isSignInWithEmailLink(window.location.href)){
-      let emailForLink = window.localStorage.getItem('emailForSignIn');
-      if(!emailForLink){
-        emailForLink = window.prompt('Please confirm your email address to finish signing in:');
-      }
-      if(emailForLink){
-        auth.signInWithEmailLink(emailForLink, window.location.href).then(()=>{
-          window.localStorage.removeItem('emailForSignIn');
-          window.history.replaceState({}, document.title, window.location.pathname);
-          showToast('Welcome! Your account is ready.');
-        }).catch(err=>{
-          showToast('Could not complete sign-in: ' + err.message, true);
-        });
-      }
-    }
-
-    function ensureUserProfileExists(user){
-      db.collection('users').doc(user.uid).get().then(doc=>{
-        if(!doc.exists){
-          db.collection('users').doc(user.uid).set({
-            email: user.email,
-            name: user.displayName || '',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, {merge:true}).catch(err=>console.error('Could not create profile', err));
-        }
-      }).catch(err=>console.error('Could not check profile', err));
-    }
-    function loadSettingsUserInfo(user){
-      document.getElementById('settingsUserEmail').textContent = user.email || '';
-      const nameEl = document.getElementById('settingsUserName');
-      const avatarEl = document.getElementById('settingsAvatar');
-      const roleEl = document.getElementById('settingsUserRole');
-      db.collection('users').doc(user.uid).get().then(doc=>{
-        const data = doc.exists ? doc.data() : {};
-        const name = data.name || user.displayName || '';
-        nameEl.textContent = name || user.email || 'Account';
-        const roleText = data.role && data.company ? `${data.role} at ${data.company}` : (data.role || data.company || '');
-        if(roleText){
-          roleEl.textContent = roleText;
-          roleEl.style.display = '';
-        } else {
-          roleEl.style.display = 'none';
-        }
-        if(data.photoURL){
-          avatarEl.innerHTML = `<img src="${data.photoURL}" alt="Profile photo">`;
-        } else {
-          const source = (name || user.email || '?').trim();
-          const parts = source.split(/\s+/);
-          avatarEl.textContent = parts.length >= 2 ? (parts[0][0]+parts[1][0]).toUpperCase() : source.slice(0,2).toUpperCase();
-        }
-      }).catch(()=>{
-        nameEl.textContent = user.email || 'Account';
-      });
-    }
-    document.getElementById('createBoardForm').addEventListener('submit', (e)=>{
-      e.preventDefault();
-      const input = document.getElementById('boardNameInput');
-      const name = input.value.trim();
-      if(!name) return;
-      const submitBtn = e.target.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      const user = auth.currentUser;
-      boardsCollection.add({
-        name,
-        defaultCountry: document.getElementById('boardCountry').value.trim(),
-        defaultCity: document.getElementById('boardCity').value.trim(),
-        defaultIndustry: document.getElementById('boardIndustry').value,
-        defaultJobTitle: document.getElementById('boardJobTitle').value.trim(),
-        defaultSource: document.getElementById('boardSource').value,
-        createdByName: document.getElementById('boardCreatedBy').value.trim(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        createdBy: user ? user.email : null
-      }).then(doc=>{
-        e.target.reset();
-        location.href = `dashboard.html?board=${encodeURIComponent(doc.id)}`;
-      }).catch(err=>{
-        showToast('Could not create board: ' + err.message, true);
-        submitBtn.disabled = false;
-      });
-    });
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
       if(user){
+        currentUid = user.uid;
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
         appRoot.classList.remove('fade-in');
         void appRoot.offsetWidth;
         appRoot.classList.add('fade-in');
-        currentUserPill.style.display = '';
-        currentUserPill.textContent = user.email;
         clearLoginError();
-        document.getElementById('loginForm').reset();
-        ensureUserProfileExists(user);
-        loadSettingsUserInfo(user);
-        initBoardsSync();
+        initTeamSync();
       } else {
         appRoot.style.display = 'none';
         loginScreen.style.display = 'flex';
         loginScreen.classList.remove('fade-in');
         void loginScreen.offsetWidth;
         loginScreen.classList.add('fade-in');
-        currentUserPill.style.display = 'none';
-        closeSettings();
+        if(unsubscribeTeam){ unsubscribeTeam(); unsubscribeTeam = null; }
       }
     });
   }

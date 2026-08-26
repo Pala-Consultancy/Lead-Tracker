@@ -1089,37 +1089,15 @@
       <span>Manage account</span>
       <span class="settings-item-arrow">→</span>
     </a>
-    <button class="settings-item" id="inviteItem">
-      <span class="settings-item-icon">✉️</span>
-      <span>Invite team member</span>
-    </button>
+    <a class="settings-item" href="team.html">
+      <span class="settings-item-icon">👥</span>
+      <span>Manage team</span>
+      <span class="settings-item-arrow">→</span>
+    </a>
     <button class="settings-item danger" id="signOutItem">
       <span class="settings-item-icon">🚪</span>
       <span>Sign out</span>
     </button>
-  </div>
-</div>
-
-<div class="modal-overlay" id="inviteOverlay">
-  <div class="modal-card" style="max-width:420px">
-    <div class="modal-header">
-      <h3>Invite a team member</h3>
-      <button class="modal-close" id="inviteClose">✕</button>
-    </div>
-    <form id="inviteForm" style="padding:16px 26px 26px;display:flex;flex-direction:column;gap:14px;">
-      <div class="field">
-        <label for="inviteEmail" style="font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;">Their email address</label>
-        <input id="inviteEmail" type="email" placeholder="colleague@pala-consultancy.com" required
-          style="font-family:'Inter',sans-serif;font-size:14.5px;padding:11px 13px;border:1px solid var(--border);border-radius:7px;background:#F6FAFE;color:var(--ink);width:100%;margin-top:6px;">
-      </div>
-      <div style="font-size:12px;color:var(--slate-light);line-height:1.5;">
-        They'll get an email with a link to join. Clicking it signs them straight in — no password needed to get started, and they can set one later from their account page.
-      </div>
-      <div class="modal-actions" style="padding:0;">
-        <button type="button" class="btn" id="inviteCancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="inviteSendBtn">Send invite</button>
-      </div>
-    </form>
   </div>
 </div>
 
@@ -2434,42 +2412,6 @@
       auth.signOut().then(()=>{
         closeSettings();
         showToast('Signed out');
-      });
-    });
-
-    // ---------- Invite team member ----------
-    const inviteOverlay = document.getElementById('inviteOverlay');
-    function openInvite(){
-      closeSettings();
-      document.getElementById('inviteEmail').value = '';
-      inviteOverlay.classList.add('open');
-    }
-    function closeInvite(){
-      inviteOverlay.classList.remove('open');
-    }
-    document.getElementById('inviteItem').addEventListener('click', openInvite);
-    document.getElementById('inviteClose').addEventListener('click', closeInvite);
-    document.getElementById('inviteCancel').addEventListener('click', closeInvite);
-    inviteOverlay.addEventListener('click', (e)=>{
-      if(e.target === inviteOverlay) closeInvite();
-    });
-    document.getElementById('inviteForm').addEventListener('submit', (e)=>{
-      e.preventDefault();
-      const email = document.getElementById('inviteEmail').value.trim();
-      if(!email) return;
-      const sendBtn = document.getElementById('inviteSendBtn');
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'Sending...';
-      const boardsPath = location.pathname.substring(0, location.pathname.lastIndexOf('/')+1);
-      const redirectUrl = location.origin + boardsPath + 'index.html';
-      auth.sendSignInLinkToEmail(email, { url: redirectUrl, handleCodeInApp: true }).then(()=>{
-        showToast(`Invite sent to ${email}`);
-        closeInvite();
-      }).catch(err=>{
-        showToast('Could not send invite: ' + err.message, true);
-      }).finally(()=>{
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Send invite';
       });
     });
 
