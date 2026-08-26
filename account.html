@@ -189,6 +189,42 @@
   .avatar-actions .btn{width:fit-content;}
   .avatar-hint{font-size:11.5px;color:var(--slate-light);}
 
+  /* ---------- Photo position modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(27,36,48,0.45);z-index:90;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-card{
+    background:var(--panel);border-radius:16px;box-shadow:0 20px 50px rgba(18,63,120,0.2);
+    width:100%;max-width:380px;position:relative;overflow:hidden;
+  }
+  .modal-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg, #1B59A5, #7A4FB5, #FF9D00);
+  }
+  .modal-header{
+    padding:20px 24px 4px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .modal-header h3{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:var(--ink);margin:0;}
+  .modal-close{background:none;border:none;color:var(--slate-light);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;}
+  .modal-close:hover{background:#F3F8FD;color:var(--ink);}
+  .crop-viewport{
+    width:240px;height:240px;border-radius:50%;overflow:hidden;position:relative;
+    margin:16px auto 0;background:#EFEBE2;cursor:grab;touch-action:none;
+    border:2px solid var(--border);
+  }
+  .crop-viewport.dragging{cursor:grabbing;}
+  .crop-viewport img{
+    position:absolute;top:0;left:0;transform-origin:top left;
+    user-select:none;-webkit-user-drag:none;pointer-events:none;
+  }
+  .crop-hint{text-align:center;font-size:11.5px;color:var(--slate-light);margin-top:10px;}
+  .crop-zoom-row{display:flex;align-items:center;gap:10px;margin:16px 26px 4px;}
+  .crop-zoom-row span{font-size:14px;flex-shrink:0;}
+  .crop-zoom-row input[type="range"]{flex:1;accent-color:var(--teal);}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:18px 26px 26px;}
+
   #accountForm{padding:6px 30px 0;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   #accountForm .field{display:flex;flex-direction:column;gap:6px;}
   #accountForm .span-full{grid-column:1/-1;}
@@ -330,6 +366,27 @@
 </div>
 </div>
 
+<div class="modal-overlay" id="cropOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Position your photo</h3>
+      <button class="modal-close" id="cropClose">✕</button>
+    </div>
+    <div class="crop-viewport" id="cropViewport">
+      <img id="cropImage" draggable="false">
+    </div>
+    <div class="crop-hint">Drag to reposition</div>
+    <div class="crop-zoom-row">
+      <span>🔍</span>
+      <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="cropCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="cropConfirm">Use this photo</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-stack" id="toastStack"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -416,28 +473,109 @@
   document.getElementById('changePhotoBtn').addEventListener('click', ()=>{
     document.getElementById('photoInput').click();
   });
-  function resizeImageToDataURL(file, maxSize, quality){
+
+  // ---------- Photo position editor ----------
+  const cropOverlay = document.getElementById('cropOverlay');
+  const cropViewport = document.getElementById('cropViewport');
+  const cropImage = document.getElementById('cropImage');
+  const cropZoom = document.getElementById('cropZoom');
+  const VIEWPORT_SIZE = 240;
+  const OUTPUT_SIZE = 320;
+  let cropImgNatural = { w:0, h:0 };
+  let cropBaseScale = 1;
+  let cropOffset = { x:0, y:0 };
+  let cropDragging = false;
+  let cropDragStart = { x:0, y:0, offX:0, offY:0 };
+
+  function clampCropOffset(){
+    const scale = cropBaseScale * parseFloat(cropZoom.value);
+    const dispW = cropImgNatural.w * scale;
+    const dispH = cropImgNatural.h * scale;
+    const minX = VIEWPORT_SIZE - dispW, maxX = 0;
+    const minY = VIEWPORT_SIZE - dispH, maxY = 0;
+    cropOffset.x = Math.min(maxX, Math.max(minX, cropOffset.x));
+    cropOffset.y = Math.min(maxY, Math.max(minY, cropOffset.y));
+  }
+  function applyCropTransform(){
+    const scale = cropBaseScale * parseFloat(cropZoom.value);
+    cropImage.style.width = (cropImgNatural.w * scale) + 'px';
+    cropImage.style.height = (cropImgNatural.h * scale) + 'px';
+    cropImage.style.transform = `translate(${cropOffset.x}px, ${cropOffset.y}px)`;
+  }
+  function openCropEditor(dataUrl){
+    const img = new Image();
+    img.onload = ()=>{
+      cropImgNatural = { w: img.naturalWidth, h: img.naturalHeight };
+      cropBaseScale = Math.max(VIEWPORT_SIZE / img.naturalWidth, VIEWPORT_SIZE / img.naturalHeight);
+      cropZoom.value = 1;
+      cropOffset.x = (VIEWPORT_SIZE - img.naturalWidth * cropBaseScale) / 2;
+      cropOffset.y = (VIEWPORT_SIZE - img.naturalHeight * cropBaseScale) / 2;
+      cropImage.src = dataUrl;
+      applyCropTransform();
+      cropOverlay.classList.add('open');
+    };
+    img.src = dataUrl;
+  }
+  function closeCropEditor(){
+    cropOverlay.classList.remove('open');
+    document.getElementById('photoInput').value = '';
+  }
+  document.getElementById('cropClose').addEventListener('click', closeCropEditor);
+  document.getElementById('cropCancel').addEventListener('click', closeCropEditor);
+
+  function cropPointerDown(clientX, clientY){
+    cropDragging = true;
+    cropViewport.classList.add('dragging');
+    cropDragStart = { x: clientX, y: clientY, offX: cropOffset.x, offY: cropOffset.y };
+  }
+  function cropPointerMove(clientX, clientY){
+    if(!cropDragging) return;
+    cropOffset.x = cropDragStart.offX + (clientX - cropDragStart.x);
+    cropOffset.y = cropDragStart.offY + (clientY - cropDragStart.y);
+    clampCropOffset();
+    applyCropTransform();
+  }
+  function cropPointerUp(){
+    cropDragging = false;
+    cropViewport.classList.remove('dragging');
+  }
+  cropViewport.addEventListener('mousedown', (e)=>cropPointerDown(e.clientX, e.clientY));
+  window.addEventListener('mousemove', (e)=>cropPointerMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup', cropPointerUp);
+  cropViewport.addEventListener('touchstart', (e)=>{
+    const t = e.touches[0];
+    cropPointerDown(t.clientX, t.clientY);
+  }, {passive:true});
+  cropViewport.addEventListener('touchmove', (e)=>{
+    const t = e.touches[0];
+    cropPointerMove(t.clientX, t.clientY);
+  }, {passive:true});
+  cropViewport.addEventListener('touchend', cropPointerUp);
+  cropZoom.addEventListener('input', ()=>{
+    clampCropOffset();
+    applyCropTransform();
+  });
+
+  document.getElementById('cropConfirm').addEventListener('click', ()=>{
+    const scale = cropBaseScale * parseFloat(cropZoom.value);
+    const sx = -cropOffset.x / scale;
+    const sy = -cropOffset.y / scale;
+    const sSize = VIEWPORT_SIZE / scale;
+    const canvas = document.createElement('canvas');
+    canvas.width = OUTPUT_SIZE;
+    canvas.height = OUTPUT_SIZE;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(cropImage, sx, sy, sSize, sSize, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+    currentPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    updateAvatarPreview(document.getElementById('fullName').value, document.getElementById('emailField').value);
+    showToast('Photo ready — click Save changes to keep it');
+    closeCropEditor();
+  });
+
+  function readFileAsDataURL(file){
     return new Promise((resolve, reject)=>{
-      const img = new Image();
       const reader = new FileReader();
-      reader.onload = ()=>{
-        img.onload = ()=>{
-          let { width, height } = img;
-          if(width > height){
-            if(width > maxSize){ height = Math.round(height * (maxSize/width)); width = maxSize; }
-          } else {
-            if(height > maxSize){ width = Math.round(width * (maxSize/height)); height = maxSize; }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.onerror = reject;
-        img.src = reader.result;
-      };
+      reader.onload = ()=>resolve(reader.result);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -449,16 +587,10 @@
       showToast('Please choose an image file.', true);
       return;
     }
-    resizeImageToDataURL(file, 300, 0.8).then(dataUrl=>{
-      if(dataUrl.length > 900*1024){
-        return resizeImageToDataURL(file, 200, 0.6).then(smaller=>{ currentPhotoDataUrl = smaller; });
-      }
-      currentPhotoDataUrl = dataUrl;
-    }).then(()=>{
-      updateAvatarPreview(document.getElementById('fullName').value, document.getElementById('emailField').value);
-      showToast('Photo ready — click Save changes to keep it');
+    readFileAsDataURL(file).then(dataUrl=>{
+      openCropEditor(dataUrl);
     }).catch(()=>{
-      showToast('Could not process that image. Try a different file.', true);
+      showToast('Could not read that image. Try a different file.', true);
     });
   });
 
