@@ -559,6 +559,50 @@
   }
 
   /* ---------- Drawer ---------- */
+  .icon-btn-settings{font-size:15px;padding:9px 12px;}
+
+  /* ---------- Settings slide panel ---------- */
+  .settings-overlay{
+    position:fixed;inset:0;background:rgba(27,36,48,0.4);z-index:95;
+    opacity:0;visibility:hidden;transition:opacity .2s ease;
+  }
+  .settings-overlay.open{opacity:1;visibility:visible;}
+  .settings-panel{
+    position:fixed;top:0;right:0;height:100%;width:340px;max-width:90vw;
+    background:var(--panel);z-index:96;box-shadow:-8px 0 30px rgba(27,36,48,0.18);
+    transform:translateX(100%);transition:transform .25s ease;
+    display:flex;flex-direction:column;
+  }
+  .settings-panel.open{transform:translateX(0);}
+  .settings-panel-header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:20px 22px;border-bottom:1px solid var(--border);
+  }
+  .settings-panel-header h3{font-family:'Sora',sans-serif;font-size:17px;margin:0;color:var(--ink);}
+  .settings-panel-body{padding:22px;}
+  .settings-user-block{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .settings-avatar{
+    width:46px;height:46px;border-radius:50%;background:#E3EEFA;color:var(--teal);
+    display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;
+    font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden;
+  }
+  .settings-avatar img{width:100%;height:100%;object-fit:cover;}
+  .settings-user-name{font-weight:700;font-size:14px;color:var(--ink);}
+  .settings-user-email{font-size:12px;color:var(--slate);word-break:break-word;}
+  .settings-item{
+    display:flex;align-items:center;gap:12px;width:100%;
+    padding:13px 14px;border-radius:9px;background:none;border:1px solid var(--border);
+    font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer;
+    margin-bottom:10px;transition:background .15s;
+  }
+  .settings-item:hover{background:#F3F8FD;}
+  .settings-item.danger{color:var(--red);}
+  .settings-item.danger:hover{background:#FBE4E2;}
+  .settings-item-icon{font-size:16px;}
+  .settings-item-arrow{margin-left:auto;color:var(--slate-light);}
+  .modal-close{background:none;border:none;color:var(--slate-light);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;}
+  .modal-close:hover{background:#F3F8FD;color:var(--ink);}
+
   .drawer-overlay{
     position:fixed;inset:0;background:rgba(27,36,48,0.4);z-index:60;
     opacity:0;visibility:hidden;transition:opacity .2s ease;
@@ -774,7 +818,7 @@
       <div class="session-actions">
         <span class="live-badge"><span class="live-dot"></span>Real-time updates</span>
         <span class="count-pill" id="currentUserPill" style="display:none"></span>
-        <button class="btn" id="logoutBtn" title="Sign out">Sign out</button>
+        <button class="btn icon-btn-settings" id="settingsBtn" title="Settings">⚙️</button>
       </div>
     </div>
   </header>
@@ -992,6 +1036,32 @@
     <button class="icon-btn" id="drawerClose" title="Close">✕</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<div class="settings-overlay" id="settingsOverlay"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-panel-header">
+    <h3>Settings</h3>
+    <button class="modal-close" id="settingsClose" title="Close">✕</button>
+  </div>
+  <div class="settings-panel-body">
+    <div class="settings-user-block">
+      <div class="settings-avatar" id="settingsAvatar">?</div>
+      <div>
+        <div class="settings-user-name" id="settingsUserName">—</div>
+        <div class="settings-user-email" id="settingsUserEmail">—</div>
+      </div>
+    </div>
+    <a class="settings-item" href="account.html">
+      <span class="settings-item-icon">👤</span>
+      <span>Manage account</span>
+      <span class="settings-item-arrow">→</span>
+    </a>
+    <button class="settings-item danger" id="signOutItem">
+      <span class="settings-item-icon">🚪</span>
+      <span>Sign out</span>
+    </button>
+  </div>
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
@@ -2281,12 +2351,46 @@
         submitBtn.textContent = 'Sign in';
       });
     });
-    document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    // ---------- Settings panel ----------
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const settingsPanel = document.getElementById('settingsPanel');
+    function openSettings(){
+      settingsOverlay.classList.add('open');
+      settingsPanel.classList.add('open');
+    }
+    function closeSettings(){
+      settingsOverlay.classList.remove('open');
+      settingsPanel.classList.remove('open');
+    }
+    document.getElementById('settingsBtn').addEventListener('click', openSettings);
+    document.getElementById('settingsClose').addEventListener('click', closeSettings);
+    settingsOverlay.addEventListener('click', closeSettings);
+    document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeLeads){ unsubscribeLeads(); unsubscribeLeads = null; }
       auth.signOut().then(()=>{
+        closeSettings();
         showToast('Signed out');
       });
     });
+    function loadSettingsUserInfo(user){
+      document.getElementById('settingsUserEmail').textContent = user.email || '';
+      const nameEl = document.getElementById('settingsUserName');
+      const avatarEl = document.getElementById('settingsAvatar');
+      db.collection('users').doc(user.uid).get().then(doc=>{
+        const data = doc.exists ? doc.data() : {};
+        const name = data.name || user.displayName || '';
+        nameEl.textContent = name || user.email || 'Account';
+        if(data.photoURL){
+          avatarEl.innerHTML = `<img src="${data.photoURL}" alt="Profile photo">`;
+        } else {
+          const source = (name || user.email || '?').trim();
+          const parts = source.split(/\s+/);
+          avatarEl.textContent = parts.length >= 2 ? (parts[0][0]+parts[1][0]).toUpperCase() : source.slice(0,2).toUpperCase();
+        }
+      }).catch(()=>{
+        nameEl.textContent = user.email || 'Account';
+      });
+    }
     let authResolvedOnce = false;
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
@@ -2305,6 +2409,7 @@
         clearLoginError();
         document.getElementById('loginForm').reset();
         loadBoardName();
+        loadSettingsUserInfo(user);
         initFirebaseSync();
         render();
       } else {
@@ -2314,6 +2419,7 @@
         void loginScreen.offsetWidth;
         loginScreen.classList.add('fade-in');
         currentUserPill.style.display = 'none';
+        closeSettings();
       }
       authResolvedOnce = true;
     });
