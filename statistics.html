@@ -366,7 +366,7 @@
     </div>
     <div class="header-right">
       <span class="live-badge"><span class="live-dot"></span>Real-time updates</span>
-      <a class="btn" href="index.html">&larr; Back to tracker</a>
+      <a class="btn" id="backLink" href="index.html">&larr; Back to tracker</a>
     </div>
   </header>
 
@@ -392,13 +392,20 @@
   };
   let db = null;
   let leadsCollection = null;
+  let boardsCollection = null;
+  let boardDocRef = null;
   let auth = null;
   let firebaseConnected = false;
+  const boardId = new URLSearchParams(location.search).get('board');
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
-      leadsCollection = db.collection('leads');
+      boardsCollection = db.collection('boards');
+      if(boardId){
+        boardDocRef = boardsCollection.doc(boardId);
+        leadsCollection = boardDocRef.collection('leads');
+      }
       auth = firebase.auth();
       firebaseConnected = true;
     }
@@ -800,6 +807,11 @@
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
       if(user){
+        if(!boardId){
+          location.href = 'index.html';
+          return;
+        }
+        document.getElementById('backLink').href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
         appRoot.classList.remove('fade-in');
