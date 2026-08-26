@@ -258,13 +258,54 @@
     font-size:12px;font-weight:700;color:var(--teal-dark);background:#E3EEFA;
     padding:4px 10px;border-radius:20px;font-family:'IBM Plex Mono',monospace;
   }
-  .board-delete{
-    position:absolute;top:14px;right:14px;background:none;border:none;color:var(--slate-light);
-    font-size:14px;padding:5px 7px;border-radius:6px;opacity:0;transition:opacity .15s, background .15s, color .15s;
-    cursor:pointer;
+  .board-card-actions{
+    position:absolute;top:14px;right:14px;display:flex;gap:4px;
+    opacity:0;transition:opacity .15s;
   }
-  .board-card:hover .board-delete{opacity:1;}
-  .board-delete:hover{background:#FBE4E2;color:var(--red);}
+  .board-card:hover .board-card-actions{opacity:1;}
+  .board-action-btn{
+    background:none;border:none;color:var(--slate-light);
+    font-size:13px;padding:5px 7px;border-radius:6px;cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .board-action-btn:hover{background:#E3EEFA;color:var(--teal);}
+  .board-action-btn.danger:hover{background:#FBE4E2;color:var(--red);}
+
+  /* ---------- Edit board modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(27,36,48,0.45);z-index:90;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-card{
+    background:var(--panel);border-radius:16px;box-shadow:0 20px 50px rgba(18,63,120,0.2);
+    width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative;
+  }
+  .modal-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg, #1B59A5, #7A4FB5, #FF9D00);
+  }
+  .modal-header{
+    padding:22px 26px 4px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .modal-header h3{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--ink);margin:0;}
+  .modal-close{background:none;border:none;color:var(--slate-light);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;}
+  .modal-close:hover{background:#F3F8FD;color:var(--ink);}
+  #editBoardForm{padding:16px 26px 26px;display:grid;grid-template-columns:repeat(2, 1fr);gap:14px;}
+  #editBoardForm .span-full{grid-column:1/-1;}
+  #editBoardForm .field{display:flex;flex-direction:column;gap:6px;}
+  #editBoardForm label{
+    font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
+  }
+  #editBoardForm input, #editBoardForm select{
+    font-family:'Inter',sans-serif;font-size:14.5px;padding:10px 13px;
+    border:1px solid var(--border);border-radius:7px;background:#F6FAFE;color:var(--ink);width:100%;
+  }
+  #editBoardForm input:focus, #editBoardForm select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
+  .modal-actions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
+  @media (max-width:560px){
+    #editBoardForm{grid-template-columns:1fr;}
+  }
 
   .empty-state{
     text-align:center;padding:60px 20px;color:var(--slate);
@@ -411,6 +452,72 @@
 </div>
 </div>
 
+<div class="modal-overlay" id="editBoardOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Edit board</h3>
+      <button class="modal-close" id="editBoardClose" title="Close">✕</button>
+    </div>
+    <form id="editBoardForm">
+      <div class="field span-full">
+        <label for="editBoardName">Board name</label>
+        <input id="editBoardName" type="text" required maxlength="80">
+      </div>
+      <div class="field">
+        <label for="editBoardCountry">Country <span class="optional-tag">(optional)</span></label>
+        <input id="editBoardCountry" type="text" placeholder="e.g. Belgium">
+      </div>
+      <div class="field">
+        <label for="editBoardCity">City <span class="optional-tag">(optional)</span></label>
+        <input id="editBoardCity" type="text" placeholder="e.g. Brussels">
+      </div>
+      <div class="field">
+        <label for="editBoardIndustry">Industry <span class="optional-tag">(optional)</span></label>
+        <select id="editBoardIndustry">
+          <option value="">Any industry</option>
+          <option>Technology</option>
+          <option>Finance</option>
+          <option>Healthcare</option>
+          <option>Retail & E-commerce</option>
+          <option>Real Estate</option>
+          <option>Manufacturing</option>
+          <option>Education</option>
+          <option>Marketing & Advertising</option>
+          <option>Consulting</option>
+          <option>Hospitality & Travel</option>
+          <option>Construction</option>
+          <option>Transportation & Logistics</option>
+          <option>Legal</option>
+          <option>Media & Entertainment</option>
+          <option>Non-profit</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="editBoardJobTitle">Job title <span class="optional-tag">(optional)</span></label>
+        <input id="editBoardJobTitle" type="text" placeholder="e.g. Marketing Manager">
+      </div>
+      <div class="field">
+        <label for="editBoardSource">Lead source <span class="optional-tag">(optional)</span></label>
+        <select id="editBoardSource">
+          <option value="">Any source</option>
+          <option>LinkedIn</option>
+          <option>YouTube</option>
+          <option>Instagram</option>
+          <option>TikTok</option>
+          <option>Website</option>
+          <option>Referral</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="editBoardCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast-stack" id="toastStack"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -518,7 +625,10 @@
           : '';
         const tagsHTML = (plainTags.length || sourceTagHTML) ? `<div class="board-tags">${plainTags.map(t=>`<span class="board-tag">${esc(t)}</span>`).join('')}${sourceTagHTML}</div>` : '';
         return `<a class="board-card" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
-          <button class="board-delete" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
+          <div class="board-card-actions">
+            <button class="board-action-btn" title="Edit board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.editBoard('${b.id}')">✎</button>
+            <button class="board-action-btn danger" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
+          </div>
           <div class="board-icon">${ICONS_FOLDER}</div>
           <div class="board-name">${esc(b.name)}</div>
           <div class="board-meta">${created ? 'Created ' + created : ''}</div>
@@ -550,7 +660,65 @@
       showToast('Could not delete board: ' + err.message, true);
     });
   }
-  window.__boardActions = { deleteBoard };
+
+  // ---------- Edit board modal ----------
+  let editingBoardId = null;
+  const editBoardOverlay = document.getElementById('editBoardOverlay');
+  function openEditBoard(boardId){
+    boardsCollection.doc(boardId).get().then(doc=>{
+      if(!doc.exists){
+        showToast('This board no longer exists.', true);
+        return;
+      }
+      const data = doc.data();
+      editingBoardId = boardId;
+      document.getElementById('editBoardName').value = data.name || '';
+      document.getElementById('editBoardCountry').value = data.defaultCountry || '';
+      document.getElementById('editBoardCity').value = data.defaultCity || '';
+      document.getElementById('editBoardIndustry').value = data.defaultIndustry || '';
+      document.getElementById('editBoardJobTitle').value = data.defaultJobTitle || '';
+      document.getElementById('editBoardSource').value = data.defaultSource || '';
+      editBoardOverlay.classList.add('open');
+    }).catch(err=>{
+      showToast('Could not load board: ' + err.message, true);
+    });
+  }
+  function closeEditBoard(){
+    editBoardOverlay.classList.remove('open');
+    editingBoardId = null;
+  }
+  document.getElementById('editBoardClose').addEventListener('click', closeEditBoard);
+  document.getElementById('editBoardCancel').addEventListener('click', closeEditBoard);
+  editBoardOverlay.addEventListener('click', (e)=>{
+    if(e.target === editBoardOverlay) closeEditBoard();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && editBoardOverlay.classList.contains('open')) closeEditBoard();
+  });
+  document.getElementById('editBoardForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('editBoardName').value.trim();
+    if(!name || !editingBoardId) return;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    boardsCollection.doc(editingBoardId).update({
+      name,
+      defaultCountry: document.getElementById('editBoardCountry').value.trim(),
+      defaultCity: document.getElementById('editBoardCity').value.trim(),
+      defaultIndustry: document.getElementById('editBoardIndustry').value,
+      defaultJobTitle: document.getElementById('editBoardJobTitle').value.trim(),
+      defaultSource: document.getElementById('editBoardSource').value
+    }).then(()=>{
+      showToast('Board updated');
+      closeEditBoard();
+    }).catch(err=>{
+      showToast('Could not update board: ' + err.message, true);
+    }).finally(()=>{
+      submitBtn.disabled = false;
+    });
+  });
+
+  window.__boardActions = { deleteBoard, editBoard: openEditBoard };
 
   function initBoardsSync(){
     if(!firebaseConnected) return;
