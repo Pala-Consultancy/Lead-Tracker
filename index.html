@@ -194,16 +194,25 @@
     content:"";position:absolute;top:0;left:0;right:0;height:3px;
     background:linear-gradient(90deg, #1B59A5, #7A4FB5, #FF9D00);
   }
-  #createBoardForm{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
-  #createBoardForm .field{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px;}
+  #createBoardForm{display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:end;}
+  #createBoardForm .field{display:flex;flex-direction:column;gap:6px;}
+  #createBoardForm .span-full{grid-column:1/-1;}
   #createBoardForm label{
     font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
   }
-  #createBoardForm input{
+  .optional-tag{text-transform:none;font-weight:500;color:var(--slate-light);letter-spacing:normal;}
+  #createBoardForm input, #createBoardForm select{
     font-family:'Inter',sans-serif;font-size:14.5px;padding:10px 13px;
     border:1px solid var(--border);border-radius:7px;background:#F6FAFE;color:var(--ink);width:100%;
   }
-  #createBoardForm input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
+  #createBoardForm input:focus, #createBoardForm select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
+  .create-board-hint{font-size:12px;color:var(--slate-light);margin-top:14px;}
+  @media (max-width:900px){
+    #createBoardForm{grid-template-columns:repeat(2, 1fr);}
+  }
+  @media (max-width:560px){
+    #createBoardForm{grid-template-columns:1fr;}
+  }
 
   /* ---------- Board grid ---------- */
   .section-title{
@@ -234,6 +243,11 @@
     margin-bottom:4px;word-break:break-word;
   }
   .board-meta{font-size:12px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;}
+  .board-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+  .board-tag{
+    font-size:10.5px;font-weight:600;color:var(--slate);background:#F3F8FD;
+    border:1px solid var(--border);padding:2px 8px;border-radius:20px;
+  }
   .board-count{
     display:inline-flex;align-items:center;gap:5px;margin-top:12px;
     font-size:12px;font-weight:700;color:var(--teal-dark);background:#E3EEFA;
@@ -327,12 +341,62 @@
 
   <div class="create-board-card">
     <form id="createBoardForm">
-      <div class="field">
+      <div class="field span-full">
         <label for="boardNameInput">New board name</label>
         <input id="boardNameInput" type="text" placeholder="e.g. Leads from Belgium" required maxlength="80">
       </div>
-      <button type="submit" class="btn btn-primary">+ Create board</button>
+      <div class="field">
+        <label for="boardCountry">Country <span class="optional-tag">(optional)</span></label>
+        <input id="boardCountry" type="text" placeholder="e.g. Belgium">
+      </div>
+      <div class="field">
+        <label for="boardCity">City <span class="optional-tag">(optional)</span></label>
+        <input id="boardCity" type="text" placeholder="e.g. Brussels">
+      </div>
+      <div class="field">
+        <label for="boardIndustry">Industry <span class="optional-tag">(optional)</span></label>
+        <select id="boardIndustry">
+          <option value="">Any industry</option>
+          <option>Technology</option>
+          <option>Finance</option>
+          <option>Healthcare</option>
+          <option>Retail & E-commerce</option>
+          <option>Real Estate</option>
+          <option>Manufacturing</option>
+          <option>Education</option>
+          <option>Marketing & Advertising</option>
+          <option>Consulting</option>
+          <option>Hospitality & Travel</option>
+          <option>Construction</option>
+          <option>Transportation & Logistics</option>
+          <option>Legal</option>
+          <option>Media & Entertainment</option>
+          <option>Non-profit</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="boardJobTitle">Job title <span class="optional-tag">(optional)</span></label>
+        <input id="boardJobTitle" type="text" placeholder="e.g. Marketing Manager">
+      </div>
+      <div class="field">
+        <label for="boardSource">Lead source <span class="optional-tag">(optional)</span></label>
+        <select id="boardSource">
+          <option value="">Any source</option>
+          <option>LinkedIn</option>
+          <option>YouTube</option>
+          <option>Instagram</option>
+          <option>TikTok</option>
+          <option>Website</option>
+          <option>Referral</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field span-full" style="flex:0">
+        <button type="submit" class="btn btn-primary">+ Create board</button>
+      </div>
     </form>
+    <div class="create-board-hint">These become the default values pre-filled whenever someone adds a new lead inside this board — still editable per lead.</div>
   </div>
 
   <h2 class="section-title">Your boards</h2>
@@ -409,11 +473,14 @@
       ${boards.map((b, i)=>{
         const accent = accents[i % accents.length];
         const created = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : '';
+        const tagValues = [b.defaultCountry, b.defaultCity, b.defaultIndustry, b.defaultJobTitle, b.defaultSource].filter(Boolean);
+        const tagsHTML = tagValues.length ? `<div class="board-tags">${tagValues.map(t=>`<span class="board-tag">${esc(t)}</span>`).join('')}</div>` : '';
         return `<a class="board-card" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
           <button class="board-delete" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
           <div class="board-icon">${ICONS_FOLDER}</div>
           <div class="board-name">${esc(b.name)}</div>
           <div class="board-meta">${created ? 'Created ' + created : ''}</div>
+          ${tagsHTML}
           <div class="board-count" id="count-${b.id}">— leads</div>
         </a>`;
       }).join('')}
@@ -510,10 +577,15 @@
       const user = auth.currentUser;
       boardsCollection.add({
         name,
+        defaultCountry: document.getElementById('boardCountry').value.trim(),
+        defaultCity: document.getElementById('boardCity').value.trim(),
+        defaultIndustry: document.getElementById('boardIndustry').value,
+        defaultJobTitle: document.getElementById('boardJobTitle').value.trim(),
+        defaultSource: document.getElementById('boardSource').value,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: user ? user.email : null
       }).then(doc=>{
-        input.value = '';
+        e.target.reset();
         location.href = `dashboard.html?board=${encodeURIComponent(doc.id)}`;
       }).catch(err=>{
         showToast('Could not create board: ' + err.message, true);
