@@ -589,6 +589,38 @@
     border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;
   }
   .toast-undo:hover{background:rgba(255,255,255,0.28);}
+
+  /* ---------- Login screen ---------- */
+  #loginScreen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .login-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    box-shadow:0 10px 30px rgba(27,59,110,0.12), var(--shadow);
+    padding:36px 34px;width:100%;max-width:380px;
+  }
+  .login-logo-row{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .login-logo-badge{
+    width:44px;height:44px;border-radius:10px;background:#1B59A5;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .login-logo-badge img{height:24px;width:auto;}
+  .login-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:19px;font-weight:800;color:var(--ink);}
+  .login-sub{font-size:12.5px;color:var(--slate);margin-top:2px;}
+  #loginForm .field{margin-bottom:14px;}
+  #loginForm label{display:block;margin-bottom:5px;}
+  .login-error{
+    background:#FBE4E2;color:#C0392B;font-size:12.5px;font-weight:600;
+    padding:9px 12px;border-radius:7px;margin-bottom:14px;display:none;
+  }
+  .login-error.show{display:block;}
+  #loginForm .btn-primary{width:100%;justify-content:center;padding:11px;margin-top:4px;}
+  .login-footer-note{
+    text-align:center;font-size:11.5px;color:var(--slate-light);margin-top:18px;
+  }
+
+  #appRoot{display:none;}
   @keyframes toast-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
   @media (max-width:720px){
@@ -603,6 +635,32 @@
 </style>
 </head>
 <body>
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo-row">
+      <div class="login-logo-badge"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAdYAAAGoCAYAAAD7MsTrAAA/WElEQVR4nO3dd5Cd1Z3m8W9HqZVbEgogBEgCIXIQCItswNgYG8YGPLbBHmwP9qT1bO3M2lUb/tja2hpX7c7sTvKMx0zw2MbGHowDNtmYnERGQkJIBCGUs7pbne7+8dx3utXc7r7xPW894/WwaAvNzX8Ba9zZ8H5uKb1DGvxAAAAABJRU5ErkJggg==" alt="Pala Consultancy logo"></div>
+      <div>
+        <div class="login-title">Lead Tracking System</div>
+        <div class="login-sub">Sign in to continue</div>
+      </div>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" placeholder="you@pala-consultancy.com" required>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
+    <div class="login-footer-note">Don't have an account? Ask your admin to create one for you.</div>
+  </div>
+</div>
+
+<div id="appRoot">
 <div class="app">
 
   <header>
@@ -622,6 +680,7 @@
     </div>
 
     <div class="header-actions">
+      <span class="count-pill" id="currentUserPill" style="display:none"></span>
       <select id="currencySelect" class="currency-select" title="Display currency">
         <option value="EUR">€ EUR</option>
         <option value="USD">$ USD</option>
@@ -638,6 +697,7 @@
       <input type="file" id="importFile" accept=".csv" style="display:none">
       <a class="btn" href="statistics.html">📊 Statistics</a>
       <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
+      <button class="btn" id="logoutBtn" title="Sign out">Sign out</button>
     </div>
   </header>
 
@@ -833,7 +893,7 @@
   <div id="boardView" style="display:none"></div>
 
   <footer>
-    Stored locally in this browser · nothing leaves this page
+    Synced live with your team via Firebase
     <div class="legal-footer">
       <p><strong>This Lead Tracking System is the exclusive property of Pala Consultancy B.V. All rights reserved.</strong></p>
       <p>This system, including its structure, tracking methodology, frameworks, processes, and underlying concepts, has been developed by Pala Consultancy B.V. for its internal and client use.</p>
@@ -844,6 +904,7 @@
       <a class="btn btn-primary" href="mailto:info@pala-consultancy.com">Email us</a>
     </div>
   </footer>
+</div>
 </div>
 
 <div class="drawer-overlay" id="drawerOverlay"></div>
@@ -859,6 +920,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script>
 (function(){
   // ====== FIREBASE SETUP ======
@@ -876,12 +938,14 @@
   };
   let db = null;
   let leadsCollection = null;
+  let auth = null;
   let firebaseConnected = false;
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       leadsCollection = db.collection('leads');
+      auth = firebase.auth();
       firebaseConnected = true;
     }
   }catch(e){
@@ -2060,8 +2124,65 @@
     if(currentView==='board') renderBoard();
     if(currentView==='monthly') renderMonthlyView();
   });
-  initFirebaseSync();
-  if(firebaseConnected) render();
+
+  // ---------- Authentication gate ----------
+  const loginScreen = document.getElementById('loginScreen');
+  const appRoot = document.getElementById('appRoot');
+  const loginError = document.getElementById('loginError');
+  const currentUserPill = document.getElementById('currentUserPill');
+
+  function showLoginError(msg){
+    loginError.textContent = msg;
+    loginError.classList.add('show');
+  }
+  function clearLoginError(){
+    loginError.classList.remove('show');
+    loginError.textContent = '';
+  }
+
+  if(!firebaseConnected){
+    loginScreen.innerHTML = `<div class="login-card">
+      <div class="login-title">Not connected</div>
+      <div class="login-sub" style="margin-top:8px;line-height:1.5">This tracker isn't connected to Firebase yet. Add your Firebase project config near the top of this file's script.</div>
+    </div>`;
+    loginScreen.style.display = 'flex';
+    appRoot.style.display = 'none';
+  } else {
+    document.getElementById('loginForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      clearLoginError();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+      auth.signInWithEmailAndPassword(email, password).catch(err=>{
+        showLoginError('Could not sign in: ' + err.message);
+      }).finally(()=>{
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign in';
+      });
+    });
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{
+      auth.signOut();
+    });
+    auth.onAuthStateChanged(user=>{
+      if(user){
+        loginScreen.style.display = 'none';
+        appRoot.style.display = '';
+        currentUserPill.style.display = '';
+        currentUserPill.textContent = user.email;
+        clearLoginError();
+        document.getElementById('loginForm').reset();
+        initFirebaseSync();
+        render();
+      } else {
+        loginScreen.style.display = 'flex';
+        appRoot.style.display = 'none';
+        currentUserPill.style.display = 'none';
+      }
+    });
+  }
 })();
 </script>
 </body>
