@@ -227,6 +227,10 @@
     border:1px solid var(--border);border-radius:7px;background:#F6FAFE;color:var(--ink);
     min-width:170px;
   }
+  .team-role-readonly{
+    font-size:12.5px;font-weight:600;color:var(--slate);background:#F3F8FD;
+    border:1px solid var(--border);padding:6px 12px;border-radius:20px;white-space:nowrap;
+  }
   .team-company{font-size:11.5px;color:var(--slate-light);margin-top:2px;}
   .empty-state{
     text-align:center;padding:50px 20px;color:var(--slate);
@@ -604,6 +608,8 @@
     return parts.length >= 2 ? (parts[0][0]+parts[1][0]).toUpperCase() : source.slice(0,2).toUpperCase();
   }
 
+  let currentUserIsAdmin = false;
+
   function renderTeam(members){
     const container = document.getElementById('teamListContainer');
     if(members.length === 0){
@@ -619,6 +625,11 @@
         const roleOptionsHtml = [`<option value="">${t('noRoleSet')}</option>`].concat(
           ROLE_OPTIONS.map(r=>`<option value="${r.value}" ${m.role===r.value?'selected':''}>${t(r.key)}</option>`)
         ).join('');
+        const roleControlHtml = currentUserIsAdmin
+          ? `<select class="team-role-select" onchange="window.__teamActions.updateRole('${m.id}', this.value)">
+              ${roleOptionsHtml}
+            </select>`
+          : `<span class="team-role-readonly">${m.role ? esc(t(ROLE_OPTIONS.find(r=>r.value===m.role)?.key || '') || m.role) : t('noRoleSet')}</span>`;
         return `<div class="team-row">
           <div class="team-avatar">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
           <div class="team-info">
@@ -626,9 +637,7 @@
             <div class="team-email">${esc(m.email || '')}</div>
             ${m.company ? `<div class="team-company">${esc(m.company)}</div>` : ''}
           </div>
-          <select class="team-role-select" onchange="window.__teamActions.updateRole('${m.id}', this.value)">
-            ${roleOptionsHtml}
-          </select>
+          ${roleControlHtml}
         </div>`;
       }).join('')}
     </div>`;
@@ -726,8 +735,11 @@
         db.collection('users').doc(user.uid).get().then(doc=>{
           const data = doc.exists ? doc.data() : {};
           if(data.language && data.language !== currentLang) setLanguage(data.language);
-        }).catch(()=>{});
-        initTeamSync();
+          currentUserIsAdmin = data.isAdmin === true;
+          initTeamSync();
+        }).catch(()=>{
+          initTeamSync();
+        });
       } else {
         appRoot.style.display = 'none';
         loginScreen.style.display = 'flex';
