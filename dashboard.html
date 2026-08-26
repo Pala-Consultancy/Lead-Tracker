@@ -1067,16 +1067,26 @@
   let activeStatusGroup = null;
   let unsubscribeLeads = null;
 
+  let boardDefaults = {};
   function loadBoardName(){
     if(!boardDocRef) return;
     boardDocRef.get().then(doc=>{
       if(doc.exists){
-        const name = doc.data().name || 'Untitled board';
+        const data = doc.data();
+        const name = data.name || 'Untitled board';
         document.getElementById('dashboardTitle').textContent = name;
         document.title = `${name} · Lead Tracking System`;
         document.getElementById('subhead').textContent = 'Track your pipeline from lead to paying customer';
         const statsLink = document.getElementById('statsLink');
         if(statsLink) statsLink.href = `statistics.html?board=${encodeURIComponent(boardId)}`;
+        boardDefaults = {
+          country: data.defaultCountry || '',
+          city: data.defaultCity || '',
+          industry: data.defaultIndustry || '',
+          jobTitle: data.defaultJobTitle || '',
+          source: data.defaultSource || ''
+        };
+        clearForm();
       } else {
         showToast('This board no longer exists.', true);
         setTimeout(()=>{ location.href = 'index.html'; }, 1200);
@@ -1212,10 +1222,14 @@
 
   function clearForm(){
     editingId = null;
-    ['name','company','country','city','email','phone','notes'].forEach(k=>{
+    ['name','company','email','phone','notes'].forEach(k=>{
       document.getElementById('f-'+k).value = '';
     });
-    document.getElementById('f-source').value = '';
+    document.getElementById('f-country').value = boardDefaults.country || '';
+    document.getElementById('f-city').value = boardDefaults.city || '';
+    document.getElementById('f-source').value = boardDefaults.source || '';
+    document.getElementById('f-industry').value = boardDefaults.industry || '';
+    document.getElementById('f-jobtitle').value = boardDefaults.jobTitle || '';
     document.getElementById('f-status').value = 'New';
     document.getElementById('f-date').value = todayISO();
     document.getElementById('f-requestSent').checked = false;
@@ -1224,8 +1238,6 @@
     document.getElementById('f-replied').checked = false;
     document.getElementById('f-showedUp').checked = false;
     document.getElementById('f-revenue').value = '';
-    document.getElementById('f-industry').value = '';
-    document.getElementById('f-jobtitle').value = '';
     ['f-name','f-source','f-jobtitle','f-date','f-country','f-city','f-industry'].forEach(id=>document.getElementById(id).classList.remove('field-error'));
     document.getElementById('saveLeadBtn').textContent = 'Save lead';
   }
