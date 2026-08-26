@@ -248,6 +248,11 @@
     font-size:10.5px;font-weight:600;color:var(--slate);background:#F3F8FD;
     border:1px solid var(--border);padding:2px 8px;border-radius:20px;
   }
+  .board-tag.source-tag{
+    display:inline-flex;align-items:center;gap:4px;border-color:transparent;
+  }
+  .source-tag-icon{width:13px;height:13px;flex-shrink:0;display:flex;}
+  .source-tag-icon svg{width:100%;height:100%;}
   .board-count{
     display:inline-flex;align-items:center;gap:5px;margin-top:12px;
     font-size:12px;font-weight:700;color:var(--teal-dark);background:#E3EEFA;
@@ -457,6 +462,37 @@
 
   const ICONS_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
 
+  const SOURCE_STYLES = {
+    LinkedIn: {
+      bg:"#E3EEFA", fg:"#1D5FA8",
+      icon:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4"/><path fill="#E3EEFA" d="M7.2 9.8h2.6v7.4H7.2zM8.5 8.7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM11.3 9.8h2.5v1h.03c.35-.66 1.2-1.36 2.47-1.36 2.64 0 3.13 1.74 3.13 4v3.76h-2.6v-3.34c0-.8-.02-1.83-1.12-1.83-1.12 0-1.29.87-1.29 1.77v3.4h-2.6z"/></svg>'
+    },
+    YouTube: {
+      bg:"#FBE4E2", fg:"#C0392B",
+      icon:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="5" width="20" height="14" rx="4"/><path fill="#FBE4E2" d="M10 8.6 16 12l-6 3.4z"/></svg>'
+    },
+    Instagram: {
+      bg:"#F6E3F0", fg:"#A6338B",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>'
+    },
+    TikTok: {
+      bg:"#E9E9E9", fg:"#222222",
+      icon:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 3c.3 1.9 1.6 3.3 3.5 3.6v2.5c-1.3 0-2.5-.4-3.5-1.1v6.1a5 5 0 1 1-5-5c.2 0 .5 0 .7.05v2.6a2.4 2.4 0 1 0 1.8 2.3V3z"/></svg>'
+    },
+    Website: {
+      bg:"#DEF0EA", fg:"#1F5C4F",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9s1.3-6.5 3.8-9z"/></svg>'
+    },
+    Referral: {
+      bg:"#FBEEDC", fg:"#A9660F",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+    },
+    Other: {
+      bg:"#EDEDED", fg:"#5A5A5A",
+      icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83a2 2 0 0 0-1.42-.58H4a1 1 0 0 0-1 1v5.58a2 2 0 0 0 .58 1.42l9.59 9.59a2 2 0 0 0 2.82 0l5.6-5.6a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1"/></svg>'
+    }
+  };
+
   let unsubscribeBoards = null;
 
   function renderBoards(boards){
@@ -473,8 +509,14 @@
       ${boards.map((b, i)=>{
         const accent = accents[i % accents.length];
         const created = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : '';
-        const tagValues = [b.defaultCountry, b.defaultCity, b.defaultIndustry, b.defaultJobTitle, b.defaultSource].filter(Boolean);
-        const tagsHTML = tagValues.length ? `<div class="board-tags">${tagValues.map(t=>`<span class="board-tag">${esc(t)}</span>`).join('')}</div>` : '';
+        const plainTags = [b.defaultCountry, b.defaultCity, b.defaultIndustry, b.defaultJobTitle].filter(Boolean);
+        const sourceStyle = b.defaultSource ? SOURCE_STYLES[b.defaultSource] : null;
+        const sourceTagHTML = b.defaultSource
+          ? `<span class="board-tag source-tag" style="background:${sourceStyle?sourceStyle.bg:'#EDEDED'};color:${sourceStyle?sourceStyle.fg:'#5A5A5A'}">
+              <span class="source-tag-icon">${sourceStyle?sourceStyle.icon:''}</span>${esc(b.defaultSource)}
+            </span>`
+          : '';
+        const tagsHTML = (plainTags.length || sourceTagHTML) ? `<div class="board-tags">${plainTags.map(t=>`<span class="board-tag">${esc(t)}</span>`).join('')}${sourceTagHTML}</div>` : '';
         return `<a class="board-card" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
           <button class="board-delete" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
           <div class="board-icon">${ICONS_FOLDER}</div>
