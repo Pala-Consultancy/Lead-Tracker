@@ -289,7 +289,7 @@
       <div class="avatar-actions">
         <button type="button" class="btn" id="changePhotoBtn">Change photo</button>
         <input type="file" id="photoInput" accept="image/*" style="display:none">
-        <div class="avatar-hint">JPG or PNG, under 500KB works best</div>
+        <div class="avatar-hint">Any photo works — it'll be resized automatically</div>
       </div>
     </div>
 
@@ -416,19 +416,50 @@
   document.getElementById('changePhotoBtn').addEventListener('click', ()=>{
     document.getElementById('photoInput').click();
   });
+  function resizeImageToDataURL(file, maxSize, quality){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        img.onload = ()=>{
+          let { width, height } = img;
+          if(width > height){
+            if(width > maxSize){ height = Math.round(height * (maxSize/width)); width = maxSize; }
+          } else {
+            if(height > maxSize){ width = Math.round(width * (maxSize/height)); height = maxSize; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
   document.getElementById('photoInput').addEventListener('change', (e)=>{
     const file = e.target.files[0];
     if(!file) return;
-    if(file.size > 800*1024){
-      showToast('That image is a bit large — try one under 500KB.', true);
+    if(!file.type.startsWith('image/')){
+      showToast('Please choose an image file.', true);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      currentPhotoDataUrl = reader.result;
+    resizeImageToDataURL(file, 300, 0.8).then(dataUrl=>{
+      if(dataUrl.length > 900*1024){
+        return resizeImageToDataURL(file, 200, 0.6).then(smaller=>{ currentPhotoDataUrl = smaller; });
+      }
+      currentPhotoDataUrl = dataUrl;
+    }).then(()=>{
       updateAvatarPreview(document.getElementById('fullName').value, document.getElementById('emailField').value);
-    };
-    reader.readAsDataURL(file);
+      showToast('Photo ready — click Save changes to keep it');
+    }).catch(()=>{
+      showToast('Could not process that image. Try a different file.', true);
+    });
   });
 
   function saveProfile(user, extra){
