@@ -934,8 +934,9 @@
         const data = doc.exists ? doc.data() : {};
         const name = data.name || user.displayName || '';
         nameEl.textContent = name || user.email || 'Account';
-        if(data.role){
-          roleEl.textContent = data.role;
+        const roleText = data.role && data.company ? `${data.role} at ${data.company}` : (data.role || data.company || '');
+        if(roleText){
+          roleEl.textContent = roleText;
           roleEl.style.display = '';
         } else {
           roleEl.style.display = 'none';
