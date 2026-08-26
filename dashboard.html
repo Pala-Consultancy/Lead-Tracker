@@ -176,6 +176,13 @@
     background:var(--panel);border:1px solid var(--border);border-radius:10px;
     box-shadow:var(--shadow);margin-bottom:22px;
   }
+  .panel.highlight-pulse{
+    animation:panel-flash 1.4s ease-out;
+  }
+  @keyframes panel-flash{
+    0%{box-shadow:0 0 0 4px rgba(27,89,165,0.45), 0 0 24px rgba(27,89,165,0.3);}
+    100%{box-shadow:var(--shadow);}
+  }
   .panel-header{
     padding:16px 20px;display:flex;justify-content:space-between;align-items:center;
     cursor:pointer;user-select:none;
@@ -1407,7 +1414,12 @@
     document.getElementById('saveLeadBtn').textContent = 'Update lead';
     panelBody.classList.remove('collapsed');
     chevIcon.classList.add('open');
-    window.scrollTo({top:0, behavior:'smooth'});
+    const panelEl = document.getElementById('addPanel');
+    panelEl.scrollIntoView({behavior:'smooth', block:'start'});
+    panelEl.classList.remove('highlight-pulse');
+    void panelEl.offsetWidth;
+    panelEl.classList.add('highlight-pulse');
+    setTimeout(()=>panelEl.classList.remove('highlight-pulse'), 1500);
   }
   function deleteLead(id){
     const l = leads.find(x=>x.id===id);
