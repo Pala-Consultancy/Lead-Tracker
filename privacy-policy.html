@@ -18,8 +18,28 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
-  .app{max-width:820px;margin:0 auto;padding:40px 24px 90px;}
+  .progress-bar{
+    position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg, var(--teal), #7A4FB5, var(--amber));
+    z-index:100;width:0%;transition:width .1s linear;
+  }
+  .app{max-width:1080px;margin:0 auto;padding:40px 24px 90px;}
   header{display:flex;justify-content:space-between;align-items:center;margin-bottom:34px;flex-wrap:wrap;gap:14px;}
+  .layout{display:grid;grid-template-columns:220px 1fr;gap:36px;align-items:start;}
+  .toc{position:sticky;top:24px;}
+  .toc-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-light);margin-bottom:12px;}
+  .toc-link{
+    display:block;padding:8px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--slate);
+    text-decoration:none;margin-bottom:2px;border-left:2px solid transparent;transition:color .15s, background .15s, border-color .15s;
+  }
+  .toc-link:hover{background:var(--c-blue-tint2, #F3F8FD);color:var(--teal);}
+  .toc-link.active{color:var(--teal);border-left-color:var(--teal);background:var(--c-blue-tint2, #F3F8FD);}
+  @media (max-width:760px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static;display:flex;overflow-x:auto;gap:6px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border);}
+    .toc-label{display:none;}
+    .toc-link{white-space:nowrap;margin-bottom:0;border-left:none;border-bottom:2px solid transparent;}
+    .toc-link.active{border-left:none;border-bottom-color:var(--teal);}
+  }
   .brand{display:flex;align-items:center;gap:12px;}
   .brand img{width:34px;height:34px;border-radius:9px;}
   .brand-text .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--slate-light);}
@@ -60,43 +80,90 @@
     <a class="btn" href="boards.html">&larr; Back to PalaTrack</a>
   </header>
 
-  <div class="card">
-    <div class="updated">Last updated: August 2026</div>
+  <div class="layout">
+    <nav class="toc" id="toc">
+      <div class="toc-label">On this page</div>
+      <a class="toc-link" href="#what-covers" data-section="what-covers">What this covers</a>
+      <a class="toc-link" href="#info-collect" data-section="info-collect">Information we collect</a>
+      <a class="toc-link" href="#info-used" data-section="info-used">How it's used</a>
+      <a class="toc-link" href="#data-stored" data-section="data-stored">Where it's stored</a>
+      <a class="toc-link" href="#who-sees" data-section="who-sees">Who can see it</a>
+      <a class="toc-link" href="#feedback-data" data-section="feedback-data">Feedback you send</a>
+      <a class="toc-link" href="#retention" data-section="retention">Data retention</a>
+      <a class="toc-link" href="#choices" data-section="choices">Your choices</a>
+      <a class="toc-link" href="#questions" data-section="questions">Questions</a>
+    </nav>
 
-    <h2>What this policy covers</h2>
-    <p>This policy explains what information PalaTrack collects when you or your team use it, how that information is stored, and who can see it. PalaTrack is an internal tool built for Pala Consultancy and its clients &mdash; it is not a public product, and access is limited to people who have been invited by an administrator.</p>
+    <div class="card">
+      <div class="updated">Last updated: August 2026</div>
 
-    <h2>Information we collect</h2>
-    <p>When you create an account or are invited to PalaTrack, we store:</p>
-    <ul>
-      <li><strong>Account details:</strong> your name, email address, phone number, company, role, and a profile photo if you choose to add one.</li>
-      <li><strong>Lead and client data:</strong> the names, companies, contact details, and deal information that you or your teammates enter into the tracker.</li>
-      <li><strong>Usage preferences:</strong> your chosen language and light/dark mode setting.</li>
-    </ul>
+      <h2 id="what-covers">What this policy covers</h2>
+      <p>This policy explains what information PalaTrack collects when you or your team use it, how that information is stored, and who can see it. PalaTrack is an internal tool built for Pala Consultancy and its clients &mdash; it is not a public product, and access is limited to people who have been invited by an administrator.</p>
 
-    <h2>How your information is used</h2>
-    <p>Your information is used only to operate PalaTrack for your team: displaying your profile to teammates, tracking leads and revenue, generating statistics, and letting administrators manage who has access. We do not sell, rent, or share this information with any third party for advertising or marketing purposes.</p>
+      <h2 id="info-collect">Information we collect</h2>
+      <p>When you create an account or are invited to PalaTrack, we store:</p>
+      <ul>
+        <li><strong>Account details:</strong> your name, email address, phone number, company, role, and a profile photo if you choose to add one.</li>
+        <li><strong>Lead and client data:</strong> the names, companies, contact details, and deal information that you or your teammates enter into the tracker.</li>
+        <li><strong>Usage preferences:</strong> your chosen language and light/dark mode setting.</li>
+      </ul>
 
-    <h2>Where your data is stored</h2>
-    <p>PalaTrack is built on Google Firebase, a cloud infrastructure platform. Your account information and lead data are stored in Firebase's Firestore database and protected by security rules that only allow signed-in team members to access data belonging to your organization's boards.</p>
+      <h2 id="info-used">How your information is used</h2>
+      <p>Your information is used only to operate PalaTrack for your team: displaying your profile to teammates, tracking leads and revenue, generating statistics, and letting administrators manage who has access. We do not sell, rent, or share this information with any third party for advertising or marketing purposes.</p>
 
-    <h2>Who can see your data</h2>
-    <p>Only people who have been explicitly invited to your PalaTrack workspace can sign in and view boards, leads, and team information. Within the workspace, all authenticated team members can see shared boards and leads by design, since PalaTrack is built as a shared team tool. Administrators additionally have the ability to manage team member roles.</p>
+      <h2 id="data-stored">Where your data is stored</h2>
+      <p>PalaTrack is built on Google Firebase, a cloud infrastructure platform. Your account information and lead data are stored in Firebase's Firestore database and protected by security rules that only allow signed-in team members to access data belonging to your organization's boards.</p>
 
-    <h2>Feedback you send us</h2>
-    <p>If you submit feedback through the Feedback form, we store your message along with your name and email (if you're signed in) so we can follow up or ask clarifying questions. Feedback is used solely to improve PalaTrack and is not shared outside Pala Consultancy.</p>
+      <h2 id="who-sees">Who can see your data</h2>
+      <p>Only people who have been explicitly invited to your PalaTrack workspace can sign in and view boards, leads, and team information. Within the workspace, all authenticated team members can see shared boards and leads by design, since PalaTrack is built as a shared team tool. Administrators additionally have the ability to manage team member roles.</p>
 
-    <h2>Data retention</h2>
-    <p>Your information is retained for as long as your account remains active. If you leave the organization, an administrator can remove your account, at which point your personal profile information is deleted. Historical lead and deal records tied to shared boards may be retained as part of the team's business records.</p>
+      <h2 id="feedback-data">Feedback you send us</h2>
+      <p>If you submit feedback through the Feedback form, we store your message along with your name and email (if you're signed in) so we can follow up or ask clarifying questions. Feedback is used solely to improve PalaTrack and is not shared outside Pala Consultancy.</p>
 
-    <h2>Your choices</h2>
-    <p>You can update your name, phone number, company, role, language, and profile photo at any time from <strong>Manage account</strong>. If you'd like your account fully removed, contact your administrator or use the Feedback form to reach us directly.</p>
+      <h2 id="retention">Data retention</h2>
+      <p>Your information is retained for as long as your account remains active. If you leave the organization, an administrator can remove your account, at which point your personal profile information is deleted. Historical lead and deal records tied to shared boards may be retained as part of the team's business records.</p>
 
-    <h2>Questions</h2>
-    <p>If you have any questions about this policy or how your data is handled, please use the <strong>Send Feedback</strong> option in Settings, or reach out to your Pala Consultancy administrator directly.</p>
+      <h2 id="choices">Your choices</h2>
+      <p>You can update your name, phone number, company, role, language, and profile photo at any time from <strong>Manage account</strong>. If you'd like your account fully removed, contact your administrator or use the Feedback form to reach us directly.</p>
+
+      <h2 id="questions">Questions</h2>
+      <p>If you have any questions about this policy or how your data is handled, please use the <strong>Send Feedback</strong> option in Settings, or reach out to your Pala Consultancy administrator directly.</p>
+    </div>
   </div>
 
   <footer>&copy; 2026 by Pala Consultancy BV. - All Rights Reserved</footer>
 </div>
+<div class="progress-bar" id="progressBar"></div>
+<script>
+  const progressBar = document.getElementById('progressBar');
+  window.addEventListener('scroll', ()=>{
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = pct + '%';
+  });
+
+  const sections = document.querySelectorAll('.card h2[id]');
+  const tocLinks = document.querySelectorAll('.toc-link');
+  const sectionObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const id = entry.target.getAttribute('id');
+        tocLinks.forEach(link=>{
+          link.classList.toggle('active', link.dataset.section === id);
+        });
+      }
+    });
+  }, {rootMargin: '-20% 0px -70% 0px'});
+  sections.forEach(sec=>sectionObserver.observe(sec));
+
+  tocLinks.forEach(link=>{
+    link.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const target = document.getElementById(link.dataset.section);
+      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+</script>
 </body>
 </html>

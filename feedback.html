@@ -418,6 +418,27 @@
     background:linear-gradient(90deg, var(--c-blue-fg), var(--c-purple-fg), var(--c-amber-fg));
   }
   .feedback-card h2{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;margin:0 0 6px;color:var(--ink);}
+  .mood-row{display:flex;gap:10px;margin-bottom:22px;}
+  .mood-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+    background:var(--c-blue-tint2, #F6FAFE);border:1px solid var(--border);border-radius:12px;
+    padding:14px 8px;cursor:pointer;transition:transform .15s, border-color .15s, background .15s;
+  }
+  .mood-btn .emoji{font-size:26px;transition:transform .15s;}
+  .mood-btn span.label{font-size:11px;font-weight:600;color:var(--slate);}
+  .mood-btn:hover{transform:translateY(-2px);}
+  .mood-btn.selected{border-color:var(--teal);background:var(--c-blue-bg, #E3EEFA);}
+  .mood-btn.selected .emoji{transform:scale(1.2);}
+  .type-pills{display:flex;flex-wrap:wrap;gap:8px;}
+  .type-pill{
+    display:flex;align-items:center;gap:7px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+    background:var(--c-blue-tint2, #F6FAFE);border:1px solid var(--border);border-radius:20px;
+    padding:9px 16px;cursor:pointer;color:var(--slate);transition:background .15s, color .15s, border-color .15s;
+  }
+  .type-pill:hover{border-color:var(--teal);}
+  .type-pill.selected{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .char-counter{text-align:right;font-size:11.5px;color:var(--slate-light);margin-top:6px;}
+  .char-counter.near-limit{color:var(--amber);}
   .feedback-sub{font-size:13px;color:var(--slate);margin-bottom:20px;line-height:1.5;}
   .field{margin-bottom:16px;}
   .field label{
@@ -510,17 +531,28 @@
       <div class="feedback-sub">Every message goes directly to the Pala Consultancy team building PalaTrack. Be as specific as you like &mdash; screenshots aren't needed, just describe what you're thinking.</div>
       <form id="feedbackForm">
         <div class="field">
-          <label for="feedbackType">Type of feedback</label>
-          <select id="feedbackType">
-            <option value="Suggestion">Suggestion / idea</option>
-            <option value="Bug">Something isn't working</option>
-            <option value="Praise">Just wanted to say something nice</option>
-            <option value="Other">Other</option>
-          </select>
+          <label>How do you feel about PalaTrack right now?</label>
+          <div class="mood-row" id="moodRow">
+            <button type="button" class="mood-btn" data-mood="1"><span class="emoji">😞</span><span class="label">Frustrated</span></button>
+            <button type="button" class="mood-btn" data-mood="2"><span class="emoji">😐</span><span class="label">Meh</span></button>
+            <button type="button" class="mood-btn" data-mood="3"><span class="emoji">🙂</span><span class="label">Good</span></button>
+            <button type="button" class="mood-btn" data-mood="4"><span class="emoji">😃</span><span class="label">Great</span></button>
+            <button type="button" class="mood-btn" data-mood="5"><span class="emoji">🤩</span><span class="label">Love it</span></button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Type of feedback</label>
+          <div class="type-pills" id="typePills">
+            <button type="button" class="type-pill" data-type="Suggestion">💡 Suggestion / idea</button>
+            <button type="button" class="type-pill" data-type="Bug">🐞 Something isn't working</button>
+            <button type="button" class="type-pill" data-type="Praise">💙 Just wanted to say something nice</button>
+            <button type="button" class="type-pill" data-type="Other">✏️ Other</button>
+          </div>
         </div>
         <div class="field">
           <label for="feedbackMessage">Your message</label>
-          <textarea id="feedbackMessage" placeholder="What would make PalaTrack better for you?" required></textarea>
+          <textarea id="feedbackMessage" maxlength="1000" placeholder="What would make PalaTrack better for you?" required></textarea>
+          <div class="char-counter" id="charCounter">0 / 1000</div>
         </div>
         <button type="submit" class="btn btn-primary" id="feedbackSubmitBtn">Send feedback</button>
         <div class="success-note" id="feedbackSuccess">✓ <span>Thank you! Your feedback has been sent.</span></div>
@@ -612,9 +644,36 @@
     }
   });
 
+  let selectedMood = null;
+  document.querySelectorAll('.mood-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedMood = btn.dataset.mood;
+    });
+  });
+
+  let selectedType = null;
+  document.querySelectorAll('.type-pill').forEach(pill=>{
+    pill.addEventListener('click', ()=>{
+      document.querySelectorAll('.type-pill').forEach(p=>p.classList.remove('selected'));
+      pill.classList.add('selected');
+      selectedType = pill.dataset.type;
+    });
+  });
+
+  const feedbackMessageEl = document.getElementById('feedbackMessage');
+  const charCounter = document.getElementById('charCounter');
+  feedbackMessageEl.addEventListener('input', ()=>{
+    const len = feedbackMessageEl.value.length;
+    charCounter.textContent = len + ' / 1000';
+    charCounter.classList.toggle('near-limit', len > 900);
+  });
+
   document.getElementById('feedbackForm').addEventListener('submit', (e)=>{
     e.preventDefault();
-    const type = document.getElementById('feedbackType').value;
+    const type = selectedType || 'Other';
+    const mood = selectedMood;
     const message = document.getElementById('feedbackMessage').value.trim();
     if(!message) return;
     const submitBtn = document.getElementById('feedbackSubmitBtn');
@@ -622,6 +681,7 @@
     submitBtn.textContent = 'Sending...';
     db.collection('feedback').add({
       type,
+      mood: mood ? parseInt(mood, 10) : null,
       message,
       name: currentUser ? (currentUser.displayName || '') : '',
       email: currentUser ? currentUser.email : '',
@@ -629,6 +689,12 @@
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(()=>{
       document.getElementById('feedbackMessage').value = '';
+      charCounter.textContent = '0 / 1000';
+      charCounter.classList.remove('near-limit');
+      document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+      document.querySelectorAll('.type-pill').forEach(p=>p.classList.remove('selected'));
+      selectedMood = null;
+      selectedType = null;
       document.getElementById('feedbackSuccess').classList.add('show');
       showToast('Feedback sent — thank you!');
       setTimeout(()=>{ document.getElementById('feedbackSuccess').classList.remove('show'); }, 4000);

@@ -39,6 +39,14 @@
     border:none;outline:none;background:none;font-size:14.5px;color:var(--ink);width:100%;font-family:'Inter',sans-serif;
   }
   .search-box input::placeholder{color:var(--slate-light);}
+  .filter-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;}
+  .filter-pill{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:700;color:var(--slate);
+    background:var(--panel);border:1px solid var(--border);border-radius:20px;
+    padding:8px 16px;cursor:pointer;transition:background .15s, color .15s, border-color .15s;
+  }
+  .filter-pill:hover{border-color:var(--teal);color:var(--teal);}
+  .filter-pill.active{background:var(--teal);color:#fff;border-color:var(--teal);}
   .category{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin:28px 0 12px;}
   .category:first-of-type{margin-top:0;}
   .faq-item{
@@ -58,6 +66,23 @@
   .faq-answer p{margin:0;padding:0 20px 18px;font-size:14px;line-height:1.65;color:var(--slate);}
   .faq-item.hidden{display:none;}
   .no-results{text-align:center;color:var(--slate-light);padding:40px 0;display:none;}
+  .faq-vote{
+    display:flex;align-items:center;gap:10px;padding:0 20px 16px;font-size:12.5px;color:var(--slate-light);
+  }
+  .faq-vote-btn{
+    display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;
+    background:none;border:1px solid var(--border);border-radius:20px;padding:5px 12px;color:var(--slate);
+    cursor:pointer;transition:background .15s, color .15s, border-color .15s;
+  }
+  .faq-vote-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .faq-vote-btn.voted{background:var(--c-green-bg, #DEF0EA);color:var(--c-green-fg, #1F5C4F);border-color:var(--c-green-fg, #1F5C4F);}
+  .faq-vote-thanks{font-size:12.5px;color:var(--c-green-fg, #1F5C4F);font-weight:600;display:none;}
+  .bottom-cta{
+    text-align:center;background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:32px 24px;margin-top:36px;box-shadow:var(--shadow);
+  }
+  .bottom-cta h3{font-family:'Sora',sans-serif;font-size:17px;margin:0 0 8px;}
+  .bottom-cta p{color:var(--slate);font-size:13.5px;margin:0 0 18px;}
   footer{text-align:center;color:var(--slate-light);font-size:12.5px;padding:40px 24px 0;}
 </style>
 </head>
@@ -85,60 +110,85 @@
     <input type="text" id="faqSearch" placeholder="Search for a question...">
   </div>
 
+  <div class="filter-pills" id="filterPills">
+    <button class="filter-pill active" data-cat="all">All</button>
+    <button class="filter-pill" data-cat="Getting started">Getting started</button>
+    <button class="filter-pill" data-cat="Working with your team">Team</button>
+    <button class="filter-pill" data-cat="Statistics & reporting">Statistics</button>
+    <button class="filter-pill" data-cat="Account & preferences">Account</button>
+  </div>
+
   <div id="faqList">
-    <div class="category">Getting started</div>
-    <div class="faq-item">
+    <div class="category" data-cat="Getting started">Getting started</div>
+    <div class="faq-item" data-cat="Getting started">
       <div class="faq-question"><span>What is a board, and why do I need one?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>A board is a self-contained group of leads &mdash; for example, one board per client, country, or campaign. Each board has its own leads, its own default values (like country or source), and its own statistics. All leads inside a board are shared with your whole team in real time.</p></div>
+      <div class="faq-answer"><p>A board is a self-contained group of leads &mdash; for example, one board per client, country, or campaign. Each board has its own leads, its own default values (like country or source), and its own statistics. All leads inside a board are shared with your whole team in real time.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item" data-cat="Getting started">
       <div class="faq-question"><span>How do I add a new lead?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Open a board, then use the "New lead" form near the top of the tracker page. Fill in whatever details you have &mdash; only the name is required &mdash; and click "Save lead". It will appear instantly for everyone on your team.</p></div>
+      <div class="faq-answer"><p>Open a board, then use the "New lead" form near the top of the tracker page. Fill in whatever details you have &mdash; only the name is required &mdash; and click "Save lead". It will appear instantly for everyone on your team.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item" data-cat="Getting started">
       <div class="faq-question"><span>Can I edit or delete a lead after I've added it?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Yes. Click the pencil icon next to any lead to edit it, or the &times; icon to delete it. Deleting shows a brief "Undo" option in case it was a mistake.</p></div>
+      <div class="faq-answer"><p>Yes. Click the pencil icon next to any lead to edit it, or the &times; icon to delete it. Deleting shows a brief "Undo" option in case it was a mistake.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
 
-    <div class="category">Working with your team</div>
-    <div class="faq-item">
+    <div class="category" data-cat="Working with your team">Working with your team</div>
+    <div class="faq-item" data-cat="Working with your team">
       <div class="faq-question"><span>How do I invite a teammate?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Go to Settings &rarr; Manage team, enter their email address, and click "Send invite". They'll receive an email with a link to join &mdash; no password required to get started. If the email doesn't arrive, ask them to check their spam folder.</p></div>
+      <div class="faq-answer"><p>Go to Settings &rarr; Manage team, enter their email address, and click "Send invite". They'll receive an email with a link to join &mdash; no password required to get started. If the email doesn't arrive, ask them to check their spam folder.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item" data-cat="Working with your team">
       <div class="faq-question"><span>Who can change someone's role?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Only administrators can change roles. If you're an admin, you'll see a clickable role next to each team member's name on the Manage Team page. Everyone else sees roles as read-only.</p></div>
+      <div class="faq-answer"><p>Only administrators can change roles. If you're an admin, you'll see a clickable role next to each team member's name on the Manage Team page. Everyone else sees roles as read-only.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item" data-cat="Working with your team">
       <div class="faq-question"><span>How do I become an admin?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Admin status is granted directly in the underlying database by whoever manages your PalaTrack setup. If you believe you should have admin access, contact your Pala Consultancy administrator.</p></div>
+      <div class="faq-answer"><p>Admin status is granted directly in the underlying database by whoever manages your PalaTrack setup. If you believe you should have admin access, contact your Pala Consultancy administrator.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
 
-    <div class="category">Statistics &amp; reporting</div>
-    <div class="faq-item">
+    <div class="category" data-cat="Statistics & reporting">Statistics &amp; reporting</div>
+    <div class="faq-item" data-cat="Statistics & reporting">
       <div class="faq-question"><span>Where do I see win rates and revenue?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Click "Statistics" from any board to see your win rate, total revenue, average deal size, average time to close, a breakdown by source, industry, and country (including a world map), and your top won deals.</p></div>
+      <div class="faq-answer"><p>Click "Statistics" from any board to see your win rate, total revenue, average deal size, average time to close, a breakdown by source, industry, and country (including a world map), and your top won deals.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item" data-cat="Statistics & reporting">
       <div class="faq-question"><span>How is "Avg. closing time" calculated?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>It's the average of the "Days to close" field across every Won lead that has that field filled in. If nobody fills it in, the stat shows as unavailable rather than guessing.</p></div>
+      <div class="faq-answer"><p>It's the average of the "Days to close" field across every Won lead that has that field filled in. If nobody fills it in, the stat shows as unavailable rather than guessing.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
 
-    <div class="category">Account &amp; preferences</div>
-    <div class="faq-item">
+    <div class="category" data-cat="Account & preferences">Account &amp; preferences</div>
+    <div class="faq-item" data-cat="Account & preferences">
       <div class="faq-question"><span>Can I use PalaTrack in a language other than English?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Yes. Go to Manage account and choose your preferred language from the dropdown &mdash; PalaTrack currently supports English, Dutch, French, German, Spanish, Italian, Portuguese, Polish, and Chinese. You can also switch languages right from the login screen before signing in.</p></div>
+      <div class="faq-answer"><p>Yes. Go to Manage account and choose your preferred language from the dropdown &mdash; PalaTrack currently supports English, Dutch, French, German, Spanish, Italian, Portuguese, Polish, and Chinese. You can also switch languages right from the login screen before signing in.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item" data-cat="Account & preferences">
       <div class="faq-question"><span>How do I switch to dark mode?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Open Settings from any board, dashboard, or statistics page, and choose "Dark" in the Light/Dark toggle near the top. Your choice is remembered everywhere you go.</p></div>
+      <div class="faq-answer"><p>Open Settings from any board, dashboard, or statistics page, and choose "Dark" in the Light/Dark toggle near the top. Your choice is remembered everywhere you go.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
-    <div class="faq-item">
+    <div class="faq-item" data-cat="Account & preferences">
       <div class="faq-question"><span>I forgot my password &mdash; what do I do?</span><span class="chev">▾</span></div>
-      <div class="faq-answer"><p>Contact your administrator, who can help you regain access. New teammates never need a password to begin with &mdash; they simply sign in through the emailed invite link.</p></div>
+      <div class="faq-answer"><p>Contact your administrator, who can help you regain access. New teammates never need a password to begin with &mdash; they simply sign in through the emailed invite link.</p>
+      <div class="faq-vote"><span>Was this helpful?</span><button class="faq-vote-btn" data-vote="yes">👍 Yes</button><button class="faq-vote-btn" data-vote="no">👎 No</button><span class="faq-vote-thanks">Thanks for the feedback!</span></div></div>
     </div>
 
     <div class="no-results" id="noResults">No results found. Try a different search, or send us feedback below.</div>
+  </div>
+
+  <div class="bottom-cta">
+    <h3>Still need help?</h3>
+    <p>Can't find what you're looking for? Send us a message and we'll get back to you.</p>
+    <a class="btn" href="feedback.html">Send Feedback →</a>
   </div>
 
   <footer>&copy; 2026 by Pala Consultancy BV. - All Rights Reserved</footer>
@@ -149,14 +199,38 @@
       q.closest('.faq-item').classList.toggle('open');
     });
   });
-  const searchInput = document.getElementById('faqSearch');
-  const noResults = document.getElementById('noResults');
-  searchInput.addEventListener('input', ()=>{
+
+  document.querySelectorAll('.faq-vote-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const voteRow = btn.closest('.faq-vote');
+      voteRow.querySelectorAll('.faq-vote-btn').forEach(b=>b.classList.remove('voted'));
+      btn.classList.add('voted');
+      voteRow.querySelectorAll('.faq-vote-btn').forEach(b=>b.style.display = 'none');
+      voteRow.querySelector('span:first-child').style.display = 'none';
+      voteRow.querySelector('.faq-vote-thanks').style.display = 'inline';
+    });
+  });
+
+  const filterPills = document.querySelectorAll('.filter-pill');
+  let activeCategory = 'all';
+  filterPills.forEach(pill=>{
+    pill.addEventListener('click', ()=>{
+      filterPills.forEach(p=>p.classList.remove('active'));
+      pill.classList.add('active');
+      activeCategory = pill.dataset.cat;
+      applyFilters();
+    });
+  });
+
+  function applyFilters(){
     const query = searchInput.value.trim().toLowerCase();
     let anyVisible = false;
     document.querySelectorAll('.faq-item').forEach(item=>{
       const text = item.textContent.toLowerCase();
-      const matches = query === '' || text.includes(query);
+      const matchesSearch = query === '' || text.includes(query);
+      const matchesCategory = activeCategory === 'all' || item.dataset.cat === activeCategory;
+      const matches = matchesSearch && matchesCategory;
       item.classList.toggle('hidden', !matches);
       if(matches) anyVisible = true;
     });
@@ -170,7 +244,11 @@
       cat.style.display = hasVisible ? '' : 'none';
     });
     noResults.style.display = anyVisible ? 'none' : 'block';
-  });
+  }
+
+  const searchInput = document.getElementById('faqSearch');
+  const noResults = document.getElementById('noResults');
+  searchInput.addEventListener('input', applyFilters);
 </script>
 </body>
 </html>
