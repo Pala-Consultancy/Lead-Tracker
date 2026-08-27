@@ -443,7 +443,8 @@
   }
   #worldMapContainer{width:100%;min-height:220px;position:relative;}
   #worldMapContainer svg{width:100%;height:auto;display:block;}
-  .world-map-country{fill:var(--c-blue-tint);stroke:var(--panel);stroke-width:0.5;transition:opacity .15s;}
+  .world-map-country{stroke:var(--border);stroke-width:0.6;transition:opacity .15s, stroke .15s, stroke-width .15s;}
+  .world-map-country.highlighted{stroke:var(--ink);stroke-width:2;}
   .world-map-country:hover{opacity:0.8;cursor:pointer;}
   .world-map-loading{
     display:flex;align-items:center;justify-content:center;height:220px;
@@ -1220,6 +1221,7 @@
         document.body.appendChild(tooltip);
       }
 
+      const mapPathsByName = {};
       svg.selectAll('path')
         .data(worldAtlasData.geo.features)
         .join('path')
@@ -1230,6 +1232,10 @@
           const revenue = revenueByNormName[name];
           if(!revenue) return getComputedStyle(document.documentElement).getPropertyValue('--c-blue-tint2').trim() || '#F6FAFE';
           return interpolator(scale(revenue));
+        })
+        .each(function(d){
+          const name = (d.properties && d.properties.name) ? d.properties.name.toLowerCase() : '';
+          mapPathsByName[name] = this;
         })
         .on('mousemove', function(event, d){
           const name = (d.properties && d.properties.name) ? d.properties.name : '';
@@ -1243,6 +1249,18 @@
         .on('mouseleave', function(){
           tooltip.style.opacity = '0';
         });
+
+      document.querySelectorAll('tr[data-country]').forEach(row=>{
+        const countryKey = row.getAttribute('data-country');
+        row.addEventListener('mouseenter', ()=>{
+          const el = mapPathsByName[countryKey];
+          if(el) el.classList.add('highlighted');
+        });
+        row.addEventListener('mouseleave', ()=>{
+          const el = mapPathsByName[countryKey];
+          if(el) el.classList.remove('highlighted');
+        });
+      });
     }
 
     if(worldAtlasData){
@@ -1420,7 +1438,8 @@
     const maxCountryCount = Math.max(1, ...countryRows.map(r=>r[1].count));
     const countryTableHTML = countryRows.map(([name, d])=>{
       const displayName = name === "Not specified" ? t('notSpecified') : name;
-      return `<tr>
+      const dataAttr = name === "Not specified" ? '' : ` data-country="${esc(normalizeCountryName(name)).toLowerCase()}"`;
+      return `<tr${dataAttr}>
         <td><div class="name-cell">${esc(displayName)}</div></td>
         <td class="bar-cell"><span class="mono">${d.count}</span><div class="bar-track"><div class="bar-fill" style="width:${(d.count/maxCountryCount)*100}%;background:var(--c-amber-fg)"></div></div></td>
         <td class="mono">${formatMoney(d.revenue)}</td>
