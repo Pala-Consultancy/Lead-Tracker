@@ -1398,7 +1398,7 @@
     const contactedCount = leads.filter(l=>l.contacted).length;
     const repliedCount = leads.filter(l=>l.replied).length;
     const callReached = leads.filter(l=>["Call booked","Won","Lost"].includes(l.status));
-    const showedUpCount = callReached.filter(l=>l.showedUp).length;
+    const showedUpCount = callReached.filter(l=>l.showedUp || l.status==='Won').length;
 
     const acceptRate = sentCount>0 ? Math.round((acceptedCount/sentCount)*100) : null;
     const replyRate = contactedCount>0 ? Math.round((repliedCount/contactedCount)*100) : null;
