@@ -300,33 +300,65 @@
   .stats-grid{
     display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;
   }
+  .stats-hero-row{
+    display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;margin-bottom:14px;
+  }
+  .stat-card-hero{
+    background:linear-gradient(155deg, var(--stat-accent-soft, var(--c-stat-fallback-bg)) 0%, var(--panel) 65%);
+    border:1px solid var(--border);border-radius:16px;
+    padding:20px 20px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+    display:flex;flex-direction:column;gap:12px;transition:transform .18s ease,box-shadow .18s ease;
+  }
+  .stat-card-hero:hover{transform:translateY(-6px);box-shadow:0 14px 30px rgba(27,36,48,0.18);}
+  .stat-card-hero::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:var(--stat-accent, var(--teal));
+  }
+  .stat-hero-icon{
+    width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:var(--panel);color:var(--stat-accent, var(--teal));flex-shrink:0;
+    box-shadow:0 3px 10px rgba(27,36,48,0.1);
+  }
+  .stat-hero-icon svg{width:22px;height:22px;}
+  .stat-hero-label{
+    font-size:12px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--slate);font-weight:700;margin-top:2px;
+  }
+  .stat-hero-value{
+    font-family:'IBM Plex Mono',monospace;font-size:38px;font-weight:700;color:var(--ink);
+    line-height:1;
+  }
+  .stat-hero-value.mid{font-size:28px;}
+  .stat-hero-sub{
+    font-size:12px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;font-weight:600;
+  }
   .stat-card{
     background:var(--panel);border:1px solid var(--border);border-radius:12px;
-    padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;
-    display:flex;flex-direction:column;gap:10px;transition:transform .15s ease,box-shadow .15s ease;
+    padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+    display:flex;flex-direction:column;gap:8px;transition:transform .15s ease,box-shadow .15s ease;
   }
-  .stat-card:hover{transform:translateY(-5px);box-shadow:0 10px 22px rgba(27,36,48,0.16);}
+  .stat-card:hover{transform:translateY(-4px);box-shadow:0 8px 18px rgba(27,36,48,0.14);}
   .stat-card::before{
     content:"";position:absolute;top:0;left:0;right:0;height:3px;
     background:var(--stat-accent, var(--teal));
   }
   .stat-top{display:flex;align-items:center;gap:8px;}
   .stat-icon{
-    width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;
     background:var(--stat-accent-soft, var(--c-stat-fallback-bg));color:var(--stat-accent, var(--teal));flex-shrink:0;
   }
-  .stat-icon svg{width:15px;height:15px;}
+  .stat-icon svg{width:14px;height:14px;}
   .stat-label{
-    font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
     color:var(--slate);font-weight:600;
   }
   .stat-value{
-    font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;color:var(--ink);
+    font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--ink);
     line-height:1;
   }
-  .stat-value.small{font-size:17px;}
+  .stat-value.small{font-size:16px;}
   .stat-sub{
-    font-size:11.5px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;
   }
 
   .ring-row{display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;}
@@ -407,8 +439,12 @@
   @media (max-width:900px){
     .two-col{grid-template-columns:1fr;}
     .stats-grid{grid-template-columns:repeat(2, 1fr);}
+    .stats-hero-row{grid-template-columns:repeat(2, 1fr);}
     .ring-row{grid-template-columns:repeat(2, 1fr);}
     .headline-card{flex-direction:column;align-items:flex-start;}
+  }
+  @media (max-width:560px){
+    .stats-hero-row{grid-template-columns:1fr;}
   }
   .empty-state{
     text-align:center;padding:80px 20px;color:var(--slate);
@@ -1045,6 +1081,17 @@
     </div>`;
   }
 
+  function heroStatCard({icon, accent, accentSoft, label, value, sub, mid}){
+    return `<div class="stat-card-hero" style="--stat-accent:${accent};--stat-accent-soft:${accentSoft}">
+      <div class="stat-hero-icon">${ICONS[icon]}</div>
+      <div>
+        <div class="stat-hero-label">${label}</div>
+        <div class="stat-hero-value${mid?" mid":""}">${value}</div>
+      </div>
+      ${sub ? `<div class="stat-hero-sub">${sub}</div>` : ""}
+    </div>`;
+  }
+
   function statCard({icon, accent, accentSoft, label, value, sub, small}){
     return `<div class="stat-card" style="--stat-accent:${accent};--stat-accent-soft:${accentSoft}">
       <div class="stat-top">
@@ -1117,14 +1164,16 @@
     // KPI row
     const kpiHTML = `<div class="section">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.users}</div>${t('overview')}</h2>
+      <div class="stats-hero-row">
+        ${heroStatCard({icon:"users", accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('totalLeads'), value:total})}
+        ${heroStatCard({icon:"check", accent:"var(--c-green-fg)", accentSoft:"var(--c-green-bg)", label:t('won'), value:wonCount, sub: winRate!==null?`${winRate}${t('ofAllLeads')}`:null})}
+        ${heroStatCard({icon:"coin", accent:"var(--c-purple-fg)", accentSoft:"var(--c-purple-bg)", label:t('totalRevenue'), value:formatMoney(totalRevenue), mid:true})}
+        ${heroStatCard({icon:"clock", accent:"var(--c-tan-fg)", accentSoft:"var(--c-tan-bg)", label:t('avgClosingTime'), value: avgClosingTime!==null?`${avgClosingTime} ${avgClosingTime===1?t('dayWord'):t('daysWordStats')}`:"—", sub: closingTimeLeads.length>0 ? `${closingTimeLeads.length} ${closingTimeLeads.length===1?t('dealWord'):t('dealsWord')}` : null})}
+      </div>
       <div class="stats-grid">
-        ${statCard({icon:"users", accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('totalLeads'), value:total})}
         ${statCard({icon:"funnel", accent:"var(--c-amber-fg)", accentSoft:"var(--c-amber-bg)", label:t('activePipeline'), value:activeCount, sub:t('newContactedCallBooked')})}
-        ${statCard({icon:"check", accent:"var(--c-green-fg)", accentSoft:"var(--c-green-bg)", label:t('won'), value:wonCount, sub: winRate!==null?`${winRate}${t('ofAllLeads')}`:null})}
         ${statCard({icon:"xCircle", accent:"var(--c-red-fg)", accentSoft:"var(--c-red-bg)", label:t('lost'), value:lostCount, sub: lostRate!==null?`${lostRate}${t('ofAllLeads')}`:null})}
-        ${statCard({icon:"coin", accent:"var(--c-purple-fg)", accentSoft:"var(--c-purple-bg)", label:t('totalRevenue'), value:formatMoney(totalRevenue), small:true})}
         ${statCard({icon:"coin", accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('avgWonDeal'), value: avgDealSize!==null?formatMoney(avgDealSize):"—", small:true})}
-        ${statCard({icon:"clock", accent:"var(--c-tan-fg)", accentSoft:"var(--c-tan-bg)", label:t('avgClosingTime'), value: avgClosingTime!==null?`${avgClosingTime} ${avgClosingTime===1?t('dayWord'):t('daysWordStats')}`:"—", small:true, sub: closingTimeLeads.length>0 ? `${closingTimeLeads.length} ${closingTimeLeads.length===1?t('dealWord'):t('dealsWord')}` : null})}
         ${statCard({icon:"coin", accent:"var(--c-amber-fg)", accentSoft:"var(--c-amber-bg)", label:t('avgValuePerLead'), value: avgAllLeads!==null?formatMoney(avgAllLeads):"—", small:true, sub:t('acrossEveryLead')})}
         ${statCard({icon:"tag", accent:"var(--c-green-fg)", accentSoft:"var(--c-green-bg)", label:t('leadsSourced'), value: leads.filter(l=>l.source).length, sub:t('withSourceRecorded')})}
         ${statCard({icon:"tag", accent:"var(--c-purple-fg)", accentSoft:"var(--c-purple-bg)", label:t('callsBooked'), value: callReached.length, sub:t('reachedCallBooked')})}
