@@ -1150,7 +1150,7 @@
     return `<div class="ring">
       <svg viewBox="0 0 48 48">
         <circle class="ring-bg" cx="24" cy="24" r="${r}"/>
-        <circle class="ring-fg" cx="24" cy="24" r="${r}" style="stroke:${color};stroke-dasharray:${c.toFixed(2)};stroke-dashoffset:${offset.toFixed(2)}"/>
+        <circle class="ring-fg" cx="24" cy="24" r="${r}" data-target-offset="${offset.toFixed(2)}" style="stroke:${color};stroke-dasharray:${c.toFixed(2)};stroke-dashoffset:${c.toFixed(2)}"/>
       </svg>
       <span class="ring-value">${pct===null?"—":pct+"%"}</span>
     </div>`;
@@ -1410,8 +1410,8 @@
 
     // Headline
     const headlineText = t('headlineTemplate')
-      .replace('{won}', wonCount).replace('{total}', total)
-      .replace('{rate}', winRate??0).replace('{revenue}', formatMoney(totalRevenue));
+      .replace('{won}', `<span class="cu">${wonCount}</span>`).replace('{total}', `<span class="cu">${total}</span>`)
+      .replace('{rate}', `<span class="cu">${winRate??0}</span>`).replace('{revenue}', `<span class="cu">${formatMoney(totalRevenue)}</span>`);
     const headlineHTML = `<div class="headline-card">
       <div class="headline-text">
         ${headlineText}
@@ -1649,10 +1649,75 @@
     renderWorldMap(byCountry);
     animateCountUps();
     animateFunnelBars();
+    animateAllNumbers();
+    animateRingFills();
     setupScrollReveal();
   }
 
   // ---------- Funnel bar grow-in ----------
+  // ---------- Generic number-text count-up (works on any element with an embedded number) ----------
+  function animateNumberText(el, duration){
+    duration = duration || 900;
+    const original = el.textContent.trim();
+    if(!original || original === '—') return;
+    const match = original.match(/^(.*?)([\d][\d,]*\.?\d*)(.*)$/s);
+    if(!match) return;
+    const prefix = match[1];
+    const rawNum = match[2];
+    const suffix = match[3];
+    const target = parseFloat(rawNum.replace(/,/g, ''));
+    if(isNaN(target)) return;
+    const hasCommas = rawNum.includes(',');
+    const decimalPart = rawNum.split('.')[1];
+    const decimals = decimalPart ? decimalPart.length : 0;
+    const start = performance.now();
+    function tick(now){
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = target * eased;
+      let numStr;
+      if(decimals > 0){
+        numStr = value.toFixed(decimals);
+        if(hasCommas) numStr = Number(numStr).toLocaleString(undefined, {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+      } else {
+        const rounded = Math.round(value);
+        numStr = hasCommas ? rounded.toLocaleString() : String(rounded);
+      }
+      el.textContent = prefix + numStr + suffix;
+      if(progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function animateRingFills(){
+    document.querySelectorAll('.ring-fg[data-target-offset]').forEach(ring=>{
+      const target = ring.dataset.targetOffset;
+      requestAnimationFrame(()=> requestAnimationFrame(()=>{
+        ring.style.strokeDashoffset = target;
+      }));
+    });
+  }
+
+  function animateAllNumbers(){
+    const selectors = [
+      '.headline-text .cu',
+      '.headline-stat-value',
+      '.stat-value',
+      '.ring-value',
+      '.funnel-fill span',
+      '.funnel-count',
+      '.mono'
+    ];
+    const seen = new Set();
+    selectors.forEach(sel=>{
+      document.querySelectorAll(sel).forEach(el=>{
+        if(seen.has(el)) return;
+        seen.add(el);
+        animateNumberText(el);
+      });
+    });
+  }
+
   function animateFunnelBars(){
     document.querySelectorAll('.funnel-fill[data-target-width]').forEach(bar=>{
       const target = bar.dataset.targetWidth;
