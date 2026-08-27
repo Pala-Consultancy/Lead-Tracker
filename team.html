@@ -464,7 +464,7 @@
         </div>
       </div>
     </div>
-    <a class="btn" href="index.html" data-i18n="backToBoards">← Back to boards</a>
+    <a class="btn" href="boards.html" data-i18n="backToBoards">← Back to boards</a>
   </header>
 
   <div class="invite-card">
@@ -894,7 +894,7 @@
     sendBtn.disabled = true;
     sendBtn.textContent = t('sending');
     const boardsPath = location.pathname.substring(0, location.pathname.lastIndexOf('/')+1);
-    const redirectUrl = location.origin + boardsPath + 'index.html';
+    const redirectUrl = location.origin + boardsPath + 'boards.html';
     auth.sendSignInLinkToEmail(email, { url: redirectUrl, handleCodeInApp: true }).then(()=>{
       showToast(`${t('inviteSentTo')} ${email}`);
       document.getElementById('inviteEmail').value = '';
@@ -939,7 +939,7 @@
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
       auth.signInWithEmailAndPassword(email, password).then(()=>{
-        location.href = 'index.html';
+        location.href = 'boards.html';
       }).catch(err=>{
         showLoginError(t('incorrectLogin'));
       }).finally(()=>{
