@@ -2061,6 +2061,10 @@
       replied: document.getElementById('f-replied').checked,
       showedUp: document.getElementById('f-showedUp').checked
     };
+    if(data.status === 'Won'){
+      data.showedUp = true;
+      data.contacted = true;
+    }
     const wasEditing = !!editingId;
     if(!firebaseConnected){
       showToast(t('notConnectedShort'), true);
@@ -2176,7 +2180,14 @@
     });
   }
   function updateStatus(id, status){
-    leadsCollection.doc(id).update({status}).catch(err=>{
+    const l = leads.find(x=>x.id===id);
+    const updates = {status};
+    if(status === 'Won' && l && !l.showedUp){
+      updates.showedUp = true;
+      updates.contacted = true;
+      if(!l.contactedAt) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    leadsCollection.doc(id).update(updates).catch(err=>{
       showToast(t('couldNotUpdateStatus') + ' ' + err.message, true);
     });
   }
@@ -2306,7 +2317,7 @@
     const contactedCount = leads.filter(l=>l.contacted).length;
     const repliedCount = leads.filter(l=>l.replied).length;
     const callReachedLeads = leads.filter(l=>['Call booked','Won','Lost'].includes(l.status));
-    const showedUpCount = callReachedLeads.filter(l=>l.showedUp).length;
+    const showedUpCount = callReachedLeads.filter(l=>l.showedUp || l.status==='Won').length;
     const acceptRate = sentCount>0 ? Math.round((acceptedCount/sentCount)*100) : null;
     const replyRate = contactedCount>0 ? Math.round((repliedCount/contactedCount)*100) : null;
     const showUpRate = callReachedLeads.length>0 ? Math.round((showedUpCount/callReachedLeads.length)*100) : null;
@@ -2817,7 +2828,7 @@
       const monthSent = monthLeads.filter(l=>l.requestSent).length;
       const monthAccepted = monthLeads.filter(l=>l.requestAccepted).length;
       const monthCallReached = monthLeads.filter(l=>['Call booked','Won','Lost'].includes(l.status));
-      const monthShowedUp = monthCallReached.filter(l=>l.showedUp).length;
+      const monthShowedUp = monthCallReached.filter(l=>l.showedUp || l.status==='Won').length;
       const closingRate = monthLeads.length>0 ? Math.round((monthWon/monthLeads.length)*100) : null;
       const acceptRate = monthSent>0 ? Math.round((monthAccepted/monthSent)*100) : null;
       const showUpRate = monthCallReached.length>0 ? Math.round((monthShowedUp/monthCallReached.length)*100) : null;
@@ -3078,7 +3089,13 @@
         const newStatus = col.dataset.status;
         const l = leads.find(x=>x.id===dragLeadId);
         if(l && l.status!==newStatus){
-          leadsCollection.doc(l.id).update({status:newStatus}).then(()=>{
+          const updates = {status:newStatus};
+          if(newStatus === 'Won' && !l.showedUp){
+            updates.showedUp = true;
+            updates.contacted = true;
+            if(!l.contactedAt) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp();
+          }
+          leadsCollection.doc(l.id).update(updates).then(()=>{
             showToast(`${t('movedWord')} ${l.name||t('lead_singular')} ${t('toWord')} ${t(STATUS_LABEL_KEYS[newStatus]||'st_new')}`);
           }).catch(err=>{
             showToast(t('couldNotUpdateStatus') + ' ' + err.message, true);
