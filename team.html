@@ -352,6 +352,44 @@
     .team-row{flex-direction:column;align-items:flex-start;}
     .team-role-select{width:100%;}
   }
+
+  .team-role-trigger{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:600;padding:8px 14px;
+    border:1px solid var(--border);border-radius:20px;background:var(--c-blue-tint2);color:var(--ink);
+    min-width:170px;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    transition:background .15s;
+  }
+  .team-role-trigger:hover{background:var(--c-hover-bg);}
+  .team-role-trigger .chev{color:var(--slate-light);font-size:11px;}
+
+  .role-overlay{
+    position:fixed;inset:0;background:rgba(27,36,48,0.4);z-index:95;
+    opacity:0;visibility:hidden;transition:opacity .2s ease;
+  }
+  .role-overlay.open{opacity:1;visibility:visible;}
+  .role-panel{
+    position:fixed;top:0;right:0;height:100%;width:340px;max-width:90vw;
+    background:var(--panel);z-index:96;box-shadow:-8px 0 30px rgba(27,36,48,0.18);
+    transform:translateX(100%);transition:transform .25s ease;
+    display:flex;flex-direction:column;
+  }
+  .role-panel.open{transform:translateX(0);}
+  .role-panel-header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:20px 22px;border-bottom:1px solid var(--border);
+  }
+  .role-panel-header h3{font-family:'Sora',sans-serif;font-size:17px;margin:0;color:var(--ink);}
+  .role-panel-body{padding:14px;overflow-y:auto;}
+  .role-option{
+    display:flex;align-items:center;justify-content:space-between;width:100%;
+    padding:13px 14px;border:none;background:none;border-radius:9px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);text-align:left;
+    transition:background .15s;
+  }
+  .role-option:hover{background:var(--c-hover-bg);}
+  .role-option.selected{background:var(--c-blue-bg);color:var(--c-blue-fg);font-weight:700;}
+  .role-option .check{color:var(--c-blue-fg);font-weight:700;visibility:hidden;}
+  .role-option.selected .check{visibility:visible;}
 </style>
 </head>
 <body>
@@ -448,7 +486,7 @@
   // ---------- i18n ----------
   const TRANSLATIONS = {
     en: {
-      brandName:"PALA CONSULTANCY", appName:"PalaTrack", signInContinue:"Sign in to continue", slogan:"Your personal lead tracker",
+      brandName:"PALA CONSULTANCY", appName:"PalaTrack", signInContinue:"Sign in to continue", selectRoleTitle:"Select role", slogan:"Your personal lead tracker",
       email:"Email", password:"Password", signIn:"Sign in",
       noAccountNote:"Don't have an account? Ask your admin to create one for you.",
       manageTeamTitle:"Manage Team", inviteManageSub:"Invite people and manage everyone's role",
@@ -466,7 +504,7 @@
       youBadge:"You", adminBadge:"Admin",
     },
     nl: {
-      brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", signInContinue:"Log in om verder te gaan", slogan:"Jouw persoonlijke leadtracker",
+      brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", signInContinue:"Log in om verder te gaan", selectRoleTitle:"Selecteer rol", slogan:"Jouw persoonlijke leadtracker",
       email:"E-mail", password:"Wachtwoord", signIn:"Inloggen",
       noAccountNote:"Nog geen account? Vraag je beheerder om er een voor je aan te maken.",
       manageTeamTitle:"Team beheren", inviteManageSub:"Nodig mensen uit en beheer ieders rol",
@@ -484,7 +522,7 @@
       youBadge:"Jij", adminBadge:"Beheerder",
     },
     fr: {
-      brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", signInContinue:"Connectez-vous pour continuer", slogan:"Votre suivi de prospects personnel",
+      brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", signInContinue:"Connectez-vous pour continuer", selectRoleTitle:"Sélectionner un rôle", slogan:"Votre suivi de prospects personnel",
       email:"E-mail", password:"Mot de passe", signIn:"Se connecter",
       noAccountNote:"Pas encore de compte ? Demandez à votre administrateur d'en créer un pour vous.",
       manageTeamTitle:"Gérer l'équipe", inviteManageSub:"Invitez des personnes et gérez le rôle de chacun",
@@ -502,7 +540,7 @@
       youBadge:"Vous", adminBadge:"Admin",
     },
     de: {
-      brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", signInContinue:"Melde dich an, um fortzufahren", slogan:"Dein persönlicher Lead-Tracker",
+      brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", signInContinue:"Melde dich an, um fortzufahren", selectRoleTitle:"Rolle auswählen", slogan:"Dein persönlicher Lead-Tracker",
       email:"E-Mail", password:"Passwort", signIn:"Anmelden",
       noAccountNote:"Noch kein Konto? Bitte deinen Admin, eins für dich zu erstellen.",
       manageTeamTitle:"Team verwalten", inviteManageSub:"Lade Personen ein und verwalte die Rolle aller",
@@ -520,7 +558,7 @@
       youBadge:"Du", adminBadge:"Admin",
     },
     es: {
-      brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", signInContinue:"Inicia sesión para continuar", slogan:"Tu rastreador de leads personal",
+      brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", signInContinue:"Inicia sesión para continuar", selectRoleTitle:"Seleccionar rol", slogan:"Tu rastreador de leads personal",
       email:"Correo electrónico", password:"Contraseña", signIn:"Iniciar sesión",
       noAccountNote:"¿No tienes una cuenta? Pide a tu administrador que cree una para ti.",
       manageTeamTitle:"Gestionar equipo", inviteManageSub:"Invita a personas y gestiona el rol de cada uno",
@@ -538,7 +576,7 @@
       youBadge:"Tú", adminBadge:"Admin",
     },
     it: {
-      brandName:"PALA CONSULTANCY", appName:"Sistema di Gestione dei Lead", signInContinue:"Accedi per continuare", slogan:"Il tuo tracker di lead personale",
+      brandName:"PALA CONSULTANCY", appName:"Sistema di Gestione dei Lead", signInContinue:"Accedi per continuare", selectRoleTitle:"Seleziona ruolo", slogan:"Il tuo tracker di lead personale",
       email:"E-mail", password:"Password", signIn:"Accedi", signingIn:"Accesso in corso...",
       noAccountNote:"Non hai un account? Chiedi al tuo amministratore di crearne uno per te.",
       incorrectLogin:"E-mail o password errati. Riprova.",
@@ -557,7 +595,7 @@
       role_operations:"Operazioni", role_intern:"Stagista", role_other:"Altro"
     },
     pt: {
-      brandName:"PALA CONSULTANCY", appName:"Sistema de Gestão de Leads", signInContinue:"Inicie sessão para continuar", slogan:"O seu rastreador de leads pessoal",
+      brandName:"PALA CONSULTANCY", appName:"Sistema de Gestão de Leads", signInContinue:"Inicie sessão para continuar", selectRoleTitle:"Selecionar função", slogan:"O seu rastreador de leads pessoal",
       email:"E-mail", password:"Palavra-passe", signIn:"Iniciar sessão", signingIn:"A iniciar sessão...",
       noAccountNote:"Ainda não tem conta? Peça ao seu administrador para criar uma para si.",
       incorrectLogin:"E-mail ou palavra-passe incorretos. Tente novamente.",
@@ -576,7 +614,7 @@
       role_operations:"Operações", role_intern:"Estagiário", role_other:"Outro"
     },
     pl: {
-      brandName:"PALA CONSULTANCY", appName:"System Śledzenia Leadów", signInContinue:"Zaloguj się, aby kontynuować", slogan:"Twój osobisty tracker leadów",
+      brandName:"PALA CONSULTANCY", appName:"System Śledzenia Leadów", signInContinue:"Zaloguj się, aby kontynuować", selectRoleTitle:"Wybierz rolę", slogan:"Twój osobisty tracker leadów",
       email:"E-mail", password:"Hasło", signIn:"Zaloguj się", signingIn:"Logowanie...",
       noAccountNote:"Nie masz konta? Poproś administratora o jego utworzenie.",
       incorrectLogin:"Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.",
@@ -595,7 +633,7 @@
       role_operations:"Operacje", role_intern:"Stażysta", role_other:"Inne"
     },
     zh: {
-      brandName:"PALA CONSULTANCY", appName:"潜在客户跟踪系统", signInContinue:"请登录以继续", slogan:"您的专属潜在客户跟踪工具",
+      brandName:"PALA CONSULTANCY", appName:"潜在客户跟踪系统", signInContinue:"请登录以继续", selectRoleTitle:"选择角色", slogan:"您的专属潜在客户跟踪工具",
       email:"电子邮箱", password:"密码", signIn:"登录", signingIn:"正在登录...",
       noAccountNote:"还没有账户？请联系管理员为您创建一个。",
       incorrectLogin:"邮箱或密码错误，请重试。",
@@ -731,14 +769,12 @@
     container.innerHTML = `<div class="team-list">
       ${members.map(m=>{
         const isYou = m.id === currentUid;
-        const roleOptionsHtml = [`<option value="">${t('noRoleSet')}</option>`].concat(
-          ROLE_OPTIONS.map(r=>`<option value="${r.value}" ${m.role===r.value?'selected':''}>${t(r.key)}</option>`)
-        ).join('');
+        const roleLabel = m.role ? (t(ROLE_OPTIONS.find(r=>r.value===m.role)?.key || '') || m.role) : t('noRoleSet');
         const roleControlHtml = currentUserIsAdmin
-          ? `<select class="team-role-select" onchange="window.__teamActions.updateRole('${m.id}', this.value)">
-              ${roleOptionsHtml}
-            </select>`
-          : `<span class="team-role-readonly">${m.role ? esc(t(ROLE_OPTIONS.find(r=>r.value===m.role)?.key || '') || m.role) : t('noRoleSet')}</span>`;
+          ? `<button type="button" class="team-role-trigger" onclick="window.__teamActions.openRolePanel('${m.id}','${(m.role||'').replace(/'/g,"\\'")}')">
+              <span>${esc(roleLabel)}</span><span class="chev">▾</span>
+            </button>`
+          : `<span class="team-role-readonly">${esc(roleLabel)}</span>`;
         return `<div class="team-row">
           <div class="team-avatar">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
           <div class="team-info">
@@ -759,7 +795,44 @@
       showToast(t('couldNotUpdateRole') + ' ' + err.message, true);
     });
   }
-  window.__teamActions = { updateRole };
+
+  // ---------- Role selection panel ----------
+  let roleEditingUid = null;
+  const roleOverlay = document.getElementById('roleOverlay');
+  const rolePanel = document.getElementById('rolePanel');
+  function renderRoleOptions(currentRole){
+    const body = document.getElementById('rolePanelBody');
+    const allOptions = [{value:'', key:'noRoleSet'}].concat(ROLE_OPTIONS);
+    body.innerHTML = allOptions.map(opt=>{
+      const label = opt.value === '' ? t('noRoleSet') : t(opt.key);
+      const isSelected = (currentRole || '') === opt.value;
+      return `<button type="button" class="role-option${isSelected?' selected':''}" onclick="window.__teamActions.selectRole('${opt.value}')">
+        <span>${esc(label)}</span><span class="check">✓</span>
+      </button>`;
+    }).join('');
+  }
+  function openRolePanel(uid, currentRole){
+    roleEditingUid = uid;
+    renderRoleOptions(currentRole);
+    roleOverlay.classList.add('open');
+    rolePanel.classList.add('open');
+  }
+  function closeRolePanel(){
+    roleOverlay.classList.remove('open');
+    rolePanel.classList.remove('open');
+    roleEditingUid = null;
+  }
+  function selectRole(role){
+    if(roleEditingUid) updateRole(roleEditingUid, role);
+    closeRolePanel();
+  }
+  document.getElementById('roleClose').addEventListener('click', closeRolePanel);
+  roleOverlay.addEventListener('click', closeRolePanel);
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && rolePanel.classList.contains('open')) closeRolePanel();
+  });
+
+  window.__teamActions = { updateRole, openRolePanel, selectRole };
 
   function initTeamSync(){
     unsubscribeTeam = usersCollection.onSnapshot(snapshot=>{
@@ -863,5 +936,13 @@
   }
 })();
 </script>
+<div class="role-overlay" id="roleOverlay"></div>
+<div class="role-panel" id="rolePanel">
+  <div class="role-panel-header">
+    <h3 data-i18n="selectRoleTitle">Select role</h3>
+    <button class="modal-close" id="roleClose" title="Close">✕</button>
+  </div>
+  <div class="role-panel-body" id="rolePanelBody"></div>
+</div>
 </body>
 </html>
