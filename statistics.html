@@ -208,6 +208,19 @@
   .settings-item.danger:hover{background:var(--c-red-bg);}
   .settings-item-icon{font-size:16px;}
   .settings-item-arrow{margin-left:auto;color:var(--slate-light);}
+  .settings-item-arrow.chevron{transition:transform .2s ease;}
+  .settings-item-arrow.chevron.open{transform:rotate(180deg);}
+  .help-submenu{
+    display:none;flex-direction:column;gap:6px;
+    margin:-4px 0 10px 14px;padding:6px 0 6px 20px;border-left:2px solid var(--border);
+  }
+  .help-submenu.open{display:flex;}
+  .help-submenu-item{
+    display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;
+    font-size:13px;font-weight:600;color:var(--slate);text-decoration:none;transition:background .15s, color .15s;
+  }
+  .help-submenu-item:hover{background:var(--c-blue-tint);color:var(--teal);}
+  .help-submenu-item .icon{font-size:14px;}
 
   /* ---------- Generic modal ---------- */
   .modal-overlay{
@@ -728,6 +741,25 @@
       <span>Manage team</span>
       <span class="settings-item-arrow">→</span>
     </a>
+    <button class="settings-item" id="helpMenuToggle">
+      <span class="settings-item-icon">❓</span>
+      <span data-i18n="helpMenuLabel">Help</span>
+      <span class="settings-item-arrow chevron" id="helpMenuChevron">▾</span>
+    </button>
+    <div class="help-submenu" id="helpSubmenu">
+      <a class="help-submenu-item" href="privacy-policy.html">
+        <span class="icon">🔒</span>
+        <span data-i18n="privacyPolicy">Privacy Policy</span>
+      </a>
+      <a class="help-submenu-item" href="help-center.html">
+        <span class="icon">📚</span>
+        <span data-i18n="helpCenter">Help Center</span>
+      </a>
+      <a class="help-submenu-item" href="feedback.html">
+        <span class="icon">💬</span>
+        <span data-i18n="sendFeedback">Send Feedback</span>
+      </a>
+    </div>
     <button class="settings-item danger" id="signOutItem">
       <span class="settings-item-icon">🚪</span>
       <span>Sign out</span>
@@ -747,7 +779,7 @@
   // ---------- i18n ----------
   const TRANSLATIONS = {
     en: {
-      brandName:"PALA CONSULTANCY", appName:"PalaTrack", role_founder:"Founder", role_cofounder:"Co-Founder", role_ceo:"CEO", role_md:"Managing Director", role_salesmanager:"Sales Manager", role_salesrep:"Sales Representative", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Intern", role_other:"Other", atWord:"at", signInContinue:"Sign in to continue", insightsLabel:"Insights", insightTopSource:"{source} drives {pct}% of your revenue", insightTopCountry:"{country} is your top market at {revenue}", insightWinRate:"{rate}% win rate across all leads", insightClosingTime:"Deals close in {days} days on average", clickToExpand:"Click to expand", loadingMap:"Loading map...", mapUnavailable:"Map unavailable", lessRevenue:"Less revenue", moreRevenue:"More revenue", avgClosingTime:"Avg. closing time", dayWord:"day", daysWordStats:"days", dealWord:"deal", dealsWord:"deals", lightMode:"Light", darkMode:"Dark", slogan:"Your personal lead tracker",
+      brandName:"PALA CONSULTANCY", appName:"PalaTrack", role_founder:"Founder", role_cofounder:"Co-Founder", role_ceo:"CEO", role_md:"Managing Director", role_salesmanager:"Sales Manager", role_salesrep:"Sales Representative", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Intern", role_other:"Other", atWord:"at", signInContinue:"Sign in to continue", helpMenuLabel:"Help", privacyPolicy:"Privacy Policy", helpCenter:"Help Center", sendFeedback:"Send Feedback", insightsLabel:"Insights", insightTopSource:"{source} drives {pct}% of your revenue", insightTopCountry:"{country} is your top market at {revenue}", insightWinRate:"{rate}% win rate across all leads", insightClosingTime:"Deals close in {days} days on average", clickToExpand:"Click to expand", loadingMap:"Loading map...", mapUnavailable:"Map unavailable", lessRevenue:"Less revenue", moreRevenue:"More revenue", avgClosingTime:"Avg. closing time", dayWord:"day", daysWordStats:"days", dealWord:"deal", dealsWord:"deals", lightMode:"Light", darkMode:"Dark", slogan:"Your personal lead tracker",
       email:"Email", password:"Password", signIn:"Sign in", signingIn:"Signing in...",
       noAccountNote:"Don't have an account? Ask your admin to create one for you.",
       incorrectLogin:"Incorrect email or password. Please try again.",
@@ -771,7 +803,7 @@
       m1:"January", m2:"February", m3:"March", m4:"April", m5:"May", m6:"June", m7:"July", m8:"August", m9:"September", m10:"October", m11:"November", m12:"December", useSameLogin:"Use the same login as the tracker."
     },
     nl: {
-      brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", role_founder:"Oprichter", role_cofounder:"Mede-oprichter", role_ceo:"CEO", role_md:"Algemeen Directeur", role_salesmanager:"Salesmanager", role_salesrep:"Sales medewerker", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Stagiair", role_other:"Overig", atWord:"bij", signInContinue:"Log in om verder te gaan", insightsLabel:"Inzichten", insightTopSource:"{source} levert {pct}% van je omzet op", insightTopCountry:"{country} is je grootste markt met {revenue}", insightWinRate:"{rate}% winratio over alle leads", insightClosingTime:"Deals sluiten gemiddeld in {days} dagen", clickToExpand:"Klik om te vergroten", loadingMap:"Kaart laden...", mapUnavailable:"Kaart niet beschikbaar", lessRevenue:"Minder omzet", moreRevenue:"Meer omzet", avgClosingTime:"Gem. sluitingstijd", dayWord:"dag", daysWordStats:"dagen", dealWord:"deal", dealsWord:"deals", lightMode:"Licht", darkMode:"Donker", slogan:"Jouw persoonlijke leadtracker",
+      brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", role_founder:"Oprichter", role_cofounder:"Mede-oprichter", role_ceo:"CEO", role_md:"Algemeen Directeur", role_salesmanager:"Salesmanager", role_salesrep:"Sales medewerker", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Stagiair", role_other:"Overig", atWord:"bij", signInContinue:"Log in om verder te gaan", helpMenuLabel:"Help", privacyPolicy:"Privacybeleid", helpCenter:"Helpcentrum", sendFeedback:"Feedback versturen", insightsLabel:"Inzichten", insightTopSource:"{source} levert {pct}% van je omzet op", insightTopCountry:"{country} is je grootste markt met {revenue}", insightWinRate:"{rate}% winratio over alle leads", insightClosingTime:"Deals sluiten gemiddeld in {days} dagen", clickToExpand:"Klik om te vergroten", loadingMap:"Kaart laden...", mapUnavailable:"Kaart niet beschikbaar", lessRevenue:"Minder omzet", moreRevenue:"Meer omzet", avgClosingTime:"Gem. sluitingstijd", dayWord:"dag", daysWordStats:"dagen", dealWord:"deal", dealsWord:"deals", lightMode:"Licht", darkMode:"Donker", slogan:"Jouw persoonlijke leadtracker",
       email:"E-mail", password:"Wachtwoord", signIn:"Inloggen", signingIn:"Inloggen...",
       noAccountNote:"Nog geen account? Vraag je beheerder om er een voor je aan te maken.",
       incorrectLogin:"Onjuist e-mailadres of wachtwoord. Probeer het opnieuw.",
@@ -795,7 +827,7 @@
       m1:"januari", m2:"februari", m3:"maart", m4:"april", m5:"mei", m6:"juni", m7:"juli", m8:"augustus", m9:"september", m10:"oktober", m11:"november", m12:"december", useSameLogin:"Gebruik dezelfde login als de tracker."
     },
     fr: {
-      brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", role_founder:"Fondateur", role_cofounder:"Co-fondateur", role_ceo:"PDG", role_md:"Directeur général", role_salesmanager:"Responsable commercial", role_salesrep:"Représentant commercial", role_bizdev:"Développement commercial", role_marketing:"Responsable marketing", role_account:"Chargé de compte", role_consultant:"Consultant", role_operations:"Opérations", role_intern:"Stagiaire", role_other:"Autre", atWord:"chez", signInContinue:"Connectez-vous pour continuer", insightsLabel:"Analyses", insightTopSource:"{source} génère {pct}% de votre chiffre d'affaires", insightTopCountry:"{country} est votre premier marché avec {revenue}", insightWinRate:"Taux de réussite de {rate}% sur tous les prospects", insightClosingTime:"Les deals se concluent en {days} jours en moyenne", clickToExpand:"Cliquez pour agrandir", loadingMap:"Chargement de la carte...", mapUnavailable:"Carte non disponible", lessRevenue:"Moins de revenu", moreRevenue:"Plus de revenu", avgClosingTime:"Délai moyen de conclusion", dayWord:"jour", daysWordStats:"jours", dealWord:"deal", dealsWord:"deals", lightMode:"Clair", darkMode:"Sombre", slogan:"Votre suivi de prospects personnel",
+      brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", role_founder:"Fondateur", role_cofounder:"Co-fondateur", role_ceo:"PDG", role_md:"Directeur général", role_salesmanager:"Responsable commercial", role_salesrep:"Représentant commercial", role_bizdev:"Développement commercial", role_marketing:"Responsable marketing", role_account:"Chargé de compte", role_consultant:"Consultant", role_operations:"Opérations", role_intern:"Stagiaire", role_other:"Autre", atWord:"chez", signInContinue:"Connectez-vous pour continuer", helpMenuLabel:"Aide", privacyPolicy:"Politique de confidentialité", helpCenter:"Centre d'aide", sendFeedback:"Envoyer des commentaires", insightsLabel:"Analyses", insightTopSource:"{source} génère {pct}% de votre chiffre d'affaires", insightTopCountry:"{country} est votre premier marché avec {revenue}", insightWinRate:"Taux de réussite de {rate}% sur tous les prospects", insightClosingTime:"Les deals se concluent en {days} jours en moyenne", clickToExpand:"Cliquez pour agrandir", loadingMap:"Chargement de la carte...", mapUnavailable:"Carte non disponible", lessRevenue:"Moins de revenu", moreRevenue:"Plus de revenu", avgClosingTime:"Délai moyen de conclusion", dayWord:"jour", daysWordStats:"jours", dealWord:"deal", dealsWord:"deals", lightMode:"Clair", darkMode:"Sombre", slogan:"Votre suivi de prospects personnel",
       email:"E-mail", password:"Mot de passe", signIn:"Se connecter", signingIn:"Connexion...",
       noAccountNote:"Pas encore de compte ? Demandez à votre administrateur d'en créer un pour vous.",
       incorrectLogin:"E-mail ou mot de passe incorrect. Veuillez réessayer.",
@@ -819,7 +851,7 @@
       m1:"janvier", m2:"février", m3:"mars", m4:"avril", m5:"mai", m6:"juin", m7:"juillet", m8:"août", m9:"septembre", m10:"octobre", m11:"novembre", m12:"décembre", useSameLogin:"Utilisez la même connexion que le suivi."
     },
     de: {
-      brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", role_founder:"Gründer", role_cofounder:"Mitgründer", role_ceo:"CEO", role_md:"Geschäftsführer", role_salesmanager:"Sales Manager", role_salesrep:"Vertriebsmitarbeiter", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Berater", role_operations:"Operations", role_intern:"Praktikant", role_other:"Sonstiges", atWord:"bei", signInContinue:"Melde dich an, um fortzufahren", insightsLabel:"Einblicke", insightTopSource:"{source} liefert {pct}% deines Umsatzes", insightTopCountry:"{country} ist dein stärkster Markt mit {revenue}", insightWinRate:"{rate}% Gewinnrate über alle Leads", insightClosingTime:"Deals schließen im Schnitt in {days} Tagen ab", clickToExpand:"Klicken zum Vergrößern", loadingMap:"Karte wird geladen...", mapUnavailable:"Karte nicht verfügbar", lessRevenue:"Weniger Umsatz", moreRevenue:"Mehr Umsatz", avgClosingTime:"Ø Abschlusszeit", dayWord:"Tag", daysWordStats:"Tage", dealWord:"Deal", dealsWord:"Deals", lightMode:"Hell", darkMode:"Dunkel", slogan:"Dein persönlicher Lead-Tracker",
+      brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", role_founder:"Gründer", role_cofounder:"Mitgründer", role_ceo:"CEO", role_md:"Geschäftsführer", role_salesmanager:"Sales Manager", role_salesrep:"Vertriebsmitarbeiter", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Berater", role_operations:"Operations", role_intern:"Praktikant", role_other:"Sonstiges", atWord:"bei", signInContinue:"Melde dich an, um fortzufahren", helpMenuLabel:"Hilfe", privacyPolicy:"Datenschutzrichtlinie", helpCenter:"Hilfe-Center", sendFeedback:"Feedback senden", insightsLabel:"Einblicke", insightTopSource:"{source} liefert {pct}% deines Umsatzes", insightTopCountry:"{country} ist dein stärkster Markt mit {revenue}", insightWinRate:"{rate}% Gewinnrate über alle Leads", insightClosingTime:"Deals schließen im Schnitt in {days} Tagen ab", clickToExpand:"Klicken zum Vergrößern", loadingMap:"Karte wird geladen...", mapUnavailable:"Karte nicht verfügbar", lessRevenue:"Weniger Umsatz", moreRevenue:"Mehr Umsatz", avgClosingTime:"Ø Abschlusszeit", dayWord:"Tag", daysWordStats:"Tage", dealWord:"Deal", dealsWord:"Deals", lightMode:"Hell", darkMode:"Dunkel", slogan:"Dein persönlicher Lead-Tracker",
       email:"E-Mail", password:"Passwort", signIn:"Anmelden", signingIn:"Anmeldung...",
       noAccountNote:"Noch kein Konto? Bitte deinen Admin, eins für dich zu erstellen.",
       incorrectLogin:"Falsche E-Mail-Adresse oder falsches Passwort. Bitte versuche es erneut.",
@@ -843,7 +875,7 @@
       m1:"Januar", m2:"Februar", m3:"März", m4:"April", m5:"Mai", m6:"Juni", m7:"Juli", m8:"August", m9:"September", m10:"Oktober", m11:"November", m12:"Dezember", useSameLogin:"Verwende den gleichen Login wie im Tracker."
     },
     es: {
-      brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Director General", role_salesmanager:"Gerente de Ventas", role_salesrep:"Representante de Ventas", role_bizdev:"Desarrollo de Negocio", role_marketing:"Gerente de Marketing", role_account:"Gerente de Cuentas", role_consultant:"Consultor", role_operations:"Operaciones", role_intern:"Becario", role_other:"Otro", atWord:"en", signInContinue:"Inicia sesión para continuar", insightsLabel:"Perspectivas", insightTopSource:"{source} genera el {pct}% de tus ingresos", insightTopCountry:"{country} es tu mercado principal con {revenue}", insightWinRate:"Tasa de éxito del {rate}% en todos los leads", insightClosingTime:"Los tratos se cierran en {days} días de media", clickToExpand:"Haz clic para ampliar", loadingMap:"Cargando mapa...", mapUnavailable:"Mapa no disponible", lessRevenue:"Menos ingresos", moreRevenue:"Más ingresos", avgClosingTime:"Tiempo medio de cierre", dayWord:"día", daysWordStats:"días", dealWord:"trato", dealsWord:"tratos", lightMode:"Claro", darkMode:"Oscuro", slogan:"Tu rastreador de leads personal",
+      brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Director General", role_salesmanager:"Gerente de Ventas", role_salesrep:"Representante de Ventas", role_bizdev:"Desarrollo de Negocio", role_marketing:"Gerente de Marketing", role_account:"Gerente de Cuentas", role_consultant:"Consultor", role_operations:"Operaciones", role_intern:"Becario", role_other:"Otro", atWord:"en", signInContinue:"Inicia sesión para continuar", helpMenuLabel:"Ayuda", privacyPolicy:"Política de privacidad", helpCenter:"Centro de ayuda", sendFeedback:"Enviar comentarios", insightsLabel:"Perspectivas", insightTopSource:"{source} genera el {pct}% de tus ingresos", insightTopCountry:"{country} es tu mercado principal con {revenue}", insightWinRate:"Tasa de éxito del {rate}% en todos los leads", insightClosingTime:"Los tratos se cierran en {days} días de media", clickToExpand:"Haz clic para ampliar", loadingMap:"Cargando mapa...", mapUnavailable:"Mapa no disponible", lessRevenue:"Menos ingresos", moreRevenue:"Más ingresos", avgClosingTime:"Tiempo medio de cierre", dayWord:"día", daysWordStats:"días", dealWord:"trato", dealsWord:"tratos", lightMode:"Claro", darkMode:"Oscuro", slogan:"Tu rastreador de leads personal",
       email:"Correo electrónico", password:"Contraseña", signIn:"Iniciar sesión", signingIn:"Iniciando sesión...",
       noAccountNote:"¿No tienes una cuenta? Pide a tu administrador que cree una para ti.",
       incorrectLogin:"Correo o contraseña incorrectos. Inténtalo de nuevo.",
@@ -867,7 +899,7 @@
       m1:"enero", m2:"febrero", m3:"marzo", m4:"abril", m5:"mayo", m6:"junio", m7:"julio", m8:"agosto", m9:"septiembre", m10:"octubre", m11:"noviembre", m12:"diciembre", useSameLogin:"Usa el mismo inicio de sesión que el seguimiento."
     },
     it: {
-      brandName:"PALA CONSULTANCY", appName:"Sistema di Gestione dei Lead", role_founder:"Fondatore", role_cofounder:"Co-fondatore", role_ceo:"CEO", role_md:"Direttore Generale", role_salesmanager:"Responsabile Vendite", role_salesrep:"Rappresentante Vendite", role_bizdev:"Sviluppo Commerciale", role_marketing:"Responsabile Marketing", role_account:"Account Manager", role_consultant:"Consulente", role_operations:"Operazioni", role_intern:"Stagista", role_other:"Altro", atWord:"presso", signInContinue:"Accedi per continuare", insightsLabel:"Approfondimenti", insightTopSource:"{source} genera il {pct}% del tuo fatturato", insightTopCountry:"{country} è il tuo mercato principale con {revenue}", insightWinRate:"Tasso di successo del {rate}% su tutti i lead", insightClosingTime:"Gli affari si chiudono in media in {days} giorni", clickToExpand:"Clicca per ingrandire", loadingMap:"Caricamento mappa...", mapUnavailable:"Mappa non disponibile", lessRevenue:"Meno fatturato", moreRevenue:"Più fatturato", avgClosingTime:"Tempo medio di chiusura", dayWord:"giorno", daysWordStats:"giorni", dealWord:"affare", dealsWord:"affari", lightMode:"Chiaro", darkMode:"Scuro", slogan:"Il tuo tracker di lead personale",
+      brandName:"PALA CONSULTANCY", appName:"Sistema di Gestione dei Lead", role_founder:"Fondatore", role_cofounder:"Co-fondatore", role_ceo:"CEO", role_md:"Direttore Generale", role_salesmanager:"Responsabile Vendite", role_salesrep:"Rappresentante Vendite", role_bizdev:"Sviluppo Commerciale", role_marketing:"Responsabile Marketing", role_account:"Account Manager", role_consultant:"Consulente", role_operations:"Operazioni", role_intern:"Stagista", role_other:"Altro", atWord:"presso", signInContinue:"Accedi per continuare", helpMenuLabel:"Aiuto", privacyPolicy:"Informativa sulla privacy", helpCenter:"Centro assistenza", sendFeedback:"Invia feedback", insightsLabel:"Approfondimenti", insightTopSource:"{source} genera il {pct}% del tuo fatturato", insightTopCountry:"{country} è il tuo mercato principale con {revenue}", insightWinRate:"Tasso di successo del {rate}% su tutti i lead", insightClosingTime:"Gli affari si chiudono in media in {days} giorni", clickToExpand:"Clicca per ingrandire", loadingMap:"Caricamento mappa...", mapUnavailable:"Mappa non disponibile", lessRevenue:"Meno fatturato", moreRevenue:"Più fatturato", avgClosingTime:"Tempo medio di chiusura", dayWord:"giorno", daysWordStats:"giorni", dealWord:"affare", dealsWord:"affari", lightMode:"Chiaro", darkMode:"Scuro", slogan:"Il tuo tracker di lead personale",
       email:"E-mail", password:"Password", signIn:"Accedi", signingIn:"Accesso in corso...",
       noAccountNote:"Non hai un account? Chiedi al tuo amministratore di crearne uno per te.",
       incorrectLogin:"E-mail o password errati. Riprova.",
@@ -891,7 +923,7 @@
       m1:"gennaio", m2:"febbraio", m3:"marzo", m4:"aprile", m5:"maggio", m6:"giugno", m7:"luglio", m8:"agosto", m9:"settembre", m10:"ottobre", m11:"novembre", m12:"dicembre", useSameLogin:"Usa lo stesso accesso del tracker."
     },
     pt: {
-      brandName:"PALA CONSULTANCY", appName:"Sistema de Gestão de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Diretor Geral", role_salesmanager:"Gestor de Vendas", role_salesrep:"Representante de Vendas", role_bizdev:"Desenvolvimento de Negócios", role_marketing:"Gestor de Marketing", role_account:"Gestor de Contas", role_consultant:"Consultor", role_operations:"Operações", role_intern:"Estagiário", role_other:"Outro", atWord:"na", signInContinue:"Inicie sessão para continuar", insightsLabel:"Insights", insightTopSource:"{source} gera {pct}% da sua receita", insightTopCountry:"{country} é o seu principal mercado com {revenue}", insightWinRate:"Taxa de sucesso de {rate}% em todos os leads", insightClosingTime:"Os negócios fecham em {days} dias, em média", clickToExpand:"Clique para ampliar", loadingMap:"A carregar mapa...", mapUnavailable:"Mapa indisponível", lessRevenue:"Menos receita", moreRevenue:"Mais receita", avgClosingTime:"Tempo médio de fecho", dayWord:"dia", daysWordStats:"dias", dealWord:"negócio", dealsWord:"negócios", lightMode:"Claro", darkMode:"Escuro", slogan:"O seu rastreador de leads pessoal",
+      brandName:"PALA CONSULTANCY", appName:"Sistema de Gestão de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Diretor Geral", role_salesmanager:"Gestor de Vendas", role_salesrep:"Representante de Vendas", role_bizdev:"Desenvolvimento de Negócios", role_marketing:"Gestor de Marketing", role_account:"Gestor de Contas", role_consultant:"Consultor", role_operations:"Operações", role_intern:"Estagiário", role_other:"Outro", atWord:"na", signInContinue:"Inicie sessão para continuar", helpMenuLabel:"Ajuda", privacyPolicy:"Política de privacidade", helpCenter:"Centro de ajuda", sendFeedback:"Enviar feedback", insightsLabel:"Insights", insightTopSource:"{source} gera {pct}% da sua receita", insightTopCountry:"{country} é o seu principal mercado com {revenue}", insightWinRate:"Taxa de sucesso de {rate}% em todos os leads", insightClosingTime:"Os negócios fecham em {days} dias, em média", clickToExpand:"Clique para ampliar", loadingMap:"A carregar mapa...", mapUnavailable:"Mapa indisponível", lessRevenue:"Menos receita", moreRevenue:"Mais receita", avgClosingTime:"Tempo médio de fecho", dayWord:"dia", daysWordStats:"dias", dealWord:"negócio", dealsWord:"negócios", lightMode:"Claro", darkMode:"Escuro", slogan:"O seu rastreador de leads pessoal",
       email:"E-mail", password:"Palavra-passe", signIn:"Iniciar sessão", signingIn:"A iniciar sessão...",
       noAccountNote:"Ainda não tem conta? Peça ao seu administrador para criar uma para si.",
       incorrectLogin:"E-mail ou palavra-passe incorretos. Tente novamente.",
@@ -915,7 +947,7 @@
       m1:"janeiro", m2:"fevereiro", m3:"março", m4:"abril", m5:"maio", m6:"junho", m7:"julho", m8:"agosto", m9:"setembro", m10:"outubro", m11:"novembro", m12:"dezembro", useSameLogin:"Use o mesmo início de sessão do rastreador."
     },
     pl: {
-      brandName:"PALA CONSULTANCY", appName:"System Śledzenia Leadów", role_founder:"Założyciel", role_cofounder:"Współzałożyciel", role_ceo:"Dyrektor Generalny", role_md:"Dyrektor Zarządzający", role_salesmanager:"Kierownik Sprzedaży", role_salesrep:"Przedstawiciel Handlowy", role_bizdev:"Rozwój Biznesu", role_marketing:"Kierownik Marketingu", role_account:"Opiekun Klienta", role_consultant:"Konsultant", role_operations:"Operacje", role_intern:"Stażysta", role_other:"Inne", atWord:"w", signInContinue:"Zaloguj się, aby kontynuować", insightsLabel:"Analizy", insightTopSource:"{source} generuje {pct}% Twojego przychodu", insightTopCountry:"{country} to Twój największy rynek z kwotą {revenue}", insightWinRate:"Wskaźnik wygranych {rate}% dla wszystkich leadów", insightClosingTime:"Transakcje zamykają się średnio w {days} dni", clickToExpand:"Kliknij, aby powiększyć", loadingMap:"Ładowanie mapy...", mapUnavailable:"Mapa niedostępna", lessRevenue:"Mniej przychodu", moreRevenue:"Więcej przychodu", avgClosingTime:"Śr. czas zamknięcia", dayWord:"dzień", daysWordStats:"dni", dealWord:"transakcja", dealsWord:"transakcji", lightMode:"Jasny", darkMode:"Ciemny", slogan:"Twój osobisty tracker leadów",
+      brandName:"PALA CONSULTANCY", appName:"System Śledzenia Leadów", role_founder:"Założyciel", role_cofounder:"Współzałożyciel", role_ceo:"Dyrektor Generalny", role_md:"Dyrektor Zarządzający", role_salesmanager:"Kierownik Sprzedaży", role_salesrep:"Przedstawiciel Handlowy", role_bizdev:"Rozwój Biznesu", role_marketing:"Kierownik Marketingu", role_account:"Opiekun Klienta", role_consultant:"Konsultant", role_operations:"Operacje", role_intern:"Stażysta", role_other:"Inne", atWord:"w", signInContinue:"Zaloguj się, aby kontynuować", helpMenuLabel:"Pomoc", privacyPolicy:"Polityka prywatności", helpCenter:"Centrum pomocy", sendFeedback:"Wyślij opinię", insightsLabel:"Analizy", insightTopSource:"{source} generuje {pct}% Twojego przychodu", insightTopCountry:"{country} to Twój największy rynek z kwotą {revenue}", insightWinRate:"Wskaźnik wygranych {rate}% dla wszystkich leadów", insightClosingTime:"Transakcje zamykają się średnio w {days} dni", clickToExpand:"Kliknij, aby powiększyć", loadingMap:"Ładowanie mapy...", mapUnavailable:"Mapa niedostępna", lessRevenue:"Mniej przychodu", moreRevenue:"Więcej przychodu", avgClosingTime:"Śr. czas zamknięcia", dayWord:"dzień", daysWordStats:"dni", dealWord:"transakcja", dealsWord:"transakcji", lightMode:"Jasny", darkMode:"Ciemny", slogan:"Twój osobisty tracker leadów",
       email:"E-mail", password:"Hasło", signIn:"Zaloguj się", signingIn:"Logowanie...",
       noAccountNote:"Nie masz konta? Poproś administratora o jego utworzenie.",
       incorrectLogin:"Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.",
@@ -939,7 +971,7 @@
       m1:"styczeń", m2:"luty", m3:"marzec", m4:"kwiecień", m5:"maj", m6:"czerwiec", m7:"lipiec", m8:"sierpień", m9:"wrzesień", m10:"październik", m11:"listopad", m12:"grudzień", useSameLogin:"Użyj tego samego logowania co w trackerze."
     },
     zh: {
-      brandName:"PALA CONSULTANCY", appName:"潜在客户跟踪系统", role_founder:"创始人", role_cofounder:"联合创始人", role_ceo:"首席执行官", role_md:"总经理", role_salesmanager:"销售经理", role_salesrep:"销售代表", role_bizdev:"业务拓展", role_marketing:"市场经理", role_account:"客户经理", role_consultant:"顾问", role_operations:"运营", role_intern:"实习生", role_other:"其他", atWord:"就职于", signInContinue:"请登录以继续", insightsLabel:"洞察", insightTopSource:"{source} 贡献了您{pct}%的收入", insightTopCountry:"{country} 是您的主要市场，收入为{revenue}", insightWinRate:"所有潜在客户的成交率为{rate}%", insightClosingTime:"交易平均在{days}天内完成", clickToExpand:"点击放大", loadingMap:"地图加载中...", mapUnavailable:"地图不可用", lessRevenue:"收入较低", moreRevenue:"收入较高", avgClosingTime:"平均成交时长", dayWord:"天", daysWordStats:"天", dealWord:"笔交易", dealsWord:"笔交易", lightMode:"浅色", darkMode:"深色", slogan:"您的专属潜在客户跟踪工具",
+      brandName:"PALA CONSULTANCY", appName:"潜在客户跟踪系统", role_founder:"创始人", role_cofounder:"联合创始人", role_ceo:"首席执行官", role_md:"总经理", role_salesmanager:"销售经理", role_salesrep:"销售代表", role_bizdev:"业务拓展", role_marketing:"市场经理", role_account:"客户经理", role_consultant:"顾问", role_operations:"运营", role_intern:"实习生", role_other:"其他", atWord:"就职于", signInContinue:"请登录以继续", helpMenuLabel:"帮助", privacyPolicy:"隐私政策", helpCenter:"帮助中心", sendFeedback:"发送反馈", insightsLabel:"洞察", insightTopSource:"{source} 贡献了您{pct}%的收入", insightTopCountry:"{country} 是您的主要市场，收入为{revenue}", insightWinRate:"所有潜在客户的成交率为{rate}%", insightClosingTime:"交易平均在{days}天内完成", clickToExpand:"点击放大", loadingMap:"地图加载中...", mapUnavailable:"地图不可用", lessRevenue:"收入较低", moreRevenue:"收入较高", avgClosingTime:"平均成交时长", dayWord:"天", daysWordStats:"天", dealWord:"笔交易", dealsWord:"笔交易", lightMode:"浅色", darkMode:"深色", slogan:"您的专属潜在客户跟踪工具",
       email:"电子邮箱", password:"密码", signIn:"登录", signingIn:"正在登录...",
       noAccountNote:"还没有账户？请联系管理员为您创建一个。",
       incorrectLogin:"邮箱或密码错误，请重试。",
@@ -1841,6 +1873,16 @@
     if(themeLightBtn) themeLightBtn.addEventListener('click', ()=>applyTheme('light'));
     if(themeDarkBtn) themeDarkBtn.addEventListener('click', ()=>applyTheme('dark'));
     applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+
+    const helpMenuToggle = document.getElementById('helpMenuToggle');
+    const helpSubmenu = document.getElementById('helpSubmenu');
+    const helpMenuChevron = document.getElementById('helpMenuChevron');
+    if(helpMenuToggle){
+      helpMenuToggle.addEventListener('click', ()=>{
+        helpSubmenu.classList.toggle('open');
+        helpMenuChevron.classList.toggle('open');
+      });
+    }
 
     document.getElementById('settingsClose').addEventListener('click', closeSettings);
     settingsOverlay.addEventListener('click', closeSettings);

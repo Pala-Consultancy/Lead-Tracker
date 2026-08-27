@@ -436,6 +436,19 @@
   .settings-item.danger:hover{background:var(--c-red-bg);}
   .settings-item-icon{font-size:16px;}
   .settings-item-arrow{margin-left:auto;color:var(--slate-light);}
+  .settings-item-arrow.chevron{transition:transform .2s ease;}
+  .settings-item-arrow.chevron.open{transform:rotate(180deg);}
+  .help-submenu{
+    display:none;flex-direction:column;gap:6px;
+    margin:-4px 0 10px 14px;padding:6px 0 6px 20px;border-left:2px solid var(--border);
+  }
+  .help-submenu.open{display:flex;}
+  .help-submenu-item{
+    display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;
+    font-size:13px;font-weight:600;color:var(--slate);text-decoration:none;transition:background .15s, color .15s;
+  }
+  .help-submenu-item:hover{background:var(--c-blue-tint);color:var(--teal);}
+  .help-submenu-item .icon{font-size:14px;}
 
   /* ---------- Edit board modal ---------- */
   .modal-overlay{
@@ -745,6 +758,25 @@
       <span data-i18n="manageTeam">Manage team</span>
       <span class="settings-item-arrow">→</span>
     </a>
+    <button class="settings-item" id="helpMenuToggle">
+      <span class="settings-item-icon">❓</span>
+      <span data-i18n="helpMenuLabel">Help</span>
+      <span class="settings-item-arrow chevron" id="helpMenuChevron">▾</span>
+    </button>
+    <div class="help-submenu" id="helpSubmenu">
+      <a class="help-submenu-item" href="privacy-policy.html">
+        <span class="icon">🔒</span>
+        <span data-i18n="privacyPolicy">Privacy Policy</span>
+      </a>
+      <a class="help-submenu-item" href="help-center.html">
+        <span class="icon">📚</span>
+        <span data-i18n="helpCenter">Help Center</span>
+      </a>
+      <a class="help-submenu-item" href="feedback.html">
+        <span class="icon">💬</span>
+        <span data-i18n="sendFeedback">Send Feedback</span>
+      </a>
+    </div>
     <button class="settings-item danger" id="signOutItem">
       <span class="settings-item-icon">🚪</span>
       <span data-i18n="signOut">Sign out</span>
@@ -762,7 +794,7 @@
   // ---------- i18n ----------
   const TRANSLATIONS = {
     en: {
-      brandName:"PALA CONSULTANCY", appName:"PalaTrack", role_founder:"Founder", role_cofounder:"Co-Founder", role_ceo:"CEO", role_md:"Managing Director", role_salesmanager:"Sales Manager", role_salesrep:"Sales Representative", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Intern", role_other:"Other", atWord:"at", signInContinue:"Sign in to continue", lightMode:"Light", darkMode:"Dark", slogan:"Your personal lead tracker",
+      brandName:"PALA CONSULTANCY", appName:"PalaTrack", role_founder:"Founder", role_cofounder:"Co-Founder", role_ceo:"CEO", role_md:"Managing Director", role_salesmanager:"Sales Manager", role_salesrep:"Sales Representative", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Intern", role_other:"Other", atWord:"at", signInContinue:"Sign in to continue", helpMenuLabel:"Help", privacyPolicy:"Privacy Policy", helpCenter:"Help Center", sendFeedback:"Send Feedback", lightMode:"Light", darkMode:"Dark", slogan:"Your personal lead tracker",
       email:"Email", password:"Password", signIn:"Sign in", signingIn:"Signing in...",
       noAccountNote:"Don't have an account? Ask your admin to create one for you.",
       yourBoardsTitle:"Your Boards", pickBoardSub:"Pick a board to start tracking leads, or create a new one",
@@ -789,7 +821,7 @@
       src_referral:"Referral", src_other:"Other"
     },
     nl: {
-      brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", role_founder:"Oprichter", role_cofounder:"Mede-oprichter", role_ceo:"CEO", role_md:"Algemeen Directeur", role_salesmanager:"Salesmanager", role_salesrep:"Sales medewerker", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Stagiair", role_other:"Overig", atWord:"bij", signInContinue:"Log in om verder te gaan", lightMode:"Licht", darkMode:"Donker", slogan:"Jouw persoonlijke leadtracker",
+      brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", role_founder:"Oprichter", role_cofounder:"Mede-oprichter", role_ceo:"CEO", role_md:"Algemeen Directeur", role_salesmanager:"Salesmanager", role_salesrep:"Sales medewerker", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Stagiair", role_other:"Overig", atWord:"bij", signInContinue:"Log in om verder te gaan", helpMenuLabel:"Help", privacyPolicy:"Privacybeleid", helpCenter:"Helpcentrum", sendFeedback:"Feedback versturen", lightMode:"Licht", darkMode:"Donker", slogan:"Jouw persoonlijke leadtracker",
       email:"E-mail", password:"Wachtwoord", signIn:"Inloggen", signingIn:"Inloggen...",
       noAccountNote:"Nog geen account? Vraag je beheerder om er een voor je aan te maken.",
       yourBoardsTitle:"Jouw Boards", pickBoardSub:"Kies een board om leads bij te houden, of maak een nieuwe aan",
@@ -816,7 +848,7 @@
       src_referral:"Doorverwijzing", src_other:"Overig"
     },
     fr: {
-      brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", role_founder:"Fondateur", role_cofounder:"Co-fondateur", role_ceo:"PDG", role_md:"Directeur général", role_salesmanager:"Responsable commercial", role_salesrep:"Représentant commercial", role_bizdev:"Développement commercial", role_marketing:"Responsable marketing", role_account:"Chargé de compte", role_consultant:"Consultant", role_operations:"Opérations", role_intern:"Stagiaire", role_other:"Autre", atWord:"chez", signInContinue:"Connectez-vous pour continuer", lightMode:"Clair", darkMode:"Sombre", slogan:"Votre suivi de prospects personnel",
+      brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", role_founder:"Fondateur", role_cofounder:"Co-fondateur", role_ceo:"PDG", role_md:"Directeur général", role_salesmanager:"Responsable commercial", role_salesrep:"Représentant commercial", role_bizdev:"Développement commercial", role_marketing:"Responsable marketing", role_account:"Chargé de compte", role_consultant:"Consultant", role_operations:"Opérations", role_intern:"Stagiaire", role_other:"Autre", atWord:"chez", signInContinue:"Connectez-vous pour continuer", helpMenuLabel:"Aide", privacyPolicy:"Politique de confidentialité", helpCenter:"Centre d'aide", sendFeedback:"Envoyer des commentaires", lightMode:"Clair", darkMode:"Sombre", slogan:"Votre suivi de prospects personnel",
       email:"E-mail", password:"Mot de passe", signIn:"Se connecter", signingIn:"Connexion...",
       noAccountNote:"Pas encore de compte ? Demandez à votre administrateur d'en créer un pour vous.",
       yourBoardsTitle:"Vos tableaux", pickBoardSub:"Choisissez un tableau pour suivre vos prospects, ou créez-en un nouveau",
@@ -843,7 +875,7 @@
       src_referral:"Recommandation", src_other:"Autre"
     },
     de: {
-      brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", role_founder:"Gründer", role_cofounder:"Mitgründer", role_ceo:"CEO", role_md:"Geschäftsführer", role_salesmanager:"Sales Manager", role_salesrep:"Vertriebsmitarbeiter", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Berater", role_operations:"Operations", role_intern:"Praktikant", role_other:"Sonstiges", atWord:"bei", signInContinue:"Melde dich an, um fortzufahren", lightMode:"Hell", darkMode:"Dunkel", slogan:"Dein persönlicher Lead-Tracker",
+      brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", role_founder:"Gründer", role_cofounder:"Mitgründer", role_ceo:"CEO", role_md:"Geschäftsführer", role_salesmanager:"Sales Manager", role_salesrep:"Vertriebsmitarbeiter", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Berater", role_operations:"Operations", role_intern:"Praktikant", role_other:"Sonstiges", atWord:"bei", signInContinue:"Melde dich an, um fortzufahren", helpMenuLabel:"Hilfe", privacyPolicy:"Datenschutzrichtlinie", helpCenter:"Hilfe-Center", sendFeedback:"Feedback senden", lightMode:"Hell", darkMode:"Dunkel", slogan:"Dein persönlicher Lead-Tracker",
       email:"E-Mail", password:"Passwort", signIn:"Anmelden", signingIn:"Anmeldung...",
       noAccountNote:"Noch kein Konto? Bitte deinen Admin, eins für dich zu erstellen.",
       yourBoardsTitle:"Deine Boards", pickBoardSub:"Wähle ein Board, um Leads zu erfassen, oder erstelle ein neues",
@@ -870,7 +902,7 @@
       src_referral:"Empfehlung", src_other:"Sonstiges"
     },
     es: {
-      brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Director General", role_salesmanager:"Gerente de Ventas", role_salesrep:"Representante de Ventas", role_bizdev:"Desarrollo de Negocio", role_marketing:"Gerente de Marketing", role_account:"Gerente de Cuentas", role_consultant:"Consultor", role_operations:"Operaciones", role_intern:"Becario", role_other:"Otro", atWord:"en", signInContinue:"Inicia sesión para continuar", lightMode:"Claro", darkMode:"Oscuro", slogan:"Tu rastreador de leads personal",
+      brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Director General", role_salesmanager:"Gerente de Ventas", role_salesrep:"Representante de Ventas", role_bizdev:"Desarrollo de Negocio", role_marketing:"Gerente de Marketing", role_account:"Gerente de Cuentas", role_consultant:"Consultor", role_operations:"Operaciones", role_intern:"Becario", role_other:"Otro", atWord:"en", signInContinue:"Inicia sesión para continuar", helpMenuLabel:"Ayuda", privacyPolicy:"Política de privacidad", helpCenter:"Centro de ayuda", sendFeedback:"Enviar comentarios", lightMode:"Claro", darkMode:"Oscuro", slogan:"Tu rastreador de leads personal",
       email:"Correo electrónico", password:"Contraseña", signIn:"Iniciar sesión", signingIn:"Iniciando sesión...",
       noAccountNote:"¿No tienes una cuenta? Pide a tu administrador que cree una para ti.",
       yourBoardsTitle:"Tus Tableros", pickBoardSub:"Elige un tablero para empezar a seguir leads, o crea uno nuevo",
@@ -898,7 +930,7 @@
     },
     it: {
       brandName:"PALA CONSULTANCY", appName:"Sistema di Gestione dei Lead", role_founder:"Fondatore", role_cofounder:"Co-fondatore", role_ceo:"CEO", role_md:"Direttore Generale", role_salesmanager:"Responsabile Vendite", role_salesrep:"Rappresentante Vendite", role_bizdev:"Sviluppo Commerciale", role_marketing:"Responsabile Marketing", role_account:"Account Manager", role_consultant:"Consulente", role_operations:"Operazioni", role_intern:"Stagista", role_other:"Altro", atWord:"presso",
-      signInContinue:"Accedi per continuare", lightMode:"Chiaro", darkMode:"Scuro", slogan:"Il tuo tracker di lead personale", email:"E-mail", password:"Password", signIn:"Accedi", signingIn:"Accesso in corso...",
+      signInContinue:"Accedi per continuare", helpMenuLabel:"Aiuto", privacyPolicy:"Informativa sulla privacy", helpCenter:"Centro assistenza", sendFeedback:"Invia feedback", lightMode:"Chiaro", darkMode:"Scuro", slogan:"Il tuo tracker di lead personale", email:"E-mail", password:"Password", signIn:"Accedi", signingIn:"Accesso in corso...",
       noAccountNote:"Non hai un account? Chiedi al tuo amministratore di crearne uno per te.",
       yourBoardsTitle:"Le tue bacheche", pickBoardSub:"Scegli una bacheca per iniziare a tracciare i lead, o creane una nuova",
       realtimeUpdates:"Aggiornamenti in tempo reale", newBoardName:"Nome nuova bacheca", boardNamePlaceholder:"es. Lead dal Belgio",
@@ -925,7 +957,7 @@
     },
     pt: {
       brandName:"PALA CONSULTANCY", appName:"Sistema de Gestão de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Diretor Geral", role_salesmanager:"Gestor de Vendas", role_salesrep:"Representante de Vendas", role_bizdev:"Desenvolvimento de Negócios", role_marketing:"Gestor de Marketing", role_account:"Gestor de Contas", role_consultant:"Consultor", role_operations:"Operações", role_intern:"Estagiário", role_other:"Outro", atWord:"na",
-      signInContinue:"Inicie sessão para continuar", lightMode:"Claro", darkMode:"Escuro", slogan:"O seu rastreador de leads pessoal", email:"E-mail", password:"Palavra-passe", signIn:"Iniciar sessão", signingIn:"A iniciar sessão...",
+      signInContinue:"Inicie sessão para continuar", helpMenuLabel:"Ajuda", privacyPolicy:"Política de privacidade", helpCenter:"Centro de ajuda", sendFeedback:"Enviar feedback", lightMode:"Claro", darkMode:"Escuro", slogan:"O seu rastreador de leads pessoal", email:"E-mail", password:"Palavra-passe", signIn:"Iniciar sessão", signingIn:"A iniciar sessão...",
       noAccountNote:"Ainda não tem conta? Peça ao seu administrador para criar uma para si.",
       yourBoardsTitle:"Os seus Quadros", pickBoardSub:"Escolha um quadro para começar a acompanhar leads, ou crie um novo",
       realtimeUpdates:"Atualizações em tempo real", newBoardName:"Nome do novo quadro", boardNamePlaceholder:"ex. Leads da Bélgica",
@@ -952,7 +984,7 @@
     },
     pl: {
       brandName:"PALA CONSULTANCY", appName:"System Śledzenia Leadów", role_founder:"Założyciel", role_cofounder:"Współzałożyciel", role_ceo:"Dyrektor Generalny", role_md:"Dyrektor Zarządzający", role_salesmanager:"Kierownik Sprzedaży", role_salesrep:"Przedstawiciel Handlowy", role_bizdev:"Rozwój Biznesu", role_marketing:"Kierownik Marketingu", role_account:"Opiekun Klienta", role_consultant:"Konsultant", role_operations:"Operacje", role_intern:"Stażysta", role_other:"Inne", atWord:"w",
-      signInContinue:"Zaloguj się, aby kontynuować", lightMode:"Jasny", darkMode:"Ciemny", slogan:"Twój osobisty tracker leadów", email:"E-mail", password:"Hasło", signIn:"Zaloguj się", signingIn:"Logowanie...",
+      signInContinue:"Zaloguj się, aby kontynuować", helpMenuLabel:"Pomoc", privacyPolicy:"Polityka prywatności", helpCenter:"Centrum pomocy", sendFeedback:"Wyślij opinię", lightMode:"Jasny", darkMode:"Ciemny", slogan:"Twój osobisty tracker leadów", email:"E-mail", password:"Hasło", signIn:"Zaloguj się", signingIn:"Logowanie...",
       noAccountNote:"Nie masz konta? Poproś administratora o jego utworzenie.",
       yourBoardsTitle:"Twoje tablice", pickBoardSub:"Wybierz tablicę, aby zacząć śledzić leady, lub utwórz nową",
       realtimeUpdates:"Aktualizacje w czasie rzeczywistym", newBoardName:"Nazwa nowej tablicy", boardNamePlaceholder:"np. Leady z Belgii",
@@ -979,7 +1011,7 @@
     },
     zh: {
       brandName:"PALA CONSULTANCY", appName:"潜在客户跟踪系统", role_founder:"创始人", role_cofounder:"联合创始人", role_ceo:"首席执行官", role_md:"总经理", role_salesmanager:"销售经理", role_salesrep:"销售代表", role_bizdev:"业务拓展", role_marketing:"市场经理", role_account:"客户经理", role_consultant:"顾问", role_operations:"运营", role_intern:"实习生", role_other:"其他", atWord:"就职于",
-      signInContinue:"请登录以继续", lightMode:"浅色", darkMode:"深色", slogan:"您的专属潜在客户跟踪工具", email:"电子邮箱", password:"密码", signIn:"登录", signingIn:"正在登录...",
+      signInContinue:"请登录以继续", helpMenuLabel:"帮助", privacyPolicy:"隐私政策", helpCenter:"帮助中心", sendFeedback:"发送反馈", lightMode:"浅色", darkMode:"深色", slogan:"您的专属潜在客户跟踪工具", email:"电子邮箱", password:"密码", signIn:"登录", signingIn:"正在登录...",
       noAccountNote:"还没有账户？请联系管理员为您创建一个。",
       yourBoardsTitle:"您的看板", pickBoardSub:"选择一个看板开始跟踪潜在客户，或创建一个新看板",
       realtimeUpdates:"实时更新", newBoardName:"新看板名称", boardNamePlaceholder:"例如：比利时潜在客户",
@@ -1357,6 +1389,16 @@
     if(themeLightBtn) themeLightBtn.addEventListener('click', ()=>applyTheme('light'));
     if(themeDarkBtn) themeDarkBtn.addEventListener('click', ()=>applyTheme('dark'));
     applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+
+    const helpMenuToggle = document.getElementById('helpMenuToggle');
+    const helpSubmenu = document.getElementById('helpSubmenu');
+    const helpMenuChevron = document.getElementById('helpMenuChevron');
+    if(helpMenuToggle){
+      helpMenuToggle.addEventListener('click', ()=>{
+        helpSubmenu.classList.toggle('open');
+        helpMenuChevron.classList.toggle('open');
+      });
+    }
 
     document.getElementById('settingsClose').addEventListener('click', closeSettings);
     settingsOverlay.addEventListener('click', closeSettings);
