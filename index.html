@@ -51,13 +51,15 @@
 
   /* ---------- Hero ---------- */
   .hero{
+    --parallax-x:0px;--parallax-y:0px;
     position:relative;overflow:hidden;padding:100px 6vw 90px;text-align:center;
   }
   .hero::before{
-    content:"";position:absolute;top:-30%;left:50%;transform:translateX(-50%);
+    content:"";position:absolute;top:-30%;left:50%;
+    transform:translateX(calc(-50% + var(--parallax-x))) translateY(var(--parallax-y));
     width:1100px;height:1100px;border-radius:50%;
     background:radial-gradient(circle, rgba(27,89,165,0.10) 0%, rgba(255,157,0,0.06) 45%, transparent 70%);
-    z-index:0;pointer-events:none;
+    z-index:0;pointer-events:none;transition:transform .3s ease-out;
   }
   .hero-content{position:relative;z-index:1;max-width:760px;margin:0 auto;}
   .hero-eyebrow{
@@ -121,6 +123,43 @@
   .pill-call{background:#EFE5FA;color:#7A4FB5;}
   .pill-new{background:#E3EEFA;color:#1B59A5;}
 
+  .preview-tabs{display:flex;gap:8px;margin-bottom:14px;justify-content:center;}
+  .preview-tab{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:700;color:var(--slate);
+    background:var(--panel);border:1px solid var(--border);border-radius:20px;
+    padding:8px 18px;cursor:pointer;transition:background .15s, color .15s, border-color .15s;
+  }
+  .preview-tab:hover{border-color:var(--teal);color:var(--teal);}
+  .preview-tab.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+  .preview-board{display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;}
+  .preview-board-col{background:#F6FAFE;border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .preview-board-col-head{
+    display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:10px;
+  }
+  .preview-board-col-head .dot{width:8px;height:8px;border-radius:50%;}
+  .preview-board-col-head .count{margin-left:auto;color:var(--slate-light);font-weight:600;}
+  .preview-board-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:9px 11px;font-size:12.5px;font-weight:600;margin-bottom:8px;
+  }
+  .preview-board-card small{display:block;font-weight:500;color:var(--slate-light);font-size:11px;margin-top:2px;}
+
+  .preview-chart{
+    display:flex;align-items:flex-end;gap:14px;height:120px;padding:10px 10px 0;margin-bottom:18px;
+  }
+  .preview-bar-col{
+    flex:1;background:linear-gradient(180deg, #7A9FD4, #1B59A5);border-radius:6px 6px 0 0;
+    position:relative;min-height:8px;transition:height 1s cubic-bezier(.22,1,.36,1);
+  }
+  .preview-bar-col.tall{background:linear-gradient(180deg, #FFC875, #FF9D00);}
+  .preview-bar-col span{
+    position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:11px;color:var(--slate-light);font-weight:600;
+  }
+  .preview-ring-row{display:flex;gap:28px;justify-content:center;margin-top:14px;}
+  .preview-ring{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;color:var(--ink);}
+  .preview-ring svg{width:42px;height:42px;}
+
   /* ---------- Features ---------- */
   .section{padding:90px 6vw;max-width:1180px;margin:0 auto;}
   .section-head{text-align:center;max-width:600px;margin:0 auto 56px;}
@@ -135,8 +174,11 @@
   .feature-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:22px;}
   .feature-card{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    padding:28px 26px;box-shadow:var(--shadow);transition:transform .18s, box-shadow .18s;
+    padding:28px 26px;box-shadow:var(--shadow);
+    transition:transform .18s, box-shadow .18s, opacity .5s ease, translate .5s ease;
+    opacity:0;translate:0 20px;
   }
+  .feature-card.revealed{opacity:1;translate:0 0;}
   .feature-card:hover{transform:translateY(-5px);box-shadow:0 14px 30px rgba(27,36,48,0.1);}
   .feature-icon{
     width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;
@@ -201,27 +243,68 @@
     </div>
 
     <div class="preview-wrap">
+      <div class="preview-tabs">
+        <button class="preview-tab active" data-view="leads">All leads</button>
+        <button class="preview-tab" data-view="board">Pipeline board</button>
+        <button class="preview-tab" data-view="stats">Statistics</button>
+      </div>
       <div class="preview-card">
         <div class="preview-bar"></div>
         <div class="preview-body">
           <div class="preview-row">
-            <div class="preview-stat"><div class="k">Total leads</div><div class="v">128</div></div>
-            <div class="preview-stat"><div class="k">Won</div><div class="v">34</div></div>
-            <div class="preview-stat"><div class="k">Total revenue</div><div class="v">$186,400</div></div>
-            <div class="preview-stat"><div class="k">Avg. closing time</div><div class="v">12 days</div></div>
+            <div class="preview-stat"><div class="k">Total leads</div><div class="v" data-count="128">0</div></div>
+            <div class="preview-stat"><div class="k">Won</div><div class="v" data-count="34">0</div></div>
+            <div class="preview-stat"><div class="k">Total revenue</div><div class="v" data-count="186400" data-prefix="$">$0</div></div>
+            <div class="preview-stat"><div class="k">Avg. closing time</div><div class="v" data-count="12" data-suffix=" days">0</div></div>
           </div>
-          <div class="preview-table">
-            <div class="preview-table-head">
-              <span>Lead</span><span>Source</span><span>Status</span><span>Revenue</span>
+
+          <div class="preview-view" id="view-leads">
+            <div class="preview-table">
+              <div class="preview-table-head">
+                <span>Lead</span><span>Source</span><span>Status</span><span>Revenue</span>
+              </div>
+              <div class="preview-table-row">
+                <span>Maria Novak — Northbridge Retail</span><span>LinkedIn</span><span><span class="preview-pill pill-won">Won</span></span><span>$18,200</span>
+              </div>
+              <div class="preview-table-row">
+                <span>Tomasz Wolski — Halden Group</span><span>Referral</span><span><span class="preview-pill pill-call">Call booked</span></span><span>—</span>
+              </div>
+              <div class="preview-table-row">
+                <span>Elena Rossi — Vertex Studio</span><span>Website</span><span><span class="preview-pill pill-new">New</span></span><span>—</span>
+              </div>
             </div>
-            <div class="preview-table-row">
-              <span>Maria Novak — Northbridge Retail</span><span>LinkedIn</span><span><span class="preview-pill pill-won">Won</span></span><span>$18,200</span>
+          </div>
+
+          <div class="preview-view" id="view-board" style="display:none">
+            <div class="preview-board">
+              <div class="preview-board-col">
+                <div class="preview-board-col-head"><span class="dot" style="background:#1B59A5"></span>New <span class="count">6</span></div>
+                <div class="preview-board-card">Elena Rossi<small>Vertex Studio</small></div>
+                <div class="preview-board-card">Jonas Weber<small>Nordkap AS</small></div>
+              </div>
+              <div class="preview-board-col">
+                <div class="preview-board-col-head"><span class="dot" style="background:#7A4FB5"></span>Call booked <span class="count">3</span></div>
+                <div class="preview-board-card">Tomasz Wolski<small>Halden Group</small></div>
+              </div>
+              <div class="preview-board-col">
+                <div class="preview-board-col-head"><span class="dot" style="background:#1F5C4F"></span>Won <span class="count">34</span></div>
+                <div class="preview-board-card">Maria Novak<small>Northbridge Retail</small></div>
+                <div class="preview-board-card">Sofia Almeida<small>Ravenscroft &amp; Co</small></div>
+              </div>
             </div>
-            <div class="preview-table-row">
-              <span>Tomasz Wolski — Halden Group</span><span>Referral</span><span><span class="preview-pill pill-call">Call booked</span></span><span>—</span>
+          </div>
+
+          <div class="preview-view" id="view-stats" style="display:none">
+            <div class="preview-chart">
+              <div class="preview-bar-col" style="height:38%"><span>Apr</span></div>
+              <div class="preview-bar-col" style="height:52%"><span>May</span></div>
+              <div class="preview-bar-col" style="height:44%"><span>Jun</span></div>
+              <div class="preview-bar-col" style="height:70%"><span>Jul</span></div>
+              <div class="preview-bar-col tall" style="height:100%"><span>Aug</span></div>
             </div>
-            <div class="preview-table-row">
-              <span>Elena Rossi — Vertex Studio</span><span>Website</span><span><span class="preview-pill pill-new">New</span></span><span>—</span>
+            <div class="preview-ring-row">
+              <div class="preview-ring"><svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="17" fill="none" stroke="#E3EEFA" stroke-width="5"/><circle cx="21" cy="21" r="17" fill="none" stroke="#1B59A5" stroke-width="5" stroke-dasharray="76 107" stroke-linecap="round" transform="rotate(-90 21 21)"/></svg><span>71% accept rate</span></div>
+              <div class="preview-ring"><svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="17" fill="none" stroke="#DEF0EA" stroke-width="5"/><circle cx="21" cy="21" r="17" fill="none" stroke="#1F5C4F" stroke-width="5" stroke-dasharray="66 107" stroke-linecap="round" transform="rotate(-90 21 21)"/></svg><span>62% win rate</span></div>
             </div>
           </div>
         </div>
@@ -292,5 +375,77 @@
     This PalaTrack system is the exclusive property of Pala Consultancy B.V.
   </footer>
 
+<script>
+  // ---------- Preview tabs ----------
+  const previewTabs = document.querySelectorAll('.preview-tab');
+  const previewViews = { leads: document.getElementById('view-leads'), board: document.getElementById('view-board'), stats: document.getElementById('view-stats') };
+  previewTabs.forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      previewTabs.forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      Object.values(previewViews).forEach(v=>{ if(v) v.style.display = 'none'; });
+      const target = previewViews[tab.dataset.view];
+      if(target) target.style.display = 'block';
+      if(tab.dataset.view === 'stats'){
+        document.querySelectorAll('.preview-bar-col').forEach(bar=>{
+          const h = bar.style.height;
+          bar.style.height = '4px';
+          requestAnimationFrame(()=> requestAnimationFrame(()=>{ bar.style.height = h; }));
+        });
+      }
+    });
+  });
+
+  // ---------- Count-up numbers ----------
+  function animateCount(el){
+    const target = parseFloat(el.dataset.count);
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    const duration = 1100;
+    const start = performance.now();
+    function tick(now){
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(target * eased);
+      el.textContent = prefix + value.toLocaleString() + suffix;
+      if(progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  const countEls = document.querySelectorAll('[data-count]');
+  const countObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        animateCount(entry.target);
+        countObserver.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.4});
+  countEls.forEach(el=>countObserver.observe(el));
+
+  // ---------- Feature card scroll reveal ----------
+  const revealEls = document.querySelectorAll('.feature-card');
+  const revealObserver = new IntersectionObserver((entries)=>{
+    entries.forEach((entry, i)=>{
+      if(entry.isIntersecting){
+        setTimeout(()=> entry.target.classList.add('revealed'), i * 60);
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.15});
+  revealEls.forEach(el=>revealObserver.observe(el));
+
+  // ---------- Hero mouse parallax ----------
+  const hero = document.querySelector('.hero');
+  if(hero){
+    hero.addEventListener('mousemove', (e)=>{
+      const rect = hero.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 24;
+      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 24;
+      hero.style.setProperty('--parallax-x', x + 'px');
+      hero.style.setProperty('--parallax-y', y + 'px');
+    });
+  }
+</script>
 </body>
 </html>
