@@ -172,22 +172,63 @@
   }
   .section-head p{font-size:16px;color:var(--slate);line-height:1.6;margin:0;}
 
-  .feature-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:22px;}
+  .feature-grid{
+    display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;
+    grid-template-areas:
+      "boards boards alexandre"
+      "pipeline stats alexandre"
+      "languages team dark";
+  }
   .feature-card{
-    background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    padding:28px 26px;box-shadow:var(--shadow);
-    transition:transform .18s, box-shadow .18s, opacity .5s ease, translate .5s ease;
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:28px 26px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+    transition:transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease, opacity .5s ease, translate .5s ease;
     opacity:0;translate:0 20px;
   }
   .feature-card.revealed{opacity:1;translate:0 0;}
-  .feature-card:hover{transform:translateY(-5px);box-shadow:0 14px 30px rgba(27,36,48,0.1);}
-  .feature-icon{
-    width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;
-    margin-bottom:18px;
+  .feature-card:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(27,36,48,0.12);}
+  .feature-card[data-area="boards"]{grid-area:boards;display:flex;align-items:center;gap:28px;}
+  .feature-card[data-area="boards"] .feature-icon{margin-bottom:0;flex-shrink:0;}
+  .feature-card[data-area="boards"] .feature-text{flex:1;}
+  .feature-card[data-area="pipeline"]{grid-area:pipeline;}
+  .feature-card[data-area="stats"]{grid-area:stats;}
+  .feature-card[data-area="languages"]{grid-area:languages;}
+  .feature-card[data-area="team"]{grid-area:team;}
+  .feature-card[data-area="dark"]{grid-area:dark;}
+  .feature-card[data-area="alexandre"]{
+    grid-area:alexandre;display:flex;flex-direction:column;
+    background:linear-gradient(160deg, #EFE5FA 0%, var(--panel) 60%);
   }
-  .feature-icon svg{width:22px;height:22px;}
+  .feature-card[data-area="alexandre"]::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg, var(--teal), #7A4FB5, var(--amber));
+  }
+  .alexandre-card-photo{
+    width:56px;height:56px;border-radius:50%;object-fit:cover;margin-bottom:16px;
+    box-shadow:0 6px 16px rgba(122,79,181,0.3);
+  }
+  .alexandre-card-badge{
+    display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+    color:#7A4FB5;background:rgba(122,79,181,0.12);padding:4px 10px;border-radius:20px;
+    margin-top:auto;align-self:flex-start;text-transform:uppercase;letter-spacing:.04em;
+  }
+  .feature-icon{
+    width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;position:relative;
+  }
+  .feature-icon::after{
+    content:"";position:absolute;inset:-6px;border-radius:16px;
+    background:inherit;opacity:0.35;filter:blur(8px);z-index:-1;
+  }
+  .feature-icon svg{width:22px;height:22px;position:relative;z-index:1;}
+  .feature-card:hover .feature-icon{transform:scale(1.08) rotate(-4deg);transition:transform .25s ease;}
   .feature-card h3{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;margin:0 0 10px;}
+  .feature-card[data-area="boards"] h3{font-size:19px;}
   .feature-card p{font-size:14.5px;line-height:1.6;color:var(--slate);margin:0;}
+  @media (max-width:760px){
+    .feature-grid{grid-template-columns:1fr;grid-template-areas:"boards" "alexandre" "pipeline" "stats" "languages" "team" "dark";}
+    .feature-card[data-area="boards"]{flex-direction:column;text-align:center;}
+  }
 
   /* ---------- Bottom CTA ---------- */
   .alexandre-demo-section{padding-top:20px;}
@@ -389,54 +430,55 @@
       <p>No spreadsheets, no separate tools for reporting. Just one shared system that stays in sync as your team works.</p>
     </div>
     <div class="feature-grid">
-      <div class="feature-card">
+      <div class="feature-card" data-area="boards">
         <div class="feature-icon" style="background:#E3EEFA;color:#1B59A5">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
-        <h3>Real-time boards</h3>
-        <p>Every change syncs instantly for the whole team — no refreshing, no waiting, no out-of-date spreadsheets.</p>
+        <div class="feature-text">
+          <h3>Real-time boards</h3>
+          <p>Every change syncs instantly for the whole team — no refreshing, no waiting, no out-of-date spreadsheets.</p>
+        </div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" data-area="alexandre">
+        <img src="data:image/jpeg;base64,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" alt="Alexandre" class="alexandre-card-photo">
+        <h3>Alexandre, your AI assistant</h3>
+        <p>Understands your pipeline, flags leads that need a follow-up, and drafts outreach messages to help you close deals faster.</p>
+        <span class="alexandre-card-badge">✦ Built in, always on</span>
+      </div>
+      <div class="feature-card" data-area="pipeline">
         <div class="feature-icon" style="background:#EFE5FA;color:#7A4FB5">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         </div>
         <h3>Pipeline &amp; monthly views</h3>
         <p>Track leads on a drag-and-drop pipeline board, or browse them broken down month by month.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" data-area="stats">
         <div class="feature-icon" style="background:#DEF0EA;color:#1F5C4F">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
         </div>
         <h3>Statistics that matter</h3>
         <p>Win rates, revenue by month, average closing time, and a world map showing where the money comes from.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" data-area="languages">
         <div class="feature-icon" style="background:#FFF1DC;color:#FF9D00">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c2.5 2.5 3.8 5.7 3.8 10s-1.3 7.5-3.8 10c-2.5-2.5-3.8-5.7-3.8-10s1.3-7.5 3.8-10z"/></svg>
         </div>
         <h3>Nine languages</h3>
         <p>Every screen switches instantly between English, Dutch, French, German, Spanish, Italian, Portuguese, Polish, and Chinese.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" data-area="team">
         <div class="feature-icon" style="background:#FBE4E2;color:#C0392B">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
         <h3>Team &amp; role management</h3>
         <p>Invite teammates by email, assign roles, and control who's allowed to make changes — all from one page.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" data-area="dark">
         <div class="feature-icon" style="background:#E9E9E9;color:#222222">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </div>
         <h3>Light &amp; dark mode</h3>
         <p>Switch themes any time from Settings — your preference is remembered everywhere you go.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:#EFE5FA;color:#7A4FB5">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M6 12v1a6 6 0 0 0 12 0v-1M12 19v3M8 22h8"/></svg>
-        </div>
-        <h3>Alexandre, your AI assistant</h3>
-        <p>A built-in AI assistant who understands your pipeline, flags leads that need a follow-up, and drafts outreach messages to help you close deals faster.</p>
       </div>
     </div>
   </section>
