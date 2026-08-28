@@ -275,7 +275,7 @@
   .pv-funnel-row{display:flex;align-items:center;gap:10px;}
   .pv-funnel-label{width:78px;flex-shrink:0;font-size:10.5px;font-weight:700;color:var(--slate);}
   .pv-funnel-track{flex:1;height:9px;background:#F6FAFE;border-radius:5px;overflow:hidden;}
-  .pv-funnel-fill{height:100%;border-radius:5px;}
+  .pv-funnel-fill{height:100%;border-radius:5px;transition:width 1s cubic-bezier(.22,1,.36,1);}
   @media (max-width:800px){
     .product-preview-row, .product-preview-row.reverse{grid-template-columns:1fr;}
     .product-preview-row.reverse .product-preview-visual{order:0;}
@@ -588,10 +588,10 @@
               <span>LinkedIn drives 45% of your revenue · 62% win rate · Belgium is your top market</span>
             </div>
             <div class="pv-funnel">
-              <div class="pv-funnel-row"><span class="pv-funnel-label">New</span><div class="pv-funnel-track"><div class="pv-funnel-fill" style="width:100%;background:#1B59A5"></div></div></div>
-              <div class="pv-funnel-row"><span class="pv-funnel-label">Contacted</span><div class="pv-funnel-track"><div class="pv-funnel-fill" style="width:72%;background:#7A4FB5"></div></div></div>
-              <div class="pv-funnel-row"><span class="pv-funnel-label">Call booked</span><div class="pv-funnel-track"><div class="pv-funnel-fill" style="width:44%;background:#A9660F"></div></div></div>
-              <div class="pv-funnel-row"><span class="pv-funnel-label">Won</span><div class="pv-funnel-track"><div class="pv-funnel-fill" style="width:27%;background:#1F5C4F"></div></div></div>
+              <div class="pv-funnel-row"><span class="pv-funnel-label">New</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="100" style="width:0%;background:#1B59A5"></div></div></div>
+              <div class="pv-funnel-row"><span class="pv-funnel-label">Contacted</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="72" style="width:0%;background:#7A4FB5"></div></div></div>
+              <div class="pv-funnel-row"><span class="pv-funnel-label">Call booked</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="44" style="width:0%;background:#A9660F"></div></div></div>
+              <div class="pv-funnel-row"><span class="pv-funnel-label">Won</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="27" style="width:0%;background:#1F5C4F"></div></div></div>
             </div>
           </div>
         </div>
@@ -725,6 +725,58 @@
         parallaxPending = false;
       });
     });
+  }
+
+  // ---------- Product preview animations (count-up + funnel grow-in) ----------
+  function animatePreviewNumberText(el, duration){
+    duration = duration || 1000;
+    const original = el.textContent.trim();
+    const match = original.match(/^(.*?)([\d][\d,]*\.?\d*)(.*)$/s);
+    if(!match) return;
+    const prefix = match[1];
+    const rawNum = match[2];
+    const suffix = match[3];
+    const target = parseFloat(rawNum.replace(/,/g, ''));
+    if(isNaN(target)) return;
+    const hasCommas = rawNum.includes(',');
+    const decimalPart = rawNum.split('.')[1];
+    const decimals = decimalPart ? decimalPart.length : 0;
+    const start = performance.now();
+    function tick(now){
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = target * eased;
+      let numStr;
+      if(decimals > 0){
+        numStr = value.toFixed(decimals);
+        if(hasCommas) numStr = Number(numStr).toLocaleString(undefined, {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+      } else {
+        const rounded = Math.round(value);
+        numStr = hasCommas ? rounded.toLocaleString() : String(rounded);
+      }
+      el.textContent = prefix + numStr + suffix;
+      if(progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  const previewSection = document.querySelector('.product-preview-section');
+  if(previewSection){
+    const previewObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          entry.target.querySelectorAll('.pv-stat-v-lg').forEach(el=>animatePreviewNumberText(el));
+          entry.target.querySelectorAll('.pv-funnel-fill[data-target-width]').forEach(bar=>{
+            const target = bar.dataset.targetWidth;
+            requestAnimationFrame(()=> requestAnimationFrame(()=>{
+              bar.style.width = target + '%';
+            }));
+          });
+          previewObserver.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.3});
+    previewObserver.observe(previewSection);
   }
 
   // ---------- Meet Alexandre demo ----------
