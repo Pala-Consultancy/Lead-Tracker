@@ -163,6 +163,10 @@
 
   /* ---------- Features ---------- */
   .section{padding:90px 6vw;max-width:1180px;margin:0 auto;}
+  .section-tinted{
+    background:linear-gradient(180deg, rgba(27,89,165,0.035) 0%, rgba(122,79,181,0.02) 100%);
+    border-radius:32px;max-width:calc(1180px + 6vw);
+  }
   .section-head{text-align:center;max-width:600px;margin:0 auto 56px;}
   .section-eyebrow{
     font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:12px;
@@ -276,6 +280,46 @@
   .pv-funnel-label{width:78px;flex-shrink:0;font-size:10.5px;font-weight:700;color:var(--slate);}
   .pv-funnel-track{flex:1;height:9px;background:#F6FAFE;border-radius:5px;overflow:hidden;}
   .pv-funnel-fill{height:100%;border-radius:5px;transition:width 5s cubic-bezier(.22,1,.36,1);}
+  .pv-boards-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  .pv-board-card{
+    border:1px solid var(--border);border-radius:10px;padding:16px 14px;position:relative;overflow:hidden;
+    background:var(--panel);transition:transform .18s ease;
+  }
+  .pv-board-card:hover{transform:translateY(-3px);}
+  .pv-board-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--pv-accent, var(--teal));
+  }
+  .pv-board-name{font-size:13px;font-weight:700;color:var(--ink);margin-top:4px;}
+  .pv-board-meta{font-size:10.5px;color:var(--slate-light);margin-top:4px;font-family:'IBM Plex Mono',monospace;}
+  .pv-board-add{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    border-style:dashed;color:var(--slate-light);
+  }
+  .pv-board-add-icon{font-size:20px;line-height:1;color:var(--slate-light);}
+  .pv-board-add .pv-board-name{color:var(--slate-light);font-weight:600;margin-top:0;}
+
+  .pv-mini-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:10px;}
+  .pv-mini-card{display:flex;flex-direction:column;gap:10px;}
+  .pv-mini-text{font-size:13.5px;color:var(--slate);line-height:1.55;margin:0;}
+  .pv-mini-window .pv-window-body{padding:14px;}
+  .pv-kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .pv-kanban-col{background:#F6FAFE;border:1px solid var(--border);border-radius:8px;padding:8px;}
+  .pv-kanban-head{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .pv-kanban-head .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .pv-kanban-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:6px 7px;font-size:10.5px;font-weight:600;margin-bottom:5px;}
+  .pv-team-list{display:flex;flex-direction:column;gap:10px;}
+  .pv-team-row{display:flex;align-items:center;gap:10px;}
+  .pv-team-avatar{
+    width:28px;height:28px;border-radius:50%;background:#E3EEFA;color:#1B59A5;
+    display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0;
+  }
+  .pv-team-name{font-size:12px;font-weight:700;color:var(--ink);}
+  .pv-team-tag{font-size:8.5px;font-weight:700;color:#A9660F;background:#FBEEDC;padding:2px 6px;border-radius:20px;margin-left:5px;text-transform:uppercase;}
+  .pv-team-email{font-size:10px;color:var(--slate-light);margin-top:1px;}
+  .pv-team-role{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--slate);flex-shrink:0;}
+  @media (max-width:800px){
+    .pv-mini-row{grid-template-columns:1fr;}
+  }
   @media (max-width:800px){
     .product-preview-row, .product-preview-row.reverse{grid-template-columns:1fr;}
     .product-preview-row.reverse .product-preview-visual{order:0;}
@@ -540,7 +584,40 @@
     </div>
   </section>
 
-  <section class="section product-preview-section">
+  <section class="section product-preview-section section-tinted">
+    <div class="product-preview-row">
+      <div class="product-preview-text">
+        <div class="section-eyebrow">Your boards</div>
+        <h2>One shared space per client, campaign, or team</h2>
+        <p>Every board is its own self-contained pipeline — its own leads, its own defaults, its own stats. Create one for each client, country, or campaign, and switch between them in a click.</p>
+      </div>
+      <div class="product-preview-visual">
+        <div class="pv-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-boards-grid">
+              <div class="pv-board-card" style="--pv-accent:#1B59A5">
+                <div class="pv-board-name">Belgium Clients</div>
+                <div class="pv-board-meta">42 leads · $86,200</div>
+              </div>
+              <div class="pv-board-card" style="--pv-accent:#7A4FB5">
+                <div class="pv-board-name">US Outreach Q3</div>
+                <div class="pv-board-meta">28 leads · $54,000</div>
+              </div>
+              <div class="pv-board-card" style="--pv-accent:#1F5C4F">
+                <div class="pv-board-name">Referral Program</div>
+                <div class="pv-board-meta">19 leads · $32,100</div>
+              </div>
+              <div class="pv-board-card pv-board-add">
+                <div class="pv-board-add-icon">+</div>
+                <div class="pv-board-name">New board</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="product-preview-row">
       <div class="product-preview-text">
         <div class="section-eyebrow">Your lead tracker</div>
@@ -598,6 +675,58 @@
               <div class="pv-funnel-row"><span class="pv-funnel-label">Contacted</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="72" style="width:0%;background:#7A4FB5"></div></div></div>
               <div class="pv-funnel-row"><span class="pv-funnel-label">Call booked</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="44" style="width:0%;background:#A9660F"></div></div></div>
               <div class="pv-funnel-row"><span class="pv-funnel-label">Won</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="27" style="width:0%;background:#1F5C4F"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-mini-row">
+      <div class="pv-mini-card">
+        <div class="pv-mini-header">
+          <span class="section-eyebrow" style="margin:0">Pipeline board</span>
+        </div>
+        <p class="pv-mini-text">Drag leads between stages as deals progress — see your whole pipeline at a glance.</p>
+        <div class="pv-window pv-mini-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-kanban">
+              <div class="pv-kanban-col">
+                <div class="pv-kanban-head"><span class="dot" style="background:#1B59A5"></span>New</div>
+                <div class="pv-kanban-card">Elena Rossi</div>
+                <div class="pv-kanban-card">Jonas Weber</div>
+              </div>
+              <div class="pv-kanban-col">
+                <div class="pv-kanban-head"><span class="dot" style="background:#7A4FB5"></span>Call booked</div>
+                <div class="pv-kanban-card">Tomasz Wolski</div>
+              </div>
+              <div class="pv-kanban-col">
+                <div class="pv-kanban-head"><span class="dot" style="background:#1F5C4F"></span>Won</div>
+                <div class="pv-kanban-card">Maria Novak</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pv-mini-card">
+        <div class="pv-mini-header">
+          <span class="section-eyebrow" style="margin:0">Team management</span>
+        </div>
+        <p class="pv-mini-text">Invite teammates, assign roles, and control who's allowed to make changes.</p>
+        <div class="pv-window pv-mini-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-team-list">
+              <div class="pv-team-row">
+                <div class="pv-team-avatar">GO</div>
+                <div><div class="pv-team-name">Gabriele Oizaz <span class="pv-team-tag">Admin</span></div><div class="pv-team-email">gabriele@pala-consultancy.com</div></div>
+                <div class="pv-team-role">Co-Founder</div>
+              </div>
+              <div class="pv-team-row">
+                <div class="pv-team-avatar">TW</div>
+                <div><div class="pv-team-name">Tomasz Wolski</div><div class="pv-team-email">tomasz@pala-consultancy.com</div></div>
+                <div class="pv-team-role">Sales Manager</div>
+              </div>
             </div>
           </div>
         </div>
