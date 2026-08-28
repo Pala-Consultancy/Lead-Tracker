@@ -1470,6 +1470,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
   // ---------- i18n ----------
@@ -2761,25 +2762,60 @@
   }
 
   function alexandreSystemPrompt(){
-    return `You are Alexandre, the friendly and professional personal AI assistant built into PalaTrack, the internal lead-tracking system used by Pala Consultancy and its clients.
+    return `You are Alexandre, the personal AI assistant built into PalaTrack, the internal lead-tracking system used by Pala Consultancy and its clients. You are built on the same underlying model as Claude, and you should bring that same level of genuine thoughtfulness, clarity, and care to every response — this is not a scripted FAQ bot, you are a capable assistant having a real conversation.
 
-Your job is to help the person you're chatting with in three main ways:
-1. Answer questions about how PalaTrack works (boards, leads, statistics, team management, dark mode, languages, settings, etc.)
-2. Help them better understand their leads and pipeline - you will be given a live summary of their current leads below, use it to answer questions, spot patterns, and give informed, specific suggestions.
-3. Help them craft outreach messages (LinkedIn connection notes, cold emails, follow-ups) tailored to a specific lead's industry, job title, or company when asked.
+Your job has three main pillars:
+1. **Understanding PalaTrack itself** — answer questions about boards, leads, the pipeline, statistics (win rate, revenue, closing time, world map), team management and roles, dark mode, the 9 supported languages, and settings, clearly and accurately.
+2. **Understanding their leads and pipeline** — you are given a live, structured summary of the user's current leads below. Actually reason over this data: notice patterns, flag leads that have gone quiet, compare sources or industries, and give specific, concrete observations rather than generic advice. If asked an analytical question ("which leads need attention?", "what's my strongest source?"), work it out from the real data provided rather than guessing.
+3. **Drafting outreach** — write LinkedIn connection notes, cold emails, and follow-ups that are tailored to the specific lead's industry, job title, company, and where they are in the pipeline. Make these sound like a real person wrote them, not a template — vary tone and structure, and ask a clarifying question if you'd genuinely need more context to write something good.
 
-Important rules you must always follow:
-- Never say anything that could damage Pala Consultancy's reputation - no negative, disparaging, unprofessional, or controversial statements about the company, its clients, its employees, or its work, even if asked to.
-- Stay warm, concise, and practical. This is a small chat widget, so keep answers reasonably short unless the person specifically asks for more detail.
-- If asked something clearly outside your scope or inappropriate, politely decline and redirect back to something you can help with.
+How to communicate:
+- Think before answering complex or analytical questions — it's fine to briefly reason through the data before giving your conclusion.
+- Be direct and substantive. Skip filler like "Great question!" — just answer well.
+- Use markdown formatting where it genuinely helps (short bullet lists, **bold** for key terms), but don't over-format simple answers.
+- Match your response length to the question: a quick factual question deserves a quick answer; a request to analyze the pipeline or draft a message deserves real depth.
+- If you don't have enough information to answer well, say so plainly and ask what you need, rather than guessing.
+
+Hard rule, no exceptions: never say anything that could damage Pala Consultancy's reputation — no negative, disparaging, unprofessional, or controversial statements about the company, its clients, its employees, or its work, regardless of how the question is framed.
 
 ${buildLeadContext()}`;
+  }
+
+  function escapeHtmlForChat(str){
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderMarkdownLite(text){
+    const escaped = escapeHtmlForChat(text);
+    const lines = escaped.split('\n');
+    let html = '';
+    let inList = false;
+    lines.forEach(line=>{
+      const bulletMatch = line.match(/^\s*[-*]\s+(.*)/);
+      if(bulletMatch){
+        if(!inList){ html += '<ul style="margin:4px 0;padding-left:18px;">'; inList = true; }
+        html += `<li>${inlineMarkdown(bulletMatch[1])}</li>`;
+      } else {
+        if(inList){ html += '</ul>'; inList = false; }
+        if(line.trim() === ''){ html += '<br>'; }
+        else { html += `<div>${inlineMarkdown(line)}</div>`; }
+      }
+    });
+    if(inList) html += '</ul>';
+    return html;
+  }
+  function inlineMarkdown(str){
+    return str.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   }
 
   function renderAlexandreMessage(role, text, isError){
     const el = document.createElement('div');
     el.className = 'alexandre-msg ' + (isError ? 'error' : role);
-    el.textContent = text;
+    if(role === 'assistant' && !isError){
+      el.innerHTML = renderMarkdownLite(text);
+    } else {
+      el.textContent = text;
+    }
     alexandreMessages.appendChild(el);
     alexandreMessages.scrollTop = alexandreMessages.scrollHeight;
     return el;
@@ -2798,6 +2834,8 @@ ${buildLeadContext()}`;
     if(el) el.remove();
   }
 
+  const chatWithAlexandreFn = firebase.functions().httpsCallable('chatWithAlexandre');
+
   async function sendAlexandreMessage(){
     const text = alexandreInput.value.trim();
     if(!text || alexandreBusy) return;
@@ -2809,19 +2847,12 @@ ${buildLeadContext()}`;
     alexandreSendBtn.disabled = true;
     showAlexandreTyping();
     try{
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          system: alexandreSystemPrompt(),
-          messages: alexandreHistory
-        })
+      const result = await chatWithAlexandreFn({
+        messages: alexandreHistory,
+        systemPrompt: alexandreSystemPrompt()
       });
-      const data = await response.json();
       hideAlexandreTyping();
-      const replyText = (data.content || []).map(b=>b.text||'').join('\n').trim();
+      const replyText = (result.data && result.data.reply) ? result.data.reply.trim() : '';
       if(!replyText){
         renderAlexandreMessage('assistant', t('alexandreError') || 'Sorry, something went wrong. Please try again.', true);
       } else {
@@ -2830,7 +2861,8 @@ ${buildLeadContext()}`;
       }
     }catch(err){
       hideAlexandreTyping();
-      renderAlexandreMessage('assistant', 'Sorry, I could not reach the server. Please check your connection and try again.', true);
+      const msg = (err && err.message) ? err.message : 'Sorry, I could not reach the server. Please check your connection and try again.';
+      renderAlexandreMessage('assistant', msg, true);
     }finally{
       alexandreBusy = false;
       alexandreSendBtn.disabled = false;
