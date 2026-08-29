@@ -36,9 +36,9 @@
 
   /* ---------- Scroll progress ---------- */
   .progress-bar{
-    position:fixed;top:0;left:0;height:3px;
+    position:fixed;top:0;left:0;height:3px;width:100%;
     background:linear-gradient(90deg, var(--teal), var(--purple), var(--amber));
-    z-index:200;width:0%;transition:width .08s linear;
+    z-index:200;transform:scaleX(0);transform-origin:left;will-change:transform;
   }
 
   /* ---------- Nav ---------- */
@@ -315,7 +315,7 @@
   .value-card{
     position:relative;background:var(--panel);border:1px solid var(--border);border-radius:16px;
     padding:26px 22px;box-shadow:var(--shadow);overflow:hidden;
-    transition:transform .12s ease;transform-style:preserve-3d;
+    transition:transform .12s ease;transform-style:preserve-3d;will-change:transform;
   }
   .value-card::before{
     content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;opacity:0;
@@ -429,8 +429,8 @@
     <div class="about-hero-content">
       <div class="about-eyebrow"><span class="dot"></span>About Pala Consultancy</div>
       <h1>
-        <span class="line">We didn't buy this tool.</span>
-        <span class="line">We <span class="accent">built it ourselves</span>.</span>
+        <span class="line">What other CRMs couldn't,</span>
+        <span class="line"><span class="accent">this tool can</span>.</span>
       </h1>
       <p>PalaTrack started as the internal system our own consultants used to chase leads and close deals. It worked well enough that we opened it up to our clients too.</p>
       <div class="about-hero-ctas">
@@ -662,16 +662,77 @@
 </div>
 
 <script>
-  // ---------- Scroll progress bar ----------
+  // ---------- Shared rAF-gated scroll handler (avoids layout thrashing) ----------
   const progressBar = document.getElementById('progressBar');
-  function updateProgress(){
-    const h = document.documentElement;
-    const scrolled = h.scrollTop;
-    const height = h.scrollHeight - h.clientHeight;
-    progressBar.style.width = height > 0 ? (scrolled / height * 100) + '%' : '0%';
+  const timelineFill = document.getElementById('timelineFill');
+  const timelineEl = document.querySelector('.timeline');
+  const timelineSteps = Array.from(document.querySelectorAll('.timeline-step'));
+
+  // Cache each dot's offset relative to the timeline container.
+  // Recomputed only on load/resize, never on scroll/mousemove.
+  let dotOffsets = [];
+  let timelineHeight = 0;
+  function measureTimeline(){
+    if(!timelineEl) return;
+    timelineHeight = timelineEl.offsetHeight;
+    const timelineTop = timelineEl.getBoundingClientRect().top + window.scrollY;
+    dotOffsets = timelineSteps.map(step=>{
+      const dot = step.querySelector('.timeline-dot');
+      const dotRect = dot.getBoundingClientRect();
+      const dotTop = dotRect.top + window.scrollY;
+      return (dotTop - timelineTop) + (dotRect.height / 2);
+    });
   }
-  document.addEventListener('scroll', updateProgress, {passive:true});
-  updateProgress();
+
+  let lastInViewIndex = -1;
+  function paintScrollEffects(){
+    // Progress bar — pure transform, no layout write.
+    const h = document.documentElement;
+    const height = h.scrollHeight - h.clientHeight;
+    const pct = height > 0 ? h.scrollTop / height : 0;
+    progressBar.style.transform = `scaleX(${pct})`;
+
+    // Timeline fill — uses cached offsets, no getBoundingClientRect here.
+    if(timelineFill && timelineHeight > 0 && lastInViewIndex >= 0){
+      const px = dotOffsets[lastInViewIndex] || 0;
+      const fillPct = Math.max(0, Math.min(100, (px / timelineHeight) * 100));
+      timelineFill.style.height = fillPct + '%';
+    }
+  }
+
+  let scrollTicking = false;
+  function onScroll(){
+    if(!scrollTicking){
+      scrollTicking = true;
+      requestAnimationFrame(()=>{
+        paintScrollEffects();
+        scrollTicking = false;
+      });
+    }
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+
+  let resizeTicking = false;
+  function onResize(){
+    if(!resizeTicking){
+      resizeTicking = true;
+      requestAnimationFrame(()=>{
+        measureTimeline();
+        paintScrollEffects();
+        resizeTicking = false;
+      });
+    }
+  }
+  window.addEventListener('resize', onResize, {passive:true});
+
+  window.addEventListener('load', ()=>{
+    measureTimeline();
+    paintScrollEffects();
+  });
+  // Fonts loading async can shift layout — remeasure once fonts settle.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(measureTimeline);
+  }
 
   // ---------- Count-up stats ----------
   const statEls = document.querySelectorAll('[data-count]');
@@ -703,48 +764,50 @@
   }
   compareRange.addEventListener('input', ()=> setSplit(compareRange.value));
 
-  // ---------- Timeline scroll progress ----------
-  const timelineSteps = document.querySelectorAll('.timeline-step');
-  const timelineFill = document.getElementById('timelineFill');
-  const timelineEl = document.querySelector('.timeline');
+  // ---------- Timeline step reveal ----------
   const stepObserver = new IntersectionObserver((entries)=>{
     entries.forEach(entry=>{
       if(entry.isIntersecting){
         entry.target.classList.add('in-view');
+        const idx = timelineSteps.indexOf(entry.target);
+        if(idx > lastInViewIndex) lastInViewIndex = idx;
       }
     });
-    updateTimelineFill();
+    onScroll();
   }, {threshold:0.5});
   timelineSteps.forEach(el=>stepObserver.observe(el));
 
-  function updateTimelineFill(){
-    const inView = document.querySelectorAll('.timeline-step.in-view');
-    if(!inView.length){ timelineFill.style.height = '0%'; return; }
-    const last = inView[inView.length - 1];
-    const timelineRect = timelineEl.getBoundingClientRect();
-    const lastRect = last.querySelector('.timeline-dot').getBoundingClientRect();
-    const heightPx = (lastRect.top - timelineRect.top) + (lastRect.height/2);
-    const pct = Math.max(0, Math.min(100, (heightPx / timelineEl.offsetHeight) * 100));
-    timelineFill.style.height = pct + '%';
-  }
-  window.addEventListener('scroll', updateTimelineFill, {passive:true});
-  window.addEventListener('resize', updateTimelineFill);
-
   // ---------- Value card tilt + spotlight ----------
+  // Rect is measured once per hover (mouseenter), not on every mousemove,
+  // and writes are batched to one requestAnimationFrame per card.
   document.querySelectorAll('.value-card').forEach(card=>{
+    let rect = null;
+    let pending = null;
+    let latestEvent = null;
+
+    card.addEventListener('mouseenter', (e)=>{
+      rect = card.getBoundingClientRect();
+    });
+
     card.addEventListener('mousemove', (e)=>{
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-      const rotateX = ((y - cy) / cy) * -6;
-      const rotateY = ((x - cx) / cx) * 6;
-      card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
-      card.style.setProperty('--mx', x + 'px');
-      card.style.setProperty('--my', y + 'px');
+      latestEvent = e;
+      if(pending) return;
+      pending = requestAnimationFrame(()=>{
+        pending = null;
+        if(!rect) rect = card.getBoundingClientRect();
+        const x = latestEvent.clientX - rect.left;
+        const y = latestEvent.clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const rotateX = ((y - cy) / cy) * -6;
+        const rotateY = ((x - cx) / cx) * 6;
+        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+        card.style.setProperty('--mx', x + 'px');
+        card.style.setProperty('--my', y + 'px');
+      });
     });
     card.addEventListener('mouseleave', ()=>{
+      rect = null;
       card.style.transform = 'rotateX(0) rotateY(0) translateY(0)';
     });
   });
