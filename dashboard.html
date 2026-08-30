@@ -312,6 +312,10 @@
     25%{transform:translateX(-4px);}
     75%{transform:translateX(4px);}
   }
+  .temp-select-row.field-error{
+    animation:field-shake .3s ease;border-radius:8px;box-shadow:0 0 0 3px rgba(192,57,46,0.14);
+  }
+  .temp-select-row.field-error .temp-pill{border-color:var(--red);}
   textarea{resize:vertical;min-height:56px;font-family:'Inter',sans-serif;}
   .checkbox-row{display:flex;gap:8px;flex-wrap:wrap;}
   .checkbox-pill{
@@ -2111,6 +2115,9 @@
   document.getElementById('f-industry').addEventListener('change', (e)=>{
     if(e.target.value) e.target.classList.remove('field-error');
   });
+  document.getElementById('f-status').addEventListener('change', (e)=>{
+    if(e.target.value) e.target.classList.remove('field-error');
+  });
   document.getElementById('f-name').addEventListener('input', (e)=>{
     if(e.target.value.trim()) e.target.classList.remove('field-error');
   });
@@ -2134,6 +2141,10 @@
     const newValue = input.value === temp ? '' : temp; // clicking the active pill again clears it
     input.value = newValue;
     syncTempPillUI(newValue);
+    if(newValue){
+      const tempRowEl = document.getElementById('tempSelectRow');
+      if(tempRowEl) tempRowEl.classList.remove('field-error');
+    }
   }
 
   function clearForm(){
@@ -2157,7 +2168,8 @@
     document.getElementById('f-showedUp').checked = false;
     document.getElementById('f-revenue').value = '';
     document.getElementById('f-daystoclose').value = '';
-    ['f-name','f-source','f-jobtitle','f-date','f-country','f-city','f-industry'].forEach(id=>document.getElementById(id).classList.remove('field-error'));
+    ['f-name','f-source','f-jobtitle','f-date','f-country','f-city','f-industry','f-status'].forEach(id=>document.getElementById(id).classList.remove('field-error'));
+    document.getElementById('tempSelectRow').classList.remove('field-error');
     document.getElementById('saveLeadBtn').textContent = 'Save lead';
   }
   document.getElementById('clearFormBtn').addEventListener('click', clearForm);
@@ -2172,18 +2184,25 @@
     const countryEl = document.getElementById('f-country');
     const cityEl = document.getElementById('f-city');
     const industryEl = document.getElementById('f-industry');
-    [nameEl, sourceEl, jobTitleEl, dateEl, countryEl, cityEl, industryEl].forEach(el=>el.classList.remove('field-error'));
+    const statusEl = document.getElementById('f-status');
+    const temperatureEl = document.getElementById('f-temperature');
+    const tempRowEl = document.getElementById('tempSelectRow');
+    [nameEl, sourceEl, jobTitleEl, dateEl, countryEl, cityEl, industryEl, statusEl].forEach(el=>el.classList.remove('field-error'));
+    if(tempRowEl) tempRowEl.classList.remove('field-error');
     const missing = [];
     if(!name) missing.push({el:nameEl, label:t('leadName').toLowerCase()});
     if(!sourceEl.value) missing.push({el:sourceEl, label:t('source').toLowerCase()});
     if(!countryEl.value.trim()) missing.push({el:countryEl, label:t('country').toLowerCase()});
     if(!cityEl.value.trim()) missing.push({el:cityEl, label:t('city').toLowerCase()});
+    if(!statusEl.value) missing.push({el:statusEl, label:t('status').toLowerCase()});
+    if(!temperatureEl.value) missing.push({el:tempRowEl || temperatureEl, label:t('temperature').toLowerCase()});
     if(!industryEl.value) missing.push({el:industryEl, label:t('industry').toLowerCase()});
     if(!jobTitleEl.value.trim()) missing.push({el:jobTitleEl, label:t('jobTitle').toLowerCase()});
     if(!dateEl.value) missing.push({el:dateEl, label:t('dateAdded').toLowerCase()});
     if(missing.length>0){
       missing.forEach(m=>m.el.classList.add('field-error'));
-      missing[0].el.focus();
+      missing[0].el.scrollIntoView({behavior:'smooth', block:'center'});
+      if(typeof missing[0].el.focus === 'function') missing[0].el.focus();
       const labels = missing.map(m=>m.label);
       const msg = labels.length===1
         ? `${t('fillInSingle')} ${labels[0]} ${t('beforeSavingLead')}`
