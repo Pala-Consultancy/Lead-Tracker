@@ -128,14 +128,16 @@
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
   }
-  .app{max-width:1180px;margin:0 auto;padding:0 24px 80px;}
+  .app{max-width:1180px;margin:0 auto;padding:30px 24px 80px;}
 
   header{
-    display:flex;justify-content:space-between;align-items:center;
-    margin:0 -24px 30px;padding:20px 24px;flex-wrap:wrap;gap:16px;
-    position:sticky;top:0;z-index:40;
+    position:sticky;top:0;z-index:40;width:100%;
     background:rgba(239,245,252,0.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     border-bottom:1px solid var(--border);
+  }
+  .header-inner{
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+    max-width:1180px;margin:0 auto;padding:20px 24px;
   }
   [data-theme="dark"] header{background:rgba(15,22,32,0.75);}
   .header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
@@ -310,7 +312,11 @@
   .section-sub{font-size:13px;color:var(--slate);margin:-8px 0 16px;line-height:1.5;}
 
   /* ---------- Win rate matrix (Source × Industry) ---------- */
-  .matrix-wrap{overflow-x:auto;padding-bottom:4px;}
+  .matrix-wrap{
+    overflow-x:auto;padding-bottom:4px;
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  .matrix-wrap::-webkit-scrollbar{display:none;height:0;}
   .matrix-header, .matrix-row{display:flex;align-items:stretch;gap:6px;margin-bottom:6px;}
   .matrix-row-label{
     width:126px;flex-shrink:0;display:flex;align-items:center;font-size:12.5px;font-weight:600;
@@ -337,7 +343,11 @@
   }
 
   /* ---------- Lead activity calendar ---------- */
-  .cal-wrap{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+  .cal-wrap{
+    display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  .cal-wrap::-webkit-scrollbar{display:none;height:0;}
   .cal-daylabels{width:26px;display:flex;flex-direction:column;gap:3px;flex-shrink:0;}
   .cal-day-label{height:12px;font-size:9px;font-weight:700;color:var(--slate-light);line-height:12px;}
   .cal-months{display:flex;gap:3px;margin-bottom:4px;padding-left:0;}
@@ -736,8 +746,8 @@
 </div>
 
 <div id="appRoot">
-<div class="app">
-  <header>
+<header>
+  <div class="header-inner">
     <div class="title-block">
       <div class="title-row">
         <div class="logo-badge"><img data-logo-src="1" alt="Pala Consultancy logo" class="brand-logo"></div>
@@ -754,7 +764,9 @@
       <a class="btn" id="backLink" href="boards.html" data-i18n="backToTracker">&larr; Back to tracker</a>
       <button class="btn icon-btn-settings" id="settingsBtn" title="Settings">⚙️</button>
     </div>
-  </header>
+  </div>
+</header>
+<div class="app">
 
   <div id="content"></div>
 
