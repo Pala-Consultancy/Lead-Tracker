@@ -1708,7 +1708,17 @@
     const acceptedCount = leads.filter(l=>l.requestAccepted).length;
     const contactedCount = leads.filter(l=>l.contacted).length;
     const repliedCount = leads.filter(l=>l.replied).length;
-    const callReached = leads.filter(l=>["Call booked","Won","Lost"].includes(l.status));
+    function callHasOccurred(l){
+      if(l.status === "Won" || l.status === "Lost") return true;
+      if(l.status === "Call booked"){
+        if(!l.callDate) return false;
+        const callTime = new Date(l.callDate).getTime();
+        if(isNaN(callTime)) return false;
+        return callTime <= Date.now();
+      }
+      return false;
+    }
+    const callReached = leads.filter(callHasOccurred);
     const showedUpCount = callReached.filter(l=>l.showedUp || l.status==='Won').length;
 
     const acceptRate = sentCount>0 ? Math.round((acceptedCount/sentCount)*100) : null;
