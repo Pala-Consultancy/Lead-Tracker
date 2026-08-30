@@ -205,10 +205,22 @@
     padding:10px 13px;border-radius:8px;display:none;
   }
   .login-error.show{display:block;}
-  #loginForm .btn-primary{
+  #loginForm .btn-primary, #resetForm .btn-primary{
     width:100%;justify-content:center;padding:12px;margin-top:6px;
     background:var(--teal);color:#fff;border:1px solid var(--teal);border-radius:8px;
     font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;
+  }
+  .login-forgot-row{text-align:right;margin:-10px 0 16px;}
+  .login-forgot-link{
+    background:none;border:none;padding:0;font-size:12.5px;font-weight:600;color:var(--teal);
+    cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;
+  }
+  .login-forgot-link:hover{opacity:.8;}
+  #resetForm .login-sub{margin:-4px 0 16px;text-align:left;}
+  #resetForm .login-forgot-link{display:block;margin:14px auto 0;text-align:center;width:100%;}
+  .login-success{
+    background:var(--c-green-bg);color:var(--c-green-fg);font-size:13px;line-height:1.5;
+    padding:12px 14px;border-radius:8px;text-align:center;margin-bottom:16px;
   }
   .login-footer-note{
     text-align:center;font-size:12px;color:var(--slate-light);margin-top:20px;padding:0 34px;
@@ -422,6 +434,7 @@
       <div class="login-sub" data-i18n="signInContinue">Sign in to continue</div>
     </div>
     <div class="login-error" id="loginError"></div>
+    <div class="login-success" id="loginSuccess" style="display:none"></div>
     <form id="loginForm">
       <div class="field">
         <label for="loginEmail" data-i18n="email">Email</label>
@@ -431,7 +444,19 @@
         <label for="loginPassword" data-i18n="password">Password</label>
         <input id="loginPassword" type="password" placeholder="••••••••" required>
       </div>
+      <div class="login-forgot-row">
+        <button type="button" class="login-forgot-link" id="forgotPasswordLink" data-i18n="forgotPassword">Forgot password?</button>
+      </div>
       <button type="submit" class="btn-primary" data-i18n="signIn">Sign in</button>
+    </form>
+    <form id="resetForm" style="display:none">
+      <div class="login-sub" data-i18n="resetPasswordSub">Enter your email and we'll send you a link to reset your password.</div>
+      <div class="field">
+        <label for="resetEmail" data-i18n="email">Email</label>
+        <input id="resetEmail" type="email" placeholder="you@pala-consultancy.com" required>
+      </div>
+      <button type="submit" class="btn-primary" data-i18n="sendResetLink">Send reset link</button>
+      <button type="button" class="login-forgot-link" id="backToSignInLink" data-i18n="backToSignIn">← Back to sign in</button>
     </form>
     <div class="login-footer-note" data-i18n="noAccountNote">Don't have an account? Ask your admin to create one for you.</div>
   </div>
@@ -573,7 +598,7 @@
     en: {
       brandName:"PALA CONSULTANCY", appName:"PalaTrack", signInContinue:"Sign in to continue", slogan:"Your personal lead tracker",
       email:"Email", password:"Password", signIn:"Sign in", signingIn:"Signing in...",
-      noAccountNote:"Don't have an account? Ask your admin to create one for you.",
+      forgotPassword:"Forgot password?", resetPasswordSub:"Enter your email and we'll send you a link to reset your password.", sendResetLink:"Send reset link", backToSignIn:"← Back to sign in", sendingResetLink:"Sending...", resetLinkSentMessage:"If an account exists for that email, we've sent a link to reset your password. Check your inbox.", noAccountNote:"Don't have an account? Ask your admin to create one for you.",
       incorrectLogin:"Incorrect email or password. Please try again.",
       accountSettingsTitle:"Account Settings", manageProfileSub:"Manage your profile details", backToBoards:"← Back to boards",
       changePhoto:"Change photo", anyPhotoWorks:"Any photo works — it'll be resized automatically",
@@ -596,7 +621,7 @@
     nl: {
       brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", signInContinue:"Log in om verder te gaan", slogan:"Jouw persoonlijke leadtracker",
       email:"E-mail", password:"Wachtwoord", signIn:"Inloggen", signingIn:"Inloggen...",
-      noAccountNote:"Nog geen account? Vraag je beheerder om er een voor je aan te maken.",
+      forgotPassword:"Wachtwoord vergeten?", resetPasswordSub:"Vul je e-mailadres in en we sturen je een link om je wachtwoord opnieuw in te stellen.", sendResetLink:"Reset-link versturen", backToSignIn:"← Terug naar inloggen", sendingResetLink:"Bezig met versturen...", resetLinkSentMessage:"Als er een account bestaat voor dit e-mailadres, hebben we een link gestuurd om je wachtwoord opnieuw in te stellen. Controleer je inbox.", noAccountNote:"Nog geen account? Vraag je beheerder om er een voor je aan te maken.",
       incorrectLogin:"Onjuist e-mailadres of wachtwoord. Probeer het opnieuw.",
       accountSettingsTitle:"Accountinstellingen", manageProfileSub:"Beheer je profielgegevens", backToBoards:"← Terug naar boards",
       changePhoto:"Foto wijzigen", anyPhotoWorks:"Elke foto werkt — deze wordt automatisch aangepast",
@@ -619,7 +644,7 @@
     fr: {
       brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", signInContinue:"Connectez-vous pour continuer", slogan:"Votre suivi de prospects personnel",
       email:"E-mail", password:"Mot de passe", signIn:"Se connecter", signingIn:"Connexion...",
-      noAccountNote:"Pas encore de compte ? Demandez à votre administrateur d'en créer un pour vous.",
+      forgotPassword:"Mot de passe oublié ?", resetPasswordSub:"Saisissez votre e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.", sendResetLink:"Envoyer le lien", backToSignIn:"← Retour à la connexion", sendingResetLink:"Envoi en cours...", resetLinkSentMessage:"Si un compte existe pour cet e-mail, nous avons envoyé un lien pour réinitialiser votre mot de passe. Vérifiez votre boîte de réception.", noAccountNote:"Pas encore de compte ? Demandez à votre administrateur d'en créer un pour vous.",
       incorrectLogin:"E-mail ou mot de passe incorrect. Veuillez réessayer.",
       accountSettingsTitle:"Paramètres du compte", manageProfileSub:"Gérez les détails de votre profil", backToBoards:"← Retour aux tableaux",
       changePhoto:"Changer la photo", anyPhotoWorks:"N'importe quelle photo fonctionne — elle sera redimensionnée automatiquement",
@@ -642,7 +667,7 @@
     de: {
       brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", signInContinue:"Melde dich an, um fortzufahren", slogan:"Dein persönlicher Lead-Tracker",
       email:"E-Mail", password:"Passwort", signIn:"Anmelden", signingIn:"Anmeldung...",
-      noAccountNote:"Noch kein Konto? Bitte deinen Admin, eins für dich zu erstellen.",
+      forgotPassword:"Passwort vergessen?", resetPasswordSub:"Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen deines Passworts.", sendResetLink:"Link senden", backToSignIn:"← Zurück zur Anmeldung", sendingResetLink:"Wird gesendet...", resetLinkSentMessage:"Falls ein Konto mit dieser E-Mail existiert, haben wir einen Link zum Zurücksetzen deines Passworts gesendet. Überprüfe dein Postfach.", noAccountNote:"Noch kein Konto? Bitte deinen Admin, eins für dich zu erstellen.",
       incorrectLogin:"Falsche E-Mail-Adresse oder falsches Passwort. Bitte versuche es erneut.",
       accountSettingsTitle:"Kontoeinstellungen", manageProfileSub:"Verwalte deine Profildetails", backToBoards:"← Zurück zu den Boards",
       changePhoto:"Foto ändern", anyPhotoWorks:"Jedes Foto funktioniert — es wird automatisch angepasst",
@@ -665,7 +690,7 @@
     es: {
       brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", signInContinue:"Inicia sesión para continuar", slogan:"Tu rastreador de leads personal",
       email:"Correo electrónico", password:"Contraseña", signIn:"Iniciar sesión", signingIn:"Iniciando sesión...",
-      noAccountNote:"¿No tienes una cuenta? Pide a tu administrador que cree una para ti.",
+      forgotPassword:"¿Olvidaste tu contraseña?", resetPasswordSub:"Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.", sendResetLink:"Enviar enlace", backToSignIn:"← Volver al inicio de sesión", sendingResetLink:"Enviando...", resetLinkSentMessage:"Si existe una cuenta con ese correo, hemos enviado un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada.", noAccountNote:"¿No tienes una cuenta? Pide a tu administrador que cree una para ti.",
       incorrectLogin:"Correo o contraseña incorrectos. Inténtalo de nuevo.",
       accountSettingsTitle:"Configuración de la cuenta", manageProfileSub:"Gestiona los detalles de tu perfil", backToBoards:"← Volver a los tableros",
       changePhoto:"Cambiar foto", anyPhotoWorks:"Cualquier foto funciona — se redimensionará automáticamente",
@@ -688,7 +713,7 @@
     it: {
       brandName:"PALA CONSULTANCY", appName:"Sistema di Gestione dei Lead", signInContinue:"Accedi per continuare", slogan:"Il tuo tracker di lead personale",
       email:"E-mail", password:"Password", signIn:"Accedi", signingIn:"Accesso in corso...",
-      noAccountNote:"Non hai un account? Chiedi al tuo amministratore di crearne uno per te.",
+      forgotPassword:"Password dimenticata?", resetPasswordSub:"Inserisci la tua email e ti invieremo un link per reimpostare la password.", sendResetLink:"Invia link", backToSignIn:"← Torna al login", sendingResetLink:"Invio in corso...", resetLinkSentMessage:"Se esiste un account con questa email, abbiamo inviato un link per reimpostare la password. Controlla la tua posta.", noAccountNote:"Non hai un account? Chiedi al tuo amministratore di crearne uno per te.",
       incorrectLogin:"E-mail o password errati. Riprova.",
       accountSettingsTitle:"Impostazioni Account", manageProfileSub:"Gestisci i dettagli del tuo profilo", backToBoards:"← Torna alle bacheche",
       changePhoto:"Cambia foto", anyPhotoWorks:"Qualsiasi foto funziona — verrà ridimensionata automaticamente",
@@ -711,7 +736,7 @@
     pt: {
       brandName:"PALA CONSULTANCY", appName:"Sistema de Gestão de Leads", signInContinue:"Inicie sessão para continuar", slogan:"O seu rastreador de leads pessoal",
       email:"E-mail", password:"Palavra-passe", signIn:"Iniciar sessão", signingIn:"A iniciar sessão...",
-      noAccountNote:"Ainda não tem conta? Peça ao seu administrador para criar uma para si.",
+      forgotPassword:"Esqueceu-se da palavra-passe?", resetPasswordSub:"Introduza o seu e-mail e enviaremos um link para redefinir a sua palavra-passe.", sendResetLink:"Enviar link", backToSignIn:"← Voltar ao início de sessão", sendingResetLink:"A enviar...", resetLinkSentMessage:"Se existir uma conta com este e-mail, enviámos um link para redefinir a sua palavra-passe. Verifique a sua caixa de entrada.", noAccountNote:"Ainda não tem conta? Peça ao seu administrador para criar uma para si.",
       incorrectLogin:"E-mail ou palavra-passe incorretos. Tente novamente.",
       accountSettingsTitle:"Definições da Conta", manageProfileSub:"Gira os detalhes do seu perfil", backToBoards:"← Voltar aos quadros",
       changePhoto:"Alterar foto", anyPhotoWorks:"Qualquer foto funciona — será redimensionada automaticamente",
@@ -734,7 +759,7 @@
     pl: {
       brandName:"PALA CONSULTANCY", appName:"System Śledzenia Leadów", signInContinue:"Zaloguj się, aby kontynuować", slogan:"Twój osobisty tracker leadów",
       email:"E-mail", password:"Hasło", signIn:"Zaloguj się", signingIn:"Logowanie...",
-      noAccountNote:"Nie masz konta? Poproś administratora o jego utworzenie.",
+      forgotPassword:"Nie pamiętasz hasła?", resetPasswordSub:"Podaj swój adres e-mail, a wyślemy Ci link do zresetowania hasła.", sendResetLink:"Wyślij link", backToSignIn:"← Powrót do logowania", sendingResetLink:"Wysyłanie...", resetLinkSentMessage:"Jeśli konto z tym adresem e-mail istnieje, wysłaliśmy link do zresetowania hasła. Sprawdź swoją skrzynkę odbiorczą.", noAccountNote:"Nie masz konta? Poproś administratora o jego utworzenie.",
       incorrectLogin:"Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.",
       accountSettingsTitle:"Ustawienia konta", manageProfileSub:"Zarządzaj danymi swojego profilu", backToBoards:"← Wróć do tablic",
       changePhoto:"Zmień zdjęcie", anyPhotoWorks:"Dowolne zdjęcie zadziała — zostanie automatycznie zmienione",
@@ -757,7 +782,7 @@
     zh: {
       brandName:"PALA CONSULTANCY", appName:"潜在客户跟踪系统", signInContinue:"请登录以继续", slogan:"您的专属潜在客户跟踪工具",
       email:"电子邮箱", password:"密码", signIn:"登录", signingIn:"正在登录...",
-      noAccountNote:"还没有账户？请联系管理员为您创建一个。",
+      forgotPassword:"忘记密码？", resetPasswordSub:"输入您的电子邮件，我们会向您发送重置密码的链接。", sendResetLink:"发送重置链接", backToSignIn:"← 返回登录", sendingResetLink:"发送中...", resetLinkSentMessage:"如果该邮箱对应的账户存在，我们已发送重置密码的链接。请查收您的邮箱。", noAccountNote:"还没有账户？请联系管理员为您创建一个。",
       incorrectLogin:"邮箱或密码错误，请重试。",
       accountSettingsTitle:"账户设置", manageProfileSub:"管理您的个人资料详情", backToBoards:"← 返回看板",
       changePhoto:"更换照片", anyPhotoWorks:"任何照片都可以——将自动调整大小",
@@ -1168,6 +1193,42 @@
       }).finally(()=>{
         submitBtn.disabled = false;
         submitBtn.textContent = t('signIn');
+      });
+    });
+    // ---------- Forgot password ----------
+    const loginFormEl = document.getElementById('loginForm');
+    const resetFormEl = document.getElementById('resetForm');
+    const loginSuccessEl = document.getElementById('loginSuccess');
+    function showResetForm(){
+      clearLoginError();
+      loginSuccessEl.style.display = 'none';
+      loginFormEl.style.display = 'none';
+      resetFormEl.style.display = '';
+      document.getElementById('resetEmail').value = document.getElementById('loginEmail').value;
+    }
+    function showLoginForm(){
+      clearLoginError();
+      loginSuccessEl.style.display = 'none';
+      resetFormEl.style.display = 'none';
+      loginFormEl.style.display = '';
+    }
+    document.getElementById('forgotPasswordLink').addEventListener('click', showResetForm);
+    document.getElementById('backToSignInLink').addEventListener('click', showLoginForm);
+    resetFormEl.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      clearLoginError();
+      const email = document.getElementById('resetEmail').value.trim();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('sendingResetLink');
+      auth.sendPasswordResetEmail(email).catch(()=>{
+        // Deliberately silent — don't reveal whether an email exists in the system.
+      }).finally(()=>{
+        submitBtn.disabled = false;
+        submitBtn.textContent = t('sendResetLink');
+        resetFormEl.style.display = 'none';
+        loginSuccessEl.textContent = t('resetLinkSentMessage');
+        loginSuccessEl.style.display = 'block';
       });
     });
     auth.onAuthStateChanged(user=>{
