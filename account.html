@@ -413,7 +413,7 @@
 
 <div id="loginScreen">
   <div class="login-card">
-    <a class="login-back-home" href="index.html">← Home</a>
+    <a class="login-back-home" id="loginBackHome" href="index.html">← Home</a>
     <div class="login-lang-switcher">
       <select id="loginLangSelect">
       <option value="en">English</option>
@@ -1205,12 +1205,16 @@
       loginFormEl.style.display = 'none';
       resetFormEl.style.display = '';
       document.getElementById('resetEmail').value = document.getElementById('loginEmail').value;
+      const backHome = document.getElementById('loginBackHome');
+      if(backHome) backHome.style.display = 'none';
     }
     function showLoginForm(){
       clearLoginError();
       loginSuccessEl.style.display = 'none';
       resetFormEl.style.display = 'none';
       loginFormEl.style.display = '';
+      const backHome = document.getElementById('loginBackHome');
+      if(backHome) backHome.style.display = '';
     }
     document.getElementById('forgotPasswordLink').addEventListener('click', showResetForm);
     document.getElementById('backToSignInLink').addEventListener('click', showLoginForm);

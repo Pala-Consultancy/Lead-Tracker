@@ -170,7 +170,7 @@
     background:linear-gradient(180deg, rgba(27,89,165,0.035) 0%, rgba(122,79,181,0.02) 100%);
     border-radius:32px;max-width:calc(1180px + 6vw);
   }
-  .section-head{text-align:center;max-width:600px;margin:0 auto 30px;}
+  .section-head{text-align:center;max-width:600px;margin:0 auto 56px;}
   .section-eyebrow{
     font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:12px;
   }
@@ -179,174 +179,71 @@
   }
   .section-head p{font-size:16px;color:var(--slate);line-height:1.6;margin:0;}
 
-  #whatsInsideSection{opacity:0;translate:0 16px;transition:opacity .6s ease, translate .6s ease;}
-  #whatsInsideSection.revealed{opacity:1;translate:0 0;}
-  .topic-pills{
-    display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:0 0 48px;
+  .feature-grid{
+    display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;
+    grid-template-areas:
+      "boards boards alexandre"
+      "pipeline stats alexandre"
+      "languages team dark";
   }
-  .topic-pill{
-    display:inline-flex;align-items:center;gap:11px;font-family:'Inter',sans-serif;font-weight:700;font-size:15px;
-    color:var(--ink);background:var(--panel);border:1.5px solid var(--border);border-radius:999px;
-    padding:11px 24px 11px 11px;cursor:pointer;transition:border-color .18s, transform .18s, box-shadow .18s, background .18s, color .18s;
-    box-shadow:var(--shadow);
+  .feature-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:28px 26px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+    transition:transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease, opacity .5s ease, translate .5s ease;
+    opacity:0;translate:0 20px;
   }
-  .topic-pill-icon{
-    width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    transition:background .18s, color .18s;
+  .feature-card.revealed{opacity:1;translate:0 0;}
+  .feature-card:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(27,36,48,0.12);}
+  .feature-card[data-area="boards"]{grid-area:boards;display:flex;align-items:center;gap:28px;}
+  .feature-card[data-area="boards"] .feature-icon{margin-bottom:0;flex-shrink:0;}
+  .feature-card[data-area="boards"] .feature-text{flex:1;}
+  .feature-card[data-area="pipeline"]{grid-area:pipeline;}
+  .feature-card[data-area="stats"]{grid-area:stats;}
+  .feature-card[data-area="languages"]{grid-area:languages;}
+  .feature-card[data-area="team"]{grid-area:team;}
+  .feature-card[data-area="dark"]{grid-area:dark;}
+  .feature-card[data-area="alexandre"]{
+    grid-area:alexandre;display:flex;flex-direction:column;
+    background:linear-gradient(160deg, #EFE5FA 0%, var(--panel) 60%);
   }
-  .topic-pill-icon svg{width:17px;height:17px;}
-  .topic-pill:hover{transform:translateY(-2px);border-color:var(--teal);box-shadow:0 10px 22px rgba(27,36,48,0.12);}
-  .topic-pill.active{
-    background:linear-gradient(135deg,var(--teal),var(--teal-dark));color:#fff;border-color:transparent;
-    box-shadow:0 10px 24px rgba(27,89,165,.32);
+  .feature-card[data-area="alexandre"]::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg, var(--teal), #7A4FB5, var(--amber));
   }
-  .topic-pill.active .topic-pill-icon{background:rgba(255,255,255,0.22) !important;color:#fff !important;}
-
-  .topic-stage{
-    position:relative;background:var(--panel);border:1px solid var(--border);border-radius:24px;
-    padding:44px;box-shadow:var(--shadow);
+  .alexandre-card-photo{
+    width:56px;height:56px;border-radius:50%;object-fit:cover;margin-bottom:16px;
+    box-shadow:0 6px 16px rgba(122,79,181,0.3);
   }
-  .topic-panel{display:none;}
-  .topic-panel.active{
-    display:grid;grid-template-columns:0.85fr 1.15fr;gap:52px;align-items:center;
-    animation:topic-fade-in .4s ease;
+  .alexandre-card-badge{
+    display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+    color:#7A4FB5;background:rgba(122,79,181,0.12);padding:4px 10px;border-radius:20px;
+    margin-top:auto;align-self:flex-start;text-transform:uppercase;letter-spacing:.04em;
   }
-  .topic-panel.reverse.active{grid-template-columns:1.15fr 0.85fr;}
-  .topic-panel.reverse.active .topic-panel-visual{order:-1;}
-  @keyframes topic-fade-in{from{opacity:0;translate:0 12px;}to{opacity:1;translate:0 0;}}
-  .topic-panel-text h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:clamp(23px,2.9vw,32px);margin:10px 0 14px;letter-spacing:-.01em;line-height:1.2;}
-  .topic-panel-text p{font-size:16px;color:var(--slate);line-height:1.65;margin:0;}
+  .feature-icon{
+    width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;position:relative;
+  }
+  .feature-icon::after{
+    content:"";position:absolute;inset:-6px;border-radius:16px;
+    background:inherit;opacity:0.35;filter:blur(8px);z-index:-1;
+  }
+  .feature-icon svg{width:22px;height:22px;position:relative;z-index:1;}
+  .feature-card:hover .feature-icon{transform:scale(1.08) rotate(-4deg);transition:transform .25s ease;}
+  .feature-card h3{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;margin:0 0 10px;}
+  .feature-card[data-area="boards"] h3{font-size:19px;}
+  .feature-card p{font-size:14.5px;line-height:1.6;color:var(--slate);margin:0;}
   @media (max-width:760px){
-    .topic-pills{gap:8px;}
-    .topic-pill{font-size:13px;padding:9px 16px 9px 8px;}
-    .topic-stage{padding:26px 20px;border-radius:20px;}
-    .topic-panel.active, .topic-panel.reverse.active{grid-template-columns:1fr;}
-    .topic-panel.reverse.active .topic-panel-visual{order:0;}
+    .feature-grid{grid-template-columns:1fr;grid-template-areas:"boards" "alexandre" "pipeline" "stats" "languages" "team" "dark";}
+    .feature-card[data-area="boards"]{flex-direction:column;text-align:center;}
   }
 
-  /* ---------- Alexandre topic panel ---------- */
-  .alexandre-panel-body{display:flex;align-items:center;gap:22px;padding:28px 24px;}
-  .alexandre-panel-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 6px 16px rgba(122,79,181,0.3);}
-  .alexandre-panel-list{display:flex;flex-direction:column;gap:10px;}
-  .alexandre-panel-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);}
-  .alexandre-panel-check{
-    display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;
-    background:rgba(122,79,181,0.14);color:#7A4FB5;font-size:10px;flex-shrink:0;
-  }
-  @media (max-width:600px){.alexandre-panel-body{flex-direction:column;text-align:center;}}
-
-  /* ---------- Languages topic panel ---------- */
-  .lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .lang-chip{
-    font-size:12.5px;font-weight:600;color:var(--ink);background:#F6FAFE;border:1px solid var(--border);
-    border-radius:9px;padding:9px 10px;display:flex;align-items:center;justify-content:space-between;
-    transition:background .35s ease, color .35s ease, border-color .35s ease;
-  }
-  .lang-chip.active{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:700;}
-  .lang-check{font-size:11px;}
-
-  .lang-stage{position:relative;}
-  .demo-cursor{
-    position:absolute;top:0;left:0;width:22px;height:22px;pointer-events:none;z-index:5;
-    transition:transform .6s cubic-bezier(.4,0,.2,1), opacity .3s ease;
-    transform:translate(0,0);
-  }
-  .demo-cursor.hidden{opacity:0;}
-  .demo-cursor-icon{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.3));transition:transform .16s ease;}
-  .demo-cursor.clicking .demo-cursor-icon{transform:scale(.75);}
-  .demo-cursor-ring{
-    position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;
-    border:2px solid var(--teal);opacity:0;transform:scale(.4);pointer-events:none;
-  }
-  .demo-cursor.clicking .demo-cursor-ring{animation:cursor-ring-pulse .5s ease-out;}
-  @keyframes cursor-ring-pulse{0%{opacity:.8;transform:scale(.4);}100%{opacity:0;transform:scale(2.4);}}
-
-  /* ---------- Dark mode topic panel ---------- */
-  .theme-demo-window{
-    position:relative;overflow:hidden;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);
-    background:linear-gradient(160deg,#F6FAFE 0%,#EAF1FB 100%);
-    transition:background .5s ease;
-  }
-  .theme-demo-window.dark-preview{background:linear-gradient(160deg,#111A26 0%,#0A1119 100%);}
-  .theme-demo-stars{
-    position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s ease;z-index:0;
-    background-image:
-      radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent),
-      radial-gradient(1.5px 1.5px at 25% 55%, #fff, transparent),
-      radial-gradient(1px 1px at 40% 15%, #fff, transparent),
-      radial-gradient(1.5px 1.5px at 60% 40%, #fff, transparent),
-      radial-gradient(1px 1px at 75% 65%, #fff, transparent),
-      radial-gradient(1.5px 1.5px at 88% 25%, #fff, transparent),
-      radial-gradient(1px 1px at 95% 75%, #fff, transparent),
-      radial-gradient(1.5px 1.5px at 15% 85%, #fff, transparent),
-      radial-gradient(1px 1px at 50% 88%, #fff, transparent);
-    background-repeat:no-repeat;
-  }
-  .theme-demo-window.dark-preview .theme-demo-stars{opacity:.8;animation:theme-star-twinkle 3s ease-in-out infinite;}
-  @keyframes theme-star-twinkle{0%,100%{opacity:.55;}50%{opacity:.95;}}
-  .theme-demo-bar{
-    position:relative;z-index:1;height:36px;background:rgba(255,255,255,0.6);border-bottom:1px solid var(--border);
-    display:flex;align-items:center;justify-content:space-between;padding:0 12px;
-    transition:background .5s ease, border-color .5s ease;
-  }
-  .theme-demo-window.dark-preview .theme-demo-bar{background:rgba(255,255,255,0.04);border-color:#26333F;}
-  .theme-demo-dots{display:flex;gap:5px;}
-  .theme-demo-dots span{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .5s ease;}
-  .theme-demo-window.dark-preview .theme-demo-dots span{background:#2C3A4A;}
-
-  .theme-demo-switch{
-    position:relative;width:46px;height:24px;border-radius:999px;border:1px solid var(--border);
-    background:#E7EEF5;cursor:pointer;padding:0;flex-shrink:0;transition:background .35s ease, border-color .35s ease;
-  }
-  .theme-demo-window.dark-preview .theme-demo-switch{background:#1B59A5;border-color:#1B59A5;}
-  .theme-demo-switch-track{
-    position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 5px;
-    color:var(--slate-light);
-  }
-  .theme-demo-switch-track svg{width:12px;height:12px;transition:opacity .3s ease, color .3s ease;}
-  .theme-demo-switch-track .icon-sun{opacity:1;color:#FF9D00;}
-  .theme-demo-switch-track .icon-moon{opacity:.5;}
-  .theme-demo-window.dark-preview .theme-demo-switch-track .icon-sun{opacity:.5;color:rgba(255,255,255,0.6);}
-  .theme-demo-window.dark-preview .theme-demo-switch-track .icon-moon{opacity:1;color:#fff;}
-  .theme-demo-switch-thumb{
-    position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;
-    box-shadow:0 2px 6px rgba(0,0,0,0.25);transition:transform .35s cubic-bezier(.4,0,.2,1);
-  }
-  .theme-demo-window.dark-preview .theme-demo-switch-thumb{transform:translateX(22px);}
-
-  .theme-demo-body{position:relative;z-index:1;padding:20px;display:flex;flex-direction:column;gap:12px;}
-  .theme-demo-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .theme-demo-stat{
-    background:rgba(255,255,255,0.65);border:1px solid var(--border);border-radius:10px;padding:10px 12px;
-    transition:background .5s ease, border-color .5s ease;
-  }
-  .theme-demo-window.dark-preview .theme-demo-stat{background:rgba(255,255,255,0.05);border-color:#26333F;}
-  .theme-demo-stat-k{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--slate-light);}
-  .theme-demo-stat-v{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;color:var(--ink);margin-top:2px;transition:color .5s ease;}
-  .theme-demo-window.dark-preview .theme-demo-stat-v{color:#EAF0F8;}
-  .theme-demo-row{
-    display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.65);border:1px solid var(--border);
-    border-radius:9px;padding:8px 10px;transition:background .5s ease, border-color .5s ease;
-  }
-  .theme-demo-window.dark-preview .theme-demo-row{background:rgba(255,255,255,0.05);border-color:#26333F;}
-  .theme-demo-avatar{
-    width:22px;height:22px;border-radius:50%;background:#1B59A5;color:#fff;font-size:9px;font-weight:700;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .theme-demo-name{font-size:12px;font-weight:600;color:var(--ink);flex:1;transition:color .5s ease;}
-  .theme-demo-window.dark-preview .theme-demo-name{color:#DCE6F0;}
-  .theme-demo-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;flex-shrink:0;}
-  .theme-demo-pill.won{color:#1F5C4F;background:#DEF0EA;}
-  .theme-demo-pill.call{color:#7A4FB5;background:#EFE5FA;}
-  .theme-demo-window.dark-preview .theme-demo-pill.won{color:#7EE0B8;background:rgba(43,193,122,0.16);}
-  .theme-demo-window.dark-preview .theme-demo-pill.call{color:#C9A8F5;background:rgba(122,79,181,0.22);}
-  .theme-demo-bars{display:flex;align-items:flex-end;gap:6px;height:44px;margin-top:2px;}
-  .theme-demo-bar{
-    flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#1B59A5,#123F78);
-    transition:background .5s ease, opacity .5s ease;
-  }
-  .theme-demo-window.dark-preview .theme-demo-bar{background:linear-gradient(180deg,#4A90D9,#1B59A5);opacity:.9;}
-
+  /* ---------- Bottom CTA ---------- */
+  .product-preview-section{display:flex;flex-direction:column;gap:70px;}
+  .product-preview-row{display:grid;grid-template-columns:0.85fr 1.15fr;gap:48px;align-items:center;}
+  .product-preview-row.reverse{grid-template-columns:1.15fr 0.85fr;}
+  .product-preview-row.reverse .product-preview-visual{order:-1;}
+  .product-preview-text h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:clamp(22px,2.8vw,30px);margin:10px 0 12px;letter-spacing:-.01em;}
+  .product-preview-text p{font-size:15px;color:var(--slate);line-height:1.6;margin:0;}
   .pv-window{
     background:var(--panel);border:1px solid var(--border);border-radius:16px;
     box-shadow:0 24px 55px rgba(18,63,120,0.14);overflow:hidden;
@@ -404,6 +301,15 @@
   .pv-board-add-icon{font-size:20px;line-height:1;color:var(--slate-light);}
   .pv-board-add .pv-board-name{color:var(--slate-light);font-weight:600;margin-top:0;}
 
+  .pv-mini-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:10px;}
+  .pv-mini-card{display:flex;flex-direction:column;gap:10px;}
+  .pv-mini-text{font-size:13.5px;color:var(--slate);line-height:1.55;margin:0;}
+  .pv-mini-window .pv-window-body{padding:14px;}
+  .pv-kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .pv-kanban-col{background:#F6FAFE;border:1px solid var(--border);border-radius:8px;padding:8px;}
+  .pv-kanban-head{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .pv-kanban-head .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .pv-kanban-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:6px 7px;font-size:10.5px;font-weight:600;margin-bottom:5px;}
   .pv-team-list{display:flex;flex-direction:column;gap:10px;}
   .pv-team-row{display:flex;align-items:center;gap:10px;}
   .pv-team-avatar{
@@ -415,112 +321,62 @@
   .pv-team-email{font-size:10px;color:var(--slate-light);margin-top:1px;}
   .pv-team-role{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--slate);flex-shrink:0;}
   @media (max-width:800px){
+    .pv-mini-row{grid-template-columns:1fr;}
+  }
+  @media (max-width:800px){
+    .product-preview-row, .product-preview-row.reverse{grid-template-columns:1fr;}
+    .product-preview-row.reverse .product-preview-visual{order:0;}
     .pv-stat-row, .pv-hero-stats{grid-template-columns:repeat(2,1fr);}
   }
 
   .cta-section{
-    margin:0 6vw 90px;padding:76px 6vw 66px;border-radius:28px;text-align:center;
+    margin:0 6vw 90px;padding:70px 6vw 64px;border-radius:24px;text-align:center;
     background:
-      radial-gradient(circle at 12% 15%, rgba(255,157,0,0.32) 0%, transparent 42%),
-      radial-gradient(circle at 88% 12%, rgba(122,79,181,0.44) 0%, transparent 50%),
-      radial-gradient(circle at 70% 95%, rgba(255,157,0,0.22) 0%, transparent 42%),
-      radial-gradient(circle at 5% 90%, rgba(74,144,217,0.32) 0%, transparent 45%),
-      linear-gradient(150deg, var(--teal) 0%, var(--teal-dark) 62%, #0F2E52 100%);
-    position:relative;overflow:hidden;isolation:isolate;
-    box-shadow:
-      0 30px 70px -18px rgba(18,63,120,0.45),
-      inset 0 1px 0 rgba(255,255,255,0.14),
-      inset 0 0 0 1px rgba(255,255,255,0.06);
+      radial-gradient(circle at 15% 20%, rgba(255,157,0,0.35) 0%, transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(122,79,181,0.4) 0%, transparent 50%),
+      radial-gradient(circle at 75% 90%, rgba(255,157,0,0.25) 0%, transparent 45%),
+      linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+    position:relative;overflow:hidden;
+    box-shadow:0 30px 70px rgba(18,63,120,0.25);
   }
   .cta-section::before{
-    content:"";position:absolute;inset:0;opacity:0.5;z-index:0;
+    content:"";position:absolute;inset:0;opacity:0.5;
     background-image:radial-gradient(rgba(255,255,255,0.14) 1.4px, transparent 1.4px);
     background-size:22px 22px;
     -webkit-mask-image:radial-gradient(ellipse 70% 80% at 50% 40%, black 0%, transparent 75%);
     mask-image:radial-gradient(ellipse 70% 80% at 50% 40%, black 0%, transparent 75%);
   }
   .cta-section::after{
-    content:"";position:absolute;top:0;left:0;right:0;height:4px;z-index:2;
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
     background:linear-gradient(90deg, var(--teal), #7A4FB5, var(--amber));
   }
-  .cta-noise{
-    position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;mix-blend-mode:overlay;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
-  }
-  .cta-spotlight{
-    position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .3s ease;
-    background:radial-gradient(380px circle at var(--spot-x,50%) var(--spot-y,0%), rgba(255,255,255,0.16), transparent 70%);
-  }
-  .cta-section:hover .cta-spotlight{opacity:1;}
-  .cta-orb{position:absolute;border-radius:50%;filter:blur(2px);z-index:0;pointer-events:none;mix-blend-mode:screen;}
-  .cta-orb.o1{width:10px;height:10px;background:rgba(255,255,255,0.55);top:24%;left:13%;animation:cta-orb-float 5.5s ease-in-out infinite;}
-  .cta-orb.o2{width:6px;height:6px;background:var(--amber);top:66%;left:82%;animation:cta-orb-float 4.2s ease-in-out infinite .6s;}
-  .cta-orb.o3{width:7px;height:7px;background:rgba(255,255,255,0.4);top:16%;left:80%;animation:cta-orb-float 6.2s ease-in-out infinite 1.1s;}
-  @keyframes cta-orb-float{0%,100%{transform:translateY(0) scale(1);opacity:.7;}50%{transform:translateY(-16px) scale(1.25);opacity:1;}}
   .cta-badge{
-    position:relative;z-index:1;overflow:hidden;display:inline-flex;align-items:center;gap:8px;
+    position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;
     font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-    color:#fff;background:rgba(255,255,255,0.12);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-    border:1px solid rgba(255,255,255,0.22);padding:8px 18px;border-radius:999px;margin-bottom:24px;
-    box-shadow:0 4px 16px rgba(0,0,0,0.12);
+    color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+    padding:7px 16px;border-radius:20px;margin-bottom:22px;
   }
-  .cta-badge::after{
-    content:"";position:absolute;top:0;bottom:0;left:0;width:40%;
-    background:linear-gradient(100deg, transparent, rgba(255,255,255,0.35), transparent);
-    transform:translateX(-160%);animation:cta-badge-shimmer 3.2s ease-in-out infinite;
-  }
-  @keyframes cta-badge-shimmer{0%,60%,100%{transform:translateX(-160%);}80%{transform:translateX(280%);}}
-  .cta-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);flex-shrink:0;}
+  .cta-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);}
   .cta-section h2{
     position:relative;z-index:1;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:#fff;
-    font-size:clamp(28px,4vw,40px);margin:0 0 16px;letter-spacing:-.015em;line-height:1.12;
-    text-shadow:0 4px 28px rgba(10,30,60,0.35);
+    font-size:clamp(26px,3.4vw,36px);margin:0 0 14px;letter-spacing:-.01em;
   }
-  .cta-section p{position:relative;z-index:1;color:rgba(255,255,255,0.88);font-size:16.5px;margin:0 0 36px;}
+  .cta-section p{position:relative;z-index:1;color:rgba(255,255,255,0.82);font-size:16.5px;margin:0 0 34px;}
   .btn-cta-white{
-    position:relative;z-index:1;overflow:hidden;isolation:isolate;display:inline-flex;align-items:center;gap:9px;
+    position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;
     font-family:'Inter',sans-serif;font-weight:700;font-size:15.5px;
-    color:var(--teal);background:#fff;padding:17px 30px 17px 34px;border-radius:13px;text-decoration:none;
-    box-shadow:0 14px 32px rgba(0,0,0,0.25), 0 2px 6px rgba(8,26,52,0.14);
-    transition:transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+    color:var(--teal);background:#fff;padding:16px 34px;border-radius:12px;
+    box-shadow:0 14px 32px rgba(0,0,0,0.25);transition:transform .18s, box-shadow .18s;
   }
-  .btn-cta-white svg{width:16px;height:16px;flex-shrink:0;transition:transform .25s ease;}
-  .btn-cta-white::before{
-    content:"";position:absolute;inset:-2px;z-index:-2;border-radius:15px;opacity:0;
-    background:radial-gradient(60% 140% at 50% 100%, rgba(255,255,255,0.9), transparent 70%);
-    filter:blur(10px);transition:opacity .25s ease;
-  }
-  .btn-cta-white::after{
-    content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;z-index:-1;
-    background:linear-gradient(100deg, transparent, rgba(27,89,165,0.16), transparent);
-    transform:skewX(-18deg);
-  }
-  .btn-cta-white:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 18px 40px rgba(0,0,0,0.3), 0 2px 8px rgba(8,26,52,0.16);}
-  .btn-cta-white:hover::before{opacity:.55;}
-  .btn-cta-white:hover svg{transform:translateX(3px);}
-  .btn-cta-white:hover::after{animation:cta-btn-sheen .85s ease forwards;}
-  @keyframes cta-btn-sheen{to{left:130%;}}
+  .btn-cta-white:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(0,0,0,0.3);}
   .cta-trust-row{
-    position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:12px;
-    margin-top:36px;flex-wrap:wrap;
+    position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:26px;
+    margin-top:34px;flex-wrap:wrap;
   }
   .cta-trust-item{
-    display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.92);
-    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);
-    padding:8px 15px 8px 8px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-    transition:background .2s ease, border-color .2s ease, transform .2s ease;
+    display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.75);
   }
-  .cta-trust-item:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.28);transform:translateY(-1px);}
-  .cta-trust-icon{
-    display:flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;
-    background:rgba(255,255,255,0.14);flex-shrink:0;
-  }
-  .cta-trust-item svg{width:13px;height:13px;flex-shrink:0;}
-  @media (prefers-reduced-motion: reduce){
-    .cta-orb, .cta-badge::after{animation:none !important;}
-    .btn-cta-white:hover::after{animation:none !important;}
-    .theme-demo-window.dark-preview .theme-demo-stars{animation:none !important;}
-  }
+  .cta-trust-item svg{width:16px;height:16px;flex-shrink:0;}
 
   .site-footer{
     text-align:center;color:var(--slate-light);font-size:13px;padding:36px 6vw 50px;
@@ -533,6 +389,7 @@
   .footer-dot{color:var(--border);}
 
   @media (max-width:860px){
+    .feature-grid{grid-template-columns:1fr;}
     .preview-row{grid-template-columns:repeat(2, 1fr);}
     .preview-table-head, .preview-table-row{grid-template-columns:1.4fr 1fr 1fr;}
     .preview-table-head span:nth-child(4), .preview-table-row span:nth-child(4){display:none;}
@@ -632,301 +489,232 @@
     </div>
   </section>
 
-  <section class="section" id="whatsInsideSection">
+  <section class="section">
     <div class="section-head">
-      <div class="section-eyebrow" style="margin-bottom:0">What's inside your tracker</div>
+      <div class="section-eyebrow">What's inside</div>
+      <h2>One tracker, everything your team needs</h2>
+      <p>No spreadsheets, no separate tools for reporting. Just one shared system that stays in sync as your team works.</p>
     </div>
-
-    <div class="topic-pills" id="topicPills">
-      <button class="topic-pill active" data-topic="boards" type="button">
-        <span class="topic-pill-icon" style="background:#E3EEFA;color:#1B59A5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
-        Boards
-      </button>
-      <button class="topic-pill" data-topic="pipeline" type="button">
-        <span class="topic-pill-icon" style="background:#EFE5FA;color:#7A4FB5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>
-        Pipeline &amp; leads
-      </button>
-      <button class="topic-pill" data-topic="stats" type="button">
-        <span class="topic-pill-icon" style="background:#DEF0EA;color:#1F5C4F"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg></span>
-        Statistics
-      </button>
-      <button class="topic-pill" data-topic="team" type="button">
-        <span class="topic-pill-icon" style="background:#FBE4E2;color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        Team &amp; roles
-      </button>
-      <button class="topic-pill" data-topic="alexandre" type="button">
-        <span class="topic-pill-icon" style="background:#FFE9C7;color:#C97C00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>
-        Alexandre AI
-      </button>
-      <button class="topic-pill" data-topic="languages" type="button">
-        <span class="topic-pill-icon" style="background:#FFF1DC;color:#FF9D00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c2.5 2.5 3.8 5.7 3.8 10s-1.3 7.5-3.8 10c-2.5-2.5-3.8-5.7-3.8-10s1.3-7.5 3.8-10z"/></svg></span>
-        Languages
-      </button>
-      <button class="topic-pill" data-topic="dark" type="button">
-        <span class="topic-pill-icon" style="background:#E9E9E9;color:#222222"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-        Light &amp; dark
-      </button>
-    </div>
-
-    <div class="topic-stage" id="topicStage">
-
-      <div class="topic-panel active" data-topic="boards">
-        <div class="topic-panel-text">
-          <div class="section-eyebrow" style="margin:0 0 8px">Your boards</div>
-          <h2>One shared space per client, campaign, or team</h2>
-          <p>Every board is its own self-contained pipeline &mdash; its own leads, its own defaults, its own stats. Create one for each client, country, or campaign, and switch between them in a click.</p>
+    <div class="feature-grid">
+      <div class="feature-card" data-area="boards">
+        <div class="feature-icon" style="background:#E3EEFA;color:#1B59A5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
-        <div class="topic-panel-visual">
-          <div class="pv-window">
-            <div class="pv-window-bar"></div>
-            <div class="pv-window-body">
-              <div class="pv-boards-grid">
-                <div class="pv-board-card" style="--pv-accent:#1B59A5">
-                  <div class="pv-board-name">Belgium Clients</div>
-                  <div class="pv-board-meta">42 leads &middot; $86,200</div>
-                </div>
-                <div class="pv-board-card" style="--pv-accent:#7A4FB5">
-                  <div class="pv-board-name">US Outreach Q3</div>
-                  <div class="pv-board-meta">28 leads &middot; $54,000</div>
-                </div>
-                <div class="pv-board-card" style="--pv-accent:#1F5C4F">
-                  <div class="pv-board-name">Referral Program</div>
-                  <div class="pv-board-meta">19 leads &middot; $32,100</div>
-                </div>
-                <div class="pv-board-card pv-board-add">
-                  <div class="pv-board-add-icon">+</div>
-                  <div class="pv-board-name">New board</div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="feature-text">
+          <h3>Real-time boards</h3>
+          <p>Every change syncs instantly for the whole team — no refreshing, no waiting, no out-of-date spreadsheets.</p>
         </div>
       </div>
-
-      <div class="topic-panel reverse" data-topic="pipeline">
-        <div class="topic-panel-text">
-          <div class="section-eyebrow" style="margin:0 0 8px">Pipeline &amp; leads</div>
-          <h2>Every lead, laid out clearly</h2>
-          <p>See who you're talking to, where they came from, and how close they are to closing &mdash; sortable, filterable, and searchable, updating in real time as your team works. Or drag leads through a kanban-style pipeline board instead.</p>
-        </div>
-        <div class="topic-panel-visual">
-          <div class="pv-window">
-            <div class="pv-window-bar"></div>
-            <div class="pv-window-body">
-              <div class="pv-tabs">
-                <div class="pv-tab active">All leads</div>
-                <div class="pv-tab">By month</div>
-                <div class="pv-tab">Pipeline board</div>
-              </div>
-              <div class="pv-stat-row">
-                <div class="pv-stat"><div class="pv-stat-k">Total leads</div><div class="pv-stat-v">128</div></div>
-                <div class="pv-stat"><div class="pv-stat-k">Won</div><div class="pv-stat-v" style="color:#1F5C4F">34</div></div>
-                <div class="pv-stat"><div class="pv-stat-k">Revenue</div><div class="pv-stat-v">$186,400</div></div>
-              </div>
-              <div class="pv-table">
-                <div class="pv-table-head"><span>Lead</span><span>Source</span><span>Status</span><span>Revenue</span></div>
-                <div class="pv-table-row"><span>Maria Novak</span><span class="pv-pill pv-pill-blue">LinkedIn</span><span class="pv-pill pv-pill-green">Won</span><span>$18,200</span></div>
-                <div class="pv-table-row"><span>Tomasz Wolski</span><span class="pv-pill pv-pill-purple">Referral</span><span class="pv-pill pv-pill-purple">Call booked</span><span>&mdash;</span></div>
-                <div class="pv-table-row"><span>Elena Rossi</span><span class="pv-pill pv-pill-blue">Website</span><span class="pv-pill pv-pill-blue">New</span><span>&mdash;</span></div>
-                <div class="pv-table-row"><span>Jonas Weber</span><span class="pv-pill pv-pill-blue">LinkedIn</span><span class="pv-pill pv-pill-blue">New</span><span>&mdash;</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="feature-card" data-area="alexandre">
+        <img src="data:image/jpeg;base64,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" alt="Alexandre" class="alexandre-card-photo">
+        <h3>Alexandre, your AI assistant</h3>
+        <p>Understands your pipeline, flags leads that need a follow-up, and drafts outreach messages to help you close deals faster.</p>
+        <span class="alexandre-card-badge">✦ Built in, always on</span>
       </div>
-
-      <div class="topic-panel" data-topic="stats">
-        <div class="topic-panel-text">
-          <div class="section-eyebrow" style="margin:0 0 8px">Your statistics</div>
-          <h2>The numbers that actually matter</h2>
-          <p>Win rate, revenue, average closing time, and a live world map of where your business comes from &mdash; with smart insights that surface patterns automatically.</p>
+      <div class="feature-card" data-area="pipeline">
+        <div class="feature-icon" style="background:#EFE5FA;color:#7A4FB5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         </div>
-        <div class="topic-panel-visual">
-          <div class="pv-window">
-            <div class="pv-window-bar"></div>
-            <div class="pv-window-body">
-              <div class="pv-hero-stats">
-                <div class="pv-hero-stat" style="background:linear-gradient(155deg,#E3EEFA,#fff)"><div class="pv-stat-k">Total leads</div><div class="pv-stat-v-lg">128</div></div>
-                <div class="pv-hero-stat" style="background:linear-gradient(155deg,#DEF0EA,#fff)"><div class="pv-stat-k">Won</div><div class="pv-stat-v-lg" style="color:#1F5C4F">34</div></div>
-                <div class="pv-hero-stat" style="background:linear-gradient(155deg,#EFE5FA,#fff)"><div class="pv-stat-k">Revenue</div><div class="pv-stat-v-lg" style="color:#7A4FB5">$186K</div></div>
-                <div class="pv-hero-stat" style="background:linear-gradient(155deg,#FBEEDC,#fff)"><div class="pv-stat-k">Avg. closing</div><div class="pv-stat-v-lg" style="color:#A9660F">12d</div></div>
-              </div>
-              <div class="pv-insight">
-                <span class="pv-insight-spark">&#10022;</span>
-                <span>LinkedIn drives 45% of your revenue &middot; 62% win rate &middot; Belgium is your top market</span>
-              </div>
-              <div class="pv-funnel">
-                <div class="pv-funnel-row"><span class="pv-funnel-label">New</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="100" style="width:0%;background:#1B59A5"></div></div></div>
-                <div class="pv-funnel-row"><span class="pv-funnel-label">Contacted</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="72" style="width:0%;background:#7A4FB5"></div></div></div>
-                <div class="pv-funnel-row"><span class="pv-funnel-label">Call booked</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="44" style="width:0%;background:#A9660F"></div></div></div>
-                <div class="pv-funnel-row"><span class="pv-funnel-label">Won</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="27" style="width:0%;background:#1F5C4F"></div></div></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h3>Pipeline &amp; monthly views</h3>
+        <p>Track leads on a drag-and-drop pipeline board, or browse them broken down month by month.</p>
       </div>
-
-      <div class="topic-panel reverse" data-topic="team">
-        <div class="topic-panel-text">
-          <div class="section-eyebrow" style="margin:0 0 8px">Team &amp; roles</div>
-          <h2>Everyone on the same page, literally</h2>
-          <p>Invite teammates by email, assign roles, and control who's allowed to make changes &mdash; all from one page.</p>
+      <div class="feature-card" data-area="stats">
+        <div class="feature-icon" style="background:#DEF0EA;color:#1F5C4F">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg>
         </div>
-        <div class="topic-panel-visual">
-          <div class="pv-window">
-            <div class="pv-window-bar"></div>
-            <div class="pv-window-body">
-              <div class="pv-team-list">
-                <div class="pv-team-row">
-                  <div class="pv-team-avatar">JM</div>
-                  <div><div class="pv-team-name">Julia Meyer <span class="pv-team-tag">Admin</span></div><div class="pv-team-email">julia@pala-consultancy.com</div></div>
-                  <div class="pv-team-role">Co-Founder</div>
-                </div>
-                <div class="pv-team-row">
-                  <div class="pv-team-avatar">TW</div>
-                  <div><div class="pv-team-name">Tomasz Wolski</div><div class="pv-team-email">tomasz@pala-consultancy.com</div></div>
-                  <div class="pv-team-role">Sales Manager</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h3>Statistics that matter</h3>
+        <p>Win rates, revenue by month, average closing time, and a world map showing where the money comes from.</p>
       </div>
-
-      <div class="topic-panel" data-topic="alexandre">
-        <div class="topic-panel-text">
-          <div class="section-eyebrow" style="margin:0 0 8px">Alexandre, your AI assistant</div>
-          <h2>Built in, always on</h2>
-          <p>Alexandre understands your pipeline, flags leads that need a follow-up, and drafts outreach messages to help you close deals faster &mdash; no separate app, no setup.</p>
+      <div class="feature-card" data-area="languages">
+        <div class="feature-icon" style="background:#FFF1DC;color:#FF9D00">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c2.5 2.5 3.8 5.7 3.8 10s-1.3 7.5-3.8 10c-2.5-2.5-3.8-5.7-3.8-10s1.3-7.5 3.8-10z"/></svg>
         </div>
-        <div class="topic-panel-visual">
-          <div class="pv-window">
-            <div class="pv-window-bar"></div>
-            <div class="pv-window-body alexandre-panel-body">
-              <img src="data:image/jpeg;base64,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" alt="Alexandre" class="alexandre-panel-photo">
-              <div class="alexandre-panel-list">
-                <div class="alexandre-panel-item"><span class="alexandre-panel-check">&#10003;</span>Flags leads that need a follow-up</div>
-                <div class="alexandre-panel-item"><span class="alexandre-panel-check">&#10003;</span>Drafts outreach messages for you</div>
-                <div class="alexandre-panel-item"><span class="alexandre-panel-check">&#10003;</span>Answers questions about your pipeline</div>
-                <div class="alexandre-panel-item"><span class="alexandre-panel-check">&#10003;</span>Lives inside every board, no setup needed</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h3>Nine languages</h3>
+        <p>Every screen switches instantly between English, Dutch, French, German, Spanish, Italian, Portuguese, Polish, and Chinese.</p>
       </div>
-
-      <div class="topic-panel reverse" data-topic="languages">
-        <div class="topic-panel-text">
-          <div class="section-eyebrow" style="margin:0 0 8px">Nine languages</div>
-          <h2>Every screen, in your language</h2>
-          <p>Switch instantly between English, Dutch, French, German, Spanish, Italian, Portuguese, Polish, and Chinese &mdash; every teammate can work in the language they're most comfortable in.</p>
+      <div class="feature-card" data-area="team">
+        <div class="feature-icon" style="background:#FBE4E2;color:#C0392B">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
-        <div class="topic-panel-visual">
-          <div class="pv-window">
-            <div class="pv-window-bar"></div>
-            <div class="pv-window-body">
-              <div class="lang-stage" id="langStage">
-                <div class="lang-grid" id="langGrid">
-                  <div class="lang-chip active">English <span class="lang-check">&#10003;</span></div>
-                  <div class="lang-chip">Nederlands</div>
-                  <div class="lang-chip">Fran&ccedil;ais</div>
-                  <div class="lang-chip">Deutsch</div>
-                  <div class="lang-chip">Espa&ntilde;ol</div>
-                  <div class="lang-chip">Italiano</div>
-                  <div class="lang-chip">Portugu&ecirc;s</div>
-                  <div class="lang-chip">Polski</div>
-                  <div class="lang-chip">&#20013;&#25991;</div>
-                </div>
-                <div class="demo-cursor hidden" id="demoCursor">
-                  <svg class="demo-cursor-icon" viewBox="0 0 24 24"><path d="M4 3l15.5 6.7-6.4 2-2 6.4L4 3z" fill="#fff" stroke="#1B2430" stroke-width="1.3" stroke-linejoin="round"/></svg>
-                  <span class="demo-cursor-ring"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h3>Team &amp; role management</h3>
+        <p>Invite teammates by email, assign roles, and control who's allowed to make changes — all from one page.</p>
       </div>
-
-      <div class="topic-panel" data-topic="dark">
-        <div class="topic-panel-text">
-          <div class="section-eyebrow" style="margin:0 0 8px">Light &amp; dark mode</div>
-          <h2>Whichever way you like to work</h2>
-          <p>Switch themes any time from Settings &mdash; your preference is remembered everywhere you go. Try the switch on the little window on the right.</p>
+      <div class="feature-card" data-area="dark">
+        <div class="feature-icon" style="background:#E9E9E9;color:#222222">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </div>
-        <div class="topic-panel-visual">
-          <div class="theme-demo-window" id="themeDemoWindow">
-            <div class="theme-demo-stars" id="themeDemoStars"></div>
-            <div class="theme-demo-bar">
-              <span class="theme-demo-dots"><span></span><span></span><span></span></span>
-              <button class="theme-demo-switch" id="themeDemoToggle" type="button" aria-label="Toggle dark mode preview" aria-pressed="false">
-                <span class="theme-demo-switch-track">
-                  <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-                  <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                </span>
-                <span class="theme-demo-switch-thumb"></span>
-              </button>
-            </div>
-            <div class="theme-demo-body">
-              <div class="theme-demo-stats">
-                <div class="theme-demo-stat">
-                  <div class="theme-demo-stat-k">Revenue</div>
-                  <div class="theme-demo-stat-v">$186K</div>
-                </div>
-                <div class="theme-demo-stat">
-                  <div class="theme-demo-stat-k">Win rate</div>
-                  <div class="theme-demo-stat-v" style="color:#1F9D6C">62%</div>
-                </div>
-              </div>
-              <div class="theme-demo-row">
-                <span class="theme-demo-avatar">MN</span>
-                <span class="theme-demo-name">Maria Novak</span>
-                <span class="theme-demo-pill won">Won</span>
-              </div>
-              <div class="theme-demo-row">
-                <span class="theme-demo-avatar" style="background:#7A4FB5">TW</span>
-                <span class="theme-demo-name">Tomasz Wolski</span>
-                <span class="theme-demo-pill call">Call booked</span>
-              </div>
-              <div class="theme-demo-bars">
-                <span class="theme-demo-bar" style="height:40%"></span>
-                <span class="theme-demo-bar" style="height:70%"></span>
-                <span class="theme-demo-bar" style="height:55%"></span>
-                <span class="theme-demo-bar" style="height:90%"></span>
-                <span class="theme-demo-bar" style="height:62%"></span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h3>Light &amp; dark mode</h3>
+        <p>Switch themes any time from Settings — your preference is remembered everywhere you go.</p>
       </div>
-
     </div>
   </section>
 
+  <section class="section product-preview-section section-tinted">
+    <div class="product-preview-row">
+      <div class="product-preview-text">
+        <div class="section-eyebrow">Your boards</div>
+        <h2>One shared space per client, campaign, or team</h2>
+        <p>Every board is its own self-contained pipeline — its own leads, its own defaults, its own stats. Create one for each client, country, or campaign, and switch between them in a click.</p>
+      </div>
+      <div class="product-preview-visual">
+        <div class="pv-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-boards-grid">
+              <div class="pv-board-card" style="--pv-accent:#1B59A5">
+                <div class="pv-board-name">Belgium Clients</div>
+                <div class="pv-board-meta">42 leads · $86,200</div>
+              </div>
+              <div class="pv-board-card" style="--pv-accent:#7A4FB5">
+                <div class="pv-board-name">US Outreach Q3</div>
+                <div class="pv-board-meta">28 leads · $54,000</div>
+              </div>
+              <div class="pv-board-card" style="--pv-accent:#1F5C4F">
+                <div class="pv-board-name">Referral Program</div>
+                <div class="pv-board-meta">19 leads · $32,100</div>
+              </div>
+              <div class="pv-board-card pv-board-add">
+                <div class="pv-board-add-icon">+</div>
+                <div class="pv-board-name">New board</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <div class="cta-section" id="ctaSection">
-    <div class="cta-noise"></div>
-    <div class="cta-spotlight"></div>
-    <div class="cta-orb o1"></div>
-    <div class="cta-orb o2"></div>
-    <div class="cta-orb o3"></div>
+    <div class="product-preview-row">
+      <div class="product-preview-text">
+        <div class="section-eyebrow">Your lead tracker</div>
+        <h2>Every lead, laid out clearly</h2>
+        <p>See who you're talking to, where they came from, and how close they are to closing — sortable, filterable, and searchable, updating in real time as your team works.</p>
+      </div>
+      <div class="product-preview-visual">
+        <div class="pv-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-tabs">
+              <div class="pv-tab active">All leads</div>
+              <div class="pv-tab">By month</div>
+              <div class="pv-tab">Pipeline board</div>
+            </div>
+            <div class="pv-stat-row">
+              <div class="pv-stat"><div class="pv-stat-k">Total leads</div><div class="pv-stat-v">128</div></div>
+              <div class="pv-stat"><div class="pv-stat-k">Won</div><div class="pv-stat-v" style="color:#1F5C4F">34</div></div>
+              <div class="pv-stat"><div class="pv-stat-k">Revenue</div><div class="pv-stat-v">$186,400</div></div>
+            </div>
+            <div class="pv-table">
+              <div class="pv-table-head"><span>Lead</span><span>Source</span><span>Status</span><span>Revenue</span></div>
+              <div class="pv-table-row"><span>Maria Novak</span><span class="pv-pill pv-pill-blue">LinkedIn</span><span class="pv-pill pv-pill-green">Won</span><span>$18,200</span></div>
+              <div class="pv-table-row"><span>Tomasz Wolski</span><span class="pv-pill pv-pill-purple">Referral</span><span class="pv-pill pv-pill-purple">Call booked</span><span>—</span></div>
+              <div class="pv-table-row"><span>Elena Rossi</span><span class="pv-pill pv-pill-blue">Website</span><span class="pv-pill pv-pill-blue">New</span><span>—</span></div>
+              <div class="pv-table-row"><span>Jonas Weber</span><span class="pv-pill pv-pill-blue">LinkedIn</span><span class="pv-pill pv-pill-blue">New</span><span>—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-preview-row reverse">
+      <div class="product-preview-text">
+        <div class="section-eyebrow">Your statistics</div>
+        <h2>The numbers that actually matter</h2>
+        <p>Win rate, revenue, average closing time, and a live world map of where your business comes from — with smart insights that surface patterns automatically.</p>
+      </div>
+      <div class="product-preview-visual">
+        <div class="pv-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-hero-stats">
+              <div class="pv-hero-stat" style="background:linear-gradient(155deg,#E3EEFA,#fff)"><div class="pv-stat-k">Total leads</div><div class="pv-stat-v-lg">128</div></div>
+              <div class="pv-hero-stat" style="background:linear-gradient(155deg,#DEF0EA,#fff)"><div class="pv-stat-k">Won</div><div class="pv-stat-v-lg" style="color:#1F5C4F">34</div></div>
+              <div class="pv-hero-stat" style="background:linear-gradient(155deg,#EFE5FA,#fff)"><div class="pv-stat-k">Revenue</div><div class="pv-stat-v-lg" style="color:#7A4FB5">$186K</div></div>
+              <div class="pv-hero-stat" style="background:linear-gradient(155deg,#FBEEDC,#fff)"><div class="pv-stat-k">Avg. closing</div><div class="pv-stat-v-lg" style="color:#A9660F">12d</div></div>
+            </div>
+            <div class="pv-insight">
+              <span class="pv-insight-spark">✦</span>
+              <span>LinkedIn drives 45% of your revenue · 62% win rate · Belgium is your top market</span>
+            </div>
+            <div class="pv-funnel">
+              <div class="pv-funnel-row"><span class="pv-funnel-label">New</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="100" style="width:0%;background:#1B59A5"></div></div></div>
+              <div class="pv-funnel-row"><span class="pv-funnel-label">Contacted</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="72" style="width:0%;background:#7A4FB5"></div></div></div>
+              <div class="pv-funnel-row"><span class="pv-funnel-label">Call booked</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="44" style="width:0%;background:#A9660F"></div></div></div>
+              <div class="pv-funnel-row"><span class="pv-funnel-label">Won</span><div class="pv-funnel-track"><div class="pv-funnel-fill" data-target-width="27" style="width:0%;background:#1F5C4F"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-mini-row">
+      <div class="pv-mini-card">
+        <div class="pv-mini-header">
+          <span class="section-eyebrow" style="margin:0">Pipeline board</span>
+        </div>
+        <p class="pv-mini-text">Drag leads between stages as deals progress — see your whole pipeline at a glance.</p>
+        <div class="pv-window pv-mini-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-kanban">
+              <div class="pv-kanban-col">
+                <div class="pv-kanban-head"><span class="dot" style="background:#1B59A5"></span>New</div>
+                <div class="pv-kanban-card">Elena Rossi</div>
+                <div class="pv-kanban-card">Jonas Weber</div>
+              </div>
+              <div class="pv-kanban-col">
+                <div class="pv-kanban-head"><span class="dot" style="background:#7A4FB5"></span>Call booked</div>
+                <div class="pv-kanban-card">Tomasz Wolski</div>
+              </div>
+              <div class="pv-kanban-col">
+                <div class="pv-kanban-head"><span class="dot" style="background:#1F5C4F"></span>Won</div>
+                <div class="pv-kanban-card">Maria Novak</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pv-mini-card">
+        <div class="pv-mini-header">
+          <span class="section-eyebrow" style="margin:0">Team management</span>
+        </div>
+        <p class="pv-mini-text">Invite teammates, assign roles, and control who's allowed to make changes.</p>
+        <div class="pv-window pv-mini-window">
+          <div class="pv-window-bar"></div>
+          <div class="pv-window-body">
+            <div class="pv-team-list">
+              <div class="pv-team-row">
+                <div class="pv-team-avatar">JM</div>
+                <div><div class="pv-team-name">Julia Meyer <span class="pv-team-tag">Admin</span></div><div class="pv-team-email">julia@pala-consultancy.com</div></div>
+                <div class="pv-team-role">Co-Founder</div>
+              </div>
+              <div class="pv-team-row">
+                <div class="pv-team-avatar">TW</div>
+                <div><div class="pv-team-name">Tomasz Wolski</div><div class="pv-team-email">tomasz@pala-consultancy.com</div></div>
+                <div class="pv-team-role">Sales Manager</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-section">
     <div class="cta-badge"><span class="dot"></span>Your team is waiting</div>
     <h2>Ready to pick up where you left off?</h2>
     <p>Sign in to see your boards, your leads, and your team's progress.</p>
-    <a class="btn-cta-white" href="boards.html">
-      Log in to your PalaTrack
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </a>
+    <a class="btn-cta-white" href="boards.html">Log in to your PalaTrack →</a>
     <div class="cta-trust-row">
       <div class="cta-trust-item">
-        <span class="cta-trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         Real-time sync
       </div>
       <div class="cta-trust-item">
-        <span class="cta-trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Private &amp; secure
       </div>
       <div class="cta-trust-item">
-        <span class="cta-trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c2.5 2.5 3.8 5.7 3.8 10s-1.3 7.5-3.8 10c-2.5-2.5-3.8-5.7-3.8-10s1.3-7.5 3.8-10z"/></svg></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c2.5 2.5 3.8 5.7 3.8 10s-1.3 7.5-3.8 10c-2.5-2.5-3.8-5.7-3.8-10s1.3-7.5 3.8-10z"/></svg>
         9 languages
       </div>
     </div>
@@ -995,19 +783,17 @@
   }, {threshold:0.4});
   countEls.forEach(el=>countObserver.observe(el));
 
-  // ---------- "What's inside" reveal on scroll ----------
-  const whatsInsideSection = document.getElementById('whatsInsideSection');
-  if(whatsInsideSection){
-    const insideObserver = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          entry.target.classList.add('revealed');
-          insideObserver.unobserve(entry.target);
-        }
-      });
-    }, {threshold:0.1});
-    insideObserver.observe(whatsInsideSection);
-  }
+  // ---------- Feature card scroll reveal ----------
+  const revealEls = document.querySelectorAll('.feature-card');
+  const revealObserver = new IntersectionObserver((entries)=>{
+    entries.forEach((entry, i)=>{
+      if(entry.isIntersecting){
+        setTimeout(()=> entry.target.classList.add('revealed'), i * 60);
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.15});
+  revealEls.forEach(el=>revealObserver.observe(el));
 
   // ---------- Hero mouse parallax ----------
   const hero = document.querySelector('.hero');
@@ -1030,9 +816,9 @@
     });
   }
 
-  // ---------- Topic pills: click to reveal (with count-up + funnel grow-in) ----------
+  // ---------- Product preview animations (count-up + funnel grow-in) ----------
   function animatePreviewNumberText(el, duration){
-    duration = duration || 1400;
+    duration = duration || 5000;
     const original = el.textContent.trim();
     const match = original.match(/^(.*?)([\d][\d,]*\.?\d*)(.*)$/s);
     if(!match) return;
@@ -1063,170 +849,25 @@
     requestAnimationFrame(tick);
   }
 
-  function animateTopicPanel(panel){
-    if(!panel) return;
-    panel.querySelectorAll('.pv-stat-v-lg').forEach(el=>animatePreviewNumberText(el));
-    panel.querySelectorAll('.pv-funnel-fill[data-target-width]').forEach(bar=>{
-      const target = bar.dataset.targetWidth;
-      bar.style.width = '0%';
-      requestAnimationFrame(()=> requestAnimationFrame(()=>{
-        bar.style.width = target + '%';
-      }));
-    });
-  }
-
-  // ---------- Languages topic: animated cursor clicks random chips ----------
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const langChips = Array.from(document.querySelectorAll('.lang-chip'));
-  const langStage = document.getElementById('langStage');
-  const demoCursor = document.getElementById('demoCursor');
-  let langCycleTimeoutId = null;
-  let langCycleRunning = false;
-  let lastLangIndex = 0;
-
-  function setActiveLangChip(chip){
-    langChips.forEach(c=>{
-      c.classList.remove('active');
-      c.querySelector('.lang-check')?.remove();
-    });
-    chip.classList.add('active');
-    const check = document.createElement('span');
-    check.className = 'lang-check';
-    check.innerHTML = '&#10003;';
-    chip.appendChild(check);
-  }
-
-  function moveCursorTo(chip, instant){
-    if(!langStage || !demoCursor) return;
-    const stageRect = langStage.getBoundingClientRect();
-    const chipRect = chip.getBoundingClientRect();
-    const x = chipRect.left - stageRect.left + chipRect.width / 2 - 11;
-    const y = chipRect.top - stageRect.top + chipRect.height / 2 - 11;
-    if(instant){
-      demoCursor.style.transition = 'none';
-      demoCursor.style.transform = `translate(${x}px, ${y}px)`;
-      // eslint-disable-next-line no-unused-expressions
-      demoCursor.offsetHeight; // force reflow so the next transition change applies cleanly
-      demoCursor.style.transition = '';
-    } else {
-      demoCursor.style.transform = `translate(${x}px, ${y}px)`;
-    }
-  }
-
-  function scheduleNextLangClick(){
-    if(!langCycleRunning) return;
-    langCycleTimeoutId = setTimeout(()=>{
-      if(!langCycleRunning) return;
-      let nextIndex;
-      do { nextIndex = Math.floor(Math.random() * langChips.length); }
-      while(nextIndex === lastLangIndex && langChips.length > 1);
-      lastLangIndex = nextIndex;
-      const chip = langChips[nextIndex];
-      moveCursorTo(chip, false);
-      langCycleTimeoutId = setTimeout(()=>{
-        if(!langCycleRunning) return;
-        demoCursor.classList.add('clicking');
-        setActiveLangChip(chip);
-        setTimeout(()=> demoCursor.classList.remove('clicking'), 350);
-        scheduleNextLangClick();
-      }, 650); // matches the cursor's movement transition duration
-    }, 1150); // dwell time on the currently selected chip before moving again
-  }
-
-  function startLangCycle(){
-    if(prefersReducedMotion || langChips.length === 0 || langCycleRunning || !demoCursor) return;
-    langCycleRunning = true;
-    demoCursor.classList.remove('hidden');
-    moveCursorTo(langChips[lastLangIndex], true);
-    scheduleNextLangClick();
-  }
-  function stopLangCycle(){
-    langCycleRunning = false;
-    if(langCycleTimeoutId){ clearTimeout(langCycleTimeoutId); langCycleTimeoutId = null; }
-    if(demoCursor) demoCursor.classList.add('hidden');
-  }
-
-  langChips.forEach((chip, i)=>{
-    chip.addEventListener('click', ()=>{
-      stopLangCycle(); // hand control back to the person once they pick one themselves
-      lastLangIndex = i;
-      setActiveLangChip(chip);
-    });
-  });
-
-  window.addEventListener('resize', ()=>{
-    if(langCycleRunning){
-      const activeChip = langChips.find(c=>c.classList.contains('active')) || langChips[lastLangIndex];
-      moveCursorTo(activeChip, true);
-    }
-  }, {passive:true});
-
-  // ---------- Dark mode topic: toggle the little demo window (+ gentle autoplay) ----------
-  const themeDemoToggle = document.getElementById('themeDemoToggle');
-  const themeDemoWindow = document.getElementById('themeDemoWindow');
-  let themeCycleTimer = null;
-
-  function setThemeDemo(dark){
-    if(!themeDemoWindow) return;
-    themeDemoWindow.classList.toggle('dark-preview', dark);
-    themeDemoToggle?.setAttribute('aria-pressed', dark ? 'true' : 'false');
-  }
-  function startThemeCycle(){
-    if(prefersReducedMotion || themeCycleTimer || !themeDemoWindow) return;
-    themeCycleTimer = setInterval(()=>{
-      setThemeDemo(!themeDemoWindow.classList.contains('dark-preview'));
-    }, 2400);
-  }
-  function stopThemeCycle(){
-    if(themeCycleTimer){ clearInterval(themeCycleTimer); themeCycleTimer = null; }
-  }
-  if(themeDemoToggle && themeDemoWindow){
-    themeDemoToggle.addEventListener('click', ()=>{
-      stopThemeCycle(); // hand control back to the person once they try it themselves
-      setThemeDemo(!themeDemoWindow.classList.contains('dark-preview'));
-    });
-  }
-
-  const topicPills = document.querySelectorAll('.topic-pill');
-  const topicPanels = document.querySelectorAll('.topic-panel');
-  topicPills.forEach(pill=>{
-    pill.addEventListener('click', ()=>{
-      const topic = pill.dataset.topic;
-      if(pill.classList.contains('active')) return;
-      topicPills.forEach(p=>p.classList.toggle('active', p === pill));
-      let newActivePanel = null;
-      topicPanels.forEach(panel=>{
-        const match = panel.dataset.topic === topic;
-        panel.classList.toggle('active', match);
-        if(match) newActivePanel = panel;
+  const previewSection = document.querySelector('.product-preview-section');
+  if(previewSection){
+    const previewObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          entry.target.querySelectorAll('.pv-stat-v-lg').forEach(el=>animatePreviewNumberText(el));
+          entry.target.querySelectorAll('.pv-funnel-fill[data-target-width]').forEach(bar=>{
+            const target = bar.dataset.targetWidth;
+            requestAnimationFrame(()=> requestAnimationFrame(()=>{
+              bar.style.width = target + '%';
+            }));
+          });
+          previewObserver.unobserve(entry.target);
+        }
       });
-      animateTopicPanel(newActivePanel);
-      if(topic === 'languages'){ startLangCycle(); } else { stopLangCycle(); }
-      if(topic === 'dark'){ startThemeCycle(); } else { stopThemeCycle(); }
-    });
-  });
-
-  // ---------- CTA spotlight (cached rect on enter, rAF-batched writes) ----------
-  const ctaSection = document.getElementById('ctaSection');
-  if(ctaSection){
-    let ctaRect = null;
-    let ctaPending = null;
-    let ctaLastEvent = null;
-    ctaSection.addEventListener('mouseenter', ()=>{ ctaRect = ctaSection.getBoundingClientRect(); });
-    ctaSection.addEventListener('mousemove', (e)=>{
-      ctaLastEvent = e;
-      if(ctaPending) return;
-      ctaPending = requestAnimationFrame(()=>{
-        ctaPending = null;
-        if(!ctaRect) ctaRect = ctaSection.getBoundingClientRect();
-        const x = ((ctaLastEvent.clientX - ctaRect.left) / ctaRect.width) * 100;
-        const y = ((ctaLastEvent.clientY - ctaRect.top) / ctaRect.height) * 100;
-        ctaSection.style.setProperty('--spot-x', x + '%');
-        ctaSection.style.setProperty('--spot-y', y + '%');
-      });
-    });
-    ctaSection.addEventListener('mouseleave', ()=>{ ctaRect = null; });
+    }, {threshold:0.3});
+    previewObserver.observe(previewSection);
   }
+
 
 </script>
 <script>
