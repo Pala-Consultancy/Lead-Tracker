@@ -3925,6 +3925,10 @@ ${buildLeadContext()}`;
     settingsOverlay.addEventListener('click', closeSettings);
     document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeLeads){ unsubscribeLeads(); unsubscribeLeads = null; }
+      isSigningOut = true;
+      loginScreen.style.display = 'none';
+      appRoot.style.display = 'none';
+      pageLoader.style.display = 'flex';
       auth.signOut().then(()=>{
         location.href = 'index.html';
       });
@@ -3965,9 +3969,10 @@ ${buildLeadContext()}`;
       });
     }
     let authResolvedOnce = false;
+    let isSigningOut = false;
     auth.onAuthStateChanged(user=>{
-      pageLoader.style.display = 'none';
       if(user){
+        pageLoader.style.display = 'none';
         if(!boardId){
           location.href = 'boards.html';
           return;
@@ -3986,6 +3991,8 @@ ${buildLeadContext()}`;
         initFirebaseSync();
         render();
       } else {
+        if(isSigningOut) return; // already navigating away — don't flash the login screen
+        pageLoader.style.display = 'none';
         appRoot.style.display = 'none';
         loginScreen.style.display = 'flex';
         loginScreen.classList.remove('fade-in');
