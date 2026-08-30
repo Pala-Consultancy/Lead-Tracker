@@ -60,6 +60,10 @@
     --c-amber-border:#FFDCA6;
     --c-amber-text2:#8A5A0F;
     --c-toast-bg:#1B2430;
+    --map-nodata-fill:#DCE7F5;
+    --map-ocean-start:#EAF2FC;
+    --map-ocean-end:#D6E6F8;
+    --map-graticule:rgba(27,89,165,0.08);
   }
   [data-theme="dark"]{
     --ink:#EAF0F8;
@@ -113,6 +117,10 @@
     --c-amber-border:#7A5A2E;
     --c-amber-text2:#E0A85C;
     --c-toast-bg:#1B2430;
+    --map-nodata-fill:#26374A;
+    --map-ocean-start:#0C1420;
+    --map-ocean-end:#141F30;
+    --map-graticule:rgba(111,168,232,0.08);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -599,14 +607,24 @@
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
   .country-map-layout{display:grid;grid-template-columns:0.85fr 1.15fr;gap:20px;align-items:start;}
   .world-map-wrap{
-    background:var(--panel);border:1px solid var(--border);border-radius:12px;
-    padding:14px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;isolation:isolate;
+    background:linear-gradient(160deg, var(--map-ocean-start) 0%, var(--map-ocean-end) 100%);
+    border:1px solid var(--border);border-radius:16px;
+    padding:18px;box-shadow:0 1px 2px rgba(27,36,48,0.05), 0 16px 36px -16px rgba(18,63,120,0.25);
   }
-  #worldMapContainer{width:100%;min-height:220px;position:relative;}
+  #worldMapContainer{width:100%;min-height:220px;position:relative;z-index:1;}
   #worldMapContainer svg{width:100%;height:auto;display:block;}
-  .world-map-country{stroke:var(--border);stroke-width:0.6;transition:opacity .15s, stroke .15s, stroke-width .15s;}
-  .world-map-country.highlighted{stroke:var(--ink);stroke-width:2;}
-  .world-map-country:hover{opacity:0.8;cursor:pointer;}
+  .world-map-graticule{fill:none;stroke:var(--map-graticule);stroke-width:0.6;}
+  .world-map-country{
+    stroke:var(--panel);stroke-width:0.75;
+    transition:opacity .15s ease, stroke .15s ease, stroke-width .15s ease, filter .15s ease;
+  }
+  .world-map-country.has-data{cursor:pointer;}
+  .world-map-country.highlighted{
+    stroke:var(--c-blue-fg);stroke-width:1.6;
+    filter:drop-shadow(0 0 6px rgba(27,89,165,0.5));
+  }
+  .world-map-country.has-data:hover{opacity:0.82;filter:brightness(1.08);}
   .world-map-loading{
     display:flex;align-items:center;justify-content:center;height:220px;
     color:var(--slate-light);font-size:12.5px;font-family:'IBM Plex Mono',monospace;
@@ -617,12 +635,13 @@
     transition:opacity .1s;box-shadow:0 6px 18px rgba(27,36,48,0.25);
   }
   .world-map-legend{
-    display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;
-    font-size:10.5px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;
+    position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:10px;
+    margin-top:14px;font-size:10.5px;color:var(--slate);font-family:'IBM Plex Mono',monospace;font-weight:600;
   }
   .world-map-legend-gradient{
-    width:120px;height:8px;border-radius:4px;
-    background:linear-gradient(90deg, var(--c-blue-tint), var(--c-blue-fg));
+    width:130px;height:9px;border-radius:5px;
+    background:linear-gradient(90deg, var(--map-nodata-fill), var(--c-blue-fg));
+    box-shadow:inset 0 1px 2px rgba(0,0,0,0.12), 0 0 0 1px var(--border);
   }
   @media (max-width:900px){
     .two-col{grid-template-columns:1fr;}
@@ -1403,11 +1422,10 @@
       revenueByNormName[key] = (revenueByNormName[key] || 0) + d.revenue;
     });
     const maxRevenue = Math.max(0, ...Object.values(revenueByNormName));
-    const tintColor = getComputedStyle(document.documentElement).getPropertyValue('--c-blue-tint').trim() || '#F3F8FD';
     const fgColor = getComputedStyle(document.documentElement).getPropertyValue('--c-blue-fg').trim() || '#1B59A5';
-    const tint2Color = getComputedStyle(document.documentElement).getPropertyValue('--c-blue-tint2').trim() || '#F6FAFE';
+    const noDataColor = getComputedStyle(document.documentElement).getPropertyValue('--map-nodata-fill').trim() || '#DCE7F5';
     const scale = d3.scaleLinear().domain([0, maxRevenue || 1]).range([0, 1]);
-    const interpolator = d3.interpolateRgb(tintColor, fgColor);
+    const interpolator = d3.interpolateRgb(noDataColor, fgColor);
 
     const width = container.clientWidth || 600;
     const height = Math.round(width * (options.aspectRatio || 0.52));
@@ -1419,6 +1437,13 @@
     const projection = d3.geoNaturalEarth1().fitSize([width, height], worldAtlasData.geo);
     const path = d3.geoPath(projection);
 
+    // Subtle graticule (lat/long grid) behind the countries for an atlas-like feel
+    const graticule = d3.geoGraticule10();
+    svg.append('path')
+      .datum(graticule)
+      .attr('class', 'world-map-graticule')
+      .attr('d', path);
+
     let tooltip = document.querySelector('.world-map-tooltip');
     if(!tooltip){
       tooltip = document.createElement('div');
@@ -1427,17 +1452,21 @@
     }
 
     const mapPathsByName = {};
-    svg.selectAll('path')
+    svg.selectAll('path.world-map-country')
       .data(worldAtlasData.geo.features)
       .join('path')
-      .attr('class', 'world-map-country')
       .attr('d', path)
+      .attr('class', d=>{
+        const name = (d.properties && d.properties.name) ? d.properties.name.toLowerCase() : '';
+        return 'world-map-country' + (revenueByNormName[name] ? ' has-data' : '');
+      })
       .attr('fill', d=>{
         const name = (d.properties && d.properties.name) ? d.properties.name.toLowerCase() : '';
         const revenue = revenueByNormName[name];
-        if(!revenue) return tint2Color;
+        if(!revenue) return noDataColor;
         return interpolator(scale(revenue));
       })
+      .style('opacity', 0)
       .each(function(d){
         const name = (d.properties && d.properties.name) ? d.properties.name.toLowerCase() : '';
         mapPathsByName[name] = this;
@@ -1454,6 +1483,13 @@
       .on('mouseleave', function(){
         tooltip.style.opacity = '0';
       });
+
+    // Gentle staggered fade-in so the map feels alive on first paint
+    d3.select(container).selectAll('path.world-map-country')
+      .transition()
+      .delay((d,i)=> Math.min(i * 1.2, 260))
+      .duration(280)
+      .style('opacity', 1);
 
     if(options.linkTableRows){
       document.querySelectorAll('tr[data-country]').forEach(row=>{
