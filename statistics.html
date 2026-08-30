@@ -299,6 +299,30 @@
   .btn:hover{background:var(--c-blue-tint);transform:translateY(-1px);}
 
   .section{margin-bottom:30px;}
+  .nav-anchor{scroll-margin-top:90px;}
+
+  /* ---------- Floating section nav ---------- */
+  .section-nav{
+    position:fixed;top:50%;right:22px;transform:translateY(-50%);z-index:30;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .section-nav-dot{
+    position:relative;width:9px;height:9px;border-radius:50%;padding:0;
+    background:var(--border);border:none;cursor:pointer;flex-shrink:0;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .section-nav-dot:hover{transform:scale(1.3);background:var(--slate-light);}
+  .section-nav-dot.active{background:var(--teal);transform:scale(1.35);box-shadow:0 0 0 4px var(--c-blue-bg);}
+  .section-nav-label{
+    position:absolute;top:50%;right:20px;transform:translateY(-50%) translateX(6px);
+    background:var(--panel);border:1px solid var(--border);color:var(--ink);
+    font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;white-space:nowrap;
+    box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s ease, transform .18s ease;
+  }
+  .section-nav-dot:hover .section-nav-label{opacity:1;transform:translateY(-50%) translateX(0);}
+  @media (max-width:1300px){
+    .section-nav{display:none;}
+  }
   .section-title{
     font-family:'Sora',sans-serif;font-size:16.5px;font-weight:700;color:var(--ink);
     margin:0 0 14px;display:flex;align-items:center;gap:10px;
@@ -368,17 +392,46 @@
   .cal-legend .cal-day{width:11px;height:11px;}
 
   .headline-card{
-    background:linear-gradient(135deg, var(--c-blue-fg) 0%, var(--c-blue-dark) 100%);
-    border-radius:14px;padding:26px 30px;margin-bottom:28px;color:#fff;
-    box-shadow:0 4px 16px rgba(18,63,120,0.25), var(--shadow);
+    position:relative;overflow:hidden;isolation:isolate;
+    background:
+      radial-gradient(circle at 12% 20%, rgba(255,157,0,0.22) 0%, transparent 45%),
+      radial-gradient(circle at 88% 15%, rgba(122,79,181,0.32) 0%, transparent 50%),
+      radial-gradient(circle at 20% 100%, rgba(74,144,217,0.22) 0%, transparent 45%),
+      linear-gradient(135deg, var(--c-blue-fg) 0%, var(--c-blue-dark) 100%);
+    border-radius:20px;padding:30px 34px;margin-bottom:28px;color:#fff;
+    box-shadow:0 20px 48px -14px rgba(18,63,120,0.4), var(--shadow);
     display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;
   }
-  .headline-text{font-family:'Sora',sans-serif;font-size:19px;font-weight:600;line-height:1.5;max-width:640px;}
+  .headline-noise{
+    position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  }
+  .headline-spotlight{
+    position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .3s ease;
+    background:radial-gradient(340px circle at var(--hl-x,50%) var(--hl-y,0%), rgba(255,255,255,0.14), transparent 70%);
+  }
+  .headline-card:hover .headline-spotlight{opacity:1;}
+  .headline-orb{position:absolute;border-radius:50%;filter:blur(2px);z-index:0;pointer-events:none;mix-blend-mode:screen;}
+  .headline-orb.o1{width:9px;height:9px;background:rgba(255,255,255,0.55);top:22%;left:16%;animation:hl-orb-float 5.5s ease-in-out infinite;}
+  .headline-orb.o2{width:6px;height:6px;background:var(--c-amber-fg);top:68%;left:78%;animation:hl-orb-float 4.2s ease-in-out infinite .6s;}
+  @keyframes hl-orb-float{0%,100%{transform:translateY(0) scale(1);opacity:.7;}50%{transform:translateY(-14px) scale(1.2);opacity:1;}}
+  .headline-eyebrow{
+    position:relative;z-index:1;display:inline-flex;align-items:center;gap:7px;
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;
+    background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);
+    padding:5px 13px;border-radius:999px;margin-bottom:12px;backdrop-filter:blur(6px);
+  }
+  .headline-eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--c-amber-fg);box-shadow:0 0 6px var(--c-amber-fg);}
+  .headline-main{position:relative;z-index:1;}
+  .headline-text{font-family:'Sora',sans-serif;font-size:19px;font-weight:600;line-height:1.5;max-width:640px;text-shadow:0 2px 16px rgba(10,30,60,0.25);}
   .headline-text strong{color:var(--c-amber-light);font-weight:800;}
-  .headline-stats{display:flex;gap:26px;flex-wrap:wrap;}
+  .headline-stats{position:relative;z-index:1;display:flex;gap:26px;flex-wrap:wrap;}
   .headline-stat{text-align:center;}
   .headline-stat-value{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;}
   .headline-stat-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,0.6);margin-top:2px;}
+  @media (prefers-reduced-motion: reduce){
+    .headline-orb{animation:none !important;}
+  }
 
   .insight-card{
     background:linear-gradient(135deg, rgba(122,79,181,0.08), rgba(255,157,0,0.06));
@@ -767,6 +820,18 @@
   </div>
 </header>
 <div class="app">
+
+  <nav class="section-nav" id="sectionNav">
+    <button class="section-nav-dot" data-target="sec-overview"><span class="section-nav-label" data-i18n="overview">Overview</span></button>
+    <button class="section-nav-dot" data-target="sec-outreach"><span class="section-nav-label" data-i18n="outreachPerformance">Outreach performance</span></button>
+    <button class="section-nav-dot" data-target="sec-funnel"><span class="section-nav-label" data-i18n="pipelineFunnel">Pipeline funnel</span></button>
+    <button class="section-nav-dot" data-target="sec-matrix"><span class="section-nav-label" data-i18n="winRateMatrix">Win rate matrix</span></button>
+    <button class="section-nav-dot" data-target="sec-calendar"><span class="section-nav-label" data-i18n="activityCalendar">Lead activity</span></button>
+    <button class="section-nav-dot" data-target="sec-revenue"><span class="section-nav-label" data-i18n="revenueByMonth">Revenue by month</span></button>
+    <button class="section-nav-dot" data-target="sec-sources"><span class="section-nav-label" data-i18n="bySource">By source</span></button>
+    <button class="section-nav-dot" data-target="sec-countries"><span class="section-nav-label" data-i18n="topCountries">Top countries</span></button>
+    <button class="section-nav-dot" data-target="sec-wondeals"><span class="section-nav-label" data-i18n="topWonDeals">Top won deals</span></button>
+  </nav>
 
   <div id="content"></div>
 
@@ -1475,7 +1540,7 @@
       </div>`;
     }).join('');
 
-    return `<div class="section">
+    return `<div class="section nav-anchor" id="sec-matrix">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-green-bg);color:var(--c-green-fg)">${ICONS.grid}</div>${t('winRateMatrix')}</h2>
       <p class="section-sub">${t('winRateMatrixSub')}</p>
       <div class="matrix-wrap">
@@ -1560,7 +1625,7 @@
     const dayKeys = ['day_mon','day_tue','day_wed','day_thu','day_fri','day_sat','day_sun'];
     const dayLabelsHTML = dayKeys.map((k,i)=> `<div class="cal-day-label">${i % 2 === 1 ? esc(t(k)) : ''}</div>`).join('');
 
-    return `<div class="section">
+    return `<div class="section nav-anchor" id="sec-calendar">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.calendar}</div>${t('activityCalendar')}</h2>
       <p class="section-sub">${t('activityCalendarSub')}</p>
       <div class="cal-months" style="padding-left:34px">${monthLabelsHTML}</div>
@@ -1582,13 +1647,16 @@
 
   function render(){
     const container = document.getElementById("content");
+    const sectionNav = document.getElementById("sectionNav");
     if(leads.length===0){
       container.innerHTML = `<div class="empty-state">
         <h3>${t('noDataYet')}</h3>
         <p>${t('addSomeLeadsFirst')}</p>
       </div>`;
+      if(sectionNav) sectionNav.style.display = 'none';
       return;
     }
+    if(sectionNav) sectionNav.style.display = '';
 
     const total = leads.length;
     const wonCount = leads.filter(l=>l.status==="Won").length;
@@ -1651,9 +1719,16 @@
     const headlineText = t('headlineTemplate')
       .replace('{won}', `<span class="cu">${wonCount}</span>`).replace('{total}', `<span class="cu">${total}</span>`)
       .replace('{rate}', `<span class="cu">${winRate??0}</span>`).replace('{revenue}', `<span class="cu">${formatMoney(totalRevenue)}</span>`);
-    const headlineHTML = `<div class="headline-card">
-      <div class="headline-text">
-        ${headlineText}
+    const headlineHTML = `<div class="headline-card" id="statsHeroCard">
+      <div class="headline-noise"></div>
+      <div class="headline-spotlight"></div>
+      <div class="headline-orb o1"></div>
+      <div class="headline-orb o2"></div>
+      <div class="headline-main">
+        <div class="headline-eyebrow"><span class="dot"></span>${t('statisticsTitle')}</div>
+        <div class="headline-text">
+          ${headlineText}
+        </div>
       </div>
       <div class="headline-stats">
         <div class="headline-stat"><div class="headline-stat-value">${activeCount}</div><div class="headline-stat-label">${t('stillActive')}</div></div>
@@ -1663,7 +1738,7 @@
     </div>`;
 
     // KPI row
-    const kpiHTML = `<div class="section">
+    const kpiHTML = `<div class="section nav-anchor" id="sec-overview">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.users}</div>${t('overview')}</h2>
       <div class="stats-hero-row">
         ${heroStatCard({icon:"users", accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('totalLeads'), value:total, countTarget:total, countType:'plain'})}
@@ -1684,7 +1759,7 @@
     </div>`;
 
     // Rings
-    const ringsHTML = `<div class="section">
+    const ringsHTML = `<div class="section nav-anchor" id="sec-outreach">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-purple-bg);color:var(--c-purple-fg)">${ICONS.tag}</div>${t('outreachPerformance')}</h2>
       <div class="ring-row">
         ${ringCard({pct:acceptRate, accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('acceptRate'), sub:`${acceptedCount}/${sentCount} ${t('sent')}`})}
@@ -1711,7 +1786,7 @@
         <div class="funnel-count">${total>0?Math.round((s.count/total)*100):0}${t('ofTotal')}</div>
       </div>`;
     }).join("");
-    const funnelHTML = `<div class="section">
+    const funnelHTML = `<div class="section nav-anchor" id="sec-funnel">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-amber-bg);color:var(--c-tan-fg)">${ICONS.funnel}</div>${t('pipelineFunnel')}</h2>
       <div class="funnel">
         ${funnelRowsHTML}
@@ -1822,7 +1897,7 @@
     }).join("") : `<tr><td colspan="4" style="text-align:center;color:var(--slate-light);padding:24px;">${t('noWonDeals')}</td></tr>`;
 
     const tablesHTML = `
-      <div class="section">
+      <div class="section nav-anchor" id="sec-revenue">
         <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.coin}</div>${t('revenueByMonth')}</h2>
         <div class="table-wrap" style="--table-accent:var(--c-blue-fg)">
           <table>
@@ -1832,7 +1907,7 @@
         </div>
       </div>
 
-      <div class="section two-col">
+      <div class="section two-col nav-anchor" id="sec-sources">
         <div>
           <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.tag}</div>${t('bySource')}</h2>
           <div class="table-wrap" style="--table-accent:var(--c-blue-fg)">
@@ -1853,7 +1928,7 @@
         </div>
       </div>
 
-      <div class="section">
+      <div class="section nav-anchor" id="sec-countries">
         <h2 class="section-title"><div class="section-icon" style="background:var(--c-amber-bg);color:var(--c-tan-fg)">${ICONS.tag}</div>${t('topCountries')}</h2>
         <div class="country-map-layout">
           <div class="table-wrap" style="--table-accent:var(--c-amber-fg)">
@@ -1873,7 +1948,7 @@
         </div>
       </div>
 
-      <div class="section">
+      <div class="section nav-anchor" id="sec-wondeals">
         <h2 class="section-title"><div class="section-icon" style="background:var(--c-green-bg);color:var(--c-green-fg)">${ICONS.check}</div>${t('topWonDeals')}</h2>
         <div class="table-wrap" style="--table-accent:var(--c-green-fg)">
           <table>
@@ -1894,6 +1969,7 @@
     animateAllNumbers();
     animateRingFills();
     setupScrollReveal();
+    setupHeroSpotlight();
   }
 
   // ---------- Funnel bar grow-in ----------
@@ -2007,6 +2083,61 @@
     }, {threshold:0.15});
     revealEls.forEach(el=>observer.observe(el));
   }
+
+  function setupHeroSpotlight(){
+    const hero = document.getElementById('statsHeroCard');
+    if(!hero) return;
+    let rect = null;
+    let pending = null;
+    let lastEvent = null;
+    hero.addEventListener('mouseenter', ()=>{ rect = hero.getBoundingClientRect(); });
+    hero.addEventListener('mousemove', (e)=>{
+      lastEvent = e;
+      if(pending) return;
+      pending = requestAnimationFrame(()=>{
+        pending = null;
+        if(!rect) rect = hero.getBoundingClientRect();
+        const x = ((lastEvent.clientX - rect.left) / rect.width) * 100;
+        const y = ((lastEvent.clientY - rect.top) / rect.height) * 100;
+        hero.style.setProperty('--hl-x', x + '%');
+        hero.style.setProperty('--hl-y', y + '%');
+      });
+    });
+    hero.addEventListener('mouseleave', ()=>{ rect = null; });
+  }
+
+  // ---------- Floating section nav: click-to-scroll + scroll-spy ----------
+  function initSectionNav(){
+    const navDots = Array.from(document.querySelectorAll('.section-nav-dot'));
+    if(navDots.length === 0) return;
+    navDots.forEach(dot=>{
+      dot.addEventListener('click', ()=>{
+        const target = document.getElementById(dot.dataset.target);
+        if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+    let ticking = false;
+    function updateActiveDot(){
+      const refLine = 140; // px from top of viewport used to judge "current" section
+      let currentId = null;
+      for(const dot of navDots){
+        const el = document.getElementById(dot.dataset.target);
+        if(!el) continue;
+        const top = el.getBoundingClientRect().top;
+        if(top <= refLine) currentId = dot.dataset.target;
+      }
+      navDots.forEach(dot=>{
+        dot.classList.toggle('active', dot.dataset.target === currentId);
+      });
+    }
+    window.addEventListener('scroll', ()=>{
+      if(ticking) return;
+      ticking = true;
+      requestAnimationFrame(()=>{ updateActiveDot(); ticking = false; });
+    }, {passive:true});
+    updateActiveDot();
+  }
+  initSectionNav();
 
   loadCurrency();
 
