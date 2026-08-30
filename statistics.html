@@ -794,6 +794,14 @@
     padding:5px 10px;cursor:pointer;appearance:auto;
   }
   .login-lang-switcher select:focus{outline:none;border-color:var(--teal);}
+  .login-back-home{
+    position:absolute;top:14px;left:14px;z-index:2;
+    display:flex;align-items:center;gap:4px;
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--slate);
+    background:var(--c-blue-tint2);border:1px solid var(--border);border-radius:20px;
+    padding:6px 12px;text-decoration:none;transition:background .15s, color .15s;
+  }
+  .login-back-home:hover{background:var(--c-hover-bg);color:var(--teal);}
   #appRoot{display:none;}
   footer{text-align:center;color:var(--slate-light);font-size:12px;margin-top:30px;}
 </style>
@@ -810,6 +818,7 @@
 </div>
 <div id="loginScreen">
   <div class="login-card">
+    <a class="login-back-home" id="loginBackHome" href="index.html">← Home</a>
         <div class="login-lang-switcher">
       <select id="loginLangSelect">
       <option value="en">English</option>
@@ -2378,12 +2387,16 @@
       loginFormEl.style.display = 'none';
       resetFormEl.style.display = '';
       document.getElementById('resetEmail').value = document.getElementById('loginEmail').value;
+      const backHome = document.getElementById('loginBackHome');
+      if(backHome) backHome.style.display = 'none';
     }
     function showLoginForm(){
       clearLoginError();
       loginSuccessEl.style.display = 'none';
       resetFormEl.style.display = 'none';
       loginFormEl.style.display = '';
+      const backHome = document.getElementById('loginBackHome');
+      if(backHome) backHome.style.display = '';
     }
     document.getElementById('forgotPasswordLink').addEventListener('click', showResetForm);
     document.getElementById('backToSignInLink').addEventListener('click', showLoginForm);
