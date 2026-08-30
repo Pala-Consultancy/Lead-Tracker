@@ -1261,7 +1261,7 @@
       return;
     }
     leadsCollection.onSnapshot(snapshot=>{
-      leads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
+      leads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(l=>!l.deleted);
       render();
     }, err=>{
       console.error("Firestore sync error", err);
