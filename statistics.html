@@ -309,6 +309,19 @@
   .section{margin-bottom:30px;}
   .nav-anchor{scroll-margin-top:90px;}
 
+  .scope-switch{
+    display:inline-flex;gap:4px;background:var(--c-blue-tint2);border-radius:9px;padding:4px;
+    margin-bottom:8px;
+  }
+  .scope-tab{
+    padding:8px 16px;border-radius:6px;font-size:13.5px;font-weight:600;color:var(--slate);
+    background:transparent;border:none;cursor:pointer;transition:background .15s,color .15s;
+    font-family:'Inter',sans-serif;
+  }
+  .scope-tab:hover{color:var(--ink);}
+  .scope-tab.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);}
+  .scope-note{font-size:12.5px;color:var(--slate-light);margin:0 0 22px;}
+
   /* ---------- Floating section nav ---------- */
   .section-nav{
     position:fixed;top:50%;right:22px;transform:translateY(-50%);z-index:30;
@@ -852,6 +865,12 @@
     <button class="section-nav-dot" data-target="sec-wondeals"><span class="section-nav-label" data-i18n="topWonDeals">Top won deals</span></button>
   </nav>
 
+  <div class="scope-switch" id="scopeSwitch">
+    <button class="scope-tab active" data-scope="board" data-i18n="scopeThisBoard">This board</button>
+    <button class="scope-tab" data-scope="all" data-i18n="scopeAllBoards">All boards</button>
+  </div>
+  <div class="scope-note" id="scopeNote" style="display:none"></div>
+
   <div id="content"></div>
 
   <footer data-i18n="footerText">© 2026 by Pala Consultancy BV. - All Rights Reserved</footer>
@@ -946,7 +965,7 @@
       th_month:"Month", th_leads:"Leads", th_revenue:"Revenue", th_closingrate:"Closing rate", th_source:"Source",
       th_winrate:"Win rate", th_industry:"Industry", th_country:"Country", th_lead:"Lead", th_company:"Company",
       noWonDeals:"No won deals with revenue recorded yet", notSpecified:"Not specified", noDate:"No date",
-      m1:"January", m2:"February", m3:"March", m4:"April", m5:"May", m6:"June", m7:"July", m8:"August", m9:"September", m10:"October", m11:"November", m12:"December", winRateMatrix:"Win rate matrix", winRateMatrixSub:"Where source meets industry — see exactly what converts", insufficientData:"Too few leads", activityCalendar:"Lead activity", activityCalendarSub:"Every day you added a lead, at a glance", fewerLeads:"Fewer leads", moreLeads:"More leads", leadsOnDate:"{count} leads on {date}", day_mon:"Mon", day_tue:"Tue", day_wed:"Wed", day_thu:"Thu", day_fri:"Fri", day_sat:"Sat", day_sun:"Sun", useSameLogin:"Use the same login as the tracker."
+      m1:"January", m2:"February", m3:"March", m4:"April", m5:"May", m6:"June", m7:"July", m8:"August", m9:"September", m10:"October", m11:"November", m12:"December", winRateMatrix:"Win rate matrix", winRateMatrixSub:"Where source meets industry — see exactly what converts", insufficientData:"Too few leads", activityCalendar:"Lead activity", activityCalendarSub:"Every day you added a lead, at a glance", fewerLeads:"Fewer leads", moreLeads:"More leads", leadsOnDate:"{count} leads on {date}", day_mon:"Mon", day_tue:"Tue", day_wed:"Wed", day_thu:"Thu", day_fri:"Fri", day_sat:"Sat", day_sun:"Sun", scopeThisBoard:"This board", scopeAllBoards:"All boards", scopeAllBoardsNote:"Combined from {count} boards", useSameLogin:"Use the same login as the tracker."
     },
     nl: {
       brandName:"PALA CONSULTANCY", appName:"Lead Tracking Systeem", role_founder:"Oprichter", role_cofounder:"Mede-oprichter", role_ceo:"CEO", role_md:"Algemeen Directeur", role_salesmanager:"Salesmanager", role_salesrep:"Sales medewerker", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Consultant", role_operations:"Operations", role_intern:"Stagiair", role_other:"Overig", atWord:"bij", signInContinue:"Log in om verder te gaan", helpMenuLabel:"Help", privacyPolicy:"Privacybeleid", helpCenter:"Helpcentrum", sendFeedback:"Feedback versturen", insightsLabel:"Inzichten", insightTopSource:"{source} levert {pct}% van je omzet op", insightTopCountry:"{country} is je grootste markt met {revenue}", insightWinRate:"{rate}% winratio over alle leads", insightClosingTime:"Deals sluiten gemiddeld in {days} dagen", clickToExpand:"Klik om te vergroten", loadingMap:"Kaart laden...", mapUnavailable:"Kaart niet beschikbaar", lessRevenue:"Minder omzet", moreRevenue:"Meer omzet", avgClosingTime:"Gem. sluitingstijd", dayWord:"dag", daysWordStats:"dagen", dealWord:"deal", dealsWord:"deals", lightMode:"Licht", darkMode:"Donker", slogan:"Jouw persoonlijke leadtracker",
@@ -970,7 +989,7 @@
       th_month:"Maand", th_leads:"Leads", th_revenue:"Omzet", th_closingrate:"Sluitingspercentage", th_source:"Bron",
       th_winrate:"Winpercentage", th_industry:"Sector", th_country:"Land", th_lead:"Lead", th_company:"Bedrijf",
       noWonDeals:"Nog geen gewonnen deals met omzet geregistreerd", notSpecified:"Niet gespecificeerd", noDate:"Geen datum",
-      m1:"januari", m2:"februari", m3:"maart", m4:"april", m5:"mei", m6:"juni", m7:"juli", m8:"augustus", m9:"september", m10:"oktober", m11:"november", m12:"december", winRateMatrix:"Winratio matrix", winRateMatrixSub:"Waar bron en branche samenkomen — zie precies wat converteert", insufficientData:"Te weinig leads", activityCalendar:"Lead-activiteit", activityCalendarSub:"Elke dag dat je een lead toevoegde, in één oogopslag", fewerLeads:"Minder leads", moreLeads:"Meer leads", leadsOnDate:"{count} leads op {date}", day_mon:"Ma", day_tue:"Di", day_wed:"Wo", day_thu:"Do", day_fri:"Vr", day_sat:"Za", day_sun:"Zo", useSameLogin:"Gebruik dezelfde login als de tracker."
+      m1:"januari", m2:"februari", m3:"maart", m4:"april", m5:"mei", m6:"juni", m7:"juli", m8:"augustus", m9:"september", m10:"oktober", m11:"november", m12:"december", winRateMatrix:"Winratio matrix", winRateMatrixSub:"Waar bron en branche samenkomen — zie precies wat converteert", insufficientData:"Te weinig leads", activityCalendar:"Lead-activiteit", activityCalendarSub:"Elke dag dat je een lead toevoegde, in één oogopslag", fewerLeads:"Minder leads", moreLeads:"Meer leads", leadsOnDate:"{count} leads op {date}", day_mon:"Ma", day_tue:"Di", day_wed:"Wo", day_thu:"Do", day_fri:"Vr", day_sat:"Za", day_sun:"Zo", scopeThisBoard:"Dit bord", scopeAllBoards:"Alle borden", scopeAllBoardsNote:"Gecombineerd uit {count} borden", useSameLogin:"Gebruik dezelfde login als de tracker."
     },
     fr: {
       brandName:"PALA CONSULTANCY", appName:"Système de suivi des prospects", role_founder:"Fondateur", role_cofounder:"Co-fondateur", role_ceo:"PDG", role_md:"Directeur général", role_salesmanager:"Responsable commercial", role_salesrep:"Représentant commercial", role_bizdev:"Développement commercial", role_marketing:"Responsable marketing", role_account:"Chargé de compte", role_consultant:"Consultant", role_operations:"Opérations", role_intern:"Stagiaire", role_other:"Autre", atWord:"chez", signInContinue:"Connectez-vous pour continuer", helpMenuLabel:"Aide", privacyPolicy:"Politique de confidentialité", helpCenter:"Centre d'aide", sendFeedback:"Envoyer des commentaires", insightsLabel:"Analyses", insightTopSource:"{source} génère {pct}% de votre chiffre d'affaires", insightTopCountry:"{country} est votre premier marché avec {revenue}", insightWinRate:"Taux de réussite de {rate}% sur tous les prospects", insightClosingTime:"Les deals se concluent en {days} jours en moyenne", clickToExpand:"Cliquez pour agrandir", loadingMap:"Chargement de la carte...", mapUnavailable:"Carte non disponible", lessRevenue:"Moins de revenu", moreRevenue:"Plus de revenu", avgClosingTime:"Délai moyen de conclusion", dayWord:"jour", daysWordStats:"jours", dealWord:"deal", dealsWord:"deals", lightMode:"Clair", darkMode:"Sombre", slogan:"Votre suivi de prospects personnel",
@@ -994,7 +1013,7 @@
       th_month:"Mois", th_leads:"Prospects", th_revenue:"Revenu", th_closingrate:"Taux de conclusion", th_source:"Source",
       th_winrate:"Taux de réussite", th_industry:"Secteur", th_country:"Pays", th_lead:"Prospect", th_company:"Entreprise",
       noWonDeals:"Aucun deal gagné avec revenu enregistré pour l'instant", notSpecified:"Non spécifié", noDate:"Aucune date",
-      m1:"janvier", m2:"février", m3:"mars", m4:"avril", m5:"mai", m6:"juin", m7:"juillet", m8:"août", m9:"septembre", m10:"octobre", m11:"novembre", m12:"décembre", winRateMatrix:"Matrice de taux de réussite", winRateMatrixSub:"Là où la source croise le secteur — voyez ce qui convertit vraiment", insufficientData:"Trop peu de prospects", activityCalendar:"Activité des prospects", activityCalendarSub:"Chaque jour où vous avez ajouté un prospect, en un coup d'œil", fewerLeads:"Moins de prospects", moreLeads:"Plus de prospects", leadsOnDate:"{count} prospects le {date}", day_mon:"Lun", day_tue:"Mar", day_wed:"Mer", day_thu:"Jeu", day_fri:"Ven", day_sat:"Sam", day_sun:"Dim", useSameLogin:"Utilisez la même connexion que le suivi."
+      m1:"janvier", m2:"février", m3:"mars", m4:"avril", m5:"mai", m6:"juin", m7:"juillet", m8:"août", m9:"septembre", m10:"octobre", m11:"novembre", m12:"décembre", winRateMatrix:"Matrice de taux de réussite", winRateMatrixSub:"Là où la source croise le secteur — voyez ce qui convertit vraiment", insufficientData:"Trop peu de prospects", activityCalendar:"Activité des prospects", activityCalendarSub:"Chaque jour où vous avez ajouté un prospect, en un coup d'œil", fewerLeads:"Moins de prospects", moreLeads:"Plus de prospects", leadsOnDate:"{count} prospects le {date}", day_mon:"Lun", day_tue:"Mar", day_wed:"Mer", day_thu:"Jeu", day_fri:"Ven", day_sat:"Sam", day_sun:"Dim", scopeThisBoard:"Ce tableau", scopeAllBoards:"Tous les tableaux", scopeAllBoardsNote:"Combiné à partir de {count} tableaux", useSameLogin:"Utilisez la même connexion que le suivi."
     },
     de: {
       brandName:"PALA CONSULTANCY", appName:"Lead-Tracking-System", role_founder:"Gründer", role_cofounder:"Mitgründer", role_ceo:"CEO", role_md:"Geschäftsführer", role_salesmanager:"Sales Manager", role_salesrep:"Vertriebsmitarbeiter", role_bizdev:"Business Development", role_marketing:"Marketing Manager", role_account:"Account Manager", role_consultant:"Berater", role_operations:"Operations", role_intern:"Praktikant", role_other:"Sonstiges", atWord:"bei", signInContinue:"Melde dich an, um fortzufahren", helpMenuLabel:"Hilfe", privacyPolicy:"Datenschutzrichtlinie", helpCenter:"Hilfe-Center", sendFeedback:"Feedback senden", insightsLabel:"Einblicke", insightTopSource:"{source} liefert {pct}% deines Umsatzes", insightTopCountry:"{country} ist dein stärkster Markt mit {revenue}", insightWinRate:"{rate}% Gewinnrate über alle Leads", insightClosingTime:"Deals schließen im Schnitt in {days} Tagen ab", clickToExpand:"Klicken zum Vergrößern", loadingMap:"Karte wird geladen...", mapUnavailable:"Karte nicht verfügbar", lessRevenue:"Weniger Umsatz", moreRevenue:"Mehr Umsatz", avgClosingTime:"Ø Abschlusszeit", dayWord:"Tag", daysWordStats:"Tage", dealWord:"Deal", dealsWord:"Deals", lightMode:"Hell", darkMode:"Dunkel", slogan:"Dein persönlicher Lead-Tracker",
@@ -1018,7 +1037,7 @@
       th_month:"Monat", th_leads:"Leads", th_revenue:"Umsatz", th_closingrate:"Abschlussquote", th_source:"Quelle",
       th_winrate:"Gewinnrate", th_industry:"Branche", th_country:"Land", th_lead:"Lead", th_company:"Unternehmen",
       noWonDeals:"Noch keine gewonnenen Deals mit erfasstem Umsatz", notSpecified:"Nicht angegeben", noDate:"Kein Datum",
-      m1:"Januar", m2:"Februar", m3:"März", m4:"April", m5:"Mai", m6:"Juni", m7:"Juli", m8:"August", m9:"September", m10:"Oktober", m11:"November", m12:"Dezember", winRateMatrix:"Gewinnrate-Matrix", winRateMatrixSub:"Wo Quelle und Branche zusammentreffen — sieh genau, was konvertiert", insufficientData:"Zu wenige Leads", activityCalendar:"Lead-Aktivität", activityCalendarSub:"Jeder Tag, an dem du einen Lead hinzugefügt hast, auf einen Blick", fewerLeads:"Weniger Leads", moreLeads:"Mehr Leads", leadsOnDate:"{count} Leads am {date}", day_mon:"Mo", day_tue:"Di", day_wed:"Mi", day_thu:"Do", day_fri:"Fr", day_sat:"Sa", day_sun:"So", useSameLogin:"Verwende den gleichen Login wie im Tracker."
+      m1:"Januar", m2:"Februar", m3:"März", m4:"April", m5:"Mai", m6:"Juni", m7:"Juli", m8:"August", m9:"September", m10:"Oktober", m11:"November", m12:"Dezember", winRateMatrix:"Gewinnrate-Matrix", winRateMatrixSub:"Wo Quelle und Branche zusammentreffen — sieh genau, was konvertiert", insufficientData:"Zu wenige Leads", activityCalendar:"Lead-Aktivität", activityCalendarSub:"Jeder Tag, an dem du einen Lead hinzugefügt hast, auf einen Blick", fewerLeads:"Weniger Leads", moreLeads:"Mehr Leads", leadsOnDate:"{count} Leads am {date}", day_mon:"Mo", day_tue:"Di", day_wed:"Mi", day_thu:"Do", day_fri:"Fr", day_sat:"Sa", day_sun:"So", scopeThisBoard:"Dieses Board", scopeAllBoards:"Alle Boards", scopeAllBoardsNote:"Kombiniert aus {count} Boards", useSameLogin:"Verwende den gleichen Login wie im Tracker."
     },
     es: {
       brandName:"PALA CONSULTANCY", appName:"Sistema de Seguimiento de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Director General", role_salesmanager:"Gerente de Ventas", role_salesrep:"Representante de Ventas", role_bizdev:"Desarrollo de Negocio", role_marketing:"Gerente de Marketing", role_account:"Gerente de Cuentas", role_consultant:"Consultor", role_operations:"Operaciones", role_intern:"Becario", role_other:"Otro", atWord:"en", signInContinue:"Inicia sesión para continuar", helpMenuLabel:"Ayuda", privacyPolicy:"Política de privacidad", helpCenter:"Centro de ayuda", sendFeedback:"Enviar comentarios", insightsLabel:"Perspectivas", insightTopSource:"{source} genera el {pct}% de tus ingresos", insightTopCountry:"{country} es tu mercado principal con {revenue}", insightWinRate:"Tasa de éxito del {rate}% en todos los leads", insightClosingTime:"Los tratos se cierran en {days} días de media", clickToExpand:"Haz clic para ampliar", loadingMap:"Cargando mapa...", mapUnavailable:"Mapa no disponible", lessRevenue:"Menos ingresos", moreRevenue:"Más ingresos", avgClosingTime:"Tiempo medio de cierre", dayWord:"día", daysWordStats:"días", dealWord:"trato", dealsWord:"tratos", lightMode:"Claro", darkMode:"Oscuro", slogan:"Tu rastreador de leads personal",
@@ -1042,7 +1061,7 @@
       th_month:"Mes", th_leads:"Leads", th_revenue:"Ingresos", th_closingrate:"Tasa de cierre", th_source:"Origen",
       th_winrate:"Tasa de éxito", th_industry:"Sector", th_country:"País", th_lead:"Lead", th_company:"Empresa",
       noWonDeals:"Aún no hay tratos ganados con ingresos registrados", notSpecified:"No especificado", noDate:"Sin fecha",
-      m1:"enero", m2:"febrero", m3:"marzo", m4:"abril", m5:"mayo", m6:"junio", m7:"julio", m8:"agosto", m9:"septiembre", m10:"octubre", m11:"noviembre", m12:"diciembre", winRateMatrix:"Matriz de tasa de éxito", winRateMatrixSub:"Donde la fuente se cruza con el sector — mira qué convierte de verdad", insufficientData:"Muy pocos leads", activityCalendar:"Actividad de leads", activityCalendarSub:"Cada día que añadiste un lead, de un vistazo", fewerLeads:"Menos leads", moreLeads:"Más leads", leadsOnDate:"{count} leads el {date}", day_mon:"Lun", day_tue:"Mar", day_wed:"Mié", day_thu:"Jue", day_fri:"Vie", day_sat:"Sáb", day_sun:"Dom", useSameLogin:"Usa el mismo inicio de sesión que el seguimiento."
+      m1:"enero", m2:"febrero", m3:"marzo", m4:"abril", m5:"mayo", m6:"junio", m7:"julio", m8:"agosto", m9:"septiembre", m10:"octubre", m11:"noviembre", m12:"diciembre", winRateMatrix:"Matriz de tasa de éxito", winRateMatrixSub:"Donde la fuente se cruza con el sector — mira qué convierte de verdad", insufficientData:"Muy pocos leads", activityCalendar:"Actividad de leads", activityCalendarSub:"Cada día que añadiste un lead, de un vistazo", fewerLeads:"Menos leads", moreLeads:"Más leads", leadsOnDate:"{count} leads el {date}", day_mon:"Lun", day_tue:"Mar", day_wed:"Mié", day_thu:"Jue", day_fri:"Vie", day_sat:"Sáb", day_sun:"Dom", scopeThisBoard:"Este tablero", scopeAllBoards:"Todos los tableros", scopeAllBoardsNote:"Combinado de {count} tableros", useSameLogin:"Usa el mismo inicio de sesión que el seguimiento."
     },
     it: {
       brandName:"PALA CONSULTANCY", appName:"Sistema di Gestione dei Lead", role_founder:"Fondatore", role_cofounder:"Co-fondatore", role_ceo:"CEO", role_md:"Direttore Generale", role_salesmanager:"Responsabile Vendite", role_salesrep:"Rappresentante Vendite", role_bizdev:"Sviluppo Commerciale", role_marketing:"Responsabile Marketing", role_account:"Account Manager", role_consultant:"Consulente", role_operations:"Operazioni", role_intern:"Stagista", role_other:"Altro", atWord:"presso", signInContinue:"Accedi per continuare", helpMenuLabel:"Aiuto", privacyPolicy:"Informativa sulla privacy", helpCenter:"Centro assistenza", sendFeedback:"Invia feedback", insightsLabel:"Approfondimenti", insightTopSource:"{source} genera il {pct}% del tuo fatturato", insightTopCountry:"{country} è il tuo mercato principale con {revenue}", insightWinRate:"Tasso di successo del {rate}% su tutti i lead", insightClosingTime:"Gli affari si chiudono in media in {days} giorni", clickToExpand:"Clicca per ingrandire", loadingMap:"Caricamento mappa...", mapUnavailable:"Mappa non disponibile", lessRevenue:"Meno fatturato", moreRevenue:"Più fatturato", avgClosingTime:"Tempo medio di chiusura", dayWord:"giorno", daysWordStats:"giorni", dealWord:"affare", dealsWord:"affari", lightMode:"Chiaro", darkMode:"Scuro", slogan:"Il tuo tracker di lead personale",
@@ -1066,7 +1085,7 @@
       th_month:"Mese", th_leads:"Lead", th_revenue:"Fatturato", th_closingrate:"Tasso di chiusura", th_source:"Fonte",
       th_winrate:"Tasso di successo", th_industry:"Settore", th_country:"Paese", th_lead:"Lead", th_company:"Azienda",
       noWonDeals:"Ancora nessun affare vinto con fatturato registrato", notSpecified:"Non specificato", noDate:"Nessuna data",
-      m1:"gennaio", m2:"febbraio", m3:"marzo", m4:"aprile", m5:"maggio", m6:"giugno", m7:"luglio", m8:"agosto", m9:"settembre", m10:"ottobre", m11:"novembre", m12:"dicembre", winRateMatrix:"Matrice del tasso di successo", winRateMatrixSub:"Dove la fonte incontra il settore — scopri cosa converte davvero", insufficientData:"Troppo pochi lead", activityCalendar:"Attività lead", activityCalendarSub:"Ogni giorno in cui hai aggiunto un lead, a colpo d'occhio", fewerLeads:"Meno lead", moreLeads:"Più lead", leadsOnDate:"{count} lead il {date}", day_mon:"Lun", day_tue:"Mar", day_wed:"Mer", day_thu:"Gio", day_fri:"Ven", day_sat:"Sab", day_sun:"Dom", useSameLogin:"Usa lo stesso accesso del tracker."
+      m1:"gennaio", m2:"febbraio", m3:"marzo", m4:"aprile", m5:"maggio", m6:"giugno", m7:"luglio", m8:"agosto", m9:"settembre", m10:"ottobre", m11:"novembre", m12:"dicembre", winRateMatrix:"Matrice del tasso di successo", winRateMatrixSub:"Dove la fonte incontra il settore — scopri cosa converte davvero", insufficientData:"Troppo pochi lead", activityCalendar:"Attività lead", activityCalendarSub:"Ogni giorno in cui hai aggiunto un lead, a colpo d'occhio", fewerLeads:"Meno lead", moreLeads:"Più lead", leadsOnDate:"{count} lead il {date}", day_mon:"Lun", day_tue:"Mar", day_wed:"Mer", day_thu:"Gio", day_fri:"Ven", day_sat:"Sab", day_sun:"Dom", scopeThisBoard:"Questa bacheca", scopeAllBoards:"Tutte le bacheche", scopeAllBoardsNote:"Combinato da {count} bacheche", useSameLogin:"Usa lo stesso accesso del tracker."
     },
     pt: {
       brandName:"PALA CONSULTANCY", appName:"Sistema de Gestão de Leads", role_founder:"Fundador", role_cofounder:"Cofundador", role_ceo:"CEO", role_md:"Diretor Geral", role_salesmanager:"Gestor de Vendas", role_salesrep:"Representante de Vendas", role_bizdev:"Desenvolvimento de Negócios", role_marketing:"Gestor de Marketing", role_account:"Gestor de Contas", role_consultant:"Consultor", role_operations:"Operações", role_intern:"Estagiário", role_other:"Outro", atWord:"na", signInContinue:"Inicie sessão para continuar", helpMenuLabel:"Ajuda", privacyPolicy:"Política de privacidade", helpCenter:"Centro de ajuda", sendFeedback:"Enviar feedback", insightsLabel:"Insights", insightTopSource:"{source} gera {pct}% da sua receita", insightTopCountry:"{country} é o seu principal mercado com {revenue}", insightWinRate:"Taxa de sucesso de {rate}% em todos os leads", insightClosingTime:"Os negócios fecham em {days} dias, em média", clickToExpand:"Clique para ampliar", loadingMap:"A carregar mapa...", mapUnavailable:"Mapa indisponível", lessRevenue:"Menos receita", moreRevenue:"Mais receita", avgClosingTime:"Tempo médio de fecho", dayWord:"dia", daysWordStats:"dias", dealWord:"negócio", dealsWord:"negócios", lightMode:"Claro", darkMode:"Escuro", slogan:"O seu rastreador de leads pessoal",
@@ -1090,7 +1109,7 @@
       th_month:"Mês", th_leads:"Leads", th_revenue:"Receita", th_closingrate:"Taxa de conversão", th_source:"Origem",
       th_winrate:"Taxa de sucesso", th_industry:"Setor", th_country:"País", th_lead:"Lead", th_company:"Empresa",
       noWonDeals:"Ainda sem negócios ganhos com receita registada", notSpecified:"Não especificado", noDate:"Sem data",
-      m1:"janeiro", m2:"fevereiro", m3:"março", m4:"abril", m5:"maio", m6:"junho", m7:"julho", m8:"agosto", m9:"setembro", m10:"outubro", m11:"novembro", m12:"dezembro", winRateMatrix:"Matriz de taxa de sucesso", winRateMatrixSub:"Onde a origem encontra o setor — veja exatamente o que converte", insufficientData:"Leads insuficientes", activityCalendar:"Atividade de leads", activityCalendarSub:"Cada dia em que adicionou um lead, num relance", fewerLeads:"Menos leads", moreLeads:"Mais leads", leadsOnDate:"{count} leads em {date}", day_mon:"Seg", day_tue:"Ter", day_wed:"Qua", day_thu:"Qui", day_fri:"Sex", day_sat:"Sáb", day_sun:"Dom", useSameLogin:"Use o mesmo início de sessão do rastreador."
+      m1:"janeiro", m2:"fevereiro", m3:"março", m4:"abril", m5:"maio", m6:"junho", m7:"julho", m8:"agosto", m9:"setembro", m10:"outubro", m11:"novembro", m12:"dezembro", winRateMatrix:"Matriz de taxa de sucesso", winRateMatrixSub:"Onde a origem encontra o setor — veja exatamente o que converte", insufficientData:"Leads insuficientes", activityCalendar:"Atividade de leads", activityCalendarSub:"Cada dia em que adicionou um lead, num relance", fewerLeads:"Menos leads", moreLeads:"Mais leads", leadsOnDate:"{count} leads em {date}", day_mon:"Seg", day_tue:"Ter", day_wed:"Qua", day_thu:"Qui", day_fri:"Sex", day_sat:"Sáb", day_sun:"Dom", scopeThisBoard:"Este quadro", scopeAllBoards:"Todos os quadros", scopeAllBoardsNote:"Combinado de {count} quadros", useSameLogin:"Use o mesmo início de sessão do rastreador."
     },
     pl: {
       brandName:"PALA CONSULTANCY", appName:"System Śledzenia Leadów", role_founder:"Założyciel", role_cofounder:"Współzałożyciel", role_ceo:"Dyrektor Generalny", role_md:"Dyrektor Zarządzający", role_salesmanager:"Kierownik Sprzedaży", role_salesrep:"Przedstawiciel Handlowy", role_bizdev:"Rozwój Biznesu", role_marketing:"Kierownik Marketingu", role_account:"Opiekun Klienta", role_consultant:"Konsultant", role_operations:"Operacje", role_intern:"Stażysta", role_other:"Inne", atWord:"w", signInContinue:"Zaloguj się, aby kontynuować", helpMenuLabel:"Pomoc", privacyPolicy:"Polityka prywatności", helpCenter:"Centrum pomocy", sendFeedback:"Wyślij opinię", insightsLabel:"Analizy", insightTopSource:"{source} generuje {pct}% Twojego przychodu", insightTopCountry:"{country} to Twój największy rynek z kwotą {revenue}", insightWinRate:"Wskaźnik wygranych {rate}% dla wszystkich leadów", insightClosingTime:"Transakcje zamykają się średnio w {days} dni", clickToExpand:"Kliknij, aby powiększyć", loadingMap:"Ładowanie mapy...", mapUnavailable:"Mapa niedostępna", lessRevenue:"Mniej przychodu", moreRevenue:"Więcej przychodu", avgClosingTime:"Śr. czas zamknięcia", dayWord:"dzień", daysWordStats:"dni", dealWord:"transakcja", dealsWord:"transakcji", lightMode:"Jasny", darkMode:"Ciemny", slogan:"Twój osobisty tracker leadów",
@@ -1114,7 +1133,7 @@
       th_month:"Miesiąc", th_leads:"Leady", th_revenue:"Przychód", th_closingrate:"Wskaźnik zamknięcia", th_source:"Źródło",
       th_winrate:"Wskaźnik wygranych", th_industry:"Branża", th_country:"Kraj", th_lead:"Lead", th_company:"Firma",
       noWonDeals:"Brak jeszcze wygranych transakcji z zarejestrowanym przychodem", notSpecified:"Nie określono", noDate:"Brak daty",
-      m1:"styczeń", m2:"luty", m3:"marzec", m4:"kwiecień", m5:"maj", m6:"czerwiec", m7:"lipiec", m8:"sierpień", m9:"wrzesień", m10:"październik", m11:"listopad", m12:"grudzień", winRateMatrix:"Macierz wskaźnika wygranych", winRateMatrixSub:"Tam, gdzie źródło spotyka branżę — zobacz, co naprawdę konwertuje", insufficientData:"Za mało leadów", activityCalendar:"Aktywność leadów", activityCalendarSub:"Każdy dzień, w którym dodałeś leada, na pierwszy rzut oka", fewerLeads:"Mniej leadów", moreLeads:"Więcej leadów", leadsOnDate:"{count} leadów w dniu {date}", day_mon:"Pon", day_tue:"Wt", day_wed:"Śr", day_thu:"Czw", day_fri:"Pt", day_sat:"Sob", day_sun:"Nie", useSameLogin:"Użyj tego samego logowania co w trackerze."
+      m1:"styczeń", m2:"luty", m3:"marzec", m4:"kwiecień", m5:"maj", m6:"czerwiec", m7:"lipiec", m8:"sierpień", m9:"wrzesień", m10:"październik", m11:"listopad", m12:"grudzień", winRateMatrix:"Macierz wskaźnika wygranych", winRateMatrixSub:"Tam, gdzie źródło spotyka branżę — zobacz, co naprawdę konwertuje", insufficientData:"Za mało leadów", activityCalendar:"Aktywność leadów", activityCalendarSub:"Każdy dzień, w którym dodałeś leada, na pierwszy rzut oka", fewerLeads:"Mniej leadów", moreLeads:"Więcej leadów", leadsOnDate:"{count} leadów w dniu {date}", day_mon:"Pon", day_tue:"Wt", day_wed:"Śr", day_thu:"Czw", day_fri:"Pt", day_sat:"Sob", day_sun:"Nie", scopeThisBoard:"Ta tablica", scopeAllBoards:"Wszystkie tablice", scopeAllBoardsNote:"Połączono z {count} tablic", useSameLogin:"Użyj tego samego logowania co w trackerze."
     },
     zh: {
       brandName:"PALA CONSULTANCY", appName:"潜在客户跟踪系统", role_founder:"创始人", role_cofounder:"联合创始人", role_ceo:"首席执行官", role_md:"总经理", role_salesmanager:"销售经理", role_salesrep:"销售代表", role_bizdev:"业务拓展", role_marketing:"市场经理", role_account:"客户经理", role_consultant:"顾问", role_operations:"运营", role_intern:"实习生", role_other:"其他", atWord:"就职于", signInContinue:"请登录以继续", helpMenuLabel:"帮助", privacyPolicy:"隐私政策", helpCenter:"帮助中心", sendFeedback:"发送反馈", insightsLabel:"洞察", insightTopSource:"{source} 贡献了您{pct}%的收入", insightTopCountry:"{country} 是您的主要市场，收入为{revenue}", insightWinRate:"所有潜在客户的成交率为{rate}%", insightClosingTime:"交易平均在{days}天内完成", clickToExpand:"点击放大", loadingMap:"地图加载中...", mapUnavailable:"地图不可用", lessRevenue:"收入较低", moreRevenue:"收入较高", avgClosingTime:"平均成交时长", dayWord:"天", daysWordStats:"天", dealWord:"笔交易", dealsWord:"笔交易", lightMode:"浅色", darkMode:"深色", slogan:"您的专属潜在客户跟踪工具",
@@ -1138,7 +1157,7 @@
       th_month:"月份", th_leads:"潜在客户", th_revenue:"收入", th_closingrate:"成交率", th_source:"来源",
       th_winrate:"成交率", th_industry:"行业", th_country:"国家", th_lead:"潜在客户", th_company:"公司",
       noWonDeals:"暂无已记录收入的成交项目", notSpecified:"未指定", noDate:"无日期",
-      m1:"一月", m2:"二月", m3:"三月", m4:"四月", m5:"五月", m6:"六月", m7:"七月", m8:"八月", m9:"九月", m10:"十月", m11:"十一月", m12:"十二月", winRateMatrix:"成交率矩阵", winRateMatrixSub:"来源与行业交叉之处 — 一目了然哪些真正转化", insufficientData:"潜在客户过少", activityCalendar:"潜在客户活动", activityCalendarSub:"您添加潜在客户的每一天，一览无余", fewerLeads:"较少潜在客户", moreLeads:"较多潜在客户", leadsOnDate:"{date} 有 {count} 个潜在客户", day_mon:"一", day_tue:"二", day_wed:"三", day_thu:"四", day_fri:"五", day_sat:"六", day_sun:"日", useSameLogin:"使用与跟踪系统相同的登录信息。"
+      m1:"一月", m2:"二月", m3:"三月", m4:"四月", m5:"五月", m6:"六月", m7:"七月", m8:"八月", m9:"九月", m10:"十月", m11:"十一月", m12:"十二月", winRateMatrix:"成交率矩阵", winRateMatrixSub:"来源与行业交叉之处 — 一目了然哪些真正转化", insufficientData:"潜在客户过少", activityCalendar:"潜在客户活动", activityCalendarSub:"您添加潜在客户的每一天，一览无余", fewerLeads:"较少潜在客户", moreLeads:"较多潜在客户", leadsOnDate:"{date} 有 {count} 个潜在客户", day_mon:"一", day_tue:"二", day_wed:"三", day_thu:"四", day_fri:"五", day_sat:"六", day_sun:"日", scopeThisBoard:"此看板", scopeAllBoards:"所有看板", scopeAllBoardsNote:"合并自 {count} 个看板", useSameLogin:"使用与跟踪系统相同的登录信息。"
     }
   };
   let currentLang = 'en';
@@ -1252,6 +1271,39 @@
 
   let leads = [];
   let currency = "EUR";
+  let statsScope = 'board';
+  let unsubscribeLeadsListener = null;
+  const boardNameCache = {};
+
+  try{
+    const cachedScope = localStorage.getItem('stats_scope_pref');
+    if(cachedScope === 'all' || cachedScope === 'board') statsScope = cachedScope;
+  }catch(e){}
+
+  function resolveBoardNames(boardIds){
+    const missing = boardIds.filter(id => !(id in boardNameCache));
+    if(missing.length === 0) return Promise.resolve();
+    return Promise.all(missing.map(id=>
+      boardsCollection.doc(id).get().then(doc=>{
+        boardNameCache[id] = doc.exists ? (doc.data().name || id) : id;
+      }).catch(()=>{ boardNameCache[id] = id; })
+    ));
+  }
+
+  function updateScopeNote(boardIds){
+    const note = document.getElementById('scopeNote');
+    if(!note) return;
+    if(statsScope !== 'all' || boardIds.length === 0){
+      note.style.display = 'none';
+      return;
+    }
+    resolveBoardNames(boardIds).then(()=>{
+      const names = boardIds.map(id => boardNameCache[id] || id);
+      note.textContent = `${t('scopeAllBoardsNote').replace('{count}', boardIds.length)}: ${names.join(', ')}`;
+      note.style.display = '';
+    });
+  }
+
   function initFirebaseSync(){
     if(!firebaseConnected){
       document.getElementById("content").innerHTML = `<div class="empty-state">
@@ -1260,17 +1312,51 @@
       </div>`;
       return;
     }
-    leadsCollection.onSnapshot(snapshot=>{
-      leads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(l=>!l.deleted);
-      render();
-    }, err=>{
-      console.error("Firestore sync error", err);
-      document.getElementById("content").innerHTML = `<div class="empty-state">
-        <h3>Could not load data</h3>
-        <p>${esc(err.message)}</p>
-      </div>`;
-    });
+    if(unsubscribeLeadsListener){ unsubscribeLeadsListener(); unsubscribeLeadsListener = null; }
+
+    if(statsScope === 'all'){
+      unsubscribeLeadsListener = db.collectionGroup('leads').onSnapshot(snapshot=>{
+        const boardIdsSeen = new Set();
+        leads = snapshot.docs.map(doc=>{
+          const parentBoardId = doc.ref.parent.parent ? doc.ref.parent.parent.id : null;
+          if(parentBoardId) boardIdsSeen.add(parentBoardId);
+          return {id:doc.id, boardId:parentBoardId, ...doc.data()};
+        }).filter(l=>!l.deleted);
+        updateScopeNote(Array.from(boardIdsSeen));
+        render();
+      }, err=>{
+        console.error("Firestore sync error", err);
+        document.getElementById("content").innerHTML = `<div class="empty-state">
+          <h3>Could not load data</h3>
+          <p>${esc(err.message)}</p>
+        </div>`;
+      });
+    } else {
+      updateScopeNote([]);
+      unsubscribeLeadsListener = leadsCollection.onSnapshot(snapshot=>{
+        leads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(l=>!l.deleted);
+        render();
+      }, err=>{
+        console.error("Firestore sync error", err);
+        document.getElementById("content").innerHTML = `<div class="empty-state">
+          <h3>Could not load data</h3>
+          <p>${esc(err.message)}</p>
+        </div>`;
+      });
+    }
   }
+
+  document.querySelectorAll('.scope-tab').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.scope === statsScope);
+    btn.addEventListener('click', ()=>{
+      const scope = btn.dataset.scope;
+      if(scope === statsScope) return;
+      statsScope = scope;
+      try{ localStorage.setItem('stats_scope_pref', scope); }catch(e){}
+      document.querySelectorAll('.scope-tab').forEach(b=>b.classList.toggle('active', b===btn));
+      initFirebaseSync();
+    });
+  });
   function loadCurrency(){
     try{ currency = localStorage.getItem(CURRENCY_KEY) || "EUR"; } catch(e){ currency = "EUR"; }
   }
