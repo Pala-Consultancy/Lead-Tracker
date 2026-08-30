@@ -2274,6 +2274,10 @@
     document.getElementById('settingsClose').addEventListener('click', closeSettings);
     settingsOverlay.addEventListener('click', closeSettings);
     document.getElementById('signOutItem').addEventListener('click', ()=>{
+      isSigningOut = true;
+      loginScreen.style.display = 'none';
+      appRoot.style.display = 'none';
+      pageLoader.style.display = 'flex';
       auth.signOut().then(()=>{
         location.href = 'index.html';
       });
@@ -2309,9 +2313,10 @@
         nameEl.textContent = user.email || 'Account';
       });
     }
+    let isSigningOut = false;
     auth.onAuthStateChanged(user=>{
-      pageLoader.style.display = 'none';
       if(user){
+        pageLoader.style.display = 'none';
         if(!boardId){
           location.href = 'boards.html';
           return;
@@ -2326,6 +2331,8 @@
         loadSettingsUserInfo(user);
         initFirebaseSync();
       } else {
+        if(isSigningOut) return;
+        pageLoader.style.display = 'none';
         appRoot.style.display = 'none';
         loginScreen.style.display = 'flex';
         loginScreen.classList.remove('fade-in');
