@@ -1784,9 +1784,12 @@
     });
   }
 
+  let selectedTrashIds = new Set();
+
   function renderTrashList(){
     const wrap = document.getElementById('trashListWrap');
     if(!wrap) return;
+    selectedTrashIds = new Set(Array.from(selectedTrashIds).filter(id=>trashedLeads.some(l=>l.id===id)));
     if(trashedLeads.length === 0){
       wrap.innerHTML = `<div class="empty-state">
         <h3>${t('trashEmpty')}</h3>
@@ -1794,9 +1797,17 @@
       </div>`;
       return;
     }
-    wrap.innerHTML = `<div class="table-wrap">
+    const allSelected = selectedTrashIds.size > 0 && selectedTrashIds.size === trashedLeads.length;
+    const bulkBarHTML = selectedTrashIds.size > 0 ? `<div class="bulk-bar">
+      <span>${selectedTrashIds.size} ${t('selectedWord')}</span>
+      <button class="btn" onclick="window.__trashActions.bulkRestore()">${t('restoreWord')}</button>
+      <button class="btn btn-danger" onclick="window.__trashActions.bulkPermanentlyDelete()">${t('deletePermanentlyWord')}</button>
+      <button class="btn btn-ghost" onclick="window.__trashActions.clearSelection()">${t('clearSelection')}</button>
+    </div>` : '';
+    wrap.innerHTML = bulkBarHTML + `<div class="table-wrap">
       <table>
         <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="trashSelectAll" title="${t('selectAllWord')}" ${allSelected?'checked':''}></th>
           <th>${t('th_lead')}</th>
           <th>${t('th_location')}</th>
           <th>${t('th_source')}</th>
@@ -1809,6 +1820,7 @@
             const sc = SOURCE_COLORS[l.source] || SOURCE_COLORS.Other;
             const stc = STATUS_COLORS[l.status] || STATUS_COLORS.New;
             return `<tr>
+              <td><input type="checkbox" class="row-select" ${selectedTrashIds.has(l.id)?'checked':''} onclick="window.__trashActions.toggleSelect('${l.id}')"></td>
               <td>
                 <div class="name-cell" style="cursor:pointer" onclick="window.__trashActions.openDrawer('${l.id}')">${esc(l.name) || '<span style="color:var(--slate-light)">Unnamed</span>'}</div>
                 <div class="sub-cell">${esc(l.company)||''}</div>
@@ -1828,6 +1840,8 @@
         </tbody>
       </table>
     </div>`;
+    const selectAllEl = document.getElementById('trashSelectAll');
+    if(selectAllEl) selectAllEl.addEventListener('change', ()=>window.__trashActions.toggleSelectAll());
   }
 
   function openDrawer(id){
@@ -1920,7 +1934,56 @@
       showToast(t('couldNotDeleteLead') + ' ' + err.message, true);
     });
   }
-  window.__trashActions = { openDrawer, restoreLead, permanentlyDeleteLead };
+
+  function toggleSelect(id){
+    if(selectedTrashIds.has(id)) selectedTrashIds.delete(id);
+    else selectedTrashIds.add(id);
+    renderTrashList();
+  }
+  function toggleSelectAll(){
+    if(selectedTrashIds.size === trashedLeads.length){
+      selectedTrashIds.clear();
+    } else {
+      selectedTrashIds = new Set(trashedLeads.map(l=>l.id));
+    }
+    renderTrashList();
+  }
+  function clearSelection(){
+    selectedTrashIds.clear();
+    renderTrashList();
+  }
+  function bulkRestore(){
+    const ids = Array.from(selectedTrashIds);
+    if(ids.length === 0) return;
+    const batch = db.batch();
+    ids.forEach(id=>batch.update(leadsCollection.doc(id), {deleted:false, deletedAt:null}));
+    batch.commit().then(()=>{
+      selectedTrashIds.clear();
+      showToast(`${t('restoredWord')} ${ids.length} ${ids.length===1?t('lead_singular'):t('lead_plural')}`);
+      if(drawerLeadId && ids.includes(drawerLeadId)) closeDrawer();
+    }).catch(err=>{
+      showToast(t('couldNotUndoDelete') + ' ' + err.message, true);
+    });
+  }
+  function bulkPermanentlyDelete(){
+    const ids = Array.from(selectedTrashIds);
+    if(ids.length === 0) return;
+    const msg = `${t('deletePermanentlyWord')} ${ids.length} ${t('selectedWord')} ${ids.length===1?t('lead_singular'):t('lead_plural')}? ${t('cannotBeUndone')}`;
+    if(!confirm(msg)) return;
+    const batch = db.batch();
+    ids.forEach(id=>batch.delete(leadsCollection.doc(id)));
+    batch.commit().then(()=>{
+      selectedTrashIds.clear();
+      showToast(`${t('permanentlyDeletedWord')} ${ids.length} ${ids.length===1?t('lead_singular'):t('lead_plural')}`, true);
+      if(drawerLeadId && ids.includes(drawerLeadId)) closeDrawer();
+    }).catch(err=>{
+      showToast(t('couldNotDeleteLead') + ' ' + err.message, true);
+    });
+  }
+  window.__trashActions = {
+    openDrawer, restoreLead, permanentlyDeleteLead,
+    toggleSelect, toggleSelectAll, clearSelection, bulkRestore, bulkPermanentlyDelete
+  };
 
   function showToast(message, danger){
     const stack = document.getElementById('toastStack');
