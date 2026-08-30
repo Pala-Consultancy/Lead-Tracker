@@ -1477,10 +1477,6 @@
     });
     document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeBoards){ unsubscribeBoards(); unsubscribeBoards = null; }
-      isSigningOut = true;
-      loginScreen.style.display = 'none';
-      appRoot.style.display = 'none';
-      pageLoader.style.display = 'flex';
       auth.signOut().then(()=>{
         location.href = 'index.html';
       });
@@ -1570,10 +1566,9 @@
         submitBtn.disabled = false;
       });
     });
-    let isSigningOut = false;
     auth.onAuthStateChanged(user=>{
+      pageLoader.style.display = 'none';
       if(user){
-        pageLoader.style.display = 'none';
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
         appRoot.classList.remove('fade-in');
@@ -1587,8 +1582,6 @@
         loadSettingsUserInfo(user);
         initBoardsSync();
       } else {
-        if(isSigningOut) return;
-        pageLoader.style.display = 'none';
         appRoot.style.display = 'none';
         loginScreen.style.display = 'flex';
         loginScreen.classList.remove('fade-in');
