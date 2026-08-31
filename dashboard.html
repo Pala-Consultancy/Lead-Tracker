@@ -122,6 +122,21 @@
     font-family:'Inter',sans-serif;
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
+    transition:background .6s ease;
+  }
+  body.linkedin-themed{
+    background:
+      radial-gradient(circle at 12% 8%, rgba(10,102,194,0.07) 0%, transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(10,102,194,0.08) 0%, transparent 48%),
+      radial-gradient(rgba(10,102,194,0.09) 1.2px, transparent 1.2px) 0 0/24px 24px,
+      linear-gradient(180deg, #EAF3FC 0%, var(--paper) 60%);
+  }
+  [data-theme="dark"] body.linkedin-themed{
+    background:
+      radial-gradient(circle at 12% 8%, rgba(10,102,194,0.14) 0%, transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(10,102,194,0.16) 0%, transparent 48%),
+      radial-gradient(rgba(10,102,194,0.12) 1.2px, transparent 1.2px) 0 0/24px 24px,
+      var(--paper);
   }
   .app{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
 
@@ -2224,6 +2239,7 @@
   }catch(e){}
   function applyLeadModeUI(){
     const isLinkedIn = addLeadMode === 'linkedin';
+    document.body.classList.toggle('linkedin-themed', isLinkedIn);
     const pillSent = document.getElementById('pill-requestSent');
     const pillAccepted = document.getElementById('pill-requestAccepted');
     if(pillSent) pillSent.style.display = isLinkedIn ? '' : 'none';
