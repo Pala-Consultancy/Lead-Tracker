@@ -365,7 +365,40 @@
   }
   #accountForm input:focus, #accountForm select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
   #accountForm input:disabled{background:var(--c-neutral-bg);color:var(--slate-light);cursor:not-allowed;}
-  #languageField.locked-select{background:var(--c-neutral-bg);color:var(--slate-light);cursor:not-allowed;opacity:.8;}
+  /* ---------- Interactive language dropdown ---------- */
+  .lang-dropdown{position:relative;}
+  .lang-dropdown-btn{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;box-sizing:border-box;
+    font-family:'Inter',sans-serif;font-size:14.5px;padding:11px 13px;
+    border:1px solid var(--border);border-radius:7px;background:var(--c-blue-tint2);color:var(--ink);
+    cursor:pointer;transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .lang-dropdown-btn:hover{background:var(--c-blue-soft, var(--c-blue-tint2));}
+  .lang-dropdown.open .lang-dropdown-btn{border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
+  .lang-chevron{width:15px;height:15px;flex-shrink:0;transition:transform .25s cubic-bezier(.4,0,.2,1);}
+  .lang-dropdown.open .lang-chevron{transform:rotate(180deg);}
+  .lang-dropdown-panel{
+    position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:60;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 20px 40px -12px rgba(27,36,48,0.25);padding:6px;
+    opacity:0;visibility:hidden;transform:translateY(-6px) scale(0.97);transform-origin:top left;
+    transition:opacity .18s ease, transform .18s cubic-bezier(.34,1.56,.64,1), visibility 0s linear .18s;
+    max-height:280px;overflow-y:auto;
+  }
+  .lang-dropdown.open .lang-dropdown-panel{
+    opacity:1;visibility:visible;transform:translateY(0) scale(1);transition:opacity .18s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
+  }
+  .lang-option{
+    display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;background:none;
+    border-radius:8px;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;color:var(--ink);
+    cursor:pointer;text-align:left;transition:background .12s ease, transform .12s ease;
+  }
+  .lang-option:hover{background:var(--c-blue-soft, var(--c-blue-tint2));transform:translateX(2px);}
+  .lang-option-flag{font-size:16px;line-height:1;}
+  .lang-check{width:15px;height:15px;margin-left:auto;color:var(--teal);opacity:0;flex-shrink:0;transition:opacity .15s ease;}
+  .lang-option.selected{background:var(--c-blue-tint2, var(--c-blue-soft));}
+  .lang-option.selected .lang-check{opacity:1;}
+  .lang-dropdown.locked .lang-dropdown-btn{background:var(--c-neutral-bg);color:var(--slate-light);cursor:not-allowed;opacity:.8;}
   .field-hint{font-size:11px;color:var(--slate-light);}
   .form-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
 
@@ -528,20 +561,25 @@
         <input id="companyField" type="text" placeholder="e.g. Pala Consultancy">
       </div>
       <div class="field">
-        <label for="languageField" data-i18n="preferredLanguage">Preferred language</label>
-        <select id="languageField">
-          <option value="" data-i18n="selectLanguage">Select language...</option>
-          <option value="en">English</option>
-          <option value="nl">Nederlands (Dutch)</option>
-          <option value="fr">Français (French)</option>
-          <option value="de">Deutsch (German)</option>
-          <option value="es">Español (Spanish)</option>
-          <option value="it">Italiano (Italian)</option>
-          <option value="pt">Português (Portuguese)</option>
-          <option value="pl">Polski (Polish)</option>
-          <option value="zh">中文 (Chinese)</option>
-          <option value="other">Other</option>
-        </select>
+        <label data-i18n="preferredLanguage">Preferred language</label>
+        <div class="lang-dropdown" id="languageField" data-value="">
+          <button type="button" class="lang-dropdown-btn" id="languageFieldBtn">
+            <span id="languageFieldCurrent" data-i18n="selectLanguage">Select language...</span>
+            <svg class="lang-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="lang-dropdown-panel" id="languageFieldPanel">
+            <button type="button" class="lang-option" data-value="en" data-flag="🇬🇧" data-display="English"><span class="lang-option-flag">🇬🇧</span><span>English</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="nl" data-flag="🇳🇱" data-display="Nederlands (Dutch)"><span class="lang-option-flag">🇳🇱</span><span>Nederlands (Dutch)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="fr" data-flag="🇫🇷" data-display="Français (French)"><span class="lang-option-flag">🇫🇷</span><span>Français (French)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="de" data-flag="🇩🇪" data-display="Deutsch (German)"><span class="lang-option-flag">🇩🇪</span><span>Deutsch (German)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="es" data-flag="🇪🇸" data-display="Español (Spanish)"><span class="lang-option-flag">🇪🇸</span><span>Español (Spanish)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="it" data-flag="🇮🇹" data-display="Italiano (Italian)"><span class="lang-option-flag">🇮🇹</span><span>Italiano (Italian)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="pt" data-flag="🇵🇹" data-display="Português (Portuguese)"><span class="lang-option-flag">🇵🇹</span><span>Português (Portuguese)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="pl" data-flag="🇵🇱" data-display="Polski (Polish)"><span class="lang-option-flag">🇵🇱</span><span>Polski (Polish)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="zh" data-flag="🇨🇳" data-display="中文 (Chinese)"><span class="lang-option-flag">🇨🇳</span><span>中文 (Chinese)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="other" data-flag="🌐" data-display="Other"><span class="lang-option-flag">🌐</span><span>Other</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+          </div>
+        </div>
       </div>
       <div class="field span-full">
         <label for="locationField" data-i18n="location">Location</label>
@@ -939,7 +977,7 @@
       document.getElementById('phoneField').value = profileData.phone || '';
       document.getElementById('roleField').value = profileData.role || '';
       document.getElementById('companyField').value = profileData.company || '';
-      document.getElementById('languageField').value = profileData.language || '';
+      setLanguageFieldUI(profileData.language || '');
       document.getElementById('languageField').dataset.lastValue = profileData.language || '';
       document.getElementById('locationField').value = profileData.location || '';
       currentPhotoDataUrl = profileData.photoURL || '';
@@ -962,7 +1000,7 @@
       if(isFreePlan() && currentLang !== 'en'){
         setLanguage('en');
         const field = document.getElementById('languageField');
-        if(field){ field.value = 'en'; field.dataset.lastValue = 'en'; }
+        if(field){ setLanguageFieldUI('en'); field.dataset.lastValue = 'en'; }
       }
       applyLanguageFieldRestriction();
     }, err=>{
@@ -973,17 +1011,48 @@
   function applyLanguageFieldRestriction(){
     const field = document.getElementById('languageField');
     if(!field) return;
-    field.classList.toggle('locked-select', isFreePlan());
+    field.classList.toggle('locked', isFreePlan());
+    if(isFreePlan()) field.classList.remove('open');
   }
 
-  document.getElementById('languageField').addEventListener('change', (e)=>{
+  const languageFieldOptions = Array.from(document.querySelectorAll('.lang-option'));
+  function setLanguageFieldUI(value){
+    const field = document.getElementById('languageField');
+    const current = document.getElementById('languageFieldCurrent');
+    field.dataset.value = value;
+    const opt = languageFieldOptions.find(o=>o.dataset.value === value);
+    if(opt){
+      current.textContent = `${opt.dataset.flag} ${opt.dataset.display}`;
+    } else {
+      current.textContent = t('selectLanguage');
+    }
+    languageFieldOptions.forEach(o=>o.classList.toggle('selected', o.dataset.value === value));
+  }
+  document.getElementById('languageFieldBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
     if(isFreePlan()){
-      e.target.value = e.target.dataset.lastValue || '';
       showToast(t('languageLockedUpgradeMessage'), true);
       return;
     }
-    if(e.target.value) setLanguage(e.target.value);
-    e.target.dataset.lastValue = e.target.value;
+    document.getElementById('languageField').classList.toggle('open');
+  });
+  languageFieldOptions.forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      const field = document.getElementById('languageField');
+      const value = opt.dataset.value;
+      setLanguageFieldUI(value);
+      field.dataset.lastValue = value;
+      field.classList.remove('open');
+      if(value && value !== 'other') setLanguage(value);
+    });
+  });
+  document.addEventListener('click', (e)=>{
+    const field = document.getElementById('languageField');
+    if(field.classList.contains('open') && !field.contains(e.target)) field.classList.remove('open');
+  });
+  document.addEventListener('keydown', (e)=>{
+    const field = document.getElementById('languageField');
+    if(e.key === 'Escape' && field.classList.contains('open')) field.classList.remove('open');
   });
   document.getElementById('changePhotoBtn').addEventListener('click', ()=>{
     document.getElementById('photoInput').click();
@@ -1114,7 +1183,7 @@
     const phone = document.getElementById('phoneField').value.trim();
     const role = document.getElementById('roleField').value;
     const company = document.getElementById('companyField').value.trim();
-    const language = document.getElementById('languageField').value;
+    const language = document.getElementById('languageField').dataset.value || '';
     const location = document.getElementById('locationField').value.trim();
     if(language && language !== currentLang) setLanguage(language);
     return usersCollection.doc(user.uid).set({
