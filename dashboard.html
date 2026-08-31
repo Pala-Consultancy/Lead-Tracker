@@ -163,7 +163,7 @@
     background:#0A66C2;color:#fff;border-color:#0A66C2;transition:background .3s ease;
   }
   body.linkedin-themed #leadModeToggleBtn:hover{background:#004182;}
-  body.linkedin-themed .status-select:focus, body.linkedin-themed .currency-select:focus{
+  body.linkedin-themed .status-select:focus, body.linkedin-themed .currency-dropdown.open .currency-dropdown-btn{
     outline-color:#0A66C2;
   }
   .app{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
@@ -264,6 +264,39 @@
     background:var(--panel);border:1px solid var(--border);color:var(--ink);
     cursor:pointer;
   }
+
+  /* ---------- Interactive currency dropdown ---------- */
+  .currency-dropdown{position:relative;display:inline-block;}
+  .currency-dropdown-btn{
+    display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:7px;font-size:13.5px;font-weight:600;
+    background:var(--panel);border:1px solid var(--border);color:var(--ink);cursor:pointer;
+    font-family:'Inter',sans-serif;transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .currency-dropdown-btn:hover{background:var(--c-blue-soft);}
+  .currency-dropdown.open .currency-dropdown-btn{border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
+  .currency-chevron{width:14px;height:14px;transition:transform .25s cubic-bezier(.4,0,.2,1);flex-shrink:0;}
+  .currency-dropdown.open .currency-chevron{transform:rotate(180deg);}
+  .currency-dropdown-panel{
+    position:absolute;top:calc(100% + 8px);left:0;min-width:170px;z-index:60;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 20px 40px -12px rgba(27,36,48,0.25);padding:6px;
+    opacity:0;visibility:hidden;transform:translateY(-6px) scale(0.97);transform-origin:top left;
+    transition:opacity .18s ease, transform .18s cubic-bezier(.34,1.56,.64,1), visibility 0s linear .18s;
+    max-height:280px;overflow-y:auto;
+  }
+  .currency-dropdown.open .currency-dropdown-panel{
+    opacity:1;visibility:visible;transform:translateY(0) scale(1);transition:opacity .18s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
+  }
+  .currency-option{
+    display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;background:none;
+    border-radius:8px;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;color:var(--ink);
+    cursor:pointer;text-align:left;transition:background .12s ease, transform .12s ease;
+  }
+  .currency-option:hover{background:var(--c-blue-soft);transform:translateX(2px);}
+  .currency-option-flag{font-size:16px;line-height:1;}
+  .currency-check{width:15px;height:15px;margin-left:auto;color:var(--teal);opacity:0;flex-shrink:0;transition:opacity .15s ease;}
+  .currency-option.selected{background:var(--c-blue-tint2, var(--c-blue-soft));}
+  .currency-option.selected .currency-check{opacity:1;}
 
   /* ---------- Stats grid (signature element) ---------- */
   .stats-grid{
@@ -1461,17 +1494,23 @@
 
     <div class="header-actions">
       <div class="actions-group">
-        <select id="currencySelect" class="currency-select" title="Display currency" data-i18n-title="displayCurrency">
-          <option value="EUR">€ EUR</option>
-          <option value="USD">$ USD</option>
-          <option value="GBP">£ GBP</option>
-          <option value="CHF">CHF</option>
-          <option value="AED">AED</option>
-          <option value="INR">₹ INR</option>
-          <option value="JPY">¥ JPY</option>
-          <option value="CAD">$ CAD</option>
-          <option value="AUD">$ AUD</option>
-        </select>
+        <div class="currency-dropdown" id="currencyDropdown">
+          <button type="button" class="currency-dropdown-btn" id="currencyDropdownBtn" title="Display currency" data-i18n-title="displayCurrency">
+            <span id="currencyDropdownCurrent">🇪🇺 € EUR</span>
+            <svg class="currency-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="currency-dropdown-panel" id="currencyDropdownPanel">
+            <button type="button" class="currency-option" data-value="EUR" data-flag="🇪🇺" data-display="€ EUR"><span class="currency-option-flag">🇪🇺</span><span>€ EUR</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="USD" data-flag="🇺🇸" data-display="$ USD"><span class="currency-option-flag">🇺🇸</span><span>$ USD</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="GBP" data-flag="🇬🇧" data-display="£ GBP"><span class="currency-option-flag">🇬🇧</span><span>£ GBP</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="CHF" data-flag="🇨🇭" data-display="CHF"><span class="currency-option-flag">🇨🇭</span><span>CHF</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="AED" data-flag="🇦🇪" data-display="AED"><span class="currency-option-flag">🇦🇪</span><span>AED</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="INR" data-flag="🇮🇳" data-display="₹ INR"><span class="currency-option-flag">🇮🇳</span><span>₹ INR</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="JPY" data-flag="🇯🇵" data-display="¥ JPY"><span class="currency-option-flag">🇯🇵</span><span>¥ JPY</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="CAD" data-flag="🇨🇦" data-display="$ CAD"><span class="currency-option-flag">🇨🇦</span><span>$ CAD</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="currency-option" data-value="AUD" data-flag="🇦🇺" data-display="$ AUD"><span class="currency-option-flag">🇦🇺</span><span>$ AUD</span><svg class="currency-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+          </div>
+        </div>
         <button class="btn" id="exportBtn" data-i18n="exportCSV">Export CSV</button>
         <button class="btn" id="importBtn" data-i18n="importCSV">Import CSV</button>
         <input type="file" id="importFile" accept=".csv" style="display:none">
@@ -4501,14 +4540,41 @@ ${buildLeadContext()}`;
 
   // ---------- Init ----------
   loadCurrency();
-  const currencySelect = document.getElementById('currencySelect');
-  currencySelect.value = currency;
-  currencySelect.addEventListener('change', (e)=>{
-    currency = e.target.value;
-    saveCurrency();
-    render();
-    if(currentView==='board') renderBoard();
-    if(currentView==='monthly') renderMonthlyView();
+  const currencyDropdown = document.getElementById('currencyDropdown');
+  const currencyDropdownBtn = document.getElementById('currencyDropdownBtn');
+  const currencyDropdownPanel = document.getElementById('currencyDropdownPanel');
+  const currencyDropdownCurrent = document.getElementById('currencyDropdownCurrent');
+  const currencyOptions = Array.from(document.querySelectorAll('.currency-option'));
+
+  function setCurrencyUI(value){
+    const opt = currencyOptions.find(o=>o.dataset.value === value) || currencyOptions[0];
+    currencyDropdownCurrent.textContent = `${opt.dataset.flag} ${opt.dataset.display}`;
+    currencyOptions.forEach(o=>o.classList.toggle('selected', o.dataset.value === value));
+  }
+  function openCurrencyDropdown(){ currencyDropdown.classList.add('open'); }
+  function closeCurrencyDropdown(){ currencyDropdown.classList.remove('open'); }
+
+  setCurrencyUI(currency);
+  currencyDropdownBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    currencyDropdown.classList.contains('open') ? closeCurrencyDropdown() : openCurrencyDropdown();
+  });
+  currencyOptions.forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      currency = opt.dataset.value;
+      setCurrencyUI(currency);
+      saveCurrency();
+      closeCurrencyDropdown();
+      render();
+      if(currentView==='board') renderBoard();
+      if(currentView==='monthly') renderMonthlyView();
+    });
+  });
+  document.addEventListener('click', (e)=>{
+    if(currencyDropdown.classList.contains('open') && !currencyDropdown.contains(e.target)) closeCurrencyDropdown();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && currencyDropdown.classList.contains('open')) closeCurrencyDropdown();
   });
 
   // ---------- Authentication gate ----------
