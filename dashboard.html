@@ -721,34 +721,60 @@
   .linkedin-mode-overlay{
     position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;
     background:radial-gradient(circle at 50% 45%, #1281D6 0%, #0A66C2 45%, #06407A 100%);
-    opacity:0;pointer-events:none;transition:opacity .35s ease;
+    opacity:0;pointer-events:none;transition:opacity .35s ease;overflow:hidden;perspective:900px;
   }
   .linkedin-mode-overlay.show{opacity:1;}
+  .linkedin-mode-overlay.punch{animation:linkedin-punch .4s ease;}
+  @keyframes linkedin-punch{
+    0%{transform:scale(1);}
+    30%{transform:scale(1.025);}
+    55%{transform:scale(0.99);}
+    100%{transform:scale(1);}
+  }
+  .linkedin-mode-node{
+    position:absolute;border-radius:50%;background:rgba(255,255,255,0.55);pointer-events:none;
+    box-shadow:0 0 10px rgba(255,255,255,0.6);animation:linkedin-node-float ease-in-out infinite alternate;
+  }
+  @keyframes linkedin-node-float{
+    0%{transform:translate(0,0);opacity:.35;}
+    100%{transform:translate(var(--nx,20px), var(--ny,-24px));opacity:.85;}
+  }
   .linkedin-mode-ring{
     position:absolute;border:3px solid rgba(255,255,255,0.5);border-radius:50%;
-    width:120px;height:120px;animation:linkedin-ring-pulse 1.6s ease-out infinite;
+    width:120px;height:120px;animation:linkedin-ring-pulse 1.6s ease-out infinite;opacity:0;
   }
+  .linkedin-mode-ring.go{opacity:1;}
   .linkedin-mode-ring.r2{animation-delay:.4s;}
   .linkedin-mode-ring.r3{animation-delay:.8s;}
   @keyframes linkedin-ring-pulse{
     0%{transform:scale(1);opacity:.8;}
     100%{transform:scale(3.4);opacity:0;}
   }
+  .linkedin-mode-spinring{
+    position:absolute;width:172px;height:172px;border-radius:50%;
+    border:2px dashed rgba(255,255,255,0.4);animation:linkedin-spin 7s linear infinite;
+  }
+  .linkedin-mode-spinring.rev{width:200px;height:200px;border-color:rgba(255,255,255,0.22);animation-duration:10s;animation-direction:reverse;}
+  @keyframes linkedin-spin{ to{transform:rotate(360deg);} }
+  .linkedin-mode-badge-wrap{position:relative;display:flex;align-items:center;justify-content:center;z-index:2;transform-style:preserve-3d;}
   .linkedin-mode-badge{
     width:110px;height:110px;border-radius:24px;background:#fff;
-    display:flex;align-items:center;justify-content:center;box-shadow:0 20px 50px rgba(0,0,0,0.35);
-    transform:scale(0);animation:linkedin-badge-pop .6s cubic-bezier(.34,1.56,.64,1) .15s forwards;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 20px 50px rgba(0,0,0,0.4), 0 0 60px rgba(255,255,255,0.25);
+    transform:scale(0) rotateY(-180deg);animation:linkedin-badge-pop .7s cubic-bezier(.34,1.56,.64,1) .35s forwards;
     position:relative;z-index:2;
   }
   .linkedin-mode-badge span{font-family:'Sora',sans-serif;font-weight:800;font-size:52px;color:#0A66C2;letter-spacing:-.02em;}
   @keyframes linkedin-badge-pop{
-    0%{transform:scale(0) rotate(-15deg);}
-    60%{transform:scale(1.15) rotate(5deg);}
-    100%{transform:scale(1) rotate(0deg);}
+    0%{transform:scale(0) rotateY(-180deg);}
+    55%{transform:scale(1.18) rotateY(20deg);}
+    75%{transform:scale(0.95) rotateY(-8deg);}
+    100%{transform:scale(1) rotateY(0deg);}
   }
+  .linkedin-mode-particle{position:absolute;border-radius:50%;pointer-events:none;z-index:3;}
   .linkedin-mode-text{
-    margin-top:26px;font-family:'Sora',sans-serif;font-weight:700;font-size:20px;color:#fff;
-    opacity:0;animation:linkedin-text-fade .5s ease .5s forwards;position:relative;z-index:2;
+    margin-top:30px;font-family:'Sora',sans-serif;font-weight:700;font-size:22px;color:#fff;
+    text-shadow:0 2px 12px rgba(0,0,0,0.25);
+    opacity:0;animation:linkedin-text-fade .5s ease .95s forwards;position:relative;z-index:2;
   }
   .linkedin-mode-overlay.other-platforms{
     background:radial-gradient(circle at 50% 45%, #2BC17A 0%, #1F5C4F 45%, #0E2E26 100%);
@@ -757,6 +783,9 @@
   @keyframes linkedin-text-fade{
     0%{opacity:0;transform:translateY(8px);}
     100%{opacity:1;transform:translateY(0);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .linkedin-mode-node, .linkedin-mode-spinring{display:none;}
   }
 
   .notif-badge{
@@ -2260,15 +2289,70 @@
       overlay.className = 'linkedin-mode-overlay' + (isLinkedIn ? '' : ' other-platforms');
       const badgeContent = isLinkedIn ? 'in' : '🌐';
       const label = isLinkedIn ? t('linkedInModeActivatedText') : t('otherPlatformsModeActivatedText');
+      const nodeGlyphs = isLinkedIn ? null : ['🌐','💻','📧','📱','🎥','🔗'];
+
+      // Ambient floating nodes/icons scattered across the whole overlay
+      let nodesHTML = '';
+      for(let i = 0; i < 16; i++){
+        const size = isLinkedIn ? (3 + Math.random() * 4) : (16 + Math.random() * 8);
+        const left = Math.random() * 100;
+        const top = Math.random() * 100;
+        const nx = (Math.random() * 60 - 30).toFixed(0);
+        const ny = (Math.random() * 60 - 30).toFixed(0);
+        const dur = (3 + Math.random() * 3).toFixed(1);
+        const delay = (Math.random() * 2).toFixed(1);
+        if(isLinkedIn){
+          nodesHTML += `<div class="linkedin-mode-node" style="left:${left}%;top:${top}%;width:${size}px;height:${size}px;--nx:${nx}px;--ny:${ny}px;animation-duration:${dur}s;animation-delay:${delay}s"></div>`;
+        } else {
+          const glyph = nodeGlyphs[i % nodeGlyphs.length];
+          nodesHTML += `<div class="linkedin-mode-node" style="left:${left}%;top:${top}%;width:${size}px;height:${size}px;--nx:${nx}px;--ny:${ny}px;animation-duration:${dur}s;animation-delay:${delay}s;background:none;box-shadow:none;font-size:${size}px;display:flex;align-items:center;justify-content:center;opacity:.55">${glyph}</div>`;
+        }
+      }
+
       overlay.innerHTML = `
+        ${nodesHTML}
         <div class="linkedin-mode-ring r1"></div>
         <div class="linkedin-mode-ring r2"></div>
         <div class="linkedin-mode-ring r3"></div>
-        <div class="linkedin-mode-badge"><span>${badgeContent}</span></div>
+        <div class="linkedin-mode-badge-wrap">
+          <div class="linkedin-mode-spinring"></div>
+          <div class="linkedin-mode-spinring rev"></div>
+          <div class="linkedin-mode-badge"><span>${badgeContent}</span></div>
+        </div>
         <div class="linkedin-mode-text">${label}</div>
       `;
       document.body.appendChild(overlay);
       requestAnimationFrame(()=> overlay.classList.add('show'));
+
+      // Impact moment: rings start, screen punches, particles burst outward
+      setTimeout(()=>{
+        overlay.querySelectorAll('.linkedin-mode-ring').forEach(r=>r.classList.add('go'));
+        overlay.classList.add('punch');
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2 - 20;
+        const colors = isLinkedIn ? ['#ffffff','#CFE6FB','#8FC7F2'] : ['#ffffff','#C9F2DD','#8FE8B4'];
+        for(let i = 0; i < 26; i++){
+          const p = document.createElement('div');
+          p.className = 'linkedin-mode-particle';
+          const size = Math.random() * 6 + 3;
+          p.style.width = size + 'px';
+          p.style.height = size + 'px';
+          p.style.left = centerX + 'px';
+          p.style.top = centerY + 'px';
+          p.style.background = colors[i % colors.length];
+          overlay.appendChild(p);
+          const angle = (Math.PI * 2 * i) / 26 + (Math.random() * 0.4 - 0.2);
+          const distance = 90 + Math.random() * 160;
+          const dx = Math.cos(angle) * distance;
+          const dy = Math.sin(angle) * distance;
+          const duration = 700 + Math.random() * 500;
+          const anim = p.animate([
+            { transform: 'translate(0,0) scale(1)', opacity: 1 },
+            { transform: `translate(${dx}px, ${dy}px) scale(0.2)`, opacity: 0 }
+          ], { duration, easing: 'cubic-bezier(.15,.7,.3,1)' });
+          anim.onfinish = () => p.remove();
+        }
+      }, 750);
 
       try{
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2286,21 +2370,38 @@
           osc.start(startTime);
           osc.stop(startTime + duration + 0.03);
         }
+        // Rising sweep building anticipation
+        const sweep = ctx.createOscillator();
+        const sweepGain = ctx.createGain();
+        sweep.type = 'sine';
+        sweep.frequency.setValueAtTime(180, now);
+        sweep.frequency.exponentialRampToValueAtTime(900, now + 0.7);
+        sweepGain.gain.setValueAtTime(0.05, now);
+        sweepGain.gain.linearRampToValueAtTime(0.001, now + 0.72);
+        sweep.connect(sweepGain); sweepGain.connect(ctx.destination);
+        sweep.start(now); sweep.stop(now + 0.75);
+        // Impact thump
+        tone(90, now + 0.72, 0.3, 0.22, 'sine');
+        tone(140, now + 0.73, 0.22, 0.16, 'triangle');
+        // Fanfare after impact
         if(isLinkedIn){
-          tone(660, now, 0.14, 0.12);
-          tone(880, now + 0.12, 0.22, 0.13);
-          tone(1320, now + 0.3, 0.32, 0.11);
+          tone(660, now + 0.78, 0.14, 0.12);
+          tone(880, now + 0.9, 0.22, 0.13);
+          tone(1320, now + 1.08, 0.32, 0.11);
         } else {
-          tone(587.33, now, 0.16, 0.12);
-          tone(880, now + 0.14, 0.2, 0.12);
-          tone(698.46, now + 0.32, 0.34, 0.11);
+          tone(587.33, now + 0.78, 0.16, 0.12);
+          tone(880, now + 0.92, 0.2, 0.12);
+          tone(698.46, now + 1.1, 0.34, 0.11);
         }
+        // Sparkle flourish near the end
+        tone(1760, now + 1.5, 0.18, 0.05);
+        tone(2093, now + 1.62, 0.22, 0.045);
       }catch(e){}
 
       setTimeout(()=>{
         overlay.classList.remove('show');
         setTimeout(()=> overlay.remove(), 400);
-      }, 2600);
+      }, 2900);
     }catch(e){}
   }
 
