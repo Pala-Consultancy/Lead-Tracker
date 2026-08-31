@@ -374,6 +374,7 @@
     cursor:pointer;transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
   }
   .lang-dropdown-btn:hover{background:var(--c-blue-soft, var(--c-blue-tint2));}
+  #languageFieldCurrent{display:inline-flex;align-items:center;}
   .lang-dropdown.open .lang-dropdown-btn{border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
   .lang-chevron{width:15px;height:15px;flex-shrink:0;transition:transform .25s cubic-bezier(.4,0,.2,1);}
   .lang-dropdown.open .lang-chevron{transform:rotate(180deg);}
@@ -394,7 +395,11 @@
     cursor:pointer;text-align:left;transition:background .12s ease, transform .12s ease;
   }
   .lang-option:hover{background:var(--c-blue-soft, var(--c-blue-tint2));transform:translateX(2px);}
-  .lang-option-flag{font-size:16px;line-height:1;}
+  .lang-option-flag{
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+    width:26px;height:19px;border-radius:4px;color:#fff;font-size:9.5px;font-weight:800;
+    letter-spacing:.02em;font-family:'Inter',sans-serif;
+  }
   .lang-check{width:15px;height:15px;margin-left:auto;color:var(--teal);opacity:0;flex-shrink:0;transition:opacity .15s ease;}
   .lang-option.selected{background:var(--c-blue-tint2, var(--c-blue-soft));}
   .lang-option.selected .lang-check{opacity:1;}
@@ -568,16 +573,16 @@
             <svg class="lang-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           <div class="lang-dropdown-panel" id="languageFieldPanel">
-            <button type="button" class="lang-option" data-value="en" data-flag="🇬🇧" data-display="English"><span class="lang-option-flag">🇬🇧</span><span>English</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="nl" data-flag="🇳🇱" data-display="Nederlands (Dutch)"><span class="lang-option-flag">🇳🇱</span><span>Nederlands (Dutch)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="fr" data-flag="🇫🇷" data-display="Français (French)"><span class="lang-option-flag">🇫🇷</span><span>Français (French)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="de" data-flag="🇩🇪" data-display="Deutsch (German)"><span class="lang-option-flag">🇩🇪</span><span>Deutsch (German)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="es" data-flag="🇪🇸" data-display="Español (Spanish)"><span class="lang-option-flag">🇪🇸</span><span>Español (Spanish)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="it" data-flag="🇮🇹" data-display="Italiano (Italian)"><span class="lang-option-flag">🇮🇹</span><span>Italiano (Italian)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="pt" data-flag="🇵🇹" data-display="Português (Portuguese)"><span class="lang-option-flag">🇵🇹</span><span>Português (Portuguese)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="pl" data-flag="🇵🇱" data-display="Polski (Polish)"><span class="lang-option-flag">🇵🇱</span><span>Polski (Polish)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="zh" data-flag="🇨🇳" data-display="中文 (Chinese)"><span class="lang-option-flag">🇨🇳</span><span>中文 (Chinese)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-            <button type="button" class="lang-option" data-value="other" data-flag="🌐" data-display="Other"><span class="lang-option-flag">🌐</span><span>Other</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="en" data-code="EN" data-color="#0A3D91" data-display="English"><span class="lang-option-flag" style="background:#0A3D91">EN</span><span>English</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="nl" data-code="NL" data-color="#C8102E" data-display="Nederlands (Dutch)"><span class="lang-option-flag" style="background:#C8102E">NL</span><span>Nederlands (Dutch)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="fr" data-code="FR" data-color="#1B59A5" data-display="Français (French)"><span class="lang-option-flag" style="background:#1B59A5">FR</span><span>Français (French)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="de" data-code="DE" data-color="#2B2B2B" data-display="Deutsch (German)"><span class="lang-option-flag" style="background:#2B2B2B">DE</span><span>Deutsch (German)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="es" data-code="ES" data-color="#C60B1E" data-display="Español (Spanish)"><span class="lang-option-flag" style="background:#C60B1E">ES</span><span>Español (Spanish)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="it" data-code="IT" data-color="#1F5C4F" data-display="Italiano (Italian)"><span class="lang-option-flag" style="background:#1F5C4F">IT</span><span>Italiano (Italian)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="pt" data-code="PT" data-color="#2B6E3F" data-display="Português (Portuguese)"><span class="lang-option-flag" style="background:#2B6E3F">PT</span><span>Português (Portuguese)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="pl" data-code="PL" data-color="#DC143C" data-display="Polski (Polish)"><span class="lang-option-flag" style="background:#DC143C">PL</span><span>Polski (Polish)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="zh" data-code="ZH" data-color="#B5241C" data-display="中文 (Chinese)"><span class="lang-option-flag" style="background:#B5241C">ZH</span><span>中文 (Chinese)</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <button type="button" class="lang-option" data-value="other" data-code="?" data-color="#6B7280" data-display="Other"><span class="lang-option-flag" style="background:#6B7280">?</span><span>Other</span><svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
           </div>
         </div>
       </div>
@@ -1022,7 +1027,7 @@
     field.dataset.value = value;
     const opt = languageFieldOptions.find(o=>o.dataset.value === value);
     if(opt){
-      current.textContent = `${opt.dataset.flag} ${opt.dataset.display}`;
+      current.innerHTML = `<span class="lang-option-flag" style="background:${opt.dataset.color};margin-right:8px">${opt.dataset.code}</span>${opt.dataset.display}`;
     } else {
       current.textContent = t('selectLanguage');
     }
