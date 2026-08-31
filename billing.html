@@ -457,7 +457,28 @@
   .pricing-card:hover::before{opacity:1;}
   .pricing-card.featured{
     border-color:var(--teal);background:linear-gradient(160deg,#F3F9FF 0%,var(--panel) 55%);
-    box-shadow:0 24px 48px rgba(27,89,165,0.18);
+    box-shadow:0 24px 48px rgba(27,89,165,0.18), 0 0 0 1px rgba(27,89,165,0.08);
+    animation:featured-glow 3.2s ease-in-out infinite;
+  }
+  @keyframes featured-glow{
+    0%,100%{box-shadow:0 24px 48px rgba(27,89,165,0.18), 0 0 0 1px rgba(27,89,165,0.08);}
+    50%{box-shadow:0 26px 54px rgba(27,89,165,0.28), 0 0 0 1px rgba(27,89,165,0.16), 0 0 30px rgba(122,79,181,0.15);}
+  }
+  .pricing-card.featured::after{
+    content:"";position:absolute;top:0;left:-160%;width:60%;height:100%;z-index:2;pointer-events:none;
+    background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+    transform:skewX(-20deg);
+    animation:featured-shine 3.2s ease-in-out infinite;
+  }
+  [data-theme="dark"] .pricing-card.featured::after{background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.14) 50%, transparent 100%);}
+  @keyframes featured-shine{
+    0%{left:-160%;}
+    38%{left:160%;}
+    100%{left:160%;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .pricing-card.featured{animation:none;}
+    .pricing-card.featured::after{display:none;}
   }
   [data-theme="dark"] .pricing-card.featured{background:linear-gradient(160deg,#16202C 0%,var(--panel) 60%);}
   /* ---------- Cancel plan ---------- */

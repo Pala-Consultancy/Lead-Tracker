@@ -515,6 +515,27 @@
   footer{text-align:center;color:var(--slate-light);font-size:12px;margin-top:36px;}
 
   /* ---------- Toasts ---------- */
+  /* ---------- In-app confirm modal (never use native browser confirm()) ---------- */
+  .confirm-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.55);z-index:500;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .confirm-modal{
+    background:var(--panel);border-radius:16px;padding:28px 26px;max-width:400px;width:100%;
+    box-shadow:0 30px 60px rgba(0,0,0,0.3);text-align:center;
+  }
+  .confirm-modal-icon{
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;
+  }
+  .confirm-modal-icon.warn{background:var(--c-red-bg);color:var(--c-red-fg);}
+  .confirm-modal-icon svg{width:22px;height:22px;}
+  .confirm-modal h3{font-family:'Sora',sans-serif;font-size:17px;margin:0 0 8px;}
+  .confirm-modal p{font-size:13.5px;color:var(--slate);line-height:1.55;margin:0 0 20px;}
+  .confirm-modal-actions{display:flex;gap:10px;justify-content:center;}
+  .btn-danger{background:var(--c-red-fg);color:#fff;border-color:var(--c-red-fg);}
+  .btn-danger:hover{background:#A9241C;}
+
   .toast-stack{
     position:fixed;bottom:20px;right:20px;z-index:80;display:flex;flex-direction:column;gap:8px;
   }
@@ -816,6 +837,30 @@
   </div>
 </div>
 
+<div class="confirm-overlay" id="appConfirmOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+    <h3 id="appConfirmTitle">Are you sure?</h3>
+    <p id="appConfirmBody"></p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn" id="appConfirmCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-danger" id="appConfirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="emailConfirmOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg></div>
+    <h3>Confirm your email</h3>
+    <p>Please confirm your email address to finish signing in.</p>
+    <input type="email" id="emailConfirmInput" placeholder="you@example.com" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:16px;box-sizing:border-box">
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn btn-primary" id="emailConfirmSubmitBtn">Continue</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-stack" id="toastStack"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -843,7 +888,7 @@
       deletedToast:"Deleted", couldNotDeleteBoard:"Could not delete board:", boardUpdated:"Board updated",
       couldNotUpdateBoard:"Could not update board:", couldNotCreateBoard:"Could not create board:",
       incorrectLogin:"Incorrect email or password. Please try again.", boardNoLongerExists:"This board no longer exists.",
-      deleteConfirm:"and all its leads? This cannot be undone.", deleteBoardVerb:"Delete", editBoardTitle:"Edit board", boardName:"Board name",
+      deleteConfirm:"This will also delete all its leads. This cannot be undone.", deleteBoardVerb:"Delete", editBoardTitle:"Edit board", boardName:"Board name",
       saveChanges:"Save changes", cancel:"Cancel",
       ind_technology:"Technology", ind_finance:"Finance", ind_healthcare:"Healthcare", ind_retail:"Retail & E-commerce",
       ind_realestate:"Real Estate", ind_manufacturing:"Manufacturing", ind_education:"Education",
@@ -870,7 +915,7 @@
       deletedToast:"Verwijderd", couldNotDeleteBoard:"Kon board niet verwijderen:", boardUpdated:"Board bijgewerkt",
       couldNotUpdateBoard:"Kon board niet bijwerken:", couldNotCreateBoard:"Kon board niet aanmaken:",
       incorrectLogin:"Onjuist e-mailadres of wachtwoord. Probeer het opnieuw.", boardNoLongerExists:"Deze board bestaat niet meer.",
-      deleteConfirm:"en alle bijbehorende leads? Dit kan niet ongedaan worden gemaakt.", deleteBoardVerb:"Verwijder", editBoardTitle:"Board bewerken", boardName:"Naam board",
+      deleteConfirm:"Dit verwijdert ook alle bijbehorende leads. Dit kan niet ongedaan worden gemaakt.", deleteBoardVerb:"Verwijder", editBoardTitle:"Board bewerken", boardName:"Naam board",
       saveChanges:"Wijzigingen opslaan", cancel:"Annuleren",
       ind_technology:"Technologie", ind_finance:"Financiën", ind_healthcare:"Gezondheidszorg", ind_retail:"Retail & E-commerce",
       ind_realestate:"Vastgoed", ind_manufacturing:"Productie", ind_education:"Onderwijs",
@@ -897,7 +942,7 @@
       deletedToast:"Supprimé", couldNotDeleteBoard:"Impossible de supprimer le tableau :", boardUpdated:"Tableau mis à jour",
       couldNotUpdateBoard:"Impossible de mettre à jour le tableau :", couldNotCreateBoard:"Impossible de créer le tableau :",
       incorrectLogin:"E-mail ou mot de passe incorrect. Veuillez réessayer.", boardNoLongerExists:"Ce tableau n'existe plus.",
-      deleteConfirm:"ainsi que tous ses prospects ? Cette action est irréversible.", deleteBoardVerb:"Supprimer", editBoardTitle:"Modifier le tableau", boardName:"Nom du tableau",
+      deleteConfirm:"Cela supprimera aussi tous ses prospects. Cette action est irréversible.", deleteBoardVerb:"Supprimer", editBoardTitle:"Modifier le tableau", boardName:"Nom du tableau",
       saveChanges:"Enregistrer", cancel:"Annuler",
       ind_technology:"Technologie", ind_finance:"Finance", ind_healthcare:"Santé", ind_retail:"Commerce & E-commerce",
       ind_realestate:"Immobilier", ind_manufacturing:"Industrie", ind_education:"Éducation",
@@ -924,7 +969,7 @@
       deletedToast:"Gelöscht", couldNotDeleteBoard:"Board konnte nicht gelöscht werden:", boardUpdated:"Board aktualisiert",
       couldNotUpdateBoard:"Board konnte nicht aktualisiert werden:", couldNotCreateBoard:"Board konnte nicht erstellt werden:",
       incorrectLogin:"Falsche E-Mail-Adresse oder falsches Passwort. Bitte versuche es erneut.", boardNoLongerExists:"Dieses Board existiert nicht mehr.",
-      deleteConfirm:"und alle zugehörigen Leads? Dies kann nicht rückgängig gemacht werden.", deleteBoardVerb:"Löschen", editBoardTitle:"Board bearbeiten", boardName:"Board-Name",
+      deleteConfirm:"Dadurch werden auch alle zugehörigen Leads gelöscht. Dies kann nicht rückgängig gemacht werden.", deleteBoardVerb:"Löschen", editBoardTitle:"Board bearbeiten", boardName:"Board-Name",
       saveChanges:"Änderungen speichern", cancel:"Abbrechen",
       ind_technology:"Technologie", ind_finance:"Finanzen", ind_healthcare:"Gesundheitswesen", ind_retail:"Einzelhandel & E-Commerce",
       ind_realestate:"Immobilien", ind_manufacturing:"Fertigung", ind_education:"Bildung",
@@ -951,7 +996,7 @@
       deletedToast:"Eliminado", couldNotDeleteBoard:"No se pudo eliminar el tablero:", boardUpdated:"Tablero actualizado",
       couldNotUpdateBoard:"No se pudo actualizar el tablero:", couldNotCreateBoard:"No se pudo crear el tablero:",
       incorrectLogin:"Correo o contraseña incorrectos. Inténtalo de nuevo.", boardNoLongerExists:"Este tablero ya no existe.",
-      deleteConfirm:"y todos sus leads? Esta acción no se puede deshacer.", deleteBoardVerb:"Eliminar", editBoardTitle:"Editar tablero", boardName:"Nombre del tablero",
+      deleteConfirm:"Esto también eliminará todos sus leads. Esta acción no se puede deshacer.", deleteBoardVerb:"Eliminar", editBoardTitle:"Editar tablero", boardName:"Nombre del tablero",
       saveChanges:"Guardar cambios", cancel:"Cancelar",
       ind_technology:"Tecnología", ind_finance:"Finanzas", ind_healthcare:"Salud", ind_retail:"Comercio minorista y E-commerce",
       ind_realestate:"Bienes raíces", ind_manufacturing:"Manufactura", ind_education:"Educación",
@@ -978,7 +1023,7 @@
       deletedToast:"Eliminato", couldNotDeleteBoard:"Impossibile eliminare la bacheca:", boardUpdated:"Bacheca aggiornata",
       couldNotUpdateBoard:"Impossibile aggiornare la bacheca:", couldNotCreateBoard:"Impossibile creare la bacheca:",
       incorrectLogin:"E-mail o password errati. Riprova.", boardNoLongerExists:"Questa bacheca non esiste più.",
-      deleteConfirm:"e tutti i suoi lead? Questa azione non può essere annullata.", deleteBoardVerb:"Elimina", editBoardTitle:"Modifica bacheca", boardName:"Nome bacheca",
+      deleteConfirm:"Questo eliminerà anche tutti i suoi lead. Questa azione non può essere annullata.", deleteBoardVerb:"Elimina", editBoardTitle:"Modifica bacheca", boardName:"Nome bacheca",
       saveChanges:"Salva modifiche", cancel:"Annulla",
       ind_technology:"Tecnologia", ind_finance:"Finanza", ind_healthcare:"Sanità", ind_retail:"Vendita al dettaglio ed E-commerce",
       ind_realestate:"Immobiliare", ind_manufacturing:"Manifattura", ind_education:"Istruzione",
@@ -1005,7 +1050,7 @@
       deletedToast:"Eliminado", couldNotDeleteBoard:"Não foi possível eliminar o quadro:", boardUpdated:"Quadro atualizado",
       couldNotUpdateBoard:"Não foi possível atualizar o quadro:", couldNotCreateBoard:"Não foi possível criar o quadro:",
       incorrectLogin:"E-mail ou palavra-passe incorretos. Tente novamente.", boardNoLongerExists:"Este quadro já não existe.",
-      deleteConfirm:"e todos os seus leads? Esta ação não pode ser revertida.", deleteBoardVerb:"Eliminar", editBoardTitle:"Editar quadro", boardName:"Nome do quadro",
+      deleteConfirm:"Isto também eliminará todos os seus leads. Esta ação não pode ser revertida.", deleteBoardVerb:"Eliminar", editBoardTitle:"Editar quadro", boardName:"Nome do quadro",
       saveChanges:"Guardar alterações", cancel:"Cancelar",
       ind_technology:"Tecnologia", ind_finance:"Finanças", ind_healthcare:"Saúde", ind_retail:"Retalho e E-commerce",
       ind_realestate:"Imobiliário", ind_manufacturing:"Indústria", ind_education:"Educação",
@@ -1032,7 +1077,7 @@
       deletedToast:"Usunięto", couldNotDeleteBoard:"Nie udało się usunąć tablicy:", boardUpdated:"Tablica zaktualizowana",
       couldNotUpdateBoard:"Nie udało się zaktualizować tablicy:", couldNotCreateBoard:"Nie udało się utworzyć tablicy:",
       incorrectLogin:"Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.", boardNoLongerExists:"Ta tablica już nie istnieje.",
-      deleteConfirm:"i wszystkie jej leady? Tej operacji nie można cofnąć.", deleteBoardVerb:"Usuń", editBoardTitle:"Edytuj tablicę", boardName:"Nazwa tablicy",
+      deleteConfirm:"Spowoduje to również usunięcie wszystkich jej leadów. Tej operacji nie można cofnąć.", deleteBoardVerb:"Usuń", editBoardTitle:"Edytuj tablicę", boardName:"Nazwa tablicy",
       saveChanges:"Zapisz zmiany", cancel:"Anuluj",
       ind_technology:"Technologia", ind_finance:"Finanse", ind_healthcare:"Opieka zdrowotna", ind_retail:"Handel detaliczny i E-commerce",
       ind_realestate:"Nieruchomości", ind_manufacturing:"Produkcja", ind_education:"Edukacja",
@@ -1059,7 +1104,7 @@
       deletedToast:"已删除", couldNotDeleteBoard:"无法删除看板：", boardUpdated:"看板已更新",
       couldNotUpdateBoard:"无法更新看板：", couldNotCreateBoard:"无法创建看板：",
       incorrectLogin:"邮箱或密码错误，请重试。", boardNoLongerExists:"该看板已不存在。",
-      deleteConfirm:"及其所有潜在客户吗？此操作无法撤销。", deleteBoardVerb:"删除", editBoardTitle:"编辑看板", boardName:"看板名称",
+      deleteConfirm:"这也将删除其所有潜在客户。此操作无法撤销。", deleteBoardVerb:"删除", editBoardTitle:"编辑看板", boardName:"看板名称",
       saveChanges:"保存更改", cancel:"取消",
       ind_technology:"科技", ind_finance:"金融", ind_healthcare:"医疗保健", ind_retail:"零售与电子商务",
       ind_realestate:"房地产", ind_manufacturing:"制造业", ind_education:"教育",
@@ -1262,19 +1307,52 @@
     });
   }
 
+  // ---------- In-app confirm modal (replaces native browser confirm()) ----------
+  const appConfirmOverlay = document.getElementById('appConfirmOverlay');
+  const appConfirmTitle = document.getElementById('appConfirmTitle');
+  const appConfirmBody = document.getElementById('appConfirmBody');
+  const appConfirmCancelBtn = document.getElementById('appConfirmCancelBtn');
+  const appConfirmOkBtn = document.getElementById('appConfirmOkBtn');
+  let appConfirmCallback = null;
+  function showConfirmModal(title, body, onConfirm){
+    appConfirmTitle.textContent = title;
+    appConfirmBody.textContent = body;
+    appConfirmCallback = onConfirm;
+    appConfirmOverlay.style.display = 'flex';
+  }
+  function closeConfirmModal(){
+    appConfirmOverlay.style.display = 'none';
+    appConfirmCallback = null;
+  }
+  appConfirmCancelBtn.addEventListener('click', closeConfirmModal);
+  appConfirmOverlay.addEventListener('click', (e)=>{ if(e.target === appConfirmOverlay) closeConfirmModal(); });
+  appConfirmOkBtn.addEventListener('click', ()=>{
+    const cb = appConfirmCallback;
+    closeConfirmModal();
+    if(cb) cb();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && appConfirmOverlay.style.display === 'flex') closeConfirmModal();
+  });
+
   function deleteBoard(boardId, boardName){
-    if(!confirm(`${t('deleteBoardVerb')} "${boardName}" ${t('deleteConfirm')}`)) return;
-    const boardRef = boardsCollection.doc(boardId);
-    boardRef.collection('leads').get().then(snap=>{
-      const batch = db.batch();
-      snap.docs.forEach(doc=>batch.delete(doc.ref));
-      batch.delete(boardRef);
-      return batch.commit();
-    }).then(()=>{
-      showToast(`${t('deletedToast')} "${boardName}"`, true);
-    }).catch(err=>{
-      showToast(t('couldNotDeleteBoard') + ' ' + err.message, true);
-    });
+    showConfirmModal(
+      `${t('deleteBoardVerb')} "${boardName}"?`,
+      t('deleteConfirm'),
+      ()=>{
+        const boardRef = boardsCollection.doc(boardId);
+        boardRef.collection('leads').get().then(snap=>{
+          const batch = db.batch();
+          snap.docs.forEach(doc=>batch.delete(doc.ref));
+          batch.delete(boardRef);
+          return batch.commit();
+        }).then(()=>{
+          showToast(`${t('deletedToast')} "${boardName}"`, true);
+        }).catch(err=>{
+          showToast(t('couldNotDeleteBoard') + ' ' + err.message, true);
+        });
+      }
+    );
   }
 
   // ---------- Edit board modal ----------
@@ -1505,17 +1583,30 @@
 
     // ---------- Complete email-link sign-in (for invited team members) ----------
     if(auth.isSignInWithEmailLink(window.location.href)){
-      let emailForLink = window.localStorage.getItem('emailForSignIn');
-      if(!emailForLink){
-        emailForLink = window.prompt('Please confirm your email address to finish signing in:');
-      }
-      if(emailForLink){
-        auth.signInWithEmailLink(emailForLink, window.location.href).then(()=>{
+      const emailForLink = window.localStorage.getItem('emailForSignIn');
+      function completeEmailLinkSignIn(email){
+        auth.signInWithEmailLink(email, window.location.href).then(()=>{
           window.localStorage.removeItem('emailForSignIn');
           window.history.replaceState({}, document.title, window.location.pathname);
           showToast('Welcome! Your account is ready.');
         }).catch(err=>{
           showToast('Could not complete sign-in: ' + err.message, true);
+        });
+      }
+      if(emailForLink){
+        completeEmailLinkSignIn(emailForLink);
+      } else {
+        const emailConfirmOverlay = document.getElementById('emailConfirmOverlay');
+        const emailConfirmInput = document.getElementById('emailConfirmInput');
+        emailConfirmOverlay.style.display = 'flex';
+        document.getElementById('emailConfirmSubmitBtn').addEventListener('click', ()=>{
+          const email = emailConfirmInput.value.trim();
+          if(!email) return;
+          emailConfirmOverlay.style.display = 'none';
+          completeEmailLinkSignIn(email);
+        });
+        emailConfirmInput.addEventListener('keydown', (e)=>{
+          if(e.key === 'Enter') document.getElementById('emailConfirmSubmitBtn').click();
         });
       }
     }
