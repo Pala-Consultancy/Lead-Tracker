@@ -1332,6 +1332,21 @@
   try{
     addLeadMode = window.localStorage.getItem('addLeadMode_' + boardId) || 'linkedin';
   }catch(e){}
+  let orgPlan = 'growth';
+  let unsubscribeOrgPlan = null;
+  function loadOrgPlan(){
+    if(!db) return;
+    if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
+    unsubscribeOrgPlan = db.collection('organization').doc('billing').onSnapshot(doc=>{
+      const data = doc.exists ? doc.data() : {};
+      orgPlan = data.plan || 'growth';
+      if((orgPlan === 'cancelled' || orgPlan === 'free') && currentLang !== 'en'){
+        setLanguage('en');
+      }
+    }, err=>{
+      console.error('Could not load plan info', err);
+    });
+  }
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
@@ -2689,6 +2704,7 @@
     document.getElementById('settingsClose').addEventListener('click', closeSettings);
     settingsOverlay.addEventListener('click', closeSettings);
     document.getElementById('signOutItem').addEventListener('click', ()=>{
+      if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
       isSigningOut = true;
       loginScreen.style.display = 'none';
       appRoot.style.display = 'none';
@@ -2744,6 +2760,7 @@
         appRoot.classList.add('fade-in');
         clearLoginError();
         loadSettingsUserInfo(user);
+        loadOrgPlan();
         initFirebaseSync();
       } else {
         if(isSigningOut) return;

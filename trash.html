@@ -1719,6 +1719,21 @@
   let auth = null;
   let firebaseConnected = false;
   const boardId = new URLSearchParams(location.search).get('board');
+  let orgPlan = 'growth';
+  let unsubscribeOrgPlan = null;
+  function loadOrgPlan(){
+    if(!db) return;
+    if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
+    unsubscribeOrgPlan = db.collection('organization').doc('billing').onSnapshot(doc=>{
+      const data = doc.exists ? doc.data() : {};
+      orgPlan = data.plan || 'growth';
+      if((orgPlan === 'cancelled' || orgPlan === 'free') && currentLang !== 'en'){
+        setLanguage('en');
+      }
+    }, err=>{
+      console.error('Could not load plan info', err);
+    });
+  }
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
@@ -2206,6 +2221,7 @@
         clearLoginError();
         document.getElementById('loginForm').reset();
         loadBoardName();
+        loadOrgPlan();
         initFirebaseSync();
       } else {
         appRoot.style.display = 'none';
@@ -2214,6 +2230,7 @@
         void loginScreen.offsetWidth;
         loginScreen.classList.add('fade-in');
         currentUserPill.style.display = 'none';
+        if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
       }
     });
   }

@@ -959,6 +959,11 @@
     unsubscribeOrgPlan = db.collection('organization').doc('billing').onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
       orgPlan = data.plan || 'growth';
+      if(isFreePlan() && currentLang !== 'en'){
+        setLanguage('en');
+        const field = document.getElementById('languageField');
+        if(field){ field.value = 'en'; field.dataset.lastValue = 'en'; }
+      }
       applyLanguageFieldRestriction();
     }, err=>{
       console.error('Could not load plan info', err);

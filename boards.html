@@ -1436,6 +1436,9 @@
     unsubscribeOrgPlan = db.collection('organization').doc('billing').onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
       orgPlan = data.plan || 'growth';
+      if((orgPlan === 'cancelled' || orgPlan === 'free') && currentLang !== 'en'){
+        setLanguage('en');
+      }
     }, err=>{
       console.error('Could not load plan info', err);
     });
