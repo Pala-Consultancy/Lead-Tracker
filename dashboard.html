@@ -126,17 +126,31 @@
   }
   body.linkedin-themed{
     background:
-      radial-gradient(circle at 12% 8%, rgba(10,102,194,0.07) 0%, transparent 42%),
-      radial-gradient(circle at 88% 92%, rgba(10,102,194,0.08) 0%, transparent 48%),
+      radial-gradient(circle at 12% 8%, rgba(10,102,194,0.09) 0%, transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(10,102,194,0.1) 0%, transparent 48%),
       radial-gradient(rgba(10,102,194,0.09) 1.2px, transparent 1.2px) 0 0/24px 24px,
+      repeating-linear-gradient(115deg, rgba(10,102,194,0.035) 0px, rgba(10,102,194,0.035) 1px, transparent 1px, transparent 64px),
+      repeating-linear-gradient(25deg, rgba(10,102,194,0.03) 0px, rgba(10,102,194,0.03) 1px, transparent 1px, transparent 64px),
       linear-gradient(180deg, #EAF3FC 0%, var(--paper) 60%);
+    animation:linkedin-bg-breathe 8s ease-in-out infinite;
+  }
+  @keyframes linkedin-bg-breathe{
+    0%,100%{background-position:0 0, 0 0, 0 0, 0 0, 0 0, 0 0;filter:brightness(1);}
+    50%{filter:brightness(1.015);}
   }
   [data-theme="dark"] body.linkedin-themed{
     background:
-      radial-gradient(circle at 12% 8%, rgba(10,102,194,0.14) 0%, transparent 42%),
-      radial-gradient(circle at 88% 92%, rgba(10,102,194,0.16) 0%, transparent 48%),
-      radial-gradient(rgba(10,102,194,0.12) 1.2px, transparent 1.2px) 0 0/24px 24px,
+      radial-gradient(circle at 12% 8%, rgba(10,102,194,0.16) 0%, transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(10,102,194,0.18) 0%, transparent 48%),
+      radial-gradient(rgba(10,102,194,0.13) 1.2px, transparent 1.2px) 0 0/24px 24px,
+      repeating-linear-gradient(115deg, rgba(10,102,194,0.05) 0px, rgba(10,102,194,0.05) 1px, transparent 1px, transparent 64px),
+      repeating-linear-gradient(25deg, rgba(10,102,194,0.04) 0px, rgba(10,102,194,0.04) 1px, transparent 1px, transparent 64px),
       var(--paper);
+  }
+  @media (prefers-reduced-motion: reduce){ body.linkedin-themed{animation:none;} }
+  body.linkedin-themed .title-block{
+    box-shadow:0 0 0 1px rgba(10,102,194,0.35), 0 10px 30px -8px rgba(10,102,194,0.3);
+    transition:box-shadow .6s ease;
   }
   .app{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
 
@@ -782,6 +796,25 @@
   }
   .linkedin-mode-spinring.rev{width:200px;height:200px;border-color:rgba(255,255,255,0.22);animation-duration:10s;animation-direction:reverse;}
   @keyframes linkedin-spin{ to{transform:rotate(360deg);} }
+  .linkedin-mode-orbit{
+    position:absolute;top:50%;left:50%;width:230px;height:230px;margin-top:-115px;margin-left:-115px;pointer-events:none;
+    animation:linkedin-spin 3.4s linear infinite;
+  }
+  .linkedin-mode-orbit.rev2{animation-duration:2.6s;animation-direction:reverse;}
+  .linkedin-mode-orbit-dot{
+    position:absolute;top:0;left:50%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;
+    background:#fff;box-shadow:0 0 10px rgba(255,255,255,0.8);
+  }
+  .linkedin-mode-chroma{
+    position:absolute;inset:0;z-index:1;opacity:0;pointer-events:none;mix-blend-mode:screen;
+    background:radial-gradient(circle at 50% 45%, rgba(255,80,80,0.5), transparent 55%);
+  }
+  .linkedin-mode-chroma.go{animation:linkedin-chroma-pulse .5s ease-out forwards;}
+  @keyframes linkedin-chroma-pulse{
+    0%{opacity:.8;transform:translateX(-6px);}
+    50%{opacity:.4;transform:translateX(6px);}
+    100%{opacity:0;transform:translateX(0);}
+  }
   .linkedin-mode-badge-wrap{position:relative;display:flex;align-items:center;justify-content:center;z-index:2;transform-style:preserve-3d;}
   .linkedin-mode-badge{
     width:110px;height:110px;border-radius:24px;background:#fff;
@@ -2333,6 +2366,7 @@
       overlay.innerHTML = `
         ${nodesHTML}
         <div class="linkedin-mode-flash"></div>
+        <div class="linkedin-mode-chroma"></div>
         <div class="linkedin-mode-ring r1"></div>
         <div class="linkedin-mode-ring r2"></div>
         <div class="linkedin-mode-ring r3"></div>
@@ -2340,6 +2374,14 @@
         <div class="linkedin-mode-badge-wrap">
           <div class="linkedin-mode-spinring"></div>
           <div class="linkedin-mode-spinring rev"></div>
+          <div class="linkedin-mode-orbit">
+            <div class="linkedin-mode-orbit-dot"></div>
+            <div class="linkedin-mode-orbit-dot" style="top:auto;bottom:0;"></div>
+            <div class="linkedin-mode-orbit-dot" style="top:50%;left:0;margin-left:0;margin-top:-4.5px;"></div>
+          </div>
+          <div class="linkedin-mode-orbit rev2">
+            <div class="linkedin-mode-orbit-dot" style="top:50%;left:100%;margin-left:-4.5px;margin-top:-4.5px;background:#FFD23F;box-shadow:0 0 10px rgba(255,210,63,0.8);"></div>
+          </div>
           <div class="linkedin-mode-badge"><span>${badgeContent}</span></div>
         </div>
         <div class="linkedin-mode-text">${label}</div>
@@ -2384,9 +2426,10 @@
         }
       }
 
-      // Impact moment: flash, shockwave, rings, screen punch, particle burst
+      // Impact moment: flash, chroma pulse, shockwave, rings, screen punch, particle burst
       setTimeout(()=>{
         overlay.querySelector('.linkedin-mode-flash').classList.add('go');
+        overlay.querySelector('.linkedin-mode-chroma').classList.add('go');
         overlay.querySelector('.linkedin-mode-shockwave').classList.add('go');
         overlay.querySelectorAll('.linkedin-mode-ring').forEach(r=>r.classList.add('go'));
         overlay.classList.add('punch');
@@ -2457,15 +2500,15 @@
         // A short punchy click transient for extra "hit" feel
         tone(2400, now + 0.72, 0.03, 0.14, 'square');
 
-        // Fanfare after impact
+        // Fanfare after impact — each note layered with a harmonic third for a fuller chord
         if(isLinkedIn){
-          tone(660, now + 0.85, 0.14, 0.12);
-          tone(880, now + 0.97, 0.22, 0.13);
-          tone(1320, now + 1.15, 0.32, 0.11);
+          tone(660, now + 0.85, 0.14, 0.12); tone(830.6, now + 0.85, 0.14, 0.07);
+          tone(880, now + 0.97, 0.22, 0.13); tone(1108.7, now + 0.97, 0.22, 0.08);
+          tone(1320, now + 1.15, 0.32, 0.11); tone(1661.2, now + 1.15, 0.32, 0.07);
         } else {
-          tone(587.33, now + 0.85, 0.16, 0.12);
-          tone(880, now + 0.99, 0.2, 0.12);
-          tone(698.46, now + 1.17, 0.34, 0.11);
+          tone(587.33, now + 0.85, 0.16, 0.12); tone(739.99, now + 0.85, 0.16, 0.07);
+          tone(880, now + 0.99, 0.2, 0.12); tone(1108.7, now + 0.99, 0.2, 0.07);
+          tone(698.46, now + 1.17, 0.34, 0.11); tone(880, now + 1.17, 0.34, 0.07);
         }
         // Sparkle flourish near the end
         tone(1760, now + 1.5, 0.18, 0.05);
