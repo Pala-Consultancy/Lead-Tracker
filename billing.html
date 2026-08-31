@@ -1352,13 +1352,94 @@
     }catch(e){}
   }
 
+  function playFanfare(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = ctx.currentTime;
+      function tone(freq, startTime, duration, volume){
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.03);
+      }
+      // "Tuu tuu-tuu!!" — a bright ascending brass fanfare
+      tone(523.25, now, 0.16, 0.12);         // C5 — Tuu
+      tone(659.25, now + 0.16, 0.16, 0.12);  // E5 — tuu
+      tone(783.99, now + 0.32, 0.16, 0.12);  // G5 — tuu
+      tone(1046.5, now + 0.48, 0.75, 0.15);  // C6 held — !!
+    }catch(e){}
+  }
+
+  function firePremiumCelebration(){
+    try{
+      playFanfare();
+      const grid = document.getElementById('planGrid');
+      const gridRect = grid ? grid.getBoundingClientRect() : null;
+      const colors = ['#1B59A5', '#7A4FB5', '#FF9D00', '#2BC17A', '#E0453A', '#FFD23F'];
+      const emojis = ['🎉', '✨', '💰', '⭐', '🏆', '🎊'];
+      function spawnWave(){
+        const count = 20;
+        for(let i = 0; i < count; i++){
+          const overGrid = gridRect && gridRect.width > 0 && Math.random() < 0.6;
+          const x = overGrid ? (gridRect.left + Math.random() * gridRect.width) : (Math.random() * window.innerWidth);
+          const startY = -30 - Math.random() * 60;
+          const useEmoji = Math.random() < 0.25;
+          const el = document.createElement('div');
+          el.style.position = 'fixed';
+          el.style.left = x + 'px';
+          el.style.top = startY + 'px';
+          el.style.pointerEvents = 'none';
+          el.style.zIndex = '9999';
+          if(useEmoji){
+            el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.fontSize = (16 + Math.random() * 16) + 'px';
+            el.style.lineHeight = '1';
+          } else {
+            const size = Math.random() * 8 + 5;
+            el.style.width = size + 'px';
+            el.style.height = size + 'px';
+            el.style.background = colors[i % colors.length];
+            el.style.borderRadius = Math.random() < 0.5 ? '50%' : '2px';
+          }
+          document.body.appendChild(el);
+          const fallDistance = window.innerHeight - startY + 80;
+          const drift = (Math.random() - 0.5) * 240;
+          const rotateAmt = (Math.random() - 0.5) * 720;
+          const duration = 2200 + Math.random() * 1400;
+          const anim = el.animate([
+            { transform: 'translate(0,0) rotate(0deg)', opacity: 1, offset: 0 },
+            { transform: `translate(${drift * 0.6}px, ${fallDistance * 0.7}px) rotate(${rotateAmt * 0.65}deg)`, opacity: 1, offset: 0.75 },
+            { transform: `translate(${drift}px, ${fallDistance}px) rotate(${rotateAmt}deg)`, opacity: 0, offset: 1 }
+          ], { duration, easing: 'cubic-bezier(.25,.46,.45,.94)', fill: 'forwards' });
+          anim.onfinish = () => el.remove();
+        }
+      }
+      spawnWave();
+      const waveInterval = setInterval(spawnWave, 350);
+      setTimeout(()=> clearInterval(waveInterval), 5000);
+    }catch(e){}
+  }
+
   function switchPlan(plan){
     if(!currentUserIsAdmin || !billingDocRef) return;
     if(plan === currentPlan) return;
     const cardEl = document.getElementById('planCard' + plan.charAt(0).toUpperCase() + plan.slice(1));
     billingDocRef.set({plan: plan}, {merge:true}).then(()=>{
       showToast(`${t('planSwitchedTo')} ${t(PLAN_INFO[plan].nameKey) || PLAN_INFO[plan].name}`);
-      if(cardEl && !prefersReducedMotion()) fireConfetti(cardEl);
+      if(!prefersReducedMotion()){
+        if(plan === 'premium' || plan === 'growth'){
+          firePremiumCelebration();
+        } else if(cardEl){
+          fireConfetti(cardEl);
+        }
+      }
     }).catch(err=>{
       showToast(t('couldNotSavePlan') + ' ' + err.message, true);
     });
