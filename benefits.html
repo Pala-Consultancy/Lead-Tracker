@@ -24,14 +24,7 @@
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   body{
-    margin:0;
-    background:
-      radial-gradient(circle at 8% 0%, rgba(74,144,217,0.08) 0%, transparent 42%),
-      radial-gradient(circle at 92% 10%, rgba(122,79,181,0.08) 0%, transparent 46%),
-      radial-gradient(circle at 50% 100%, rgba(255,179,56,0.06) 0%, transparent 45%),
-      var(--paper);
-    background-attachment:fixed;
-    color:var(--ink);font-family:'Inter',sans-serif;
+    margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;
     min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;
   }
   @media (prefers-reduced-motion: reduce){
@@ -171,12 +164,7 @@
   .compare-pane{
     position:relative;padding:24px 26px 22px;
   }
-  .compare-pane.before{
-    background:
-      radial-gradient(circle at 88% 92%, rgba(122,100,50,0.07) 0%, transparent 22%),
-      radial-gradient(circle at 6% 12%, rgba(122,100,50,0.05) 0%, transparent 18%),
-      #EAEDF1;
-  }
+  .compare-pane.before{background:#EAEDF1;}
   [data-theme="dark"] .compare-pane.before{background:#1C2530;}
   .compare-pane.after{
     position:absolute;inset:0;padding:24px 26px 22px;
@@ -222,10 +210,6 @@
   .cell-status-plain{font-family:'Inter',sans-serif;font-size:12px;color:#9C9C93;}
   .cell-value-plain{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#B9B9AF;}
   .cell-fresh-plain{font-family:'Inter',sans-serif;font-size:11.5px;color:#B9B9AF;}
-  .compare-row.stale{transform:rotate(-0.5deg);}
-  .compare-row.stale .cell-status-plain{display:inline-block;animation:status-jitter 3.4s ease-in-out infinite;}
-  @keyframes status-jitter{0%,100%{transform:rotate(0deg);}25%{transform:rotate(-5deg);}75%{transform:rotate(5deg);}}
-  @media (prefers-reduced-motion: reduce){.compare-row.stale .cell-status-plain{animation:none;}}
   .compare-row.stale .cell-name, .compare-row.stale .cell-source,
   .compare-row.stale .cell-status-plain, .compare-row.stale .cell-fresh-plain{
     text-decoration:line-through;color:#B7B7AC;
@@ -272,37 +256,22 @@
     position:absolute;top:0;bottom:0;left:var(--split, 50%);width:0;z-index:5;
     transform:translateX(-50%);cursor:ew-resize;
   }
-  .compare-wrap.auto-demo .compare-handle{transition:left .65s cubic-bezier(.4,0,.2,1);}
   .compare-handle::before{
-    content:"";position:absolute;top:0;bottom:0;left:50%;width:4px;
-    background:linear-gradient(180deg, var(--teal), var(--purple), var(--amber), var(--teal));
-    background-size:100% 300%;
-    box-shadow:0 0 22px rgba(122,79,181,0.55), 0 0 10px rgba(27,89,165,0.5);
-    transform:translateX(-50%);border-radius:4px;
-    animation:beam-shimmer 4s ease-in-out infinite;
+    content:"";position:absolute;top:0;bottom:0;left:50%;width:3px;
+    background:linear-gradient(180deg, var(--teal), var(--purple));
+    box-shadow:0 0 16px rgba(122,79,181,0.5);transform:translateX(-50%);border-radius:3px;
   }
-  @keyframes beam-shimmer{0%,100%{background-position:0 0%;}50%{background-position:0 100%;}}
-  @media (prefers-reduced-motion: reduce){.compare-handle::before{animation:none;}}
   .compare-handle-grip{
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#fff,#F3F6FB);
-    box-shadow:0 8px 24px rgba(27,36,48,0.32), 0 0 0 4px rgba(255,255,255,0.55), 0 0 0 1.5px rgba(122,79,181,0.35);
+    width:42px;height:42px;border-radius:50%;background:#fff;
+    box-shadow:0 8px 22px rgba(27,36,48,0.3), 0 0 0 4px rgba(255,255,255,0.5);
     display:flex;align-items:center;justify-content:center;color:var(--teal);
-    transition:transform .15s;animation:grip-breathe 2.6s ease-in-out infinite;
+    transition:transform .15s;
   }
-  @keyframes grip-breathe{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.07);}}
-  @media (prefers-reduced-motion: reduce){.compare-handle-grip{animation:none;}}
-  .compare-wrap:hover .compare-handle-grip{animation-play-state:paused;transform:translate(-50%,-50%) scale(1.1);}
-  .compare-wrap.auto-demo .compare-pane.after{transition:clip-path .65s cubic-bezier(.4,0,.2,1);}
+  .compare-wrap:hover .compare-handle-grip{transform:translate(-50%,-50%) scale(1.06);}
   .compare-range{
     position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0;z-index:6;
   }
-  .compare-spotlight{
-    position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .35s ease;
-    background:radial-gradient(300px circle at var(--spot-x,50%) var(--spot-y,50%), rgba(255,255,255,0.16), transparent 70%);
-    mix-blend-mode:overlay;
-  }
-  .compare-wrap:hover .compare-spotlight{opacity:1;}
   .compare-hint{
     text-align:center;font-size:12.5px;color:var(--slate-light);margin-top:12px;
     display:flex;align-items:center;justify-content:center;gap:6px;
@@ -502,185 +471,39 @@
   @media (max-width:600px){
     .about-hero{padding:56px 16px 48px;}
     .questions-card{flex-direction:column;align-items:flex-start;}
-  }  /* ---------- Problem / Solution rows (click-to-reveal) ---------- */
-  .ps-progress{
-    display:flex;align-items:center;justify-content:center;gap:12px;max-width:840px;margin:0 auto 24px;
-    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--slate);
-  }
-  .ps-progress-bar{flex:1;height:6px;border-radius:4px;background:var(--border);overflow:hidden;max-width:280px;}
-  .ps-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--teal),var(--c-green-fg));border-radius:4px;transition:width .4s ease;}
-  .ps-picker{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:840px;margin:0 auto 30px;}
-  .ps-picker-pill{
-    display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
-    background:var(--panel);border:1px solid var(--border);color:var(--slate);font-size:12.5px;font-weight:600;
-    cursor:pointer;transition:border-color .15s ease, color .15s ease, background .15s ease;
-    font-family:'Inter',sans-serif;
-  }
-  .ps-picker-pill:hover{border-color:var(--teal);color:var(--teal);}
-  .ps-picker-pill.done{background:var(--c-green-bg);color:var(--c-green-fg);border-color:var(--c-green-fg);}
-  .ps-picker-pill.done svg{opacity:1;}
-  .ps-picker-pill svg{width:12px;height:12px;opacity:0;transition:opacity .15s ease;}
+  }  /* ---------- Problem / Solution rows ---------- */
   .ps-list{display:flex;flex-direction:column;gap:16px;max-width:840px;margin:0 auto;}
   .ps-row{
+    display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;
     background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px 26px;box-shadow:var(--shadow);
-    transition:box-shadow .3s ease, transform .3s ease, border-color .3s ease;scroll-margin-top:100px;
+    transition:box-shadow .2s ease, transform .2s ease;
   }
   .ps-row:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(27,36,48,.1);}
-  .ps-row.pulse{animation:ps-row-pulse 1s ease;}
-  @keyframes ps-row-pulse{0%,100%{box-shadow:var(--shadow);}50%{box-shadow:0 0 0 4px rgba(27,89,165,0.25), 0 16px 32px rgba(27,36,48,.12);}}
-  .ps-row.solved{border-color:var(--c-green-fg, #1F5C4F);}
-  .ps-row-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-  .ps-problem{display:flex;gap:12px;align-items:flex-start;flex:1;min-width:240px;}
+  @media (max-width:760px){.ps-row{grid-template-columns:1fr;}}
+  .ps-problem{display:flex;gap:12px;align-items:flex-start;}
   .ps-solution{display:flex;gap:12px;align-items:flex-start;}
   .ps-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .ps-icon svg{width:17px;height:17px;}
   .ps-problem .ps-icon{background:var(--c-red-bg);color:var(--c-red-fg);}
-  .ps-solution .ps-icon{background:var(--c-green-bg);color:var(--c-green-fg);position:relative;}
+  .ps-solution .ps-icon{background:var(--c-green-bg);color:var(--c-green-fg);}
   .ps-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
   .ps-problem .ps-label{color:var(--c-red-fg);}
   .ps-solution .ps-label{color:var(--c-green-fg);}
   .ps-text{font-size:13.8px;line-height:1.5;color:var(--ink);}
-  .ps-reveal-btn{
-    flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:9px;
-    background:var(--c-blue-tint2, var(--paper));border:1px solid var(--border);color:var(--teal);
-    font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s ease, transform .15s ease;
-    font-family:'Inter',sans-serif;
-  }
-  .ps-reveal-btn:hover{background:var(--c-blue-soft);transform:translateX(2px);}
-  .ps-reveal-btn svg{width:14px;height:14px;transition:transform .2s ease;}
-  .ps-row.solved .ps-reveal-btn{display:none;}
-  .ps-solution-wrap{
-    display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .4s ease, opacity .3s ease, margin-top .4s ease;
-  }
-  .ps-solution-wrap-inner{overflow:hidden;}
-  .ps-row.solved .ps-solution-wrap{grid-template-rows:1fr;opacity:1;margin-top:16px;}
-  .ps-row.solved .ps-solution-wrap-inner{padding-top:16px;border-top:1px dashed var(--border);}
-  .ps-check-pop{
-    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    background:var(--c-green-fg);color:#fff;border-radius:10px;opacity:0;transform:scale(0.5);
-    transition:opacity .2s ease, transform .2s ease;pointer-events:none;
-  }
-  .ps-row.solved .ps-check-pop{opacity:1;transform:scale(1);}
-  .ps-check-pop svg{width:18px;height:18px;}
-  @media (prefers-reduced-motion: reduce){.ps-row.pulse{animation:none;}}
+  .ps-arrow{color:var(--slate-light);flex-shrink:0;}
+  .ps-arrow svg{width:20px;height:20px;}
+  @media (max-width:760px){.ps-arrow{display:none;}}
 
   /* ---------- Benefits grid ---------- */
-  /* ---------- Mini drag-and-drop board demo ---------- */
-  .mini-board-add{
-    display:flex;gap:8px;max-width:840px;margin:0 auto 14px;
-  }
-  .mini-board-add input{
-    flex:1;font-family:'Inter',sans-serif;font-size:13.5px;padding:10px 14px;
-    border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--ink);
-    transition:border-color .15s ease, box-shadow .15s ease;
-  }
-  .mini-board-add input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
-  .mini-board-add-btn{
-    flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;
-    background:linear-gradient(135deg,var(--teal),var(--teal-dark, #123F78));color:#fff;border:none;
-    font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
-    box-shadow:0 6px 16px -4px rgba(27,89,165,.4);transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .mini-board-add-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px -4px rgba(27,89,165,.5);}
-  .mini-board-add-btn:active{transform:translateY(0) scale(.97);}
-  .mini-board-add-btn svg{width:14px;height:14px;}
-  .mini-board-toolbar{
-    display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:840px;margin:0 auto 16px;
-    flex-wrap:wrap;
-  }
-  .mini-board-total{
-    display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--slate);
-  }
-  .mini-board-total strong{
-    font-family:'IBM Plex Mono',monospace;font-size:17px;color:var(--ink);font-weight:600;
-    transition:color .2s ease;
-  }
-  .mini-board-reset{
-    display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
-    background:var(--panel);border:1px solid var(--border);color:var(--slate);
-    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;
-    transition:border-color .15s ease, color .15s ease, transform .15s ease;
-  }
-  .mini-board-reset:hover{border-color:var(--teal);color:var(--teal);}
-  .mini-board-reset:active{transform:scale(.96);}
-  .mini-board-reset svg{width:13px;height:13px;}
-  .mini-board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:840px;margin:0 auto;user-select:none;-webkit-user-select:none;align-items:start;}
-  @media (max-width:700px){.mini-board{grid-template-columns:1fr;}}
-  .mini-col{
-    position:relative;
-    background:var(--c-blue-tint2, var(--paper));border:1px solid var(--border);border-radius:14px;padding:16px 14px 14px;
-    min-height:180px;transition:background .18s ease, border-color .18s ease, box-shadow .18s ease;
-  }
-  .mini-col::before{
-    content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;
-    background:var(--col-accent, var(--teal));opacity:.7;transition:opacity .18s ease, height .18s ease;
-  }
-  .mini-col.drag-over{
-    background:var(--c-blue-soft);border-color:var(--col-accent, var(--teal));
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--col-accent, var(--teal)) 20%, transparent);
-  }
-  .mini-col.drag-over::before{opacity:1;height:4px;}
-  .mini-col-head{
-    display:flex;align-items:center;gap:8px;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;
-    color:var(--ink);margin-bottom:12px;
-  }
-  .mini-col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);}
-  .mini-col-count{
-    margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate-light);
-    background:var(--panel);padding:2px 7px;border-radius:999px;border:1px solid var(--border);
-    transition:transform .2s ease;
-  }
-  .mini-col-count.bump{transform:scale(1.3);}
-  .mini-col-body{display:flex;flex-direction:column;gap:10px;min-height:60px;}
-  .mini-card{
-    display:flex;align-items:center;gap:11px;touch-action:none;
-    background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 13px;
-    box-shadow:0 1px 2px rgba(27,36,48,0.06);cursor:grab;
-    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease, border-color .15s ease;
-  }
-  .mini-card:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(27,36,48,0.12);border-color:var(--col-accent, var(--border));}
-  .mini-card.dragging-source{opacity:.35;}
-  .mini-card.settle{animation:card-settle .35s ease;}
-  @keyframes card-settle{0%{transform:scale(1.06);}100%{transform:scale(1);}}
-  @media (prefers-reduced-motion: reduce){.mini-card.settle{animation:none;}}
-  .mini-card-avatar{
-    width:32px;height:32px;border-radius:50%;flex-shrink:0;color:#fff;
-    display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;
-    font-family:'Inter',sans-serif;box-shadow:0 3px 8px rgba(27,36,48,0.18);
-  }
-  .mini-card-info{min-width:0;}
-  .mini-card-name{font-family:'Inter',sans-serif;font-weight:700;font-size:13px;color:var(--ink);}
-  .mini-card-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate-light);margin-top:3px;}
-  .mini-card-ghost{
-    position:fixed;z-index:9999;pointer-events:none;opacity:.96;
-    box-shadow:0 20px 40px -8px rgba(27,36,48,0.35);border-radius:12px;
-    transform:rotate(2.5deg) scale(1.03);
-  }
-  #miniBoardHint{margin-top:16px;transition:color .2s ease;}
-
   .benefits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
   @media (max-width:860px){.benefits-grid{grid-template-columns:1fr 1fr;}}
   @media (max-width:560px){.benefits-grid{grid-template-columns:1fr;}}
   .benefit-card{
-    position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:26px 24px;
+    position:relative;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:26px 24px;
     box-shadow:var(--shadow);transition:transform .18s ease, box-shadow .18s ease;
-    opacity:0;transform:translateY(16px);
   }
-  .benefit-card.revealed{opacity:1;transform:translateY(0);transition:opacity .5s ease, transform .5s ease, box-shadow .18s ease;}
-  .benefit-card::before{
-    content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;opacity:0;
-    background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(27,89,165,0.08), transparent 70%);
-    transition:opacity .25s ease;
-  }
-  .benefit-card:hover::before{opacity:1;}
   .benefit-card:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(27,36,48,.1);}
-  @media (prefers-reduced-motion: reduce){.benefit-card{opacity:1;transform:none;}}
-  .benefit-icon{
-    width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;
-    margin-bottom:16px;position:relative;z-index:1;transition:transform .3s ease;
-    box-shadow:0 8px 18px -6px rgba(27,89,165,0.35), inset 0 0 0 1px rgba(255,255,255,0.12);
-  }
-  .benefit-card:hover .benefit-icon{transform:scale(1.1) rotate(-4deg);}
+  .benefit-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
   .benefit-icon svg{width:21px;height:21px;}
   .benefit-title{font-family:'Sora',sans-serif;font-weight:700;font-size:15.5px;margin:0 0 8px;}
   .benefit-desc{font-size:13.3px;color:var(--slate);line-height:1.55;margin:0;}
@@ -724,346 +547,86 @@
     </div>
   </section>
 
-  <div class="stat-strip">
-    <div class="stat-card">
-      <div class="stat-value" data-count="8">0</div>
-      <div class="stat-label">Real pain points solved, not just features</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value"><span data-count="100">0</span><span class="suffix">%</span></div>
-      <div class="stat-label">Real-time, always in sync across your team</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" data-count="9">0</div>
-      <div class="stat-label">Languages your whole team can work in</div>
-    </div>
-  </div>
-
   <section class="section-block">
     <div class="section-head">
       <div class="section-eyebrow-lbl">The problems</div>
       <h2>You've felt these before</h2>
       <p>Every one of these came from a real frustration &mdash; ours, or a client's.</p>
     </div>
-    <div class="ps-progress">
-      <span id="psProgressLabel">0 of 8 solved</span>
-      <div class="ps-progress-bar"><div class="ps-progress-fill" id="psProgressFill"></div></div>
-    </div>
-    <div class="ps-picker">
-      <button class="ps-picker-pill" data-target="ps-row-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Scattered leads</button>
-      <button class="ps-picker-pill" data-target="ps-row-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Forgotten follow-ups</button>
-      <button class="ps-picker-pill" data-target="ps-row-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>No visibility</button>
-      <button class="ps-picker-pill" data-target="ps-row-3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Tool overload</button>
-      <button class="ps-picker-pill" data-target="ps-row-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Lost data</button>
-      <button class="ps-picker-pill" data-target="ps-row-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Language barrier</button>
-      <button class="ps-picker-pill" data-target="ps-row-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Unclear ownership</button>
-      <button class="ps-picker-pill" data-target="ps-row-7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Can't find anything</button>
-    </div>
     <div class="ps-list">
 
-      <div class="ps-row" id="ps-row-0">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l3-3 3 3M12 12v6"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">Leads live in scattered spreadsheets and DMs, and nobody's sure which version is the current one.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-0">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <div class="ps-row">
+        <div class="ps-problem">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l3-3 3 3M12 12v6"/></svg></div>
+          <div><div class="ps-label">The problem</div><div class="ps-text">Leads live in scattered spreadsheets and DMs, and nobody's sure which version is the current one.</div></div>
         </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">Every lead lives on one shared, real-time board &mdash; everyone sees the same, up-to-date pipeline.</div></div>
-            </div>
-          </div>
+        <div class="ps-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="ps-solution">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div><div class="ps-label">How we solve it</div><div class="ps-text">Every lead lives on one shared, real-time board &mdash; everyone sees the same, up-to-date pipeline.</div></div>
         </div>
       </div>
 
-      <div class="ps-row" id="ps-row-1">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">Follow-ups get forgotten and deals go cold because nobody remembered to reach back out.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-1">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <div class="ps-row">
+        <div class="ps-problem">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+          <div><div class="ps-label">The problem</div><div class="ps-text">Follow-ups get forgotten and deals go cold because nobody remembered to reach back out.</div></div>
         </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">Automatic reminders nudge you the moment a lead's gone quiet or a call needs a status update.</div></div>
-            </div>
-          </div>
+        <div class="ps-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="ps-solution">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div><div class="ps-label">How we solve it</div><div class="ps-text">Automatic reminders nudge you the moment a lead's gone quiet or a call needs a status update.</div></div>
         </div>
       </div>
 
-      <div class="ps-row" id="ps-row-2">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">You have no real idea what's working &mdash; which source, which country, which rep is actually performing.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-2">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <div class="ps-row">
+        <div class="ps-problem">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+          <div><div class="ps-label">The problem</div><div class="ps-text">You have no real idea what's working &mdash; which source, which country, which rep is actually performing.</div></div>
         </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">A full statistics dashboard breaks down win rate, revenue, and performance by source, country, and more.</div></div>
-            </div>
-          </div>
+        <div class="ps-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="ps-solution">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div><div class="ps-label">How we solve it</div><div class="ps-text">A full statistics dashboard breaks down win rate, revenue, and performance by source, country, and more.</div></div>
         </div>
       </div>
 
-      <div class="ps-row" id="ps-row-3">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">Switching between five different tools just to update one lead wastes half your day.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-3">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <div class="ps-row">
+        <div class="ps-problem">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></div>
+          <div><div class="ps-label">The problem</div><div class="ps-text">Switching between five different tools just to update one lead wastes half your day.</div></div>
         </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">Alexandre, your built-in AI assistant, answers questions about your pipeline without ever leaving the page.</div></div>
-            </div>
-          </div>
+        <div class="ps-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="ps-solution">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div><div class="ps-label">How we solve it</div><div class="ps-text">Alexandre, your built-in AI assistant, answers questions about your pipeline without ever leaving the page.</div></div>
         </div>
       </div>
 
-      <div class="ps-row" id="ps-row-4">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">One accidental delete and a lead's whole history is gone for good.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-4">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <div class="ps-row">
+        <div class="ps-problem">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg></div>
+          <div><div class="ps-label">The problem</div><div class="ps-text">One accidental delete and a lead's whole history is gone for good.</div></div>
         </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">Every deleted lead lands safely in the Trash, ready to restore anytime &mdash; nothing disappears by accident.</div></div>
-            </div>
-          </div>
+        <div class="ps-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="ps-solution">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div><div class="ps-label">How we solve it</div><div class="ps-text">Every deleted lead lands safely in the Trash, ready to restore anytime &mdash; nothing disappears by accident.</div></div>
         </div>
       </div>
 
-      <div class="ps-row" id="ps-row-5">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M3 12h18M3 19h18"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">A team spread across countries means half of them are working in a language they didn't choose.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-5">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <div class="ps-row">
+        <div class="ps-problem">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M3 12h18M3 19h18"/></svg></div>
+          <div><div class="ps-label">The problem</div><div class="ps-text">A team spread across countries means half of them are working in a language they didn't choose.</div></div>
         </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">The entire tracker is fully translated into 9 languages, so everyone works comfortably in their own.</div></div>
-            </div>
-          </div>
+        <div class="ps-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="ps-solution">
+          <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div><div class="ps-label">How we solve it</div><div class="ps-text">The entire tracker is fully translated into 9 languages, so everyone works comfortably in their own.</div></div>
         </div>
       </div>
 
-      <div class="ps-row" id="ps-row-6">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">Two people reach out to the same lead because nobody could tell who was already working it.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-6">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-        </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">Every board belongs to one person from the start &mdash; so every lead in it is already clearly theirs, with zero setup.</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="ps-row" id="ps-row-7">
-        <div class="ps-row-top">
-          <div class="ps-problem">
-            <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
-            <div><div class="ps-label">The problem</div><div class="ps-text">Finding one specific lead, or a whole segment of them, means scrolling through hundreds of rows by hand.</div></div>
-          </div>
-          <button class="ps-reveal-btn" data-target="ps-row-7">See how we fix it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-        </div>
-        <div class="ps-solution-wrap">
-          <div class="ps-solution-wrap-inner">
-            <div class="ps-solution">
-              <div class="ps-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div class="ps-check-pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
-              <div><div class="ps-label">How we solve it</div><div class="ps-text">Filter by source, status, temperature, industry, country, or month &mdash; narrow hundreds of leads down to exactly the ones you need in one click.</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="section-head">
-      <div class="section-eyebrow-lbl">See the difference</div>
-      <h2>From a scattered spreadsheet&hellip;</h2>
-      <p>Drag the handle to see what changed when we stopped bending our process around a generic tool.</p>
-    </div>
-    <div class="compare-wrap" id="compareWrap" style="--split:50%;">
-      <div class="compare-spotlight"></div>
-      <div class="compare-pane before">
-        <div class="compare-label before-lbl">Before &middot; Generic spreadsheet</div>
-        <div class="compare-table">
-          <div class="compare-row head">
-            <div class="cell-avatar"></div><div>Lead</div><div>Status</div><div>Value</div><div>Last touch</div>
-          </div>
-          <div class="compare-row stale">
-            <div class="cell-avatar-plain">ER</div>
-            <div><div class="cell-name">Elena Rossi</div><div class="cell-source">LinkedIn</div></div>
-            <div class="cell-status-plain">?</div>
-            <div class="cell-value-plain">&mdash;</div>
-            <div class="cell-fresh-plain">3 wks ago</div>
-          </div>
-          <div class="compare-row">
-            <div class="cell-avatar-plain">JW</div>
-            <div><div class="cell-name">Jonas Weber</div><div class="cell-source">Referral</div></div>
-            <div class="cell-status-plain">New</div>
-            <div class="cell-value-plain">&mdash;</div>
-            <div class="cell-fresh-plain">2 days ago</div>
-          </div>
-          <div class="compare-row stale">
-            <div class="cell-avatar-plain">MN</div>
-            <div><div class="cell-name">M. Novak</div><div class="cell-source">Website</div></div>
-            <div class="cell-status-plain">maybe won?</div>
-            <div class="cell-value-plain">&mdash;</div>
-            <div class="cell-fresh-plain">unknown</div>
-          </div>
-          <div class="compare-row">
-            <div class="cell-avatar-plain">TW</div>
-            <div><div class="cell-name">T. Wolski</div><div class="cell-source">YouTube</div></div>
-            <div class="cell-status-plain">Contacted</div>
-            <div class="cell-value-plain">&mdash;</div>
-            <div class="cell-fresh-plain">Yesterday</div>
-          </div>
-        </div>
-        <div class="compare-caption">Out-of-date rows, unclear statuses, and no one quite sure whose copy is current.</div>
-      </div>
-      <div class="compare-pane after">
-        <div class="compare-label after-lbl">After &middot; PalaTrack, built in-house</div>
-        <div class="compare-live"><span class="pulse-dot"></span>Live</div>
-        <div class="compare-table">
-          <div class="compare-row head">
-            <div class="cell-avatar"></div><div>Lead</div><div>Status</div><div>Value</div><div>Last touch</div>
-          </div>
-          <div class="compare-row rich">
-            <div class="cell-avatar" style="background:linear-gradient(135deg,#1B59A5,#123F78)">ER</div>
-            <div><div class="cell-name-rich">Elena Rossi</div><div class="cell-source-chip">LinkedIn</div></div>
-            <div><span class="status-pill won">Won</span></div>
-            <div class="cell-value-rich" data-count="18200">$0</div>
-            <div class="cell-fresh-rich"><span class="mini-dot"></span>2 min ago</div>
-          </div>
-          <div class="compare-row rich">
-            <div class="cell-avatar" style="background:linear-gradient(135deg,#7A4FB5,#5C3A8C)">JW</div>
-            <div><div class="cell-name-rich">Jonas Weber</div><div class="cell-source-chip">Referral</div></div>
-            <div><span class="status-pill new">New</span></div>
-            <div class="cell-value-rich" data-count="9400">$0</div>
-            <div class="cell-fresh-rich"><span class="mini-dot"></span>Just now</div>
-          </div>
-          <div class="compare-row rich">
-            <div class="cell-avatar" style="background:linear-gradient(135deg,#FF9D00,#C97C00)">MN</div>
-            <div><div class="cell-name-rich">Maria Novak</div><div class="cell-source-chip">Website</div></div>
-            <div><span class="status-pill contacted">Contacted</span></div>
-            <div class="cell-value-rich" data-count="12000">$0</div>
-            <div class="cell-fresh-rich"><span class="mini-dot"></span>5 min ago</div>
-          </div>
-          <div class="compare-row rich">
-            <div class="cell-avatar" style="background:linear-gradient(135deg,#1F5C4F,#164238)">TW</div>
-            <div><div class="cell-name-rich">Tomasz Wolski</div><div class="cell-source-chip">YouTube</div></div>
-            <div><span class="status-pill call">Call booked</span></div>
-            <div class="cell-value-rich" data-count="24500">$0</div>
-            <div class="cell-fresh-rich"><span class="mini-dot"></span>12 min ago</div>
-          </div>
-        </div>
-        <div class="compare-caption">The same leads, always in sync &mdash; no version to chase, no field to guess at.</div>
-      </div>
-      <div class="compare-handle" style="left:var(--split);">
-        <div class="compare-handle-grip">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 8 4 12l4 4M16 8l4 4-4 4"/></svg>
-        </div>
-      </div>
-      <input class="compare-range" id="compareRange" type="range" min="0" max="100" value="50" aria-label="Compare before and after">
-    </div>
-    <div class="compare-hint">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8 4 12l4 4M16 8l4 4-4 4"/></svg>
-      Drag left and right to compare
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="section-head">
-      <div class="section-eyebrow-lbl">Try it yourself</div>
-      <h2>This is literally how it works</h2>
-      <p>Drag a card to a different column. That's the whole product &mdash; no tutorial needed.</p>
-    </div>
-    <div class="mini-board-add">
-      <input type="text" id="miniBoardNameInput" placeholder="Type any name and add it to the board&hellip;" maxlength="40">
-      <button type="button" class="mini-board-add-btn" id="miniBoardAddBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-        Add
-      </button>
-    </div>
-    <div class="mini-board-toolbar">
-      <div class="mini-board-total"><span>Pipeline value</span><strong id="miniBoardTotal">$21,600</strong></div>
-      <button type="button" class="mini-board-reset" id="miniBoardReset">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-        Reset
-      </button>
-    </div>
-    <div class="mini-board" id="miniBoard">
-      <div class="mini-col" data-col="new" style="--col-accent:var(--c-blue2-fg)">
-        <div class="mini-col-head"><span class="mini-col-dot" style="background:var(--c-blue2-fg)"></span>New <span class="mini-col-count">2</span></div>
-        <div class="mini-col-body" data-col="new">
-          <div class="mini-card" data-id="1" data-value="6200">
-            <div class="mini-card-avatar" style="background:linear-gradient(135deg,#1B59A5,#123F78)">SK</div>
-            <div class="mini-card-info">
-              <div class="mini-card-name">Sara Kessler</div>
-              <div class="mini-card-meta">Website &middot; $6,200</div>
-            </div>
-          </div>
-          <div class="mini-card" data-id="2" data-value="3900">
-            <div class="mini-card-avatar" style="background:linear-gradient(135deg,#7A4FB5,#5C3A8C)">MD</div>
-            <div class="mini-card-info">
-              <div class="mini-card-name">Marco Diallo</div>
-              <div class="mini-card-meta">LinkedIn &middot; $3,900</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="mini-col" data-col="contacted" style="--col-accent:var(--c-tan-fg)">
-        <div class="mini-col-head"><span class="mini-col-dot" style="background:var(--c-tan-fg)"></span>Contacted <span class="mini-col-count">1</span></div>
-        <div class="mini-col-body" data-col="contacted">
-          <div class="mini-card" data-id="3" data-value="11500">
-            <div class="mini-card-avatar" style="background:linear-gradient(135deg,#FF9D00,#C97C00)">PS</div>
-            <div class="mini-card-info">
-              <div class="mini-card-name">Priya Sharma</div>
-              <div class="mini-card-meta">Referral &middot; $11,500</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="mini-col" data-col="won" style="--col-accent:var(--c-green-fg)">
-        <div class="mini-col-head"><span class="mini-col-dot" style="background:var(--c-green-fg)"></span>Won <span class="mini-col-count">0</span></div>
-        <div class="mini-col-body" data-col="won"></div>
-      </div>
-    </div>
-    <div class="compare-hint" id="miniBoardHint">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7-7 7 7M12 2v20"/></svg>
-      Drag any card into "Won" and see what happens
     </div>
   </section>
 
@@ -1076,37 +639,37 @@
     <div class="benefits-grid">
 
       <div class="benefit-card">
-        <div class="benefit-icon" style="background:linear-gradient(135deg,#2BC17A,#1F5C4F);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <div class="benefit-icon" style="background:var(--c-green-bg);color:var(--c-green-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
         <div class="benefit-title">Real-time collaboration</div>
         <p class="benefit-desc">Every board updates instantly for your whole team &mdash; no refreshing, no re-syncing, no waiting.</p>
       </div>
 
       <div class="benefit-card">
-        <div class="benefit-icon" style="background:linear-gradient(135deg,var(--teal),#7A4FB5);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.2 4 4-1.2-2.8 3 2.8 3-4-1.2L12 14l-1.2-4-4 1.2 2.8-3-2.8-3 4 1.2L12 2z"/></svg></div>
+        <div class="benefit-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.2 4 4-1.2-2.8 3 2.8 3-4-1.2L12 14l-1.2-4-4 1.2 2.8-3-2.8-3 4 1.2L12 2z"/></svg></div>
         <div class="benefit-title">Alexandre, your AI assistant</div>
         <p class="benefit-desc">Ask questions about your pipeline in plain language and get instant, accurate answers.</p>
       </div>
 
       <div class="benefit-card">
-        <div class="benefit-icon" style="background:linear-gradient(135deg,#7A4FB5,#4A3080);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+        <div class="benefit-icon" style="background:var(--c-purple-bg);color:var(--c-purple-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
         <div class="benefit-title">Deep statistics</div>
         <p class="benefit-desc">Win rates, revenue trends, source performance, and a live world map of your whole pipeline.</p>
       </div>
 
       <div class="benefit-card">
-        <div class="benefit-icon" style="background:linear-gradient(135deg,#FF9D00,#C9720A);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+        <div class="benefit-icon" style="background:var(--c-tan-bg);color:var(--c-tan-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
         <div class="benefit-title">Multi-board organization</div>
         <p class="benefit-desc">Separate boards for every campaign, market, or client &mdash; organized exactly your way.</p>
       </div>
 
       <div class="benefit-card">
-        <div class="benefit-icon" style="background:linear-gradient(135deg,#E0453A,#A9241C);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg></div>
+        <div class="benefit-icon" style="background:var(--c-red-bg);color:var(--c-red-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg></div>
         <div class="benefit-title">A built-in safety net</div>
         <p class="benefit-desc">Soft deletes, a dedicated Trash page, and one-click undo mean nothing is ever truly lost.</p>
       </div>
 
       <div class="benefit-card">
-        <div class="benefit-icon" style="background:linear-gradient(135deg,#1B59A5,#123A6E);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+        <div class="benefit-icon" style="background:var(--c-blue-bg);color:var(--c-blue2-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
         <div class="benefit-title">Smart reminders</div>
         <p class="benefit-desc">Get nudged the moment a follow-up is overdue, a call needs an update, or a lead's gone cold.</p>
       </div>
@@ -1164,451 +727,6 @@
 </div>
 
 <script>
-  // ---------- Problem/Solution: click-to-reveal + progress ----------
-  const psRows = Array.from(document.querySelectorAll('.ps-row'));
-  const psPills = Array.from(document.querySelectorAll('.ps-picker-pill'));
-  const psProgressFill = document.getElementById('psProgressFill');
-  const psProgressLabel = document.getElementById('psProgressLabel');
-  let confettiFired = false;
-
-  function playRevealSound(){
-    try{
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const now = ctx.currentTime;
-      function tone(freq, startTime, duration, volume){
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(startTime);
-        osc.stop(startTime + duration + 0.02);
-      }
-      tone(880, now, 0.12, 0.11);
-      tone(1318.5, now + 0.08, 0.18, 0.11);
-    }catch(e){}
-  }
-
-  function prefersReducedMotion(){
-    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
-  function fireConfetti(originEl){
-    try{
-      const rect = originEl.getBoundingClientRect();
-      const originX = rect.left + rect.width / 2;
-      const originY = rect.top + rect.height / 2;
-      const colors = ['#1B59A5', '#7A4FB5', '#FF9D00', '#2BC17A', '#E0453A'];
-      const count = 36;
-      for(let i = 0; i < count; i++){
-        const el = document.createElement('div');
-        const size = Math.random() * 6 + 4;
-        el.style.position = 'fixed';
-        el.style.left = originX + 'px';
-        el.style.top = originY + 'px';
-        el.style.width = size + 'px';
-        el.style.height = size + 'px';
-        el.style.background = colors[i % colors.length];
-        el.style.borderRadius = Math.random() < 0.5 ? '50%' : '2px';
-        el.style.pointerEvents = 'none';
-        el.style.zIndex = '9999';
-        document.body.appendChild(el);
-        const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.5 - 0.25);
-        const distance = 90 + Math.random() * 130;
-        const dx = Math.cos(angle) * distance;
-        const dy = Math.sin(angle) * distance - 60;
-        const duration = 800 + Math.random() * 500;
-        const anim = el.animate([
-          { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
-          { transform: `translate(${dx}px, ${dy}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
-        ], { duration, easing: 'cubic-bezier(.2,.8,.3,1)' });
-        anim.onfinish = () => el.remove();
-      }
-    }catch(e){}
-  }
-
-  function fireBigCelebration(){
-    try{
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const colors = ['#1B59A5', '#7A4FB5', '#FF9D00', '#2BC17A', '#E0453A', '#FFD23F'];
-      const emojis = ['🎉','✨','💰','⭐','🏆','🎊'];
-      const count = 150;
-      for(let i = 0; i < count; i++){
-        const useEmoji = Math.random() < 0.22;
-        const el = document.createElement('div');
-        const startX = Math.random() * vw;
-        const startY = -30 - Math.random() * vh * 0.35;
-        el.style.position = 'fixed';
-        el.style.left = startX + 'px';
-        el.style.top = startY + 'px';
-        el.style.pointerEvents = 'none';
-        el.style.zIndex = '9999';
-        if(useEmoji){
-          el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-          el.style.fontSize = (16 + Math.random() * 16) + 'px';
-          el.style.lineHeight = '1';
-        } else {
-          const size = Math.random() * 8 + 5;
-          el.style.width = size + 'px';
-          el.style.height = size + 'px';
-          el.style.background = colors[i % colors.length];
-          el.style.borderRadius = Math.random() < 0.5 ? '50%' : '2px';
-        }
-        document.body.appendChild(el);
-        const fallDistance = (vh - startY) + 60 + Math.random() * 140;
-        const drift = (Math.random() - 0.5) * 280;
-        const rotateAmt = (Math.random() - 0.5) * 720;
-        const duration = 2200 + Math.random() * 1800;
-        const delay = Math.random() * 450;
-        const anim = el.animate([
-          { transform: 'translate(0,0) rotate(0deg)', opacity: 1, offset: 0 },
-          { transform: `translate(${drift * 0.6}px, ${fallDistance * 0.7}px) rotate(${rotateAmt * 0.65}deg)`, opacity: 1, offset: 0.75 },
-          { transform: `translate(${drift}px, ${fallDistance}px) rotate(${rotateAmt}deg)`, opacity: 0, offset: 1 }
-        ], { duration, delay, easing: 'cubic-bezier(.25,.46,.45,.94)', fill: 'forwards' });
-        anim.onfinish = () => el.remove();
-      }
-    }catch(e){}
-  }
-
-  function updateProgress(){
-    const solvedCount = psRows.filter(r=>r.classList.contains('solved')).length;
-    psProgressFill.style.width = (solvedCount / psRows.length * 100) + '%';
-    psProgressLabel.textContent = `${solvedCount} of ${psRows.length} solved`;
-    psPills.forEach(pill=>{
-      const target = document.getElementById(pill.dataset.target);
-      pill.classList.toggle('done', target && target.classList.contains('solved'));
-    });
-    if(solvedCount === psRows.length && !confettiFired){
-      confettiFired = true;
-      if(!prefersReducedMotion()) fireConfetti(document.querySelector('.ps-progress'));
-    }
-  }
-
-  function solveRow(row){
-    if(row.classList.contains('solved')) return;
-    row.classList.add('solved');
-    playRevealSound();
-    updateProgress();
-  }
-
-  psRows.forEach(row=>{
-    const btn = row.querySelector('.ps-reveal-btn');
-    if(btn) btn.addEventListener('click', ()=> solveRow(row));
-  });
-  psPills.forEach(pill=>{
-    pill.addEventListener('click', ()=>{
-      const target = document.getElementById(pill.dataset.target);
-      if(!target) return;
-      solveRow(target);
-      target.scrollIntoView({behavior:'smooth', block:'center'});
-      target.classList.add('pulse');
-      setTimeout(()=> target.classList.remove('pulse'), 1000);
-    });
-  });
-  updateProgress();
-
-  // ---------- Benefit cards: reveal on scroll + tilt/spotlight ----------
-  const benefitCards = document.querySelectorAll('.benefit-card');
-  const benefitObserver = new IntersectionObserver((entries)=>{
-    entries.forEach((entry, i)=>{
-      if(entry.isIntersecting){
-        setTimeout(()=> entry.target.classList.add('revealed'), i * 60);
-        benefitObserver.unobserve(entry.target);
-      }
-    });
-  }, {threshold:0.15});
-  benefitCards.forEach(card=>benefitObserver.observe(card));
-
-  benefitCards.forEach(card=>{
-    let rect = null;
-    card.addEventListener('mouseenter', ()=>{ rect = card.getBoundingClientRect(); });
-    card.addEventListener('mousemove', (e)=>{
-      if(!rect) rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      card.style.setProperty('--mx', x + 'px');
-      card.style.setProperty('--my', y + 'px');
-    });
-    card.addEventListener('mouseleave', ()=>{ rect = null; });
-  });
-
-  // ---------- Count-up stats ----------
-  const statEls = document.querySelectorAll('[data-count]');
-  const statObserver = new IntersectionObserver((entries)=>{
-    entries.forEach(entry=>{
-      if(entry.isIntersecting){
-        const el = entry.target;
-        const target = parseInt(el.dataset.count, 10);
-        const duration = 900;
-        const start = performance.now();
-        function tick(now){
-          const p = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - p, 3);
-          el.textContent = Math.round(eased * target);
-          if(p < 1) requestAnimationFrame(tick);
-        }
-        requestAnimationFrame(tick);
-        statObserver.unobserve(el);
-      }
-    });
-  }, {threshold:0.4});
-  statEls.forEach(el=>statObserver.observe(el));
-
-  // ---------- Mini drag-and-drop board demo (pointer-based: works on mouse + touch) ----------
-  (function(){
-    const board = document.getElementById('miniBoard');
-    if(!board) return;
-    const hint = document.getElementById('miniBoardHint');
-    const totalEl = document.getElementById('miniBoardTotal');
-    const resetBtn = document.getElementById('miniBoardReset');
-    const initialHTML = board.innerHTML;
-    const defaultHintHTML = hint ? hint.innerHTML : '';
-    let wonCelebrated = false;
-
-    let dragCard = null;
-    let ghost = null;
-    let offsetX = 0, offsetY = 0;
-    let overColBody = null;
-
-    function updateCounts(){
-      let total = 0;
-      board.querySelectorAll('.mini-col').forEach(col=>{
-        const body = col.querySelector('.mini-col-body');
-        const countEl = col.querySelector('.mini-col-count');
-        const newCount = body.children.length;
-        if(countEl && countEl.textContent !== String(newCount)){
-          countEl.textContent = newCount;
-          countEl.classList.add('bump');
-          setTimeout(()=> countEl.classList.remove('bump'), 200);
-        }
-        body.querySelectorAll('.mini-card').forEach(c=>{ total += parseInt(c.dataset.value, 10) || 0; });
-      });
-      if(totalEl) totalEl.textContent = '$' + total.toLocaleString('en-US');
-    }
-
-    function onPointerDown(e){
-      if(e.button !== undefined && e.button !== 0) return;
-      e.preventDefault();
-      const card = e.currentTarget;
-      dragCard = card;
-      const rect = card.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-
-      ghost = card.cloneNode(true);
-      ghost.classList.add('mini-card-ghost');
-      ghost.style.width = rect.width + 'px';
-      ghost.style.left = rect.left + 'px';
-      ghost.style.top = rect.top + 'px';
-      document.body.appendChild(ghost);
-
-      card.classList.add('dragging-source');
-      document.addEventListener('pointermove', onPointerMove);
-      document.addEventListener('pointerup', onPointerUp);
-    }
-
-    function onPointerMove(e){
-      if(!ghost) return;
-      ghost.style.left = (e.clientX - offsetX) + 'px';
-      ghost.style.top = (e.clientY - offsetY) + 'px';
-
-      ghost.style.display = 'none';
-      const elUnder = document.elementFromPoint(e.clientX, e.clientY);
-      ghost.style.display = '';
-      const colBody = elUnder ? elUnder.closest('.mini-col-body') : null;
-
-      if(overColBody && overColBody !== colBody){
-        overColBody.closest('.mini-col').classList.remove('drag-over');
-      }
-      if(colBody){
-        colBody.closest('.mini-col').classList.add('drag-over');
-      }
-      overColBody = colBody;
-    }
-
-    function onPointerUp(){
-      document.removeEventListener('pointermove', onPointerMove);
-      document.removeEventListener('pointerup', onPointerUp);
-      if(ghost){ ghost.remove(); ghost = null; }
-
-      if(overColBody && dragCard){
-        overColBody.closest('.mini-col').classList.remove('drag-over');
-        overColBody.appendChild(dragCard);
-        dragCard.classList.add('settle');
-        setTimeout(()=> dragCard && dragCard.classList.remove('settle'), 350);
-        updateCounts();
-        if(overColBody.dataset.col === 'won'){
-          if(hint && !wonCelebrated){
-            hint.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>That\'s it. That\'s the whole workflow.';
-          }
-          wonCelebrated = true;
-          if(!prefersReducedMotion()){
-            playRevealSound();
-            fireBigCelebration();
-          }
-        }
-      }
-      if(dragCard) dragCard.classList.remove('dragging-source');
-      dragCard = null;
-      overColBody = null;
-    }
-
-    function attachCard(card){
-      card.addEventListener('pointerdown', onPointerDown);
-    }
-
-    board.querySelectorAll('.mini-card').forEach(attachCard);
-    updateCounts();
-
-    if(resetBtn){
-      resetBtn.addEventListener('click', ()=>{
-        board.innerHTML = initialHTML;
-        board.querySelectorAll('.mini-card').forEach(attachCard);
-        wonCelebrated = false;
-        if(hint) hint.innerHTML = defaultHintHTML;
-        updateCounts();
-      });
-    }
-
-    // ---------- Add a card with a custom name ----------
-    const nameInput = document.getElementById('miniBoardNameInput');
-    const addBtn = document.getElementById('miniBoardAddBtn');
-    function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-    const avatarPalette = [
-      'linear-gradient(135deg,#1B59A5,#123F78)',
-      'linear-gradient(135deg,#7A4FB5,#5C3A8C)',
-      'linear-gradient(135deg,#FF9D00,#C97C00)',
-      'linear-gradient(135deg,#1F5C4F,#164238)',
-      'linear-gradient(135deg,#E0453A,#A9241C)'
-    ];
-    let addedCount = 0;
-
-    function initialsOf(name){
-      const parts = name.trim().split(/\s+/);
-      return ((parts[0]||'')[0] || '') + ((parts[1]||'')[0] || '');
-    }
-
-    function addCardWithName(){
-      const name = nameInput.value.trim();
-      if(!name) return;
-      addedCount++;
-      const card = document.createElement('div');
-      card.className = 'mini-card settle';
-      card.dataset.id = 'custom-' + Date.now();
-      card.dataset.value = '0';
-      const color = avatarPalette[addedCount % avatarPalette.length];
-      card.innerHTML = `
-        <div class="mini-card-avatar" style="background:${color}">${esc(initialsOf(name)).toUpperCase() || '?'}</div>
-        <div class="mini-card-info">
-          <div class="mini-card-name">${esc(name)}</div>
-          <div class="mini-card-meta">Just added &middot; New</div>
-        </div>`;
-      const targetColBody = board.querySelector('.mini-col-body[data-col="new"]');
-      targetColBody.appendChild(card);
-      attachCard(card);
-      updateCounts();
-      setTimeout(()=> card.classList.remove('settle'), 350);
-      nameInput.value = '';
-      nameInput.focus();
-    }
-
-    if(addBtn) addBtn.addEventListener('click', addCardWithName);
-    if(nameInput){
-      nameInput.addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter') addCardWithName();
-      });
-    }
-  })();
-
-  // ---------- Before/after compare slider ----------
-  const compareWrap = document.getElementById('compareWrap');
-  const compareRange = document.getElementById('compareRange');
-  function setSplit(v){
-    compareWrap.style.setProperty('--split', v + '%');
-  }
-  compareRange.addEventListener('input', ()=> setSplit(compareRange.value));
-  compareRange.addEventListener('pointerdown', ()=> compareWrap.classList.remove('auto-demo'));
-
-  // Spotlight follows the cursor (rect cached on enter, writes batched to one rAF)
-  (function(){
-    let rect = null;
-    let pending = null;
-    let lastEvent = null;
-    compareWrap.addEventListener('mouseenter', ()=>{ rect = compareWrap.getBoundingClientRect(); });
-    compareWrap.addEventListener('mousemove', (e)=>{
-      lastEvent = e;
-      if(pending) return;
-      pending = requestAnimationFrame(()=>{
-        pending = null;
-        if(!rect) rect = compareWrap.getBoundingClientRect();
-        const x = ((lastEvent.clientX - rect.left) / rect.width) * 100;
-        const y = ((lastEvent.clientY - rect.top) / rect.height) * 100;
-        compareWrap.style.setProperty('--spot-x', x + '%');
-        compareWrap.style.setProperty('--spot-y', y + '%');
-      });
-    });
-    compareWrap.addEventListener('mouseleave', ()=>{ rect = null; });
-  })();
-
-  // One-time auto-demo sweep the first time the slider scrolls into view,
-  // so people immediately understand it's draggable without reading the hint.
-  (function(){
-    if(prefersReducedMotion()) return;
-    const observer = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          observer.unobserve(entry.target);
-          setTimeout(()=>{
-            compareWrap.classList.add('auto-demo');
-            const steps = [24, 76, 50];
-            let i = 0;
-            function next(){
-              if(i >= steps.length || !compareWrap.classList.contains('auto-demo')) {
-                compareWrap.classList.remove('auto-demo');
-                return;
-              }
-              setSplit(steps[i]);
-              compareRange.value = steps[i];
-              i++;
-              setTimeout(next, 700);
-            }
-            next();
-          }, 500);
-        }
-      });
-    }, {threshold:0.5});
-    observer.observe(compareWrap);
-  })();
-
-  // Count-up on the "after" side's revenue values
-  (function(){
-    const valueEls = compareWrap.querySelectorAll('.cell-value-rich[data-count]');
-    const observer = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          const el = entry.target;
-          const target = parseInt(el.dataset.count, 10);
-          const duration = 1000;
-          const start = performance.now();
-          function tick(now){
-            const p = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - p, 3);
-            el.textContent = '$' + Math.round(eased * target).toLocaleString('en-US');
-            if(p < 1) requestAnimationFrame(tick);
-          }
-          requestAnimationFrame(tick);
-          observer.unobserve(el);
-        }
-      });
-    }, {threshold:0.5});
-    valueEls.forEach(el=>observer.observe(el));
-  })();
-
   const progressBar = document.getElementById('progressBar');
   function paintScrollEffects(){
     const h = document.documentElement;
