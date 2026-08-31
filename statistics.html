@@ -1328,6 +1328,10 @@
   let auth = null;
   let firebaseConnected = false;
   const boardId = new URLSearchParams(location.search).get('board');
+  let addLeadMode = 'linkedin';
+  try{
+    addLeadMode = window.localStorage.getItem('addLeadMode_' + boardId) || 'linkedin';
+  }catch(e){}
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
@@ -2010,7 +2014,7 @@
       </div>
       <div class="headline-stats">
         <div class="headline-stat"><div class="headline-stat-value">${activeCount}</div><div class="headline-stat-label">${t('stillActive')}</div></div>
-        <div class="headline-stat"><div class="headline-stat-value">${acceptRate??"—"}${acceptRate!==null?"%":""}</div><div class="headline-stat-label">${t('acceptRate')}</div></div>
+        ${addLeadMode === 'linkedin' ? `<div class="headline-stat"><div class="headline-stat-value">${acceptRate??"—"}${acceptRate!==null?"%":""}</div><div class="headline-stat-label">${t('acceptRate')}</div></div>` : ''}
         <div class="headline-stat"><div class="headline-stat-value">${showUpRate??"—"}${showUpRate!==null?"%":""}</div><div class="headline-stat-label">${t('showUpRate')}</div></div>
       </div>
     </div>`;
@@ -2061,7 +2065,7 @@
     const ringsHTML = `<div class="section nav-anchor" id="sec-outreach">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-purple-bg);color:var(--c-purple-fg)">${ICONS.tag}</div>${t('outreachPerformance')}</h2>
       <div class="ring-row">
-        ${ringCard({pct:acceptRate, accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('acceptRate'), sub:`${acceptedCount}/${sentCount} ${t('sent')}`})}
+        ${addLeadMode === 'linkedin' ? ringCard({pct:acceptRate, accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('acceptRate'), sub:`${acceptedCount}/${sentCount} ${t('sent')}`}) : ''}
         ${ringCard({pct:replyRate, accent:"var(--c-amber-fg)", accentSoft:"var(--c-amber-bg)", label:t('replyRate'), sub:`${repliedCount}/${contactedCount} ${t('contacted')}`})}
         ${ringCard({pct:showUpRate, accent:"var(--c-purple-fg)", accentSoft:"var(--c-purple-bg)", label:t('showUpRate'), sub:`${showedUpCount}/${callReached.length} ${t('calls_booked_lower')}`})}
         ${ringCard({pct:winRate, accent:"var(--c-green-fg)", accentSoft:"var(--c-green-bg)", label:t('closingRate'), sub:`${wonCount}/${total} ${t('totalLeadsLower')}`})}
