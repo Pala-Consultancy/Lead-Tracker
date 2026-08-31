@@ -637,6 +637,24 @@
     border:1px solid var(--border);border-radius:16px;
     padding:18px;box-shadow:0 1px 2px rgba(27,36,48,0.05), 0 16px 36px -16px rgba(18,63,120,0.25);
   }
+  .world-map-wrap::after{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+    background:
+      radial-gradient(circle at 12% 12%, rgba(74,144,217,0.16) 0%, transparent 35%),
+      radial-gradient(circle at 90% 85%, rgba(122,79,181,0.14) 0%, transparent 40%);
+  }
+  .world-map-live-badge{
+    position:absolute;top:16px;right:20px;z-index:3;display:flex;align-items:center;gap:6px;
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+    color:#8FE8B4;background:rgba(15,30,51,0.55);padding:5px 11px;border-radius:999px;
+    border:1px solid rgba(143,232,180,0.25);backdrop-filter:blur(4px);
+  }
+  .world-map-live-dot{width:6px;height:6px;border-radius:50%;background:#2BC17A;position:relative;flex-shrink:0;}
+  .world-map-live-dot::after{
+    content:"";position:absolute;inset:-4px;border-radius:50%;background:#2BC17A;opacity:.55;
+    animation:world-map-pulse 1.8s infinite ease-out;
+  }
+  @keyframes world-map-pulse{0%{transform:scale(.4);opacity:.6;}100%{transform:scale(2.6);opacity:0;}}
   #worldMapContainer{width:100%;min-height:220px;position:relative;z-index:1;}
   #worldMapContainer svg{width:100%;height:auto;display:block;}
   .world-map-graticule{fill:none;stroke:var(--map-graticule);stroke-width:0.6;}
@@ -650,6 +668,15 @@
     filter:drop-shadow(0 0 6px rgba(27,89,165,0.5));
   }
   .world-map-country.has-data:hover{opacity:0.82;filter:brightness(1.08);}
+  .world-map-glow-dot{transform-origin:center;transform-box:fill-box;}
+  .world-map-glow-pulse{
+    opacity:.55;transform-origin:center;transform-box:fill-box;
+    animation:world-map-pulse-svg 2.2s infinite ease-out;
+  }
+  @keyframes world-map-pulse-svg{0%{transform:scale(0.6);opacity:.6;}100%{transform:scale(3.2);opacity:0;}}
+  @media (prefers-reduced-motion: reduce){
+    .world-map-live-dot::after, .world-map-glow-pulse{animation:none;}
+  }
   .world-map-loading{
     display:flex;align-items:center;justify-content:center;height:220px;
     color:var(--slate-light);font-size:12.5px;font-family:'IBM Plex Mono',monospace;
@@ -1645,6 +1672,22 @@
       .duration(280)
       .style('opacity', 1);
 
+    // Glowing pulse markers on countries with data — the top performer gets its own color
+    const dataEntries = Object.entries(revenueByNormName).sort((a,b)=> b[1] - a[1]);
+    const topCountryKey = dataEntries.length ? dataEntries[0][0] : null;
+    worldAtlasData.geo.features.forEach(d=>{
+      const name = (d.properties && d.properties.name) ? d.properties.name.toLowerCase() : '';
+      if(!revenueByNormName[name]) return;
+      const centroid = path.centroid(d);
+      if(!centroid || isNaN(centroid[0]) || isNaN(centroid[1])) return;
+      const isTop = name === topCountryKey;
+      const dotColor = isTop ? '#8FE8B4' : '#FF9D00';
+      const dotRadius = isTop ? 4.5 : 3;
+      const g = svg.append('g').attr('transform', `translate(${centroid[0]},${centroid[1]})`).style('pointer-events', 'none');
+      g.append('circle').attr('class', 'world-map-glow-pulse').attr('r', dotRadius).attr('fill', dotColor);
+      g.append('circle').attr('class', 'world-map-glow-dot').attr('r', dotRadius).attr('fill', dotColor);
+    });
+
     if(options.linkTableRows){
       document.querySelectorAll('tr[data-country]').forEach(row=>{
         const countryKey = row.getAttribute('data-country');
@@ -2138,6 +2181,7 @@
             </table>
           </div>
           <div class="world-map-wrap" id="worldMapWrap">
+            <div class="world-map-live-badge"><span class="world-map-live-dot"></span>LIVE</div>
             <div id="worldMapContainer"><div class="world-map-loading">${t('loadingMap')}</div></div>
             <div class="world-map-legend">
               <span>${t('lessRevenue')}</span>
