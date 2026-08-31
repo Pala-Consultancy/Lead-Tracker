@@ -131,15 +131,28 @@
     display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:64px;
   }
   .stat-card{
-    background:var(--panel);border:1px solid var(--border);border-radius:16px;
-    padding:26px 22px;text-align:center;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+    background:linear-gradient(160deg, var(--panel) 0%, var(--c-blue-tint2, #F6FAFE) 100%);
+    border:1px solid var(--border);border-radius:18px;
+    padding:32px 24px 28px;text-align:center;
+    box-shadow:0 1px 2px rgba(27,36,48,0.04), 0 18px 36px -16px rgba(27,36,48,0.14);
+    transition:transform .22s ease, box-shadow .22s ease;
   }
+  .stat-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,#1B59A5,#7A4FB5,#FF9D00);
+  }
+  .stat-card:hover{transform:translateY(-5px);box-shadow:0 26px 46px -14px rgba(27,36,48,0.2);}
   .stat-value{
-    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:clamp(30px,4vw,38px);
-    color:var(--ink);letter-spacing:-.01em;
+    font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:clamp(34px,4.4vw,42px);
+    background:linear-gradient(135deg,#1B59A5,#7A4FB5);-webkit-background-clip:text;background-clip:text;color:transparent;
+    letter-spacing:-.01em;
   }
-  .stat-value .suffix{font-size:0.55em;color:var(--teal);font-weight:600;}
-  .stat-label{font-size:13px;color:var(--slate);margin-top:6px;line-height:1.4;}
+  .stat-value .suffix{
+    font-size:0.5em;font-weight:700;
+    background:linear-gradient(135deg,#1B59A5,#7A4FB5);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .stat-label{font-size:13px;color:var(--slate);margin-top:8px;line-height:1.4;}
   @media (max-width:700px){.stat-strip{grid-template-columns:1fr;}}
 
   /* ---------- Section shell ---------- */
@@ -485,6 +498,56 @@
     content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.4;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
   }
+  .custom-hero-dotgrid{
+    position:absolute;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,0.16) 1.4px, transparent 1.4px);
+    background-size:26px 26px;
+    -webkit-mask-image:radial-gradient(ellipse 70% 65% at 50% 40%, #000 40%, transparent 85%);
+    mask-image:radial-gradient(ellipse 70% 65% at 50% 40%, #000 40%, transparent 85%);
+  }
+
+  /* ---------- Entrance light show ---------- */
+  .custom-hero-lightbeam{
+    position:absolute;top:-30%;width:120px;height:170%;z-index:0;pointer-events:none;
+    transform-origin:top center;filter:blur(6px);opacity:0;
+  }
+  .custom-hero-lightbeam.b1{
+    left:6%;background:linear-gradient(180deg, rgba(255,255,255,0.5), transparent 68%);
+    animation:lightbeam-sweep 3.4s cubic-bezier(.2,.7,.3,1) .15s infinite;
+  }
+  .custom-hero-lightbeam.b2{
+    left:32%;width:150px;background:linear-gradient(180deg, rgba(255,210,63,0.45), transparent 70%);
+    animation:lightbeam-sweep 3.6s cubic-bezier(.2,.7,.3,1) 1.1s infinite;
+  }
+  .custom-hero-lightbeam.b3{
+    left:58%;width:140px;background:linear-gradient(180deg, rgba(122,79,181,0.5), transparent 70%);
+    animation:lightbeam-sweep-rev 3.6s cubic-bezier(.2,.7,.3,1) 1.9s infinite;
+  }
+  .custom-hero-lightbeam.b4{
+    left:82%;background:linear-gradient(180deg, rgba(143,232,180,0.4), transparent 68%);
+    animation:lightbeam-sweep-rev 3.4s cubic-bezier(.2,.7,.3,1) 2.7s infinite;
+  }
+  @keyframes lightbeam-sweep{
+    0%{opacity:0;transform:rotate(-32deg) translateX(-30px);}
+    22%{opacity:.65;}
+    65%{opacity:.3;transform:rotate(18deg) translateX(50px);}
+    100%{opacity:0;transform:rotate(34deg) translateX(90px);}
+  }
+  @keyframes lightbeam-sweep-rev{
+    0%{opacity:0;transform:rotate(32deg) translateX(30px);}
+    22%{opacity:.6;}
+    65%{opacity:.28;transform:rotate(-18deg) translateX(-50px);}
+    100%{opacity:0;transform:rotate(-34deg) translateX(-90px);}
+  }
+  .custom-hero-flash{
+    position:absolute;inset:0;z-index:0;pointer-events:none;background:#fff;opacity:0;
+    animation:hero-flash 1.4s ease-out forwards;
+  }
+  @keyframes hero-flash{0%{opacity:.28;}100%{opacity:0;}}
+  @media (prefers-reduced-motion: reduce){
+    .custom-hero-lightbeam, .custom-hero-flash{display:none;}
+  }
+
   .custom-hero-orb{position:absolute;border-radius:50%;filter:blur(50px);opacity:.5;pointer-events:none;z-index:0;}
   .custom-hero-orb.o1{width:220px;height:220px;background:#7A4FB5;top:-60px;left:-40px;animation:custom-orb-float 9s ease-in-out infinite;}
   .custom-hero-orb.o2{width:260px;height:260px;background:#FF9D00;bottom:-90px;right:-60px;animation:custom-orb-float 11s ease-in-out infinite 1s;}
@@ -524,13 +587,22 @@
   @media (max-width:560px){.custom-benefits-grid{grid-template-columns:1fr;}}
   .custom-benefit-card{
     position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--border);border-radius:18px;
-    padding:26px 22px;box-shadow:var(--shadow);
+    padding:28px 22px 24px;box-shadow:var(--shadow);
     opacity:0;transform:translateY(16px);
-    transition:opacity .5s ease, transform .5s ease, box-shadow .2s ease;
+    transition:opacity .5s ease, transform .5s ease, box-shadow .25s ease, border-color .25s ease;
   }
   .custom-benefit-card.revealed{opacity:1;transform:translateY(0);}
-  .custom-benefit-card.revealed:hover{transform:translateY(-5px);box-shadow:0 20px 40px rgba(27,36,48,.12);}
+  .custom-benefit-card.revealed:hover{
+    transform:translateY(-6px);
+    box-shadow:0 26px 46px -14px rgba(27,36,48,.22), 0 0 0 1px color-mix(in srgb, var(--accent, var(--teal)) 25%, transparent);
+    border-color:color-mix(in srgb, var(--accent, var(--teal)) 40%, var(--border));
+  }
   @media (prefers-reduced-motion: reduce){.custom-benefit-card{opacity:1;transform:none;transition:box-shadow .2s ease;}}
+  .custom-benefit-card::after{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg, var(--accent, var(--teal)), var(--accent2, var(--purple)));
+    opacity:.85;
+  }
   .custom-benefit-card::before{
     content:"";position:absolute;inset:0;border-radius:18px;pointer-events:none;opacity:0;
     background:radial-gradient(200px circle at var(--mx,50%) var(--my,50%), rgba(122,79,181,0.1), transparent 70%);
@@ -538,9 +610,11 @@
   }
   .custom-benefit-card:hover::before{opacity:1;}
   .custom-benefit-icon{
-    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;
-    position:relative;z-index:1;box-shadow:0 8px 18px -6px rgba(27,89,165,0.35);
+    width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+    position:relative;z-index:1;box-shadow:0 10px 22px -6px color-mix(in srgb, var(--accent, #1B59A5) 60%, transparent);
+    transition:transform .3s ease;
   }
+  .custom-benefit-card.revealed:hover .custom-benefit-icon{transform:scale(1.08) rotate(-3deg);}
   .custom-benefit-icon svg{width:22px;height:22px;color:#fff;}
   .custom-benefit-title{font-family:'Sora',sans-serif;font-weight:700;font-size:15.5px;margin:0 0 8px;position:relative;z-index:1;}
   .custom-benefit-desc{font-size:13.3px;color:var(--slate);line-height:1.55;margin:0;position:relative;z-index:1;}
@@ -631,6 +705,12 @@
 <div class="app">
 
   <section class="custom-hero">
+    <div class="custom-hero-dotgrid"></div>
+    <div class="custom-hero-lightbeam b1"></div>
+    <div class="custom-hero-lightbeam b2"></div>
+    <div class="custom-hero-lightbeam b3"></div>
+    <div class="custom-hero-lightbeam b4"></div>
+    <div class="custom-hero-flash"></div>
     <div class="custom-hero-orb o1"></div>
     <div class="custom-hero-orb o2"></div>
     <div class="custom-hero-orb o3"></div>
@@ -660,32 +740,32 @@
   </div>
 
   <div class="custom-benefits-grid" id="customBenefitsGrid">
-    <div class="custom-benefit-card">
+    <div class="custom-benefit-card" style="--accent:#1B59A5;--accent2:#123F78">
       <div class="custom-benefit-icon" style="background:linear-gradient(135deg,var(--teal),#123F78)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
       <div class="custom-benefit-title">Unlimited boards</div>
       <p class="custom-benefit-desc">Every team, campaign, or client gets its own space &mdash; with no cap on how many you run.</p>
     </div>
-    <div class="custom-benefit-card">
+    <div class="custom-benefit-card" style="--accent:#7A4FB5;--accent2:#4A3080">
       <div class="custom-benefit-icon" style="background:linear-gradient(135deg,#7A4FB5,#4A3080)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M12 12V3m0 0 4 4m-4-4-4 4"/></svg></div>
       <div class="custom-benefit-title">Custom integrations</div>
       <p class="custom-benefit-desc">We connect PalaTrack to the other tools your team already relies on.</p>
     </div>
-    <div class="custom-benefit-card">
+    <div class="custom-benefit-card" style="--accent:#FF9D00;--accent2:#C97C00">
       <div class="custom-benefit-icon" style="background:linear-gradient(135deg,#FF9D00,#C97C00)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
       <div class="custom-benefit-title">Dedicated onboarding</div>
       <p class="custom-benefit-desc">A real person walks your team through setup, migration, and training.</p>
     </div>
-    <div class="custom-benefit-card">
+    <div class="custom-benefit-card" style="--accent:#1F5C4F;--accent2:#164238">
       <div class="custom-benefit-icon" style="background:linear-gradient(135deg,#1F5C4F,#164238)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2z"/><path d="M2 10h20"/></svg></div>
       <div class="custom-benefit-title">Custom contract &amp; invoicing</div>
       <p class="custom-benefit-desc">Billing terms, invoicing cadence, and contracts that match how your finance team works.</p>
     </div>
-    <div class="custom-benefit-card">
+    <div class="custom-benefit-card" style="--accent:#E0453A;--accent2:#A9241C">
       <div class="custom-benefit-icon" style="background:linear-gradient(135deg,#E0453A,#A9241C)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></div>
       <div class="custom-benefit-title">Dedicated account manager</div>
       <p class="custom-benefit-desc">One point of contact who actually knows your setup and can move fast when you need something.</p>
     </div>
-    <div class="custom-benefit-card">
+    <div class="custom-benefit-card" style="--accent:#1B59A5;--accent2:#7A4FB5">
       <div class="custom-benefit-icon" style="background:linear-gradient(135deg,#1B59A5,#7A4FB5)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
       <div class="custom-benefit-title">Priority everything</div>
       <p class="custom-benefit-desc">Priority support, priority feature requests, priority attention &mdash; you're not in a queue.</p>
