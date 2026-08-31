@@ -721,9 +721,17 @@
   .linkedin-mode-overlay{
     position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;
     background:radial-gradient(circle at 50% 45%, #1281D6 0%, #0A66C2 45%, #06407A 100%);
-    opacity:0;pointer-events:none;transition:opacity .35s ease;overflow:hidden;perspective:900px;
+    opacity:0;pointer-events:none;transition:opacity .35s ease, clip-path .6s cubic-bezier(.6,0,.8,.2);
+    overflow:hidden;perspective:900px;clip-path:circle(150% at 50% 50%);
   }
   .linkedin-mode-overlay.show{opacity:1;}
+  .linkedin-mode-overlay.closing{clip-path:circle(0% at 50% 50%);}
+  .linkedin-mode-badge-wrap.finalpulse{animation:linkedin-final-pulse .5s ease;}
+  @keyframes linkedin-final-pulse{
+    0%{transform:scale(1);filter:brightness(1);}
+    40%{transform:scale(1.12);filter:brightness(1.5);}
+    100%{transform:scale(1);filter:brightness(1);}
+  }
   .linkedin-mode-flash{
     position:absolute;inset:0;z-index:1;background:#fff;opacity:0;pointer-events:none;
   }
@@ -2357,22 +2365,25 @@
           p.style.left = (fromTop ? Math.random() * window.innerWidth : centerX) + 'px';
           p.style.top = centerY + 'px';
           p.style.background = colors[i % colors.length];
+          p.style.borderRadius = (fromTop && Math.random() < 0.4) ? '2px' : '50%';
           overlay.appendChild(p);
-          let dx, dy, duration;
+          let dx, dy, duration, rot;
           if(fromTop){
             dx = (Math.random() - 0.5) * 120;
             dy = window.innerHeight + 60;
-            duration = 1600 + Math.random() * 900;
+            duration = 1300 + Math.random() * 500;
+            rot = (Math.random() - 0.5) * 540;
           } else {
             const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.4 - 0.2);
             const distance = spreadMin + Math.random() * (spreadMax - spreadMin);
             dx = Math.cos(angle) * distance;
             dy = Math.sin(angle) * distance;
             duration = 700 + Math.random() * 500;
+            rot = 0;
           }
           const anim = p.animate([
-            { transform: 'translate(0,0) scale(1)', opacity: 1 },
-            { transform: `translate(${dx}px, ${dy}px) scale(0.2)`, opacity: 0 }
+            { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
+            { transform: `translate(${dx}px, ${dy}px) scale(0.2) rotate(${rot}deg)`, opacity: 0 }
           ], { duration, easing: fromTop ? 'cubic-bezier(.4,0,.7,1)' : 'cubic-bezier(.15,.7,.3,1)' });
           anim.onfinish = () => p.remove();
         }
@@ -2387,10 +2398,10 @@
         burstParticles(34, 90, 260, 3, 8, false);
       }, 750);
 
-      // Second wave: a gentle particle shower before fade-out
+      // Second wave: a gentle particle shower, given time to actually finish falling
       setTimeout(()=>{
         burstParticles(22, 0, 0, 4, 9, true);
-      }, 1900);
+      }, 1700);
 
       try{
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2467,9 +2478,15 @@
       }catch(e){}
 
       setTimeout(()=>{
+        const wrap = overlay.querySelector('.linkedin-mode-badge-wrap');
+        if(wrap) wrap.classList.add('finalpulse');
+      }, 3550);
+
+      setTimeout(()=>{
+        overlay.classList.add('closing');
         overlay.classList.remove('show');
-        setTimeout(()=> overlay.remove(), 400);
-      }, 2900);
+        setTimeout(()=> overlay.remove(), 650);
+      }, 3850);
     }catch(e){}
   }
 
