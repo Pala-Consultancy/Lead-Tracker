@@ -379,7 +379,7 @@
   .lang-chevron{width:15px;height:15px;flex-shrink:0;transition:transform .25s cubic-bezier(.4,0,.2,1);}
   .lang-dropdown.open .lang-chevron{transform:rotate(180deg);}
   .lang-dropdown-panel{
-    position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:60;
+    position:fixed;z-index:600;
     background:var(--panel);border:1px solid var(--border);border-radius:12px;
     box-shadow:0 20px 40px -12px rgba(27,36,48,0.25);padding:6px;
     opacity:0;visibility:hidden;transform:translateY(-6px) scale(0.97);transform-origin:top left;
@@ -1033,14 +1033,33 @@
     }
     languageFieldOptions.forEach(o=>o.classList.toggle('selected', o.dataset.value === value));
   }
+  function positionLanguageFieldPanel(){
+    const btn = document.getElementById('languageFieldBtn');
+    const panel = document.getElementById('languageFieldPanel');
+    const rect = btn.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 8) + 'px';
+    panel.style.left = rect.left + 'px';
+    panel.style.width = rect.width + 'px';
+  }
   document.getElementById('languageFieldBtn').addEventListener('click', (e)=>{
     e.stopPropagation();
     if(isFreePlan()){
       showToast(t('languageLockedUpgradeMessage'), true);
       return;
     }
-    document.getElementById('languageField').classList.toggle('open');
+    const field = document.getElementById('languageField');
+    const willOpen = !field.classList.contains('open');
+    if(willOpen) positionLanguageFieldPanel();
+    field.classList.toggle('open');
   });
+  window.addEventListener('resize', ()=>{
+    const field = document.getElementById('languageField');
+    if(field.classList.contains('open')) field.classList.remove('open');
+  });
+  window.addEventListener('scroll', ()=>{
+    const field = document.getElementById('languageField');
+    if(field.classList.contains('open')) field.classList.remove('open');
+  }, true);
   languageFieldOptions.forEach(opt=>{
     opt.addEventListener('click', ()=>{
       const field = document.getElementById('languageField');
