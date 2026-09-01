@@ -779,6 +779,14 @@
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
+
   function playSuccessSound(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -871,7 +879,7 @@
     usersCollection.doc(uid).set({ role }, {merge:true}).then(()=>{
       showToast(t('roleUpdated'));
     }).catch(err=>{
-      showToast(t('couldNotUpdateRole') + ' ' + err.message, true);
+      showToast(t('couldNotUpdateRole') + ' ' + friendlyErr(err), true);
     });
   }
 
@@ -958,7 +966,7 @@
       showToast(`${t('inviteSentTo')} ${email}`);
       document.getElementById('inviteEmail').value = '';
     }).catch(err=>{
-      showToast(t('couldNotSendInvite') + ' ' + err.message, true);
+      showToast(t('couldNotSendInvite') + ' ' + friendlyErr(err), true);
     }).finally(()=>{
       sendBtn.disabled = false;
       sendBtn.textContent = t('sendInvite');

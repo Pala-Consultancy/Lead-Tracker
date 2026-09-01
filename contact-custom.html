@@ -958,6 +958,14 @@
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
+
   function showToast(message, danger){
     const stack = document.getElementById('toastStack');
     if(!stack) return;
@@ -1069,7 +1077,7 @@
         fireConfetti(document.getElementById('customFormWrap'));
       }
     }).catch(err=>{
-      showToast('Could not send message: ' + err.message, true);
+      showToast('Could not send message: ' + friendlyErr(err), true);
       btn.disabled = false;
       btn.textContent = 'Get in touch';
     });

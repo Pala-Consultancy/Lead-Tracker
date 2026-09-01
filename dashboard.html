@@ -2806,6 +2806,14 @@
   }
   function todayISO(){ return new Date().toISOString().slice(0,10); }
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
   function formatMoney(n){
     const num = parseFloat(n)||0;
     try{
@@ -3036,7 +3044,7 @@
         showToast(wasEditing ? t('leadUpdated') : t('leadSaved'));
         clearForm();
       }).catch(err=>{
-        showToast(t('couldNotSaveLead') + ' ' + err.message, true);
+        showToast(t('couldNotSaveLead') + ' ' + friendlyErr(err), true);
       });
     }
     if(!wasEditing){
@@ -3259,7 +3267,7 @@
         restoreLead(id);
       });
     }).catch(err=>{
-      showToast(t('couldNotDeleteLead') + ' ' + err.message, true);
+      showToast(t('couldNotDeleteLead') + ' ' + friendlyErr(err), true);
     });
   }
   function restoreLead(id){
@@ -3267,7 +3275,7 @@
       const l = trashedLeads.find(x=>x.id===id);
       showToast(`${t('restoredWord')} ${(l && l.name) || t('lead_singular')}`);
     }).catch(err=>{
-      showToast(t('couldNotUndoDelete') + ' ' + err.message, true);
+      showToast(t('couldNotUndoDelete') + ' ' + friendlyErr(err), true);
     });
   }
   function permanentlyDeleteLead(id){
@@ -3276,7 +3284,7 @@
     leadsCollection.doc(id).delete().then(()=>{
       showToast(`${t('permanentlyDeletedWord')} ${(l && l.name) || t('lead_singular')}`, true);
     }).catch(err=>{
-      showToast(t('couldNotDeleteLead') + ' ' + err.message, true);
+      showToast(t('couldNotDeleteLead') + ' ' + friendlyErr(err), true);
     });
   }
   function callHasOccurred(l){
@@ -3306,7 +3314,7 @@
       if(!l.contactedAt) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp();
     }
     leadsCollection.doc(id).update(updates).catch(err=>{
-      showToast(t('couldNotUpdateStatus') + ' ' + err.message, true);
+      showToast(t('couldNotUpdateStatus') + ' ' + friendlyErr(err), true);
     });
   }
   function toggleOutreach(id, field){
@@ -3322,7 +3330,7 @@
     if(field==='showedUp' && updates[field]){ updates.contacted = true; updates.noShow = false; if(!l.contactedAt) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp(); }
     if(field==='noShow' && updates[field]){ updates.contacted = true; updates.showedUp = false; if(!l.contactedAt) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp(); }
     leadsCollection.doc(id).update(updates).catch(err=>{
-      showToast(t('couldNotUpdateLead') + ' ' + err.message, true);
+      showToast(t('couldNotUpdateLead') + ' ' + friendlyErr(err), true);
     });
   }
   function cycleCallOutcome(id){
@@ -3338,7 +3346,7 @@
       updates = {showedUp:false, noShow:false};
     }
     leadsCollection.doc(id).update(updates).catch(err=>{
-      showToast(t('couldNotUpdateLead') + ' ' + err.message, true);
+      showToast(t('couldNotUpdateLead') + ' ' + friendlyErr(err), true);
     });
   }
 
@@ -3802,11 +3810,11 @@
         const restoreBatch = db.batch();
         ids.forEach(id=>restoreBatch.update(leadsCollection.doc(id), {deleted:false, deletedAt:null}));
         restoreBatch.commit().catch(err=>{
-          showToast(t('couldNotUndo') + ' ' + err.message, true);
+          showToast(t('couldNotUndo') + ' ' + friendlyErr(err), true);
         });
       });
     }).catch(err=>{
-      showToast(t('couldNotDeleteLeads') + ' ' + err.message, true);
+      showToast(t('couldNotDeleteLeads') + ' ' + friendlyErr(err), true);
     });
   }
   function bulkSetStatus(status){
@@ -3818,7 +3826,7 @@
       showToast(`${t('movedWord')} ${ids.length} ${ids.length===1?t('lead_singular'):t('lead_plural')} ${t('toWord')} ${t(STATUS_LABEL_KEYS[status]||'st_new')}`);
       document.getElementById('bulkStatusSelect').value = '';
     }).catch(err=>{
-      showToast(t('couldNotUpdateLeads') + ' ' + err.message, true);
+      showToast(t('couldNotUpdateLeads') + ' ' + friendlyErr(err), true);
     });
   }
   function bulkExportSelected(){
@@ -4042,7 +4050,8 @@ ${buildLeadContext()}`;
       }
     }catch(err){
       hideAlexandreTyping();
-      const msg = (err && err.message) ? err.message : 'Sorry, I could not reach the server. Please check your connection and try again.';
+      console.error(err);
+      const msg = 'Sorry, I could not reach the server. Please check your connection and try again.';
       renderAlexandreMessage('assistant', msg, true);
     }finally{
       alexandreBusy = false;
@@ -4165,7 +4174,7 @@ ${buildLeadContext()}`;
       })).then(()=>{
         showToast(`${t('importedWord')} ${imported.length} ${imported.length===1?t('lead_singular'):t('lead_plural')}.`);
       }).catch(err=>{
-        showToast(t('couldNotImportLeads') + ' ' + err.message, true);
+        showToast(t('couldNotImportLeads') + ' ' + friendlyErr(err), true);
       });
     };
     reader.readAsText(file);
@@ -4439,7 +4448,7 @@ ${buildLeadContext()}`;
       leadsCollection.doc(noteId).update({notes: value}).then(()=>{
         showToast(t('noteSaved'));
       }).catch(err=>{
-        showToast(t('couldNotSaveNote') + ' ' + err.message, true);
+        showToast(t('couldNotSaveNote') + ' ' + friendlyErr(err), true);
       });
     });
     drawerOverlay.classList.add('open');
@@ -4547,7 +4556,7 @@ ${buildLeadContext()}`;
           leadsCollection.doc(l.id).update(updates).then(()=>{
             showToast(`${t('movedWord')} ${l.name||t('lead_singular')} ${t('toWord')} ${t(STATUS_LABEL_KEYS[newStatus]||'st_new')}`);
           }).catch(err=>{
-            showToast(t('couldNotUpdateStatus') + ' ' + err.message, true);
+            showToast(t('couldNotUpdateStatus') + ' ' + friendlyErr(err), true);
           });
         }
       });

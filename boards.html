@@ -1244,6 +1244,14 @@
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
+
   function playSuccessSound(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1405,7 +1413,7 @@
         }).then(()=>{
           showToast(`${t('deletedToast')} "${boardName}"`, true);
         }).catch(err=>{
-          showToast(t('couldNotDeleteBoard') + ' ' + err.message, true);
+          showToast(t('couldNotDeleteBoard') + ' ' + friendlyErr(err), true);
         });
       }
     );
@@ -1431,7 +1439,7 @@
       document.getElementById('editBoardCreatedBy').value = data.createdByName || '';
       editBoardOverlay.classList.add('open');
     }).catch(err=>{
-      showToast('Could not load board: ' + err.message, true);
+      showToast('Could not load board: ' + friendlyErr(err), true);
     });
   }
   function closeEditBoard(){
@@ -1464,7 +1472,7 @@
       showToast(t('boardUpdated'));
       closeEditBoard();
     }).catch(err=>{
-      showToast(t('couldNotUpdateBoard') + ' ' + err.message, true);
+      showToast(t('couldNotUpdateBoard') + ' ' + friendlyErr(err), true);
     }).finally(()=>{
       submitBtn.disabled = false;
     });
@@ -1662,7 +1670,7 @@
         }).then(()=>{
           showToast('Welcome! Your account is ready.');
         }).catch(err=>{
-          showToast('Could not complete sign-in: ' + err.message, true);
+          showToast('Could not complete sign-in: ' + friendlyErr(err), true);
         });
       }
       if(emailForLink){
@@ -1761,7 +1769,7 @@
         e.target.reset();
         location.href = `dashboard.html?board=${encodeURIComponent(doc.id)}`;
       }).catch(err=>{
-        showToast(t('couldNotCreateBoard') + ' ' + err.message, true);
+        showToast(t('couldNotCreateBoard') + ' ' + friendlyErr(err), true);
         submitBtn.disabled = false;
       });
     });

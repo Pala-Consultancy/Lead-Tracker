@@ -1487,7 +1487,7 @@
         console.error("Firestore sync error", err);
         document.getElementById("content").innerHTML = `<div class="empty-state">
           <h3>Could not load data</h3>
-          <p>${esc(err.message)}</p>
+          <p>${esc(friendlyErr(err))}</p>
         </div>`;
       });
     } else {
@@ -1499,7 +1499,7 @@
         console.error("Firestore sync error", err);
         document.getElementById("content").innerHTML = `<div class="empty-state">
           <h3>Could not load data</h3>
-          <p>${esc(err.message)}</p>
+          <p>${esc(friendlyErr(err))}</p>
         </div>`;
       });
     }
@@ -1520,6 +1520,14 @@
     try{ currency = localStorage.getItem(CURRENCY_KEY) || "EUR"; } catch(e){ currency = "EUR"; }
   }
   function esc(s){ return (s||"").toString().replace(/[&<>"\']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","\'":"&#39;"}[c])); }
+
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
   function playSuccessSound(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();

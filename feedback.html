@@ -598,6 +598,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script>
 (function(){
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
   const firebaseConfig = {
     apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",
     authDomain: "lead-tracker-c5c3a.firebaseapp.com",
@@ -767,7 +774,7 @@
       showToast('Feedback sent — thank you!');
       setTimeout(()=>{ document.getElementById('feedbackSuccess').classList.remove('show'); }, 4000);
     }).catch(err=>{
-      showToast('Could not send feedback: ' + err.message, true);
+      showToast('Could not send feedback: ' + friendlyErr(err), true);
     }).finally(()=>{
       submitBtn.disabled = false;
       submitBtn.textContent = 'Send feedback';

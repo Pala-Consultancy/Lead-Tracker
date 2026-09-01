@@ -1248,6 +1248,14 @@
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
+
   function playSuccessSound(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1474,7 +1482,7 @@
         }
       }
     }).catch(err=>{
-      showToast(t('couldNotSavePlan') + ' ' + err.message, true);
+      showToast(t('couldNotSavePlan') + ' ' + friendlyErr(err), true);
     });
   }
   window.__billingActions = { switchPlan };
@@ -1504,7 +1512,7 @@
         cancelPlanModal.style.display = 'none';
         showToast(t('planCancelledToast'), true);
       }).catch(err=>{
-        showToast(t('couldNotSavePlan') + ' ' + err.message, true);
+        showToast(t('couldNotSavePlan') + ' ' + friendlyErr(err), true);
       }).finally(()=>{
         cancelPlanConfirmBtn.disabled = false;
       });
@@ -1604,7 +1612,7 @@
     billingDocRef.set(data, {merge:true}).then(()=>{
       showToast(t('billingDetailsSaved'));
     }).catch(err=>{
-      showToast(t('couldNotSaveBilling') + ' ' + err.message, true);
+      showToast(t('couldNotSaveBilling') + ' ' + friendlyErr(err), true);
     }).finally(()=>{
       btn.disabled = false;
     });
@@ -1743,7 +1751,7 @@
       clearPaymentForm();
       paymentForm.style.display = 'none';
     }).catch(err=>{
-      showToast(t('couldNotSavePayment') + ' ' + err.message, true);
+      showToast(t('couldNotSavePayment') + ' ' + friendlyErr(err), true);
     }).finally(()=>{
       btn.disabled = false;
     });

@@ -921,6 +921,14 @@
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
+
   function playSuccessSound(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1242,7 +1250,7 @@
         showToast(t('profileUpdated'));
         reauthCard.classList.remove('show');
       }).catch(err=>{
-        showToast(t('couldNotSaveProfile') + ' ' + err.message, true);
+        showToast(t('couldNotSaveProfile') + ' ' + friendlyErr(err), true);
       }).finally(()=>{
         saveBtn.disabled = false;
       });
@@ -1257,7 +1265,7 @@
           pendingEmail = newEmail;
           reauthCard.classList.add('show');
         } else {
-          showToast(t('couldNotUpdateEmail') + ' ' + err.message, true);
+          showToast(t('couldNotUpdateEmail') + ' ' + friendlyErr(err), true);
         }
       });
     } else {
@@ -1280,7 +1288,7 @@
       document.getElementById('reauthPassword').value = '';
       pendingEmail = null;
     }).catch(err=>{
-      showToast(t('couldNotConfirm') + ' ' + err.message, true);
+      showToast(t('couldNotConfirm') + ' ' + friendlyErr(err), true);
     });
   });
 

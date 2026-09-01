@@ -1813,6 +1813,14 @@
     try{ currency = localStorage.getItem(CURRENCY_KEY) || "EUR"; }catch(e){ currency = "EUR"; }
   }
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+  function friendlyErr(err){
+    console.error(err);
+    const code = err && err.code;
+    if(code === "permission-denied") return "You do not have permission to do that.";
+    if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    return "Please try again.";
+  }
   function formatMoney(n){
     const num = parseFloat(n)||0;
     try{
@@ -2012,7 +2020,7 @@
       showToast(`${t('restoredWord')} ${(l && l.name) || t('lead_singular')}`);
       if(drawerLeadId===id) closeDrawer();
     }).catch(err=>{
-      showToast(t('couldNotUndoDelete') + ' ' + err.message, true);
+      showToast(t('couldNotUndoDelete') + ' ' + friendlyErr(err), true);
     });
   }
   let confirmModalCallback = null;
@@ -2052,7 +2060,7 @@
         showToast(`${t('permanentlyDeletedWord')} ${(l && l.name) || t('lead_singular')}`, true);
         if(drawerLeadId===id) closeDrawer();
       }).catch(err=>{
-        showToast(t('couldNotDeleteLead') + ' ' + err.message, true);
+        showToast(t('couldNotDeleteLead') + ' ' + friendlyErr(err), true);
       });
     });
   }
@@ -2084,7 +2092,7 @@
       showToast(`${t('restoredWord')} ${ids.length} ${ids.length===1?t('lead_singular'):t('lead_plural')}`);
       if(drawerLeadId && ids.includes(drawerLeadId)) closeDrawer();
     }).catch(err=>{
-      showToast(t('couldNotUndoDelete') + ' ' + err.message, true);
+      showToast(t('couldNotUndoDelete') + ' ' + friendlyErr(err), true);
     });
   }
   function bulkPermanentlyDelete(){
@@ -2099,7 +2107,7 @@
         showToast(`${t('permanentlyDeletedWord')} ${ids.length} ${ids.length===1?t('lead_singular'):t('lead_plural')}`, true);
         if(drawerLeadId && ids.includes(drawerLeadId)) closeDrawer();
       }).catch(err=>{
-        showToast(t('couldNotDeleteLead') + ' ' + err.message, true);
+        showToast(t('couldNotDeleteLead') + ' ' + friendlyErr(err), true);
       });
     });
   }
