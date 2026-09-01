@@ -419,6 +419,40 @@
     border:1px solid var(--c-amber-border);border-radius:6px;background:#fff;color:var(--ink);
   }
 
+  /* ---------- Danger zone ---------- */
+  .danger-zone-card{
+    background:var(--panel);border:1px solid var(--c-red-border, #F0C4C0);border-radius:16px;
+    padding:22px 28px;margin-top:20px;
+  }
+  .danger-zone-card h3{font-family:'Sora',sans-serif;font-size:15px;color:var(--c-red-fg, #C0392B);margin:0 0 6px;}
+  .danger-zone-card p{font-size:13px;color:var(--slate);line-height:1.55;margin:0 0 14px;}
+  .btn-danger{background:var(--c-red-fg, #C0392B);color:#fff;border:1px solid var(--c-red-fg, #C0392B);}
+  .btn-danger:hover{background:#A9241C;}
+
+  /* ---------- Confirm modal (delete account) ---------- */
+  .confirm-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.55);z-index:500;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .confirm-modal{
+    background:var(--panel);border-radius:16px;padding:28px 26px;max-width:400px;width:100%;
+    box-shadow:0 30px 60px rgba(0,0,0,0.3);text-align:center;
+  }
+  .confirm-modal-icon{
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;
+  }
+  .confirm-modal-icon.warn{background:var(--c-red-bg, #FBE8E6);color:var(--c-red-fg, #C0392B);}
+  .confirm-modal-icon svg{width:22px;height:22px;}
+  .confirm-modal h3{font-family:'Sora',sans-serif;font-size:17px;margin:0 0 8px;}
+  .confirm-modal p{font-size:13.5px;color:var(--slate);line-height:1.55;margin:0 0 16px;}
+  .confirm-modal .field label{display:block;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:5px;}
+  .confirm-modal .field input{
+    width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;box-sizing:border-box;
+    border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);
+  }
+  .confirm-modal-actions{display:flex;gap:10px;justify-content:center;}
+
   .toast-stack{
     position:fixed;bottom:20px;right:20px;z-index:80;display:flex;flex-direction:column;gap:8px;
   }
@@ -608,8 +642,34 @@
     </form>
   </div>
 
+  <div class="danger-zone-card">
+    <h3 data-i18n="dangerZoneTitle">Danger zone</h3>
+    <p data-i18n="deleteAccountDesc">Permanently delete your account. If you're the only member of your workspace, this also deletes all its boards and leads. This cannot be undone.</p>
+    <button type="button" class="btn btn-danger" id="deleteAccountBtn" data-i18n="deleteAccountBtn">Delete my account</button>
+  </div>
+
   <footer data-i18n="footerText">© 2026 by Pala Consultancy BV. - All Rights Reserved</footer>
 </div>
+</div>
+
+<div class="confirm-overlay" id="deleteAccountOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+    <h3 data-i18n="deleteAccountConfirmTitle">Delete your account?</h3>
+    <p id="deleteAccountConfirmBody" data-i18n="deleteAccountConfirmBody">This will permanently delete your account. This cannot be undone.</p>
+    <div class="field" style="text-align:left;margin-bottom:12px">
+      <label for="deleteConfirmPassword" data-i18n="confirmYourPassword">Confirm your password</label>
+      <input type="password" id="deleteConfirmPassword" placeholder="••••••••">
+    </div>
+    <div class="field" style="text-align:left;margin-bottom:16px">
+      <label for="deleteConfirmType" data-i18n="typeDeleteToConfirm">Type DELETE to confirm</label>
+      <input type="text" id="deleteConfirmType" placeholder="DELETE">
+    </div>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn" id="deleteAccountCancelBtn" data-i18n="keepMyAccount">Keep my account</button>
+      <button type="button" class="btn btn-danger" id="deleteAccountConfirmBtn" data-i18n="yesDeleteAccount">Yes, delete it</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="cropOverlay">
@@ -652,7 +712,7 @@
       fullName:"Full name", emailAddress:"Email address", changeEmailHint:"Changing this updates your login email too.",
       phoneNumber:"Phone number", roleWithinCompany:"Role within company", selectRole:"Select role...",
       company:"Company", preferredLanguage:"Preferred language", languageLockedUpgradeMessage:"Changing your language is a paid feature — upgrade to unlock it.", selectLanguage:"Select language...",
-      location:"Location", reauthNotice:"For your security, updating your email requires confirming your current password.",
+      location:"Location", reauthNotice:"For your security, updating your email requires confirming your current password.", dangerZoneTitle:"Danger zone", deleteAccountDesc:"Permanently delete your account. If you're the only member of your workspace, this also deletes all its boards and leads. This cannot be undone.", deleteAccountBtn:"Delete my account", deleteAccountConfirmTitle:"Delete your account?", deleteAccountConfirmBody:"This will permanently delete your account. This cannot be undone.", confirmYourPassword:"Confirm your password", typeDeleteToConfirm:"Type DELETE to confirm", keepMyAccount:"Keep my account", yesDeleteAccount:"Yes, delete it", mustTypeDeleteMessage:"Please type DELETE to confirm.", pleaseEnterYourPassword:"Please enter your password.", deletingAccount:"Deleting account...", couldNotDeleteAccount:"Could not delete account:", lastAdminMessage:"You're the only admin of this workspace. Please make someone else an admin before deleting your account.",
       confirmAndSave:"Confirm & save", saveChanges:"Save changes", positionPhoto:"Position your photo",
       dragToReposition:"Drag to reposition", cancel:"Cancel", useThisPhoto:"Use this photo",
       footerText:"© 2026 by Pala Consultancy BV. - All Rights Reserved",
@@ -675,7 +735,7 @@
       fullName:"Volledige naam", emailAddress:"E-mailadres", changeEmailHint:"Dit wijzigt ook je inlog-e-mailadres.",
       phoneNumber:"Telefoonnummer", roleWithinCompany:"Rol binnen bedrijf", selectRole:"Selecteer rol...",
       company:"Bedrijf", preferredLanguage:"Voorkeurstaal", languageLockedUpgradeMessage:"Je taal wijzigen is een betaalde functie — upgrade om het te ontgrendelen.", selectLanguage:"Selecteer taal...",
-      location:"Locatie", reauthNotice:"Voor je veiligheid moet je je huidige wachtwoord bevestigen om je e-mail te wijzigen.",
+      location:"Locatie", reauthNotice:"Voor je veiligheid moet je je huidige wachtwoord bevestigen om je e-mail te wijzigen.", dangerZoneTitle:"Gevarenzone", deleteAccountDesc:"Verwijder je account permanent. Als je het enige lid van je werkruimte bent, worden ook alle boards en leads verwijderd. Dit kan niet ongedaan worden gemaakt.", deleteAccountBtn:"Verwijder mijn account", deleteAccountConfirmTitle:"Account verwijderen?", deleteAccountConfirmBody:"Dit verwijdert je account permanent. Dit kan niet ongedaan worden gemaakt.", confirmYourPassword:"Bevestig je wachtwoord", typeDeleteToConfirm:"Typ DELETE om te bevestigen", keepMyAccount:"Account behouden", yesDeleteAccount:"Ja, verwijderen", mustTypeDeleteMessage:"Typ DELETE om te bevestigen.", pleaseEnterYourPassword:"Voer je wachtwoord in.", deletingAccount:"Account verwijderen...", couldNotDeleteAccount:"Kon account niet verwijderen:", lastAdminMessage:"Je bent de enige admin van deze werkruimte. Maak iemand anders admin voordat je je account verwijdert.",
       confirmAndSave:"Bevestigen & opslaan", saveChanges:"Wijzigingen opslaan", positionPhoto:"Positioneer je foto",
       dragToReposition:"Sleep om te verplaatsen", cancel:"Annuleren", useThisPhoto:"Gebruik deze foto",
       footerText:"© 2026 by Pala Consultancy BV. - Alle rechten voorbehouden",
@@ -698,7 +758,7 @@
       fullName:"Nom complet", emailAddress:"Adresse e-mail", changeEmailHint:"Cela met également à jour votre e-mail de connexion.",
       phoneNumber:"Numéro de téléphone", roleWithinCompany:"Rôle dans l'entreprise", selectRole:"Sélectionner un rôle...",
       company:"Entreprise", preferredLanguage:"Langue préférée", languageLockedUpgradeMessage:"Changer de langue est une fonctionnalité payante — mettez à niveau pour la débloquer.", selectLanguage:"Sélectionner une langue...",
-      location:"Localisation", reauthNotice:"Pour votre sécurité, la mise à jour de votre e-mail nécessite de confirmer votre mot de passe actuel.",
+      location:"Localisation", reauthNotice:"Pour votre sécurité, la mise à jour de votre e-mail nécessite de confirmer votre mot de passe actuel.", dangerZoneTitle:"Zone dangereuse", deleteAccountDesc:"Supprimez définitivement votre compte. Si vous êtes le seul membre de votre espace de travail, cela supprime aussi tous ses tableaux et prospects. Cette action est irréversible.", deleteAccountBtn:"Supprimer mon compte", deleteAccountConfirmTitle:"Supprimer votre compte ?", deleteAccountConfirmBody:"Cela supprimera définitivement votre compte. Cette action est irréversible.", confirmYourPassword:"Confirmez votre mot de passe", typeDeleteToConfirm:"Tapez DELETE pour confirmer", keepMyAccount:"Garder mon compte", yesDeleteAccount:"Oui, supprimer", mustTypeDeleteMessage:"Veuillez taper DELETE pour confirmer.", pleaseEnterYourPassword:"Veuillez saisir votre mot de passe.", deletingAccount:"Suppression du compte...", couldNotDeleteAccount:"Impossible de supprimer le compte :", lastAdminMessage:"Vous êtes le seul administrateur de cet espace de travail. Désignez quelqu'un d'autre comme administrateur avant de supprimer votre compte.",
       confirmAndSave:"Confirmer & enregistrer", saveChanges:"Enregistrer", positionPhoto:"Positionnez votre photo",
       dragToReposition:"Faites glisser pour repositionner", cancel:"Annuler", useThisPhoto:"Utiliser cette photo",
       footerText:"© 2026 by Pala Consultancy BV. - Tous droits réservés",
@@ -721,7 +781,7 @@
       fullName:"Vollständiger Name", emailAddress:"E-Mail-Adresse", changeEmailHint:"Dies aktualisiert auch deine Anmelde-E-Mail.",
       phoneNumber:"Telefonnummer", roleWithinCompany:"Rolle im Unternehmen", selectRole:"Rolle auswählen...",
       company:"Unternehmen", preferredLanguage:"Bevorzugte Sprache", languageLockedUpgradeMessage:"Die Sprache zu ändern ist eine kostenpflichtige Funktion — upgrade, um sie freizuschalten.", selectLanguage:"Sprache auswählen...",
-      location:"Standort", reauthNotice:"Aus Sicherheitsgründen musst du zur Aktualisierung deiner E-Mail dein aktuelles Passwort bestätigen.",
+      location:"Standort", reauthNotice:"Aus Sicherheitsgründen musst du zur Aktualisierung deiner E-Mail dein aktuelles Passwort bestätigen.", dangerZoneTitle:"Gefahrenzone", deleteAccountDesc:"Lösche dein Konto endgültig. Falls du das einzige Mitglied deines Arbeitsbereichs bist, werden auch alle Boards und Leads gelöscht. Dies kann nicht rückgängig gemacht werden.", deleteAccountBtn:"Mein Konto löschen", deleteAccountConfirmTitle:"Konto löschen?", deleteAccountConfirmBody:"Dies löscht dein Konto endgültig. Dies kann nicht rückgängig gemacht werden.", confirmYourPassword:"Bestätige dein Passwort", typeDeleteToConfirm:"Gib DELETE ein, um zu bestätigen", keepMyAccount:"Konto behalten", yesDeleteAccount:"Ja, löschen", mustTypeDeleteMessage:"Bitte gib DELETE ein, um zu bestätigen.", pleaseEnterYourPassword:"Bitte gib dein Passwort ein.", deletingAccount:"Konto wird gelöscht...", couldNotDeleteAccount:"Konto konnte nicht gelöscht werden:", lastAdminMessage:"Du bist der einzige Admin dieses Arbeitsbereichs. Mache jemand anderen zum Admin, bevor du dein Konto löschst.",
       confirmAndSave:"Bestätigen & speichern", saveChanges:"Änderungen speichern", positionPhoto:"Foto positionieren",
       dragToReposition:"Zum Verschieben ziehen", cancel:"Abbrechen", useThisPhoto:"Dieses Foto verwenden",
       footerText:"© 2026 by Pala Consultancy BV. - Alle Rechte vorbehalten",
@@ -744,7 +804,7 @@
       fullName:"Nombre completo", emailAddress:"Correo electrónico", changeEmailHint:"Esto también actualiza tu correo de inicio de sesión.",
       phoneNumber:"Número de teléfono", roleWithinCompany:"Rol en la empresa", selectRole:"Seleccionar rol...",
       company:"Empresa", preferredLanguage:"Idioma preferido", languageLockedUpgradeMessage:"Cambiar tu idioma es una función de pago — mejora tu plan para desbloquearla.", selectLanguage:"Seleccionar idioma...",
-      location:"Ubicación", reauthNotice:"Por tu seguridad, actualizar tu correo requiere confirmar tu contraseña actual.",
+      location:"Ubicación", reauthNotice:"Por tu seguridad, actualizar tu correo requiere confirmar tu contraseña actual.", dangerZoneTitle:"Zona de peligro", deleteAccountDesc:"Elimina tu cuenta de forma permanente. Si eres el único miembro de tu espacio de trabajo, también se eliminarán todos sus tableros y leads. Esto no se puede deshacer.", deleteAccountBtn:"Eliminar mi cuenta", deleteAccountConfirmTitle:"¿Eliminar tu cuenta?", deleteAccountConfirmBody:"Esto eliminará tu cuenta de forma permanente. Esto no se puede deshacer.", confirmYourPassword:"Confirma tu contraseña", typeDeleteToConfirm:"Escribe DELETE para confirmar", keepMyAccount:"Mantener mi cuenta", yesDeleteAccount:"Sí, eliminar", mustTypeDeleteMessage:"Por favor escribe DELETE para confirmar.", pleaseEnterYourPassword:"Por favor introduce tu contraseña.", deletingAccount:"Eliminando cuenta...", couldNotDeleteAccount:"No se pudo eliminar la cuenta:", lastAdminMessage:"Eres el único administrador de este espacio de trabajo. Haz que otra persona sea administradora antes de eliminar tu cuenta.",
       confirmAndSave:"Confirmar y guardar", saveChanges:"Guardar cambios", positionPhoto:"Posiciona tu foto",
       dragToReposition:"Arrastra para reposicionar", cancel:"Cancelar", useThisPhoto:"Usar esta foto",
       footerText:"© 2026 by Pala Consultancy BV. - Todos los derechos reservados",
@@ -767,7 +827,7 @@
       fullName:"Nome completo", emailAddress:"Indirizzo e-mail", changeEmailHint:"Questo aggiorna anche la tua e-mail di accesso.",
       phoneNumber:"Numero di telefono", roleWithinCompany:"Ruolo in azienda", selectRole:"Seleziona ruolo...",
       company:"Azienda", preferredLanguage:"Lingua preferita", languageLockedUpgradeMessage:"Cambiare la lingua è una funzione a pagamento — esegui l'upgrade per sbloccarla.", selectLanguage:"Seleziona lingua...",
-      location:"Posizione", reauthNotice:"Per la tua sicurezza, aggiornare la tua e-mail richiede la conferma della password attuale.",
+      location:"Posizione", reauthNotice:"Per la tua sicurezza, aggiornare la tua e-mail richiede la conferma della password attuale.", dangerZoneTitle:"Zona pericolosa", deleteAccountDesc:"Elimina permanentemente il tuo account. Se sei l'unico membro del tuo spazio di lavoro, verranno eliminate anche tutte le sue bacheche e i lead. Questa azione non può essere annullata.", deleteAccountBtn:"Elimina il mio account", deleteAccountConfirmTitle:"Eliminare il tuo account?", deleteAccountConfirmBody:"Questo eliminerà permanentemente il tuo account. Questa azione non può essere annullata.", confirmYourPassword:"Conferma la tua password", typeDeleteToConfirm:"Digita DELETE per confermare", keepMyAccount:"Mantieni il mio account", yesDeleteAccount:"Sì, elimina", mustTypeDeleteMessage:"Digita DELETE per confermare.", pleaseEnterYourPassword:"Inserisci la tua password.", deletingAccount:"Eliminazione account...", couldNotDeleteAccount:"Impossibile eliminare l'account:", lastAdminMessage:"Sei l'unico amministratore di questo spazio di lavoro. Rendi qualcun altro amministratore prima di eliminare il tuo account.",
       confirmAndSave:"Conferma e salva", saveChanges:"Salva modifiche", positionPhoto:"Posiziona la tua foto",
       dragToReposition:"Trascina per riposizionare", cancel:"Annulla", useThisPhoto:"Usa questa foto",
       footerText:"© 2026 by Pala Consultancy BV. - Tutti i diritti riservati",
@@ -790,7 +850,7 @@
       fullName:"Nome completo", emailAddress:"Endereço de e-mail", changeEmailHint:"Isto também atualiza o seu e-mail de início de sessão.",
       phoneNumber:"Número de telefone", roleWithinCompany:"Função na empresa", selectRole:"Selecionar função...",
       company:"Empresa", preferredLanguage:"Idioma preferido", languageLockedUpgradeMessage:"Alterar o seu idioma é um recurso pago — atualize para o desbloquear.", selectLanguage:"Selecionar idioma...",
-      location:"Localização", reauthNotice:"Para sua segurança, atualizar o seu e-mail requer confirmação da sua palavra-passe atual.",
+      location:"Localização", reauthNotice:"Para sua segurança, atualizar o seu e-mail requer confirmação da sua palavra-passe atual.", dangerZoneTitle:"Zona de perigo", deleteAccountDesc:"Elimine permanentemente a sua conta. Se for o único membro do seu espaço de trabalho, isto também elimina todos os seus quadros e leads. Esta ação não pode ser revertida.", deleteAccountBtn:"Eliminar a minha conta", deleteAccountConfirmTitle:"Eliminar a sua conta?", deleteAccountConfirmBody:"Isto irá eliminar permanentemente a sua conta. Esta ação não pode ser revertida.", confirmYourPassword:"Confirme a sua palavra-passe", typeDeleteToConfirm:"Escreva DELETE para confirmar", keepMyAccount:"Manter a minha conta", yesDeleteAccount:"Sim, eliminar", mustTypeDeleteMessage:"Por favor escreva DELETE para confirmar.", pleaseEnterYourPassword:"Por favor introduza a sua palavra-passe.", deletingAccount:"A eliminar conta...", couldNotDeleteAccount:"Não foi possível eliminar a conta:", lastAdminMessage:"É o único administrador deste espaço de trabalho. Torne outra pessoa administradora antes de eliminar a sua conta.",
       confirmAndSave:"Confirmar e guardar", saveChanges:"Guardar alterações", positionPhoto:"Posicione a sua foto",
       dragToReposition:"Arraste para reposicionar", cancel:"Cancelar", useThisPhoto:"Usar esta foto",
       footerText:"© 2026 by Pala Consultancy BV. - Todos os direitos reservados",
@@ -813,7 +873,7 @@
       fullName:"Imię i nazwisko", emailAddress:"Adres e-mail", changeEmailHint:"To również zaktualizuje Twój e-mail logowania.",
       phoneNumber:"Numer telefonu", roleWithinCompany:"Rola w firmie", selectRole:"Wybierz rolę...",
       company:"Firma", preferredLanguage:"Preferowany język", languageLockedUpgradeMessage:"Zmiana języka to funkcja płatna — ulepsz plan, aby ją odblokować.", selectLanguage:"Wybierz język...",
-      location:"Lokalizacja", reauthNotice:"Ze względów bezpieczeństwa aktualizacja e-maila wymaga potwierdzenia obecnego hasła.",
+      location:"Lokalizacja", reauthNotice:"Ze względów bezpieczeństwa aktualizacja e-maila wymaga potwierdzenia obecnego hasła.", dangerZoneTitle:"Strefa zagrożenia", deleteAccountDesc:"Trwale usuń swoje konto. Jeśli jesteś jedynym członkiem swojej przestrzeni roboczej, spowoduje to również usunięcie wszystkich jej tablic i leadów. Tej operacji nie można cofnąć.", deleteAccountBtn:"Usuń moje konto", deleteAccountConfirmTitle:"Usunąć swoje konto?", deleteAccountConfirmBody:"Spowoduje to trwałe usunięcie Twojego konta. Tej operacji nie można cofnąć.", confirmYourPassword:"Potwierdź swoje hasło", typeDeleteToConfirm:"Wpisz DELETE, aby potwierdzić", keepMyAccount:"Zachowaj moje konto", yesDeleteAccount:"Tak, usuń", mustTypeDeleteMessage:"Wpisz DELETE, aby potwierdzić.", pleaseEnterYourPassword:"Wpisz swoje hasło.", deletingAccount:"Usuwanie konta...", couldNotDeleteAccount:"Nie można usunąć konta:", lastAdminMessage:"Jesteś jedynym administratorem tej przestrzeni roboczej. Ustanów kogoś innego administratorem przed usunięciem konta.",
       confirmAndSave:"Potwierdź i zapisz", saveChanges:"Zapisz zmiany", positionPhoto:"Ustaw pozycję zdjęcia",
       dragToReposition:"Przeciągnij, aby zmienić pozycję", cancel:"Anuluj", useThisPhoto:"Użyj tego zdjęcia",
       footerText:"© 2026 by Pala Consultancy BV. - Wszelkie prawa zastrzeżone",
@@ -836,7 +896,7 @@
       fullName:"全名", emailAddress:"电子邮箱地址", changeEmailHint:"这也会更新您的登录邮箱。",
       phoneNumber:"电话号码", roleWithinCompany:"公司内角色", selectRole:"选择角色...",
       company:"公司", preferredLanguage:"首选语言", languageLockedUpgradeMessage:"更改语言是付费功能 — 升级以解锁。", selectLanguage:"选择语言...",
-      location:"所在地", reauthNotice:"为了您的安全，更新邮箱需要确认您当前的密码。",
+      location:"所在地", reauthNotice:"为了您的安全，更新邮箱需要确认您当前的密码。", dangerZoneTitle:"危险区域", deleteAccountDesc:"永久删除您的账户。如果您是工作区的唯一成员，这也会删除其所有看板和潜在客户。此操作无法撤销。", deleteAccountBtn:"删除我的账户", deleteAccountConfirmTitle:"删除您的账户？", deleteAccountConfirmBody:"这将永久删除您的账户。此操作无法撤销。", confirmYourPassword:"确认您的密码", typeDeleteToConfirm:"输入DELETE以确认", keepMyAccount:"保留我的账户", yesDeleteAccount:"是的，删除", mustTypeDeleteMessage:"请输入DELETE以确认。", pleaseEnterYourPassword:"请输入您的密码。", deletingAccount:"正在删除账户...", couldNotDeleteAccount:"无法删除账户：", lastAdminMessage:"您是此工作区的唯一管理员。请在删除账户前将其他人设为管理员。",
       confirmAndSave:"确认并保存", saveChanges:"保存更改", positionPhoto:"调整照片位置",
       dragToReposition:"拖动以重新定位", cancel:"取消", useThisPhoto:"使用此照片",
       footerText:"© 2026 by Pala Consultancy BV. - 保留所有权利",
@@ -1289,6 +1349,111 @@
       pendingEmail = null;
     }).catch(err=>{
       showToast(t('couldNotConfirm') + ' ' + friendlyErr(err), true);
+    });
+  });
+
+  // ---------- Delete account ----------
+  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+  const deleteAccountOverlay = document.getElementById('deleteAccountOverlay');
+  const deleteAccountCancelBtn = document.getElementById('deleteAccountCancelBtn');
+  const deleteAccountConfirmBtn = document.getElementById('deleteAccountConfirmBtn');
+
+  deleteAccountBtn.addEventListener('click', ()=>{
+    document.getElementById('deleteConfirmPassword').value = '';
+    document.getElementById('deleteConfirmType').value = '';
+    const isGoogleUser = auth.currentUser && auth.currentUser.providerData.some(p=>p.providerId === 'google.com');
+    document.getElementById('deleteConfirmPassword').closest('.field').style.display = isGoogleUser ? 'none' : '';
+    deleteAccountOverlay.style.display = 'flex';
+  });
+  deleteAccountCancelBtn.addEventListener('click', ()=>{ deleteAccountOverlay.style.display = 'none'; });
+  deleteAccountOverlay.addEventListener('click', (e)=>{ if(e.target === deleteAccountOverlay) deleteAccountOverlay.style.display = 'none'; });
+
+  function performAccountDeletion(user){
+    return membersCollection.get().then(snap=>{
+      const members = snap.docs;
+      const isSoleMember = members.length <= 1;
+      const me = members.find(m=>m.id === user.uid);
+      const isCurrentUserAdmin = me && me.data().isAdmin === true;
+
+      if(!isSoleMember){
+        const otherAdmins = members.filter(m=>m.id !== user.uid && m.data().isAdmin === true);
+        if(isCurrentUserAdmin && otherAdmins.length === 0){
+          throw {code: 'last-admin'};
+        }
+        return membersCollection.doc(user.uid).delete().then(()=>{
+          return db.collection('userDirectory').doc(user.uid).delete();
+        }).then(()=>{
+          return user.delete();
+        });
+      }
+
+      // Sole member: delete the entire workspace — every board, every lead, everything.
+      return workspaceRef.get().then(wsDoc=>{
+        const companyName = wsDoc.exists ? (wsDoc.data().name || '') : '';
+        return workspaceRef.collection('boards').get().then(boardsSnap=>{
+          const boardDeletions = boardsSnap.docs.map(boardDoc=>{
+            return boardDoc.ref.collection('leads').get().then(leadsSnap=>{
+              const batch = db.batch();
+              leadsSnap.docs.forEach(leadDoc=>batch.delete(leadDoc.ref));
+              batch.delete(boardDoc.ref);
+              return batch.commit();
+            });
+          });
+          return Promise.all(boardDeletions);
+        }).then(()=>{
+          const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+          const cleanup = [
+            membersCollection.doc(user.uid).delete(),
+            db.collection('userDirectory').doc(user.uid).delete(),
+            workspaceRef.delete()
+          ];
+          if(slug) cleanup.push(db.collection('workspaceDirectory').doc(slug).delete());
+          return Promise.all(cleanup);
+        });
+      }).then(()=>{
+        return user.delete();
+      });
+    });
+  }
+
+  deleteAccountConfirmBtn.addEventListener('click', ()=>{
+    const user = auth.currentUser;
+    if(!user) return;
+    const typedConfirm = document.getElementById('deleteConfirmType').value.trim();
+    if(typedConfirm !== 'DELETE'){
+      showToast(t('mustTypeDeleteMessage'), true);
+      return;
+    }
+
+    const isGoogleUser = user.providerData.some(p=>p.providerId === 'google.com');
+    let reauthPromise;
+    if(isGoogleUser){
+      reauthPromise = user.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());
+    } else {
+      const password = document.getElementById('deleteConfirmPassword').value;
+      if(!password){
+        showToast(t('pleaseEnterYourPassword'), true);
+        return;
+      }
+      const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+      reauthPromise = user.reauthenticateWithCredential(credential);
+    }
+
+    deleteAccountConfirmBtn.disabled = true;
+    deleteAccountConfirmBtn.textContent = t('deletingAccount');
+
+    reauthPromise.then(()=>{
+      return performAccountDeletion(user);
+    }).then(()=>{
+      location.href = 'index.html';
+    }).catch(err=>{
+      if(err && err.code === 'last-admin'){
+        showToast(t('lastAdminMessage'), true);
+      } else {
+        showToast(t('couldNotDeleteAccount') + ' ' + friendlyErr(err), true);
+      }
+      deleteAccountConfirmBtn.disabled = false;
+      deleteAccountConfirmBtn.textContent = t('yesDeleteAccount');
     });
   });
 
