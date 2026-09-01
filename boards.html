@@ -349,6 +349,7 @@
     font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
   }
   .optional-tag{text-transform:none;font-weight:500;color:var(--slate-light);letter-spacing:normal;}
+  .field-missing{border-color:var(--c-red-fg, #C0392B) !important;background:var(--c-red-bg, #FBE8E6) !important;}
   #createBoardForm input, #createBoardForm select{
     font-family:'Inter',sans-serif;font-size:14.5px;padding:10px 13px;
     border:1px solid var(--border);border-radius:7px;background:var(--c-blue-tint2);color:var(--ink);width:100%;
@@ -1444,11 +1445,22 @@
       document.getElementById('editBoardJobTitle').value = data.defaultJobTitle || '';
       document.getElementById('editBoardSource').value = data.defaultSource || '';
       document.getElementById('editBoardCreatedBy').value = data.createdByName || '';
+      ['editBoardCountry','editBoardCity','editBoardIndustry','editBoardJobTitle','editBoardSource','editBoardCreatedBy'].forEach(id=>{
+        const field = document.getElementById(id);
+        if(field) field.classList.toggle('field-missing', !field.value);
+      });
       editBoardOverlay.classList.add('open');
     }).catch(err=>{
       showToast('Could not load board: ' + friendlyErr(err), true);
     });
   }
+  ['editBoardCountry','editBoardCity','editBoardIndustry','editBoardJobTitle','editBoardSource','editBoardCreatedBy'].forEach(id=>{
+    const field = document.getElementById(id);
+    if(field){
+      field.addEventListener('input', ()=>field.classList.toggle('field-missing', !field.value));
+      field.addEventListener('change', ()=>field.classList.toggle('field-missing', !field.value));
+    }
+  });
   function closeEditBoard(){
     editBoardOverlay.classList.remove('open');
     editingBoardId = null;
