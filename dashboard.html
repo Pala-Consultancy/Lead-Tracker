@@ -142,6 +142,17 @@
       repeating-linear-gradient(25deg, rgba(10,102,194,0.04) 0px, rgba(10,102,194,0.04) 1px, transparent 1px, transparent 64px),
       var(--paper);
   }
+  body.linkedin-themed::after{
+    content:"in";
+    position:fixed;bottom:-90px;right:-40px;z-index:0;pointer-events:none;
+    font-family:Arial,sans-serif;font-weight:800;font-size:420px;line-height:1;
+    color:rgba(10,102,194,0.05);
+    transition:opacity .6s ease;
+  }
+  [data-theme="dark"] body.linkedin-themed::after{color:rgba(10,102,194,0.09);}
+  @media (max-width:900px){ body.linkedin-themed::after{font-size:260px;bottom:-50px;right:-30px;} }
+  body.linkedin-themed #headerLinkedinBadge{display:flex;animation:li-badge-pop .4s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes li-badge-pop{0%{transform:scale(0);}100%{transform:scale(1);}}
   body.linkedin-themed .title-block{
     background:linear-gradient(135deg, #0A66C2 0%, #004182 100%);
     box-shadow:0 4px 16px rgba(10,102,194,0.35), var(--shadow);
@@ -1482,7 +1493,10 @@
   <header>
     <div class="title-block">
       <div class="title-row">
-        <div class="logo-badge"><img data-logo-src="1" alt="Pala Consultancy logo" class="brand-logo"></div>
+        <div class="logo-badge" style="position:relative">
+          <img data-logo-src="1" alt="Pala Consultancy logo" class="brand-logo">
+          <span id="headerLinkedinBadge" style="display:none;position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;border-radius:5px;background:#0A66C2;border:2px solid var(--panel);align-items:center;justify-content:center;font-family:Arial,sans-serif;font-weight:800;font-size:10px;color:#fff;line-height:1;">in</span>
+        </div>
         <div class="title-divider"></div>
         <div class="title-text">
           <div class="eyebrow" data-i18n="brandName">PALA CONSULTANCY</div>
@@ -1528,7 +1542,7 @@
         <button class="btn icon-btn-settings" id="settingsBtn" title="Settings" data-i18n-title="settingsWord">⚙️</button>
       </div>
       <div class="all-boards-group">
-        <button class="btn" id="leadModeToggleBtn" title="Switch between LinkedIn and other lead sources" data-i18n-title="leadModeToggleTitle">📇 <span id="leadModeToggleLabel">LinkedIn mode</span></button>
+        <button class="btn" id="leadModeToggleBtn" title="Switch between LinkedIn and other lead sources" data-i18n-title="leadModeToggleTitle"><svg id="leadModeToggleIcon" width="16" height="16" viewBox="0 0 24 24" style="border-radius:5px;flex-shrink:0;vertical-align:-3px;margin-right:2px" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#0A66C2"/><text x="12" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="13" fill="#fff">in</text></svg> <span id="leadModeToggleLabel">LinkedIn mode</span></button>
         <a class="btn" href="boards.html" data-i18n="allBoards">← All boards</a>
       </div>
     </div>
