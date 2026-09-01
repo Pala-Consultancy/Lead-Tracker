@@ -1334,10 +1334,13 @@
   }catch(e){}
   let orgPlan = 'growth';
   let unsubscribeOrgPlan = null;
+  let workspaceId = null;
+  let workspaceRef = null;
+  let membersCollection = null;
   function loadOrgPlan(){
-    if(!db) return;
+    if(!workspaceRef) return;
     if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
-    unsubscribeOrgPlan = db.collection('organization').doc('billing').onSnapshot(doc=>{
+    unsubscribeOrgPlan = workspaceRef.onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
       orgPlan = data.plan || 'growth';
       if((orgPlan === 'cancelled' || orgPlan === 'free') && currentLang !== 'en'){
@@ -1347,15 +1350,39 @@
       console.error('Could not load plan info', err);
     });
   }
-  try{
-    if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-      boardsCollection = db.collection('boards');
+  function resolveWorkspace(user){
+    return db.collection('userDirectory').doc(user.uid).get().then(doc=>{
+      if(doc.exists && doc.data().workspaceId){
+        workspaceId = doc.data().workspaceId;
+        return;
+      }
+      const newWorkspaceRef = db.collection('workspaces').doc();
+      workspaceId = newWorkspaceRef.id;
+      return newWorkspaceRef.set({
+        name: '', plan: 'free', ownerId: user.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>{
+        return newWorkspaceRef.collection('members').doc(user.uid).set({
+          name: user.displayName || '', isAdmin: true,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }).then(()=>{
+        return db.collection('userDirectory').doc(user.uid).set({workspaceId});
+      });
+    }).then(()=>{
+      workspaceRef = db.collection('workspaces').doc(workspaceId);
+      boardsCollection = workspaceRef.collection('boards');
+      membersCollection = workspaceRef.collection('members');
       if(boardId){
         boardDocRef = boardsCollection.doc(boardId);
         leadsCollection = boardDocRef.collection('leads');
       }
+    });
+  }
+  try{
+    if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
       auth = firebase.auth();
       firebaseConnected = true;
     }
@@ -2719,7 +2746,7 @@
       const nameEl = document.getElementById('settingsUserName');
       const avatarEl = document.getElementById('settingsAvatar');
       const roleEl = document.getElementById('settingsUserRole');
-      db.collection('users').doc(user.uid).get().then(doc=>{
+      membersCollection.doc(user.uid).get().then(doc=>{
         const data = doc.exists ? doc.data() : {};
         if(data.language && data.language !== currentLang) setLanguage(data.language);
         const name = data.name || user.displayName || '';
@@ -2759,9 +2786,13 @@
         void appRoot.offsetWidth;
         appRoot.classList.add('fade-in');
         clearLoginError();
-        loadSettingsUserInfo(user);
-        loadOrgPlan();
-        initFirebaseSync();
+        resolveWorkspace(user).then(()=>{
+          loadSettingsUserInfo(user);
+          loadOrgPlan();
+          initFirebaseSync();
+        }).catch(err=>{
+          console.error('Could not resolve workspace', err);
+        });
       } else {
         if(isSigningOut) return;
         pageLoader.style.display = 'none';
