@@ -212,6 +212,34 @@
   .login-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--ink);line-height:1.25;}
   .login-sub{font-size:13px;color:var(--slate);margin-top:5px;}
   #loginForm, #resetForm, #signupForm{padding:22px 34px 0;}
+
+  /* ---------- Signup interactivity ---------- */
+  .signup-progress{
+    height:4px;background:var(--border);border-radius:2px;margin:0 34px 4px;overflow:hidden;
+  }
+  .signup-progress-fill{
+    height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg, var(--c-blue-fg), var(--c-purple-fg));
+    transition:width .3s ease;
+  }
+  .field-hint{font-size:11px;color:var(--slate-light);min-height:14px;margin-top:2px;}
+  .field-hint.active{color:var(--teal);font-weight:600;}
+  .input-with-icon{position:relative;display:flex;align-items:center;}
+  .input-with-icon input{padding-right:38px !important;}
+  .field-check{
+    position:absolute;right:12px;width:16px;height:16px;color:var(--c-green-fg, #2BC17A);
+    opacity:0;transform:scale(.6);transition:opacity .2s ease, transform .2s ease;pointer-events:none;
+  }
+  .field-check.show{opacity:1;transform:scale(1);}
+  .field-eye-btn{
+    position:absolute;right:8px;background:none;border:none;padding:6px;cursor:pointer;
+    color:var(--slate-light);display:flex;align-items:center;justify-content:center;
+  }
+  .field-eye-btn:hover{color:var(--slate);}
+  .field-eye-btn svg{width:18px;height:18px;}
+  .pw-strength{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .pw-strength-bar{flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden;}
+  .pw-strength-fill{height:100%;width:0%;border-radius:2px;transition:width .25s ease, background .25s ease;}
+  .pw-strength-label{font-size:11px;font-weight:700;color:var(--slate-light);min-width:44px;text-align:right;}
   #loginForm .field, #resetForm .field, #signupForm .field{margin-bottom:16px;display:flex;flex-direction:column;gap:6px;}
   #loginForm label, #resetForm label, #signupForm label{
     font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
@@ -625,6 +653,7 @@
     </div>
     <div class="login-error" id="loginError"></div>
     <div class="login-success" id="loginSuccess" style="display:none"></div>
+    <div class="signup-progress"><div class="signup-progress-fill" id="signupProgressFill"></div></div>
     <form id="signupForm">
       <div class="field-row">
         <div class="field">
@@ -639,14 +668,27 @@
       <div class="field">
         <label for="signupCompany" data-i18n="company">Company</label>
         <input id="signupCompany" type="text" placeholder="Acme Inc." required>
+        <div class="field-hint" id="companySlugHint">&nbsp;</div>
       </div>
       <div class="field">
         <label for="signupEmail" data-i18n="email">Email</label>
-        <input id="signupEmail" type="email" placeholder="you@company.com" required>
+        <div class="input-with-icon">
+          <input id="signupEmail" type="email" placeholder="you@company.com" required>
+          <svg class="field-check" id="emailCheckIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
       </div>
       <div class="field">
         <label for="signupPassword" data-i18n="password">Password</label>
-        <input id="signupPassword" type="password" placeholder="••••••••" required minlength="6">
+        <div class="input-with-icon">
+          <input id="signupPassword" type="password" placeholder="••••••••" required minlength="6">
+          <button type="button" class="field-eye-btn" id="togglePasswordBtn" aria-label="Show password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="pw-strength" id="pwStrength">
+          <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
+          <span class="pw-strength-label" id="pwStrengthLabel">&nbsp;</span>
+        </div>
       </div>
       <button type="submit" class="btn-primary" data-i18n="createAccountBtn">Create account</button>
     </form>
@@ -671,15 +713,15 @@
 (function(){
   // ---------- i18n ----------
   const TRANSLATIONS = {
-    en:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Create your account to get started with PalaTrack.", email:"Email", password:"Password", firstName:"First name", lastName:"Last name", orWord:"OR", signUpWithGoogle:"Sign up with Google", pleaseEnterCompanyBeforeGoogle:"Please enter your company name before continuing with Google.", company:"Company", createAccountBtn:"Create account", creatingAccount:"Creating account...", alreadyHaveAccountNote:"Already have an account?", signInInstead:"Sign in", pleaseEnterCompany:"Please enter your company name.", companyAlreadyExistsMessage:"An account already exists for", companyTakenRaceMessage:"That company name was just claimed by someone else. Please try again.", signInCancelledMessage:"Sign-in was cancelled — try again when you're ready.", popupBlockedMessage:"Your browser blocked the sign-in popup. Please allow popups and try again." },
-    nl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Maak je account aan om aan de slag te gaan met PalaTrack.", email:"E-mail", password:"Wachtwoord", firstName:"Voornaam", lastName:"Achternaam", orWord:"OF", signUpWithGoogle:"Aanmelden met Google", pleaseEnterCompanyBeforeGoogle:"Vul de naam van je bedrijf in voordat je verdergaat met Google.", company:"Bedrijf", createAccountBtn:"Account aanmaken", creatingAccount:"Account aanmaken...", alreadyHaveAccountNote:"Heb je al een account?", signInInstead:"Inloggen", pleaseEnterCompany:"Vul de naam van je bedrijf in.", companyAlreadyExistsMessage:"Er bestaat al een account voor", companyTakenRaceMessage:"Die bedrijfsnaam is net door iemand anders geclaimd. Probeer het opnieuw.", signInCancelledMessage:"Inloggen is geannuleerd — probeer het opnieuw wanneer je klaar bent.", popupBlockedMessage:"Je browser heeft de inlogpop-up geblokkeerd. Sta pop-ups toe en probeer het opnieuw." },
-    fr:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Créez votre compte pour commencer avec PalaTrack.", email:"E-mail", password:"Mot de passe", firstName:"Prénom", lastName:"Nom de famille", orWord:"OU", signUpWithGoogle:"S'inscrire avec Google", pleaseEnterCompanyBeforeGoogle:"Veuillez indiquer le nom de votre entreprise avant de continuer avec Google.", company:"Entreprise", createAccountBtn:"Créer un compte", creatingAccount:"Création du compte...", alreadyHaveAccountNote:"Vous avez déjà un compte ?", signInInstead:"Se connecter", pleaseEnterCompany:"Veuillez indiquer le nom de votre entreprise.", companyAlreadyExistsMessage:"Un compte existe déjà pour", companyTakenRaceMessage:"Ce nom d'entreprise vient d'être pris par quelqu'un d'autre. Veuillez réessayer.", signInCancelledMessage:"La connexion a été annulée — réessayez quand vous êtes prêt.", popupBlockedMessage:"Votre navigateur a bloqué la fenêtre de connexion. Veuillez autoriser les pop-ups et réessayer." },
-    de:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Erstelle dein Konto, um mit PalaTrack zu starten.", email:"E-Mail", password:"Passwort", firstName:"Vorname", lastName:"Nachname", orWord:"ODER", signUpWithGoogle:"Mit Google registrieren", pleaseEnterCompanyBeforeGoogle:"Bitte gib den Namen deines Unternehmens ein, bevor du mit Google fortfährst.", company:"Unternehmen", createAccountBtn:"Konto erstellen", creatingAccount:"Konto wird erstellt...", alreadyHaveAccountNote:"Hast du schon ein Konto?", signInInstead:"Anmelden", pleaseEnterCompany:"Bitte gib den Namen deines Unternehmens ein.", companyAlreadyExistsMessage:"Für dieses Unternehmen existiert bereits ein Konto:", companyTakenRaceMessage:"Dieser Firmenname wurde gerade von jemand anderem beansprucht. Bitte versuche es erneut.", signInCancelledMessage:"Die Anmeldung wurde abgebrochen — versuche es erneut, wenn du bereit bist.", popupBlockedMessage:"Dein Browser hat das Anmelde-Popup blockiert. Bitte erlaube Popups und versuche es erneut." },
-    es:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea tu cuenta para empezar con PalaTrack.", email:"Correo electrónico", password:"Contraseña", firstName:"Nombre", lastName:"Apellido", orWord:"O", signUpWithGoogle:"Regístrate con Google", pleaseEnterCompanyBeforeGoogle:"Introduce el nombre de tu empresa antes de continuar con Google.", company:"Empresa", createAccountBtn:"Crear cuenta", creatingAccount:"Creando cuenta...", alreadyHaveAccountNote:"¿Ya tienes una cuenta?", signInInstead:"Iniciar sesión", pleaseEnterCompany:"Introduce el nombre de tu empresa.", companyAlreadyExistsMessage:"Ya existe una cuenta para", companyTakenRaceMessage:"Ese nombre de empresa acaba de ser reclamado por otra persona. Inténtalo de nuevo.", signInCancelledMessage:"El inicio de sesión se canceló — inténtalo de nuevo cuando quieras.", popupBlockedMessage:"Tu navegador bloqueó la ventana de inicio de sesión. Permite las ventanas emergentes e inténtalo de nuevo." },
-    it:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea il tuo account per iniziare con PalaTrack.", email:"E-mail", password:"Password", firstName:"Nome", lastName:"Cognome", orWord:"OPPURE", signUpWithGoogle:"Registrati con Google", pleaseEnterCompanyBeforeGoogle:"Inserisci il nome della tua azienda prima di continuare con Google.", company:"Azienda", createAccountBtn:"Crea account", creatingAccount:"Creazione account...", alreadyHaveAccountNote:"Hai già un account?", signInInstead:"Accedi", pleaseEnterCompany:"Inserisci il nome della tua azienda.", companyAlreadyExistsMessage:"Esiste già un account per", companyTakenRaceMessage:"Questo nome azienda è stato appena rivendicato da qualcun altro. Riprova.", signInCancelledMessage:"L'accesso è stato annullato — riprova quando sei pronto.", popupBlockedMessage:"Il tuo browser ha bloccato il popup di accesso. Consenti i popup e riprova." },
-    pt:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crie a sua conta para começar a usar o PalaTrack.", email:"E-mail", password:"Palavra-passe", firstName:"Nome próprio", lastName:"Apelido", orWord:"OU", signUpWithGoogle:"Inscrever-se com o Google", pleaseEnterCompanyBeforeGoogle:"Introduza o nome da sua empresa antes de continuar com o Google.", company:"Empresa", createAccountBtn:"Criar conta", creatingAccount:"A criar conta...", alreadyHaveAccountNote:"Já tem conta?", signInInstead:"Iniciar sessão", pleaseEnterCompany:"Introduza o nome da sua empresa.", companyAlreadyExistsMessage:"Já existe uma conta para", companyTakenRaceMessage:"Esse nome de empresa acabou de ser reivindicado por outra pessoa. Tente novamente.", signInCancelledMessage:"O início de sessão foi cancelado — tente novamente quando estiver pronto.", popupBlockedMessage:"O seu navegador bloqueou a janela de início de sessão. Permita pop-ups e tente novamente." },
-    pl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Utwórz konto, aby zacząć korzystać z PalaTrack.", email:"E-mail", password:"Hasło", firstName:"Imię", lastName:"Nazwisko", orWord:"LUB", signUpWithGoogle:"Zarejestruj się przez Google", pleaseEnterCompanyBeforeGoogle:"Podaj nazwę swojej firmy przed kontynuowaniem z Google.", company:"Firma", createAccountBtn:"Utwórz konto", creatingAccount:"Tworzenie konta...", alreadyHaveAccountNote:"Masz już konto?", signInInstead:"Zaloguj się", pleaseEnterCompany:"Podaj nazwę swojej firmy.", companyAlreadyExistsMessage:"Konto dla tej firmy już istnieje:", companyTakenRaceMessage:"Ta nazwa firmy została właśnie zarezerwowana przez kogoś innego. Spróbuj ponownie.", signInCancelledMessage:"Logowanie zostało anulowane — spróbuj ponownie, gdy będziesz gotowy.", popupBlockedMessage:"Twoja przeglądarka zablokowała wyskakujące okno logowania. Zezwól na wyskakujące okna i spróbuj ponownie." },
-    zh:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"创建您的账户以开始使用PalaTrack。", email:"电子邮箱", password:"密码", firstName:"名", lastName:"姓", orWord:"或", signUpWithGoogle:"使用Google注册", pleaseEnterCompanyBeforeGoogle:"请在使用Google继续之前输入您的公司名称。", company:"公司", createAccountBtn:"创建账户", creatingAccount:"正在创建账户...", alreadyHaveAccountNote:"已经有账户了？", signInInstead:"登录", pleaseEnterCompany:"请输入您的公司名称。", companyAlreadyExistsMessage:"该公司已存在账户：", companyTakenRaceMessage:"该公司名称刚被其他人注册。请重试。", signInCancelledMessage:"登录已取消 — 请在准备好后重试。", popupBlockedMessage:"您的浏览器阻止了登录弹出窗口。请允许弹出窗口并重试。" }
+    en:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Create your account to get started with PalaTrack.", email:"Email", password:"Password", firstName:"First name", lastName:"Last name", orWord:"OR", signUpWithGoogle:"Sign up with Google", pleaseEnterCompanyBeforeGoogle:"Please enter your company name before continuing with Google.", company:"Company", createAccountBtn:"Create account", creatingAccount:"Creating account...", alreadyHaveAccountNote:"Already have an account?", signInInstead:"Sign in", pleaseEnterCompany:"Please enter your company name.", companyAlreadyExistsMessage:"An account already exists for", companyTakenRaceMessage:"That company name was just claimed by someone else. Please try again.", signInCancelledMessage:"Sign-in was cancelled — try again when you're ready.", popupBlockedMessage:"Your browser blocked the sign-in popup. Please allow popups and try again.", yourWorkspaceWillBe:"Your workspace will be", pwWeak:"Weak", pwFair:"Fair", pwGood:"Good", pwStrong:"Strong" },
+    nl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Maak je account aan om aan de slag te gaan met PalaTrack.", email:"E-mail", password:"Wachtwoord", firstName:"Voornaam", lastName:"Achternaam", orWord:"OF", signUpWithGoogle:"Aanmelden met Google", pleaseEnterCompanyBeforeGoogle:"Vul de naam van je bedrijf in voordat je verdergaat met Google.", company:"Bedrijf", createAccountBtn:"Account aanmaken", creatingAccount:"Account aanmaken...", alreadyHaveAccountNote:"Heb je al een account?", signInInstead:"Inloggen", pleaseEnterCompany:"Vul de naam van je bedrijf in.", companyAlreadyExistsMessage:"Er bestaat al een account voor", companyTakenRaceMessage:"Die bedrijfsnaam is net door iemand anders geclaimd. Probeer het opnieuw.", signInCancelledMessage:"Inloggen is geannuleerd — probeer het opnieuw wanneer je klaar bent.", popupBlockedMessage:"Je browser heeft de inlogpop-up geblokkeerd. Sta pop-ups toe en probeer het opnieuw.", yourWorkspaceWillBe:"Je werkruimte wordt", pwWeak:"Zwak", pwFair:"Redelijk", pwGood:"Goed", pwStrong:"Sterk" },
+    fr:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Créez votre compte pour commencer avec PalaTrack.", email:"E-mail", password:"Mot de passe", firstName:"Prénom", lastName:"Nom de famille", orWord:"OU", signUpWithGoogle:"S'inscrire avec Google", pleaseEnterCompanyBeforeGoogle:"Veuillez indiquer le nom de votre entreprise avant de continuer avec Google.", company:"Entreprise", createAccountBtn:"Créer un compte", creatingAccount:"Création du compte...", alreadyHaveAccountNote:"Vous avez déjà un compte ?", signInInstead:"Se connecter", pleaseEnterCompany:"Veuillez indiquer le nom de votre entreprise.", companyAlreadyExistsMessage:"Un compte existe déjà pour", companyTakenRaceMessage:"Ce nom d'entreprise vient d'être pris par quelqu'un d'autre. Veuillez réessayer.", signInCancelledMessage:"La connexion a été annulée — réessayez quand vous êtes prêt.", popupBlockedMessage:"Votre navigateur a bloqué la fenêtre de connexion. Veuillez autoriser les pop-ups et réessayer.", yourWorkspaceWillBe:"Votre espace de travail sera", pwWeak:"Faible", pwFair:"Correct", pwGood:"Bon", pwStrong:"Fort" },
+    de:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Erstelle dein Konto, um mit PalaTrack zu starten.", email:"E-Mail", password:"Passwort", firstName:"Vorname", lastName:"Nachname", orWord:"ODER", signUpWithGoogle:"Mit Google registrieren", pleaseEnterCompanyBeforeGoogle:"Bitte gib den Namen deines Unternehmens ein, bevor du mit Google fortfährst.", company:"Unternehmen", createAccountBtn:"Konto erstellen", creatingAccount:"Konto wird erstellt...", alreadyHaveAccountNote:"Hast du schon ein Konto?", signInInstead:"Anmelden", pleaseEnterCompany:"Bitte gib den Namen deines Unternehmens ein.", companyAlreadyExistsMessage:"Für dieses Unternehmen existiert bereits ein Konto:", companyTakenRaceMessage:"Dieser Firmenname wurde gerade von jemand anderem beansprucht. Bitte versuche es erneut.", signInCancelledMessage:"Die Anmeldung wurde abgebrochen — versuche es erneut, wenn du bereit bist.", popupBlockedMessage:"Dein Browser hat das Anmelde-Popup blockiert. Bitte erlaube Popups und versuche es erneut.", yourWorkspaceWillBe:"Dein Arbeitsbereich wird", pwWeak:"Schwach", pwFair:"Mittel", pwGood:"Gut", pwStrong:"Stark" },
+    es:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea tu cuenta para empezar con PalaTrack.", email:"Correo electrónico", password:"Contraseña", firstName:"Nombre", lastName:"Apellido", orWord:"O", signUpWithGoogle:"Regístrate con Google", pleaseEnterCompanyBeforeGoogle:"Introduce el nombre de tu empresa antes de continuar con Google.", company:"Empresa", createAccountBtn:"Crear cuenta", creatingAccount:"Creando cuenta...", alreadyHaveAccountNote:"¿Ya tienes una cuenta?", signInInstead:"Iniciar sesión", pleaseEnterCompany:"Introduce el nombre de tu empresa.", companyAlreadyExistsMessage:"Ya existe una cuenta para", companyTakenRaceMessage:"Ese nombre de empresa acaba de ser reclamado por otra persona. Inténtalo de nuevo.", signInCancelledMessage:"El inicio de sesión se canceló — inténtalo de nuevo cuando quieras.", popupBlockedMessage:"Tu navegador bloqueó la ventana de inicio de sesión. Permite las ventanas emergentes e inténtalo de nuevo.", yourWorkspaceWillBe:"Tu espacio de trabajo será", pwWeak:"Débil", pwFair:"Aceptable", pwGood:"Buena", pwStrong:"Fuerte" },
+    it:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea il tuo account per iniziare con PalaTrack.", email:"E-mail", password:"Password", firstName:"Nome", lastName:"Cognome", orWord:"OPPURE", signUpWithGoogle:"Registrati con Google", pleaseEnterCompanyBeforeGoogle:"Inserisci il nome della tua azienda prima di continuare con Google.", company:"Azienda", createAccountBtn:"Crea account", creatingAccount:"Creazione account...", alreadyHaveAccountNote:"Hai già un account?", signInInstead:"Accedi", pleaseEnterCompany:"Inserisci il nome della tua azienda.", companyAlreadyExistsMessage:"Esiste già un account per", companyTakenRaceMessage:"Questo nome azienda è stato appena rivendicato da qualcun altro. Riprova.", signInCancelledMessage:"L'accesso è stato annullato — riprova quando sei pronto.", popupBlockedMessage:"Il tuo browser ha bloccato il popup di accesso. Consenti i popup e riprova.", yourWorkspaceWillBe:"Il tuo spazio di lavoro sarà", pwWeak:"Debole", pwFair:"Discreta", pwGood:"Buona", pwStrong:"Forte" },
+    pt:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crie a sua conta para começar a usar o PalaTrack.", email:"E-mail", password:"Palavra-passe", firstName:"Nome próprio", lastName:"Apelido", orWord:"OU", signUpWithGoogle:"Inscrever-se com o Google", pleaseEnterCompanyBeforeGoogle:"Introduza o nome da sua empresa antes de continuar com o Google.", company:"Empresa", createAccountBtn:"Criar conta", creatingAccount:"A criar conta...", alreadyHaveAccountNote:"Já tem conta?", signInInstead:"Iniciar sessão", pleaseEnterCompany:"Introduza o nome da sua empresa.", companyAlreadyExistsMessage:"Já existe uma conta para", companyTakenRaceMessage:"Esse nome de empresa acabou de ser reivindicado por outra pessoa. Tente novamente.", signInCancelledMessage:"O início de sessão foi cancelado — tente novamente quando estiver pronto.", popupBlockedMessage:"O seu navegador bloqueou a janela de início de sessão. Permita pop-ups e tente novamente.", yourWorkspaceWillBe:"O seu espaço de trabalho será", pwWeak:"Fraca", pwFair:"Razoável", pwGood:"Boa", pwStrong:"Forte" },
+    pl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Utwórz konto, aby zacząć korzystać z PalaTrack.", email:"E-mail", password:"Hasło", firstName:"Imię", lastName:"Nazwisko", orWord:"LUB", signUpWithGoogle:"Zarejestruj się przez Google", pleaseEnterCompanyBeforeGoogle:"Podaj nazwę swojej firmy przed kontynuowaniem z Google.", company:"Firma", createAccountBtn:"Utwórz konto", creatingAccount:"Tworzenie konta...", alreadyHaveAccountNote:"Masz już konto?", signInInstead:"Zaloguj się", pleaseEnterCompany:"Podaj nazwę swojej firmy.", companyAlreadyExistsMessage:"Konto dla tej firmy już istnieje:", companyTakenRaceMessage:"Ta nazwa firmy została właśnie zarezerwowana przez kogoś innego. Spróbuj ponownie.", signInCancelledMessage:"Logowanie zostało anulowane — spróbuj ponownie, gdy będziesz gotowy.", popupBlockedMessage:"Twoja przeglądarka zablokowała wyskakujące okno logowania. Zezwól na wyskakujące okna i spróbuj ponownie.", yourWorkspaceWillBe:"Twoja przestrzeń roboczą będzie", pwWeak:"Słabe", pwFair:"Średnie", pwGood:"Dobre", pwStrong:"Silne" },
+    zh:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"创建您的账户以开始使用PalaTrack。", email:"电子邮箱", password:"密码", firstName:"名", lastName:"姓", orWord:"或", signUpWithGoogle:"使用Google注册", pleaseEnterCompanyBeforeGoogle:"请在使用Google继续之前输入您的公司名称。", company:"公司", createAccountBtn:"创建账户", creatingAccount:"正在创建账户...", alreadyHaveAccountNote:"已经有账户了？", signInInstead:"登录", pleaseEnterCompany:"请输入您的公司名称。", companyAlreadyExistsMessage:"该公司已存在账户：", companyTakenRaceMessage:"该公司名称刚被其他人注册。请重试。", signInCancelledMessage:"登录已取消 — 请在准备好后重试。", popupBlockedMessage:"您的浏览器阻止了登录弹出窗口。请允许弹出窗口并重试。", yourWorkspaceWillBe:"您的工作区将是", pwWeak:"弱", pwFair:"一般", pwGood:"良好", pwStrong:"强" }
   };
   let currentLang = 'en';
   function t(key){
@@ -808,6 +850,77 @@
       showLoginError(err.message || String(err));
     }
   }
+
+  // ---------- Live signup interactivity ----------
+  (function(){
+    const firstNameEl = document.getElementById('signupFirstName');
+    const lastNameEl = document.getElementById('signupLastName');
+    const companyEl = document.getElementById('signupCompany');
+    const emailEl = document.getElementById('signupEmail');
+    const passwordEl = document.getElementById('signupPassword');
+    const progressFill = document.getElementById('signupProgressFill');
+    const companyHint = document.getElementById('companySlugHint');
+    const emailCheck = document.getElementById('emailCheckIcon');
+    const pwFill = document.getElementById('pwStrengthFill');
+    const pwLabel = document.getElementById('pwStrengthLabel');
+    const toggleBtn = document.getElementById('togglePasswordBtn');
+
+    function updateProgress(){
+      const fields = [firstNameEl.value.trim(), lastNameEl.value.trim(), companyEl.value.trim(), emailEl.value.trim(), passwordEl.value];
+      const filled = fields.filter(v=>v.length > 0).length;
+      progressFill.style.width = ((filled / fields.length) * 100) + '%';
+    }
+
+    companyEl.addEventListener('input', ()=>{
+      const slug = companyEl.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if(slug){
+        companyHint.textContent = `${t('yourWorkspaceWillBe')} "${slug}"`;
+        companyHint.classList.add('active');
+      } else {
+        companyHint.textContent = '\u00A0';
+        companyHint.classList.remove('active');
+      }
+      updateProgress();
+    });
+
+    emailEl.addEventListener('input', ()=>{
+      const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim());
+      emailCheck.classList.toggle('show', valid);
+      updateProgress();
+    });
+
+    function passwordStrength(pw){
+      if(!pw) return {pct:0, label:'', color:''};
+      let score = 0;
+      if(pw.length >= 6) score++;
+      if(pw.length >= 10) score++;
+      if(/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+      if(/[0-9]/.test(pw)) score++;
+      if(/[^A-Za-z0-9]/.test(pw)) score++;
+      if(score <= 1) return {pct:25, label:t('pwWeak'), color:'#E0453A'};
+      if(score <= 2) return {pct:50, label:t('pwFair'), color:'#FF9D00'};
+      if(score <= 3) return {pct:75, label:t('pwGood'), color:'#2BC17A'};
+      return {pct:100, label:t('pwStrong'), color:'#1F5C4F'};
+    }
+    passwordEl.addEventListener('input', ()=>{
+      const s = passwordStrength(passwordEl.value);
+      pwFill.style.width = s.pct + '%';
+      pwFill.style.background = s.color;
+      pwLabel.textContent = s.label || '\u00A0';
+      updateProgress();
+    });
+
+    toggleBtn.addEventListener('click', ()=>{
+      const isPw = passwordEl.type === 'password';
+      passwordEl.type = isPw ? 'text' : 'password';
+      toggleBtn.innerHTML = isPw
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    });
+
+    firstNameEl.addEventListener('input', updateProgress);
+    lastNameEl.addEventListener('input', updateProgress);
+  })();
 
   document.getElementById('signupForm').addEventListener('submit', (e)=>{
     e.preventDefault();
