@@ -211,6 +211,21 @@
     font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;
   }
   .login-forgot-row{text-align:right;margin:-10px 0 16px;}
+  .field-row{display:flex;gap:12px;}
+  .field-row .field{flex:1;min-width:0;}
+  .login-divider{
+    display:flex;align-items:center;gap:12px;margin:18px 34px 16px;
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--slate-light);letter-spacing:.05em;
+  }
+  .login-divider::before, .login-divider::after{content:"";flex:1;height:1px;background:var(--border);}
+  .btn-google{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 68px);margin:0 34px 18px;
+    padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--panel);
+    font-family:'Inter',sans-serif;font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .btn-google:hover{background:var(--c-blue-tint2);border-color:var(--slate-light);}
+  .btn-google:disabled{opacity:.6;cursor:not-allowed;}
   .login-forgot-link{
     background:none;border:none;padding:0;font-size:12.5px;font-weight:600;color:var(--teal);
     cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;
@@ -585,9 +600,15 @@
     <div class="login-error" id="loginError"></div>
     <div class="login-success" id="loginSuccess" style="display:none"></div>
     <form id="signupForm">
-      <div class="field">
-        <label for="signupName" data-i18n="fullName">Full name</label>
-        <input id="signupName" type="text" placeholder="Jane Doe" required>
+      <div class="field-row">
+        <div class="field">
+          <label for="signupFirstName" data-i18n="firstName">First name</label>
+          <input id="signupFirstName" type="text" placeholder="Jane" required>
+        </div>
+        <div class="field">
+          <label for="signupLastName" data-i18n="lastName">Last name</label>
+          <input id="signupLastName" type="text" placeholder="Doe" required>
+        </div>
       </div>
       <div class="field">
         <label for="signupCompany" data-i18n="company">Company</label>
@@ -603,6 +624,11 @@
       </div>
       <button type="submit" class="btn-primary" data-i18n="createAccountBtn">Create account</button>
     </form>
+    <div class="login-divider"><span data-i18n="orWord">OR</span></div>
+    <button type="button" class="btn-google" id="googleSignupBtn">
+      <svg viewBox="0 0 48 48" width="18" height="18"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6.1 29.6 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.4C29.5 35.4 26.9 36 24 36c-5.3 0-9.7-3.1-11.3-7.7l-6.6 5.1C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.6 5.4C41.9 35.6 44 30.3 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      <span data-i18n="signUpWithGoogle">Sign up with Google</span>
+    </button>
     <div class="login-footer-note">
       <span data-i18n="alreadyHaveAccountNote">Already have an account?</span>
       <a href="boards.html" class="login-forgot-link" style="display:inline;padding:0 0 0 4px" data-i18n="signInInstead">Sign in</a>
@@ -619,15 +645,15 @@
 (function(){
   // ---------- i18n ----------
   const TRANSLATIONS = {
-    en:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Create your account to get started with PalaTrack.", email:"Email", password:"Password", fullName:"Full name", company:"Company", createAccountBtn:"Create account", creatingAccount:"Creating account...", alreadyHaveAccountNote:"Already have an account?", signInInstead:"Sign in", pleaseEnterCompany:"Please enter your company name.", companyAlreadyExistsMessage:"An account already exists for", companyTakenRaceMessage:"That company name was just claimed by someone else. Please try again." },
-    nl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Maak je account aan om aan de slag te gaan met PalaTrack.", email:"E-mail", password:"Wachtwoord", fullName:"Volledige naam", company:"Bedrijf", createAccountBtn:"Account aanmaken", creatingAccount:"Account aanmaken...", alreadyHaveAccountNote:"Heb je al een account?", signInInstead:"Inloggen", pleaseEnterCompany:"Vul de naam van je bedrijf in.", companyAlreadyExistsMessage:"Er bestaat al een account voor", companyTakenRaceMessage:"Die bedrijfsnaam is net door iemand anders geclaimd. Probeer het opnieuw." },
-    fr:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Créez votre compte pour commencer avec PalaTrack.", email:"E-mail", password:"Mot de passe", fullName:"Nom complet", company:"Entreprise", createAccountBtn:"Créer un compte", creatingAccount:"Création du compte...", alreadyHaveAccountNote:"Vous avez déjà un compte ?", signInInstead:"Se connecter", pleaseEnterCompany:"Veuillez indiquer le nom de votre entreprise.", companyAlreadyExistsMessage:"Un compte existe déjà pour", companyTakenRaceMessage:"Ce nom d'entreprise vient d'être pris par quelqu'un d'autre. Veuillez réessayer." },
-    de:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Erstelle dein Konto, um mit PalaTrack zu starten.", email:"E-Mail", password:"Passwort", fullName:"Vollständiger Name", company:"Unternehmen", createAccountBtn:"Konto erstellen", creatingAccount:"Konto wird erstellt...", alreadyHaveAccountNote:"Hast du schon ein Konto?", signInInstead:"Anmelden", pleaseEnterCompany:"Bitte gib den Namen deines Unternehmens ein.", companyAlreadyExistsMessage:"Für dieses Unternehmen existiert bereits ein Konto:", companyTakenRaceMessage:"Dieser Firmenname wurde gerade von jemand anderem beansprucht. Bitte versuche es erneut." },
-    es:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea tu cuenta para empezar con PalaTrack.", email:"Correo electrónico", password:"Contraseña", fullName:"Nombre completo", company:"Empresa", createAccountBtn:"Crear cuenta", creatingAccount:"Creando cuenta...", alreadyHaveAccountNote:"¿Ya tienes una cuenta?", signInInstead:"Iniciar sesión", pleaseEnterCompany:"Introduce el nombre de tu empresa.", companyAlreadyExistsMessage:"Ya existe una cuenta para", companyTakenRaceMessage:"Ese nombre de empresa acaba de ser reclamado por otra persona. Inténtalo de nuevo." },
-    it:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea il tuo account per iniziare con PalaTrack.", email:"E-mail", password:"Password", fullName:"Nome completo", company:"Azienda", createAccountBtn:"Crea account", creatingAccount:"Creazione account...", alreadyHaveAccountNote:"Hai già un account?", signInInstead:"Accedi", pleaseEnterCompany:"Inserisci il nome della tua azienda.", companyAlreadyExistsMessage:"Esiste già un account per", companyTakenRaceMessage:"Questo nome azienda è stato appena rivendicato da qualcun altro. Riprova." },
-    pt:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crie a sua conta para começar a usar o PalaTrack.", email:"E-mail", password:"Palavra-passe", fullName:"Nome completo", company:"Empresa", createAccountBtn:"Criar conta", creatingAccount:"A criar conta...", alreadyHaveAccountNote:"Já tem conta?", signInInstead:"Iniciar sessão", pleaseEnterCompany:"Introduza o nome da sua empresa.", companyAlreadyExistsMessage:"Já existe uma conta para", companyTakenRaceMessage:"Esse nome de empresa acabou de ser reivindicado por outra pessoa. Tente novamente." },
-    pl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Utwórz konto, aby zacząć korzystać z PalaTrack.", email:"E-mail", password:"Hasło", fullName:"Imię i nazwisko", company:"Firma", createAccountBtn:"Utwórz konto", creatingAccount:"Tworzenie konta...", alreadyHaveAccountNote:"Masz już konto?", signInInstead:"Zaloguj się", pleaseEnterCompany:"Podaj nazwę swojej firmy.", companyAlreadyExistsMessage:"Konto dla tej firmy już istnieje:", companyTakenRaceMessage:"Ta nazwa firmy została właśnie zarezerwowana przez kogoś innego. Spróbuj ponownie." },
-    zh:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"创建您的账户以开始使用PalaTrack。", email:"电子邮箱", password:"密码", fullName:"全名", company:"公司", createAccountBtn:"创建账户", creatingAccount:"正在创建账户...", alreadyHaveAccountNote:"已经有账户了？", signInInstead:"登录", pleaseEnterCompany:"请输入您的公司名称。", companyAlreadyExistsMessage:"该公司已存在账户：", companyTakenRaceMessage:"该公司名称刚被其他人注册。请重试。" }
+    en:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Create your account to get started with PalaTrack.", email:"Email", password:"Password", firstName:"First name", lastName:"Last name", orWord:"OR", signUpWithGoogle:"Sign up with Google", pleaseEnterCompanyBeforeGoogle:"Please enter your company name before continuing with Google.", company:"Company", createAccountBtn:"Create account", creatingAccount:"Creating account...", alreadyHaveAccountNote:"Already have an account?", signInInstead:"Sign in", pleaseEnterCompany:"Please enter your company name.", companyAlreadyExistsMessage:"An account already exists for", companyTakenRaceMessage:"That company name was just claimed by someone else. Please try again." },
+    nl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Maak je account aan om aan de slag te gaan met PalaTrack.", email:"E-mail", password:"Wachtwoord", firstName:"Voornaam", lastName:"Achternaam", orWord:"OF", signUpWithGoogle:"Aanmelden met Google", pleaseEnterCompanyBeforeGoogle:"Vul de naam van je bedrijf in voordat je verdergaat met Google.", company:"Bedrijf", createAccountBtn:"Account aanmaken", creatingAccount:"Account aanmaken...", alreadyHaveAccountNote:"Heb je al een account?", signInInstead:"Inloggen", pleaseEnterCompany:"Vul de naam van je bedrijf in.", companyAlreadyExistsMessage:"Er bestaat al een account voor", companyTakenRaceMessage:"Die bedrijfsnaam is net door iemand anders geclaimd. Probeer het opnieuw." },
+    fr:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Créez votre compte pour commencer avec PalaTrack.", email:"E-mail", password:"Mot de passe", firstName:"Prénom", lastName:"Nom de famille", orWord:"OU", signUpWithGoogle:"S'inscrire avec Google", pleaseEnterCompanyBeforeGoogle:"Veuillez indiquer le nom de votre entreprise avant de continuer avec Google.", company:"Entreprise", createAccountBtn:"Créer un compte", creatingAccount:"Création du compte...", alreadyHaveAccountNote:"Vous avez déjà un compte ?", signInInstead:"Se connecter", pleaseEnterCompany:"Veuillez indiquer le nom de votre entreprise.", companyAlreadyExistsMessage:"Un compte existe déjà pour", companyTakenRaceMessage:"Ce nom d'entreprise vient d'être pris par quelqu'un d'autre. Veuillez réessayer." },
+    de:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Erstelle dein Konto, um mit PalaTrack zu starten.", email:"E-Mail", password:"Passwort", firstName:"Vorname", lastName:"Nachname", orWord:"ODER", signUpWithGoogle:"Mit Google registrieren", pleaseEnterCompanyBeforeGoogle:"Bitte gib den Namen deines Unternehmens ein, bevor du mit Google fortfährst.", company:"Unternehmen", createAccountBtn:"Konto erstellen", creatingAccount:"Konto wird erstellt...", alreadyHaveAccountNote:"Hast du schon ein Konto?", signInInstead:"Anmelden", pleaseEnterCompany:"Bitte gib den Namen deines Unternehmens ein.", companyAlreadyExistsMessage:"Für dieses Unternehmen existiert bereits ein Konto:", companyTakenRaceMessage:"Dieser Firmenname wurde gerade von jemand anderem beansprucht. Bitte versuche es erneut." },
+    es:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea tu cuenta para empezar con PalaTrack.", email:"Correo electrónico", password:"Contraseña", firstName:"Nombre", lastName:"Apellido", orWord:"O", signUpWithGoogle:"Regístrate con Google", pleaseEnterCompanyBeforeGoogle:"Introduce el nombre de tu empresa antes de continuar con Google.", company:"Empresa", createAccountBtn:"Crear cuenta", creatingAccount:"Creando cuenta...", alreadyHaveAccountNote:"¿Ya tienes una cuenta?", signInInstead:"Iniciar sesión", pleaseEnterCompany:"Introduce el nombre de tu empresa.", companyAlreadyExistsMessage:"Ya existe una cuenta para", companyTakenRaceMessage:"Ese nombre de empresa acaba de ser reclamado por otra persona. Inténtalo de nuevo." },
+    it:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crea il tuo account per iniziare con PalaTrack.", email:"E-mail", password:"Password", firstName:"Nome", lastName:"Cognome", orWord:"OPPURE", signUpWithGoogle:"Registrati con Google", pleaseEnterCompanyBeforeGoogle:"Inserisci il nome della tua azienda prima di continuare con Google.", company:"Azienda", createAccountBtn:"Crea account", creatingAccount:"Creazione account...", alreadyHaveAccountNote:"Hai già un account?", signInInstead:"Accedi", pleaseEnterCompany:"Inserisci il nome della tua azienda.", companyAlreadyExistsMessage:"Esiste già un account per", companyTakenRaceMessage:"Questo nome azienda è stato appena rivendicato da qualcun altro. Riprova." },
+    pt:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Crie a sua conta para começar a usar o PalaTrack.", email:"E-mail", password:"Palavra-passe", firstName:"Nome próprio", lastName:"Apelido", orWord:"OU", signUpWithGoogle:"Inscrever-se com o Google", pleaseEnterCompanyBeforeGoogle:"Introduza o nome da sua empresa antes de continuar com o Google.", company:"Empresa", createAccountBtn:"Criar conta", creatingAccount:"A criar conta...", alreadyHaveAccountNote:"Já tem conta?", signInInstead:"Iniciar sessão", pleaseEnterCompany:"Introduza o nome da sua empresa.", companyAlreadyExistsMessage:"Já existe uma conta para", companyTakenRaceMessage:"Esse nome de empresa acabou de ser reivindicado por outra pessoa. Tente novamente." },
+    pl:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"Utwórz konto, aby zacząć korzystać z PalaTrack.", email:"E-mail", password:"Hasło", firstName:"Imię", lastName:"Nazwisko", orWord:"LUB", signUpWithGoogle:"Zarejestruj się przez Google", pleaseEnterCompanyBeforeGoogle:"Podaj nazwę swojej firmy przed kontynuowaniem z Google.", company:"Firma", createAccountBtn:"Utwórz konto", creatingAccount:"Tworzenie konta...", alreadyHaveAccountNote:"Masz już konto?", signInInstead:"Zaloguj się", pleaseEnterCompany:"Podaj nazwę swojej firmy.", companyAlreadyExistsMessage:"Konto dla tej firmy już istnieje:", companyTakenRaceMessage:"Ta nazwa firmy została właśnie zarezerwowana przez kogoś innego. Spróbuj ponownie." },
+    zh:{ brandName:"PALA CONSULTANCY", appName:"PalaTrack", signupSub:"创建您的账户以开始使用PalaTrack。", email:"电子邮箱", password:"密码", firstName:"名", lastName:"姓", orWord:"或", signUpWithGoogle:"使用Google注册", pleaseEnterCompanyBeforeGoogle:"请在使用Google继续之前输入您的公司名称。", company:"公司", createAccountBtn:"创建账户", creatingAccount:"正在创建账户...", alreadyHaveAccountNote:"已经有账户了？", signInInstead:"登录", pleaseEnterCompany:"请输入您的公司名称。", companyAlreadyExistsMessage:"该公司已存在账户：", companyTakenRaceMessage:"该公司名称刚被其他人注册。请重试。" }
   };
   let currentLang = 'en';
   function t(key){
@@ -712,9 +738,52 @@
     showLoginError('Could not connect. Please try again later.');
   }
 
+  // Shared by both password signup and Google signup: given an already-authenticated
+  // Firebase user and a company name, create their workspace (or roll back on conflict).
+  function createWorkspaceForUser(cred, name, company){
+    const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const dirRef = db.collection('workspaceDirectory').doc(slug);
+    const newWorkspaceRef = db.collection('workspaces').doc();
+    return db.runTransaction(tx=>{
+      return tx.get(dirRef).then(dirDoc2=>{
+        if(dirDoc2.exists){
+          throw {code: 'company-race'};
+        }
+        tx.set(newWorkspaceRef, {
+          name: company, plan: 'free', ownerId: cred.user.uid,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        tx.set(newWorkspaceRef.collection('members').doc(cred.user.uid), {
+          name, company, isAdmin: true, language: currentLang,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        tx.set(dirRef, {workspaceId: newWorkspaceRef.id, companyName: company});
+      });
+    }).then(()=>{
+      return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: newWorkspaceRef.id});
+    }).catch(err=>{
+      if(err && err.code === 'company-race'){
+        return cred.user.delete().then(()=>{ throw {code: 'company-race'}; });
+      }
+      throw err;
+    });
+  }
+
+  function reportSignupError(err){
+    if(err && err.code === 'company-exists'){
+      showLoginError(`${t('companyAlreadyExistsMessage')} "${err.companyName}"`);
+    } else if(err && err.code === 'company-race'){
+      showLoginError(t('companyTakenRaceMessage'));
+    } else {
+      showLoginError(err.message || String(err));
+    }
+  }
+
   document.getElementById('signupForm').addEventListener('submit', (e)=>{
     e.preventDefault();
-    const name = document.getElementById('signupName').value.trim();
+    const firstName = document.getElementById('signupFirstName').value.trim();
+    const lastName = document.getElementById('signupLastName').value.trim();
+    const name = `${firstName} ${lastName}`.trim();
     const company = document.getElementById('signupCompany').value.trim();
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
@@ -741,42 +810,47 @@
       }
       return auth.createUserWithEmailAndPassword(email, password);
     }).then(cred=>{
-      const newWorkspaceRef = db.collection('workspaces').doc();
-      return db.runTransaction(tx=>{
-        return tx.get(dirRef).then(dirDoc2=>{
-          if(dirDoc2.exists){
-            throw {code: 'company-race'};
-          }
-          tx.set(newWorkspaceRef, {
-            name: company, plan: 'free', ownerId: cred.user.uid,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          tx.set(newWorkspaceRef.collection('members').doc(cred.user.uid), {
-            name, company, isAdmin: true, language: currentLang,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          tx.set(dirRef, {workspaceId: newWorkspaceRef.id, companyName: company});
-        });
-      }).then(()=>{
-        return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: newWorkspaceRef.id});
-      }).catch(err=>{
-        if(err && err.code === 'company-race'){
-          return cred.user.delete().then(()=>{ throw {code: 'company-race'}; });
-        }
-        throw err;
-      });
+      return createWorkspaceForUser(cred, name, company);
     }).then(()=>{
       location.href = 'boards.html';
     }).catch(err=>{
-      if(err && err.code === 'company-exists'){
-        showLoginError(`${t('companyAlreadyExistsMessage')} "${err.companyName}"`);
-      } else if(err && err.code === 'company-race'){
-        showLoginError(t('companyTakenRaceMessage'));
-      } else {
-        showLoginError(err.message || String(err));
-      }
+      reportSignupError(err);
       submitBtn.disabled = false;
       submitBtn.textContent = t('createAccountBtn');
+    });
+  });
+
+  document.getElementById('googleSignupBtn').addEventListener('click', ()=>{
+    clearLoginError();
+    const company = document.getElementById('signupCompany').value.trim();
+    const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if(!slug){
+      showLoginError(t('pleaseEnterCompanyBeforeGoogle'));
+      return;
+    }
+    if(!firebaseConnected){
+      showLoginError('Could not connect. Please try again later.');
+      return;
+    }
+
+    const googleBtn = document.getElementById('googleSignupBtn');
+    googleBtn.disabled = true;
+    const dirRef = db.collection('workspaceDirectory').doc(slug);
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    dirRef.get().then(dirDoc=>{
+      if(dirDoc.exists){
+        throw {code: 'company-exists', companyName: dirDoc.data().companyName};
+      }
+      return auth.signInWithPopup(provider);
+    }).then(cred=>{
+      const name = cred.user.displayName || '';
+      return createWorkspaceForUser(cred, name, company);
+    }).then(()=>{
+      location.href = 'boards.html';
+    }).catch(err=>{
+      reportSignupError(err);
+      googleBtn.disabled = false;
     });
   });
 
