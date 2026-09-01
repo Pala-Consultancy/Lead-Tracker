@@ -1229,6 +1229,7 @@
   };
   let db = null;
   let billingDocRef = null;
+  let unsubscribeBilling = null;
   let usersCollection = null;
   let workspaceId = null;
   let workspaceRef = null;
@@ -1571,12 +1572,13 @@
 
   let cardOnFile = null;
   function initBillingSync(){
+    if(unsubscribeBilling){ unsubscribeBilling(); unsubscribeBilling = null; }
     if(!firebaseConnected || !billingDocRef){
       renderPlanState();
       renderCardOnFile();
       return;
     }
-    billingDocRef.onSnapshot(doc=>{
+    unsubscribeBilling = billingDocRef.onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
       currentPlan = data.plan || 'premium';
       document.getElementById('billingEmail').value = data.billingEmail || '';

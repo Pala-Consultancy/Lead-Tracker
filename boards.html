@@ -169,10 +169,10 @@
     mask-image:radial-gradient(ellipse 75% 75% at 50% 40%, #000 30%, transparent 80%);
   }
   [data-theme="dark"] .login-bg-dotgrid{background-image:radial-gradient(rgba(122,79,181,0.22) 1.4px, transparent 1.4px);}
-  .login-bg-orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.4;pointer-events:none;z-index:0;}
-  .login-bg-orb.o1{width:280px;height:280px;background:var(--c-blue-fg);top:-80px;left:-60px;animation:login-orb-float 11s ease-in-out infinite;}
-  .login-bg-orb.o2{width:320px;height:320px;background:var(--c-purple-fg, #7A4FB5);bottom:-100px;right:-80px;animation:login-orb-float 13s ease-in-out infinite 2s;}
-  .login-bg-orb.o3{width:200px;height:200px;background:var(--c-amber-fg);top:55%;right:8%;animation:login-orb-float 9s ease-in-out infinite 4s;}
+  .login-bg-orb{position:absolute;border-radius:50%;opacity:.55;pointer-events:none;z-index:0;will-change:transform;}
+  .login-bg-orb.o1{width:280px;height:280px;background:radial-gradient(circle, var(--c-blue-fg) 0%, transparent 70%);top:-80px;left:-60px;animation:login-orb-float 11s ease-in-out infinite;}
+  .login-bg-orb.o2{width:320px;height:320px;background:radial-gradient(circle, var(--c-purple-fg, #7A4FB5) 0%, transparent 70%);bottom:-100px;right:-80px;animation:login-orb-float 13s ease-in-out infinite 2s;}
+  .login-bg-orb.o3{width:200px;height:200px;background:radial-gradient(circle, var(--c-amber-fg) 0%, transparent 70%);top:55%;right:8%;animation:login-orb-float 9s ease-in-out infinite 4s;}
   @keyframes login-orb-float{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-26px) scale(1.12);}}
   @media (prefers-reduced-motion: reduce){.login-bg-orb{animation:none;}}
   .login-card{
@@ -1198,17 +1198,26 @@
     if(!card || !screen) return;
     if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var rect = null;
+    var pendingRotateX = 0, pendingRotateY = 0, rafScheduled = false;
+    function applyTilt(){
+      card.style.transform = 'rotateX(' + pendingRotateX + 'deg) rotateY(' + pendingRotateY + 'deg)';
+      rafScheduled = false;
+    }
     screen.addEventListener('mouseenter', function(){ rect = card.getBoundingClientRect(); });
     screen.addEventListener('mousemove', function(e){
       if(!rect) rect = card.getBoundingClientRect();
       var cx = rect.left + rect.width / 2;
       var cy = rect.top + rect.height / 2;
-      var rotateY = ((e.clientX - cx) / rect.width) * 10;
-      var rotateX = ((cy - e.clientY) / rect.height) * 10;
-      card.style.transform = 'rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
+      pendingRotateY = ((e.clientX - cx) / rect.width) * 10;
+      pendingRotateX = ((cy - e.clientY) / rect.height) * 10;
+      if(!rafScheduled){
+        rafScheduled = true;
+        requestAnimationFrame(applyTilt);
+      }
     });
     screen.addEventListener('mouseleave', function(){
       rect = null;
+      pendingRotateX = 0; pendingRotateY = 0;
       card.style.transform = 'rotateX(0) rotateY(0)';
     });
   })();
