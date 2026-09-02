@@ -1458,13 +1458,14 @@
           return Promise.all(boardDeletions);
         }).then(()=>{
           const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-          const cleanup = [
-            membersCollection.doc(user.uid).delete(),
-            db.collection('userDirectory').doc(user.uid).delete(),
-            workspaceRef.delete()
-          ];
-          if(slug) cleanup.push(db.collection('workspaceDirectory').doc(slug).delete());
-          return Promise.all(cleanup);
+          const directoryCleanup = slug ? db.collection('workspaceDirectory').doc(slug).delete() : Promise.resolve();
+          return directoryCleanup.then(()=>{
+            return Promise.all([
+              membersCollection.doc(user.uid).delete(),
+              db.collection('userDirectory').doc(user.uid).delete(),
+              workspaceRef.delete()
+            ]);
+          });
         });
       }).then(()=>{
         return user.delete();
