@@ -165,7 +165,8 @@
   .chat-empty{padding:36px 20px;text-align:center;color:var(--slate-light);font-size:13px;}
   .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
   .chat-main-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--slate-light);font-size:13.5px;padding:20px;text-align:center;}
-  .chat-thread-view{display:flex;flex-direction:column;flex:1;min-height:0;}
+  .chat-thread-view{display:flex;flex-direction:column;flex:1;min-height:0;animation:chat-thread-fade .2s ease;}
+  @keyframes chat-thread-fade{from{opacity:0;}to{opacity:1;}}
   .chat-thread-header{
     display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;
     font-family:'Sora',sans-serif;font-weight:700;font-size:14px;color:var(--ink);
@@ -179,10 +180,26 @@
   }
   .chat-thread-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
   .chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;}
-  .chat-msg{max-width:70%;font-size:13.5px;line-height:1.5;padding:9px 12px;border-radius:13px;white-space:pre-wrap;word-break:break-word;}
-  .chat-msg.mine{align-self:flex-end;background:var(--teal);color:#fff;border-bottom-right-radius:4px;}
-  .chat-msg.theirs{align-self:flex-start;background:var(--c-blue-tint2, #F6FAFE);color:var(--ink);border-bottom-left-radius:4px;}
-  .chat-msg-time{font-size:10.5px;opacity:.7;margin-top:3px;}
+  .chat-msg{
+    max-width:70%;font-size:13.5px;line-height:1.5;padding:9px 12px;border-radius:13px;
+    white-space:pre-wrap;word-break:break-word;transition:transform .15s;
+  }
+  .chat-msg:hover{transform:translateY(-1px);}
+  .chat-msg.mine{
+    align-self:flex-end;color:#fff;border-bottom-right-radius:4px;
+    background:linear-gradient(135deg, var(--teal), var(--teal-dark));
+    box-shadow:0 3px 10px rgba(27,89,165,0.25);
+  }
+  .chat-msg.theirs{
+    align-self:flex-start;background:var(--c-blue-tint2, #F6FAFE);color:var(--ink);
+    border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(27,36,48,0.06);
+  }
+  .chat-msg-time{font-size:10.5px;opacity:.75;margin-top:3px;}
+  .chat-msg-receipt{
+    display:flex;align-items:center;gap:4px;font-size:10.5px;opacity:.85;margin-top:3px;font-weight:500;
+  }
+  .chat-msg-receipt svg{width:13px;height:13px;flex-shrink:0;}
+  .chat-msg-receipt.read svg{color:#7FE3C4;}
   .chat-input-row{
     display:flex;gap:8px;padding:14px;border-top:1px solid var(--border);flex-shrink:0;background:var(--panel);
   }
@@ -1089,17 +1106,41 @@
     statusEl.innerHTML = isTyping ? `<div class="chat-typing-indicator"><span></span><span></span><span></span></div>` : '';
   }
 
+  let lastRenderedMessages = [];
+
   function renderChatMessages(messages){
+    lastRenderedMessages = messages;
     const container = document.getElementById('chatMessages');
     if(!container) return;
     if(messages.length === 0){
       container.innerHTML = `<div class="chat-empty">Say hello 👋</div>`;
       return;
     }
-    container.innerHTML = messages.map(m=>{
+    const convId = chatActiveOtherUid ? getConversationId(currentUid, chatActiveOtherUid) : null;
+    const conv = convId ? chatConversationsMap[convId] : null;
+    const otherReadAt = conv && conv.lastReadAt && conv.lastReadAt[chatActiveOtherUid];
+    // Find the last message I sent — that's the only one that gets a read receipt,
+    // matching how most chat apps only mark the most recent outgoing message.
+    let lastMineIndex = -1;
+    for(let i = messages.length - 1; i >= 0; i--){
+      if(messages[i].senderId === currentUid){ lastMineIndex = i; break; }
+    }
+    container.innerHTML = messages.map((m, i)=>{
       const mine = m.senderId === currentUid;
       const time = (m.createdAt && typeof m.createdAt.toDate === 'function') ? formatChatTime(m.createdAt.toDate()) : '';
-      return `<div class="chat-msg ${mine ? 'mine' : 'theirs'}">${esc(m.text)}${time ? `<div class="chat-msg-time">${esc(time)}</div>` : ''}</div>`;
+      let receiptHtml = '';
+      if(mine && i === lastMineIndex){
+        const msgMillis = (m.createdAt && typeof m.createdAt.toMillis === 'function') ? m.createdAt.toMillis() : null;
+        const readMillis = (otherReadAt && typeof otherReadAt.toMillis === 'function') ? otherReadAt.toMillis() : null;
+        const isRead = msgMillis && readMillis && readMillis >= msgMillis;
+        if(isRead){
+          const readTime = formatChatTime(otherReadAt.toDate());
+          receiptHtml = `<div class="chat-msg-receipt read"><svg viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l5 5L18 6"/><path d="M9 13l5 5L26 6"/></svg>Read ${esc(readTime)}</div>`;
+        } else {
+          receiptHtml = `<div class="chat-msg-receipt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>Sent</div>`;
+        }
+      }
+      return `<div class="chat-msg ${mine ? 'mine' : 'theirs'}">${esc(m.text)}${time ? `<div class="chat-msg-time">${esc(time)}</div>` : ''}${receiptHtml}</div>`;
     }).join('');
     container.scrollTop = container.scrollHeight;
   }
@@ -1127,6 +1168,7 @@
     }
 
     if(unsubscribeChatThread) unsubscribeChatThread();
+    lastRenderedMessages = [];
     unsubscribeChatThread = directMessagesCollection.doc(convId).collection('thread').orderBy('createdAt').onSnapshot(snap=>{
       renderChatMessages(snap.docs.map(d=>d.data()));
     });
@@ -1238,6 +1280,7 @@
       snap.docs.forEach(d=>{ chatConversationsMap[d.id] = {id:d.id, ...d.data()}; });
       renderChatMemberList();
       updateTypingStatusLine();
+      if(chatActiveOtherUid) renderChatMessages(lastRenderedMessages);
     });
   }
 
