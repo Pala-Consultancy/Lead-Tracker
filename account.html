@@ -671,6 +671,17 @@
   </div>
 </div>
 
+<div class="confirm-overlay" id="companyNameTakenOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+    <h3>Company name already in use</h3>
+    <p>A company called "<span id="companyNameTakenValue"></span>" already exists on PalaTrack. Please use a different name, or ask an admin at that company to invite you instead.</p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn btn-primary" id="companyNameTakenOkBtn">Okay</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="cropOverlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -1286,6 +1297,15 @@
     });
   });
 
+  function isCompanyNameTakenByOther(company){
+    const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if(!slug) return Promise.resolve(false);
+    return db.collection('workspaceDirectory').doc(slug).get().then(doc=>{
+      if(!doc.exists) return false;
+      return doc.data().workspaceId !== workspaceId;
+    });
+  }
+
   function saveProfile(user, extra){
     const name = document.getElementById('fullName').value.trim();
     const phone = document.getElementById('phoneField').value.trim();
@@ -1314,6 +1334,7 @@
     const user = auth.currentUser;
     if(!user) return;
     const newEmail = document.getElementById('emailField').value.trim();
+    const company = document.getElementById('companyField').value.trim();
     const saveBtn = document.getElementById('saveAccountBtn');
     saveBtn.disabled = true;
 
@@ -1328,22 +1349,45 @@
       });
     };
 
-    if(newEmail && newEmail !== user.email){
-      user.updateEmail(newEmail).then(()=>{
+    const proceedWithSave = ()=>{
+      if(newEmail && newEmail !== user.email){
+        user.updateEmail(newEmail).then(()=>{
+          finishSave();
+        }).catch(err=>{
+          saveBtn.disabled = false;
+          if(err.code === 'auth/requires-recent-login'){
+            pendingEmail = newEmail;
+            reauthCard.classList.add('show');
+          } else {
+            showToast(t('couldNotUpdateEmail') + ' ' + friendlyErr(err), true);
+          }
+        });
+      } else {
         finishSave();
-      }).catch(err=>{
+      }
+    };
+
+    isCompanyNameTakenByOther(company).then(taken=>{
+      if(taken){
         saveBtn.disabled = false;
-        if(err.code === 'auth/requires-recent-login'){
-          pendingEmail = newEmail;
-          reauthCard.classList.add('show');
-        } else {
-          showToast(t('couldNotUpdateEmail') + ' ' + friendlyErr(err), true);
-        }
-      });
-    } else {
-      finishSave();
-    }
+        document.getElementById('companyNameTakenValue').textContent = company;
+        document.getElementById('companyNameTakenOverlay').style.display = 'flex';
+        return;
+      }
+      proceedWithSave();
+    }).catch(()=>{
+      // If the lookup itself fails (e.g. offline), don't block saving on it.
+      proceedWithSave();
+    });
   });
+
+  document.getElementById('companyNameTakenOkBtn').addEventListener('click', ()=>{
+    document.getElementById('companyNameTakenOverlay').style.display = 'none';
+  });
+  document.getElementById('companyNameTakenOverlay').addEventListener('click', (e)=>{
+    if(e.target === document.getElementById('companyNameTakenOverlay')) e.currentTarget.style.display = 'none';
+  });
+
 
   document.getElementById('reauthConfirmBtn').addEventListener('click', ()=>{
     const user = auth.currentUser;
