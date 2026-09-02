@@ -192,6 +192,47 @@
   }
   .chat-send-btn:hover{background:var(--teal-dark);}
   .chat-send-btn:disabled{opacity:.5;cursor:default;}
+  .chat-send-btn:active{transform:scale(0.92);}
+
+  .chat-avatar-blue{background:var(--c-blue-bg);color:var(--c-blue-fg);}
+  .chat-avatar-purple{background:var(--c-purple-bg);color:var(--c-purple-fg);}
+  .chat-avatar-amber{background:var(--c-amber-bg);color:var(--c-amber-fg);}
+  .chat-avatar-green{background:var(--c-green-bg);color:var(--c-green-fg);}
+  .chat-avatar-red{background:var(--c-red-bg);color:var(--c-red-fg);}
+
+  .chat-search-row{padding:10px 12px;border-bottom:1px solid var(--border);}
+  .chat-search-row input{
+    width:100%;box-sizing:border-box;padding:8px 12px;border-radius:9px;border:1px solid var(--border);
+    background:var(--c-blue-tint2, #F6FAFE);font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink);
+  }
+  .chat-search-row input:focus{outline:none;border-color:var(--teal);}
+
+  .chat-unread-dot{animation:chat-pulse 1.6s ease-in-out infinite;}
+  @keyframes chat-pulse{
+    0%,100%{transform:scale(1);opacity:1;}
+    50%{transform:scale(1.35);opacity:.6;}
+  }
+
+  @keyframes chat-msg-pop{
+    from{opacity:0;transform:translateY(8px) scale(.97);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+  .chat-msg{animation:chat-msg-pop .22s ease both;}
+
+  .chat-member-row{position:relative;transition:background .15s, transform .15s;}
+  .chat-member-row:hover{transform:translateX(2px);}
+
+  .chat-typing-indicator{display:flex;gap:4px;align-items:center;padding:2px 0;}
+  .chat-typing-indicator span{width:5px;height:5px;border-radius:50%;background:var(--slate-light);animation:chat-typing-bounce 1.1s infinite ease-in-out;}
+  .chat-typing-indicator span:nth-child(2){animation-delay:.15s;}
+  .chat-typing-indicator span:nth-child(3){animation-delay:.3s;}
+  @keyframes chat-typing-bounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-3px);opacity:1;}}
+  .chat-thread-header .status-line{font-size:11px;font-weight:400;color:var(--slate-light);margin-top:1px;}
+  .chat-thread-header-text{display:flex;flex-direction:column;}
+
+  .chat-main-empty-icon{font-size:38px;margin-bottom:10px;animation:chat-float 3s ease-in-out infinite;}
+  @keyframes chat-float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
   @media (max-width:720px){
     .chat-page{height:calc(100vh - 180px);}
     .chat-sidebar{position:absolute;inset:0;width:100%;z-index:2;background:var(--panel);}
@@ -593,21 +634,32 @@
         </div>
       </div>
     </div>
-    <a class="btn" href="dashboard.html" data-i18n="backToTrackerBtn">← Back to tracker</a>
+    <a class="btn" href="dashboard.html">← Back to tracker</a>
   </header>
 
   <div class="chat-page">
     <div class="chat-sidebar" id="chatSidebar">
       <div class="chat-sidebar-header">Teammates</div>
+      <div class="chat-search-row">
+        <input type="text" id="chatSearchInput" placeholder="Search teammates...">
+      </div>
       <div id="chatMembersBody"></div>
     </div>
     <div class="chat-main" id="chatMain">
-      <div class="chat-main-empty" id="chatMainEmpty">Select a teammate on the left to start chatting.</div>
+      <div class="chat-main-empty" id="chatMainEmpty">
+        <div>
+          <div class="chat-main-empty-icon">💬</div>
+          <div>Select a teammate on the left to start chatting.</div>
+        </div>
+      </div>
       <div class="chat-thread-view" id="chatThreadView" style="display:none">
         <div class="chat-thread-header">
           <button class="chat-back-btn" id="chatBackBtn">←</button>
           <div class="chat-thread-avatar" id="chatThreadAvatar"></div>
-          <div id="chatHeaderTitle">Chat</div>
+          <div class="chat-thread-header-text">
+            <div id="chatHeaderTitle">Chat</div>
+            <div class="status-line" id="chatTypingStatus"></div>
+          </div>
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-row">
@@ -943,12 +995,21 @@
   let unsubscribeChatConversations = null;
   let unsubscribeChatThread = null;
   let chatActiveOtherUid = null;
+  let chatSearchFilter = '';
+  let chatTypingTimeout = null;
 
   function getConversationId(uidA, uidB){
     return [uidA, uidB].sort().join('_');
   }
   function formatChatTime(date){
     return date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+  const AVATAR_COLORS = ['blue', 'purple', 'amber', 'green', 'red'];
+  function avatarColorClass(id){
+    const source = id || '';
+    let hash = 0;
+    for(let i=0; i<source.length; i++){ hash = (hash * 31 + source.charCodeAt(i)) >>> 0; }
+    return 'chat-avatar-' + AVATAR_COLORS[hash % AVATAR_COLORS.length];
   }
 
   function isConversationUnread(conv, myUid){
@@ -967,7 +1028,16 @@
       container.innerHTML = `<div class="chat-empty">No other team members yet. Invite someone from the Team page to start chatting.</div>`;
       return;
     }
-    const sorted = teamMembersList.slice().sort((a,b)=>{
+    const filtered = teamMembersList.filter(m=>{
+      if(!chatSearchFilter) return true;
+      const haystack = ((m.name || '') + ' ' + (m.email || '')).toLowerCase();
+      return haystack.includes(chatSearchFilter);
+    });
+    if(filtered.length === 0){
+      container.innerHTML = `<div class="chat-empty">No teammates match "${esc(chatSearchFilter)}".</div>`;
+      return;
+    }
+    const sorted = filtered.slice().sort((a,b)=>{
       const convA = chatConversationsMap[getConversationId(currentUid, a.id)];
       const convB = chatConversationsMap[getConversationId(currentUid, b.id)];
       const tA = (convA && convA.lastMessage && convA.lastMessage.createdAt && convA.lastMessage.createdAt.toMillis) ? convA.lastMessage.createdAt.toMillis() : 0;
@@ -978,20 +1048,32 @@
       const conv = chatConversationsMap[getConversationId(currentUid, m.id)];
       const unread = isConversationUnread(conv, currentUid);
       const active = m.id === chatActiveOtherUid;
+      const isTyping = conv && conv.typing && conv.typing[m.id];
       let preview = 'No messages yet';
-      if(conv && conv.lastMessage){
+      if(isTyping){
+        preview = 'Typing...';
+      } else if(conv && conv.lastMessage){
         const prefix = conv.lastMessage.senderId === currentUid ? 'You: ' : '';
         preview = prefix + (conv.lastMessage.text || '');
       }
       return `<button type="button" class="chat-member-row${active ? ' active' : ''}" onclick="window.__chatActions.openChatThread('${m.id}')">
-        <div class="chat-member-avatar">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
+        <div class="chat-member-avatar ${avatarColorClass(m.id)}">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
         <div class="chat-member-info">
           <div class="chat-member-name">${esc(m.name || m.email || 'Team member')}</div>
-          <div class="chat-member-preview">${esc(preview)}</div>
+          <div class="chat-member-preview"${isTyping ? ' style="color:var(--teal);font-weight:600;"' : ''}>${esc(preview)}</div>
         </div>
         ${unread ? '<div class="chat-unread-dot"></div>' : ''}
       </button>`;
     }).join('');
+  }
+
+  function updateTypingStatusLine(){
+    const statusEl = document.getElementById('chatTypingStatus');
+    if(!statusEl || !chatActiveOtherUid) return;
+    const convId = getConversationId(currentUid, chatActiveOtherUid);
+    const conv = chatConversationsMap[convId];
+    const isTyping = conv && conv.typing && conv.typing[chatActiveOtherUid];
+    statusEl.innerHTML = isTyping ? `<div class="chat-typing-indicator"><span></span><span></span><span></span></div>` : '';
   }
 
   function renderChatMessages(messages){
@@ -1015,6 +1097,7 @@
     const convId = getConversationId(currentUid, otherUid);
     const otherMember = teamMembersList.find(m=>m.id === otherUid);
     document.getElementById('chatHeaderTitle').textContent = (otherMember && (otherMember.name || otherMember.email)) || 'Chat';
+    document.getElementById('chatThreadAvatar').className = 'chat-thread-avatar ' + avatarColorClass(otherUid);
     document.getElementById('chatThreadAvatar').innerHTML = otherMember && otherMember.photoURL
       ? `<img src="${otherMember.photoURL}" alt="">`
       : esc(initials(otherMember && otherMember.name, otherMember && otherMember.email));
@@ -1022,6 +1105,7 @@
     document.getElementById('chatThreadView').style.display = 'flex';
     document.getElementById('chatSidebar').classList.add('mobile-hidden');
     renderChatMemberList();
+    updateTypingStatusLine();
 
     if(chatConversationsMap[convId]){
       directMessagesCollection.doc(convId).set({
@@ -1035,8 +1119,18 @@
     });
   }
 
+  function setTypingFlag(isTyping){
+    if(!chatActiveOtherUid || !currentUid) return;
+    const convId = getConversationId(currentUid, chatActiveOtherUid);
+    directMessagesCollection.doc(convId).set({
+      participants: [currentUid, chatActiveOtherUid],
+      [`typing.${currentUid}`]: isTyping
+    }, {merge:true}).catch(()=>{});
+  }
+
   function closeChatThread(){
     if(unsubscribeChatThread){ unsubscribeChatThread(); unsubscribeChatThread = null; }
+    setTypingFlag(false);
     chatActiveOtherUid = null;
     document.getElementById('chatSidebar').classList.remove('mobile-hidden');
     document.getElementById('chatThreadView').style.display = 'none';
@@ -1048,6 +1142,8 @@
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     if(!text || !chatActiveOtherUid) return;
+    if(chatTypingTimeout){ clearTimeout(chatTypingTimeout); chatTypingTimeout = null; }
+    setTypingFlag(false);
     const convId = getConversationId(currentUid, chatActiveOtherUid);
     const convRef = directMessagesCollection.doc(convId);
     const sendBtn = document.getElementById('chatSendBtn');
@@ -1079,6 +1175,16 @@
       sendChatMessage();
     }
   });
+  document.getElementById('chatInput').addEventListener('input', ()=>{
+    if(!chatActiveOtherUid) return;
+    setTypingFlag(true);
+    if(chatTypingTimeout) clearTimeout(chatTypingTimeout);
+    chatTypingTimeout = setTimeout(()=>{ setTypingFlag(false); }, 2500);
+  });
+  document.getElementById('chatSearchInput').addEventListener('input', (e)=>{
+    chatSearchFilter = e.target.value.trim().toLowerCase();
+    renderChatMemberList();
+  });
 
   function initTeamSync(){
     unsubscribeTeam = usersCollection.onSnapshot(snapshot=>{
@@ -1097,6 +1203,7 @@
       chatConversationsMap = {};
       snap.docs.forEach(d=>{ chatConversationsMap[d.id] = {id:d.id, ...d.data()}; });
       renderChatMemberList();
+      updateTypingStatusLine();
     });
   }
 
