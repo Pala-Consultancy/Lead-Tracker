@@ -3697,13 +3697,13 @@
 
   function computeStaleNewLeads(){
     const now = Date.now();
-    const oneDayMs = 24 * 60 * 60 * 1000;
+    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
     return leads.filter(l=>{
       if(l.status !== "New") return false;
       if(!l.dateAdded) return false;
       const addedTime = new Date(l.dateAdded).getTime();
       if(isNaN(addedTime)) return false;
-      return (now - addedTime) >= oneDayMs;
+      return (now - addedTime) >= twoDaysMs;
     }).sort((a,b)=> new Date(a.dateAdded) - new Date(b.dateAdded));
   }
 
