@@ -553,6 +553,67 @@
     position:fixed;inset:0;background:rgba(15,23,32,0.55);z-index:500;
     display:flex;align-items:center;justify-content:center;padding:20px;
   }
+
+  /* ---------- Welcome-back modal ---------- */
+  .welcome-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.55);backdrop-filter:blur(4px);z-index:600;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;pointer-events:none;transition:opacity .25s ease;
+  }
+  .welcome-overlay.open{opacity:1;pointer-events:auto;}
+  .welcome-card{
+    position:relative;overflow:hidden;background:var(--panel);border-radius:20px;
+    padding:44px 34px 34px;max-width:380px;width:100%;text-align:center;
+    box-shadow:0 40px 80px rgba(0,0,0,0.35);
+    transform:scale(0.85) translateY(10px);opacity:0;
+    transition:transform .45s cubic-bezier(.34,1.56,.64,1), opacity .35s ease;
+  }
+  .welcome-overlay.open .welcome-card{transform:scale(1) translateY(0);opacity:1;}
+  .welcome-confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+  .welcome-confetti span{
+    position:absolute;top:-10px;width:8px;height:8px;border-radius:2px;
+    animation:welcome-confetti-fall 1.6s ease-in forwards;opacity:0;
+  }
+  @keyframes welcome-confetti-fall{
+    0%{opacity:1;transform:translateY(0) rotate(0deg);}
+    100%{opacity:0;transform:translateY(240px) rotate(340deg);}
+  }
+  .welcome-emoji{
+    font-size:44px;display:inline-block;margin-bottom:6px;
+    animation:welcome-wave 1.8s ease-in-out .3s 2;transform-origin:70% 70%;
+  }
+  @keyframes welcome-wave{
+    0%, 100%{transform:rotate(0deg);}
+    15%{transform:rotate(18deg);}
+    30%{transform:rotate(-10deg);}
+    45%{transform:rotate(18deg);}
+    60%{transform:rotate(-4deg);}
+    75%{transform:rotate(0deg);}
+  }
+  .welcome-title{
+    font-size:22px;font-weight:800;margin:0 0 8px;color:var(--ink);
+  }
+  .welcome-name{
+    background:linear-gradient(90deg, var(--teal), var(--c-purple-fg, #7A4FB5), var(--c-amber-fg));
+    background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:welcome-gradient-shift 3s ease infinite;
+  }
+  @keyframes welcome-gradient-shift{
+    0%{background-position:0% center;}
+    50%{background-position:100% center;}
+    100%{background-position:0% center;}
+  }
+  .welcome-sub{font-size:14px;color:var(--slate-light);margin:0 0 26px;line-height:1.5;}
+  .welcome-cta{
+    display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:700;
+    padding:12px 24px;border-radius:12px;border:none;cursor:pointer;color:#fff;
+    background:linear-gradient(90deg, var(--teal), var(--c-purple-fg, #7A4FB5));
+    box-shadow:0 10px 24px rgba(27,89,165,0.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .welcome-cta:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(27,89,165,0.45);}
+  .welcome-cta-arrow{display:inline-block;transition:transform .15s ease;}
+  .welcome-cta:hover .welcome-cta-arrow{transform:translateX(3px);}
   .confirm-modal{
     background:var(--panel);border-radius:16px;padding:28px 26px;max-width:400px;width:100%;
     box-shadow:0 30px 60px rgba(0,0,0,0.3);text-align:center;
@@ -886,6 +947,16 @@
       <button type="button" class="btn" id="appConfirmCancelBtn">Cancel</button>
       <button type="button" class="btn btn-danger" id="appConfirmOkBtn">Confirm</button>
     </div>
+  </div>
+</div>
+
+<div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-card" id="welcomeCard">
+    <div class="welcome-confetti" id="welcomeConfetti"></div>
+    <div class="welcome-emoji" id="welcomeEmoji">👋</div>
+    <h2 class="welcome-title">Welcome back, <span class="welcome-name" id="welcomeName"></span></h2>
+    <p class="welcome-sub" id="welcomeSub"></p>
+    <button type="button" class="welcome-cta" id="welcomeCtaBtn">Let's go <span class="welcome-cta-arrow">→</span></button>
   </div>
 </div>
 
@@ -1399,7 +1470,8 @@
     boards.forEach(b=>{
       boardsCollection.doc(b.id).collection('leads').get().then(snap=>{
         const el = document.getElementById(`count-${b.id}`);
-        if(el) el.textContent = `${snap.size} ${snap.size===1?t('leadLabel'):t('leadsLabel')}`;
+        const activeCount = snap.docs.filter(d=>!d.data().deleted).length;
+        if(el) el.textContent = `${activeCount} ${activeCount===1?t('leadLabel'):t('leadsLabel')}`;
       }).catch(()=>{});
     });
   }
@@ -1591,7 +1663,9 @@
       const submitBtn = e.target.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
-      auth.signInWithEmailAndPassword(email, password).catch(err=>{
+      auth.signInWithEmailAndPassword(email, password).then(()=>{
+        justLoggedIn = true;
+      }).catch(err=>{
         showLoginError(t('incorrectLogin'));
       }).finally(()=>{
         submitBtn.disabled = false;
@@ -1770,6 +1844,10 @@
         const name = data.name || user.displayName || '';
         nameEl.textContent = name || user.email || 'Account';
         if(pillEl){ if(name){ pillEl.textContent = `${t(getTimeGreeting())}, ${name}`; } else { pillEl.innerHTML = t('pleaseAddYourName'); } }
+        if(justLoggedIn){
+          justLoggedIn = false;
+          showWelcomeModal(name || user.email || '');
+        }
         const ROLE_KEY_MAP = {'Founder':'role_founder','Co-Founder':'role_cofounder','CEO':'role_ceo','Managing Director':'role_md','Sales Manager':'role_salesmanager','Sales Representative':'role_salesrep','Business Development':'role_bizdev','Marketing Manager':'role_marketing','Account Manager':'role_account','Consultant':'role_consultant','Operations':'role_operations','Intern':'role_intern','Other':'role_other'};
       const roleDisplay = data.role ? (t(ROLE_KEY_MAP[data.role]) || data.role) : '';
       const roleText = roleDisplay && data.company ? `${roleDisplay} ${t('atWord')} ${data.company}` : (roleDisplay || data.company || '');
@@ -1789,7 +1867,56 @@
       }).catch(()=>{
         nameEl.textContent = user.email || 'Account';
         if(pillEl) pillEl.innerHTML = t('pleaseAddYourName');
+        if(justLoggedIn){
+          justLoggedIn = false;
+          showWelcomeModal(user.email || '');
+        }
       });
+    }
+
+    const WELCOME_MESSAGES = [
+      "Ready to close some deals today?",
+      "Let's turn leads into wins.",
+      "Your pipeline's waiting for you.",
+      "Time to make it happen.",
+      "Let's see what's new since you left.",
+      "Good things happen one lead at a time."
+    ];
+    const CONFETTI_COLORS = ['#1B59A5', '#7A4FB5', '#FF9D00', '#2E9E6B', '#E0625A'];
+    function launchWelcomeConfetti(){
+      const holder = document.getElementById('welcomeConfetti');
+      holder.innerHTML = '';
+      const pieceCount = 28;
+      for(let i=0; i<pieceCount; i++){
+        const piece = document.createElement('span');
+        const color = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+        piece.style.left = `${Math.random()*100}%`;
+        piece.style.background = color;
+        piece.style.animationDelay = `${Math.random()*0.4}s`;
+        piece.style.width = piece.style.height = `${5 + Math.random()*5}px`;
+        holder.appendChild(piece);
+      }
+    }
+    let welcomeDismissHandlersBound = false;
+    function showWelcomeModal(name){
+      const overlay = document.getElementById('welcomeOverlay');
+      const nameEl = document.getElementById('welcomeName');
+      const subEl = document.getElementById('welcomeSub');
+      const ctaBtn = document.getElementById('welcomeCtaBtn');
+      const firstName = (name || '').split(/\s+/)[0] || name;
+      nameEl.textContent = firstName || 'there';
+      subEl.textContent = WELCOME_MESSAGES[Math.floor(Math.random()*WELCOME_MESSAGES.length)];
+      launchWelcomeConfetti();
+      overlay.classList.add('open');
+      function dismiss(){
+        overlay.classList.remove('open');
+      }
+      if(!welcomeDismissHandlersBound){
+        welcomeDismissHandlersBound = true;
+        ctaBtn.addEventListener('click', dismiss);
+        overlay.addEventListener('click', (e)=>{ if(e.target === overlay) dismiss(); });
+        document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') dismiss(); });
+      }
     }
     document.getElementById('createBoardForm').addEventListener('submit', (e)=>{
       e.preventDefault();
@@ -1866,6 +1993,7 @@
     }
     let isSigningOut = false;
   let workspaceReadyPromise = null;
+  let justLoggedIn = false;
     function resolveWorkspace(user){
       return db.collection('userDirectory').doc(user.uid).get().then(doc=>{
         if(doc.exists && doc.data().workspaceId){
