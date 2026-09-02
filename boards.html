@@ -421,7 +421,13 @@
   .board-action-btn.danger:hover{background:var(--c-red-bg);color:var(--red);}
   .board-action-btn.pin-btn.pinned{color:var(--c-amber-fg);}
   .board-action-btn.pin-btn.pinned:hover{background:var(--c-amber-bg);color:var(--c-amber-fg);}
+  .board-card.pinned{border-color:var(--c-amber-border);background:var(--c-amber-bg);}
   .board-card.pinned::before{background:linear-gradient(90deg, var(--c-amber-fg), var(--c-amber-light));}
+  .board-pinned-label{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+    color:var(--c-amber-dark-text);background:rgba(0,0,0,0.07);
+    border-radius:20px;padding:3px 9px;margin-bottom:10px;
+  }
 
   .icon-btn-settings{font-size:15px;padding:9px 12px;}
 
@@ -1380,6 +1386,7 @@
             <button class="board-action-btn" title="Edit board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.editBoard('${b.id}')">✎</button>
             <button class="board-action-btn danger" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
           </div>
+          ${b.pinned ? '<div class="board-pinned-label">📌 Pinned</div>' : ''}
           <div class="board-icon">${ICONS_FOLDER}</div>
           <div class="board-name">${esc(b.name)}</div>
           <div class="board-meta">${esc(metaParts.join(' · '))}</div>
@@ -1822,6 +1829,21 @@
 
     function actuallyCreateBoard(name, formEl){
       const submitBtn = formEl.querySelector('button[type="submit"]');
+      if(!boardsCollection){
+        if(workspaceReadyPromise){
+          submitBtn.disabled = true;
+          workspaceReadyPromise.then(()=>{
+            if(boardsCollection){ actuallyCreateBoard(name, formEl); }
+            else {
+              showToast('Could not set up your workspace. Please refresh and try again.', true);
+              submitBtn.disabled = false;
+            }
+          });
+        } else {
+          showToast('Still setting up your workspace — please wait a second and try again.', true);
+        }
+        return;
+      }
       submitBtn.disabled = true;
       const user = auth.currentUser;
       boardsCollection.add({
@@ -1843,6 +1865,7 @@
       });
     }
     let isSigningOut = false;
+  let workspaceReadyPromise = null;
     function resolveWorkspace(user){
       return db.collection('userDirectory').doc(user.uid).get().then(doc=>{
         if(doc.exists && doc.data().workspaceId){
@@ -1883,7 +1906,7 @@
         currentUserPill.textContent = '';
         clearLoginError();
         document.getElementById('loginForm').reset();
-        resolveWorkspace(user).then(()=>{
+        workspaceReadyPromise = resolveWorkspace(user).then(()=>{
           ensureUserProfileExists(user);
           loadSettingsUserInfo(user);
           loadOrgPlan();
