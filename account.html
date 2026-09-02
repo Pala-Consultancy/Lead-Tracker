@@ -1425,7 +1425,7 @@
   deleteAccountOverlay.addEventListener('click', (e)=>{ if(e.target === deleteAccountOverlay) deleteAccountOverlay.style.display = 'none'; });
 
   function performAccountDeletion(user){
-    return membersCollection.get().then(snap=>{
+    return usersCollection.get().then(snap=>{
       const members = snap.docs;
       const isSoleMember = members.length <= 1;
       const me = members.find(m=>m.id === user.uid);
@@ -1436,7 +1436,7 @@
         if(isCurrentUserAdmin && otherAdmins.length === 0){
           throw {code: 'last-admin'};
         }
-        return membersCollection.doc(user.uid).delete().then(()=>{
+        return usersCollection.doc(user.uid).delete().then(()=>{
           return db.collection('userDirectory').doc(user.uid).delete();
         }).then(()=>{
           return user.delete();
@@ -1461,7 +1461,7 @@
           const directoryCleanup = slug ? db.collection('workspaceDirectory').doc(slug).delete() : Promise.resolve();
           return directoryCleanup.then(()=>{
             return Promise.all([
-              membersCollection.doc(user.uid).delete(),
+              usersCollection.doc(user.uid).delete(),
               db.collection('userDirectory').doc(user.uid).delete(),
               workspaceRef.delete()
             ]);
