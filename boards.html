@@ -999,6 +999,20 @@
   </div>
 </div>
 
+<div class="confirm-overlay" id="setPasswordOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <h3>Set a password</h3>
+    <p>You joined via an email link, so there's no password on your account yet. Set one now so you can sign in directly next time.</p>
+    <input type="password" id="setPasswordInput" placeholder="New password" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:10px;box-sizing:border-box">
+    <input type="password" id="setPasswordConfirmInput" placeholder="Confirm password" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:16px;box-sizing:border-box">
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn" id="setPasswordSkipBtn">Skip for now</button>
+      <button type="button" class="btn btn-primary" id="setPasswordSubmitBtn">Set password</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-stack" id="toastStack"></div>
 <div class="chat-notify-stack" id="chatNotifyStack"></div>
 
@@ -1915,23 +1929,28 @@
     if(auth.isSignInWithEmailLink(window.location.href)){
       const emailForLink = window.localStorage.getItem('emailForSignIn');
       const inviteWorkspaceId = new URLSearchParams(window.location.search).get('workspace');
+      let pendingPasswordUser = null;
+      function offerToSetPassword(user){
+        pendingPasswordUser = user;
+        document.getElementById('setPasswordOverlay').style.display = 'flex';
+      }
       function completeEmailLinkSignIn(email){
         inviteLinkCompletionPromise = auth.signInWithEmailLink(email, window.location.href).then(cred=>{
           window.localStorage.removeItem('emailForSignIn');
           window.history.replaceState({}, document.title, window.location.pathname);
-          if(inviteWorkspaceId){
-            return db.collection('userDirectory').doc(cred.user.uid).get().then(doc=>{
-              if(doc.exists && doc.data().workspaceId) return; // already set up, don't overwrite
-              return db.collection('workspaces').doc(inviteWorkspaceId).collection('members').doc(cred.user.uid).set({
-                name: '', company: '', isAdmin: false, language: currentLang,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-              }).then(()=>{
-                return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: inviteWorkspaceId});
-              });
+          const memberSetupPromise = inviteWorkspaceId ? db.collection('userDirectory').doc(cred.user.uid).get().then(doc=>{
+            if(doc.exists && doc.data().workspaceId) return; // already set up, don't overwrite
+            return db.collection('workspaces').doc(inviteWorkspaceId).collection('members').doc(cred.user.uid).set({
+              name: '', company: '', isAdmin: false, language: currentLang,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(()=>{
+              return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: inviteWorkspaceId});
             });
-          }
-        }).then(()=>{
-          showToast('Welcome! Your account is ready.');
+          }) : Promise.resolve();
+          return memberSetupPromise.then(()=>{
+            showToast('Welcome! Your account is ready.');
+            offerToSetPassword(cred.user);
+          });
         }).catch(err=>{
           showToast('Could not complete sign-in: ' + friendlyErr(err), true);
         });
@@ -1953,6 +1972,32 @@
           if(e.key === 'Enter') document.getElementById('emailConfirmSubmitBtn').click();
         });
       }
+      document.getElementById('setPasswordSkipBtn').addEventListener('click', ()=>{
+        document.getElementById('setPasswordOverlay').style.display = 'none';
+        pendingPasswordUser = null;
+      });
+      document.getElementById('setPasswordSubmitBtn').addEventListener('click', ()=>{
+        if(!pendingPasswordUser) return;
+        const pw = document.getElementById('setPasswordInput').value;
+        const pwConfirm = document.getElementById('setPasswordConfirmInput').value;
+        if(pw.length < 6){ showToast('Password must be at least 6 characters.', true); return; }
+        if(pw !== pwConfirm){ showToast('Passwords do not match.', true); return; }
+        const submitBtn = document.getElementById('setPasswordSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Setting...';
+        pendingPasswordUser.updatePassword(pw).then(()=>{
+          showToast('Password set! You can use it to sign in next time.');
+          document.getElementById('setPasswordOverlay').style.display = 'none';
+          document.getElementById('setPasswordInput').value = '';
+          document.getElementById('setPasswordConfirmInput').value = '';
+          pendingPasswordUser = null;
+        }).catch(err=>{
+          showToast('Could not set password: ' + friendlyErr(err), true);
+        }).finally(()=>{
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Set password';
+        });
+      });
     }
 
     function ensureUserProfileExists(user){
