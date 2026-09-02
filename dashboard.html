@@ -2812,6 +2812,18 @@
       if(typeof applyLeadModeUI === 'function') applyLeadModeUI();
       if(typeof render === 'function' && typeof leads !== 'undefined') render();
     }
+
+    const chatBtnEl = document.getElementById('chatBtn');
+    if(chatBtnEl) chatBtnEl.classList.toggle('locked', isCancelled);
+    if(isCancelled){
+      if(unsubscribeChatConversations){ unsubscribeChatConversations(); unsubscribeChatConversations = null; }
+      if(unsubscribeTeamMembersMap){ unsubscribeTeamMembersMap(); unsubscribeTeamMembersMap = null; }
+      chatConversationsMap = {};
+      const badge = document.getElementById('chatBadge');
+      if(badge) badge.style.display = 'none';
+    } else if(!unsubscribeChatConversations){
+      initTeamChatSync();
+    }
   }
 
   let boardDefaults = {};
@@ -3912,6 +3924,15 @@
     if(notifPanel.classList.contains('open')) closeNotifPanel();
     else openNotifPanel();
   });
+  const chatBtnEl = document.getElementById('chatBtn');
+  if(chatBtnEl){
+    chatBtnEl.addEventListener('click', (e)=>{
+      if(orgPlan === 'cancelled' || orgPlan === 'free'){
+        e.preventDefault();
+        showToast('Team chat is a paid feature — upgrade to unlock it.', true);
+      }
+    });
+  }
   document.getElementById('notifClose').addEventListener('click', closeNotifPanel);
   notifOverlay.addEventListener('click', closeNotifPanel);
   document.addEventListener('keydown', (e)=>{
@@ -5177,7 +5198,6 @@ ${buildLeadContext()}`;
           loadSettingsUserInfo(user);
           loadOrgPlan();
           initFirebaseSync();
-          initTeamChatSync();
           render();
         }).catch(err=>{
           console.error('Could not resolve workspace', err);

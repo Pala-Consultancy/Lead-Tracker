@@ -129,8 +129,15 @@
   .chat-page{
     display:flex;gap:0;height:640px;max-height:calc(100vh - 220px);
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    box-shadow:var(--shadow);overflow:hidden;
+    box-shadow:var(--shadow);overflow:hidden;position:relative;
   }
+  .chat-locked-state{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:40px;gap:6px;
+  }
+  .chat-locked-icon{font-size:34px;margin-bottom:6px;}
+  .chat-locked-state h2{font-family:'Sora',sans-serif;font-size:18px;margin:0;color:var(--ink);}
+  .chat-locked-state p{font-size:13.5px;color:var(--slate-light);max-width:340px;margin:0 0 14px;}
   .chat-sidebar{
     width:280px;flex-shrink:0;border-right:1px solid var(--border);
     display:flex;flex-direction:column;overflow-y:auto;
@@ -638,6 +645,12 @@
   </header>
 
   <div class="chat-page">
+    <div class="chat-locked-state" id="chatLockedState" style="display:none">
+      <div class="chat-locked-icon">🔒</div>
+      <h2>Team chat is a paid feature</h2>
+      <p>Upgrade your plan to message your teammates directly, right inside PalaTrack.</p>
+      <a class="btn btn-primary" href="billing.html">Upgrade now →</a>
+    </div>
     <div class="chat-sidebar" id="chatSidebar">
       <div class="chat-sidebar-header">Teammates</div>
       <div class="chat-search-row">
@@ -1187,6 +1200,7 @@
   });
 
   function initTeamSync(){
+    if(unsubscribeTeam) unsubscribeTeam();
     unsubscribeTeam = usersCollection.onSnapshot(snapshot=>{
       teamMembersList = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(m=>m.id !== currentUid);
       teamMembersList.sort((a,b)=>(a.name||a.email||'').localeCompare(b.name||b.email||''));
@@ -1196,6 +1210,26 @@
       showToast('Lost connection to the shared database.', true);
     });
   }
+  let unsubscribeChatOrgPlan = null;
+  function initChatPlanGate(){
+    if(!workspaceRef) return;
+    if(unsubscribeChatOrgPlan) unsubscribeChatOrgPlan();
+    unsubscribeChatOrgPlan = workspaceRef.onSnapshot(doc=>{
+      const data = doc.exists ? doc.data() : {};
+      const plan = data.plan || 'growth';
+      const isCancelled = plan === 'cancelled' || plan === 'free';
+      document.getElementById('chatLockedState').style.display = isCancelled ? 'flex' : 'none';
+      document.getElementById('chatSidebar').style.display = isCancelled ? 'none' : '';
+      document.getElementById('chatMain').style.display = isCancelled ? 'none' : 'flex';
+      if(!isCancelled){
+        initTeamSync();
+        initChatSync();
+      }
+    }, err=>{
+      console.error('Could not load plan info', err);
+    });
+  }
+
   function initChatSync(){
     if(!directMessagesCollection || !currentUid) return;
     if(unsubscribeChatConversations) unsubscribeChatConversations();
@@ -1330,11 +1364,9 @@
           const data = doc.exists ? doc.data() : {};
           if(data.language && data.language !== currentLang) setLanguage(data.language);
           currentUserIsAdmin = data.isAdmin === true;
-          initTeamSync();
-          initChatSync();
+          initChatPlanGate();
         }).catch(()=>{
-          initTeamSync();
-          initChatSync();
+          initChatPlanGate();
         });
       } else {
         appRoot.style.display = 'none';
@@ -1345,6 +1377,7 @@
         if(unsubscribeTeam){ unsubscribeTeam(); unsubscribeTeam = null; }
         if(unsubscribeChatConversations){ unsubscribeChatConversations(); unsubscribeChatConversations = null; }
         if(unsubscribeChatThread){ unsubscribeChatThread(); unsubscribeChatThread = null; }
+        if(unsubscribeChatOrgPlan){ unsubscribeChatOrgPlan(); unsubscribeChatOrgPlan = null; }
       }
     });
   }
