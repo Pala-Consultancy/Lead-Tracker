@@ -348,6 +348,18 @@
     font-size:10px;font-weight:700;color:var(--c-tan-fg);background:var(--c-tan-bg);
     padding:2px 8px;border-radius:20px;margin-left:6px;text-transform:uppercase;letter-spacing:.03em;
   }
+  .team-manager-badge{
+    color:var(--c-purple-fg);background:var(--c-purple-bg);
+  }
+  .team-manager-toggle{
+    display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 10px;
+    border:1px solid var(--border);border-radius:20px;background:var(--panel);color:var(--slate);
+    font-size:11.5px;font-weight:600;cursor:pointer;transition:background .15s, color .15s, border-color .15s;
+  }
+  .team-manager-toggle-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .15s;}
+  .team-manager-toggle.active{background:var(--c-purple-bg);color:var(--c-purple-fg);border-color:var(--c-purple-fg);}
+  .team-manager-toggle.active .team-manager-toggle-dot{background:var(--c-purple-fg);}
+  .team-manager-toggle:hover{opacity:.85;}
   .team-role-select{
     font-family:'Inter',sans-serif;font-size:13px;padding:8px 11px;
     border:1px solid var(--border);border-radius:7px;background:var(--c-blue-tint2);color:var(--ink);
@@ -894,6 +906,7 @@
   }
 
   let currentUserIsAdmin = false;
+  let currentUserCanManageTeam = false;
 
   function renderTeam(members){
     const container = document.getElementById('teamListContainer');
@@ -913,15 +926,21 @@
               <span>${esc(roleLabel)}</span><span class="chev">▾</span>
             </button>`
           : `<span class="team-role-readonly">${esc(roleLabel)}</span>`;
-        const removeBtnHtml = (currentUserIsAdmin && !isYou)
+        const removeBtnHtml = ((currentUserIsAdmin || currentUserCanManageTeam) && !isYou)
           ? `<button type="button" class="team-remove-btn" title="Remove from team" onclick="window.__teamActions.confirmRemoveMember('${m.id}','${esc(m.name || m.email || 'this person').replace(/'/g,"\\'")}')">✕</button>`
+          : '';
+        const managerToggleHtml = (currentUserIsAdmin && !isYou && !m.isAdmin)
+          ? `<button type="button" class="team-manager-toggle${m.canManageTeam ? ' active' : ''}" title="Can remove team members (but not touch billing)" onclick="window.__teamActions.toggleCanManageTeam('${m.id}', ${m.canManageTeam ? 'true' : 'false'})">
+              <span class="team-manager-toggle-dot"></span> Can remove members
+            </button>`
           : '';
         return `<div class="team-row">
           <div class="team-avatar">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
           <div class="team-info">
-            <div class="team-name">${esc(m.name || m.email || 'Team member')}${isYou ? `<span class="team-you-badge">${t('youBadge')}</span>` : ''}${m.isAdmin ? `<span class="team-admin-badge">${t('adminBadge')}</span>` : ''}</div>
+            <div class="team-name">${esc(m.name || m.email || 'Team member')}${isYou ? `<span class="team-you-badge">${t('youBadge')}</span>` : ''}${m.isAdmin ? `<span class="team-admin-badge">${t('adminBadge')}</span>` : ''}${(!m.isAdmin && m.canManageTeam) ? `<span class="team-admin-badge team-manager-badge">Can remove members</span>` : ''}</div>
             <div class="team-email">${esc(m.email || '')}</div>
             ${m.company ? `<div class="team-company">${esc(m.company)}</div>` : ''}
+            ${managerToggleHtml}
           </div>
           ${roleControlHtml}
           ${removeBtnHtml}
@@ -974,7 +993,16 @@
     if(e.key === 'Escape' && rolePanel.classList.contains('open')) closeRolePanel();
   });
 
-  window.__teamActions = { updateRole, openRolePanel, selectRole, confirmRemoveMember };
+  function toggleCanManageTeam(uid, currentlyOn){
+    if(!currentUserIsAdmin) return;
+    usersCollection.doc(uid).set({ canManageTeam: !currentlyOn }, {merge:true}).then(()=>{
+      showToast(!currentlyOn ? 'They can now remove team members.' : 'That permission has been removed.');
+    }).catch(err=>{
+      showToast('Could not update permission: ' + friendlyErr(err), true);
+    });
+  }
+
+  window.__teamActions = { updateRole, openRolePanel, selectRole, confirmRemoveMember, toggleCanManageTeam };
 
   // ---------- Remove team member ----------
   let removeMemberUid = null;
@@ -983,7 +1011,7 @@
   const removeMemberCancelBtn = document.getElementById('removeMemberCancelBtn');
   const removeMemberConfirmBtn = document.getElementById('removeMemberConfirmBtn');
   function confirmRemoveMember(uid, name){
-    if(!currentUserIsAdmin) return;
+    if(!currentUserIsAdmin && !currentUserCanManageTeam) return;
     removeMemberUid = uid;
     removeMemberBody.textContent = `Remove ${name} from your team? They'll lose access to all boards and leads. This cannot be undone.`;
     removeMemberOverlay.style.display = 'flex';
@@ -1181,6 +1209,7 @@
           const data = doc.exists ? doc.data() : {};
           if(data.language && data.language !== currentLang) setLanguage(data.language);
           currentUserIsAdmin = data.isAdmin === true;
+          currentUserCanManageTeam = data.canManageTeam === true;
           initTeamSync();
           loadOrgPlan();
         }).catch(()=>{
