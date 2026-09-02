@@ -964,33 +964,9 @@
     <div id="cardOnFileDisplay"></div>
     <div class="payment-security-note">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <span data-i18n="cardSecurityNote">We only store your card's last 4 digits and expiry date. Your full card number and CVC are never saved.</span>
+      <span>Card details are handled entirely by Stripe — we never see or store your full card number.</span>
     </div>
-    <button type="button" class="btn" id="togglePaymentFormBtn" data-i18n="updatePaymentMethod">Update payment method</button>
-    <form id="paymentForm" style="display:none;margin-top:20px">
-      <div class="field">
-        <label for="cardholderName" data-i18n="cardholderNameLabel">Name on card</label>
-        <input id="cardholderName" type="text" autocomplete="cc-name" placeholder="Gabriele Oizaz">
-      </div>
-      <div class="field">
-        <label for="cardNumber" data-i18n="cardNumberLabel">Card number</label>
-        <input id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19">
-      </div>
-      <div class="billing-form-grid">
-        <div class="field">
-          <label for="cardExpiry" data-i18n="cardExpiryLabel">Expiry (MM/YY)</label>
-          <input id="cardExpiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5">
-        </div>
-        <div class="field">
-          <label for="cardCvc" data-i18n="cardCvcLabel">CVC</label>
-          <input id="cardCvc" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4">
-        </div>
-      </div>
-      <div class="billing-form-footer">
-        <button type="button" class="btn" id="cancelPaymentFormBtn" data-i18n="cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="savePaymentBtn" data-i18n="savePaymentMethod">Save payment method</button>
-      </div>
-    </form>
+    <button type="button" class="btn" id="managePaymentBtn">Manage payment method</button>
   </div>
 
   <footer data-i18n="footerText">© 2026 by PalaTrack BV. - All Rights Reserved</footer>
@@ -1020,6 +996,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
 
@@ -1249,6 +1226,7 @@
   let workspaceId = null;
   let workspaceRef = null;
   let auth = null;
+  let cloudFunctions = null;
   let firebaseConnected = false;
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
@@ -1256,6 +1234,7 @@
       db = firebase.firestore();
       auth = firebase.auth();
       auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+      cloudFunctions = firebase.functions();
       firebaseConnected = true;
     }
   }catch(e){
@@ -1362,8 +1341,8 @@
       document.getElementById(id).disabled = !currentUserIsAdmin;
     });
     document.getElementById('saveBillingBtn').style.display = currentUserIsAdmin ? '' : 'none';
-    const togglePayBtn = document.getElementById('togglePaymentFormBtn');
-    if(togglePayBtn) togglePayBtn.style.display = currentUserIsAdmin ? '' : 'none';
+    const managePayBtn = document.getElementById('managePaymentBtn');
+    if(managePayBtn) managePayBtn.style.display = currentUserIsAdmin ? '' : 'none';
   }
 
   function prefersReducedMotion(){
@@ -1484,22 +1463,52 @@
     }catch(e){}
   }
 
+  function handleStripeReturn(){
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    if(!checkout) return;
+    if(checkout === 'success'){
+      showToast("Payment received — activating your plan now...");
+    } else if(checkout === 'cancelled'){
+      showToast('Checkout cancelled — no charge was made.', true);
+    }
+    params.delete('checkout');
+    const newSearch = params.toString();
+    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+    window.history.replaceState({}, '', newUrl);
+  }
+
   function switchPlan(plan){
     if(!currentUserIsAdmin || !billingDocRef) return;
     if(plan === currentPlan) return;
+
+    if(plan === 'free'){
+      // Downgrading must actually cancel the real Stripe subscription too,
+      // not just flip a local flag — otherwise the person keeps being charged.
+      cancelActiveSubscription();
+      return;
+    }
+
+    if(!cloudFunctions){
+      showToast('Not connected. Please try again later.', true);
+      return;
+    }
     const cardEl = document.getElementById('planCard' + plan.charAt(0).toUpperCase() + plan.slice(1));
-    billingDocRef.set({plan: plan}, {merge:true}).then(()=>{
-      showToast(`${t('planSwitchedTo')} ${t(PLAN_INFO[plan].nameKey) || PLAN_INFO[plan].name}`);
-      if(!prefersReducedMotion()){
-        if(plan === 'premium' || plan === 'growth'){
-          firePremiumCelebration();
-        } else if(cardEl){
-          fireConfetti(cardEl);
+    if(cardEl){
+      const btn = cardEl.querySelector('.pricing-cta');
+      if(btn) btn.disabled = true;
+    }
+    cloudFunctions.httpsCallable('createCheckoutSession')({ plan, siteUrl: window.location.origin, locale: currentLang })
+      .then(result=>{
+        window.location.href = result.data.url;
+      })
+      .catch(err=>{
+        showToast(t('couldNotSavePlan') + ' ' + friendlyErr(err), true);
+        if(cardEl){
+          const btn = cardEl.querySelector('.pricing-cta');
+          if(btn) btn.disabled = false;
         }
-      }
-    }).catch(err=>{
-      showToast(t('couldNotSavePlan') + ' ' + friendlyErr(err), true);
-    });
+      });
   }
   window.__billingActions = { switchPlan };
 
@@ -1508,6 +1517,18 @@
   const cancelPlanModal = document.getElementById('cancelPlanModal');
   const cancelPlanCancelBtn = document.getElementById('cancelPlanCancelBtn');
   const cancelPlanConfirmBtn = document.getElementById('cancelPlanConfirmBtn');
+  function cancelActiveSubscription(){
+    if(!currentUserIsAdmin || !cloudFunctions) return;
+    if(cancelPlanConfirmBtn) cancelPlanConfirmBtn.disabled = true;
+    cloudFunctions.httpsCallable('cancelSubscription')({}).then(()=>{
+      if(cancelPlanModal) cancelPlanModal.style.display = 'none';
+      showToast(t('planCancelledToast'), true);
+    }).catch(err=>{
+      showToast(t('couldNotSavePlan') + ' ' + friendlyErr(err), true);
+    }).finally(()=>{
+      if(cancelPlanConfirmBtn) cancelPlanConfirmBtn.disabled = false;
+    });
+  }
   if(cancelPlanBtn){
     cancelPlanBtn.addEventListener('click', ()=>{
       if(!currentUserIsAdmin) return;
@@ -1521,19 +1542,9 @@
     cancelPlanModal.addEventListener('click', (e)=>{ if(e.target === cancelPlanModal) cancelPlanModal.style.display = 'none'; });
   }
   if(cancelPlanConfirmBtn){
-    cancelPlanConfirmBtn.addEventListener('click', ()=>{
-      if(!currentUserIsAdmin || !billingDocRef) return;
-      cancelPlanConfirmBtn.disabled = true;
-      billingDocRef.set({plan: 'free'}, {merge:true}).then(()=>{
-        cancelPlanModal.style.display = 'none';
-        showToast(t('planCancelledToast'), true);
-      }).catch(err=>{
-        showToast(t('couldNotSavePlan') + ' ' + friendlyErr(err), true);
-      }).finally(()=>{
-        cancelPlanConfirmBtn.disabled = false;
-      });
-    });
+    cancelPlanConfirmBtn.addEventListener('click', cancelActiveSubscription);
   }
+
 
   // ---------- Pricing card tilt + spotlight ----------
   document.querySelectorAll('.pricing-card').forEach(card=>{
@@ -1706,73 +1717,23 @@
     setupCardInteractions();
   }
 
-  const cardNumberInput = document.getElementById('cardNumber');
-  cardNumberInput.addEventListener('input', (e)=>{
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
-    e.target.value = digits.replace(/(.{4})/g, '$1 ').trim();
-  });
-  const cardExpiryInput = document.getElementById('cardExpiry');
-  cardExpiryInput.addEventListener('input', (e)=>{
-    let digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-    if(digits.length >= 3) digits = digits.slice(0,2) + '/' + digits.slice(2);
-    e.target.value = digits;
-  });
-  const cardCvcInput = document.getElementById('cardCvc');
-  cardCvcInput.addEventListener('input', (e)=>{
-    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
-  });
-
-  const paymentForm = document.getElementById('paymentForm');
-  const togglePaymentFormBtn = document.getElementById('togglePaymentFormBtn');
-  function clearPaymentForm(){
-    document.getElementById('cardholderName').value = '';
-    cardNumberInput.value = '';
-    cardExpiryInput.value = '';
-    cardCvcInput.value = '';
-  }
-  togglePaymentFormBtn.addEventListener('click', ()=>{
-    if(!currentUserIsAdmin) return;
-    paymentForm.style.display = paymentForm.style.display === 'none' ? '' : 'none';
-  });
-  document.getElementById('cancelPaymentFormBtn').addEventListener('click', ()=>{
-    clearPaymentForm();
-    paymentForm.style.display = 'none';
-  });
-  paymentForm.addEventListener('submit', (e)=>{
-    e.preventDefault();
-    if(!currentUserIsAdmin || !billingDocRef) return;
-    const name = document.getElementById('cardholderName').value.trim();
-    const digits = cardNumberInput.value.replace(/\D/g, '');
-    const expiry = cardExpiryInput.value;
-    const [expMonth, expYear] = expiry.split('/');
-    if(digits.length < 12 || digits.length > 19){
-      showToast(t('invalidCardNumber'), true);
-      return;
-    }
-    if(!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2){
-      showToast(t('invalidCardExpiry'), true);
-      return;
-    }
-    const last4 = digits.slice(-4);
-    const brand = detectCardBrand(digits);
-    const btn = document.getElementById('savePaymentBtn');
-    btn.disabled = true;
-    billingDocRef.set({
-      cardholderName: name,
-      cardLast4: last4,
-      cardBrand: brand,
-      cardExpiryMonth: expMonth,
-      cardExpiryYear: expYear
-    }, {merge:true}).then(()=>{
-      showToast(t('paymentMethodSaved'));
-      clearPaymentForm();
-      paymentForm.style.display = 'none';
-    }).catch(err=>{
-      showToast(t('couldNotSavePayment') + ' ' + friendlyErr(err), true);
-    }).finally(()=>{
-      btn.disabled = false;
+  const managePaymentBtn = document.getElementById('managePaymentBtn');
+  if(managePaymentBtn){
+    managePaymentBtn.addEventListener('click', ()=>{
+      if(!currentUserIsAdmin || !cloudFunctions) return;
+      managePaymentBtn.disabled = true;
+      cloudFunctions.httpsCallable('createPortalSession')({ siteUrl: window.location.origin, locale: currentLang })
+        .then(result=>{
+          window.location.href = result.data.url;
+        })
+        .catch(err=>{
+          showToast(t('couldNotSavePayment') + ' ' + friendlyErr(err), true);
+        })
+        .finally(()=>{
+          managePaymentBtn.disabled = false;
+        });
     });
-  });
+  }
 
   // ---------- Authentication gate ----------
   const pageLoader = document.getElementById('pageLoader');
@@ -1900,6 +1861,7 @@
         }).catch(()=>{
           initBillingSync();
         });
+        handleStripeReturn();
       } else {
         appRoot.style.display = 'none';
         loginScreen.style.display = 'flex';
