@@ -171,6 +171,23 @@
     display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;
     font-family:'Sora',sans-serif;font-weight:700;font-size:14px;color:var(--ink);
   }
+  .chat-thread-header-text{flex:1;}
+  .chat-bg-btn{
+    background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:15px;
+    padding:6px 9px;flex-shrink:0;transition:background .15s, transform .1s;
+  }
+  .chat-bg-btn:hover{background:var(--c-hover-bg, var(--c-blue-tint2));}
+  .chat-bg-btn:active{transform:scale(0.92);}
+  .chat-bg-picker{
+    display:flex;gap:10px;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;
+    animation:chat-thread-fade .15s ease;
+  }
+  .chat-bg-swatch{
+    width:34px;height:34px;border-radius:9px;cursor:pointer;border:2px solid transparent;
+    transition:transform .12s, border-color .12s;flex-shrink:0;
+  }
+  .chat-bg-swatch:hover{transform:scale(1.08);}
+  .chat-bg-swatch.selected{border-color:var(--teal);}
   .chat-back-btn{
     display:none;background:none;border:none;cursor:pointer;font-size:16px;color:var(--slate);padding:2px;
   }
@@ -179,7 +196,34 @@
     display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;flex-shrink:0;overflow:hidden;
   }
   .chat-thread-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
-  .chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;}
+  .chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;transition:background .2s;}
+  .chat-messages.bg-default{background:var(--c-blue-tint2, #F6FAFE);}
+  .chat-messages.bg-sunset{background:linear-gradient(135deg,#FFD9A0,#FF9D6C,#EE6C9B);}
+  .chat-messages.bg-ocean{background:linear-gradient(135deg,#8ED1FC,#4A90E2,#1B59A5);}
+  .chat-messages.bg-forest{background:linear-gradient(135deg,#B6E3C6,#4F9D69,#1F5C4F);}
+  .chat-messages.bg-lavender{background:linear-gradient(135deg,#E5D4F5,#B091DD,#7A4FB5);}
+  .chat-messages.bg-dark{background:linear-gradient(135deg,#2C3444,#1B2430);}
+  .chat-messages.bg-dots{background:#F3F8FD url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22><circle cx=%222%22 cy=%222%22 r=%221.2%22 fill=%22%23c9d7e8%22/></svg>');}
+  .chat-messages.bg-sunset .chat-msg.theirs, .chat-messages.bg-ocean .chat-msg.theirs,
+  .chat-messages.bg-forest .chat-msg.theirs, .chat-messages.bg-lavender .chat-msg.theirs,
+  .chat-messages.bg-dark .chat-msg.theirs{background:rgba(255,255,255,0.9);color:var(--ink);}
+
+  .chat-emoji-btn{
+    background:none;border:none;font-size:19px;cursor:pointer;flex-shrink:0;padding:0 2px;
+    transition:transform .12s;
+  }
+  .chat-emoji-btn:hover{transform:scale(1.15);}
+  .chat-emoji-btn:active{transform:scale(0.92);}
+  .chat-emoji-picker{
+    display:grid;grid-template-columns:repeat(8, 1fr);gap:4px;padding:12px;
+    border-top:1px solid var(--border);max-height:160px;overflow-y:auto;flex-shrink:0;
+    background:var(--panel);animation:chat-thread-fade .15s ease;
+  }
+  .chat-emoji-picker button{
+    background:none;border:none;font-size:20px;cursor:pointer;padding:6px;border-radius:8px;
+    transition:background .1s, transform .1s;
+  }
+  .chat-emoji-picker button:hover{background:var(--c-hover-bg, var(--c-blue-tint2));transform:scale(1.15);}
   .chat-msg{
     max-width:70%;font-size:13.5px;line-height:1.5;padding:9px 12px;border-radius:13px;
     white-space:pre-wrap;word-break:break-word;transition:transform .15s;
@@ -690,9 +734,21 @@
             <div id="chatHeaderTitle">Chat</div>
             <div class="status-line" id="chatTypingStatus"></div>
           </div>
+          <button type="button" class="chat-bg-btn" id="chatBgBtn" title="Change chat background">🎨</button>
+        </div>
+        <div class="chat-bg-picker" id="chatBgPicker" style="display:none">
+          <div class="chat-bg-swatch" data-bg="default" style="background:var(--c-blue-tint2, #F6FAFE)"></div>
+          <div class="chat-bg-swatch" data-bg="sunset" style="background:linear-gradient(135deg,#FFD9A0,#FF9D6C,#EE6C9B)"></div>
+          <div class="chat-bg-swatch" data-bg="ocean" style="background:linear-gradient(135deg,#8ED1FC,#4A90E2,#1B59A5)"></div>
+          <div class="chat-bg-swatch" data-bg="forest" style="background:linear-gradient(135deg,#B6E3C6,#4F9D69,#1F5C4F)"></div>
+          <div class="chat-bg-swatch" data-bg="lavender" style="background:linear-gradient(135deg,#E5D4F5,#B091DD,#7A4FB5)"></div>
+          <div class="chat-bg-swatch" data-bg="dark" style="background:linear-gradient(135deg,#2C3444,#1B2430)"></div>
+          <div class="chat-bg-swatch" data-bg="dots" style="background:#F3F8FD url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22><circle cx=%222%22 cy=%222%22 r=%221.2%22 fill=%22%23c9d7e8%22/></svg>')"></div>
         </div>
         <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-emoji-picker" id="chatEmojiPicker" style="display:none"></div>
         <div class="chat-input-row">
+          <button type="button" class="chat-emoji-btn" id="chatEmojiBtn" title="Add emoji">😊</button>
           <textarea id="chatInput" rows="1" placeholder="Type a message..."></textarea>
           <button type="button" class="chat-send-btn" id="chatSendBtn">➤</button>
         </div>
@@ -1221,6 +1277,66 @@
   }
 
   window.__chatActions = { openChatThread };
+
+  // ---------- Emoji picker ----------
+  const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','🙄','😴','😭','😡','🥳','😎','🤩',
+    '👍','👎','👏','🙌','🙏','💪','👌','✌️','🤝','👋','💯','🔥','✨','🎉','❤️','💙',
+    '💚','💛','💜','🖤','🤍','💔','😢','😅','😆','😇','🤗','😬','😳','🥺','😏','😴',
+    '🚀','⭐','☀️','🌧️','☕','🍕','🎂','🏆','✅','❌','⚡','💡','📌','📎','⏰','📅'];
+  const chatEmojiPicker = document.getElementById('chatEmojiPicker');
+  chatEmojiPicker.innerHTML = CHAT_EMOJIS.map(e=>`<button type="button">${e}</button>`).join('');
+  chatEmojiPicker.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const input = document.getElementById('chatInput');
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    input.value = input.value.slice(0, start) + btn.textContent + input.value.slice(end);
+    const newPos = start + btn.textContent.length;
+    input.focus();
+    input.setSelectionRange(newPos, newPos);
+  });
+  document.getElementById('chatEmojiBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('chatBgPicker').style.display = 'none';
+    chatEmojiPicker.style.display = chatEmojiPicker.style.display === 'none' ? 'grid' : 'none';
+  });
+  document.addEventListener('click', (e)=>{
+    if(chatEmojiPicker.style.display !== 'none' && !chatEmojiPicker.contains(e.target) && e.target.id !== 'chatEmojiBtn'){
+      chatEmojiPicker.style.display = 'none';
+    }
+  });
+
+  // ---------- Chat background customization ----------
+  const CHAT_BG_STORAGE_KEY = 'palatrack_chat_bg';
+  function applyChatBackground(bgName){
+    const container = document.getElementById('chatMessages');
+    container.className = container.className.replace(/\bbg-\S+/g, '').trim();
+    container.classList.add('chat-messages', 'bg-' + bgName);
+    document.querySelectorAll('.chat-bg-swatch').forEach(sw=>{
+      sw.classList.toggle('selected', sw.dataset.bg === bgName);
+    });
+  }
+  function loadChatBackground(){
+    let saved = 'default';
+    try{ saved = window.localStorage.getItem(CHAT_BG_STORAGE_KEY) || 'default'; }catch(e){}
+    applyChatBackground(saved);
+  }
+  document.getElementById('chatBgBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    chatEmojiPicker.style.display = 'none';
+    const picker = document.getElementById('chatBgPicker');
+    picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+  });
+  document.getElementById('chatBgPicker').addEventListener('click', (e)=>{
+    const swatch = e.target.closest('.chat-bg-swatch');
+    if(!swatch) return;
+    const bgName = swatch.dataset.bg;
+    applyChatBackground(bgName);
+    try{ window.localStorage.setItem(CHAT_BG_STORAGE_KEY, bgName); }catch(e){}
+    document.getElementById('chatBgPicker').style.display = 'none';
+  });
+  loadChatBackground();
 
   document.getElementById('chatBackBtn').addEventListener('click', closeChatThread);
   document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
