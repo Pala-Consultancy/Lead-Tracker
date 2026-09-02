@@ -2088,10 +2088,13 @@
   let justLoggedIn = false;
     function resolveWorkspace(user){
       return db.collection('userDirectory').doc(user.uid).get().then(doc=>{
+        console.log('[INVITE DEBUG] boards.html resolveWorkspace for uid=', user.uid, 'doc.exists=', doc.exists, 'data=', doc.exists ? JSON.stringify(doc.data()) : null);
         if(doc.exists && doc.data().workspaceId){
           workspaceId = doc.data().workspaceId;
+          console.log('[INVITE DEBUG] Using existing workspaceId:', workspaceId);
           return;
         }
+        console.warn('[INVITE DEBUG] No workspaceId found — falling back to creating a brand new workspace!');
         // No workspace pointer found (e.g. a pre-existing account from before workspaces existed).
         // Give them their own new, isolated workspace rather than leaving them stuck.
         const newWorkspaceRef = db.collection('workspaces').doc();

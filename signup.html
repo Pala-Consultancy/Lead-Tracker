@@ -1008,21 +1008,28 @@
     if(inviteMode){
       submitBtn.disabled = true;
       submitBtn.textContent = t('creatingAccount');
+      console.log('[INVITE DEBUG] Starting invite signup. inviteMode =', JSON.stringify(inviteMode));
       const inviteRef = db.collection('workspaces').doc(inviteMode.workspaceId).collection('invites').doc(inviteMode.inviteId);
       auth.createUserWithEmailAndPassword(email, password).then(cred=>{
+        console.log('[INVITE DEBUG] Auth account created. uid =', cred.user.uid);
         return cred.user.updateProfile({displayName: name}).then(()=>{
+          console.log('[INVITE DEBUG] Writing member doc at workspaces/' + inviteMode.workspaceId + '/members/' + cred.user.uid);
           return db.collection('workspaces').doc(inviteMode.workspaceId).collection('members').doc(cred.user.uid).set({
             name, company: '', isAdmin: false, language: currentLang,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
         }).then(()=>{
+          console.log('[INVITE DEBUG] Member doc written successfully. Now writing userDirectory/' + cred.user.uid + ' -> workspaceId:', inviteMode.workspaceId);
           return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: inviteMode.workspaceId});
         }).then(()=>{
+          console.log('[INVITE DEBUG] userDirectory written successfully. Marking invite used.');
           return inviteRef.update({used: true});
         });
       }).then(()=>{
+        console.log('[INVITE DEBUG] All writes succeeded. Redirecting to boards.html now.');
         location.href = 'boards.html';
       }).catch(err=>{
+        console.error('[INVITE DEBUG] FAILED at some step:', err);
         reportSignupError(err);
         submitBtn.disabled = false;
         submitBtn.textContent = t('createAccountBtn');
