@@ -946,6 +946,20 @@
     transition:background .15s;
   }
   .notif-item:hover{background:var(--c-hover-bg);}
+  .notif-select-checkbox{flex-shrink:0;margin-top:14px;width:15px;height:15px;cursor:pointer;}
+  .notif-read-toolbar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 14px;border-bottom:1px solid var(--border);
+  }
+  .notif-select-all-label{
+    display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate-light);cursor:pointer;
+  }
+  .notif-remove-selected-btn{
+    font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--border);
+    background:var(--panel);color:var(--red);cursor:pointer;transition:background .15s;
+  }
+  .notif-remove-selected-btn:hover:not(:disabled){background:var(--c-red-bg);}
+  .notif-remove-selected-btn:disabled{opacity:.4;cursor:not-allowed;}
   .notif-item-main{
     display:flex;gap:12px;align-items:flex-start;text-align:left;flex:1;min-width:0;
     border:none;background:none;font-family:'Inter',sans-serif;cursor:pointer;padding:0;
@@ -3637,6 +3651,39 @@
     renderNotifPanel();
   }
 
+  function getRemovedNotifStorageKey(){
+    const uid = (auth.currentUser && auth.currentUser.uid) || 'anon';
+    return `palatrack_removed_notifs_${uid}`;
+  }
+  function loadRemovedNotifIds(){
+    try{
+      const raw = localStorage.getItem(getRemovedNotifStorageKey());
+      return new Set(raw ? JSON.parse(raw) : []);
+    }catch(e){ return new Set(); }
+  }
+  function saveRemovedNotifIds(set){
+    try{ localStorage.setItem(getRemovedNotifStorageKey(), JSON.stringify(Array.from(set))); }catch(e){}
+  }
+
+  let selectedForRemoval = new Set();
+  function toggleNotifSelect(id, checked){
+    if(checked) selectedForRemoval.add(id); else selectedForRemoval.delete(id);
+    renderNotifPanel();
+  }
+  function toggleSelectAllRead(checked, ids){
+    if(checked){ ids.forEach(id=>selectedForRemoval.add(id)); }
+    else { ids.forEach(id=>selectedForRemoval.delete(id)); }
+    renderNotifPanel();
+  }
+  function removeSelectedNotifs(){
+    if(selectedForRemoval.size === 0) return;
+    const removedIds = loadRemovedNotifIds();
+    selectedForRemoval.forEach(id=>removedIds.add(id));
+    saveRemovedNotifIds(removedIds);
+    selectedForRemoval.clear();
+    renderNotifPanel();
+  }
+
   function computeFollowUpReminders(){
     const now = Date.now();
     const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
@@ -3714,7 +3761,8 @@
 
   let notifActiveFilter = 'all';
   function renderNotifPanel(){
-    const allReminders = computeAllReminders();
+    const removedIds = loadRemovedNotifIds();
+    const allReminders = computeAllReminders().filter(r=>!removedIds.has(r.id));
     const readIds = loadReadNotifIds();
     const unreadReminders = allReminders.filter(r=>!readIds.has(r.id));
     const readReminders = allReminders.filter(r=>readIds.has(r.id));
@@ -3745,7 +3793,21 @@
       body.innerHTML = `<div class="notif-empty"><div class="notif-empty-icon">🔍</div>${t('noFollowUpsNeeded')}</div>`;
       return;
     }
-    body.innerHTML = reminders.map(r=>{
+
+    let toolbarHtml = '';
+    if(showingRead){
+      const allIds = readReminders.map(r=>r.id);
+      const allSelected = allIds.length > 0 && allIds.every(id=>selectedForRemoval.has(id));
+      toolbarHtml = `<div class="notif-read-toolbar">
+        <label class="notif-select-all-label">
+          <input type="checkbox" ${allSelected?'checked':''} onchange='window.__leadActions.toggleSelectAllRead(this.checked, ${JSON.stringify(allIds)})'>
+          Select all
+        </label>
+        <button class="notif-remove-selected-btn" ${selectedForRemoval.size===0?'disabled':''} onclick="window.__leadActions.removeSelectedNotifs()">Remove selected${selectedForRemoval.size>0?` (${selectedForRemoval.size})`:''}</button>
+      </div>`;
+    }
+
+    body.innerHTML = toolbarHtml + reminders.map(r=>{
       const l = r.lead;
       let message, icon, tagLabel, tagClass;
       if(r.type === 'stalenew'){
@@ -3773,7 +3835,11 @@
       }
       const readBtnTitle = showingRead ? 'Mark as unread' : 'Mark as read';
       const readBtnIcon = showingRead ? '↺' : '✓';
+      const selectCheckbox = showingRead
+        ? `<input type="checkbox" class="notif-select-checkbox" ${selectedForRemoval.has(r.id)?'checked':''} onchange="window.__leadActions.toggleNotifSelect('${r.id}', this.checked)">`
+        : '';
       return `<div class="notif-item">
+        ${selectCheckbox}
         <button class="notif-item-main" onclick="window.__leadActions.editLead('${l.id}');window.__leadActions.closeNotifPanel();">
           <div class="notif-item-icon">${icon}</div>
           <div>
@@ -3790,6 +3856,7 @@
   document.querySelectorAll('.notif-filter-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       notifActiveFilter = btn.dataset.notifFilter;
+      selectedForRemoval.clear();
       document.querySelectorAll('.notif-filter-btn').forEach(b=>b.classList.toggle('active', b === btn));
       renderNotifPanel();
     });
@@ -4007,7 +4074,8 @@
   window.__leadActions = {
     editLead, deleteLead, updateStatus, toggleOutreach, cycleCallOutcome, toggleMonthGroup, openDrawer,
     toggleSelect, copyToClipboard, filterBySource, filterByStatus, filterByTemperature, filterByActivePipeline, filterByMonthKey, clearAllFilters,
-    closeNotifPanel, setTempField, restoreLead, permanentlyDeleteLead, toggleNotifRead
+    closeNotifPanel, setTempField, restoreLead, permanentlyDeleteLead, toggleNotifRead,
+    toggleNotifSelect, toggleSelectAllRead, removeSelectedNotifs
   };
 
   // ---------- Alexandre AI Assistant ----------
