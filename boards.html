@@ -1905,7 +1905,55 @@
       });
     });
 
-    // ---------- Team invites now land on signup.html, not here ----------
+    // ---------- Complete email-link sign-in (for invited team members) ----------
+    // This must fully finish (member doc + userDirectory written) BEFORE the normal
+    // resolveWorkspace() logic below ever runs for this user — otherwise the two
+    // race to decide "does this person have a workspace yet?" and resolveWorkspace's
+    // own fallback can win that race, silently creating a brand new, wrong workspace
+    // and making the invited person its sole admin instead of joining the real one.
+    let inviteLinkCompletionPromise = Promise.resolve();
+    if(auth.isSignInWithEmailLink(window.location.href)){
+      const emailForLink = window.localStorage.getItem('emailForSignIn');
+      const inviteWorkspaceId = new URLSearchParams(window.location.search).get('workspace');
+      function completeEmailLinkSignIn(email){
+        inviteLinkCompletionPromise = auth.signInWithEmailLink(email, window.location.href).then(cred=>{
+          window.localStorage.removeItem('emailForSignIn');
+          window.history.replaceState({}, document.title, window.location.pathname);
+          if(inviteWorkspaceId){
+            return db.collection('userDirectory').doc(cred.user.uid).get().then(doc=>{
+              if(doc.exists && doc.data().workspaceId) return; // already set up, don't overwrite
+              return db.collection('workspaces').doc(inviteWorkspaceId).collection('members').doc(cred.user.uid).set({
+                name: '', company: '', isAdmin: false, language: currentLang,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              }).then(()=>{
+                return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: inviteWorkspaceId});
+              });
+            });
+          }
+        }).then(()=>{
+          showToast('Welcome! Your account is ready.');
+        }).catch(err=>{
+          showToast('Could not complete sign-in: ' + friendlyErr(err), true);
+        });
+        return inviteLinkCompletionPromise;
+      }
+      if(emailForLink){
+        completeEmailLinkSignIn(emailForLink);
+      } else {
+        const emailConfirmOverlay = document.getElementById('emailConfirmOverlay');
+        const emailConfirmInput = document.getElementById('emailConfirmInput');
+        emailConfirmOverlay.style.display = 'flex';
+        document.getElementById('emailConfirmSubmitBtn').addEventListener('click', ()=>{
+          const email = emailConfirmInput.value.trim();
+          if(!email) return;
+          emailConfirmOverlay.style.display = 'none';
+          completeEmailLinkSignIn(email);
+        });
+        emailConfirmInput.addEventListener('keydown', (e)=>{
+          if(e.key === 'Enter') document.getElementById('emailConfirmSubmitBtn').click();
+        });
+      }
+    }
 
     function ensureUserProfileExists(user){
       membersCollection.doc(user.uid).get().then(doc=>{
@@ -2088,13 +2136,10 @@
   let justLoggedIn = false;
     function resolveWorkspace(user){
       return db.collection('userDirectory').doc(user.uid).get().then(doc=>{
-        console.log('[INVITE DEBUG] boards.html resolveWorkspace for uid=', user.uid, 'doc.exists=', doc.exists, 'data=', doc.exists ? JSON.stringify(doc.data()) : null);
         if(doc.exists && doc.data().workspaceId){
           workspaceId = doc.data().workspaceId;
-          console.log('[INVITE DEBUG] Using existing workspaceId:', workspaceId);
           return;
         }
-        console.warn('[INVITE DEBUG] No workspaceId found — falling back to creating a brand new workspace!');
         // No workspace pointer found (e.g. a pre-existing account from before workspaces existed).
         // Give them their own new, isolated workspace rather than leaving them stuck.
         const newWorkspaceRef = db.collection('workspaces').doc();
@@ -2130,7 +2175,7 @@
         currentUserPill.textContent = '';
         clearLoginError();
         document.getElementById('loginForm').reset();
-        workspaceReadyPromise = resolveWorkspace(user).then(()=>{
+        workspaceReadyPromise = inviteLinkCompletionPromise.then(()=>resolveWorkspace(user)).then(()=>{
           ensureUserProfileExists(user);
           loadSettingsUserInfo(user);
           loadOrgPlan();
