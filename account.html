@@ -364,6 +364,26 @@
   }
   #accountForm input:focus, #accountForm select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
   #accountForm input:disabled{background:var(--c-neutral-bg);color:var(--slate-light);cursor:not-allowed;}
+
+  .password-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:22px 28px;margin-top:20px;
+  }
+  .password-card h3{font-family:'Sora',sans-serif;font-size:15px;color:var(--ink);margin:0 0 6px;}
+  .password-card p{font-size:13px;color:var(--slate);line-height:1.55;margin:0 0 14px;}
+  #passwordForm{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  #passwordForm .field{display:flex;flex-direction:column;gap:6px;}
+  #passwordForm .field:first-child{grid-column:1/-1;}
+  #passwordForm label{
+    font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
+  }
+  #passwordForm input{
+    font-family:'Inter',sans-serif;font-size:14.5px;padding:11px 13px;
+    border:1px solid var(--border);border-radius:7px;background:var(--c-blue-tint2);color:var(--ink);width:100%;
+    box-sizing:border-box;
+  }
+  #passwordForm input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,0.14);}
+  #passwordForm .form-actions{grid-column:1/-1;}
   /* ---------- Interactive language dropdown ---------- */
   .lang-dropdown{position:relative;}
   .lang-dropdown-btn{
@@ -637,6 +657,28 @@
 
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" id="saveAccountBtn" data-i18n="saveChanges">Save changes</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="password-card" id="passwordCard">
+    <h3>Change password</h3>
+    <p>Update the password you use to sign in to PalaTrack.</p>
+    <form id="passwordForm">
+      <div class="field">
+        <label for="currentPasswordField">Current password</label>
+        <input id="currentPasswordField" type="password" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label for="newPasswordField">New password</label>
+        <input id="newPasswordField" type="password" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+      </div>
+      <div class="field">
+        <label for="confirmNewPasswordField">Confirm new password</label>
+        <input id="confirmNewPasswordField" type="password" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="savePasswordBtn">Update password</button>
       </div>
     </form>
   </div>
@@ -1009,6 +1051,7 @@
     const code = err && err.code;
     if(code === "permission-denied") return "You do not have permission to do that.";
     if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
+    if(code === "auth/wrong-password" || code === "auth/invalid-credential") return "That current password isn't correct.";
     return "Please try again.";
   }
 
@@ -1405,6 +1448,41 @@
       pendingEmail = null;
     }).catch(err=>{
       showToast(t('couldNotConfirm') + ' ' + friendlyErr(err), true);
+    });
+  });
+
+  // ---------- Change password ----------
+  document.getElementById('passwordForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const user = auth.currentUser;
+    if(!user) return;
+    const currentPassword = document.getElementById('currentPasswordField').value;
+    const newPassword = document.getElementById('newPasswordField').value;
+    const confirmNewPassword = document.getElementById('confirmNewPasswordField').value;
+    const savePasswordBtn = document.getElementById('savePasswordBtn');
+
+    if(newPassword !== confirmNewPassword){
+      showToast('New passwords do not match.', true);
+      return;
+    }
+    if(newPassword.length < 6){
+      showToast('New password must be at least 6 characters.', true);
+      return;
+    }
+
+    savePasswordBtn.disabled = true;
+    savePasswordBtn.textContent = 'Updating...';
+    const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+    user.reauthenticateWithCredential(credential).then(()=>{
+      return user.updatePassword(newPassword);
+    }).then(()=>{
+      showToast('Your password has been updated.');
+      document.getElementById('passwordForm').reset();
+    }).catch(err=>{
+      showToast('Could not update password: ' + friendlyErr(err), true);
+    }).finally(()=>{
+      savePasswordBtn.disabled = false;
+      savePasswordBtn.textContent = 'Update password';
     });
   });
 
