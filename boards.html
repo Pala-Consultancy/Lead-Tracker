@@ -735,22 +735,6 @@
       <button type="submit" class="btn-primary" data-i18n="sendResetLink">Send reset link</button>
       <button type="button" class="login-forgot-link" id="backToSignInLink" data-i18n="backToSignIn">← Back to sign in</button>
     </form>
-    <form id="inviteAcceptForm" style="display:none">
-      <div class="login-sub">You've been invited to join a team on PalaTrack. Create your account to get started.</div>
-      <div class="field">
-        <label for="inviteAcceptEmail">Email</label>
-        <input id="inviteAcceptEmail" type="email" disabled>
-      </div>
-      <div class="field">
-        <label for="inviteAcceptName">Your name</label>
-        <input id="inviteAcceptName" type="text" placeholder="Jane Doe" required>
-      </div>
-      <div class="field">
-        <label for="inviteAcceptPassword">Choose a password</label>
-        <input id="inviteAcceptPassword" type="password" placeholder="••••••••" required minlength="6">
-      </div>
-      <button type="submit" class="btn-primary" id="inviteAcceptSubmitBtn">Create account &amp; join team</button>
-    </form>
     <div class="login-footer-note">
       <span data-i18n="noAccountNote">Don't have an account?</span>
       <a href="signup.html" class="login-forgot-link" style="display:inline;padding:0 0 0 4px" data-i18n="createAccountLink">Create one</a>
@@ -1921,64 +1905,7 @@
       });
     });
 
-    // ---------- Accept a team invite (create a real account, no auto sign-in) ----------
-    (function(){
-      const params = new URLSearchParams(window.location.search);
-      const inviteId = params.get('invite');
-      const inviteWorkspaceId = params.get('workspace');
-      const inviteEmail = params.get('email');
-      if(!inviteId || !inviteWorkspaceId || !inviteEmail) return;
-
-      const loginFormEl2 = document.getElementById('loginForm');
-      const inviteForm = document.getElementById('inviteAcceptForm');
-      const inviteEmailField = document.getElementById('inviteAcceptEmail');
-      const inviteNameField = document.getElementById('inviteAcceptName');
-      const invitePasswordField = document.getElementById('inviteAcceptPassword');
-      const inviteSubmitBtn = document.getElementById('inviteAcceptSubmitBtn');
-
-      const inviteRef = db.collection('workspaces').doc(inviteWorkspaceId).collection('invites').doc(inviteId);
-      inviteRef.get().then(doc=>{
-        const data = doc.exists ? doc.data() : null;
-        if(!data || data.used || data.email !== inviteEmail){
-          showLoginError('This invite link is invalid or has already been used.');
-          return;
-        }
-        loginFormEl2.style.display = 'none';
-        inviteForm.style.display = '';
-        inviteEmailField.value = inviteEmail;
-        const backHome = document.getElementById('loginBackHome');
-        if(backHome) backHome.style.display = 'none';
-
-        inviteForm.addEventListener('submit', (e)=>{
-          e.preventDefault();
-          const name = inviteNameField.value.trim();
-          const password = invitePasswordField.value;
-          if(!name || password.length < 6) return;
-          inviteSubmitBtn.disabled = true;
-          inviteSubmitBtn.textContent = 'Creating your account...';
-          auth.createUserWithEmailAndPassword(inviteEmail, password).then(cred=>{
-            return cred.user.updateProfile({displayName: name}).then(()=>{
-              return db.collection('workspaces').doc(inviteWorkspaceId).collection('members').doc(cred.user.uid).set({
-                name, company: '', isAdmin: false, language: currentLang,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-              });
-            }).then(()=>{
-              return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: inviteWorkspaceId});
-            }).then(()=>{
-              return inviteRef.update({used: true});
-            });
-          }).then(()=>{
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }).catch(err=>{
-            showLoginError('Could not create your account: ' + friendlyErr(err));
-            inviteSubmitBtn.disabled = false;
-            inviteSubmitBtn.textContent = 'Create account & join team';
-          });
-        });
-      }).catch(()=>{
-        showLoginError('This invite link is invalid or has already been used.');
-      });
-    })();
+    // ---------- Team invites now land on signup.html, not here ----------
 
     function ensureUserProfileExists(user){
       membersCollection.doc(user.uid).get().then(doc=>{

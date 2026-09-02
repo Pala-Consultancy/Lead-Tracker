@@ -797,6 +797,45 @@
     loginError.textContent = '';
   }
 
+  // ---------- Team invite detection ----------
+  // When someone arrives via a team invite link, they join an existing workspace
+  // instead of creating a new company — so the Company field goes away and email
+  // is locked to the address that was actually invited.
+  let inviteMode = null;
+  function applyInviteModeUI(){
+    const subEl = document.querySelector('.login-sub');
+    if(subEl) subEl.textContent = "You've been invited to join a team on PalaTrack. Create your account to get started.";
+    const companyField = document.getElementById('signupCompany');
+    const companyWrap = companyField ? companyField.closest('.field') : null;
+    if(companyWrap) companyWrap.style.display = 'none';
+    if(companyField) companyField.required = false;
+    const emailField = document.getElementById('signupEmail');
+    emailField.value = inviteMode.email;
+    emailField.disabled = true;
+    const googleBtn = document.getElementById('googleSignupBtn');
+    if(googleBtn) googleBtn.style.display = 'none';
+    const divider = document.querySelector('.login-divider');
+    if(divider) divider.style.display = 'none';
+  }
+  (function checkForInvite(){
+    const params = new URLSearchParams(window.location.search);
+    const inviteId = params.get('invite');
+    const inviteWorkspaceId = params.get('workspace');
+    const inviteEmail = params.get('email');
+    if(!inviteId || !inviteWorkspaceId || !inviteEmail || !firebaseConnected) return;
+    db.collection('workspaces').doc(inviteWorkspaceId).collection('invites').doc(inviteId).get().then(doc=>{
+      const data = doc.exists ? doc.data() : null;
+      if(!data || data.used || data.email !== inviteEmail){
+        showLoginError('This invite link is invalid or has already been used.');
+        return;
+      }
+      inviteMode = {inviteId, workspaceId: inviteWorkspaceId, email: inviteEmail};
+      applyInviteModeUI();
+    }).catch(()=>{
+      showLoginError('This invite link is invalid or has already been used.');
+    });
+  })();
+
   if(!firebaseConnected){
     document.getElementById('pageLoader').style.display = 'none';
     const screen = document.getElementById('loginScreen');
@@ -939,19 +978,45 @@
     const firstName = document.getElementById('signupFirstName').value.trim();
     const lastName = document.getElementById('signupLastName').value.trim();
     const name = `${firstName} ${lastName}`.trim();
-    const company = document.getElementById('signupCompany').value.trim();
-    const email = document.getElementById('signupEmail').value.trim();
+    const email = inviteMode ? inviteMode.email : document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
     const submitBtn = e.target.querySelector('button[type="submit"]');
     clearLoginError();
 
+    if(!firebaseConnected){
+      showLoginError('Could not connect. Please try again later.');
+      return;
+    }
+
+    if(inviteMode){
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('creatingAccount');
+      const inviteRef = db.collection('workspaces').doc(inviteMode.workspaceId).collection('invites').doc(inviteMode.inviteId);
+      auth.createUserWithEmailAndPassword(email, password).then(cred=>{
+        return cred.user.updateProfile({displayName: name}).then(()=>{
+          return db.collection('workspaces').doc(inviteMode.workspaceId).collection('members').doc(cred.user.uid).set({
+            name, company: '', isAdmin: false, language: currentLang,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }).then(()=>{
+          return db.collection('userDirectory').doc(cred.user.uid).set({workspaceId: inviteMode.workspaceId});
+        }).then(()=>{
+          return inviteRef.update({used: true});
+        });
+      }).then(()=>{
+        location.href = 'boards.html';
+      }).catch(err=>{
+        reportSignupError(err);
+        submitBtn.disabled = false;
+        submitBtn.textContent = t('createAccountBtn');
+      });
+      return;
+    }
+
+    const company = document.getElementById('signupCompany').value.trim();
     const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     if(!slug){
       showLoginError(t('pleaseEnterCompany'));
-      return;
-    }
-    if(!firebaseConnected){
-      showLoginError('Could not connect. Please try again later.');
       return;
     }
 
