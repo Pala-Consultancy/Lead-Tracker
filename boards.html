@@ -419,6 +419,9 @@
   }
   .board-action-btn:hover{background:var(--c-blue-bg);color:var(--teal);}
   .board-action-btn.danger:hover{background:var(--c-red-bg);color:var(--red);}
+  .board-action-btn.pin-btn.pinned{color:var(--c-amber-fg);}
+  .board-action-btn.pin-btn.pinned:hover{background:var(--c-amber-bg);color:var(--c-amber-fg);}
+  .board-card.pinned::before{background:linear-gradient(90deg, var(--c-amber-fg), var(--c-amber-light));}
 
   .icon-btn-settings{font-size:15px;padding:9px 12px;}
 
@@ -1346,6 +1349,7 @@
   let unsubscribeBoards = null;
 
   function renderBoards(boards){
+    boards = boards.slice().sort((a, b) => (b.pinned?1:0) - (a.pinned?1:0));
     const container = document.getElementById('boardsContainer');
     if(boards.length === 0){
       container.innerHTML = `<div class="empty-state">
@@ -1370,8 +1374,9 @@
             </span>`
           : '';
         const tagsHTML = (plainTags.length || sourceTagHTML) ? `<div class="board-tags">${plainTags.map(tag=>`<span class="board-tag">${esc(tag)}</span>`).join('')}${sourceTagHTML}</div>` : '';
-        return `<a class="board-card" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
+        return `<a class="board-card${b.pinned?' pinned':''}" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
           <div class="board-card-actions">
+            <button class="board-action-btn pin-btn${b.pinned?' pinned':''}" title="${b.pinned?'Unpin board':'Pin board'}" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.pinBoard('${b.id}', ${b.pinned?'true':'false'})">📌</button>
             <button class="board-action-btn" title="Edit board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.editBoard('${b.id}')">✎</button>
             <button class="board-action-btn danger" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
           </div>
@@ -1510,7 +1515,13 @@
     });
   });
 
-  window.__boardActions = { deleteBoard, editBoard: openEditBoard };
+  function pinBoard(boardId, currentlyPinned){
+    boardsCollection.doc(boardId).update({ pinned: !currentlyPinned }).catch(err=>{
+      showToast('Could not update board. ' + friendlyErr(err), true);
+    });
+  }
+
+  window.__boardActions = { deleteBoard, editBoard: openEditBoard, pinBoard };
 
   let currentBoardCount = 0;
   let orgPlan = 'growth';
