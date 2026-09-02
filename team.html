@@ -1046,17 +1046,9 @@
     const sendBtn = document.getElementById('inviteSendBtn');
     sendBtn.disabled = true;
     sendBtn.textContent = t('sending');
-    workspaceRef.collection('invites').add({
-      email, invitedBy: currentUid, used: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(inviteRef=>{
-      const boardsPath = location.pathname.substring(0, location.pathname.lastIndexOf('/')+1);
-      const redirectUrl = location.origin + boardsPath + 'signup.html'
-        + '?invite=' + encodeURIComponent(inviteRef.id)
-        + '&workspace=' + encodeURIComponent(workspaceId)
-        + '&email=' + encodeURIComponent(email);
-      return auth.sendSignInLinkToEmail(email, { url: redirectUrl, handleCodeInApp: true });
-    }).then(()=>{
+    const boardsPath = location.pathname.substring(0, location.pathname.lastIndexOf('/')+1);
+    const redirectUrl = location.origin + boardsPath + 'boards.html?workspace=' + encodeURIComponent(workspaceId);
+    auth.sendSignInLinkToEmail(email, { url: redirectUrl, handleCodeInApp: true }).then(()=>{
       showToast(`${t('inviteSentTo')} ${email}`);
       document.getElementById('inviteEmail').value = '';
     }).catch(err=>{
