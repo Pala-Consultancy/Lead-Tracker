@@ -816,13 +816,25 @@
     if(googleBtn) googleBtn.style.display = 'none';
     const divider = document.querySelector('.login-divider');
     if(divider) divider.style.display = 'none';
+    const submitBtn = document.querySelector('#signupForm button[type="submit"]');
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = t('createAccountBtn'); }
   }
   (function checkForInvite(){
     const params = new URLSearchParams(window.location.search);
     const inviteId = params.get('invite');
     const inviteWorkspaceId = params.get('workspace');
     const inviteEmail = params.get('email');
-    if(!inviteId || !inviteWorkspaceId || !inviteEmail || !firebaseConnected) return;
+    if(!inviteId || !inviteWorkspaceId || !inviteEmail) return;
+    // Lock the form the instant we know this is an invite link, so it can never be
+    // submitted as a normal "create a new company" signup before we've confirmed
+    // the invite is real — that race is what used to put people in their own
+    // brand-new workspace instead of joining the one they were invited to.
+    const submitBtn = document.querySelector('#signupForm button[type="submit"]');
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Checking invite...'; }
+    if(!firebaseConnected){
+      showLoginError('Could not connect. Please try again later.');
+      return;
+    }
     db.collection('workspaces').doc(inviteWorkspaceId).collection('invites').doc(inviteId).get().then(doc=>{
       const data = doc.exists ? doc.data() : null;
       if(!data || data.used || data.email !== inviteEmail){
@@ -975,6 +987,11 @@
 
   document.getElementById('signupForm').addEventListener('submit', (e)=>{
     e.preventDefault();
+    const urlHasInvite = new URLSearchParams(window.location.search).has('invite');
+    if(urlHasInvite && !inviteMode){
+      showLoginError('Still verifying your invite — please wait a moment and try again.');
+      return;
+    }
     const firstName = document.getElementById('signupFirstName').value.trim();
     const lastName = document.getElementById('signupLastName').value.trim();
     const name = `${firstName} ${lastName}`.trim();
