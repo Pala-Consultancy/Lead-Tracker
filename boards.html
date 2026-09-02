@@ -430,6 +430,32 @@
   }
 
   .icon-btn-settings{font-size:15px;padding:9px 12px;}
+  .notif-badge{
+    position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;
+    background:var(--c-red-fg, #C0392B);color:#fff;border-radius:20px;
+    font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;line-height:1;
+  }
+  .chat-notify-stack{
+    position:fixed;top:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:10px;
+  }
+  .chat-notify-card{
+    display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:12px 14px;box-shadow:0 16px 40px rgba(27,36,48,0.22);
+    max-width:320px;cursor:pointer;animation:chat-notify-in .25s ease;transition:transform .15s;
+  }
+  .chat-notify-card:hover{transform:translateY(-2px);}
+  .chat-notify-card.leaving{animation:chat-notify-out .2s ease forwards;}
+  @keyframes chat-notify-in{from{opacity:0;transform:translateX(24px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes chat-notify-out{from{opacity:1;}to{opacity:0;transform:translateX(24px);}}
+  .chat-notify-avatar{
+    width:36px;height:36px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;overflow:hidden;
+  }
+  .chat-notify-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  .chat-notify-text{min-width:0;}
+  .chat-notify-name{font-size:13px;font-weight:700;color:var(--ink);}
+  .chat-notify-preview{font-size:12px;color:var(--slate-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 
   /* ---------- Settings slide panel ---------- */
   .settings-overlay{
@@ -733,6 +759,7 @@
     <div class="header-right">
       <span class="live-badge"><span class="live-dot"></span><span data-i18n="realtimeUpdates">Real-time updates</span></span>
       <span class="count-pill" id="currentUserPill" style="display:none"></span>
+      <a class="btn icon-btn-settings" id="chatBtn" href="chat.html" title="Team chat" style="position:relative">💬<span class="notif-badge" id="chatBadge" style="display:none">0</span></a>
       <button class="btn icon-btn-settings" id="settingsBtn" title="Settings">⚙️</button>
     </div>
   </header>
@@ -973,6 +1000,7 @@
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
+<div class="chat-notify-stack" id="chatNotifyStack"></div>
 
 <div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
   <div class="confirm-modal">
@@ -1327,6 +1355,13 @@
   let db = null;
   let boardsCollection = null;
   let membersCollection = null;
+  let directMessagesCollection = null;
+  let teamMembersMap = {};
+  let chatConversationsMap = {};
+  let previousConversationTimestamps = {};
+  let chatToastInitialized = false;
+  let unsubscribeTeamMembersMap = null;
+  let unsubscribeChatConversationsBoards = null;
   let workspaceId = null;
   let workspaceRef = null;
   let auth = null;
@@ -1601,6 +1636,83 @@
   }
 
   window.__boardActions = { deleteBoard, editBoard: openEditBoard, pinBoard };
+
+  // ---------- Team Chat (badge + new-message popup) ----------
+  function initials(name, email){
+    const source = (name || email || '?').trim();
+    const parts = source.split(/\s+/);
+    return parts.length >= 2 ? (parts[0][0]+parts[1][0]).toUpperCase() : source.slice(0,2).toUpperCase();
+  }
+  function getConversationId(uidA, uidB){
+    return [uidA, uidB].sort().join('_');
+  }
+  function isConversationUnread(conv, myUid){
+    if(!conv || !conv.lastMessage) return false;
+    if(conv.lastMessage.senderId === myUid) return false;
+    const lastReadAt = conv.lastReadAt && conv.lastReadAt[myUid];
+    if(!lastReadAt || typeof lastReadAt.toMillis !== 'function') return true;
+    if(!conv.lastMessage.createdAt || typeof conv.lastMessage.createdAt.toMillis !== 'function') return false;
+    return conv.lastMessage.createdAt.toMillis() > lastReadAt.toMillis();
+  }
+  function updateChatBadge(){
+    const myUid = auth.currentUser && auth.currentUser.uid;
+    const badge = document.getElementById('chatBadge');
+    if(!badge) return;
+    const unreadCount = Object.values(chatConversationsMap).filter(c=>isConversationUnread(c, myUid)).length;
+    if(unreadCount > 0){
+      badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  function showChatNotification(senderId, text){
+    const stack = document.getElementById('chatNotifyStack');
+    if(!stack) return;
+    const sender = teamMembersMap[senderId] || {};
+    const card = document.createElement('div');
+    card.className = 'chat-notify-card';
+    card.innerHTML = `
+      <div class="chat-notify-avatar">${sender.photoURL ? `<img src="${sender.photoURL}" alt="">` : esc(initials(sender.name, sender.email))}</div>
+      <div class="chat-notify-text">
+        <div class="chat-notify-name">${esc(sender.name || sender.email || 'New message')}</div>
+        <div class="chat-notify-preview">${esc(text)}</div>
+      </div>`;
+    card.addEventListener('click', ()=>{ location.href = 'chat.html'; });
+    stack.appendChild(card);
+    setTimeout(()=>{
+      card.classList.add('leaving');
+      setTimeout(()=>card.remove(), 220);
+    }, 6000);
+  }
+  function initTeamChatSync(){
+    if(!membersCollection || !directMessagesCollection) return;
+    const myUid = auth.currentUser && auth.currentUser.uid;
+    if(unsubscribeTeamMembersMap) unsubscribeTeamMembersMap();
+    unsubscribeTeamMembersMap = membersCollection.onSnapshot(snap=>{
+      teamMembersMap = {};
+      snap.docs.forEach(d=>{ teamMembersMap[d.id] = d.data(); });
+    });
+    if(unsubscribeChatConversationsBoards) unsubscribeChatConversationsBoards();
+    unsubscribeChatConversationsBoards = directMessagesCollection.where('participants', 'array-contains', myUid).onSnapshot(snap=>{
+      chatConversationsMap = {};
+      snap.docs.forEach(d=>{
+        const conv = {id:d.id, ...d.data()};
+        chatConversationsMap[d.id] = conv;
+        const lastMsg = conv.lastMessage;
+        if(lastMsg && lastMsg.senderId !== myUid && lastMsg.createdAt && typeof lastMsg.createdAt.toMillis === 'function'){
+          const ts = lastMsg.createdAt.toMillis();
+          const prevTs = previousConversationTimestamps[d.id] || 0;
+          if(chatToastInitialized && ts > prevTs){
+            showChatNotification(lastMsg.senderId, lastMsg.text || '');
+          }
+          previousConversationTimestamps[d.id] = ts;
+        }
+      });
+      updateChatBadge();
+      chatToastInitialized = true;
+    });
+  }
 
   let currentBoardCount = 0;
   let orgPlan = 'growth';
@@ -2019,6 +2131,7 @@
         workspaceRef = db.collection('workspaces').doc(workspaceId);
         boardsCollection = workspaceRef.collection('boards');
         membersCollection = workspaceRef.collection('members');
+        directMessagesCollection = workspaceRef.collection('directMessages');
       });
     }
 
@@ -2039,6 +2152,7 @@
           loadSettingsUserInfo(user);
           loadOrgPlan();
           initBoardsSync();
+          initTeamChatSync();
         }).catch(err=>{
           console.error('Could not resolve workspace', err);
           showLoginError('Something went wrong setting up your account. Please try again or contact support.');

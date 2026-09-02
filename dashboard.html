@@ -910,6 +910,26 @@
     font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;
     font-family:'IBM Plex Mono',monospace;line-height:1;
   }
+  .chat-notify-stack{
+    position:fixed;top:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:10px;
+  }
+  .chat-notify-card{
+    display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:12px 14px;box-shadow:0 16px 40px rgba(27,36,48,0.22);
+    max-width:320px;cursor:pointer;animation:chat-notify-in .25s ease;transition:transform .15s;
+  }
+  .chat-notify-card:hover{transform:translateY(-2px);}
+  .chat-notify-card.leaving{animation:chat-notify-out .2s ease forwards;}
+  @keyframes chat-notify-in{from{opacity:0;transform:translateX(24px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes chat-notify-out{from{opacity:1;}to{opacity:0;transform:translateX(24px);}}
+  .chat-notify-avatar{
+    width:36px;height:36px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;overflow:hidden;
+  }
+  .chat-notify-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  .chat-notify-text{min-width:0;}
+  .chat-notify-name{font-size:13px;font-weight:700;color:var(--ink);}
+  .chat-notify-preview{font-size:12px;color:var(--slate-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
   .notif-overlay{
     position:fixed;inset:0;background:rgba(27,36,48,0.25);z-index:95;
     opacity:0;visibility:hidden;transition:opacity .2s ease;
@@ -2000,6 +2020,7 @@
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
+<div class="chat-notify-stack" id="chatNotifyStack"></div>
 
 <div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
   <div class="confirm-modal">
@@ -2460,6 +2481,10 @@
   let directMessagesCollection = null;
   let chatConversationsMap = {};
   let unsubscribeChatConversations = null;
+  let teamMembersMap = {};
+  let unsubscribeTeamMembersMap = null;
+  let previousConversationTimestamps = {};
+  let chatToastInitialized = false;
   let workspaceId = null;
   let workspaceRef = null;
   let auth = null;
@@ -4083,19 +4108,57 @@
     toggleNotifSelect, toggleSelectAllRead, removeSelectedNotifs
   };
 
-  // ---------- Team Chat (badge only — actual chatting lives on chat.html) ----------
+  // ---------- Team Chat (badge + new-message popup — actual chatting lives on chat.html) ----------
   function getConversationId(uidA, uidB){
     return [uidA, uidB].sort().join('_');
+  }
+
+  function showChatNotification(senderId, text){
+    const stack = document.getElementById('chatNotifyStack');
+    if(!stack) return;
+    const sender = teamMembersMap[senderId] || {};
+    const card = document.createElement('div');
+    card.className = 'chat-notify-card';
+    card.innerHTML = `
+      <div class="chat-notify-avatar">${sender.photoURL ? `<img src="${sender.photoURL}" alt="">` : esc(initials(sender.name || sender.email))}</div>
+      <div class="chat-notify-text">
+        <div class="chat-notify-name">${esc(sender.name || sender.email || 'New message')}</div>
+        <div class="chat-notify-preview">${esc(text)}</div>
+      </div>`;
+    card.addEventListener('click', ()=>{ location.href = 'chat.html'; });
+    stack.appendChild(card);
+    setTimeout(()=>{
+      card.classList.add('leaving');
+      setTimeout(()=>card.remove(), 220);
+    }, 6000);
   }
 
   function initTeamChatSync(){
     if(!membersCollection || !directMessagesCollection) return;
     const myUid = auth.currentUser && auth.currentUser.uid;
+    if(unsubscribeTeamMembersMap) unsubscribeTeamMembersMap();
+    unsubscribeTeamMembersMap = membersCollection.onSnapshot(snap=>{
+      teamMembersMap = {};
+      snap.docs.forEach(d=>{ teamMembersMap[d.id] = d.data(); });
+    });
     if(unsubscribeChatConversations) unsubscribeChatConversations();
     unsubscribeChatConversations = directMessagesCollection.where('participants', 'array-contains', myUid).onSnapshot(snap=>{
       chatConversationsMap = {};
-      snap.docs.forEach(d=>{ chatConversationsMap[d.id] = {id:d.id, ...d.data()}; });
+      snap.docs.forEach(d=>{
+        const conv = {id:d.id, ...d.data()};
+        chatConversationsMap[d.id] = conv;
+        const lastMsg = conv.lastMessage;
+        if(lastMsg && lastMsg.senderId !== myUid && lastMsg.createdAt && typeof lastMsg.createdAt.toMillis === 'function'){
+          const ts = lastMsg.createdAt.toMillis();
+          const prevTs = previousConversationTimestamps[d.id] || 0;
+          if(chatToastInitialized && ts > prevTs){
+            showChatNotification(lastMsg.senderId, lastMsg.text || '');
+          }
+          previousConversationTimestamps[d.id] = ts;
+        }
+      });
       updateChatBadge();
+      chatToastInitialized = true;
     });
   }
 
