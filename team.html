@@ -356,6 +356,24 @@
   .empty-state h3{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin:0 0 6px;}
   .empty-state p{font-size:13px;margin:0;}
 
+  .confirm-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.55);z-index:500;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .confirm-modal{
+    background:var(--panel);border-radius:16px;padding:28px 26px;max-width:400px;width:100%;
+    box-shadow:0 30px 60px rgba(0,0,0,0.3);text-align:center;
+  }
+  .confirm-modal-icon{
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;
+  }
+  .confirm-modal-icon.warn{background:var(--c-red-bg);color:var(--c-red-fg);}
+  .confirm-modal-icon svg{width:22px;height:22px;}
+  .confirm-modal h3{font-family:'Sora',sans-serif;font-size:17px;margin:0 0 8px;}
+  .confirm-modal p{font-size:13.5px;color:var(--slate);line-height:1.55;margin:0 0 20px;white-space:pre-line;}
+  .confirm-modal-actions{display:flex;gap:10px;justify-content:center;}
+
   .toast-stack{
     position:fixed;bottom:20px;right:20px;z-index:80;display:flex;flex-direction:column;gap:8px;
   }
@@ -524,6 +542,18 @@
 
 <div class="toast-stack" id="toastStack"></div>
 
+<div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+    <h3 data-i18n="idleWarningTitle">Are you still there?</h3>
+    <p data-i18n="idleWarningBody">You've been inactive for a while. For your security, you'll be automatically signed out soon.</p>
+    <div style="font-family:'Sora',sans-serif;font-size:32px;font-weight:800;color:var(--c-red-fg);margin-bottom:18px;" id="idleCountdownDisplay">50</div>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn btn-primary" id="stayLoggedInBtn" data-i18n="stayInPalaTrack" style="width:100%;">Stay in PalaTrack</button>
+    </div>
+  </div>
+</div>
+
 <div class="role-overlay" id="roleOverlay"></div>
 <div class="role-panel" id="rolePanel">
   <div class="role-panel-header">
@@ -548,7 +578,7 @@
       backToBoards:"← Back to boards", inviteTeamMemberTitle:"Invite a team member",
       inviteTeamMemberSub:"They'll get an email with a link to join — no password needed to get started.",
       emailAddress:"Email address", sendInvite:"Send invite", sending:"Sending...",
-      teamMembers:"Team members", footerText:"© 2026 by PalaTrack BV. - All Rights Reserved",
+      teamMembers:"Team members", footerText:"© 2026 by PalaTrack BV. - All Rights Reserved", idleWarningTitle:"Are you still there?", idleWarningBody:"You've been inactive for a while. For your security, you'll be automatically signed out soon.", stayInPalaTrack:"Stay in PalaTrack",
       noTeamMembersYet:"No team members yet", inviteFirstTeammate:"Invite your first teammate using the form above.",
       noRoleSet:"No role set", roleUpdated:"Role updated", couldNotUpdateRole:"Could not update role:",
       inviteSentTo:"Invite sent to", couldNotSendInvite:"Could not send invite:",
@@ -566,7 +596,7 @@
       backToBoards:"← Terug naar boards", inviteTeamMemberTitle:"Nodig een teamlid uit",
       inviteTeamMemberSub:"Ze ontvangen een e-mail met een link om deel te nemen — geen wachtwoord nodig om te beginnen.",
       emailAddress:"E-mailadres", sendInvite:"Uitnodiging versturen", sending:"Versturen...",
-      teamMembers:"Teamleden", footerText:"© 2026 by PalaTrack BV. - Alle rechten voorbehouden",
+      teamMembers:"Teamleden", footerText:"© 2026 by PalaTrack BV. - Alle rechten voorbehouden", idleWarningTitle:"Ben je er nog?", idleWarningBody:"Je bent al een tijdje inactief. Voor je veiligheid word je binnenkort automatisch uitgelogd.", stayInPalaTrack:"Blijf in PalaTrack",
       noTeamMembersYet:"Nog geen teamleden", inviteFirstTeammate:"Nodig hierboven je eerste teamlid uit.",
       noRoleSet:"Geen rol ingesteld", roleUpdated:"Rol bijgewerkt", couldNotUpdateRole:"Kon rol niet bijwerken:",
       inviteSentTo:"Uitnodiging verstuurd naar", couldNotSendInvite:"Kon uitnodiging niet versturen:",
@@ -584,7 +614,7 @@
       backToBoards:"← Retour aux tableaux", inviteTeamMemberTitle:"Inviter un membre de l'équipe",
       inviteTeamMemberSub:"Ils recevront un e-mail avec un lien pour rejoindre — aucun mot de passe requis pour commencer.",
       emailAddress:"Adresse e-mail", sendInvite:"Envoyer l'invitation", sending:"Envoi en cours...",
-      teamMembers:"Membres de l'équipe", footerText:"© 2026 by PalaTrack BV. - Tous droits réservés",
+      teamMembers:"Membres de l'équipe", footerText:"© 2026 by PalaTrack BV. - Tous droits réservés", idleWarningTitle:"Êtes-vous toujours là ?", idleWarningBody:"Vous êtes inactif depuis un moment. Pour votre sécurité, vous serez bientôt déconnecté automatiquement.", stayInPalaTrack:"Rester dans PalaTrack",
       noTeamMembersYet:"Aucun membre pour l'instant", inviteFirstTeammate:"Invitez votre premier collègue ci-dessus.",
       noRoleSet:"Aucun rôle défini", roleUpdated:"Rôle mis à jour", couldNotUpdateRole:"Impossible de mettre à jour le rôle :",
       inviteSentTo:"Invitation envoyée à", couldNotSendInvite:"Impossible d'envoyer l'invitation :",
@@ -602,7 +632,7 @@
       backToBoards:"← Zurück zu den Boards", inviteTeamMemberTitle:"Teammitglied einladen",
       inviteTeamMemberSub:"Sie erhalten eine E-Mail mit einem Link zum Beitreten — kein Passwort für den Start nötig.",
       emailAddress:"E-Mail-Adresse", sendInvite:"Einladung senden", sending:"Wird gesendet...",
-      teamMembers:"Teammitglieder", footerText:"© 2026 by PalaTrack BV. - Alle Rechte vorbehalten",
+      teamMembers:"Teammitglieder", footerText:"© 2026 by PalaTrack BV. - Alle Rechte vorbehalten", idleWarningTitle:"Bist du noch da?", idleWarningBody:"Du warst eine Weile inaktiv. Aus Sicherheitsgründen wirst du bald automatisch abgemeldet.", stayInPalaTrack:"In PalaTrack bleiben",
       noTeamMembersYet:"Noch keine Teammitglieder", inviteFirstTeammate:"Lade oben dein erstes Teammitglied ein.",
       noRoleSet:"Keine Rolle festgelegt", roleUpdated:"Rolle aktualisiert", couldNotUpdateRole:"Rolle konnte nicht aktualisiert werden:",
       inviteSentTo:"Einladung gesendet an", couldNotSendInvite:"Einladung konnte nicht gesendet werden:",
@@ -620,7 +650,7 @@
       backToBoards:"← Volver a los tableros", inviteTeamMemberTitle:"Invitar a un miembro del equipo",
       inviteTeamMemberSub:"Recibirán un correo con un enlace para unirse — no se necesita contraseña para empezar.",
       emailAddress:"Correo electrónico", sendInvite:"Enviar invitación", sending:"Enviando...",
-      teamMembers:"Miembros del equipo", footerText:"© 2026 by PalaTrack BV. - Todos los derechos reservados",
+      teamMembers:"Miembros del equipo", footerText:"© 2026 by PalaTrack BV. - Todos los derechos reservados", idleWarningTitle:"¿Sigues ahí?", idleWarningBody:"Has estado inactivo un tiempo. Por tu seguridad, se cerrará tu sesión automáticamente pronto.", stayInPalaTrack:"Permanecer en PalaTrack",
       noTeamMembersYet:"Aún no hay miembros", inviteFirstTeammate:"Invita a tu primer compañero arriba.",
       noRoleSet:"Sin rol asignado", roleUpdated:"Rol actualizado", couldNotUpdateRole:"No se pudo actualizar el rol:",
       inviteSentTo:"Invitación enviada a", couldNotSendInvite:"No se pudo enviar la invitación:",
@@ -640,7 +670,7 @@
       backToBoards:"← Torna alle bacheche", inviteTeamMemberTitle:"Invita un membro del team",
       inviteTeamMemberSub:"Riceveranno un'e-mail con un link per unirsi — nessuna password necessaria per iniziare.",
       emailAddress:"Indirizzo e-mail", sendInvite:"Invia invito", sending:"Invio in corso...",
-      teamMembers:"Membri del team", footerText:"© 2026 by PalaTrack BV. - Tutti i diritti riservati",
+      teamMembers:"Membri del team", footerText:"© 2026 by PalaTrack BV. - Tutti i diritti riservati", idleWarningTitle:"Sei ancora lì?", idleWarningBody:"Sei stato inattivo per un po'. Per la tua sicurezza, verrai disconnesso automaticamente a breve.", stayInPalaTrack:"Resta in PalaTrack",
       noTeamMembersYet:"Ancora nessun membro del team", inviteFirstTeammate:"Invita il tuo primo collega qui sopra.",
       noRoleSet:"Nessun ruolo impostato", roleUpdated:"Ruolo aggiornato", couldNotUpdateRole:"Impossibile aggiornare il ruolo:",
       inviteSentTo:"Invito inviato a", couldNotSendInvite:"Impossibile inviare l'invito:",
@@ -659,7 +689,7 @@
       backToBoards:"← Voltar aos quadros", inviteTeamMemberTitle:"Convidar um membro da equipa",
       inviteTeamMemberSub:"Receberão um e-mail com um link para aderir — sem necessidade de palavra-passe para começar.",
       emailAddress:"Endereço de e-mail", sendInvite:"Enviar convite", sending:"A enviar...",
-      teamMembers:"Membros da equipa", footerText:"© 2026 by PalaTrack BV. - Todos os direitos reservados",
+      teamMembers:"Membros da equipa", footerText:"© 2026 by PalaTrack BV. - Todos os direitos reservados", idleWarningTitle:"Ainda está aí?", idleWarningBody:"Está inativo há algum tempo. Para sua segurança, a sua sessão será terminada automaticamente em breve.", stayInPalaTrack:"Continuar no PalaTrack",
       noTeamMembersYet:"Ainda não há membros na equipa", inviteFirstTeammate:"Convide o seu primeiro colega acima.",
       noRoleSet:"Nenhuma função definida", roleUpdated:"Função atualizada", couldNotUpdateRole:"Não foi possível atualizar a função:",
       inviteSentTo:"Convite enviado para", couldNotSendInvite:"Não foi possível enviar o convite:",
@@ -678,7 +708,7 @@
       backToBoards:"← Wróć do tablic", inviteTeamMemberTitle:"Zaproś członka zespołu",
       inviteTeamMemberSub:"Otrzymają e-mail z linkiem do dołączenia — bez hasła na początek.",
       emailAddress:"Adres e-mail", sendInvite:"Wyślij zaproszenie", sending:"Wysyłanie...",
-      teamMembers:"Członkowie zespołu", footerText:"© 2026 by PalaTrack BV. - Wszelkie prawa zastrzeżone",
+      teamMembers:"Członkowie zespołu", footerText:"© 2026 by PalaTrack BV. - Wszelkie prawa zastrzeżone", idleWarningTitle:"Czy nadal tam jesteś?", idleWarningBody:"Byłeś nieaktywny przez chwilę. Dla Twojego bezpieczeństwa zostaniesz wkrótce automatycznie wylogowany.", stayInPalaTrack:"Zostań w PalaTrack",
       noTeamMembersYet:"Brak członków zespołu", inviteFirstTeammate:"Zaproś pierwszego współpracownika powyżej.",
       noRoleSet:"Brak ustawionej roli", roleUpdated:"Rola zaktualizowana", couldNotUpdateRole:"Nie udało się zaktualizować roli:",
       inviteSentTo:"Zaproszenie wysłane do", couldNotSendInvite:"Nie udało się wysłać zaproszenia:",
@@ -697,7 +727,7 @@
       backToBoards:"← 返回看板", inviteTeamMemberTitle:"邀请团队成员",
       inviteTeamMemberSub:"对方将收到一封带有加入链接的邮件——无需密码即可开始。",
       emailAddress:"电子邮箱地址", sendInvite:"发送邀请", sending:"发送中...",
-      teamMembers:"团队成员", footerText:"© 2026 by PalaTrack BV. - 保留所有权利",
+      teamMembers:"团队成员", footerText:"© 2026 by PalaTrack BV. - 保留所有权利", idleWarningTitle:"您还在吗？", idleWarningBody:"您已经有一段时间没有操作了。为了您的账户安全，系统将很快自动将您退出登录。", stayInPalaTrack:"留在PalaTrack",
       noTeamMembersYet:"暂无团队成员", inviteFirstTeammate:"在上方邀请您的第一位同事。",
       noRoleSet:"未设置角色", roleUpdated:"角色已更新", couldNotUpdateRole:"无法更新角色：",
       inviteSentTo:"邀请已发送至", couldNotSendInvite:"无法发送邀请：",
@@ -770,6 +800,7 @@
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       auth = firebase.auth();
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
       firebaseConnected = true;
     }
   }catch(e){
@@ -1111,6 +1142,52 @@
       }
     });
   }
+
+  // ---------- Idle timeout ----------
+  (function(){
+    var IDLE_LIMIT_MS = 10 * 60 * 1000;
+    var COUNTDOWN_SECONDS = 50;
+    var idleTimer = null;
+    var countdownInterval = null;
+    var countdownRemaining = COUNTDOWN_SECONDS;
+    var idleOverlay = document.getElementById('idleWarningOverlay');
+    var countdownDisplay = document.getElementById('idleCountdownDisplay');
+    if(!idleOverlay || !countdownDisplay) return;
+
+    function resetIdleTimer(){
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(showIdleWarning, IDLE_LIMIT_MS);
+    }
+    function showIdleWarning(){
+      if(!auth || !auth.currentUser){ resetIdleTimer(); return; }
+      countdownRemaining = COUNTDOWN_SECONDS;
+      countdownDisplay.textContent = countdownRemaining;
+      idleOverlay.style.display = 'flex';
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(function(){
+        countdownRemaining--;
+        countdownDisplay.textContent = countdownRemaining;
+        if(countdownRemaining <= 0){
+          clearInterval(countdownInterval);
+          idleOverlay.style.display = 'none';
+          if(auth) auth.signOut();
+        }
+      }, 1000);
+    }
+    function stayLoggedIn(){
+      clearInterval(countdownInterval);
+      idleOverlay.style.display = 'none';
+      resetIdleTimer();
+    }
+    var stayBtn = document.getElementById('stayLoggedInBtn');
+    if(stayBtn) stayBtn.addEventListener('click', stayLoggedIn);
+    ['mousemove','keydown','click','scroll','touchstart'].forEach(function(evt){
+      document.addEventListener(evt, function(){
+        if(idleOverlay.style.display !== 'flex') resetIdleTimer();
+      }, {passive:true});
+    });
+    resetIdleTimer();
+  })();
 })();
 </script>
 <script>

@@ -894,6 +894,18 @@
 
 <div class="toast-stack" id="toastStack"></div>
 
+<div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+    <h3 data-i18n="idleWarningTitle">Are you still there?</h3>
+    <p data-i18n="idleWarningBody">You've been inactive for a while. For your security, you'll be automatically signed out soon.</p>
+    <div style="font-family:'Sora',sans-serif;font-size:32px;font-weight:800;color:var(--c-red-fg);margin-bottom:18px;" id="idleCountdownDisplay">50</div>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn btn-primary" id="stayLoggedInBtn" data-i18n="stayInPalaTrack" style="width:100%;">Stay in PalaTrack</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -912,7 +924,7 @@
       jobTitle:"Job title", jobTitlePlaceholder:"e.g. Marketing Manager", leadSource:"Lead source", anySource:"Any source",
       createdByLabel:"Created by", createdByPlaceholder:"e.g. Tom", createBoardBtn:"+ Create board", boardIncompleteConfirmTitle:"Missing details", missingFieldsPrefix:"Missing:", boardIncompleteBannerText:"We highly recommend filling in all the missing details. This way you don't create a scattered dashboard and make finding leads as effective as possible.",
       createBoardHint:"These become the default values pre-filled whenever someone adds a new lead inside this board — still editable per lead.",
-      yourBoardsSection:"Your boards", footerText:"© 2026 by PalaTrack BV. - All Rights Reserved",
+      yourBoardsSection:"Your boards", footerText:"© 2026 by PalaTrack BV. - All Rights Reserved", idleWarningTitle:"Are you still there?", idleWarningBody:"You've been inactive for a while. For your security, you'll be automatically signed out soon.", stayInPalaTrack:"Stay in PalaTrack",
       settingsTitle:"Settings", manageAccount:"Manage account", manageTeam:"Manage team", billingPlansLabel:"Billing & plans", signOut:"Sign out",
       noBoardsYet:"No boards yet", createFirstBoard:"Create your first board above to start tracking leads.",
       signedOutToast:"Signed out", createdLabel:"Created", byLabel:"by", leadsLabel:"leads", leadLabel:"lead",
@@ -939,7 +951,7 @@
       jobTitle:"Functietitel", jobTitlePlaceholder:"bijv. Marketing Manager", leadSource:"Leadbron", anySource:"Alle bronnen",
       createdByLabel:"Aangemaakt door", createdByPlaceholder:"bijv. Tom", createBoardBtn:"+ Board aanmaken", boardIncompleteConfirmTitle:"Ontbrekende gegevens", missingFieldsPrefix:"Ontbreekt:", boardIncompleteBannerText:"We raden ten zeerste aan om alle ontbrekende gegevens in te vullen. Zo voorkom je een versnipperd dashboard en maak je het vinden van leads zo effectief mogelijk.",
       createBoardHint:"Dit worden de standaardwaarden die automatisch worden ingevuld wanneer iemand een nieuwe lead toevoegt aan deze board — nog steeds aanpasbaar per lead.",
-      yourBoardsSection:"Jouw boards", footerText:"© 2026 by PalaTrack BV. - Alle rechten voorbehouden",
+      yourBoardsSection:"Jouw boards", footerText:"© 2026 by PalaTrack BV. - Alle rechten voorbehouden", idleWarningTitle:"Ben je er nog?", idleWarningBody:"Je bent al een tijdje inactief. Voor je veiligheid word je binnenkort automatisch uitgelogd.", stayInPalaTrack:"Blijf in PalaTrack",
       settingsTitle:"Instellingen", manageAccount:"Account beheren", manageTeam:"Team beheren", billingPlansLabel:"Facturatie & abonnementen", signOut:"Uitloggen",
       noBoardsYet:"Nog geen boards", createFirstBoard:"Maak hierboven je eerste board aan om leads bij te houden.",
       signedOutToast:"Uitgelogd", createdLabel:"Aangemaakt", byLabel:"door", leadsLabel:"leads", leadLabel:"lead",
@@ -966,7 +978,7 @@
       jobTitle:"Titre du poste", jobTitlePlaceholder:"ex. Responsable Marketing", leadSource:"Source du prospect", anySource:"Toutes les sources",
       createdByLabel:"Créé par", createdByPlaceholder:"ex. Tom", createBoardBtn:"+ Créer un tableau", boardIncompleteConfirmTitle:"Détails manquants", missingFieldsPrefix:"Manquant :", boardIncompleteBannerText:"Nous vous recommandons vivement de renseigner tous les détails manquants. Cela évite un tableau de bord dispersé et rend la recherche de prospects aussi efficace que possible.",
       createBoardHint:"Ces valeurs seront pré-remplies par défaut lorsqu'un prospect est ajouté à ce tableau — toujours modifiables par prospect.",
-      yourBoardsSection:"Vos tableaux", footerText:"© 2026 by PalaTrack BV. - Tous droits réservés",
+      yourBoardsSection:"Vos tableaux", footerText:"© 2026 by PalaTrack BV. - Tous droits réservés", idleWarningTitle:"Êtes-vous toujours là ?", idleWarningBody:"Vous êtes inactif depuis un moment. Pour votre sécurité, vous serez bientôt déconnecté automatiquement.", stayInPalaTrack:"Rester dans PalaTrack",
       settingsTitle:"Paramètres", manageAccount:"Gérer le compte", manageTeam:"Gérer l'équipe", billingPlansLabel:"Facturation & forfaits", signOut:"Se déconnecter",
       noBoardsYet:"Aucun tableau pour l'instant", createFirstBoard:"Créez votre premier tableau ci-dessus pour commencer à suivre vos prospects.",
       signedOutToast:"Déconnecté", createdLabel:"Créé le", byLabel:"par", leadsLabel:"prospects", leadLabel:"prospect",
@@ -993,7 +1005,7 @@
       jobTitle:"Position", jobTitlePlaceholder:"z.B. Marketing Manager", leadSource:"Lead-Quelle", anySource:"Alle Quellen",
       createdByLabel:"Erstellt von", createdByPlaceholder:"z.B. Tom", createBoardBtn:"+ Board erstellen", boardIncompleteConfirmTitle:"Fehlende Details", missingFieldsPrefix:"Fehlt:", boardIncompleteBannerText:"Wir empfehlen dringend, alle fehlenden Details auszufüllen. So entsteht kein unübersichtliches Dashboard und das Finden von Leads bleibt so effektiv wie möglich.",
       createBoardHint:"Dies werden die Standardwerte, die automatisch ausgefüllt werden, wenn jemand einen neuen Lead in diesem Board anlegt — pro Lead weiterhin änderbar.",
-      yourBoardsSection:"Deine Boards", footerText:"© 2026 by PalaTrack BV. - Alle Rechte vorbehalten",
+      yourBoardsSection:"Deine Boards", footerText:"© 2026 by PalaTrack BV. - Alle Rechte vorbehalten", idleWarningTitle:"Bist du noch da?", idleWarningBody:"Du warst eine Weile inaktiv. Aus Sicherheitsgründen wirst du bald automatisch abgemeldet.", stayInPalaTrack:"In PalaTrack bleiben",
       settingsTitle:"Einstellungen", manageAccount:"Konto verwalten", manageTeam:"Team verwalten", billingPlansLabel:"Abrechnung & Tarife", signOut:"Abmelden",
       noBoardsYet:"Noch keine Boards", createFirstBoard:"Erstelle oben dein erstes Board, um Leads zu erfassen.",
       signedOutToast:"Abgemeldet", createdLabel:"Erstellt", byLabel:"von", leadsLabel:"Leads", leadLabel:"Lead",
@@ -1020,7 +1032,7 @@
       jobTitle:"Cargo", jobTitlePlaceholder:"ej. Gerente de Marketing", leadSource:"Origen del lead", anySource:"Cualquier origen",
       createdByLabel:"Creado por", createdByPlaceholder:"ej. Tom", createBoardBtn:"+ Crear tablero", boardIncompleteConfirmTitle:"Faltan detalles", missingFieldsPrefix:"Falta:", boardIncompleteBannerText:"Te recomendamos encarecidamente completar todos los detalles que faltan. Así evitas un panel disperso y haces que encontrar leads sea lo más eficaz posible.",
       createBoardHint:"Estos serán los valores predeterminados que se rellenarán automáticamente cuando alguien añada un nuevo lead a este tablero — siempre editables por lead.",
-      yourBoardsSection:"Tus tableros", footerText:"© 2026 by PalaTrack BV. - Todos los derechos reservados",
+      yourBoardsSection:"Tus tableros", footerText:"© 2026 by PalaTrack BV. - Todos los derechos reservados", idleWarningTitle:"¿Sigues ahí?", idleWarningBody:"Has estado inactivo un tiempo. Por tu seguridad, se cerrará tu sesión automáticamente pronto.", stayInPalaTrack:"Permanecer en PalaTrack",
       settingsTitle:"Configuración", manageAccount:"Gestionar cuenta", manageTeam:"Gestionar equipo", billingPlansLabel:"Facturación y planes", signOut:"Cerrar sesión",
       noBoardsYet:"Aún no hay tableros", createFirstBoard:"Crea tu primer tablero arriba para empezar a seguir leads.",
       signedOutToast:"Sesión cerrada", createdLabel:"Creado", byLabel:"por", leadsLabel:"leads", leadLabel:"lead",
@@ -1047,7 +1059,7 @@
       jobTitle:"Titolo di lavoro", jobTitlePlaceholder:"es. Responsabile Marketing", leadSource:"Fonte del lead", anySource:"Qualsiasi fonte",
       createdByLabel:"Creato da", createdByPlaceholder:"es. Tom", createBoardBtn:"+ Crea bacheca", boardIncompleteConfirmTitle:"Dettagli mancanti", missingFieldsPrefix:"Mancante:", boardIncompleteBannerText:"Ti consigliamo vivamente di compilare tutti i dettagli mancanti. In questo modo eviti una dashboard dispersiva e rendi la ricerca dei lead il più efficace possibile.",
       createBoardHint:"Questi diventeranno i valori predefiniti pre-compilati quando qualcuno aggiunge un nuovo lead a questa bacheca — sempre modificabili per singolo lead.",
-      yourBoardsSection:"Le tue bacheche", footerText:"© 2026 by PalaTrack BV. - Tutti i diritti riservati",
+      yourBoardsSection:"Le tue bacheche", footerText:"© 2026 by PalaTrack BV. - Tutti i diritti riservati", idleWarningTitle:"Sei ancora lì?", idleWarningBody:"Sei stato inattivo per un po'. Per la tua sicurezza, verrai disconnesso automaticamente a breve.", stayInPalaTrack:"Resta in PalaTrack",
       settingsTitle:"Impostazioni", manageAccount:"Gestisci account", manageTeam:"Gestisci team", billingPlansLabel:"Fatturazione e piani", signOut:"Esci",
       noBoardsYet:"Ancora nessuna bacheca", createFirstBoard:"Crea la tua prima bacheca qui sopra per iniziare a tracciare i lead.",
       signedOutToast:"Disconnesso", createdLabel:"Creato", byLabel:"da", leadsLabel:"lead", leadLabel:"lead",
@@ -1074,7 +1086,7 @@
       jobTitle:"Cargo", jobTitlePlaceholder:"ex. Gestor de Marketing", leadSource:"Origem do lead", anySource:"Qualquer origem",
       createdByLabel:"Criado por", createdByPlaceholder:"ex. Tom", createBoardBtn:"+ Criar quadro", boardIncompleteConfirmTitle:"Detalhes em falta", missingFieldsPrefix:"Em falta:", boardIncompleteBannerText:"Recomendamos vivamente que preencha todos os detalhes em falta. Assim evita um painel disperso e torna a procura de leads o mais eficaz possível.",
       createBoardHint:"Estes tornar-se-ão os valores predefinidos preenchidos automaticamente quando alguém adicionar um novo lead a este quadro — sempre editáveis por lead.",
-      yourBoardsSection:"Os seus quadros", footerText:"© 2026 by PalaTrack BV. - Todos os direitos reservados",
+      yourBoardsSection:"Os seus quadros", footerText:"© 2026 by PalaTrack BV. - Todos os direitos reservados", idleWarningTitle:"Ainda está aí?", idleWarningBody:"Está inativo há algum tempo. Para sua segurança, a sua sessão será terminada automaticamente em breve.", stayInPalaTrack:"Continuar no PalaTrack",
       settingsTitle:"Definições", manageAccount:"Gerir conta", manageTeam:"Gerir equipa", billingPlansLabel:"Faturação e planos", signOut:"Terminar sessão",
       noBoardsYet:"Ainda sem quadros", createFirstBoard:"Crie o seu primeiro quadro acima para começar a acompanhar leads.",
       signedOutToast:"Sessão terminada", createdLabel:"Criado", byLabel:"por", leadsLabel:"leads", leadLabel:"lead",
@@ -1101,7 +1113,7 @@
       jobTitle:"Stanowisko", jobTitlePlaceholder:"np. Kierownik Marketingu", leadSource:"Źródło leada", anySource:"Wszystkie źródła",
       createdByLabel:"Utworzone przez", createdByPlaceholder:"np. Tom", createBoardBtn:"+ Utwórz tablicę", boardIncompleteConfirmTitle:"Brakujące szczegóły", missingFieldsPrefix:"Brakuje:", boardIncompleteBannerText:"Zdecydowanie zalecamy uzupełnienie wszystkich brakujących szczegółów. Dzięki temu unikniesz rozproszonego pulpitu i sprawisz, że wyszukiwanie leadów będzie jak najbardziej efektywne.",
       createBoardHint:"Staną się one domyślnymi wartościami wypełnianymi automatycznie, gdy ktoś doda nowego leada do tej tablicy — nadal edytowalne dla każdego leada.",
-      yourBoardsSection:"Twoje tablice", footerText:"© 2026 by PalaTrack BV. - Wszelkie prawa zastrzeżone",
+      yourBoardsSection:"Twoje tablice", footerText:"© 2026 by PalaTrack BV. - Wszelkie prawa zastrzeżone", idleWarningTitle:"Czy nadal tam jesteś?", idleWarningBody:"Byłeś nieaktywny przez chwilę. Dla Twojego bezpieczeństwa zostaniesz wkrótce automatycznie wylogowany.", stayInPalaTrack:"Zostań w PalaTrack",
       settingsTitle:"Ustawienia", manageAccount:"Zarządzaj kontem", manageTeam:"Zarządzaj zespołem", billingPlansLabel:"Rozliczenia i plany", signOut:"Wyloguj się",
       noBoardsYet:"Brak tablic", createFirstBoard:"Utwórz swoją pierwszą tablicę powyżej, aby zacząć śledzić leady.",
       signedOutToast:"Wylogowano", createdLabel:"Utworzono", byLabel:"przez", leadsLabel:"leadów", leadLabel:"lead",
@@ -1128,7 +1140,7 @@
       jobTitle:"职位", jobTitlePlaceholder:"例如：市场经理", leadSource:"客户来源", anySource:"所有来源",
       createdByLabel:"创建者", createdByPlaceholder:"例如：Tom", createBoardBtn:"+ 创建看板", boardIncompleteConfirmTitle:"缺少详细信息", missingFieldsPrefix:"缺少：", boardIncompleteBannerText:"我们强烈建议您填写所有缺失的详细信息。这样可以避免仪表板信息分散，让查找潜在客户尽可能高效。",
       createBoardHint:"这些将成为在此看板中添加新潜在客户时自动填充的默认值——仍可针对每个潜在客户单独编辑。",
-      yourBoardsSection:"您的看板", footerText:"© 2026 by PalaTrack BV. - 保留所有权利",
+      yourBoardsSection:"您的看板", footerText:"© 2026 by PalaTrack BV. - 保留所有权利", idleWarningTitle:"您还在吗？", idleWarningBody:"您已经有一段时间没有操作了。为了您的账户安全，系统将很快自动将您退出登录。", stayInPalaTrack:"留在PalaTrack",
       settingsTitle:"设置", manageAccount:"管理账户", manageTeam:"管理团队", billingPlansLabel:"账单与套餐", signOut:"退出登录",
       noBoardsYet:"暂无看板", createFirstBoard:"在上方创建您的第一个看板以开始跟踪潜在客户。",
       signedOutToast:"已退出登录", createdLabel:"创建于", byLabel:"由", leadsLabel:"个潜在客户", leadLabel:"个潜在客户",
@@ -1244,6 +1256,7 @@
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       auth = firebase.auth();
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
       firebaseConnected = true;
     }
   }catch(e){
@@ -1881,6 +1894,52 @@
       }
     });
   }
+
+  // ---------- Idle timeout ----------
+  (function(){
+    var IDLE_LIMIT_MS = 10 * 60 * 1000;
+    var COUNTDOWN_SECONDS = 50;
+    var idleTimer = null;
+    var countdownInterval = null;
+    var countdownRemaining = COUNTDOWN_SECONDS;
+    var idleOverlay = document.getElementById('idleWarningOverlay');
+    var countdownDisplay = document.getElementById('idleCountdownDisplay');
+    if(!idleOverlay || !countdownDisplay) return;
+
+    function resetIdleTimer(){
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(showIdleWarning, IDLE_LIMIT_MS);
+    }
+    function showIdleWarning(){
+      if(!auth || !auth.currentUser){ resetIdleTimer(); return; }
+      countdownRemaining = COUNTDOWN_SECONDS;
+      countdownDisplay.textContent = countdownRemaining;
+      idleOverlay.style.display = 'flex';
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(function(){
+        countdownRemaining--;
+        countdownDisplay.textContent = countdownRemaining;
+        if(countdownRemaining <= 0){
+          clearInterval(countdownInterval);
+          idleOverlay.style.display = 'none';
+          if(auth) auth.signOut();
+        }
+      }, 1000);
+    }
+    function stayLoggedIn(){
+      clearInterval(countdownInterval);
+      idleOverlay.style.display = 'none';
+      resetIdleTimer();
+    }
+    var stayBtn = document.getElementById('stayLoggedInBtn');
+    if(stayBtn) stayBtn.addEventListener('click', stayLoggedIn);
+    ['mousemove','keydown','click','scroll','touchstart'].forEach(function(evt){
+      document.addEventListener(evt, function(){
+        if(idleOverlay.style.display !== 'flex') resetIdleTimer();
+      }, {passive:true});
+    });
+    resetIdleTimer();
+  })();
 })();
 </script>
 <script>

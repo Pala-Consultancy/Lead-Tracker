@@ -271,6 +271,24 @@
   }
   .modal-close:hover{background:var(--c-red-bg);color:var(--c-red-fg);border-color:var(--c-red-fg);}
 
+  .confirm-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.55);z-index:500;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .confirm-modal{
+    background:var(--panel);border-radius:16px;padding:28px 26px;max-width:400px;width:100%;
+    box-shadow:0 30px 60px rgba(0,0,0,0.3);text-align:center;
+  }
+  .confirm-modal-icon{
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;
+  }
+  .confirm-modal-icon.warn{background:var(--c-red-bg);color:var(--c-red-fg);}
+  .confirm-modal-icon svg{width:22px;height:22px;}
+  .confirm-modal h3{font-family:'Sora',sans-serif;font-size:17px;margin:0 0 8px;}
+  .confirm-modal p{font-size:13.5px;color:var(--slate);line-height:1.55;margin:0 0 20px;white-space:pre-line;}
+  .confirm-modal-actions{display:flex;gap:10px;justify-content:center;}
+
   .toast-stack{
     position:fixed;bottom:20px;right:20px;z-index:80;display:flex;flex-direction:column;gap:8px;
   }
@@ -1040,6 +1058,18 @@
 
 <div class="toast-stack" id="toastStack"></div>
 
+<div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+    <h3 data-i18n="idleWarningTitle">Are you still there?</h3>
+    <p data-i18n="idleWarningBody">You've been inactive for a while. For your security, you'll be automatically signed out soon.</p>
+    <div style="font-family:'Sora',sans-serif;font-size:32px;font-weight:800;color:var(--c-red-fg);margin-bottom:18px;" id="idleCountdownDisplay">50</div>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn btn-primary" id="stayLoggedInBtn" data-i18n="stayInPalaTrack" style="width:100%;">Stay in PalaTrack</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -1055,7 +1085,7 @@
       noAccountNote:"Don't have an account? Ask your admin to create one for you.",
       incorrectLogin:"Incorrect email or password. Please try again.",
       statisticsTitle:"Statistics", statisticsSub:"Every number behind your pipeline, in one place", backToTracker:"← Back to tracker",
-      footerText:"© 2026 by PalaTrack BV. - All Rights Reserved",
+      footerText:"© 2026 by PalaTrack BV. - All Rights Reserved", idleWarningTitle:"Are you still there?", idleWarningBody:"You've been inactive for a while. For your security, you'll be automatically signed out soon.", stayInPalaTrack:"Stay in PalaTrack",
       noDataYet:"No data yet", addSomeLeadsFirst:"Add some leads in the tracker first, then come back here to see the full breakdown.",
       headlineTemplate:"You've closed <strong>{won} of {total}</strong> leads (<strong>{rate}%</strong>) worth <strong>{revenue}</strong> in total revenue.",
       stillActive:"Still active", acceptRate:"Accept rate", showUpRate:"Show up rate",
@@ -1079,7 +1109,7 @@
       noAccountNote:"Nog geen account? Vraag je beheerder om er een voor je aan te maken.",
       incorrectLogin:"Onjuist e-mailadres of wachtwoord. Probeer het opnieuw.",
       statisticsTitle:"Statistieken", statisticsSub:"Elk cijfer achter je pipeline, op één plek", backToTracker:"← Terug naar tracker",
-      footerText:"© 2026 by PalaTrack BV. - Alle rechten voorbehouden",
+      footerText:"© 2026 by PalaTrack BV. - Alle rechten voorbehouden", idleWarningTitle:"Ben je er nog?", idleWarningBody:"Je bent al een tijdje inactief. Voor je veiligheid word je binnenkort automatisch uitgelogd.", stayInPalaTrack:"Blijf in PalaTrack",
       noDataYet:"Nog geen data", addSomeLeadsFirst:"Voeg eerst wat leads toe in de tracker, en kom dan hier terug voor het volledige overzicht.",
       headlineTemplate:"Je hebt <strong>{won} van de {total}</strong> leads gesloten (<strong>{rate}%</strong>) ter waarde van <strong>{revenue}</strong> totale omzet.",
       stillActive:"Nog actief", acceptRate:"Acceptatiegraad", showUpRate:"Opkomstpercentage",
@@ -1103,7 +1133,7 @@
       noAccountNote:"Pas encore de compte ? Demandez à votre administrateur d'en créer un pour vous.",
       incorrectLogin:"E-mail ou mot de passe incorrect. Veuillez réessayer.",
       statisticsTitle:"Statistiques", statisticsSub:"Tous les chiffres de votre pipeline, au même endroit", backToTracker:"← Retour au suivi",
-      footerText:"© 2026 by PalaTrack BV. - Tous droits réservés",
+      footerText:"© 2026 by PalaTrack BV. - Tous droits réservés", idleWarningTitle:"Êtes-vous toujours là ?", idleWarningBody:"Vous êtes inactif depuis un moment. Pour votre sécurité, vous serez bientôt déconnecté automatiquement.", stayInPalaTrack:"Rester dans PalaTrack",
       noDataYet:"Aucune donnée pour l'instant", addSomeLeadsFirst:"Ajoutez d'abord des prospects dans le suivi, puis revenez ici pour voir le détail complet.",
       headlineTemplate:"Vous avez conclu <strong>{won} sur {total}</strong> prospects (<strong>{rate}%</strong>) pour une valeur de <strong>{revenue}</strong> de chiffre d'affaires total.",
       stillActive:"Encore actifs", acceptRate:"Taux d'acceptation", showUpRate:"Taux de présence",
@@ -1127,7 +1157,7 @@
       noAccountNote:"Noch kein Konto? Bitte deinen Admin, eins für dich zu erstellen.",
       incorrectLogin:"Falsche E-Mail-Adresse oder falsches Passwort. Bitte versuche es erneut.",
       statisticsTitle:"Statistiken", statisticsSub:"Jede Zahl hinter deiner Pipeline, an einem Ort", backToTracker:"← Zurück zum Tracker",
-      footerText:"© 2026 by PalaTrack BV. - Alle Rechte vorbehalten",
+      footerText:"© 2026 by PalaTrack BV. - Alle Rechte vorbehalten", idleWarningTitle:"Bist du noch da?", idleWarningBody:"Du warst eine Weile inaktiv. Aus Sicherheitsgründen wirst du bald automatisch abgemeldet.", stayInPalaTrack:"In PalaTrack bleiben",
       noDataYet:"Noch keine Daten", addSomeLeadsFirst:"Füge zuerst Leads im Tracker hinzu und komm dann hierher zurück für die vollständige Übersicht.",
       headlineTemplate:"Du hast <strong>{won} von {total}</strong> Leads abgeschlossen (<strong>{rate}%</strong>) im Wert von <strong>{revenue}</strong> Gesamtumsatz.",
       stillActive:"Noch aktiv", acceptRate:"Annahmequote", showUpRate:"Erscheinungsquote",
@@ -1151,7 +1181,7 @@
       noAccountNote:"¿No tienes una cuenta? Pide a tu administrador que cree una para ti.",
       incorrectLogin:"Correo o contraseña incorrectos. Inténtalo de nuevo.",
       statisticsTitle:"Estadísticas", statisticsSub:"Cada cifra detrás de tu pipeline, en un solo lugar", backToTracker:"← Volver al seguimiento",
-      footerText:"© 2026 by PalaTrack BV. - Todos los derechos reservados",
+      footerText:"© 2026 by PalaTrack BV. - Todos los derechos reservados", idleWarningTitle:"¿Sigues ahí?", idleWarningBody:"Has estado inactivo un tiempo. Por tu seguridad, se cerrará tu sesión automáticamente pronto.", stayInPalaTrack:"Permanecer en PalaTrack",
       noDataYet:"Aún no hay datos", addSomeLeadsFirst:"Añade algunos leads en el seguimiento primero, y vuelve aquí para ver el desglose completo.",
       headlineTemplate:"Has cerrado <strong>{won} de {total}</strong> leads (<strong>{rate}%</strong>) por un valor de <strong>{revenue}</strong> en ingresos totales.",
       stillActive:"Aún activos", acceptRate:"Tasa de aceptación", showUpRate:"Tasa de asistencia",
@@ -1175,7 +1205,7 @@
       noAccountNote:"Non hai un account? Chiedi al tuo amministratore di crearne uno per te.",
       incorrectLogin:"E-mail o password errati. Riprova.",
       statisticsTitle:"Statistiche", statisticsSub:"Ogni numero della tua pipeline, in un unico posto", backToTracker:"← Torna al tracker",
-      footerText:"© 2026 by PalaTrack BV. - Tutti i diritti riservati",
+      footerText:"© 2026 by PalaTrack BV. - Tutti i diritti riservati", idleWarningTitle:"Sei ancora lì?", idleWarningBody:"Sei stato inattivo per un po'. Per la tua sicurezza, verrai disconnesso automaticamente a breve.", stayInPalaTrack:"Resta in PalaTrack",
       noDataYet:"Ancora nessun dato", addSomeLeadsFirst:"Aggiungi prima alcuni lead nel tracker, poi torna qui per vedere il quadro completo.",
       headlineTemplate:"Hai chiuso <strong>{won} di {total}</strong> lead (<strong>{rate}%</strong>) per un valore di <strong>{revenue}</strong> di fatturato totale.",
       stillActive:"Ancora attivi", acceptRate:"Tasso di accettazione", showUpRate:"Tasso di presenza",
@@ -1199,7 +1229,7 @@
       noAccountNote:"Ainda não tem conta? Peça ao seu administrador para criar uma para si.",
       incorrectLogin:"E-mail ou palavra-passe incorretos. Tente novamente.",
       statisticsTitle:"Estatísticas", statisticsSub:"Todos os números do seu pipeline, num só lugar", backToTracker:"← Voltar ao rastreador",
-      footerText:"© 2026 by PalaTrack BV. - Todos os direitos reservados",
+      footerText:"© 2026 by PalaTrack BV. - Todos os direitos reservados", idleWarningTitle:"Ainda está aí?", idleWarningBody:"Está inativo há algum tempo. Para sua segurança, a sua sessão será terminada automaticamente em breve.", stayInPalaTrack:"Continuar no PalaTrack",
       noDataYet:"Ainda sem dados", addSomeLeadsFirst:"Adicione primeiro alguns leads no rastreador e depois volte aqui para ver a análise completa.",
       headlineTemplate:"Fechou <strong>{won} de {total}</strong> leads (<strong>{rate}%</strong>) num valor de <strong>{revenue}</strong> em receita total.",
       stillActive:"Ainda ativos", acceptRate:"Taxa de aceitação", showUpRate:"Taxa de comparência",
@@ -1223,7 +1253,7 @@
       noAccountNote:"Nie masz konta? Poproś administratora o jego utworzenie.",
       incorrectLogin:"Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.",
       statisticsTitle:"Statystyki", statisticsSub:"Wszystkie liczby dotyczące Twojego pipeline'u w jednym miejscu", backToTracker:"← Wróć do trackera",
-      footerText:"© 2026 by PalaTrack BV. - Wszelkie prawa zastrzeżone",
+      footerText:"© 2026 by PalaTrack BV. - Wszelkie prawa zastrzeżone", idleWarningTitle:"Czy nadal tam jesteś?", idleWarningBody:"Byłeś nieaktywny przez chwilę. Dla Twojego bezpieczeństwa zostaniesz wkrótce automatycznie wylogowany.", stayInPalaTrack:"Zostań w PalaTrack",
       noDataYet:"Brak danych", addSomeLeadsFirst:"Najpierw dodaj kilka leadów w trackerze, a potem wróć tutaj, aby zobaczyć pełne zestawienie.",
       headlineTemplate:"Zamknąłeś <strong>{won} z {total}</strong> leadów (<strong>{rate}%</strong>) o wartości <strong>{revenue}</strong> całkowitego przychodu.",
       stillActive:"Nadal aktywne", acceptRate:"Wskaźnik akceptacji", showUpRate:"Wskaźnik obecności",
@@ -1247,7 +1277,7 @@
       noAccountNote:"还没有账户？请联系管理员为您创建一个。",
       incorrectLogin:"邮箱或密码错误，请重试。",
       statisticsTitle:"统计数据", statisticsSub:"您的销售管道的所有数据，一目了然", backToTracker:"← 返回跟踪系统",
-      footerText:"© 2026 by PalaTrack BV. - 保留所有权利",
+      footerText:"© 2026 by PalaTrack BV. - 保留所有权利", idleWarningTitle:"您还在吗？", idleWarningBody:"您已经有一段时间没有操作了。为了您的账户安全，系统将很快自动将您退出登录。", stayInPalaTrack:"留在PalaTrack",
       noDataYet:"暂无数据", addSomeLeadsFirst:"请先在跟踪系统中添加一些潜在客户，然后返回此处查看完整明细。",
       headlineTemplate:"您已成交 <strong>{total} 个潜在客户中的 {won} 个</strong>（<strong>{rate}%</strong>），总收入为 <strong>{revenue}</strong>。",
       stillActive:"仍在进行中", acceptRate:"接受率", showUpRate:"到场率",
@@ -1383,6 +1413,7 @@
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       auth = firebase.auth();
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
       firebaseConnected = true;
     }
   }catch(e){
@@ -2812,6 +2843,52 @@
       }
     });
   }
+
+  // ---------- Idle timeout ----------
+  (function(){
+    var IDLE_LIMIT_MS = 10 * 60 * 1000;
+    var COUNTDOWN_SECONDS = 50;
+    var idleTimer = null;
+    var countdownInterval = null;
+    var countdownRemaining = COUNTDOWN_SECONDS;
+    var idleOverlay = document.getElementById('idleWarningOverlay');
+    var countdownDisplay = document.getElementById('idleCountdownDisplay');
+    if(!idleOverlay || !countdownDisplay) return;
+
+    function resetIdleTimer(){
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(showIdleWarning, IDLE_LIMIT_MS);
+    }
+    function showIdleWarning(){
+      if(!auth || !auth.currentUser){ resetIdleTimer(); return; }
+      countdownRemaining = COUNTDOWN_SECONDS;
+      countdownDisplay.textContent = countdownRemaining;
+      idleOverlay.style.display = 'flex';
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(function(){
+        countdownRemaining--;
+        countdownDisplay.textContent = countdownRemaining;
+        if(countdownRemaining <= 0){
+          clearInterval(countdownInterval);
+          idleOverlay.style.display = 'none';
+          if(auth) auth.signOut();
+        }
+      }, 1000);
+    }
+    function stayLoggedIn(){
+      clearInterval(countdownInterval);
+      idleOverlay.style.display = 'none';
+      resetIdleTimer();
+    }
+    var stayBtn = document.getElementById('stayLoggedInBtn');
+    if(stayBtn) stayBtn.addEventListener('click', stayLoggedIn);
+    ['mousemove','keydown','click','scroll','touchstart'].forEach(function(evt){
+      document.addEventListener(evt, function(){
+        if(idleOverlay.style.display !== 'flex') resetIdleTimer();
+      }, {passive:true});
+    });
+    resetIdleTimer();
+  })();
 })();
 </script>
 <script>
