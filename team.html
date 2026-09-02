@@ -926,7 +926,7 @@
               <span>${esc(roleLabel)}</span><span class="chev">▾</span>
             </button>`
           : `<span class="team-role-readonly">${esc(roleLabel)}</span>`;
-        const removeBtnHtml = ((currentUserIsAdmin || currentUserCanManageTeam) && !isYou)
+        const removeBtnHtml = (!isYou && (currentUserIsAdmin || (currentUserCanManageTeam && !m.isAdmin)))
           ? `<button type="button" class="team-remove-btn" title="Remove from team" onclick="window.__teamActions.confirmRemoveMember('${m.id}','${esc(m.name || m.email || 'this person').replace(/'/g,"\\'")}')">✕</button>`
           : '';
         const managerToggleHtml = (currentUserIsAdmin && !isYou && !m.isAdmin)
