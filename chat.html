@@ -1334,6 +1334,14 @@
     lastRenderedMessages = [];
     unsubscribeChatThread = directMessagesCollection.doc(convId).collection('thread').orderBy('createdAt').onSnapshot(snap=>{
       renderChatMessages(snap.docs.map(d=>({id:d.id, ...d.data()})));
+      // Keep marking read while this thread stays open — otherwise a message that
+      // arrives while you're already looking at the conversation leaves the sidebar
+      // showing it as unread until you click away and back in.
+      if(chatActiveOtherUid === otherUid){
+        directMessagesCollection.doc(convId).set({
+          lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
+        }, {merge:true}).catch(()=>{});
+      }
     });
   }
 
