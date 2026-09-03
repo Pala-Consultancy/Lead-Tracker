@@ -165,6 +165,10 @@
   .chat-member-info{flex:1;min-width:0;}
   .chat-member-name{font-size:13.5px;font-weight:600;color:var(--ink);}
   .chat-member-preview{font-size:12px;color:var(--slate-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+  .chat-presence{font-size:11px;color:var(--slate-light);display:inline-flex;align-items:center;gap:4px;}
+  .chat-presence.online{color:var(--c-green-fg, #1F5C4F);font-weight:600;}
+  .chat-presence-dot{width:7px;height:7px;border-radius:50%;background:var(--c-green-fg, #1F5C4F);flex-shrink:0;animation:chat-presence-pulse 1.8s ease-in-out infinite;}
+  @keyframes chat-presence-pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
   .chat-unread-dot{width:9px;height:9px;border-radius:50%;background:var(--teal);flex-shrink:0;}
   .chat-empty{padding:36px 20px;text-align:center;color:var(--slate-light);font-size:13px;}
   .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
@@ -1142,6 +1146,22 @@
   let chatSearchFilter = '';
   let notificationPrefs = {};
   function notifEnabled(key){ return notificationPrefs[key] !== false; }
+  let myShowOnlineStatus = true;
+
+  function formatPresence(member){
+    if(!myShowOnlineStatus || member.showOnlineStatus === false) return '';
+    const lastActiveAt = member.lastActiveAt;
+    if(!lastActiveAt || typeof lastActiveAt.toMillis !== 'function') return '';
+    const diffMs = Date.now() - lastActiveAt.toMillis();
+    if(diffMs < 45000) return `<span class="chat-presence online"><span class="chat-presence-dot"></span>Online</span>`;
+    const mins = Math.floor(diffMs / 60000);
+    if(mins < 60) return `<span class="chat-presence">Last seen ${mins}m ago</span>`;
+    const hours = Math.floor(mins / 60);
+    if(hours < 24) return `<span class="chat-presence">Last seen ${hours}h ago</span>`;
+    const days = Math.floor(hours / 24);
+    if(days < 7) return `<span class="chat-presence">Last seen ${days}d ago</span>`;
+    return `<span class="chat-presence">Last seen a while ago</span>`;
+  }
   let chatTypingTimeout = null;
 
   function getConversationId(uidA, uidB){
@@ -1215,10 +1235,12 @@
         const prefix = conv.lastMessage.senderId === currentUid ? 'You: ' : '';
         preview = prefix + (conv.lastMessage.text || '');
       }
+      const presenceHtml = formatPresence(m);
       return `<button type="button" class="chat-member-row${active ? ' active' : ''}${unread ? ' unread' : ''}" data-uid="${m.id}">
         <div class="chat-member-avatar ${avatarColorClass(m.id)}">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
         <div class="chat-member-info">
           <div class="chat-member-name">${esc(m.name || m.email || 'Team member')}</div>
+          ${presenceHtml}
           <div class="chat-member-preview"${isTyping ? ' style="color:var(--teal);font-weight:600;"' : ''}>${esc(preview)}</div>
         </div>
         ${unread ? '<div class="chat-unread-dot"></div>' : ''}
@@ -1232,7 +1254,12 @@
     const convId = getConversationId(currentUid, chatActiveOtherUid);
     const conv = chatConversationsMap[convId];
     const isTyping = conv && conv.typing && conv.typing[chatActiveOtherUid];
-    statusEl.innerHTML = isTyping ? `<div class="chat-typing-indicator"><span></span><span></span><span></span></div>` : '';
+    if(isTyping){
+      statusEl.innerHTML = `<div class="chat-typing-indicator"><span></span><span></span><span></span></div>`;
+      return;
+    }
+    const otherMember = teamMembersList.find(m=>m.id === chatActiveOtherUid);
+    statusEl.innerHTML = otherMember ? formatPresence(otherMember) : '';
   }
 
   let lastRenderedMessages = [];
@@ -1506,6 +1533,11 @@
     if(row && row.dataset.uid) openChatThread(row.dataset.uid);
   });
 
+  setInterval(()=>{
+    renderChatMemberList();
+    updateTypingStatusLine();
+  }, 30000);
+
   function initTeamSync(){
     if(unsubscribeTeam) unsubscribeTeam();
     unsubscribeTeam = usersCollection.onSnapshot(snapshot=>{
@@ -1555,6 +1587,22 @@
     if(Notification.permission === 'default'){
       Notification.requestPermission().catch(()=>{});
     }
+  }
+
+  let presenceHeartbeatInterval = null;
+  function startPresenceHeartbeat(user, enabled){
+    if(presenceHeartbeatInterval){ clearInterval(presenceHeartbeatInterval); presenceHeartbeatInterval = null; }
+    if(!enabled || !usersCollection) return;
+    function beat(){
+      usersCollection.doc(user.uid).set({
+        lastActiveAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge:true}).catch(()=>{});
+    }
+    beat();
+    presenceHeartbeatInterval = setInterval(beat, 30000);
+    document.addEventListener('visibilitychange', ()=>{
+      if(!document.hidden) beat();
+    });
   }
 
   function initChatSync(){
@@ -1705,9 +1753,11 @@
         }).then(doc=>{
           const data = doc.exists ? doc.data() : {};
           notificationPrefs = data.notificationPrefs || {};
+          myShowOnlineStatus = data.showOnlineStatus !== false;
           if(data.language && data.language !== currentLang) setLanguage(data.language);
           currentUserIsAdmin = data.isAdmin === true;
           requestNotificationPermissionIfNeeded();
+          startPresenceHeartbeat(user, data.showOnlineStatus !== false);
           initChatPlanGate();
         }).catch(()=>{
           initChatPlanGate();

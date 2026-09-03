@@ -651,6 +651,18 @@
     </div>
   </div>
 
+  <div class="notif-settings-card">
+    <h3>Privacy</h3>
+    <p>Control what your teammates can see about your activity.</p>
+    <div class="notif-toggle-row" data-key="showOnlineStatus">
+      <div class="notif-toggle-text">
+        <div class="notif-toggle-title">Show online status &amp; last seen</div>
+        <div class="notif-toggle-desc">Lets teammates see when you're online or when you were last active in Team Chat. Turning this off also hides your ability to see theirs.</div>
+      </div>
+      <button type="button" class="notif-toggle-switch" data-key="showOnlineStatus"><span class="notif-toggle-dot"></span></button>
+    </div>
+  </div>
+
   <footer data-i18n="footerText">© 2026 by PalaTrack BV. - All Rights Reserved</footer>
 </div>
 </div>
@@ -1011,13 +1023,17 @@
   }
 
   const NOTIF_KEYS = ['stalenew','followup','nocalldate','postcall','chatToast','chatDesktop'];
+  const TOP_LEVEL_KEYS = ['showOnlineStatus'];
   let notifPrefs = {};
+  let topLevelPrefs = {};
+
+  function prefIsOn(key){
+    return TOP_LEVEL_KEYS.includes(key) ? (topLevelPrefs[key] !== false) : (notifPrefs[key] !== false);
+  }
 
   function applyNotifToggleUI(){
     document.querySelectorAll('.notif-toggle-switch').forEach(btn=>{
-      const key = btn.dataset.key;
-      const on = notifPrefs[key] !== false; // default to on unless explicitly set false
-      btn.classList.toggle('on', on);
+      btn.classList.toggle('on', prefIsOn(btn.dataset.key));
     });
   }
 
@@ -1025,6 +1041,7 @@
     usersCollection.doc(user.uid).get().then(doc=>{
       const data = doc.exists ? doc.data() : {};
       notifPrefs = data.notificationPrefs || {};
+      topLevelPrefs = { showOnlineStatus: data.showOnlineStatus };
       applyNotifToggleUI();
     }).catch(()=>{
       applyNotifToggleUI();
@@ -1036,17 +1053,19 @@
       const user = auth.currentUser;
       if(!user) return;
       const key = btn.dataset.key;
-      const newValue = !(notifPrefs[key] !== false);
-      notifPrefs[key] = newValue;
+      const newValue = !prefIsOn(key);
+      const isTopLevel = TOP_LEVEL_KEYS.includes(key);
+      if(isTopLevel) topLevelPrefs[key] = newValue; else notifPrefs[key] = newValue;
       applyNotifToggleUI();
       if(key === 'chatDesktop' && newValue && typeof Notification !== 'undefined' && Notification.permission === 'default'){
         Notification.requestPermission().catch(()=>{});
       }
-      usersCollection.doc(user.uid).set({
-        notificationPrefs: { [key]: newValue }
-      }, {merge:true}).catch(err=>{
+      usersCollection.doc(user.uid).set(
+        isTopLevel ? { [key]: newValue } : { notificationPrefs: { [key]: newValue } },
+        {merge:true}
+      ).catch(err=>{
         showToast('Could not save that setting: ' + friendlyErr(err), true);
-        notifPrefs[key] = !newValue;
+        if(isTopLevel) topLevelPrefs[key] = !newValue; else notifPrefs[key] = !newValue;
         applyNotifToggleUI();
       });
     });

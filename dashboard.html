@@ -2753,6 +2753,21 @@
   let leads = [];
   let notificationPrefs = {};
   function notifEnabled(key){ return notificationPrefs[key] !== false; }
+  let presenceHeartbeatInterval = null;
+  function startPresenceHeartbeat(user, enabled){
+    if(presenceHeartbeatInterval){ clearInterval(presenceHeartbeatInterval); presenceHeartbeatInterval = null; }
+    if(!enabled || !membersCollection) return;
+    function beat(){
+      membersCollection.doc(user.uid).set({
+        lastActiveAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge:true}).catch(()=>{});
+    }
+    beat();
+    presenceHeartbeatInterval = setInterval(beat, 30000);
+    document.addEventListener('visibilitychange', ()=>{
+      if(!document.hidden) beat();
+    });
+  }
   let trashedLeads = [];
   let sortKey = "name";
   let sortDir = 1;
@@ -5144,6 +5159,7 @@ ${buildLeadContext()}`;
       membersCollection.doc(user.uid).get().then(doc=>{
         const data = doc.exists ? doc.data() : {};
         notificationPrefs = data.notificationPrefs || {};
+        startPresenceHeartbeat(user, data.showOnlineStatus !== false);
         if(data.language && data.language !== currentLang) setLanguage(data.language);
         const name = data.name || user.displayName || '';
         nameEl.textContent = name || user.email || 'Account';
