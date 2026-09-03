@@ -1238,13 +1238,19 @@
 <div class="confirm-overlay" id="setPasswordOverlay" style="display:none">
   <div class="confirm-modal">
     <div class="confirm-modal-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-    <h3>Set a password</h3>
-    <p>You joined via an email link, so there's no password on your account yet. Set one now so you can sign in directly next time.</p>
+    <h3>Complete your profile</h3>
+    <p>You joined via an email link, so let's finish setting up your account.</p>
+    <input type="text" id="setProfileNameInput" placeholder="Your name" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:10px;box-sizing:border-box">
+    <input type="text" id="setProfileCompanyInput" placeholder="Company (optional)" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:10px;box-sizing:border-box">
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <input type="text" id="setProfileCountryInput" placeholder="Country (optional)" style="flex:1;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);box-sizing:border-box">
+      <input type="text" id="setProfileCityInput" placeholder="City (optional)" style="flex:1;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);box-sizing:border-box">
+    </div>
     <input type="password" id="setPasswordInput" placeholder="New password" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:10px;box-sizing:border-box">
     <input type="password" id="setPasswordConfirmInput" placeholder="Confirm password" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:16px;box-sizing:border-box">
     <div class="confirm-modal-actions">
       <button type="button" class="btn" id="setPasswordSkipBtn">Skip for now</button>
-      <button type="button" class="btn btn-primary" id="setPasswordSubmitBtn">Set password</button>
+      <button type="button" class="btn btn-primary" id="setPasswordSubmitBtn">Save &amp; continue</button>
     </div>
   </div>
 </div>
@@ -2359,25 +2365,40 @@
       });
       document.getElementById('setPasswordSubmitBtn').addEventListener('click', ()=>{
         if(!pendingPasswordUser) return;
+        const name = document.getElementById('setProfileNameInput').value.trim();
+        const company = document.getElementById('setProfileCompanyInput').value.trim();
+        const country = document.getElementById('setProfileCountryInput').value.trim();
+        const city = document.getElementById('setProfileCityInput').value.trim();
         const pw = document.getElementById('setPasswordInput').value;
         const pwConfirm = document.getElementById('setPasswordConfirmInput').value;
+        if(!name){ showToast('Please enter your name.', true); return; }
         if(pw.length < 6){ showToast('Password must be at least 6 characters.', true); return; }
         if(pw !== pwConfirm){ showToast('Passwords do not match.', true); return; }
         const submitBtn = document.getElementById('setPasswordSubmitBtn');
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Setting...';
+        submitBtn.textContent = 'Saving...';
         pendingPasswordUser.updatePassword(pw).then(()=>{
-          showToast('Password set! You can use it to sign in next time.');
+          return pendingPasswordUser.updateProfile({displayName: name});
+        }).then(()=>{
+          return membersCollection.doc(pendingPasswordUser.uid).set({
+            name, company, country, city
+          }, {merge:true});
+        }).then(()=>{
+          showToast('Profile saved! You can use your password to sign in next time.');
           document.getElementById('setPasswordOverlay').style.display = 'none';
+          document.getElementById('setProfileNameInput').value = '';
+          document.getElementById('setProfileCompanyInput').value = '';
+          document.getElementById('setProfileCountryInput').value = '';
+          document.getElementById('setProfileCityInput').value = '';
           document.getElementById('setPasswordInput').value = '';
           document.getElementById('setPasswordConfirmInput').value = '';
           pendingPasswordUser = null;
           if(pendingOnboardingAfterPassword){ pendingOnboardingAfterPassword = false; showOnboardingTour(); }
         }).catch(err=>{
-          showToast('Could not set password: ' + friendlyErr(err), true);
+          showToast('Could not save: ' + friendlyErr(err), true);
         }).finally(()=>{
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Set password';
+          submitBtn.textContent = 'Save & continue';
         });
       });
     }
