@@ -1239,7 +1239,7 @@
 
     directMessagesCollection.doc(convId).set({
       participants: [currentUid, otherUid],
-      [`lastReadAt.${currentUid}`]: firebase.firestore.FieldValue.serverTimestamp()
+      lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
     }, {merge:true}).catch(()=>{});
 
     if(unsubscribeChatThread) unsubscribeChatThread();
@@ -1254,7 +1254,7 @@
     const convId = getConversationId(currentUid, chatActiveOtherUid);
     directMessagesCollection.doc(convId).set({
       participants: [currentUid, chatActiveOtherUid],
-      [`typing.${currentUid}`]: isTyping
+      typing: { [currentUid]: isTyping }
     }, {merge:true}).catch(()=>{});
   }
 
@@ -1282,7 +1282,7 @@
     convRef.set({
       participants: [currentUid, chatActiveOtherUid],
       lastMessage: { text, senderId: currentUid, createdAt: firebase.firestore.FieldValue.serverTimestamp() },
-      [`lastReadAt.${currentUid}`]: firebase.firestore.FieldValue.serverTimestamp()
+      lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
     }, {merge:true}).then(()=>{
       return convRef.collection('thread').add({
         senderId: currentUid, text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
