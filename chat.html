@@ -1217,11 +1217,10 @@
     renderChatMemberList();
     updateTypingStatusLine();
 
-    if(chatConversationsMap[convId]){
-      directMessagesCollection.doc(convId).set({
-        [`lastReadAt.${currentUid}`]: firebase.firestore.FieldValue.serverTimestamp()
-      }, {merge:true}).catch(()=>{});
-    }
+    directMessagesCollection.doc(convId).set({
+      participants: [currentUid, otherUid],
+      [`lastReadAt.${currentUid}`]: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge:true}).catch(()=>{});
 
     if(unsubscribeChatThread) unsubscribeChatThread();
     lastRenderedMessages = [];
