@@ -141,7 +141,12 @@
   .feed-header h3{font-family:'Sora',sans-serif;font-size:14.5px;margin:0;color:var(--ink);}
   .feed-header-text{min-width:0;}
   .feed-header-company{font-size:11px;color:var(--slate-light);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .feed-header-actions{display:flex;align-items:center;flex-shrink:0;}
   .feed-close-btn{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;padding:4px;border-radius:6px;transition:background .15s, color .15s;}
+  .feed-refresh-btn{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;padding:4px;border-radius:6px;transition:background .15s, color .15s;margin-right:4px;}
+  .feed-refresh-btn:hover{background:var(--c-blue-tint2, #F6FAFE);color:var(--teal);}
+  .feed-refresh-btn.spinning{animation:feed-refresh-spin .6s linear;}
+  @keyframes feed-refresh-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
   .feed-close-btn:hover{background:var(--c-red-bg, #FBE4E2);color:var(--c-red-fg, #C0392B);}
   .feed-composer{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
   .feed-composer textarea{
@@ -263,15 +268,33 @@
   .feed-comments{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
   .feed-comments-loading, .feed-comments-empty{font-size:11.5px;color:var(--slate-light);padding:4px 0;}
   .feed-comments-list{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;max-height:220px;overflow-y:auto;}
-  .feed-comment{display:flex;gap:8px;align-items:flex-start;}
+  .feed-comment{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;}
+  .feed-comment.feed-reply{margin-left:34px;margin-top:-2px;}
   .feed-comment-avatar{
     width:26px;height:26px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);
     display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;overflow:hidden;
   }
+  .feed-reply .feed-comment-avatar{width:22px;height:22px;font-size:9px;}
   .feed-comment-avatar img{width:100%;height:100%;object-fit:cover;}
-  .feed-comment-bubble{background:var(--c-blue-tint2, #F6FAFE);border-radius:12px;padding:6px 11px;flex:1;min-width:0;}
+  .feed-comment-body{flex:1;min-width:0;}
+  .feed-comment-bubble{background:var(--c-blue-tint2, #F6FAFE);border-radius:12px;padding:6px 11px;}
   .feed-comment-author{font-size:11.5px;font-weight:700;color:var(--ink);}
   .feed-comment-text{font-size:12px;color:var(--ink);line-height:1.45;word-break:break-word;}
+  .feed-comment-footer{display:flex;gap:10px;margin:3px 2px 0;}
+  .feed-comment-time{font-size:10px;color:var(--slate-light);}
+  .feed-comment-reply-link{font-size:10.5px;font-weight:700;color:var(--slate-light);cursor:pointer;}
+  .feed-comment-reply-link:hover{color:var(--teal);text-decoration:underline;}
+  .feed-reply-composer{display:flex;gap:6px;margin-top:6px;}
+  .feed-reply-composer input{
+    flex:1;border:1px solid var(--border);border-radius:20px;padding:6px 11px;
+    font-family:'Inter',sans-serif;font-size:11.5px;color:var(--ink);background:var(--c-blue-tint2, #F6FAFE);
+  }
+  .feed-reply-composer input:focus{outline:none;border-color:var(--teal);}
+  .feed-reply-composer button{
+    background:var(--teal);color:#fff;border:none;border-radius:50%;width:26px;height:26px;
+    flex-shrink:0;cursor:pointer;font-size:11px;transition:background .15s;
+  }
+  .feed-reply-composer button:hover{background:var(--teal-dark);}
   .feed-comment-composer{display:flex;gap:6px;}
   .feed-comment-composer input{
     flex:1;border:1px solid var(--border);border-radius:20px;padding:7px 12px;
@@ -1172,7 +1195,10 @@
         <h3>Team Feed</h3>
         <div class="feed-header-company" id="feedHeaderCompany"></div>
       </div>
-      <button type="button" class="feed-close-btn" id="feedCloseBtn" title="Hide feed">✕</button>
+      <div class="feed-header-actions">
+        <button type="button" class="feed-refresh-btn" id="feedRefreshBtn" title="Refresh feed">🔄</button>
+        <button type="button" class="feed-close-btn" id="feedCloseBtn" title="Hide feed">✕</button>
+      </div>
     </div>
     <div class="feed-composer">
       <textarea id="feedPostInput" rows="2" placeholder="Share an update with your team..." maxlength="600"></textarea>
@@ -2389,6 +2415,7 @@
   let editingFeedPostId = null;
   let openFeedComments = new Set();
   let feedCommentsCache = {};
+  let replyingToCommentId = null;
 
   function renderFeedPosts(posts){
     lastRenderedFeedPosts = posts;
@@ -2536,10 +2563,31 @@
   }
   function loadFeedComments(postId){
     if(!feedPostsCollection) return;
-    feedPostsCollection.doc(postId).collection('comments').orderBy('createdAt','asc').limit(100).get().then(snap=>{
+    feedPostsCollection.doc(postId).collection('comments').orderBy('createdAt','asc').limit(200).get().then(snap=>{
       feedCommentsCache[postId] = snap.docs.map(d=>({id:d.id, ...d.data()}));
       renderFeedCommentsList(postId);
     }).catch(()=>{});
+  }
+  function renderCommentRow(c, postId, isReply){
+    const time = c.createdAt && c.createdAt.toDate ? formatFeedTime(c.createdAt.toDate()) : '';
+    const replyBoxHtml = replyingToCommentId === c.id ? `<div class="feed-reply-composer">
+        <input type="text" id="feed-reply-input-${c.id}" placeholder="Write a reply...">
+        <button type="button" onclick="window.__feedActions.postReply('${postId}','${c.id}')">➤</button>
+      </div>` : '';
+    return `<div class="feed-comment${isReply ? ' feed-reply' : ''}">
+      <div class="feed-comment-avatar">${c.authorPhotoURL ? `<img src="${c.authorPhotoURL}" alt="">` : esc((c.authorName||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase())}</div>
+      <div class="feed-comment-body">
+        <div class="feed-comment-bubble">
+          <div class="feed-comment-author">${esc(c.authorName || 'Team member')}</div>
+          <div class="feed-comment-text">${esc(c.text)}</div>
+        </div>
+        <div class="feed-comment-footer">
+          <span class="feed-comment-time">${esc(time)}</span>
+          ${!isReply ? `<span class="feed-comment-reply-link" onclick="window.__feedActions.toggleReply('${c.id}')">Reply</span>` : ''}
+        </div>
+        ${replyBoxHtml}
+      </div>
+    </div>`;
   }
   function renderFeedCommentsList(postId){
     const listEl = document.getElementById(`feed-comments-list-${postId}`);
@@ -2549,15 +2597,14 @@
       listEl.innerHTML = `<div class="feed-comments-empty">No comments yet.</div>`;
       return;
     }
-    listEl.innerHTML = comments.map(c=>{
-      const time = c.createdAt && c.createdAt.toDate ? formatFeedTime(c.createdAt.toDate()) : '';
-      return `<div class="feed-comment">
-        <div class="feed-comment-avatar">${c.authorPhotoURL ? `<img src="${c.authorPhotoURL}" alt="">` : esc((c.authorName||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase())}</div>
-        <div class="feed-comment-bubble">
-          <div class="feed-comment-author">${esc(c.authorName || 'Team member')}</div>
-          <div class="feed-comment-text">${esc(c.text)}</div>
-        </div>
-      </div>`;
+    const topLevel = comments.filter(c=>!c.parentCommentId);
+    const repliesByParent = {};
+    comments.filter(c=>c.parentCommentId).forEach(c=>{
+      (repliesByParent[c.parentCommentId] = repliesByParent[c.parentCommentId] || []).push(c);
+    });
+    listEl.innerHTML = topLevel.map(c=>{
+      const replies = repliesByParent[c.id] || [];
+      return renderCommentRow(c, postId, false) + replies.map(r=>renderCommentRow(r, postId, true)).join('');
     }).join('');
   }
   function postFeedComment(postId){
@@ -2570,6 +2617,7 @@
     const postRef = feedPostsCollection.doc(postId);
     postRef.collection('comments').add({
       text,
+      parentCommentId: null,
       authorId: user.uid,
       authorName: currentUserDisplayName || user.email || 'Team member',
       authorPhotoURL: currentUserPhotoURL || null,
@@ -2580,6 +2628,35 @@
       loadFeedComments(postId);
     }).catch(err=>{
       showToast('Could not post comment: ' + friendlyErr(err), true);
+    });
+  }
+  function toggleReplyBox(commentId){
+    replyingToCommentId = (replyingToCommentId === commentId) ? null : commentId;
+    Object.keys(feedCommentsCache).forEach(postId=>{
+      if((feedCommentsCache[postId] || []).some(c=>c.id === commentId)) renderFeedCommentsList(postId);
+    });
+  }
+  function postFeedReply(postId, parentCommentId){
+    const input = document.getElementById(`feed-reply-input-${parentCommentId}`);
+    const text = input.value.trim();
+    if(!text || !feedPostsCollection) return;
+    const user = auth.currentUser;
+    if(!user) return;
+    const postRef = feedPostsCollection.doc(postId);
+    postRef.collection('comments').add({
+      text,
+      parentCommentId,
+      authorId: user.uid,
+      authorName: currentUserDisplayName || user.email || 'Team member',
+      authorPhotoURL: currentUserPhotoURL || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      return postRef.set({ commentCount: firebase.firestore.FieldValue.increment(1) }, {merge:true});
+    }).then(()=>{
+      replyingToCommentId = null;
+      loadFeedComments(postId);
+    }).catch(err=>{
+      showToast('Could not post reply: ' + friendlyErr(err), true);
     });
   }
   function initFeedSync(){
@@ -2724,6 +2801,8 @@
     likeWithHeart: likeWithHeartBurst,
     toggleComments: toggleCommentsFeedPost,
     postComment: postFeedComment,
+    toggleReply: toggleReplyBox,
+    postReply: postFeedReply,
     startEdit: startEditFeedPost,
     cancelEdit: cancelEditFeedPost,
     saveEdit: saveEditFeedPost
@@ -2735,12 +2814,24 @@
     try{ window.localStorage.setItem('palatrack_feed_hidden', visible ? '0' : '1'); }catch(e){}
   }
   document.getElementById('feedCloseBtn').addEventListener('click', ()=>setFeedVisibility(false));
+  document.getElementById('feedRefreshBtn').addEventListener('click', ()=>{
+    const btn = document.getElementById('feedRefreshBtn');
+    btn.classList.remove('spinning');
+    void btn.offsetWidth;
+    btn.classList.add('spinning');
+    initFeedSync();
+  });
   document.getElementById('feedReopenBtn').addEventListener('click', ()=>setFeedVisibility(true));
   document.getElementById('feedPostBtn').addEventListener('click', postFeedUpdate);
   document.getElementById('feedPosts').addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter' && e.target.id && e.target.id.startsWith('feed-comment-input-')){
+    if(e.key !== 'Enter') return;
+    if(e.target.id && e.target.id.startsWith('feed-comment-input-')){
       const postId = e.target.id.replace('feed-comment-input-', '');
       postFeedComment(postId);
+    } else if(e.target.id && e.target.id.startsWith('feed-reply-input-')){
+      const commentId = e.target.id.replace('feed-reply-input-', '');
+      const postId = Object.keys(feedCommentsCache).find(pid=>(feedCommentsCache[pid]||[]).some(c=>c.id===commentId));
+      if(postId) postFeedReply(postId, commentId);
     }
   });
   document.getElementById('feedPostInput').addEventListener('keydown', (e)=>{
