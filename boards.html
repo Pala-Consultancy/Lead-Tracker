@@ -605,10 +605,118 @@
   }
   .onboarding-slide.active{opacity:1;transform:translateX(0);pointer-events:auto;}
   .onboarding-slide.prev{transform:translateX(-30px);}
-  .onboarding-icon{
-    width:76px;height:76px;border-radius:22px;display:flex;align-items:center;justify-content:center;
-    font-size:36px;margin-bottom:20px;flex-shrink:0;
+
+  .ob-demo{
+    width:100%;height:110px;margin-bottom:22px;position:relative;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
   }
+
+  /* Welcome */
+  .ob-demo-welcome{font-size:52px;}
+  .ob-wave{animation:ob-wave-anim 1.4s ease-in-out infinite;transform-origin:70% 70%;}
+  @keyframes ob-wave-anim{0%,100%{transform:rotate(0deg);}25%{transform:rotate(18deg);}75%{transform:rotate(-8deg);}}
+  .ob-sparkle{position:absolute;font-size:16px;animation:ob-sparkle-anim 1.8s ease-in-out infinite;}
+  .ob-sparkle.s1{top:10px;left:35%;animation-delay:0s;}
+  .ob-sparkle.s2{top:30px;right:30%;animation-delay:.5s;}
+  .ob-sparkle.s3{bottom:10px;left:45%;animation-delay:1s;}
+  @keyframes ob-sparkle-anim{0%,100%{opacity:.2;transform:scale(.7);}50%{opacity:1;transform:scale(1.1);}}
+
+  /* Boards */
+  .ob-demo-boards{gap:8px;}
+  .ob-column{
+    width:64px;height:80px;border-radius:8px;background:var(--c-blue-tint2, #F6FAFE);
+    border:1px solid var(--border);font-size:9.5px;color:var(--slate-light);text-align:center;padding-top:4px;
+  }
+  .ob-card{
+    position:absolute;top:34px;left:20px;width:56px;height:22px;border-radius:6px;
+    background:var(--teal);box-shadow:0 3px 8px rgba(27,89,165,0.3);
+    animation:ob-card-move 2.2s ease-in-out infinite;
+  }
+  @keyframes ob-card-move{0%,15%{left:20px;}45%,60%{left:92px;}90%,100%{left:20px;}}
+
+  /* Pipeline */
+  .ob-demo-pipeline{}
+  .ob-pipe-track{width:80%;height:3px;background:var(--border);border-radius:2px;}
+  .ob-pipe-dot{
+    position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--c-blue-tint2, #F6FAFE);
+    border:2px solid var(--border);transform:translateY(-50%);
+  }
+  .ob-pipe-dot.d1{left:10%;}
+  .ob-pipe-dot.d2{left:48%;}
+  .ob-pipe-dot.d3{left:86%;}
+  .ob-pipe-check{
+    position:absolute;top:50%;left:10%;width:20px;height:20px;border-radius:50%;background:var(--teal);
+    color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;
+    transform:translate(-50%,-50%);animation:ob-pipe-travel 2.4s ease-in-out infinite;
+  }
+  @keyframes ob-pipe-travel{
+    0%,10%{left:10%;background:var(--teal);}
+    45%,55%{left:48%;background:var(--c-amber-fg);}
+    90%,100%{left:86%;background:var(--c-green-fg);}
+  }
+
+  /* Statistics */
+  .ob-demo-stats{align-items:flex-end;gap:10px;}
+  .ob-bar{width:20px;border-radius:5px 5px 0 0;background:linear-gradient(180deg, var(--teal), var(--teal-dark));animation:ob-bar-grow 1.8s ease-in-out infinite alternate;}
+  .ob-bar.b1{height:40px;animation-delay:0s;}
+  .ob-bar.b2{height:70px;animation-delay:.15s;}
+  .ob-bar.b3{height:50px;animation-delay:.3s;}
+  .ob-bar.b4{height:85px;animation-delay:.45s;}
+  @keyframes ob-bar-grow{0%{transform:scaleY(.55);}100%{transform:scaleY(1);}}
+  .ob-bar{transform-origin:bottom;}
+
+  /* Team */
+  .ob-demo-team{gap:-8px;}
+  .ob-avatar{
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-family:'Sora',sans-serif;font-size:15px;border:3px solid var(--panel);
+    margin-left:-12px;opacity:0;animation:ob-avatar-pop 1.8s ease-in-out infinite;
+  }
+  .ob-avatar.a1{animation-delay:0s;margin-left:0;}
+  .ob-avatar.a2{animation-delay:.25s;}
+  .ob-avatar.a3{animation-delay:.5s;}
+  @keyframes ob-avatar-pop{0%,15%{opacity:0;transform:scale(.4) translateY(10px);}30%,85%{opacity:1;transform:scale(1) translateY(0);}100%{opacity:1;transform:scale(1);}}
+
+  /* Team Chat */
+  .ob-demo-chat{flex-direction:column;align-items:stretch;gap:6px;height:auto;}
+  .ob-bubble{
+    max-width:60%;padding:6px 11px;border-radius:12px;font-size:11px;opacity:0;
+    animation:ob-bubble-in .4s ease forwards;
+  }
+  .ob-bubble.theirs{align-self:flex-start;background:var(--c-blue-tint2, #F6FAFE);color:var(--ink);border-bottom-left-radius:3px;animation-delay:.1s;}
+  .ob-bubble.mine{align-self:flex-end;background:var(--teal);color:#fff;border-bottom-right-radius:3px;animation-delay:.7s;}
+  @keyframes ob-bubble-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .ob-bubble-typing{
+    align-self:flex-start;display:flex;gap:3px;padding:7px 11px;border-radius:12px;
+    background:var(--c-blue-tint2, #F6FAFE);opacity:0;animation:ob-bubble-in .3s ease forwards;animation-delay:1.3s;
+  }
+  .ob-bubble-typing span{width:5px;height:5px;border-radius:50%;background:var(--slate-light);animation:ob-typing-dot 1s infinite ease-in-out;}
+  .ob-bubble-typing span:nth-child(2){animation-delay:.15s;}
+  .ob-bubble-typing span:nth-child(3){animation-delay:.3s;}
+  @keyframes ob-typing-dot{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-3px);opacity:1;}}
+
+  /* Alexandre AI */
+  .ob-demo-ai{}
+  .ob-ai-glow{
+    position:absolute;width:70px;height:70px;border-radius:50%;
+    background:radial-gradient(circle, rgba(255,157,0,0.35), transparent 70%);
+    animation:ob-glow-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ob-glow-pulse{0%,100%{transform:scale(.85);opacity:.6;}50%{transform:scale(1.15);opacity:1;}}
+  .ob-ai-icon{font-size:40px;position:relative;animation:ob-ai-spin 3s linear infinite;}
+  @keyframes ob-ai-spin{0%{transform:rotate(0deg) scale(1);}50%{transform:rotate(180deg) scale(1.15);}100%{transform:rotate(360deg) scale(1);}}
+  .ob-bell{position:absolute;top:14px;right:calc(50% - 46px);font-size:20px;animation:ob-bell-shake 2.4s ease-in-out infinite;}
+  @keyframes ob-bell-shake{0%,80%,100%{transform:rotate(0deg);}82%{transform:rotate(14deg);}86%{transform:rotate(-14deg);}90%{transform:rotate(10deg);}94%{transform:rotate(-6deg);}}
+
+  .ob-confetti-piece{
+    position:absolute;top:-10px;border-radius:2px;pointer-events:none;z-index:10;
+    animation:ob-confetti-fall 1.4s ease-in forwards;
+  }
+  @keyframes ob-confetti-fall{
+    0%{transform:translateY(0) rotate(0deg);opacity:1;}
+    100%{transform:translateY(340px) rotate(540deg);opacity:0;}
+  }
+
   .onboarding-slide h2{font-family:'Sora',sans-serif;font-size:19px;margin:0 0 10px;color:var(--ink);}
   .onboarding-slide p{font-size:13.5px;line-height:1.6;color:var(--slate);margin:0;max-width:360px;}
   .onboarding-footer{
@@ -2197,37 +2305,61 @@
     // ---------- Onboarding tour ----------
     const ONBOARDING_SLIDES = [
       {
-        icon: '👋', bg: 'var(--c-blue-bg)', color: 'var(--c-blue-fg)',
+        demo: `<div class="ob-demo ob-demo-welcome"><div class="ob-wave">👋</div><div class="ob-sparkle s1">✨</div><div class="ob-sparkle s2">✨</div><div class="ob-sparkle s3">✨</div></div>`,
         title: 'Welcome to PalaTrack!',
         body: "Here's a quick two-minute tour of everything you can do — feel free to skip it anytime and come back later, nothing here needs to be memorized."
       },
       {
-        icon: '📋', bg: 'var(--c-purple-bg)', color: 'var(--c-purple-fg)',
+        demo: `<div class="ob-demo ob-demo-boards">
+          <div class="ob-column">New</div>
+          <div class="ob-column">Contacted</div>
+          <div class="ob-column">Won</div>
+          <div class="ob-card"></div>
+        </div>`,
         title: 'Boards',
         body: 'Each board is its own lead list — split them however makes sense for you, like by source (LinkedIn, referrals) or by target market. Create as many as you need from the Boards page.'
       },
       {
-        icon: '🎯', bg: 'var(--c-amber-bg)', color: 'var(--c-amber-fg)',
+        demo: `<div class="ob-demo ob-demo-pipeline">
+          <div class="ob-pipe-track"></div>
+          <div class="ob-pipe-dot d1"></div>
+          <div class="ob-pipe-dot d2"></div>
+          <div class="ob-pipe-dot d3"></div>
+          <div class="ob-pipe-check">✓</div>
+        </div>`,
         title: 'Leads & the pipeline',
         body: 'Inside a board, add leads and drag them through stages as things progress. Track status, temperature, revenue, and notes — everything about a lead lives in one place.'
       },
       {
-        icon: '📊', bg: 'var(--c-green-bg)', color: 'var(--c-green-fg)',
+        demo: `<div class="ob-demo ob-demo-stats">
+          <div class="ob-bar b1"></div>
+          <div class="ob-bar b2"></div>
+          <div class="ob-bar b3"></div>
+          <div class="ob-bar b4"></div>
+        </div>`,
         title: 'Statistics',
         body: "See reply rates, revenue by month, top sources, and how you're trending versus last month — all pulled automatically from your boards, no extra setup."
       },
       {
-        icon: '👥', bg: 'var(--c-blue-bg)', color: 'var(--c-blue-fg)',
+        demo: `<div class="ob-demo ob-demo-team">
+          <div class="ob-avatar a1" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">A</div>
+          <div class="ob-avatar a2" style="background:var(--c-purple-bg);color:var(--c-purple-fg)">B</div>
+          <div class="ob-avatar a3" style="background:var(--c-amber-bg);color:var(--c-amber-fg)">C</div>
+        </div>`,
         title: 'Team',
         body: "Invite teammates from the Team page. Admins can assign roles, and you can even grant someone permission to remove members without giving them access to billing."
       },
       {
-        icon: '💬', bg: 'var(--c-purple-bg)', color: 'var(--c-purple-fg)',
+        demo: `<div class="ob-demo ob-demo-chat">
+          <div class="ob-bubble theirs">Hey!</div>
+          <div class="ob-bubble mine">On it 👍</div>
+          <div class="ob-bubble-typing"><span></span><span></span><span></span></div>
+        </div>`,
         title: 'Team Chat',
         body: 'Message teammates directly — send photos and videos, react to messages, see when something was read, and know when someone\'s online. Look for the 💬 icon.'
       },
       {
-        icon: '✨', bg: 'var(--c-amber-bg)', color: 'var(--c-amber-fg)',
+        demo: `<div class="ob-demo ob-demo-ai"><div class="ob-ai-glow"></div><div class="ob-ai-icon">✨</div><div class="ob-bell">🔔</div></div>`,
         title: 'Alexandre AI & Smart Reminders',
         body: "Ask Alexandre to draft outreach messages or answer questions about your leads. PalaTrack will also nudge you about leads that have gone quiet — you can fine-tune exactly which reminders and notifications you get in Notification Settings."
       }
@@ -2237,7 +2369,7 @@
       const container = document.getElementById('onboardingSlides');
       container.innerHTML = ONBOARDING_SLIDES.map((s, i)=>`
         <div class="onboarding-slide" data-index="${i}">
-          <div class="onboarding-icon" style="background:${s.bg};color:${s.color}">${s.icon}</div>
+          ${s.demo}
           <h2>${esc(s.title)}</h2>
           <p>${esc(s.body)}</p>
         </div>`).join('');
@@ -2256,6 +2388,21 @@
       document.getElementById('onboardingBackBtn').style.visibility = onboardingIndex === 0 ? 'hidden' : 'visible';
       const nextBtn = document.getElementById('onboardingNextBtn');
       nextBtn.textContent = onboardingIndex === ONBOARDING_SLIDES.length - 1 ? 'Get started' : 'Next →';
+    }
+    function onboardingConfettiBurst(){
+      const card = document.querySelector('.onboarding-card');
+      if(!card) return;
+      const colors = ['#1B59A5','#7A4FB5','#FF9D00','#1F5C4F','#C0392B'];
+      for(let i=0;i<28;i++){
+        const piece = document.createElement('div');
+        piece.className = 'ob-confetti-piece';
+        piece.style.left = Math.random()*100 + '%';
+        piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+        piece.style.animationDelay = (Math.random()*0.3) + 's';
+        piece.style.width = piece.style.height = (5 + Math.random()*5) + 'px';
+        card.appendChild(piece);
+        setTimeout(()=>piece.remove(), 1500);
+      }
     }
     function completeOnboarding(){
       document.getElementById('onboardingOverlay').style.display = 'none';
@@ -2279,13 +2426,34 @@
         onboardingIndex++;
         updateOnboardingSlide();
       } else {
-        completeOnboarding();
+        onboardingConfettiBurst();
+        setTimeout(completeOnboarding, 500);
       }
     });
     document.getElementById('onboardingDots').addEventListener('click', (e)=>{
       const dot = e.target.closest('.onboarding-dot');
       if(dot){ onboardingIndex = parseInt(dot.dataset.index, 10); updateOnboardingSlide(); }
     });
+    document.addEventListener('keydown', (e)=>{
+      const overlay = document.getElementById('onboardingOverlay');
+      if(!overlay || overlay.style.display !== 'flex') return;
+      if(e.key === 'ArrowRight') document.getElementById('onboardingNextBtn').click();
+      else if(e.key === 'ArrowLeft' && onboardingIndex > 0){ onboardingIndex--; updateOnboardingSlide(); }
+      else if(e.key === 'Escape') completeOnboarding();
+    });
+    (function(){
+      let touchStartX = null;
+      const slidesEl = document.getElementById('onboardingSlides');
+      slidesEl.addEventListener('touchstart', (e)=>{ touchStartX = e.touches[0].clientX; }, {passive:true});
+      slidesEl.addEventListener('touchend', (e)=>{
+        if(touchStartX === null) return;
+        const diff = e.changedTouches[0].clientX - touchStartX;
+        touchStartX = null;
+        if(Math.abs(diff) < 40) return;
+        if(diff < 0 && onboardingIndex < ONBOARDING_SLIDES.length - 1){ onboardingIndex++; updateOnboardingSlide(); }
+        else if(diff > 0 && onboardingIndex > 0){ onboardingIndex--; updateOnboardingSlide(); }
+      }, {passive:true});
+    })();
 
     let welcomeDismissHandlersBound = false;
     function showWelcomeModal(name){
