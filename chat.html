@@ -1411,7 +1411,7 @@
       snap.docs.forEach(d=>{
         const conv = {id:d.id, ...d.data()};
         chatConversationsMap[d.id] = conv;
-        markDeliveredIfNeeded(conv);
+        if(!snap.metadata.hasPendingWrites) markDeliveredIfNeeded(conv);
       });
       renderChatMemberList();
       updateTypingStatusLine();
