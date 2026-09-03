@@ -205,9 +205,21 @@
   }
   .feed-post-menu-dropdown button{
     display:block;width:100%;text-align:left;background:none;border:none;padding:9px 12px;
-    font-size:12px;color:var(--c-red-fg, #C0392B);cursor:pointer;font-family:'Inter',sans-serif;
+    font-size:12px;color:var(--ink);cursor:pointer;font-family:'Inter',sans-serif;
   }
-  .feed-post-menu-dropdown button:hover{background:var(--c-red-bg, #FBE4E2);}
+  .feed-post-menu-dropdown button:hover{background:var(--c-blue-tint2, #F6FAFE);}
+  .feed-post-menu-dropdown button.danger{color:var(--c-red-fg, #C0392B);}
+  .feed-post-menu-dropdown button.danger:hover{background:var(--c-red-bg, #FBE4E2);}
+  .feed-post-edit{margin-bottom:10px;}
+  .feed-post-edit textarea{
+    width:100%;box-sizing:border-box;resize:none;border:1px solid var(--teal);border-radius:9px;
+    padding:9px 11px;font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);
+    background:var(--c-blue-tint2, #F6FAFE);margin-bottom:8px;
+  }
+  .feed-post-edit textarea:focus{outline:none;}
+  .feed-edit-actions{display:flex;justify-content:flex-end;gap:8px;}
+  .feed-edit-actions .btn{font-size:11.5px;padding:6px 12px;}
+  .feed-edited-tag{color:var(--slate-light);font-size:11px;font-weight:400;}
   .feed-post-actions{display:flex;gap:6px;margin-top:6px;}
   .feed-like-btn{
     display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);
@@ -2318,6 +2330,7 @@
   }
   let lastRenderedFeedPosts = [];
   let expandedFeedPosts = new Set();
+  let editingFeedPostId = null;
 
   function renderFeedPosts(posts){
     lastRenderedFeedPosts = posts;
@@ -2341,11 +2354,23 @@
       const likeCount = Object.keys(likes).length;
       const iLiked = !!(myUid && likes[myUid]);
       const text = p.text || '';
-      const isLong = text.length > 180 && !expandedFeedPosts.has(p.id);
-      const displayText = isLong ? text.slice(0, 180) : text;
-      const textHtml = text
-        ? `<div class="feed-post-text">${esc(displayText)}${isLong ? `<span class="feed-show-more" onclick="window.__feedActions.toggleExpand('${p.id}')">... more</span>` : ''}${(!isLong && text.length > 180) ? ` <span class="feed-show-more" onclick="window.__feedActions.toggleExpand('${p.id}')">show less</span>` : ''}</div>`
-        : '';
+      const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || (text ? [text] : []);
+      const hasMore = sentences.length > 2;
+      const expanded = expandedFeedPosts.has(p.id);
+      const displayText = (hasMore && !expanded) ? sentences.slice(0, 2).join('').trim() : text;
+      const textHtml = editingFeedPostId === p.id
+        ? `<div class="feed-post-edit">
+            <textarea id="feed-edit-input-${p.id}" rows="3">${esc(text)}</textarea>
+            <div class="feed-edit-actions">
+              <button type="button" class="btn" onclick="window.__feedActions.cancelEdit()">Cancel</button>
+              <button type="button" class="btn btn-primary" onclick="window.__feedActions.saveEdit('${p.id}')">Save</button>
+            </div>
+          </div>`
+        : (text
+          ? `<div class="feed-post-text">${esc(displayText)}${hasMore ? (expanded
+              ? ` <span class="feed-show-more" onclick="window.__feedActions.toggleExpand('${p.id}')">show less</span>`
+              : `<span class="feed-show-more" onclick="window.__feedActions.toggleExpand('${p.id}')"> ... more</span>`) : ''}${p.edited ? ' <span class="feed-edited-tag">(edited)</span>' : ''}</div>`
+          : '');
       return `<div class="feed-post">
         <div class="feed-post-head">
           <div class="feed-post-avatar">${p.authorPhotoURL ? `<img src="${p.authorPhotoURL}" alt="">` : esc((p.authorName||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase())}</div>
@@ -2356,7 +2381,8 @@
           ${canDelete ? `<div class="feed-post-menu">
             <button type="button" class="feed-post-menu-btn" onclick="window.__feedActions.toggleMenu(event,'${p.id}')">⋯</button>
             <div class="feed-post-menu-dropdown" id="feed-menu-${p.id}" style="display:none">
-              <button type="button" onclick="window.__feedActions.deletePost('${p.id}')">Delete post</button>
+              <button type="button" onclick="window.__feedActions.startEdit('${p.id}')">Edit post</button>
+              <button type="button" class="danger" onclick="window.__feedActions.deletePost('${p.id}')">Delete post</button>
             </div>
           </div>` : ''}
         </div>
@@ -2371,6 +2397,28 @@
     }).join('');
   }
 
+  function startEditFeedPost(postId){
+    editingFeedPostId = postId;
+    if(activeFeedMenu){ activeFeedMenu.style.display = 'none'; activeFeedMenu = null; }
+    renderFeedPosts(lastRenderedFeedPosts);
+  }
+  function cancelEditFeedPost(){
+    editingFeedPostId = null;
+    renderFeedPosts(lastRenderedFeedPosts);
+  }
+  function saveEditFeedPost(postId){
+    const textarea = document.getElementById(`feed-edit-input-${postId}`);
+    if(!textarea || !feedPostsCollection) return;
+    const newText = textarea.value.trim();
+    feedPostsCollection.doc(postId).set({
+      text: newText,
+      edited: true
+    }, {merge:true}).then(()=>{
+      editingFeedPostId = null;
+    }).catch(err=>{
+      showToast('Could not save edit: ' + friendlyErr(err), true);
+    });
+  }
   function toggleExpandFeedPost(postId){
     if(expandedFeedPosts.has(postId)) expandedFeedPosts.delete(postId);
     else expandedFeedPosts.add(postId);
@@ -2527,7 +2575,10 @@
     openLightbox: openFeedLightbox,
     toggleExpand: toggleExpandFeedPost,
     toggleMenu: toggleFeedMenu,
-    toggleLike: toggleLikeFeedPost
+    toggleLike: toggleLikeFeedPost,
+    startEdit: startEditFeedPost,
+    cancelEdit: cancelEditFeedPost,
+    saveEdit: saveEditFeedPost
   };
 
   function setFeedVisibility(visible){
