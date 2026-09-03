@@ -429,6 +429,29 @@
     border-radius:20px;padding:3px 9px;margin-bottom:10px;
   }
 
+  .board-style-picker{
+    position:fixed;width:220px;background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:12px;box-shadow:0 12px 32px rgba(27,36,48,0.2);z-index:400;
+  }
+  .style-picker-label{font-size:10.5px;font-weight:700;color:var(--slate-light);text-transform:uppercase;letter-spacing:.04em;margin:4px 0;}
+  .style-picker-swatches{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+  .style-swatch{
+    width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+    transition:transform .12s, border-color .12s;
+  }
+  .style-swatch:hover{transform:scale(1.15);border-color:var(--border);}
+  .style-picker-icons{display:grid;grid-template-columns:repeat(8, 1fr);gap:2px;margin-bottom:8px;}
+  .style-icon-btn{
+    background:none;border:none;font-size:16px;cursor:pointer;padding:4px;border-radius:6px;
+    transition:background .12s, transform .12s;
+  }
+  .style-icon-btn:hover{background:var(--c-blue-bg, var(--c-blue-tint2));transform:scale(1.15);}
+  .style-picker-reset{
+    width:100%;background:none;border:1px solid var(--border);border-radius:7px;padding:6px;
+    font-size:11.5px;color:var(--slate);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .style-picker-reset:hover{background:var(--c-red-bg, #FBE4E2);color:var(--c-red-fg, #C0392B);}
+
   .icon-btn-settings{font-size:15px;padding:9px 12px;}
   .notif-badge{
     position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;
@@ -1031,8 +1054,8 @@
         </select>
       </div>
       <div class="field">
-        <label for="boardCreatedBy" data-i18n="createdByLabel">Created by <span class="optional-tag" data-i18n="optional">(optional)</span></label>
-        <input id="boardCreatedBy" type="text" placeholder="e.g. Tom" data-i18n-placeholder="createdByPlaceholder">
+        <label for="boardCreatedBy" data-i18n="createdByLabel">Created by</label>
+        <input id="boardCreatedBy" type="text" placeholder="e.g. Tom" data-i18n-placeholder="createdByPlaceholder" required>
       </div>
       <div class="field span-full" style="flex:0">
         <button type="submit" class="btn btn-primary" data-i18n="createBoardBtn">+ Create board</button>
@@ -1738,7 +1761,8 @@
     const accents = ['var(--c-blue-fg), var(--c-purple-fg)', 'var(--c-purple-fg), var(--c-amber-fg)', 'var(--c-amber-fg), var(--c-green-fg)', 'var(--c-green-fg), var(--c-blue-fg)', 'var(--c-red-fg), var(--c-amber-fg)'];
     container.innerHTML = `<div class="boards-grid">
       ${boards.map((b, i)=>{
-        const accent = accents[i % accents.length];
+        const accent = b.customAccent || accents[i % accents.length];
+        const iconHtml = b.customIcon ? `<span style="font-size:20px;line-height:1;">${esc(b.customIcon)}</span>` : ICONS_FOLDER;
         const created = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : '';
         const metaParts = [];
         if(created) metaParts.push(t('createdLabel') + ' ' + created);
@@ -1754,11 +1778,12 @@
         return `<a class="board-card${b.pinned?' pinned':''}" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
           <div class="board-card-actions">
             <button class="board-action-btn pin-btn${b.pinned?' pinned':''}" title="${b.pinned?'Unpin board':'Pin board'}" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.pinBoard('${b.id}', ${b.pinned?'true':'false'})">📌</button>
+            <button class="board-action-btn" title="Customize style" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.openStylePicker(event,'${b.id}')">🎨</button>
             <button class="board-action-btn" title="Edit board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.editBoard('${b.id}')">✎</button>
             <button class="board-action-btn danger" title="Delete board" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.deleteBoard('${b.id}','${esc(b.name).replace(/'/g,"\\'")}')">✕</button>
           </div>
           ${b.pinned ? '<div class="board-pinned-label">📌 Pinned</div>' : ''}
-          <div class="board-icon">${ICONS_FOLDER}</div>
+          <div class="board-icon">${iconHtml}</div>
           <div class="board-name">${esc(b.name)}</div>
           <div class="board-meta">${esc(metaParts.join(' · '))}</div>
           ${tagsHTML}
@@ -1897,7 +1922,66 @@
     });
   }
 
-  window.__boardActions = { deleteBoard, editBoard: openEditBoard, pinBoard };
+  const BOARD_ACCENT_OPTIONS = [
+    {name:'Blue → Purple', gradient:'var(--c-blue-fg), var(--c-purple-fg)'},
+    {name:'Purple → Amber', gradient:'var(--c-purple-fg), var(--c-amber-fg)'},
+    {name:'Amber → Green', gradient:'var(--c-amber-fg), var(--c-green-fg)'},
+    {name:'Green → Blue', gradient:'var(--c-green-fg), var(--c-blue-fg)'},
+    {name:'Red → Amber', gradient:'var(--c-red-fg), var(--c-amber-fg)'},
+    {name:'Pink', gradient:'#E85D9C, #F4A6C6'},
+    {name:'Teal', gradient:'#1B59A5, #17A398'},
+    {name:'Slate', gradient:'#475569, #94A3B8'}
+  ];
+  const BOARD_ICON_OPTIONS = ['📋','💼','🎯','🚀','💡','📊','🌍','🔥','⭐','📞','💰','🏆','📈','🤝','📝','🛠️'];
+
+  let activeStylePicker = null;
+  function closeStylePicker(){
+    if(activeStylePicker){ activeStylePicker.remove(); activeStylePicker = null; }
+  }
+  function openStylePicker(event, boardId){
+    event.stopPropagation();
+    closeStylePicker();
+    const picker = document.createElement('div');
+    picker.className = 'board-style-picker';
+    picker.innerHTML = `
+      <div class="style-picker-label">Color</div>
+      <div class="style-picker-swatches">
+        ${BOARD_ACCENT_OPTIONS.map(o=>`<button type="button" class="style-swatch" title="${o.name}" data-accent="${o.gradient}" style="background:linear-gradient(90deg, ${o.gradient})"></button>`).join('')}
+      </div>
+      <div class="style-picker-label">Icon</div>
+      <div class="style-picker-icons">
+        ${BOARD_ICON_OPTIONS.map(e=>`<button type="button" class="style-icon-btn" data-icon="${e}">${e}</button>`).join('')}
+      </div>
+      <button type="button" class="style-picker-reset" data-reset="1">Reset to default</button>
+    `;
+    document.body.appendChild(picker);
+    const rect = event.currentTarget.getBoundingClientRect();
+    const pickerWidth = 220;
+    picker.style.left = Math.max(8, Math.min(window.innerWidth - pickerWidth - 8, rect.left)) + 'px';
+    picker.style.top = (rect.bottom + 6) + 'px';
+    picker.addEventListener('click', (e)=>{
+      const swatch = e.target.closest('.style-swatch');
+      const iconBtn = e.target.closest('.style-icon-btn');
+      const resetBtn = e.target.closest('.style-picker-reset');
+      if(swatch){
+        boardsCollection.doc(boardId).set({customAccent: swatch.dataset.accent}, {merge:true}).catch(()=>{});
+      } else if(iconBtn){
+        boardsCollection.doc(boardId).set({customIcon: iconBtn.dataset.icon}, {merge:true}).catch(()=>{});
+      } else if(resetBtn){
+        boardsCollection.doc(boardId).set({
+          customAccent: firebase.firestore.FieldValue.delete(),
+          customIcon: firebase.firestore.FieldValue.delete()
+        }, {merge:true}).catch(()=>{});
+        closeStylePicker();
+      }
+    });
+    activeStylePicker = picker;
+  }
+  document.addEventListener('click', (e)=>{
+    if(activeStylePicker && !activeStylePicker.contains(e.target)) closeStylePicker();
+  });
+
+  window.__boardActions = { deleteBoard, editBoard: openEditBoard, pinBoard, openStylePicker };
 
   // ---------- Team Chat (badge + new-message popup) ----------
   function initials(name, email){
@@ -2589,6 +2673,12 @@
       const input = document.getElementById('boardNameInput');
       const name = input.value.trim();
       if(!name) return;
+      const createdByInput = document.getElementById('boardCreatedBy');
+      if(!createdByInput.value.trim()){
+        showToast('Please fill in who created this board.', true);
+        createdByInput.focus();
+        return;
+      }
       const BOARD_LIMITS = {free:1, cancelled:1, starter:3, growth:25, premium:25};
       const boardLimit = BOARD_LIMITS[orgPlan];
       if(boardLimit !== undefined && currentBoardCount >= boardLimit){
@@ -2601,8 +2691,7 @@
         ['boardCity', 'city'],
         ['boardIndustry', 'industry'],
         ['boardJobTitle', 'jobTitle'],
-        ['boardSource', 'leadSource'],
-        ['boardCreatedBy', 'createdByLabel']
+        ['boardSource', 'leadSource']
       ];
       const missingLabels = fieldMap
         .filter(([id]) => !document.getElementById(id).value.trim())
@@ -2651,9 +2740,10 @@
         createdBy: user ? user.email : null
       }).then(doc=>{
         formEl.reset();
-        location.href = `dashboard.html?board=${encodeURIComponent(doc.id)}`;
+        showToast(`"${name}" created — click it below to open it`);
       }).catch(err=>{
         showToast(t('couldNotCreateBoard') + ' ' + friendlyErr(err), true);
+      }).finally(()=>{
         submitBtn.disabled = false;
       });
     }

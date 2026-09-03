@@ -1725,7 +1725,8 @@
     const accents = ['var(--c-blue-fg), var(--c-purple-fg)', 'var(--c-purple-fg), var(--c-amber-fg)', 'var(--c-amber-fg), var(--c-green-fg)', 'var(--c-green-fg), var(--c-blue-fg)', 'var(--c-red-fg), var(--c-amber-fg)'];
     container.innerHTML = `<div class="boards-grid">
       ${filtered.map((b, i)=>{
-        const accent = accents[i % accents.length];
+        const accent = b.customAccent || accents[i % accents.length];
+        const iconHtml = b.customIcon ? `<span style="font-size:20px;line-height:1;">${esc(b.customIcon)}</span>` : ICONS_FOLDER;
         const deletedAt = b.deletedAt && b.deletedAt.toDate ? b.deletedAt.toDate() : null;
         const deletedLabel = deletedAt ? deletedAt.toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'}) : 'recently';
         const created = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : '';
@@ -1734,7 +1735,7 @@
         if(b.createdByName) metaParts.push('by ' + b.createdByName);
         return `<div class="board-card trash-board-card" data-board-id="${b.id}" style="--board-accent:linear-gradient(90deg, ${accent})">
           <div class="trash-deleted-badge">🗑️ Deleted ${esc(deletedLabel)}</div>
-          <div class="board-icon">${ICONS_FOLDER}</div>
+          <div class="board-icon">${iconHtml}</div>
           <div class="board-name">${esc(b.name || 'Untitled board')}</div>
           <div class="board-meta">${esc(metaParts.join(' · '))}</div>
           <div class="board-count" id="trash-count-${b.id}">— leads</div>
