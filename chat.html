@@ -233,6 +233,18 @@
   }
   .chat-emoji-picker button:hover{background:var(--c-hover-bg, var(--c-blue-tint2));transform:scale(1.15);}
 
+  .chat-media-preview{
+    padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0;background:var(--panel);
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    animation:chat-thread-fade .15s ease;
+  }
+  .chat-media-preview-content{display:flex;align-items:center;gap:10px;min-width:0;}
+  .chat-media-preview-content img, .chat-media-preview-content video{
+    max-width:64px;max-height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;
+  }
+  .chat-media-preview-name{font-size:12.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+  .chat-media-preview-actions{display:flex;gap:8px;flex-shrink:0;}
+
   .chat-upload-progress{
     padding:8px 14px;border-top:1px solid var(--border);flex-shrink:0;background:var(--panel);
     font-size:11.5px;color:var(--slate);display:flex;flex-direction:column;gap:4px;
@@ -858,6 +870,13 @@
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-emoji-picker" id="chatEmojiPicker" style="display:none"></div>
+        <div class="chat-media-preview" id="chatMediaPreview" style="display:none">
+          <div class="chat-media-preview-content" id="chatMediaPreviewContent"></div>
+          <div class="chat-media-preview-actions">
+            <button type="button" class="btn" id="chatMediaCancelBtn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="chatMediaSendBtn">Send</button>
+          </div>
+        </div>
         <div class="chat-upload-progress" id="chatUploadProgress" style="display:none">
           <div class="chat-upload-progress-bar" id="chatUploadProgressBar"></div>
           <span id="chatUploadProgressLabel">Uploading...</span>
@@ -1412,6 +1431,7 @@
 
   function openChatThread(otherUid){
     if(!currentUid || !directMessagesCollection) return;
+    clearMediaPreview();
     chatActiveOtherUid = otherUid;
     const convId = getConversationId(currentUid, otherUid);
     const otherMember = teamMembersList.find(m=>m.id === otherUid);
@@ -1457,6 +1477,7 @@
 
   function closeChatThread(){
     if(unsubscribeChatThread){ unsubscribeChatThread(); unsubscribeChatThread = null; }
+    clearMediaPreview();
     setTypingFlag(false);
     chatActiveOtherUid = null;
     document.getElementById('chatSidebar').classList.remove('mobile-hidden');
@@ -1494,8 +1515,10 @@
     });
   }
 
-  function sendMediaMessage(file){
-    if(!chatActiveOtherUid || !storage) return;
+  let pendingMediaFile = null;
+  let pendingMediaObjectUrl = null;
+
+  function showMediaPreview(file){
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
     if(!isImage && !isVideo){
@@ -1507,6 +1530,28 @@
       showToast(`That file is too big (max ${isVideo ? '50MB for videos' : '10MB for photos'}).`, true);
       return;
     }
+    clearMediaPreview();
+    pendingMediaFile = file;
+    pendingMediaObjectUrl = URL.createObjectURL(file);
+    const content = document.getElementById('chatMediaPreviewContent');
+    const mediaEl = isImage
+      ? `<img src="${pendingMediaObjectUrl}" alt="">`
+      : `<video src="${pendingMediaObjectUrl}" muted></video>`;
+    content.innerHTML = `${mediaEl}<span class="chat-media-preview-name">${esc(file.name)}</span>`;
+    document.getElementById('chatMediaPreview').style.display = 'flex';
+  }
+
+  function clearMediaPreview(){
+    if(pendingMediaObjectUrl){ URL.revokeObjectURL(pendingMediaObjectUrl); pendingMediaObjectUrl = null; }
+    pendingMediaFile = null;
+    document.getElementById('chatMediaPreview').style.display = 'none';
+    document.getElementById('chatMediaPreviewContent').innerHTML = '';
+  }
+
+  function sendMediaMessage(file){
+    if(!chatActiveOtherUid || !storage) return;
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
     const convId = getConversationId(currentUid, chatActiveOtherUid);
     const mediaType = isImage ? 'image' : 'video';
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -1557,8 +1602,15 @@
   });
   document.getElementById('chatFileInput').addEventListener('change', (e)=>{
     const file = e.target.files[0];
-    if(file) sendMediaMessage(file);
+    if(file) showMediaPreview(file);
     e.target.value = '';
+  });
+  document.getElementById('chatMediaCancelBtn').addEventListener('click', clearMediaPreview);
+  document.getElementById('chatMediaSendBtn').addEventListener('click', ()=>{
+    if(!pendingMediaFile) return;
+    const file = pendingMediaFile;
+    clearMediaPreview();
+    sendMediaMessage(file);
   });
 
   function openLightbox(url){
