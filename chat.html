@@ -153,14 +153,10 @@
   }
   .chat-member-row:hover{background:var(--c-hover-bg, var(--c-blue-tint2));}
   .chat-member-row.active{background:var(--c-blue-bg);}
-  .chat-member-row.unread{background:var(--c-amber-bg);animation:chat-unread-glow 2s ease-in-out infinite;}
+  .chat-member-row.unread{background:var(--c-amber-bg);}
   .chat-member-row.unread .chat-member-name{font-weight:800;}
   .chat-member-row.unread .chat-member-preview{color:var(--ink);font-weight:600;}
-  .chat-member-row.unread.active{background:var(--c-blue-bg);animation:none;}
-  @keyframes chat-unread-glow{
-    0%,100%{box-shadow:inset 0 0 0 1px rgba(255,157,0,0.25);}
-    50%{box-shadow:inset 0 0 0 1px rgba(255,157,0,0.55);}
-  }
+  .chat-member-row.unread.active{background:var(--c-blue-bg);}
   .chat-member-avatar{
     width:38px;height:38px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);
     display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;overflow:hidden;
@@ -1118,16 +1114,16 @@
 
   let renderChatMemberListScheduled = false;
   function renderChatMemberList(){
-    // Coalesce rapid-fire calls (typing indicators, delivery/read updates can all
-    // trigger this within milliseconds of each other) into a single render per
-    // animation frame — rebuilding the whole row list too often was swapping the
-    // clickable button out from under people's clicks mid-gesture.
+    // Real debounce (not just a single animation frame) — typing indicators can
+    // keep triggering this many times per second while someone types, and
+    // rebuilding the row list that often was visibly flickering and swapping
+    // the clickable button out from under people's cursor mid-click.
     if(renderChatMemberListScheduled) return;
     renderChatMemberListScheduled = true;
-    requestAnimationFrame(()=>{
+    setTimeout(()=>{
       renderChatMemberListScheduled = false;
       renderChatMemberListImmediate();
-    });
+    }, 500);
   }
   function renderChatMemberListImmediate(){
     const container = document.getElementById('chatMembersBody');
@@ -1197,7 +1193,6 @@
     const convId = chatActiveOtherUid ? getConversationId(currentUid, chatActiveOtherUid) : null;
     const conv = convId ? chatConversationsMap[convId] : null;
     const otherReadAt = conv && conv.lastReadAt && conv.lastReadAt[chatActiveOtherUid];
-    const otherDeliveredAt = conv && conv.lastDeliveredAt && conv.lastDeliveredAt[chatActiveOtherUid];
     // Find the last message I sent — that's the only one that gets a read receipt,
     // matching how most chat apps only mark the most recent outgoing message.
     let lastMineIndex = -1;
@@ -1211,16 +1206,12 @@
       if(mine && i === lastMineIndex){
         const msgMillis = (m.createdAt && typeof m.createdAt.toMillis === 'function') ? m.createdAt.toMillis() : null;
         const readMillis = (otherReadAt && typeof otherReadAt.toMillis === 'function') ? otherReadAt.toMillis() : null;
-        const deliveredMillis = (otherDeliveredAt && typeof otherDeliveredAt.toMillis === 'function') ? otherDeliveredAt.toMillis() : null;
         const isRead = msgMillis && readMillis && readMillis >= msgMillis;
-        const isDelivered = msgMillis && deliveredMillis && deliveredMillis >= msgMillis;
         const singleCheck = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>`;
         const doubleCheck = `<svg viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l5 5L18 6"/><path d="M9 13l5 5L26 6"/></svg>`;
         if(isRead){
           const readTime = formatChatTime(otherReadAt.toDate());
           receiptHtml = `<div class="chat-msg-receipt read">${doubleCheck}Read ${esc(readTime)}</div>`;
-        } else if(isDelivered){
-          receiptHtml = `<div class="chat-msg-receipt delivered">${doubleCheck}Delivered</div>`;
         } else {
           receiptHtml = `<div class="chat-msg-receipt">${singleCheck}Sent</div>`;
         }
@@ -1429,27 +1420,11 @@
     if(unsubscribeChatConversations) unsubscribeChatConversations();
     unsubscribeChatConversations = directMessagesCollection.where('participants', 'array-contains', currentUid).onSnapshot(snap=>{
       chatConversationsMap = {};
-      snap.docs.forEach(d=>{
-        const conv = {id:d.id, ...d.data()};
-        chatConversationsMap[d.id] = conv;
-        if(!snap.metadata.hasPendingWrites) markDeliveredIfNeeded(conv);
-      });
+      snap.docs.forEach(d=>{ chatConversationsMap[d.id] = {id:d.id, ...d.data()}; });
       renderChatMemberList();
       updateTypingStatusLine();
       if(chatActiveOtherUid) renderChatMessages(lastRenderedMessages);
     });
-  }
-
-  function markDeliveredIfNeeded(conv){
-    const lastMsg = conv.lastMessage;
-    if(!lastMsg || lastMsg.senderId === currentUid) return; // only mark messages sent TO me
-    if(!lastMsg.createdAt || typeof lastMsg.createdAt.toMillis !== 'function') return;
-    const deliveredAt = conv.lastDeliveredAt && conv.lastDeliveredAt[currentUid];
-    const deliveredMillis = (deliveredAt && typeof deliveredAt.toMillis === 'function') ? deliveredAt.toMillis() : 0;
-    if(deliveredMillis >= lastMsg.createdAt.toMillis()) return; // already marked delivered
-    directMessagesCollection.doc(conv.id).set({
-      [`lastDeliveredAt.${currentUid}`]: firebase.firestore.FieldValue.serverTimestamp()
-    }, {merge:true}).catch(()=>{});
   }
 
   // ---------- Authentication gate ----------
