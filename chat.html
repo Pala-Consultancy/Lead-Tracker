@@ -1116,7 +1116,20 @@
     return conv.lastMessage.createdAt.toMillis() > lastReadAt.toMillis();
   }
 
+  let renderChatMemberListScheduled = false;
   function renderChatMemberList(){
+    // Coalesce rapid-fire calls (typing indicators, delivery/read updates can all
+    // trigger this within milliseconds of each other) into a single render per
+    // animation frame — rebuilding the whole row list too often was swapping the
+    // clickable button out from under people's clicks mid-gesture.
+    if(renderChatMemberListScheduled) return;
+    renderChatMemberListScheduled = true;
+    requestAnimationFrame(()=>{
+      renderChatMemberListScheduled = false;
+      renderChatMemberListImmediate();
+    });
+  }
+  function renderChatMemberListImmediate(){
     const container = document.getElementById('chatMembersBody');
     if(!container) return;
     if(teamMembersList.length === 0){
@@ -1218,15 +1231,10 @@
   }
 
   function openChatThread(otherUid){
-    console.log('[CLICK DEBUG] openChatThread called with otherUid=', otherUid, 'currentUid=', currentUid, 'directMessagesCollection set?', !!directMessagesCollection);
-    if(!currentUid || !directMessagesCollection){
-      console.warn('[CLICK DEBUG] openChatThread bailed out early — currentUid or directMessagesCollection missing.');
-      return;
-    }
+    if(!currentUid || !directMessagesCollection) return;
     chatActiveOtherUid = otherUid;
     const convId = getConversationId(currentUid, otherUid);
     const otherMember = teamMembersList.find(m=>m.id === otherUid);
-    console.log('[CLICK DEBUG] convId=', convId, 'otherMember found?', !!otherMember);
     document.getElementById('chatHeaderTitle').textContent = (otherMember && (otherMember.name || otherMember.email)) || 'Chat';
     document.getElementById('chatThreadAvatar').className = 'chat-thread-avatar ' + avatarColorClass(otherUid);
     document.getElementById('chatThreadAvatar').innerHTML = otherMember && otherMember.photoURL
@@ -1234,7 +1242,6 @@
       : esc(initials(otherMember && otherMember.name, otherMember && otherMember.email));
     document.getElementById('chatMainEmpty').style.display = 'none';
     document.getElementById('chatThreadView').style.display = 'flex';
-    console.log('[CLICK DEBUG] Set chatThreadView display to flex. Actual current display:', document.getElementById('chatThreadView').style.display);
     document.getElementById('chatSidebar').classList.add('mobile-hidden');
     renderChatMemberList();
     updateTypingStatusLine();
@@ -1242,17 +1249,12 @@
     directMessagesCollection.doc(convId).set({
       participants: [currentUid, otherUid],
       [`lastReadAt.${currentUid}`]: firebase.firestore.FieldValue.serverTimestamp()
-    }, {merge:true}).catch(err=>{
-      console.error('[CLICK DEBUG] lastReadAt write failed:', err);
-    });
+    }, {merge:true}).catch(()=>{});
 
     if(unsubscribeChatThread) unsubscribeChatThread();
     lastRenderedMessages = [];
     unsubscribeChatThread = directMessagesCollection.doc(convId).collection('thread').orderBy('createdAt').onSnapshot(snap=>{
-      console.log('[CLICK DEBUG] thread snapshot received, message count:', snap.docs.length);
       renderChatMessages(snap.docs.map(d=>d.data()));
-    }, err=>{
-      console.error('[CLICK DEBUG] thread listener error:', err);
     });
   }
 
@@ -1386,17 +1388,7 @@
   // Delegated click handler: attached once to the container, not to individual rows,
   // so it keeps working no matter how many times the row list gets re-rendered
   // underneath it (new messages, typing indicators, delivery updates, etc).
-  document.addEventListener('click', (e)=>{
-    console.log('[CLICK DEBUG] ANY click on page. target=', e.target.tagName, 'id=', e.target.id, 'class=', e.target.className);
-  }, true);
-
   document.getElementById('chatMembersBody').addEventListener('click', (e)=>{
-    console.log('[CLICK DEBUG] click reached listener. target=', e.target.tagName, 'class=', e.target.className);
-    const banner = document.createElement('div');
-    banner.textContent = 'DEBUG: click detected on ' + e.target.tagName;
-    banner.style.cssText = 'position:fixed;top:10px;left:10px;background:red;color:white;padding:10px;z-index:99999;font-size:16px;';
-    document.body.appendChild(banner);
-    setTimeout(()=>banner.remove(), 4000);
     const row = e.target.closest('.chat-member-row');
     if(row && row.dataset.uid) openChatThread(row.dataset.uid);
   });
