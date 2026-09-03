@@ -228,18 +228,24 @@
     transition:background .1s, transform .1s;
   }
   .chat-emoji-picker button:hover{background:var(--c-hover-bg, var(--c-blue-tint2));transform:scale(1.15);}
+  .chat-msg-wrap{
+    display:flex;flex-direction:column;max-width:70%;position:relative;
+  }
+  .chat-msg-wrap.mine{align-self:flex-end;align-items:flex-end;}
+  .chat-msg-wrap.theirs{align-self:flex-start;align-items:flex-start;}
+  .chat-msg-wrap:hover .chat-msg-react-btn{opacity:1;transform:scale(1);}
   .chat-msg{
-    max-width:70%;font-size:13.5px;line-height:1.5;padding:9px 12px;border-radius:13px;
-    white-space:pre-wrap;word-break:break-word;transition:transform .15s;
+    max-width:100%;font-size:13.5px;line-height:1.5;padding:9px 12px;border-radius:13px;
+    white-space:pre-wrap;word-break:break-word;transition:transform .15s;cursor:default;
   }
   .chat-msg:hover{transform:translateY(-1px);}
   .chat-msg.mine{
-    align-self:flex-end;color:#fff;border-bottom-right-radius:4px;
+    color:#fff;border-bottom-right-radius:4px;
     background:linear-gradient(135deg, var(--teal), var(--teal-dark));
     box-shadow:0 3px 10px rgba(27,89,165,0.25);
   }
   .chat-msg.theirs{
-    align-self:flex-start;background:var(--c-blue-tint2, #F6FAFE);color:var(--ink);
+    background:var(--c-blue-tint2, #F6FAFE);color:var(--ink);
     border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(27,36,48,0.06);
   }
   .chat-msg-time{font-size:10.5px;opacity:.75;margin-top:3px;}
@@ -249,6 +255,47 @@
   .chat-msg-receipt svg{width:13px;height:13px;flex-shrink:0;}
   .chat-msg-receipt.read{color:#8ED1FC;opacity:1;}
   .chat-msg-receipt.read svg{color:#8ED1FC;}
+
+  .chat-msg-react-btn{
+    position:absolute;top:-10px;background:var(--panel);border:1px solid var(--border);border-radius:50%;
+    width:24px;height:24px;font-size:12px;cursor:pointer;opacity:0;transform:scale(.7);
+    transition:opacity .15s, transform .15s;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(27,36,48,0.12);
+  }
+  .chat-msg-wrap.mine .chat-msg-react-btn{left:-8px;}
+  .chat-msg-wrap.theirs .chat-msg-react-btn{right:-8px;}
+  .chat-msg-react-btn:hover{transform:scale(1.15);}
+
+  .chat-msg-reactions{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+  .chat-reaction-pill{
+    display:inline-flex;align-items:center;gap:3px;font-size:12px;padding:2px 7px;border-radius:12px;
+    background:var(--c-blue-tint2, #F6FAFE);border:1px solid var(--border);cursor:pointer;transition:transform .1s;
+  }
+  .chat-reaction-pill:hover{transform:scale(1.08);}
+  .chat-reaction-pill.mine{background:var(--c-blue-bg);border-color:var(--teal);}
+
+  .chat-reaction-picker{
+    position:fixed;display:flex;gap:4px;background:var(--panel);border:1px solid var(--border);
+    border-radius:20px;padding:6px 8px;box-shadow:0 8px 24px rgba(27,36,48,0.22);z-index:500;
+    animation:chat-msg-pop .15s ease both;
+  }
+  .chat-reaction-picker button{
+    background:none;border:none;font-size:18px;cursor:pointer;padding:3px;border-radius:50%;
+    transition:transform .12s;
+  }
+  .chat-reaction-picker button:hover{transform:scale(1.3);}
+
+  .chat-typing-bubble{
+    display:flex;gap:4px;align-items:center;padding:12px 14px !important;
+  }
+  .chat-typing-bubble span{
+    width:6px;height:6px;border-radius:50%;background:var(--slate-light);
+    animation:chat-typing-bounce-bubble 1.1s infinite ease-in-out;
+  }
+  .chat-typing-bubble span:nth-child(2){animation-delay:.15s;}
+  .chat-typing-bubble span:nth-child(3){animation-delay:.3s;}
+  @keyframes chat-typing-bounce-bubble{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
+
   .chat-input-row{
     display:flex;gap:8px;padding:14px;border-top:1px solid var(--border);flex-shrink:0;background:var(--panel);
   }
@@ -266,6 +313,12 @@
   .chat-send-btn:hover{background:var(--teal-dark);}
   .chat-send-btn:disabled{opacity:.5;cursor:default;}
   .chat-send-btn:active{transform:scale(0.92);}
+  .chat-send-btn.sent-flourish{animation:chat-send-flourish .4s ease;}
+  @keyframes chat-send-flourish{
+    0%{transform:scale(1) rotate(0deg);}
+    40%{transform:scale(1.25) rotate(18deg);}
+    100%{transform:scale(1) rotate(0deg);}
+  }
 
   .chat-avatar-blue{background:var(--c-blue-bg);color:var(--c-blue-fg);}
   .chat-avatar-purple{background:var(--c-purple-bg);color:var(--c-purple-fg);}
@@ -1184,16 +1237,30 @@
 
   let lastRenderedMessages = [];
 
+  const QUICK_REACTIONS = ['❤️','😂','👍','😮','😢','🙏'];
+
+  function toggleReaction(messageId, emoji){
+    if(!chatActiveOtherUid || !messageId) return;
+    const convId = getConversationId(currentUid, chatActiveOtherUid);
+    const msgRef = directMessagesCollection.doc(convId).collection('thread').doc(messageId);
+    const existing = lastRenderedMessages.find(m=>m.id === messageId);
+    const already = existing && existing.reactions && existing.reactions[currentUid] === emoji;
+    msgRef.set({
+      reactions: { [currentUid]: already ? firebase.firestore.FieldValue.delete() : emoji }
+    }, {merge:true}).catch(()=>{});
+  }
+
   function renderChatMessages(messages){
     lastRenderedMessages = messages;
     const container = document.getElementById('chatMessages');
     if(!container) return;
-    if(messages.length === 0){
+    const convId = chatActiveOtherUid ? getConversationId(currentUid, chatActiveOtherUid) : null;
+    const conv = convId ? chatConversationsMap[convId] : null;
+    const otherIsTyping = conv && conv.typing && conv.typing[chatActiveOtherUid];
+    if(messages.length === 0 && !otherIsTyping){
       container.innerHTML = `<div class="chat-empty">Say hello 👋</div>`;
       return;
     }
-    const convId = chatActiveOtherUid ? getConversationId(currentUid, chatActiveOtherUid) : null;
-    const conv = convId ? chatConversationsMap[convId] : null;
     const otherReadAt = conv && conv.lastReadAt && conv.lastReadAt[chatActiveOtherUid];
     // Find the last message I sent — that's the only one that gets a read receipt,
     // matching how most chat apps only mark the most recent outgoing message.
@@ -1201,7 +1268,7 @@
     for(let i = messages.length - 1; i >= 0; i--){
       if(messages[i].senderId === currentUid){ lastMineIndex = i; break; }
     }
-    container.innerHTML = messages.map((m, i)=>{
+    const messagesHtml = messages.map((m, i)=>{
       const mine = m.senderId === currentUid;
       const time = (m.createdAt && typeof m.createdAt.toDate === 'function') ? formatChatTime(m.createdAt.toDate()) : '';
       let receiptHtml = '';
@@ -1218,8 +1285,27 @@
           receiptHtml = `<div class="chat-msg-receipt">${singleCheck}Sent</div>`;
         }
       }
-      return `<div class="chat-msg ${mine ? 'mine' : 'theirs'}">${esc(m.text)}${time ? `<div class="chat-msg-time">${esc(time)}</div>` : ''}${receiptHtml}</div>`;
+      const reactionCounts = {};
+      if(m.reactions){
+        Object.values(m.reactions).forEach(e=>{ reactionCounts[e] = (reactionCounts[e]||0) + 1; });
+      }
+      const myReaction = m.reactions && m.reactions[currentUid];
+      const reactionsHtml = Object.keys(reactionCounts).length
+        ? `<div class="chat-msg-reactions">${Object.entries(reactionCounts).map(([emoji,count])=>
+            `<button type="button" class="chat-reaction-pill${myReaction===emoji ? ' mine':''}" onclick="window.__chatActions.toggleReaction('${m.id}','${emoji}')">${emoji}${count>1?` ${count}`:''}</button>`
+          ).join('')}</div>`
+        : '';
+      const reactBtnHtml = `<button type="button" class="chat-msg-react-btn" onclick="window.__chatActions.openReactionPicker(event,'${m.id}')" title="React">😊</button>`;
+      return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}">
+        <div class="chat-msg ${mine ? 'mine' : 'theirs'}" ondblclick="window.__chatActions.toggleReaction('${m.id}','❤️')">${esc(m.text)}${time ? `<div class="chat-msg-time">${esc(time)}</div>` : ''}${receiptHtml}</div>
+        ${reactBtnHtml}
+        ${reactionsHtml}
+      </div>`;
     }).join('');
+    const typingBubbleHtml = otherIsTyping
+      ? `<div class="chat-msg-wrap theirs"><div class="chat-msg theirs chat-typing-bubble"><span></span><span></span><span></span></div></div>`
+      : '';
+    container.innerHTML = messagesHtml + typingBubbleHtml;
     container.scrollTop = container.scrollHeight;
   }
 
@@ -1247,7 +1333,7 @@
     if(unsubscribeChatThread) unsubscribeChatThread();
     lastRenderedMessages = [];
     unsubscribeChatThread = directMessagesCollection.doc(convId).collection('thread').orderBy('createdAt').onSnapshot(snap=>{
-      renderChatMessages(snap.docs.map(d=>d.data()));
+      renderChatMessages(snap.docs.map(d=>({id:d.id, ...d.data()})));
     });
   }
 
@@ -1279,6 +1365,8 @@
     const convId = getConversationId(currentUid, chatActiveOtherUid);
     const convRef = directMessagesCollection.doc(convId);
     const sendBtn = document.getElementById('chatSendBtn');
+    sendBtn.classList.add('sent-flourish');
+    setTimeout(()=>sendBtn.classList.remove('sent-flourish'), 400);
     sendBtn.disabled = true;
     input.value = '';
     convRef.set({
@@ -1297,7 +1385,31 @@
     });
   }
 
-  window.__chatActions = { openChatThread };
+  let activeReactionPicker = null;
+  function closeReactionPicker(){
+    if(activeReactionPicker){ activeReactionPicker.remove(); activeReactionPicker = null; }
+  }
+  function openReactionPicker(event, messageId){
+    event.stopPropagation();
+    closeReactionPicker();
+    const picker = document.createElement('div');
+    picker.className = 'chat-reaction-picker';
+    picker.innerHTML = QUICK_REACTIONS.map(e=>`<button type="button">${e}</button>`).join('');
+    document.body.appendChild(picker);
+    const rect = event.currentTarget.getBoundingClientRect();
+    picker.style.left = Math.max(8, rect.left - 100) + 'px';
+    picker.style.top = (rect.top - 52) + 'px';
+    picker.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button');
+      if(btn){ toggleReaction(messageId, btn.textContent); closeReactionPicker(); }
+    });
+    activeReactionPicker = picker;
+  }
+  document.addEventListener('click', (e)=>{
+    if(activeReactionPicker && !activeReactionPicker.contains(e.target)) closeReactionPicker();
+  });
+
+  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker };
 
   // ---------- Emoji picker ----------
   const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','🙄','😴','😭','😡','🥳','😎','🤩',
