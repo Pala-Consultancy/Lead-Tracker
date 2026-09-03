@@ -148,7 +148,34 @@
     box-sizing:border-box;margin-bottom:8px;
   }
   .feed-composer textarea:focus{outline:none;border-color:var(--teal);}
-  .feed-post-btn{width:100%;justify-content:center;font-size:12.5px;padding:8px;}
+  .feed-composer-actions{display:flex;gap:8px;align-items:center;}
+  .feed-attach-btn{
+    background:var(--c-blue-tint2, #F6FAFE);border:1px solid var(--border);border-radius:8px;
+    font-size:15px;cursor:pointer;padding:7px 10px;flex-shrink:0;transition:background .15s, transform .12s;
+  }
+  .feed-attach-btn:hover{background:var(--c-blue-bg);}
+  .feed-attach-btn:active{transform:scale(.92);}
+  .feed-post-btn{flex:1;justify-content:center;font-size:12.5px;padding:8px;}
+  .feed-media-preview{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--c-blue-tint2, #F6FAFE);border-radius:8px;padding:6px 8px;margin-bottom:8px;
+  }
+  .feed-media-preview-content{display:flex;align-items:center;gap:8px;min-width:0;}
+  .feed-media-preview-content img, .feed-media-preview-content video{
+    width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0;
+  }
+  .feed-media-preview-content span{font-size:11px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .feed-media-remove-btn{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:12px;flex-shrink:0;padding:2px 5px;}
+  .feed-media-remove-btn:hover{color:var(--c-red-fg, #C0392B);}
+  .feed-upload-progress{height:4px;border-radius:4px;background:var(--c-blue-tint2, #F6FAFE);overflow:hidden;margin-bottom:8px;position:relative;}
+  .feed-upload-progress-bar{position:absolute;left:0;top:0;bottom:0;width:var(--pct,0%);background:var(--teal);border-radius:4px;transition:width .2s;}
+  .feed-post-media{max-width:100%;border-radius:9px;margin-bottom:8px;display:block;cursor:pointer;}
+  .feed-post-media[data-type="video"]{cursor:default;}
+  .chat-lightbox{
+    position:fixed;inset:0;background:rgba(10,14,20,0.9);z-index:600;
+    display:flex;align-items:center;justify-content:center;cursor:zoom-out;
+  }
+  .chat-lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;}
   .feed-post-btn:disabled{opacity:.5;cursor:default;}
   .feed-posts{flex:1;overflow-y:auto;padding:6px 14px 14px;}
   .feed-post{padding:12px 0;border-bottom:1px solid var(--border);}
@@ -1059,7 +1086,18 @@
     </div>
     <div class="feed-composer">
       <textarea id="feedPostInput" rows="2" placeholder="Share an update with your team..." maxlength="600"></textarea>
-      <button type="button" class="btn btn-primary feed-post-btn" id="feedPostBtn">Post</button>
+      <div class="feed-media-preview" id="feedMediaPreview" style="display:none">
+        <div class="feed-media-preview-content" id="feedMediaPreviewContent"></div>
+        <button type="button" class="feed-media-remove-btn" id="feedMediaRemoveBtn" title="Remove">✕</button>
+      </div>
+      <div class="feed-upload-progress" id="feedUploadProgress" style="display:none">
+        <div class="feed-upload-progress-bar" id="feedUploadProgressBar"></div>
+      </div>
+      <div class="feed-composer-actions">
+        <button type="button" class="feed-attach-btn" id="feedAttachBtn" title="Attach photo or video">📎</button>
+        <input type="file" id="feedFileInput" accept="image/*,video/*" style="display:none">
+        <button type="button" class="btn btn-primary feed-post-btn" id="feedPostBtn">Post</button>
+      </div>
     </div>
     <div class="feed-posts" id="feedPosts"></div>
   </div>
@@ -1376,6 +1414,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 <script>
 (function(){
   // ---------- i18n ----------
@@ -1727,12 +1766,14 @@
   let workspaceId = null;
   let workspaceRef = null;
   let auth = null;
+  let storage = null;
   let firebaseConnected = false;
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       auth = firebase.auth();
+      storage = firebase.storage();
       auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
       firebaseConnected = true;
     }
@@ -2263,6 +2304,12 @@
     container.innerHTML = posts.map(p=>{
       const time = p.createdAt && p.createdAt.toDate ? formatFeedTime(p.createdAt.toDate()) : '';
       const canDelete = p.authorId === myUid;
+      let mediaHtml = '';
+      if(p.mediaType === 'image' && p.mediaUrl){
+        mediaHtml = `<img class="feed-post-media" data-type="image" src="${p.mediaUrl}" alt="" onclick="window.__feedActions.openLightbox('${p.mediaUrl}')">`;
+      } else if(p.mediaType === 'video' && p.mediaUrl){
+        mediaHtml = `<video class="feed-post-media" data-type="video" src="${p.mediaUrl}" controls></video>`;
+      }
       return `<div class="feed-post">
         <div class="feed-post-head">
           <div class="feed-post-avatar">${p.authorPhotoURL ? `<img src="${p.authorPhotoURL}" alt="">` : esc((p.authorName||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase())}</div>
@@ -2272,7 +2319,8 @@
           </div>
           ${canDelete ? `<button type="button" class="feed-post-delete" onclick="window.__feedActions.deletePost('${p.id}')">Delete</button>` : ''}
         </div>
-        <div class="feed-post-text">${esc(p.text)}</div>
+        ${mediaHtml}
+        ${p.text ? `<div class="feed-post-text">${esc(p.text)}</div>` : ''}
       </div>`;
     }).join('');
   }
@@ -2285,21 +2333,101 @@
       console.error('Feed sync error', err);
     });
   }
+
+  let pendingFeedMediaFile = null;
+  let pendingFeedMediaObjectUrl = null;
+  function showFeedMediaPreview(file){
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if(!isImage && !isVideo){
+      showToast('Only photos and videos can be attached.', true);
+      return;
+    }
+    const maxBytes = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if(file.size > maxBytes){
+      showToast(`That file is too big (max ${isVideo ? '50MB for videos' : '10MB for photos'}).`, true);
+      return;
+    }
+    clearFeedMediaPreview();
+    pendingFeedMediaFile = file;
+    pendingFeedMediaObjectUrl = URL.createObjectURL(file);
+    const content = document.getElementById('feedMediaPreviewContent');
+    const mediaEl = isImage ? `<img src="${pendingFeedMediaObjectUrl}" alt="">` : `<video src="${pendingFeedMediaObjectUrl}" muted></video>`;
+    content.innerHTML = `${mediaEl}<span>${esc(file.name)}</span>`;
+    document.getElementById('feedMediaPreview').style.display = 'flex';
+  }
+  function clearFeedMediaPreview(){
+    if(pendingFeedMediaObjectUrl){ URL.revokeObjectURL(pendingFeedMediaObjectUrl); pendingFeedMediaObjectUrl = null; }
+    pendingFeedMediaFile = null;
+    document.getElementById('feedMediaPreview').style.display = 'none';
+    document.getElementById('feedMediaPreviewContent').innerHTML = '';
+  }
+  function openFeedLightbox(url){
+    const overlay = document.createElement('div');
+    overlay.className = 'chat-lightbox';
+    overlay.innerHTML = `<img src="${url}" alt="">`;
+    overlay.addEventListener('click', ()=>overlay.remove());
+    document.body.appendChild(overlay);
+  }
+
   function postFeedUpdate(){
     const input = document.getElementById('feedPostInput');
     const text = input.value.trim();
-    if(!text || !feedPostsCollection) return;
+    if(!text && !pendingFeedMediaFile) return;
+    if(!feedPostsCollection) return;
     const user = auth.currentUser;
     if(!user) return;
     const btn = document.getElementById('feedPostBtn');
     btn.disabled = true;
-    feedPostsCollection.add({
-      text,
-      authorId: user.uid,
-      authorName: currentUserDisplayName || user.email || 'Team member',
-      authorPhotoURL: user.photoURL || null,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
+
+    function createPost(mediaUrl, mediaType){
+      return feedPostsCollection.add({
+        text,
+        mediaUrl: mediaUrl || null,
+        mediaType: mediaType || null,
+        authorId: user.uid,
+        authorName: currentUserDisplayName || user.email || 'Team member',
+        authorPhotoURL: user.photoURL || null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    if(pendingFeedMediaFile){
+      const file = pendingFeedMediaFile;
+      const isImage = file.type.startsWith('image/');
+      const mediaType = isImage ? 'image' : 'video';
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `workspaces/${workspaceId}/feedMedia/${Date.now()}_${user.uid}_${safeName}`;
+      const uploadTask = storage.ref(storagePath).put(file);
+      const progressEl = document.getElementById('feedUploadProgress');
+      const progressBar = document.getElementById('feedUploadProgressBar');
+      progressEl.style.display = 'block';
+      progressBar.style.setProperty('--pct', '0%');
+      uploadTask.on('state_changed', snapshot=>{
+        const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        progressBar.style.setProperty('--pct', pct + '%');
+      }, err=>{
+        progressEl.style.display = 'none';
+        showToast('Upload failed: ' + friendlyErr(err), true);
+        btn.disabled = false;
+      }, ()=>{
+        uploadTask.snapshot.ref.getDownloadURL().then(url=>{
+          return createPost(url, mediaType);
+        }).then(()=>{
+          input.value = '';
+          clearFeedMediaPreview();
+          progressEl.style.display = 'none';
+        }).catch(err=>{
+          progressEl.style.display = 'none';
+          showToast('Could not post update: ' + friendlyErr(err), true);
+        }).finally(()=>{
+          btn.disabled = false;
+        });
+      });
+      return;
+    }
+
+    createPost(null, null).then(()=>{
       input.value = '';
     }).catch(err=>{
       showToast('Could not post update: ' + friendlyErr(err), true);
@@ -2307,13 +2435,22 @@
       btn.disabled = false;
     });
   }
+  document.getElementById('feedAttachBtn').addEventListener('click', ()=>{
+    document.getElementById('feedFileInput').click();
+  });
+  document.getElementById('feedFileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) showFeedMediaPreview(file);
+    e.target.value = '';
+  });
+  document.getElementById('feedMediaRemoveBtn').addEventListener('click', clearFeedMediaPreview);
   function deleteFeedPost(postId){
     if(!feedPostsCollection) return;
     feedPostsCollection.doc(postId).delete().catch(err=>{
       showToast('Could not delete post: ' + friendlyErr(err), true);
     });
   }
-  window.__feedActions = { deletePost: deleteFeedPost };
+  window.__feedActions = { deletePost: deleteFeedPost, openLightbox: openFeedLightbox };
 
   function setFeedVisibility(visible){
     document.getElementById('feedSidebar').style.display = visible ? 'flex' : 'none';
