@@ -139,6 +139,8 @@
     border-bottom:1px solid var(--border);flex-shrink:0;
   }
   .feed-header h3{font-family:'Sora',sans-serif;font-size:14.5px;margin:0;color:var(--ink);}
+  .feed-header-text{min-width:0;}
+  .feed-header-company{font-size:11px;color:var(--slate-light);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .feed-close-btn{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;padding:4px;border-radius:6px;transition:background .15s, color .15s;}
   .feed-close-btn:hover{background:var(--c-red-bg, #FBE4E2);color:var(--c-red-fg, #C0392B);}
   .feed-composer{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
@@ -1166,7 +1168,10 @@
 <div class="boards-layout">
   <div class="feed-sidebar" id="feedSidebar">
     <div class="feed-header">
-      <h3>Team Feed</h3>
+      <div class="feed-header-text">
+        <h3>Team Feed</h3>
+        <div class="feed-header-company" id="feedHeaderCompany"></div>
+      </div>
       <button type="button" class="feed-close-btn" id="feedCloseBtn" title="Hide feed">✕</button>
     </div>
     <div class="feed-composer">
@@ -2579,6 +2584,13 @@
   }
   function initFeedSync(){
     if(!feedPostsCollection) return;
+    if(workspaceRef){
+      workspaceRef.get().then(doc=>{
+        const companyName = doc.exists ? (doc.data().name || '') : '';
+        const el = document.getElementById('feedHeaderCompany');
+        if(el) el.textContent = companyName || '';
+      }).catch(()=>{});
+    }
     if(unsubscribeFeedPosts) unsubscribeFeedPosts();
     unsubscribeFeedPosts = feedPostsCollection.orderBy('createdAt','desc').limit(50).onSnapshot(snap=>{
       renderFeedPosts(snap.docs.map(d=>({id:d.id, ...d.data()})));
