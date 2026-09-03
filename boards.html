@@ -580,6 +580,45 @@
     display:flex;align-items:center;justify-content:center;padding:20px;
   }
 
+  /* ---------- Onboarding tour ---------- */
+  .onboarding-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.6);backdrop-filter:blur(4px);z-index:700;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    animation:onboarding-fade-in .25s ease;
+  }
+  @keyframes onboarding-fade-in{from{opacity:0;}to{opacity:1;}}
+  .onboarding-card{
+    background:var(--panel);border-radius:20px;max-width:480px;width:100%;
+    box-shadow:0 30px 80px rgba(15,23,32,0.35);position:relative;overflow:hidden;
+    display:flex;flex-direction:column;max-height:88vh;
+  }
+  .onboarding-skip{
+    position:absolute;top:16px;right:16px;background:none;border:none;font-size:12.5px;
+    color:var(--slate-light);cursor:pointer;z-index:2;padding:6px 8px;font-family:'Inter',sans-serif;
+  }
+  .onboarding-skip:hover{color:var(--ink);}
+  .onboarding-slides{position:relative;flex:1;overflow:hidden;min-height:340px;}
+  .onboarding-slide{
+    position:absolute;inset:0;padding:48px 34px 20px;display:flex;flex-direction:column;
+    align-items:center;text-align:center;opacity:0;transform:translateX(30px);
+    transition:opacity .3s ease, transform .3s ease;pointer-events:none;
+  }
+  .onboarding-slide.active{opacity:1;transform:translateX(0);pointer-events:auto;}
+  .onboarding-slide.prev{transform:translateX(-30px);}
+  .onboarding-icon{
+    width:76px;height:76px;border-radius:22px;display:flex;align-items:center;justify-content:center;
+    font-size:36px;margin-bottom:20px;flex-shrink:0;
+  }
+  .onboarding-slide h2{font-family:'Sora',sans-serif;font-size:19px;margin:0 0 10px;color:var(--ink);}
+  .onboarding-slide p{font-size:13.5px;line-height:1.6;color:var(--slate);margin:0;max-width:360px;}
+  .onboarding-footer{
+    padding:18px 26px 24px;display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--border);
+  }
+  .onboarding-dots{display:flex;justify-content:center;gap:6px;}
+  .onboarding-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background .2s, width .2s;}
+  .onboarding-dot.active{background:var(--teal);width:18px;border-radius:4px;}
+  .onboarding-nav{display:flex;justify-content:space-between;gap:10px;}
+
   /* ---------- Welcome-back modal ---------- */
   .welcome-overlay{
     position:fixed;inset:0;background:rgba(15,23,32,0.55);backdrop-filter:blur(4px);z-index:600;
@@ -1015,6 +1054,20 @@
 
 <div class="toast-stack" id="toastStack"></div>
 <div class="chat-notify-stack" id="chatNotifyStack"></div>
+
+<div class="onboarding-overlay" id="onboardingOverlay" style="display:none">
+  <div class="onboarding-card">
+    <button type="button" class="onboarding-skip" id="onboardingSkipBtn">Skip tour</button>
+    <div class="onboarding-slides" id="onboardingSlides"></div>
+    <div class="onboarding-footer">
+      <div class="onboarding-dots" id="onboardingDots"></div>
+      <div class="onboarding-nav">
+        <button type="button" class="btn" id="onboardingBackBtn" style="visibility:hidden">← Back</button>
+        <button type="button" class="btn btn-primary" id="onboardingNextBtn">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
   <div class="confirm-modal">
@@ -2078,6 +2131,9 @@
           justLoggedIn = false;
           showWelcomeModal(name || user.email || '');
         }
+        if(data.onboardingCompleted !== true){
+          showOnboardingTour();
+        }
         const ROLE_KEY_MAP = {'Founder':'role_founder','Co-Founder':'role_cofounder','CEO':'role_ceo','Managing Director':'role_md','Sales Manager':'role_salesmanager','Sales Representative':'role_salesrep','Business Development':'role_bizdev','Marketing Manager':'role_marketing','Account Manager':'role_account','Consultant':'role_consultant','Operations':'role_operations','Intern':'role_intern','Other':'role_other'};
       const roleDisplay = data.role ? (t(ROLE_KEY_MAP[data.role]) || data.role) : '';
       const roleText = roleDisplay && data.company ? `${roleDisplay} ${t('atWord')} ${data.company}` : (roleDisplay || data.company || '');
@@ -2127,6 +2183,99 @@
         holder.appendChild(piece);
       }
     }
+    // ---------- Onboarding tour ----------
+    const ONBOARDING_SLIDES = [
+      {
+        icon: '👋', bg: 'var(--c-blue-bg)', color: 'var(--c-blue-fg)',
+        title: 'Welcome to PalaTrack!',
+        body: "Here's a quick two-minute tour of everything you can do — feel free to skip it anytime and come back later, nothing here needs to be memorized."
+      },
+      {
+        icon: '📋', bg: 'var(--c-purple-bg)', color: 'var(--c-purple-fg)',
+        title: 'Boards',
+        body: 'Each board is its own lead list — split them however makes sense for you, like by source (LinkedIn, referrals) or by target market. Create as many as you need from the Boards page.'
+      },
+      {
+        icon: '🎯', bg: 'var(--c-amber-bg)', color: 'var(--c-amber-fg)',
+        title: 'Leads & the pipeline',
+        body: 'Inside a board, add leads and drag them through stages as things progress. Track status, temperature, revenue, and notes — everything about a lead lives in one place.'
+      },
+      {
+        icon: '📊', bg: 'var(--c-green-bg)', color: 'var(--c-green-fg)',
+        title: 'Statistics',
+        body: "See reply rates, revenue by month, top sources, and how you're trending versus last month — all pulled automatically from your boards, no extra setup."
+      },
+      {
+        icon: '👥', bg: 'var(--c-blue-bg)', color: 'var(--c-blue-fg)',
+        title: 'Team',
+        body: "Invite teammates from the Team page. Admins can assign roles, and you can even grant someone permission to remove members without giving them access to billing."
+      },
+      {
+        icon: '💬', bg: 'var(--c-purple-bg)', color: 'var(--c-purple-fg)',
+        title: 'Team Chat',
+        body: 'Message teammates directly — send photos and videos, react to messages, see when something was read, and know when someone\'s online. Look for the 💬 icon.'
+      },
+      {
+        icon: '✨', bg: 'var(--c-amber-bg)', color: 'var(--c-amber-fg)',
+        title: 'Alexandre AI & Smart Reminders',
+        body: "Ask Alexandre to draft outreach messages or answer questions about your leads. PalaTrack will also nudge you about leads that have gone quiet — you can fine-tune exactly which reminders and notifications you get in Notification Settings."
+      }
+    ];
+    let onboardingIndex = 0;
+    function renderOnboardingSlides(){
+      const container = document.getElementById('onboardingSlides');
+      container.innerHTML = ONBOARDING_SLIDES.map((s, i)=>`
+        <div class="onboarding-slide" data-index="${i}">
+          <div class="onboarding-icon" style="background:${s.bg};color:${s.color}">${s.icon}</div>
+          <h2>${esc(s.title)}</h2>
+          <p>${esc(s.body)}</p>
+        </div>`).join('');
+      const dots = document.getElementById('onboardingDots');
+      dots.innerHTML = ONBOARDING_SLIDES.map((s, i)=>`<div class="onboarding-dot" data-index="${i}"></div>`).join('');
+    }
+    function updateOnboardingSlide(){
+      document.querySelectorAll('.onboarding-slide').forEach(el=>{
+        const i = parseInt(el.dataset.index, 10);
+        el.classList.toggle('active', i === onboardingIndex);
+        el.classList.toggle('prev', i < onboardingIndex);
+      });
+      document.querySelectorAll('.onboarding-dot').forEach(el=>{
+        el.classList.toggle('active', parseInt(el.dataset.index, 10) === onboardingIndex);
+      });
+      document.getElementById('onboardingBackBtn').style.visibility = onboardingIndex === 0 ? 'hidden' : 'visible';
+      const nextBtn = document.getElementById('onboardingNextBtn');
+      nextBtn.textContent = onboardingIndex === ONBOARDING_SLIDES.length - 1 ? 'Get started' : 'Next →';
+    }
+    function completeOnboarding(){
+      document.getElementById('onboardingOverlay').style.display = 'none';
+      const user = auth.currentUser;
+      if(user && membersCollection){
+        membersCollection.doc(user.uid).set({ onboardingCompleted: true }, {merge:true}).catch(()=>{});
+      }
+    }
+    function showOnboardingTour(){
+      onboardingIndex = 0;
+      renderOnboardingSlides();
+      updateOnboardingSlide();
+      document.getElementById('onboardingOverlay').style.display = 'flex';
+    }
+    document.getElementById('onboardingSkipBtn').addEventListener('click', completeOnboarding);
+    document.getElementById('onboardingBackBtn').addEventListener('click', ()=>{
+      if(onboardingIndex > 0){ onboardingIndex--; updateOnboardingSlide(); }
+    });
+    document.getElementById('onboardingNextBtn').addEventListener('click', ()=>{
+      if(onboardingIndex < ONBOARDING_SLIDES.length - 1){
+        onboardingIndex++;
+        updateOnboardingSlide();
+      } else {
+        completeOnboarding();
+      }
+    });
+    document.getElementById('onboardingDots').addEventListener('click', (e)=>{
+      const dot = e.target.closest('.onboarding-dot');
+      if(dot){ onboardingIndex = parseInt(dot.dataset.index, 10); updateOnboardingSlide(); }
+    });
+
     let welcomeDismissHandlersBound = false;
     function showWelcomeModal(name){
       const overlay = document.getElementById('welcomeOverlay');
