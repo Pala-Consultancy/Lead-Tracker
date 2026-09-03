@@ -1151,7 +1151,7 @@
         const prefix = conv.lastMessage.senderId === currentUid ? 'You: ' : '';
         preview = prefix + (conv.lastMessage.text || '');
       }
-      return `<button type="button" class="chat-member-row${active ? ' active' : ''}${unread ? ' unread' : ''}" onclick="window.__chatActions.openChatThread('${m.id}')">
+      return `<button type="button" class="chat-member-row${active ? ' active' : ''}${unread ? ' unread' : ''}" data-uid="${m.id}">
         <div class="chat-member-avatar ${avatarColorClass(m.id)}">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
         <div class="chat-member-info">
           <div class="chat-member-name">${esc(m.name || m.email || 'Team member')}</div>
@@ -1370,6 +1370,14 @@
   document.getElementById('chatSearchInput').addEventListener('input', (e)=>{
     chatSearchFilter = e.target.value.trim().toLowerCase();
     renderChatMemberList();
+  });
+
+  // Delegated click handler: attached once to the container, not to individual rows,
+  // so it keeps working no matter how many times the row list gets re-rendered
+  // underneath it (new messages, typing indicators, delivery updates, etc).
+  document.getElementById('chatMembersBody').addEventListener('click', (e)=>{
+    const row = e.target.closest('.chat-member-row');
+    if(row && row.dataset.uid) openChatThread(row.dataset.uid);
   });
 
   function initTeamSync(){
