@@ -178,24 +178,46 @@
   .chat-lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;}
   .feed-post-btn:disabled{opacity:.5;cursor:default;}
   .feed-posts{flex:1;overflow-y:auto;padding:6px 14px 14px;}
-  .feed-post{padding:12px 0;border-bottom:1px solid var(--border);}
+  .feed-post{padding:14px 0;border-bottom:1px solid var(--border);position:relative;}
   .feed-post:last-child{border-bottom:none;}
-  .feed-post-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .feed-post-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
   .feed-post-avatar{
-    width:28px;height:28px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);
-    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;overflow:hidden;
+    width:42px;height:42px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;overflow:hidden;
   }
   .feed-post-avatar img{width:100%;height:100%;object-fit:cover;}
-  .feed-post-meta{min-width:0;}
-  .feed-post-author{font-size:12.5px;font-weight:700;color:var(--ink);}
-  .feed-post-time{font-size:10.5px;color:var(--slate-light);}
-  .feed-post-text{font-size:12.5px;color:var(--ink);line-height:1.5;white-space:pre-wrap;word-break:break-word;}
-  .feed-post-delete{
-    margin-left:auto;background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:11px;
-    padding:2px 5px;border-radius:5px;opacity:0;transition:opacity .15s, background .15s, color .15s;
+  .feed-post-meta{min-width:0;flex:1;}
+  .feed-post-author{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.35;}
+  .feed-post-time{font-size:11px;color:var(--slate-light);display:flex;align-items:center;gap:4px;margin-top:1px;}
+  .feed-globe-icon{width:10px;height:10px;flex-shrink:0;}
+  .feed-post-text{font-size:13px;color:var(--ink);line-height:1.55;white-space:pre-wrap;word-break:break-word;margin-bottom:10px;}
+  .feed-show-more{color:var(--slate-light);font-weight:600;cursor:pointer;white-space:nowrap;}
+  .feed-show-more:hover{color:var(--teal);text-decoration:underline;}
+  .feed-post-menu{position:relative;flex-shrink:0;}
+  .feed-post-menu-btn{
+    background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:16px;
+    padding:2px 6px;border-radius:6px;transition:background .15s;
   }
-  .feed-post:hover .feed-post-delete{opacity:1;}
-  .feed-post-delete:hover{background:var(--c-red-bg, #FBE4E2);color:var(--c-red-fg, #C0392B);}
+  .feed-post-menu-btn:hover{background:var(--c-blue-tint2, #F6FAFE);}
+  .feed-post-menu-dropdown{
+    position:absolute;right:0;top:100%;background:var(--panel);border:1px solid var(--border);
+    border-radius:9px;box-shadow:0 8px 20px rgba(27,36,48,0.18);z-index:20;overflow:hidden;min-width:130px;
+  }
+  .feed-post-menu-dropdown button{
+    display:block;width:100%;text-align:left;background:none;border:none;padding:9px 12px;
+    font-size:12px;color:var(--c-red-fg, #C0392B);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .feed-post-menu-dropdown button:hover{background:var(--c-red-bg, #FBE4E2);}
+  .feed-post-actions{display:flex;gap:6px;margin-top:6px;}
+  .feed-like-btn{
+    display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);
+    border-radius:20px;padding:5px 12px;font-size:11.5px;font-weight:600;color:var(--slate);
+    cursor:pointer;transition:background .15s, border-color .15s, transform .1s;
+  }
+  .feed-like-btn:hover{background:var(--c-blue-tint2, #F6FAFE);}
+  .feed-like-btn:active{transform:scale(.95);}
+  .feed-like-btn.liked{border-color:var(--c-red-fg, #C0392B);color:var(--c-red-fg, #C0392B);}
+  .feed-like-icon{font-size:13px;}
   .feed-empty{text-align:center;padding:30px 14px;color:var(--slate-light);font-size:12.5px;}
   .feed-reopen-btn{
     position:sticky;top:28px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);
@@ -1757,6 +1779,7 @@
   let feedPostsCollection = null;
   let unsubscribeFeedPosts = null;
   let currentUserDisplayName = '';
+  let currentUserPhotoURL = '';
   let teamMembersMap = {};
   let chatConversationsMap = {};
   let previousConversationTimestamps = {};
@@ -2293,7 +2316,11 @@
     if(days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
   }
+  let lastRenderedFeedPosts = [];
+  let expandedFeedPosts = new Set();
+
   function renderFeedPosts(posts){
+    lastRenderedFeedPosts = posts;
     const container = document.getElementById('feedPosts');
     if(!container) return;
     if(posts.length === 0){
@@ -2310,19 +2337,64 @@
       } else if(p.mediaType === 'video' && p.mediaUrl){
         mediaHtml = `<video class="feed-post-media" data-type="video" src="${p.mediaUrl}" controls></video>`;
       }
+      const likes = p.likes || {};
+      const likeCount = Object.keys(likes).length;
+      const iLiked = !!(myUid && likes[myUid]);
+      const text = p.text || '';
+      const isLong = text.length > 180 && !expandedFeedPosts.has(p.id);
+      const displayText = isLong ? text.slice(0, 180) : text;
+      const textHtml = text
+        ? `<div class="feed-post-text">${esc(displayText)}${isLong ? `<span class="feed-show-more" onclick="window.__feedActions.toggleExpand('${p.id}')">... more</span>` : ''}${(!isLong && text.length > 180) ? ` <span class="feed-show-more" onclick="window.__feedActions.toggleExpand('${p.id}')">show less</span>` : ''}</div>`
+        : '';
       return `<div class="feed-post">
         <div class="feed-post-head">
           <div class="feed-post-avatar">${p.authorPhotoURL ? `<img src="${p.authorPhotoURL}" alt="">` : esc((p.authorName||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase())}</div>
           <div class="feed-post-meta">
             <div class="feed-post-author">${esc(p.authorName || 'Team member')}</div>
-            <div class="feed-post-time">${esc(time)}</div>
+            <div class="feed-post-time">${esc(time)} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feed-globe-icon"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
           </div>
-          ${canDelete ? `<button type="button" class="feed-post-delete" onclick="window.__feedActions.deletePost('${p.id}')">Delete</button>` : ''}
+          ${canDelete ? `<div class="feed-post-menu">
+            <button type="button" class="feed-post-menu-btn" onclick="window.__feedActions.toggleMenu(event,'${p.id}')">⋯</button>
+            <div class="feed-post-menu-dropdown" id="feed-menu-${p.id}" style="display:none">
+              <button type="button" onclick="window.__feedActions.deletePost('${p.id}')">Delete post</button>
+            </div>
+          </div>` : ''}
         </div>
+        ${textHtml}
         ${mediaHtml}
-        ${p.text ? `<div class="feed-post-text">${esc(p.text)}</div>` : ''}
+        <div class="feed-post-actions">
+          <button type="button" class="feed-like-btn${iLiked?' liked':''}" onclick="window.__feedActions.toggleLike('${p.id}')">
+            <span class="feed-like-icon">${iLiked?'❤️':'🤍'}</span> Like${likeCount ? ` · ${likeCount}` : ''}
+          </button>
+        </div>
       </div>`;
     }).join('');
+  }
+
+  function toggleExpandFeedPost(postId){
+    if(expandedFeedPosts.has(postId)) expandedFeedPosts.delete(postId);
+    else expandedFeedPosts.add(postId);
+    renderFeedPosts(lastRenderedFeedPosts);
+  }
+  let activeFeedMenu = null;
+  function toggleFeedMenu(event, postId){
+    event.stopPropagation();
+    const dropdown = document.getElementById(`feed-menu-${postId}`);
+    if(activeFeedMenu && activeFeedMenu !== dropdown) activeFeedMenu.style.display = 'none';
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    activeFeedMenu = dropdown.style.display === 'block' ? dropdown : null;
+  }
+  document.addEventListener('click', ()=>{
+    if(activeFeedMenu){ activeFeedMenu.style.display = 'none'; activeFeedMenu = null; }
+  });
+  function toggleLikeFeedPost(postId){
+    const user = auth.currentUser;
+    if(!user || !feedPostsCollection) return;
+    const post = lastRenderedFeedPosts.find(p=>p.id === postId);
+    const alreadyLiked = !!(post && post.likes && post.likes[user.uid]);
+    feedPostsCollection.doc(postId).set({
+      likes: { [user.uid]: alreadyLiked ? firebase.firestore.FieldValue.delete() : true }
+    }, {merge:true}).catch(()=>{});
   }
   function initFeedSync(){
     if(!feedPostsCollection) return;
@@ -2387,7 +2459,7 @@
         mediaType: mediaType || null,
         authorId: user.uid,
         authorName: currentUserDisplayName || user.email || 'Team member',
-        authorPhotoURL: user.photoURL || null,
+        authorPhotoURL: currentUserPhotoURL || user.photoURL || null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -2450,7 +2522,13 @@
       showToast('Could not delete post: ' + friendlyErr(err), true);
     });
   }
-  window.__feedActions = { deletePost: deleteFeedPost, openLightbox: openFeedLightbox };
+  window.__feedActions = {
+    deletePost: deleteFeedPost,
+    openLightbox: openFeedLightbox,
+    toggleExpand: toggleExpandFeedPost,
+    toggleMenu: toggleFeedMenu,
+    toggleLike: toggleLikeFeedPost
+  };
 
   function setFeedVisibility(visible){
     document.getElementById('feedSidebar').style.display = visible ? 'flex' : 'none';
@@ -2791,6 +2869,7 @@
         if(data.language && data.language !== currentLang) setLanguage(data.language);
         const name = data.name || user.displayName || '';
         currentUserDisplayName = name;
+        currentUserPhotoURL = data.photoURL || '';
         nameEl.textContent = name || user.email || 'Account';
         if(pillEl){ if(name){ pillEl.textContent = `${t(getTimeGreeting())}, ${name}`; } else { pillEl.innerHTML = t('pleaseAddYourName'); } }
         if(justLoggedIn){
