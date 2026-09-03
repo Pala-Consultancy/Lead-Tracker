@@ -1572,7 +1572,22 @@
   function deleteMessage(messageId){
     if(!chatActiveOtherUid) return;
     const convId = getConversationId(currentUid, chatActiveOtherUid);
-    directMessagesCollection.doc(convId).collection('thread').doc(messageId).delete().catch(err=>{
+    const threadRef = directMessagesCollection.doc(convId).collection('thread');
+    threadRef.doc(messageId).delete().then(()=>{
+      return threadRef.orderBy('createdAt', 'desc').limit(1).get();
+    }).then(snap=>{
+      const convRef = directMessagesCollection.doc(convId);
+      if(snap.empty){
+        return convRef.set({ lastMessage: firebase.firestore.FieldValue.delete() }, {merge:true});
+      }
+      const latest = snap.docs[0].data();
+      let previewText = latest.text || '';
+      if(!previewText && latest.mediaType === 'image') previewText = '📷 Photo';
+      else if(!previewText && latest.mediaType === 'video') previewText = '🎥 Video';
+      return convRef.set({
+        lastMessage: { text: previewText, senderId: latest.senderId, createdAt: latest.createdAt }
+      }, {merge:true});
+    }).catch(err=>{
       showToast('Could not delete message: ' + friendlyErr(err), true);
     });
   }
