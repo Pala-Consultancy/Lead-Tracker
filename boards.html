@@ -125,22 +125,28 @@
   }
   .app{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
 
-  .boards-layout{display:flex;gap:24px;align-items:flex-start;}
   .boards-main-column{flex:1;min-width:0;}
 
-  .feed-sidebar{
-    width:300px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    box-shadow:var(--shadow);position:sticky;top:28px;max-height:calc(100vh - 56px);
-    display:flex;flex-direction:column;overflow:hidden;animation:feed-in .2s ease;
+  .feed-modal-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.55);backdrop-filter:blur(3px);z-index:650;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    animation:feed-modal-fade .18s ease;
   }
-  @keyframes feed-in{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes feed-modal-fade{from{opacity:0;}to{opacity:1;}}
+  .feed-modal-card{
+    width:100%;max-width:640px;background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    box-shadow:0 30px 70px rgba(15,23,32,0.35);max-height:min(720px, 90vh);
+    display:flex;flex-direction:column;overflow:hidden;
+    animation:feed-modal-in .2s ease;
+  }
+  @keyframes feed-modal-in{from{opacity:0;transform:scale(.96) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);}}
   .feed-header{
-    display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
     border-bottom:1px solid var(--border);flex-shrink:0;
   }
-  .feed-header h3{font-family:'Sora',sans-serif;font-size:14.5px;margin:0;color:var(--ink);}
+  .feed-header h3{font-family:'Sora',sans-serif;font-size:16px;margin:0;color:var(--ink);}
   .feed-header-text{min-width:0;}
-  .feed-header-company{font-size:11px;color:var(--slate-light);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .feed-header-company{font-size:11.5px;color:var(--slate-light);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .feed-header-actions{display:flex;align-items:center;flex-shrink:0;}
   .feed-close-btn{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;padding:4px;border-radius:6px;transition:background .15s, color .15s;}
   .feed-refresh-btn{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;padding:4px;border-radius:6px;transition:background .15s, color .15s;margin-right:4px;}
@@ -307,17 +313,9 @@
   }
   .feed-comment-composer button:hover{background:var(--teal-dark);}
   .feed-empty{text-align:center;padding:30px 14px;color:var(--slate-light);font-size:12.5px;}
-  .feed-reopen-btn{
-    position:sticky;top:28px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);
-    border-radius:12px;padding:12px 10px;box-shadow:var(--shadow);cursor:pointer;font-size:12.5px;
-    font-weight:600;color:var(--ink);writing-mode:vertical-rl;text-orientation:mixed;height:fit-content;
-    transition:background .15s;
-  }
-  .feed-reopen-btn:hover{background:var(--c-blue-bg);}
-  @media (max-width:900px){
-    .boards-layout{flex-direction:column;}
-    .feed-sidebar{width:100%;position:relative;top:0;max-height:400px;}
-    .feed-reopen-btn{writing-mode:horizontal-tb;width:100%;}
+  @media (max-width:700px){
+    .feed-modal-overlay{padding:0;}
+    .feed-modal-card{max-width:100%;height:100%;max-height:100%;border-radius:0;}
   }
 
   /* ---------- Page loader ---------- */
@@ -1188,8 +1186,8 @@
 
 <div id="appRoot">
 <div class="app">
-<div class="boards-layout">
-  <div class="feed-sidebar" id="feedSidebar">
+<div class="feed-modal-overlay" id="feedModalOverlay" style="display:none">
+  <div class="feed-sidebar feed-modal-card" id="feedSidebar">
     <div class="feed-header">
       <div class="feed-header-text">
         <h3>Team Feed</h3>
@@ -1197,7 +1195,7 @@
       </div>
       <div class="feed-header-actions">
         <button type="button" class="feed-refresh-btn" id="feedRefreshBtn" title="Refresh feed">🔄</button>
-        <button type="button" class="feed-close-btn" id="feedCloseBtn" title="Hide feed">✕</button>
+        <button type="button" class="feed-close-btn" id="feedCloseBtn" title="Close feed">✕</button>
       </div>
     </div>
     <div class="feed-composer">
@@ -1217,7 +1215,7 @@
     </div>
     <div class="feed-posts" id="feedPosts"></div>
   </div>
-  <button type="button" class="feed-reopen-btn" id="feedReopenBtn" style="display:none" title="Show team feed">📰 Show Team Feed</button>
+</div>
 
   <div class="boards-main-column">
   <header>
@@ -1235,6 +1233,7 @@
     <div class="header-right">
       <span class="live-badge"><span class="live-dot"></span><span data-i18n="realtimeUpdates">Real-time updates</span></span>
       <span class="count-pill" id="currentUserPill" style="display:none"></span>
+      <button type="button" class="btn icon-btn-settings" id="feedOpenBtn" title="Team Feed">📰</button>
       <a class="btn icon-btn-settings" id="chatBtn" href="chat.html" title="Team chat" style="position:relative">💬<span class="notif-badge" id="chatBadge" style="display:none">0</span></a>
       <a class="btn icon-btn-settings" href="boards-trash.html" title="Board Trash">🗑️</a>
       <button class="btn icon-btn-settings" id="settingsBtn" title="Settings">⚙️</button>
@@ -1310,7 +1309,6 @@
 
   <footer data-i18n="footerText">© 2026 by PalaTrack BV. - All Rights Reserved</footer>
   </div>
-</div>
 </div>
 </div>
 
@@ -2808,12 +2806,20 @@
     saveEdit: saveEditFeedPost
   };
 
-  function setFeedVisibility(visible){
-    document.getElementById('feedSidebar').style.display = visible ? 'flex' : 'none';
-    document.getElementById('feedReopenBtn').style.display = visible ? 'none' : 'block';
-    try{ window.localStorage.setItem('palatrack_feed_hidden', visible ? '0' : '1'); }catch(e){}
+  function openFeedModal(){
+    document.getElementById('feedModalOverlay').style.display = 'flex';
   }
-  document.getElementById('feedCloseBtn').addEventListener('click', ()=>setFeedVisibility(false));
+  function closeFeedModal(){
+    document.getElementById('feedModalOverlay').style.display = 'none';
+  }
+  document.getElementById('feedOpenBtn').addEventListener('click', openFeedModal);
+  document.getElementById('feedCloseBtn').addEventListener('click', closeFeedModal);
+  document.getElementById('feedModalOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'feedModalOverlay') closeFeedModal();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && document.getElementById('feedModalOverlay').style.display === 'flex') closeFeedModal();
+  });
   document.getElementById('feedRefreshBtn').addEventListener('click', ()=>{
     const btn = document.getElementById('feedRefreshBtn');
     btn.classList.remove('spinning');
@@ -2821,7 +2827,6 @@
     btn.classList.add('spinning');
     initFeedSync();
   });
-  document.getElementById('feedReopenBtn').addEventListener('click', ()=>setFeedVisibility(true));
   document.getElementById('feedPostBtn').addEventListener('click', postFeedUpdate);
   document.getElementById('feedPosts').addEventListener('keydown', (e)=>{
     if(e.key !== 'Enter') return;
@@ -2837,11 +2842,6 @@
   document.getElementById('feedPostInput').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); postFeedUpdate(); }
   });
-  (function(){
-    let hidden = false;
-    try{ hidden = window.localStorage.getItem('palatrack_feed_hidden') === '1'; }catch(e){}
-    setFeedVisibility(!hidden);
-  })();
 
   function initBoardsSync(){
     if(!firebaseConnected) return;
