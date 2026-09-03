@@ -4176,6 +4176,13 @@
             showChatNotification(lastMsg.senderId, lastMsg.text || '');
           }
           previousConversationTimestamps[d.id] = ts;
+          const deliveredAt = conv.lastDeliveredAt && conv.lastDeliveredAt[myUid];
+          const deliveredMillis = (deliveredAt && typeof deliveredAt.toMillis === 'function') ? deliveredAt.toMillis() : 0;
+          if(deliveredMillis < ts){
+            directMessagesCollection.doc(d.id).set({
+              [`lastDeliveredAt.${myUid}`]: firebase.firestore.FieldValue.serverTimestamp()
+            }, {merge:true}).catch(()=>{});
+          }
         }
       });
       updateChatBadge();
