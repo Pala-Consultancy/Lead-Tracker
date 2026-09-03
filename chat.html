@@ -1415,15 +1415,49 @@
     });
   }
 
+  let previousConversationTimestamps = {};
+  let chatToastInitialized = false;
+  function showBrowserNotification(senderName, text){
+    if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try{
+      const n = new Notification(senderName || 'New message', {
+        body: text || '',
+        icon: 'https://pala-consultancy.github.io/Lead-Tracker/favicon.png',
+        tag: 'palatrack-chat'
+      });
+      n.onclick = ()=>{ window.focus(); };
+    }catch(e){}
+  }
+  function requestNotificationPermissionIfNeeded(){
+    if(typeof Notification === 'undefined') return;
+    if(Notification.permission === 'default'){
+      Notification.requestPermission().catch(()=>{});
+    }
+  }
+
   function initChatSync(){
     if(!directMessagesCollection || !currentUid) return;
     if(unsubscribeChatConversations) unsubscribeChatConversations();
     unsubscribeChatConversations = directMessagesCollection.where('participants', 'array-contains', currentUid).onSnapshot(snap=>{
       chatConversationsMap = {};
-      snap.docs.forEach(d=>{ chatConversationsMap[d.id] = {id:d.id, ...d.data()}; });
+      snap.docs.forEach(d=>{
+        const conv = {id:d.id, ...d.data()};
+        chatConversationsMap[d.id] = conv;
+        const lastMsg = conv.lastMessage;
+        if(document.hidden && lastMsg && lastMsg.senderId !== currentUid && lastMsg.createdAt && typeof lastMsg.createdAt.toMillis === 'function'){
+          const ts = lastMsg.createdAt.toMillis();
+          const prevTs = previousConversationTimestamps[d.id] || 0;
+          if(chatToastInitialized && ts > prevTs){
+            const sender = teamMembersList.find(m=>m.id === lastMsg.senderId) || {};
+            showBrowserNotification(sender.name || sender.email, lastMsg.text || '');
+          }
+          previousConversationTimestamps[d.id] = ts;
+        }
+      });
       renderChatMemberList();
       updateTypingStatusLine();
       if(chatActiveOtherUid) renderChatMessages(lastRenderedMessages);
+      chatToastInitialized = true;
     });
   }
 
@@ -1550,6 +1584,7 @@
           const data = doc.exists ? doc.data() : {};
           if(data.language && data.language !== currentLang) setLanguage(data.language);
           currentUserIsAdmin = data.isAdmin === true;
+          requestNotificationPermissionIfNeeded();
           initChatPlanGate();
         }).catch(()=>{
           initChatPlanGate();

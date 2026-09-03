@@ -1680,10 +1680,35 @@
       badge.style.display = 'none';
     }
   }
+  function showBrowserNotification(senderName, text){
+    if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try{
+      const n = new Notification(senderName || 'New message', {
+        body: text || '',
+        icon: 'https://pala-consultancy.github.io/Lead-Tracker/favicon.png',
+        tag: 'palatrack-chat'
+      });
+      n.onclick = ()=>{
+        window.focus();
+        location.href = 'chat.html';
+      };
+    }catch(e){}
+  }
+  function requestNotificationPermissionIfNeeded(){
+    if(typeof Notification === 'undefined') return;
+    if(Notification.permission === 'default'){
+      Notification.requestPermission().catch(()=>{});
+    }
+  }
+
   function showChatNotification(senderId, text){
+    const sender = teamMembersMap[senderId] || {};
+    if(document.hidden){
+      showBrowserNotification(sender.name || sender.email, text);
+      return;
+    }
     const stack = document.getElementById('chatNotifyStack');
     if(!stack) return;
-    const sender = teamMembersMap[senderId] || {};
     const card = document.createElement('div');
     card.className = 'chat-notify-card';
     card.innerHTML = `
@@ -2225,6 +2250,7 @@
           loadSettingsUserInfo(user);
           loadOrgPlan();
           initBoardsSync();
+          requestNotificationPermissionIfNeeded();
         }).catch(err=>{
           console.error('Could not resolve workspace', err);
           showLoginError('Something went wrong setting up your account. Please try again or contact support.');
