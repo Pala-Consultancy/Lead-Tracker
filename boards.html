@@ -2518,6 +2518,8 @@
       onboardingIndex = 0;
       renderOnboardingSlides();
       updateOnboardingSlide();
+      document.getElementById('onboardingNextBtn').disabled = false;
+      document.getElementById('onboardingSkipBtn').style.visibility = 'visible';
       document.getElementById('onboardingOverlay').style.display = 'flex';
     }
     document.getElementById('onboardingSkipBtn').addEventListener('click', completeOnboarding);
@@ -2529,9 +2531,13 @@
         onboardingIndex++;
         updateOnboardingSlide();
       } else {
+        document.getElementById('onboardingNextBtn').disabled = true;
+        document.getElementById('onboardingNextBtn').textContent = 'Welcome aboard! 🎉';
+        document.getElementById('onboardingSkipBtn').style.visibility = 'hidden';
+        document.getElementById('onboardingBackBtn').style.visibility = 'hidden';
         onboardingConfettiBurst();
         playFanfareSound();
-        setTimeout(completeOnboarding, 500);
+        setTimeout(completeOnboarding, 2000);
       }
     });
     document.getElementById('onboardingDots').addEventListener('click', (e)=>{
