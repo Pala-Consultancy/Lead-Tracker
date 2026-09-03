@@ -2022,7 +2022,12 @@
     // own fallback can win that race, silently creating a brand new, wrong workspace
     // and making the invited person its sole admin instead of joining the real one.
     let inviteLinkCompletionPromise = Promise.resolve();
+    let pendingOnboardingAfterPassword = false;
     if(auth.isSignInWithEmailLink(window.location.href)){
+      // Set this immediately (synchronously) — we know a password-setup modal is
+      // coming for this session, so the onboarding tour needs to wait for it,
+      // rather than racing to check whether the modal happens to be visible yet.
+      pendingOnboardingAfterPassword = true;
       const emailForLink = window.localStorage.getItem('emailForSignIn');
       const inviteWorkspaceId = new URLSearchParams(window.location.search).get('workspace');
       let pendingPasswordUser = null;
@@ -2071,6 +2076,7 @@
       document.getElementById('setPasswordSkipBtn').addEventListener('click', ()=>{
         document.getElementById('setPasswordOverlay').style.display = 'none';
         pendingPasswordUser = null;
+        if(pendingOnboardingAfterPassword){ pendingOnboardingAfterPassword = false; showOnboardingTour(); }
       });
       document.getElementById('setPasswordSubmitBtn').addEventListener('click', ()=>{
         if(!pendingPasswordUser) return;
@@ -2087,6 +2093,7 @@
           document.getElementById('setPasswordInput').value = '';
           document.getElementById('setPasswordConfirmInput').value = '';
           pendingPasswordUser = null;
+          if(pendingOnboardingAfterPassword){ pendingOnboardingAfterPassword = false; showOnboardingTour(); }
         }).catch(err=>{
           showToast('Could not set password: ' + friendlyErr(err), true);
         }).finally(()=>{
@@ -2132,7 +2139,11 @@
           showWelcomeModal(name || user.email || '');
         }
         if(data.onboardingCompleted !== true){
-          showOnboardingTour();
+          if(pendingOnboardingAfterPassword){
+            // Already flagged — will show once the password modal closes instead.
+          } else {
+            showOnboardingTour();
+          }
         }
         const ROLE_KEY_MAP = {'Founder':'role_founder','Co-Founder':'role_cofounder','CEO':'role_ceo','Managing Director':'role_md','Sales Manager':'role_salesmanager','Sales Representative':'role_salesrep','Business Development':'role_bizdev','Marketing Manager':'role_marketing','Account Manager':'role_account','Consultant':'role_consultant','Operations':'role_operations','Intern':'role_intern','Other':'role_other'};
       const roleDisplay = data.role ? (t(ROLE_KEY_MAP[data.role]) || data.role) : '';
