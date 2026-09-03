@@ -430,25 +430,39 @@
   }
 
   .board-style-picker{
-    position:fixed;width:220px;background:var(--panel);border:1px solid var(--border);border-radius:12px;
-    padding:12px;box-shadow:0 12px 32px rgba(27,36,48,0.2);z-index:400;
+    position:fixed;width:244px;background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:16px;box-shadow:0 20px 48px rgba(27,36,48,0.28);z-index:400;
+    max-height:calc(100vh - 16px);overflow-y:auto;
+    animation:style-picker-in .15s ease;
   }
-  .style-picker-label{font-size:10.5px;font-weight:700;color:var(--slate-light);text-transform:uppercase;letter-spacing:.04em;margin:4px 0;}
-  .style-picker-swatches{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+  @keyframes style-picker-in{from{opacity:0;transform:translateY(-6px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .style-picker-label{
+    font-size:10.5px;font-weight:700;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;
+    margin:12px 0 8px;
+  }
+  .style-picker-label:first-child{margin-top:0;}
+  .style-picker-swatches{display:grid;grid-template-columns:repeat(6, 1fr);gap:8px;}
   .style-swatch{
-    width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;
-    transition:transform .12s, border-color .12s;
+    width:30px;height:30px;border-radius:10px;cursor:pointer;border:none;
+    box-shadow:0 2px 5px rgba(27,36,48,0.18), inset 0 0 0 1px rgba(255,255,255,0.15);
+    transition:transform .15s, box-shadow .15s;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;
   }
-  .style-swatch:hover{transform:scale(1.15);border-color:var(--border);}
-  .style-picker-icons{display:grid;grid-template-columns:repeat(8, 1fr);gap:2px;margin-bottom:8px;}
+  .style-swatch:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 6px 14px rgba(27,36,48,0.28);}
+  .style-swatch.selected{box-shadow:0 0 0 2px var(--panel), 0 0 0 4px var(--teal), 0 2px 5px rgba(27,36,48,0.18);}
+  .style-bg-swatch{border:1px solid var(--border);color:var(--ink);box-shadow:0 1px 3px rgba(27,36,48,0.1);}
+  .style-bg-swatch.selected{box-shadow:0 0 0 2px var(--panel), 0 0 0 4px var(--teal);}
+  .style-picker-icons{display:grid;grid-template-columns:repeat(6, 1fr);gap:4px;}
   .style-icon-btn{
-    background:none;border:none;font-size:16px;cursor:pointer;padding:4px;border-radius:6px;
-    transition:background .12s, transform .12s;
+    background:var(--c-blue-tint2, #F6FAFE);border:1px solid transparent;font-size:17px;cursor:pointer;
+    padding:6px 0;border-radius:9px;transition:background .12s, transform .12s, border-color .12s;
   }
-  .style-icon-btn:hover{background:var(--c-blue-bg, var(--c-blue-tint2));transform:scale(1.15);}
+  .style-icon-btn:hover{background:var(--c-blue-bg, var(--c-blue-tint2));transform:scale(1.1);}
+  .style-icon-btn.selected{border-color:var(--teal);background:var(--c-blue-bg);}
   .style-picker-reset{
-    width:100%;background:none;border:1px solid var(--border);border-radius:7px;padding:6px;
-    font-size:11.5px;color:var(--slate);cursor:pointer;font-family:'Inter',sans-serif;
+    width:100%;background:none;border:1px solid var(--border);border-radius:9px;padding:8px;
+    font-size:12px;font-weight:600;color:var(--slate);cursor:pointer;font-family:'Inter',sans-serif;
+    margin-top:16px;transition:background .12s, color .12s;
   }
   .style-picker-reset:hover{background:var(--c-red-bg, #FBE4E2);color:var(--c-red-fg, #C0392B);}
 
@@ -1756,6 +1770,7 @@
 
   function renderBoards(boards){
     boards = boards.slice().sort((a, b) => (b.pinned?1:0) - (a.pinned?1:0));
+    window.__currentBoardsCache = boards;
     const container = document.getElementById('boardsContainer');
     if(boards.length === 0){
       container.innerHTML = `<div class="empty-state">
@@ -1781,7 +1796,8 @@
             </span>`
           : '';
         const tagsHTML = (plainTags.length || sourceTagHTML) ? `<div class="board-tags">${plainTags.map(tag=>`<span class="board-tag">${esc(tag)}</span>`).join('')}${sourceTagHTML}</div>` : '';
-        return `<a class="board-card${b.pinned?' pinned':''}" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(90deg, ${accent})">
+        const cardBg = b.customBackground ? `background:${b.customBackground};` : '';
+        return `<a class="board-card${b.pinned?' pinned':''}" href="dashboard.html?board=${encodeURIComponent(b.id)}" style="--board-accent:linear-gradient(135deg, ${accent});${cardBg}">
           <div class="board-card-actions">
             <button class="board-action-btn pin-btn${b.pinned?' pinned':''}" title="${b.pinned?'Unpin board':'Pin board'}" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.pinBoard('${b.id}', ${b.pinned?'true':'false'})">📌</button>
             <button class="board-action-btn" title="Customize style" onclick="event.preventDefault();event.stopPropagation();window.__boardActions.openStylePicker(event,'${b.id}')">🎨</button>
@@ -1936,7 +1952,25 @@
     {name:'Red → Amber', gradient:'var(--c-red-fg), var(--c-amber-fg)'},
     {name:'Pink', gradient:'#E85D9C, #F4A6C6'},
     {name:'Teal', gradient:'#1B59A5, #17A398'},
-    {name:'Slate', gradient:'#475569, #94A3B8'}
+    {name:'Slate', gradient:'#475569, #94A3B8'},
+    {name:'Sunset', gradient:'#FF9D6C, #EE6C9B'},
+    {name:'Ocean', gradient:'#4A90E2, #1B59A5'},
+    {name:'Forest', gradient:'#4F9D69, #1F5C4F'},
+    {name:'Lavender', gradient:'#B091DD, #7A4FB5'},
+    {name:'Crimson', gradient:'#C0392B, #7A2318'},
+    {name:'Gold', gradient:'#FFD166, #FF9D00'},
+    {name:'Midnight', gradient:'#1B2430, #2C3444'},
+    {name:'Mint', gradient:'#5FBFA8, #1F5C4F'}
+  ];
+  const BOARD_BACKGROUND_OPTIONS = [
+    {name:'Default', bg:'var(--panel)'},
+    {name:'Soft blue', bg:'var(--c-blue-bg)'},
+    {name:'Soft purple', bg:'var(--c-purple-bg)'},
+    {name:'Soft amber', bg:'var(--c-amber-bg)'},
+    {name:'Soft green', bg:'var(--c-green-bg)'},
+    {name:'Soft pink', bg:'#FCE7F0'},
+    {name:'Soft slate', bg:'#F1F4F8'},
+    {name:'Dark', bg:'#1E2732'}
   ];
   const BOARD_ICON_OPTIONS = ['📋','💼','🎯','🚀','💡','📊','🌍','🔥','⭐','📞','💰','🏆','📈','🤝','📝','🛠️'];
 
@@ -1947,36 +1981,53 @@
   function openStylePicker(event, boardId){
     event.stopPropagation();
     closeStylePicker();
+    const board = (window.__currentBoardsCache || []).find(b=>b.id === boardId) || {};
     const picker = document.createElement('div');
     picker.className = 'board-style-picker';
     picker.innerHTML = `
       <div class="style-picker-label">Color</div>
       <div class="style-picker-swatches">
-        ${BOARD_ACCENT_OPTIONS.map(o=>`<button type="button" class="style-swatch" title="${o.name}" data-accent="${o.gradient}" style="background:linear-gradient(90deg, ${o.gradient})"></button>`).join('')}
+        ${BOARD_ACCENT_OPTIONS.map(o=>`<button type="button" class="style-swatch${board.customAccent===o.gradient?' selected':''}" title="${o.name}" data-accent="${o.gradient}" style="background:linear-gradient(135deg, ${o.gradient})">${board.customAccent===o.gradient?'✓':''}</button>`).join('')}
+      </div>
+      <div class="style-picker-label">Background</div>
+      <div class="style-picker-swatches">
+        ${BOARD_BACKGROUND_OPTIONS.map(o=>`<button type="button" class="style-swatch style-bg-swatch${(board.customBackground||'var(--panel)')===o.bg?' selected':''}" title="${o.name}" data-bg="${o.bg}" style="background:${o.bg}">${(board.customBackground||'var(--panel)')===o.bg?'✓':''}</button>`).join('')}
       </div>
       <div class="style-picker-label">Icon</div>
       <div class="style-picker-icons">
-        ${BOARD_ICON_OPTIONS.map(e=>`<button type="button" class="style-icon-btn" data-icon="${e}">${e}</button>`).join('')}
+        ${BOARD_ICON_OPTIONS.map(e=>`<button type="button" class="style-icon-btn${board.customIcon===e?' selected':''}" data-icon="${e}">${e}</button>`).join('')}
       </div>
       <button type="button" class="style-picker-reset" data-reset="1">Reset to default</button>
     `;
     document.body.appendChild(picker);
     const rect = event.currentTarget.getBoundingClientRect();
-    const pickerWidth = 220;
+    const pickerWidth = 244;
     picker.style.left = Math.max(8, Math.min(window.innerWidth - pickerWidth - 8, rect.left)) + 'px';
     picker.style.top = (rect.bottom + 6) + 'px';
+    const maxTop = window.innerHeight - 8;
+    requestAnimationFrame(()=>{
+      const pRect = picker.getBoundingClientRect();
+      if(pRect.bottom > maxTop) picker.style.top = Math.max(8, maxTop - pRect.height) + 'px';
+    });
     picker.addEventListener('click', (e)=>{
-      const swatch = e.target.closest('.style-swatch');
+      const swatch = e.target.closest('.style-swatch:not(.style-bg-swatch)');
+      const bgSwatch = e.target.closest('.style-bg-swatch');
       const iconBtn = e.target.closest('.style-icon-btn');
       const resetBtn = e.target.closest('.style-picker-reset');
       if(swatch){
         boardsCollection.doc(boardId).set({customAccent: swatch.dataset.accent}, {merge:true}).catch(()=>{});
+        closeStylePicker();
+      } else if(bgSwatch){
+        boardsCollection.doc(boardId).set({customBackground: bgSwatch.dataset.bg}, {merge:true}).catch(()=>{});
+        closeStylePicker();
       } else if(iconBtn){
         boardsCollection.doc(boardId).set({customIcon: iconBtn.dataset.icon}, {merge:true}).catch(()=>{});
+        closeStylePicker();
       } else if(resetBtn){
         boardsCollection.doc(boardId).set({
           customAccent: firebase.firestore.FieldValue.delete(),
-          customIcon: firebase.firestore.FieldValue.delete()
+          customIcon: firebase.firestore.FieldValue.delete(),
+          customBackground: firebase.firestore.FieldValue.delete()
         }, {merge:true}).catch(()=>{});
         closeStylePicker();
       }
