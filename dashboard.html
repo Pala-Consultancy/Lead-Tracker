@@ -189,6 +189,11 @@
   }
   .board-incomplete-banner svg{width:16px;height:16px;flex-shrink:0;}
   .board-incomplete-banner a{color:inherit;text-decoration:underline;font-weight:700;margin-left:auto;flex-shrink:0;}
+  .board-incomplete-dismiss{
+    background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:14px;
+    padding:2px 4px;flex-shrink:0;line-height:1;
+  }
+  .board-incomplete-dismiss:hover{opacity:1;}
   .title-block{
     background:linear-gradient(135deg, var(--c-blue-fg) 0%, var(--c-blue-dark) 100%);
     padding:18px 26px;border-radius:14px;
@@ -1603,6 +1608,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
     <span data-i18n="boardIncompleteBannerText">We highly recommend filling in all the missing details. This way you don't create a scattered dashboard and make finding leads as effective as possible.</span>
     <a href="boards.html" data-i18n="fillInDetailsLink">Fill in details →</a>
+    <button type="button" class="board-incomplete-dismiss" id="boardIncompleteDismissBtn" title="Dismiss">✕</button>
   </div>
 
   <div class="stats-grid" id="tallyStrip"></div>
@@ -2490,6 +2496,13 @@
   let auth = null;
   let firebaseConnected = false;
   const boardId = new URLSearchParams(location.search).get('board');
+  const boardIncompleteDismissBtn = document.getElementById('boardIncompleteDismissBtn');
+  if(boardIncompleteDismissBtn){
+    boardIncompleteDismissBtn.addEventListener('click', ()=>{
+      document.getElementById('boardIncompleteBanner').style.display = 'none';
+      try{ window.localStorage.setItem('palatrack_dismissed_incomplete_' + boardId, '1'); }catch(e){}
+    });
+  }
   let addLeadMode = 'linkedin';
   try{
     addLeadMode = window.localStorage.getItem('addLeadMode_' + boardId) || 'linkedin';
@@ -2868,7 +2881,9 @@
         if(incompleteBanner){
           const isIncomplete = !data.defaultCountry || !data.defaultCity || !data.defaultIndustry
             || !data.defaultJobTitle || !data.defaultSource || !data.createdByName;
-          incompleteBanner.style.display = isIncomplete ? '' : 'none';
+          let dismissed = false;
+          try{ dismissed = window.localStorage.getItem('palatrack_dismissed_incomplete_' + boardId) === '1'; }catch(e){}
+          incompleteBanner.style.display = (isIncomplete && !dismissed) ? '' : 'none';
         }
         clearForm();
       } else {
