@@ -1087,6 +1087,8 @@
   let unsubscribeChatThread = null;
   let chatActiveOtherUid = null;
   let chatSearchFilter = '';
+  let notificationPrefs = {};
+  function notifEnabled(key){ return notificationPrefs[key] !== false; }
   let chatTypingTimeout = null;
 
   function getConversationId(uidA, uidB){
@@ -1447,7 +1449,7 @@
         if(document.hidden && lastMsg && lastMsg.senderId !== currentUid && lastMsg.createdAt && typeof lastMsg.createdAt.toMillis === 'function'){
           const ts = lastMsg.createdAt.toMillis();
           const prevTs = previousConversationTimestamps[d.id] || 0;
-          if(chatToastInitialized && ts > prevTs){
+          if(chatToastInitialized && ts > prevTs && notifEnabled('chatDesktop')){
             const sender = teamMembersList.find(m=>m.id === lastMsg.senderId) || {};
             showBrowserNotification(sender.name || sender.email, lastMsg.text || '');
           }
@@ -1582,6 +1584,7 @@
           return usersCollection.doc(user.uid).get();
         }).then(doc=>{
           const data = doc.exists ? doc.data() : {};
+          notificationPrefs = data.notificationPrefs || {};
           if(data.language && data.language !== currentLang) setLanguage(data.language);
           currentUserIsAdmin = data.isAdmin === true;
           requestNotificationPermissionIfNeeded();

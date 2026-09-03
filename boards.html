@@ -1704,9 +1704,10 @@
   function showChatNotification(senderId, text){
     const sender = teamMembersMap[senderId] || {};
     if(document.hidden){
-      showBrowserNotification(sender.name || sender.email, text);
+      if(notifEnabled('chatDesktop')) showBrowserNotification(sender.name || sender.email, text);
       return;
     }
+    if(!notifEnabled('chatToast')) return;
     const stack = document.getElementById('chatNotifyStack');
     if(!stack) return;
     const card = document.createElement('div');
@@ -1754,6 +1755,8 @@
   }
 
   let currentBoardCount = 0;
+  let notificationPrefs = {};
+  function notifEnabled(key){ return notificationPrefs[key] !== false; }
   let orgPlan = 'growth';
   function initBoardsSync(){
     if(!firebaseConnected) return;
@@ -2050,6 +2053,7 @@
       const pillEl = document.getElementById('currentUserPill');
       membersCollection.doc(user.uid).get().then(doc=>{
         const data = doc.exists ? doc.data() : {};
+        notificationPrefs = data.notificationPrefs || {};
         if(data.language && data.language !== currentLang) setLanguage(data.language);
         const name = data.name || user.displayName || '';
         nameEl.textContent = name || user.email || 'Account';

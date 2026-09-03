@@ -2751,6 +2751,8 @@
   const SOURCES = Object.keys(SOURCE_COLORS);
 
   let leads = [];
+  let notificationPrefs = {};
+  function notifEnabled(key){ return notificationPrefs[key] !== false; }
   let trashedLeads = [];
   let sortKey = "name";
   let sortDir = 1;
@@ -3773,10 +3775,10 @@
   }
 
   function computeAllReminders(){
-    const followUps = computeFollowUpReminders().map(l=>({lead:l, type:'followup', time:l.contactedAt.toDate().getTime()}));
-    const staleNew = computeStaleNewLeads().map(l=>({lead:l, type:'stalenew', time:new Date(l.dateAdded).getTime()}));
-    const missingCallDate = computeMissingCallDateReminders().map(l=>({lead:l, type:'nocalldate', time:l.callBookedAt.toDate().getTime()}));
-    const postCall = computePostCallReminders().map(l=>({lead:l, type:'postcall', time:new Date(l.callDate).getTime()}));
+    const followUps = notifEnabled('followup') ? computeFollowUpReminders().map(l=>({lead:l, type:'followup', time:l.contactedAt.toDate().getTime()})) : [];
+    const staleNew = notifEnabled('stalenew') ? computeStaleNewLeads().map(l=>({lead:l, type:'stalenew', time:new Date(l.dateAdded).getTime()})) : [];
+    const missingCallDate = notifEnabled('nocalldate') ? computeMissingCallDateReminders().map(l=>({lead:l, type:'nocalldate', time:l.callBookedAt.toDate().getTime()})) : [];
+    const postCall = notifEnabled('postcall') ? computePostCallReminders().map(l=>({lead:l, type:'postcall', time:new Date(l.callDate).getTime()})) : [];
     return followUps.concat(staleNew, missingCallDate, postCall)
       .map(r=>({...r, id: `${r.type}:${r.lead.id}`}))
       .sort((a,b)=>a.time-b.time);
@@ -4158,9 +4160,10 @@
   function showChatNotification(senderId, text){
     const sender = teamMembersMap[senderId] || {};
     if(document.hidden){
-      showBrowserNotification(sender.name || sender.email, text);
+      if(notifEnabled('chatDesktop')) showBrowserNotification(sender.name || sender.email, text);
       return;
     }
+    if(!notifEnabled('chatToast')) return;
     const stack = document.getElementById('chatNotifyStack');
     if(!stack) return;
     const card = document.createElement('div');
@@ -5140,6 +5143,7 @@ ${buildLeadContext()}`;
       const pillEl = document.getElementById('currentUserPill');
       membersCollection.doc(user.uid).get().then(doc=>{
         const data = doc.exists ? doc.data() : {};
+        notificationPrefs = data.notificationPrefs || {};
         if(data.language && data.language !== currentLang) setLanguage(data.language);
         const name = data.name || user.displayName || '';
         nameEl.textContent = name || user.email || 'Account';
