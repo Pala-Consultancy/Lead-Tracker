@@ -1573,31 +1573,21 @@
     if(!chatActiveOtherUid) return;
     const convId = getConversationId(currentUid, chatActiveOtherUid);
     const threadRef = directMessagesCollection.doc(convId).collection('thread');
-    console.log('[DELETE DEBUG] Deleting message', messageId, 'in conv', convId);
     threadRef.doc(messageId).delete().then(()=>{
-      console.log('[DELETE DEBUG] Message deleted. Querying for new latest message...');
       return threadRef.orderBy('createdAt', 'desc').limit(1).get();
     }).then(snap=>{
-      console.log('[DELETE DEBUG] Query returned. Empty?', snap.empty, 'doc count:', snap.docs.length);
       const convRef = directMessagesCollection.doc(convId);
       if(snap.empty){
-        console.log('[DELETE DEBUG] No messages left — clearing lastMessage.');
-        return convRef.set({ lastMessage: firebase.firestore.FieldValue.delete() }, {merge:true}).then(()=>{
-          console.log('[DELETE DEBUG] lastMessage cleared successfully.');
-        });
+        return convRef.set({ lastMessage: firebase.firestore.FieldValue.delete() }, {merge:true});
       }
       const latest = snap.docs[0].data();
-      console.log('[DELETE DEBUG] New latest message data:', JSON.stringify(latest));
       let previewText = latest.text || '';
       if(!previewText && latest.mediaType === 'image') previewText = '📷 Photo';
       else if(!previewText && latest.mediaType === 'video') previewText = '🎥 Video';
       return convRef.set({
         lastMessage: { text: previewText, senderId: latest.senderId, createdAt: latest.createdAt }
-      }, {merge:true}).then(()=>{
-        console.log('[DELETE DEBUG] lastMessage updated successfully to:', previewText);
-      });
+      }, {merge:true});
     }).catch(err=>{
-      console.error('[DELETE DEBUG] FAILED:', err);
       showToast('Could not delete message: ' + friendlyErr(err), true);
     });
   }
