@@ -232,6 +232,33 @@
     transition:background .1s, transform .1s;
   }
   .chat-emoji-picker button:hover{background:var(--c-hover-bg, var(--c-blue-tint2));transform:scale(1.15);}
+
+  .chat-upload-progress{
+    padding:8px 14px;border-top:1px solid var(--border);flex-shrink:0;background:var(--panel);
+    font-size:11.5px;color:var(--slate);display:flex;flex-direction:column;gap:4px;
+  }
+  .chat-upload-progress-bar{
+    height:4px;border-radius:4px;background:var(--c-blue-tint2, #F6FAFE);overflow:hidden;position:relative;
+  }
+  .chat-upload-progress-bar::after{
+    content:'';position:absolute;left:0;top:0;bottom:0;width:var(--pct, 0%);background:var(--teal);
+    border-radius:4px;transition:width .2s;
+  }
+  .chat-media-img{
+    max-width:240px;max-height:240px;border-radius:10px;display:block;cursor:pointer;
+    margin-bottom:2px;
+  }
+  .chat-media-video{
+    max-width:260px;max-height:280px;border-radius:10px;display:block;margin-bottom:2px;
+  }
+  .chat-msg.has-media{padding:6px;background:none !important;box-shadow:none !important;}
+  .chat-msg.has-media.mine{background:none;}
+  .chat-lightbox{
+    position:fixed;inset:0;background:rgba(10,14,20,0.9);z-index:600;
+    display:flex;align-items:center;justify-content:center;cursor:zoom-out;
+    animation:chat-thread-fade .15s ease;
+  }
+  .chat-lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;}
   .chat-msg-wrap{
     display:flex;flex-direction:column;max-width:70%;position:relative;
   }
@@ -809,8 +836,14 @@
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-emoji-picker" id="chatEmojiPicker" style="display:none"></div>
+        <div class="chat-upload-progress" id="chatUploadProgress" style="display:none">
+          <div class="chat-upload-progress-bar" id="chatUploadProgressBar"></div>
+          <span id="chatUploadProgressLabel">Uploading...</span>
+        </div>
         <div class="chat-input-row">
           <button type="button" class="chat-emoji-btn" id="chatEmojiBtn" title="Add emoji">😊</button>
+          <button type="button" class="chat-emoji-btn" id="chatAttachBtn" title="Attach photo or video">📎</button>
+          <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none">
           <textarea id="chatInput" rows="1" placeholder="Type a message..."></textarea>
           <button type="button" class="chat-send-btn" id="chatSendBtn">➤</button>
         </div>
@@ -839,6 +872,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 <script>
 (function(){
   // ---------- i18n ----------
@@ -1067,12 +1101,14 @@
   let workspaceId = null;
   let workspaceRef = null;
   let auth = null;
+  let storage = null;
   let firebaseConnected = false;
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       auth = firebase.auth();
+      storage = firebase.storage();
       auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
       firebaseConnected = true;
     }
@@ -1323,8 +1359,15 @@
           ).join('')}</div>`
         : '';
       const reactBtnHtml = `<button type="button" class="chat-msg-react-btn" onclick="window.__chatActions.openReactionPicker(event,'${m.id}')" title="React">😊</button>`;
+      let mediaHtml = '';
+      if(m.mediaType === 'image' && m.mediaUrl){
+        mediaHtml = `<img class="chat-media-img" src="${m.mediaUrl}" alt="Photo" onclick="window.__chatActions.openLightbox('${m.mediaUrl}')">`;
+      } else if(m.mediaType === 'video' && m.mediaUrl){
+        mediaHtml = `<video class="chat-media-video" src="${m.mediaUrl}" controls></video>`;
+      }
+      const hasMedia = !!mediaHtml;
       return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}">
-        <div class="chat-msg ${mine ? 'mine' : 'theirs'}" ondblclick="window.__chatActions.toggleReaction('${m.id}','❤️')">${esc(m.text)}${time ? `<div class="chat-msg-time">${esc(time)}</div>` : ''}${receiptHtml}</div>
+        <div class="chat-msg ${mine ? 'mine' : 'theirs'}${hasMedia ? ' has-media' : ''}" ondblclick="window.__chatActions.toggleReaction('${m.id}','❤️')">${mediaHtml}${m.text ? esc(m.text) : ''}${time ? `<div class="chat-msg-time"${hasMedia ? ' style="padding:0 4px 4px;"' : ''}>${esc(time)}</div>` : ''}${receiptHtml}</div>
         ${reactBtnHtml}
         ${reactionsHtml}
       </div>`;
@@ -1420,6 +1463,81 @@
     });
   }
 
+  function sendMediaMessage(file){
+    if(!chatActiveOtherUid || !storage) return;
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if(!isImage && !isVideo){
+      showToast('Only photos and videos can be sent.', true);
+      return;
+    }
+    const maxBytes = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if(file.size > maxBytes){
+      showToast(`That file is too big (max ${isVideo ? '50MB for videos' : '10MB for photos'}).`, true);
+      return;
+    }
+    const convId = getConversationId(currentUid, chatActiveOtherUid);
+    const mediaType = isImage ? 'image' : 'video';
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `workspaces/${workspaceId}/chatMedia/${convId}/${Date.now()}_${currentUid}_${safeName}`;
+    const storageRef = storage.ref(storagePath);
+    const uploadTask = storageRef.put(file);
+
+    const progressEl = document.getElementById('chatUploadProgress');
+    const progressBar = document.getElementById('chatUploadProgressBar');
+    const progressLabel = document.getElementById('chatUploadProgressLabel');
+    progressEl.style.display = 'flex';
+    progressLabel.textContent = `Uploading ${mediaType}...`;
+    progressBar.style.setProperty('--pct', '0%');
+
+    uploadTask.on('state_changed', snapshot=>{
+      const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+      progressBar.style.setProperty('--pct', pct + '%');
+      progressLabel.textContent = `Uploading ${mediaType}... ${pct}%`;
+    }, err=>{
+      progressEl.style.display = 'none';
+      showToast('Upload failed: ' + friendlyErr(err), true);
+    }, ()=>{
+      uploadTask.snapshot.ref.getDownloadURL().then(url=>{
+        const convRef = directMessagesCollection.doc(convId);
+        const previewText = mediaType === 'image' ? '📷 Photo' : '🎥 Video';
+        return convRef.set({
+          participants: [currentUid, chatActiveOtherUid],
+          lastMessage: { text: previewText, senderId: currentUid, createdAt: firebase.firestore.FieldValue.serverTimestamp() },
+          lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
+        }, {merge:true}).then(()=>{
+          return convRef.collection('thread').add({
+            senderId: currentUid, text: '', mediaUrl: url, mediaType,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+      }).then(()=>{
+        progressEl.style.display = 'none';
+      }).catch(err=>{
+        progressEl.style.display = 'none';
+        showToast('Could not send: ' + friendlyErr(err), true);
+      });
+    });
+  }
+
+  document.getElementById('chatAttachBtn').addEventListener('click', ()=>{
+    if(!chatActiveOtherUid) return;
+    document.getElementById('chatFileInput').click();
+  });
+  document.getElementById('chatFileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) sendMediaMessage(file);
+    e.target.value = '';
+  });
+
+  function openLightbox(url){
+    const overlay = document.createElement('div');
+    overlay.className = 'chat-lightbox';
+    overlay.innerHTML = `<img src="${url}" alt="">`;
+    overlay.addEventListener('click', ()=>overlay.remove());
+    document.body.appendChild(overlay);
+  }
+
   let activeReactionPicker = null;
   function closeReactionPicker(){
     if(activeReactionPicker){ activeReactionPicker.remove(); activeReactionPicker = null; }
@@ -1444,7 +1562,7 @@
     if(activeReactionPicker && !activeReactionPicker.contains(e.target)) closeReactionPicker();
   });
 
-  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker };
+  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox };
 
   // ---------- Emoji picker ----------
   const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','🙄','😴','😭','😡','🥳','😎','🤩',
