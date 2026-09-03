@@ -295,6 +295,26 @@
   }
   .chat-msg-wrap.mine .chat-msg-react-btn{left:-8px;}
   .chat-msg-wrap.theirs .chat-msg-react-btn{right:-8px;}
+
+  .chat-msg-delete-btn{
+    position:absolute;top:-10px;left:-38px;background:var(--panel);border:1px solid var(--border);border-radius:50%;
+    width:24px;height:24px;font-size:11px;cursor:pointer;opacity:0;transform:scale(.7);
+    transition:opacity .15s, transform .15s;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(27,36,48,0.12);
+  }
+  .chat-msg-wrap:hover .chat-msg-delete-btn{opacity:1;transform:scale(1);}
+  .chat-msg-delete-btn:hover{background:var(--c-red-bg, #FBE4E2);transform:scale(1.15);}
+
+  .chat-delete-confirm{
+    position:fixed;inset:0;background:rgba(10,14,20,0.35);z-index:550;
+    display:flex;align-items:center;justify-content:center;animation:chat-thread-fade .12s ease;
+  }
+  .chat-delete-confirm-card{
+    background:var(--panel);border-radius:14px;padding:22px 26px;max-width:300px;text-align:center;
+    box-shadow:0 16px 40px rgba(27,36,48,0.25);
+  }
+  .chat-delete-confirm-card p{font-size:13.5px;color:var(--ink);margin:0 0 16px;}
+  .chat-delete-confirm-actions{display:flex;gap:10px;justify-content:center;}
   .chat-msg-react-btn:hover{transform:scale(1.15);}
 
   .chat-msg-reactions{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
@@ -560,6 +580,8 @@
   .btn-primary{background:var(--teal);color:#fff;border-color:var(--teal);}
   .btn-primary:hover{background:var(--teal-dark);}
   .btn-primary:disabled{opacity:.6;cursor:default;}
+  .btn-danger{background:var(--c-red-fg, #C0392B);color:#fff;border-color:var(--c-red-fg, #C0392B);}
+  .btn-danger:hover{opacity:.9;}
 
   /* ---------- Invite card ---------- */
   .invite-card{
@@ -1359,6 +1381,14 @@
           ).join('')}</div>`
         : '';
       const reactBtnHtml = `<button type="button" class="chat-msg-react-btn" onclick="window.__chatActions.openReactionPicker(event,'${m.id}')" title="React">😊</button>`;
+      let deleteBtnHtml = '';
+      if(mine){
+        const msgMillis = (m.createdAt && typeof m.createdAt.toMillis === 'function') ? m.createdAt.toMillis() : null;
+        const withinWindow = msgMillis && (Date.now() - msgMillis) < 30 * 60 * 1000;
+        if(withinWindow){
+          deleteBtnHtml = `<button type="button" class="chat-msg-delete-btn" onclick="window.__chatActions.confirmDeleteMessage('${m.id}')" title="Delete message">🗑️</button>`;
+        }
+      }
       let mediaHtml = '';
       if(m.mediaType === 'image' && m.mediaUrl){
         mediaHtml = `<img class="chat-media-img" src="${m.mediaUrl}" alt="Photo" onclick="window.__chatActions.openLightbox('${m.mediaUrl}')">`;
@@ -1369,6 +1399,7 @@
       return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}">
         <div class="chat-msg ${mine ? 'mine' : 'theirs'}${hasMedia ? ' has-media' : ''}" ondblclick="window.__chatActions.toggleReaction('${m.id}','❤️')">${mediaHtml}${m.text ? esc(m.text) : ''}${time ? `<div class="chat-msg-time"${hasMedia ? ' style="padding:0 4px 4px;"' : ''}>${esc(time)}</div>` : ''}${receiptHtml}</div>
         ${reactBtnHtml}
+        ${deleteBtnHtml}
         ${reactionsHtml}
       </div>`;
     }).join('');
@@ -1538,6 +1569,33 @@
     document.body.appendChild(overlay);
   }
 
+  function deleteMessage(messageId){
+    if(!chatActiveOtherUid) return;
+    const convId = getConversationId(currentUid, chatActiveOtherUid);
+    directMessagesCollection.doc(convId).collection('thread').doc(messageId).delete().catch(err=>{
+      showToast('Could not delete message: ' + friendlyErr(err), true);
+    });
+  }
+
+  function confirmDeleteMessage(messageId){
+    const overlay = document.createElement('div');
+    overlay.className = 'chat-delete-confirm';
+    overlay.innerHTML = `<div class="chat-delete-confirm-card">
+      <p>Delete this message? This can't be undone.</p>
+      <div class="chat-delete-confirm-actions">
+        <button type="button" class="btn" id="chatDeleteCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="chatDeleteConfirmBtn">Delete</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.remove(); });
+    document.getElementById('chatDeleteCancelBtn').addEventListener('click', ()=>overlay.remove());
+    document.getElementById('chatDeleteConfirmBtn').addEventListener('click', ()=>{
+      deleteMessage(messageId);
+      overlay.remove();
+    });
+  }
+
   let activeReactionPicker = null;
   function closeReactionPicker(){
     if(activeReactionPicker){ activeReactionPicker.remove(); activeReactionPicker = null; }
@@ -1562,7 +1620,7 @@
     if(activeReactionPicker && !activeReactionPicker.contains(e.target)) closeReactionPicker();
   });
 
-  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox };
+  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox, confirmDeleteMessage };
 
   // ---------- Emoji picker ----------
   const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','🙄','😴','😭','😡','🥳','😎','🤩',
