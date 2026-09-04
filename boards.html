@@ -180,14 +180,23 @@
   @media (prefers-reduced-motion: reduce){.login-bg-orb{animation:none;}}
 
   .login-monster{
-    position:fixed;bottom:18px;left:18px;width:130px;height:130px;z-index:5;
+    position:fixed;bottom:0px;left:12px;width:300px;height:300px;z-index:5;
     pointer-events:none;animation:monster-bob 3.4s ease-in-out infinite;
     filter:drop-shadow(0 8px 16px rgba(15,23,32,0.18));
   }
-  .login-monster img{width:100%;height:100%;display:block;transition:transform .15s ease-out;}
+  .login-monster img{width:100%;height:100%;display:block;position:relative;}
+  .monster-pupil-overlay{
+    position:absolute;width:9%;height:9%;border-radius:50%;
+    background:rgb(22,21,79);transform:translate(-50%,-50%);
+    transition:left .06s linear, top .06s linear;
+  }
+  .monster-pupil-highlight{
+    position:absolute;width:32%;height:32%;border-radius:50%;background:#fdfdff;
+    top:18%;right:12%;
+  }
   @keyframes monster-bob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-6px) rotate(1deg);}}
-  @media (prefers-reduced-motion: reduce){.login-monster{animation:none;}.login-monster img{transition:none;}}
-  @media (max-width:640px){.login-monster{width:90px;height:90px;bottom:10px;left:10px;}}
+  @media (prefers-reduced-motion: reduce){.login-monster{animation:none;}}
+  @media (max-width:640px){.login-monster{width:190px;height:190px;bottom:0px;left:6px;}}
 
   .login-card{
     background:var(--panel);border:1px solid var(--border);border-radius:18px;
@@ -954,31 +963,40 @@
   <div class="login-bg-orb o3"></div>
   <div class="login-monster" id="loginMonster">
     <img src="monster-mascot.png" alt="Blue monster mascot">
+    <div class="monster-pupil-overlay" id="monsterPupilLeft" style="left:43.34%; top:38.73%"><span class="monster-pupil-highlight"></span></div>
+    <div class="monster-pupil-overlay" id="monsterPupilRight" style="left:54.41%; top:38.89%"><span class="monster-pupil-highlight"></span></div>
   </div>
   <script>
     (function(){
       var monsterEl = document.getElementById('loginMonster');
-      var imgEl = monsterEl ? monsterEl.querySelector('img') : null;
-      if(!monsterEl || !imgEl) return;
-      var maxTilt = 10;
+      var pupilLeft = document.getElementById('monsterPupilLeft');
+      var pupilRight = document.getElementById('monsterPupilRight');
+      if(!monsterEl || !pupilLeft || !pupilRight) return;
+      var eyes = [
+        {el: pupilLeft, baseLeft: 43.34, baseTop: 38.73},
+        {el: pupilRight, baseLeft: 54.41, baseTop: 38.89}
+      ];
+      var maxOffsetPct = 1.6;
       var ticking = false;
       var lastX = window.innerWidth / 2, lastY = window.innerHeight / 2;
-      function updateTilt(){
+      function updatePupils(){
         ticking = false;
         var rect = monsterEl.getBoundingClientRect();
         if(rect.width === 0) return;
-        var cx = rect.left + rect.width / 2;
-        var cy = rect.top + rect.height / 2;
-        var dx = (lastX - cx) / (window.innerWidth / 2);
-        var dy = (lastY - cy) / (window.innerHeight / 2);
-        var rotateY = Math.max(-1, Math.min(1, dx)) * maxTilt;
-        var rotateX = Math.max(-1, Math.min(1, -dy)) * maxTilt * 0.6;
-        imgEl.style.transform = 'perspective(600px) rotateX(' + rotateX.toFixed(1) + 'deg) rotateY(' + rotateY.toFixed(1) + 'deg)';
+        eyes.forEach(function(eye){
+          var eyeScreenX = rect.left + (eye.baseLeft / 100) * rect.width;
+          var eyeScreenY = rect.top + (eye.baseTop / 100) * rect.height;
+          var angle = Math.atan2(lastY - eyeScreenY, lastX - eyeScreenX);
+          var newLeft = eye.baseLeft + Math.cos(angle) * maxOffsetPct;
+          var newTop = eye.baseTop + Math.sin(angle) * maxOffsetPct * 0.85;
+          eye.el.style.left = newLeft.toFixed(2) + '%';
+          eye.el.style.top = newTop.toFixed(2) + '%';
+        });
       }
       document.addEventListener('mousemove', function(e){
         lastX = e.clientX;
         lastY = e.clientY;
-        if(!ticking){ ticking = true; requestAnimationFrame(updateTilt); }
+        if(!ticking){ ticking = true; requestAnimationFrame(updatePupils); }
       }, {passive:true});
     })();
   </script>
