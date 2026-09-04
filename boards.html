@@ -161,7 +161,7 @@
   /* ---------- Login screen ---------- */
   #loginScreen{
     min-height:100vh;display:none;align-items:center;justify-content:center;
-    padding:24px;position:relative;overflow:hidden;perspective:1400px;
+    padding:24px;position:relative;overflow:hidden;
     background:radial-gradient(circle at 50% 0%, var(--c-blue-bg) 0%, var(--paper) 65%);
   }
   .login-bg-dotgrid{
@@ -172,36 +172,20 @@
     mask-image:radial-gradient(ellipse 75% 75% at 50% 40%, #000 30%, transparent 80%);
   }
   [data-theme="dark"] .login-bg-dotgrid{background-image:radial-gradient(rgba(122,79,181,0.22) 1.4px, transparent 1.4px);}
-  .login-bg-orb{position:absolute;border-radius:50%;opacity:.55;pointer-events:none;z-index:0;will-change:transform;}
+  .login-cursor-glow{position:absolute;inset:0;z-index:0;pointer-events:none;transition:background .1s ease-out;}
+  .login-orb-parallax{position:absolute;inset:0;z-index:0;pointer-events:none;transition:transform .25s ease-out;}
+  .login-bg-orb{position:absolute;border-radius:50%;opacity:.55;pointer-events:none;will-change:transform;}
   .login-bg-orb.o1{width:280px;height:280px;background:radial-gradient(circle, var(--c-blue-fg) 0%, transparent 70%);top:-80px;left:-60px;animation:login-orb-float 11s ease-in-out infinite;}
   .login-bg-orb.o2{width:320px;height:320px;background:radial-gradient(circle, var(--c-purple-fg, #7A4FB5) 0%, transparent 70%);bottom:-100px;right:-80px;animation:login-orb-float 13s ease-in-out infinite 2s;}
   .login-bg-orb.o3{width:200px;height:200px;background:radial-gradient(circle, var(--c-amber-fg) 0%, transparent 70%);top:55%;right:8%;animation:login-orb-float 9s ease-in-out infinite 4s;}
   @keyframes login-orb-float{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-26px) scale(1.12);}}
   @media (prefers-reduced-motion: reduce){.login-bg-orb{animation:none;}}
 
-  .login-monster{
-    position:fixed;bottom:0;left:0;width:340px;height:265.2px;z-index:5;
-    pointer-events:none;
-    filter:drop-shadow(0 8px 16px rgba(15,23,32,0.18));
-  }
-  .login-monster img{width:100%;height:100%;display:block;position:relative;}
-  .monster-pupil-overlay{
-    position:absolute;width:11%;aspect-ratio:1;border-radius:50%;
-    background:rgb(22,21,79);transform:translate(-50%,-50%);
-    transition:left .06s linear, top .06s linear;
-  }
-  .monster-pupil-highlight{
-    position:absolute;width:30%;aspect-ratio:1;border-radius:50%;background:#fdfdff;
-    top:18%;right:12%;
-  }
-  @media (max-width:640px){.login-monster{width:220px;height:171.6px;bottom:0;left:0;}}
-
   .login-card{
     background:var(--panel);border:1px solid var(--border);border-radius:18px;
     box-shadow:0 20px 50px rgba(18,63,120,0.14), var(--shadow);
     padding:0 0 32px;width:100%;max-width:400px;overflow:hidden;position:relative;z-index:1;
-    transform-style:preserve-3d;transition:transform .15s ease, box-shadow .3s ease;
-    will-change:transform;
+    transition:box-shadow .3s ease;
   }
   .login-card:hover{box-shadow:0 30px 65px rgba(18,63,120,0.22), var(--shadow);}
   .login-card::before{
@@ -956,45 +940,37 @@
 
 <div id="loginScreen">
   <div class="login-bg-dotgrid"></div>
-  <div class="login-bg-orb o1"></div>
-  <div class="login-bg-orb o2"></div>
-  <div class="login-bg-orb o3"></div>
-  <div class="login-monster" id="loginMonster">
-    <img src="monster-mascot2-crop.png" alt="Blue monster mascot">
-    <div class="monster-pupil-overlay" id="monsterPupilLeft" style="left:40.47%; top:46.99%"><span class="monster-pupil-highlight"></span></div>
-    <div class="monster-pupil-overlay" id="monsterPupilRight" style="left:52.51%; top:47.23%"><span class="monster-pupil-highlight"></span></div>
-  </div>
+  <div class="login-cursor-glow" id="loginCursorGlow"></div>
+  <div class="login-orb-parallax" id="orbParallax1"><div class="login-bg-orb o1"></div></div>
+  <div class="login-orb-parallax" id="orbParallax2"><div class="login-bg-orb o2"></div></div>
+  <div class="login-orb-parallax" id="orbParallax3"><div class="login-bg-orb o3"></div></div>
   <script>
     (function(){
-      var monsterEl = document.getElementById('loginMonster');
-      var pupilLeft = document.getElementById('monsterPupilLeft');
-      var pupilRight = document.getElementById('monsterPupilRight');
-      if(!monsterEl || !pupilLeft || !pupilRight) return;
-      var eyes = [
-        {el: pupilLeft, baseLeft: 40.47, baseTop: 46.99},
-        {el: pupilRight, baseLeft: 52.51, baseTop: 47.23}
+      var screen = document.getElementById('loginScreen');
+      var glow = document.getElementById('loginCursorGlow');
+      var layers = [
+        {el: document.getElementById('orbParallax1'), strength: 18},
+        {el: document.getElementById('orbParallax2'), strength: 26},
+        {el: document.getElementById('orbParallax3'), strength: 14}
       ];
-      var maxOffsetPct = 1.6;
+      if(!screen) return;
+      if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       var ticking = false;
       var lastX = window.innerWidth / 2, lastY = window.innerHeight / 2;
-      function updatePupils(){
+      function update(){
         ticking = false;
-        var rect = monsterEl.getBoundingClientRect();
-        if(rect.width === 0) return;
-        eyes.forEach(function(eye){
-          var eyeScreenX = rect.left + (eye.baseLeft / 100) * rect.width;
-          var eyeScreenY = rect.top + (eye.baseTop / 100) * rect.height;
-          var angle = Math.atan2(lastY - eyeScreenY, lastX - eyeScreenX);
-          var newLeft = eye.baseLeft + Math.cos(angle) * maxOffsetPct;
-          var newTop = eye.baseTop + Math.sin(angle) * maxOffsetPct * 0.85;
-          eye.el.style.left = newLeft.toFixed(2) + '%';
-          eye.el.style.top = newTop.toFixed(2) + '%';
+        var nx = (lastX / window.innerWidth) - 0.5;
+        var ny = (lastY / window.innerHeight) - 0.5;
+        layers.forEach(function(layer){
+          if(!layer.el) return;
+          layer.el.style.transform = 'translate(' + (nx * layer.strength).toFixed(1) + 'px, ' + (ny * layer.strength).toFixed(1) + 'px)';
         });
+        if(glow) glow.style.background = 'radial-gradient(circle at ' + lastX + 'px ' + lastY + 'px, rgba(27,89,165,0.14), transparent 42%)';
       }
-      document.addEventListener('mousemove', function(e){
+      screen.addEventListener('mousemove', function(e){
         lastX = e.clientX;
         lastY = e.clientY;
-        if(!ticking){ ticking = true; requestAnimationFrame(updatePupils); }
+        if(!ticking){ ticking = true; requestAnimationFrame(update); }
       }, {passive:true});
     })();
   </script>
@@ -1656,37 +1632,6 @@
         setLanguage(e.target.value);
       });
     }
-  })();
-
-  // ---------- Login card: subtle 3D mouse-follow tilt ----------
-  (function(){
-    var card = document.getElementById('loginCard');
-    var screen = document.getElementById('loginScreen');
-    if(!card || !screen) return;
-    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var rect = null;
-    var pendingRotateX = 0, pendingRotateY = 0, rafScheduled = false;
-    function applyTilt(){
-      card.style.transform = 'rotateX(' + pendingRotateX + 'deg) rotateY(' + pendingRotateY + 'deg)';
-      rafScheduled = false;
-    }
-    screen.addEventListener('mouseenter', function(){ rect = card.getBoundingClientRect(); });
-    screen.addEventListener('mousemove', function(e){
-      if(!rect) rect = card.getBoundingClientRect();
-      var cx = rect.left + rect.width / 2;
-      var cy = rect.top + rect.height / 2;
-      pendingRotateY = ((e.clientX - cx) / rect.width) * 10;
-      pendingRotateX = ((cy - e.clientY) / rect.height) * 10;
-      if(!rafScheduled){
-        rafScheduled = true;
-        requestAnimationFrame(applyTilt);
-      }
-    });
-    screen.addEventListener('mouseleave', function(){
-      rect = null;
-      pendingRotateX = 0; pendingRotateY = 0;
-      card.style.transform = 'rotateX(0) rotateY(0)';
-    });
   })();
 
   // Paste the SAME firebaseConfig you used in the tracker (dashboard.html) here.
