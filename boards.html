@@ -178,6 +178,19 @@
   .login-bg-orb.o3{width:200px;height:200px;background:radial-gradient(circle, var(--c-amber-fg) 0%, transparent 70%);top:55%;right:8%;animation:login-orb-float 9s ease-in-out infinite 4s;}
   @keyframes login-orb-float{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-26px) scale(1.12);}}
   @media (prefers-reduced-motion: reduce){.login-bg-orb{animation:none;}}
+
+  .login-monster{
+    position:fixed;bottom:18px;right:18px;width:120px;height:120px;z-index:5;
+    pointer-events:none;animation:monster-bob 3.4s ease-in-out infinite;
+    filter:drop-shadow(0 8px 16px rgba(15,23,32,0.18));
+  }
+  .login-monster svg{width:100%;height:100%;overflow:visible;}
+  @keyframes monster-bob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-6px) rotate(-2deg);}}
+  @media (prefers-reduced-motion: reduce){.login-monster{animation:none;}}
+  .monster-eye-white{fill:#fff;}
+  .monster-pupil{fill:#1B2F66;transition:cx .05s linear, cy .05s linear;}
+  @media (max-width:640px){.login-monster{width:80px;height:80px;bottom:10px;right:10px;}}
+
   .login-card{
     background:var(--panel);border:1px solid var(--border);border-radius:18px;
     box-shadow:0 20px 50px rgba(18,63,120,0.14), var(--shadow);
@@ -941,6 +954,63 @@
   <div class="login-bg-orb o1"></div>
   <div class="login-bg-orb o2"></div>
   <div class="login-bg-orb o3"></div>
+  <div class="login-monster" id="loginMonster">
+    <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="80" cy="150" rx="46" ry="8" fill="rgba(15,23,32,0.12)"></ellipse>
+      <path d="M80 10c-30 0-52 20-58 46-4 17 2 30 8 40-6 8-8 18-4 28 8 18 30 26 54 26s46-8 54-26c4-10 2-20-4-28 6-10 12-23 8-40-6-26-28-46-58-46z" fill="#3E6FE0"></path>
+      <path d="M80 10c-30 0-52 20-58 46-4 17 2 30 8 40-6 8-8 18-4 28 8 18 30 26 54 26" fill="none" stroke="#2E56C4" stroke-width="2" opacity="0.4"></path>
+      <ellipse cx="52" cy="24" rx="9" ry="14" fill="#3E6FE0" transform="rotate(-20 52 24)"></ellipse>
+      <ellipse cx="108" cy="24" rx="9" ry="14" fill="#3E6FE0" transform="rotate(20 108 24)"></ellipse>
+      <circle cx="52" cy="20" r="4" fill="#FF9D00"></circle>
+      <circle cx="108" cy="20" r="4" fill="#FF9D00"></circle>
+      <ellipse class="monster-eye-white" cx="58" cy="78" rx="19" ry="22"></ellipse>
+      <ellipse class="monster-eye-white" cx="102" cy="78" rx="19" ry="22"></ellipse>
+      <circle class="monster-pupil" id="monsterPupilLeft" cx="58" cy="78" r="8"></circle>
+      <circle class="monster-pupil" id="monsterPupilRight" cx="102" cy="78" r="8"></circle>
+      <circle cx="61" cy="74" r="2.4" fill="#fff"></circle>
+      <circle cx="105" cy="74" r="2.4" fill="#fff"></circle>
+      <path d="M62 116c6 8 30 8 36 0" fill="none" stroke="#1B2F66" stroke-width="4" stroke-linecap="round"></path>
+      <path d="M66 118l3 6M74 120l1 6M86 120l-1 6M94 118l-3 6" stroke="#fff" stroke-width="3" stroke-linecap="round"></path>
+      <ellipse cx="40" cy="102" rx="7" ry="5" fill="#FF6F91" opacity="0.55"></ellipse>
+      <ellipse cx="120" cy="102" rx="7" ry="5" fill="#FF6F91" opacity="0.55"></ellipse>
+    </svg>
+  </div>
+  <script>
+    (function(){
+      var monsterEl = document.getElementById('loginMonster');
+      var pupilLeft = document.getElementById('monsterPupilLeft');
+      var pupilRight = document.getElementById('monsterPupilRight');
+      if(!monsterEl || !pupilLeft || !pupilRight) return;
+      var eyes = [
+        {el: pupilLeft, svgX: 58, svgY: 78},
+        {el: pupilRight, svgX: 102, svgY: 78}
+      ];
+      var maxOffset = 6;
+      var ticking = false;
+      var lastX = window.innerWidth / 2, lastY = window.innerHeight / 2;
+      function updatePupils(){
+        ticking = false;
+        var rect = monsterEl.getBoundingClientRect();
+        if(rect.width === 0 || rect.height === 0) return;
+        var scaleX = rect.width / 160;
+        var scaleY = rect.height / 160;
+        eyes.forEach(function(eye){
+          var eyeScreenX = rect.left + eye.svgX * scaleX;
+          var eyeScreenY = rect.top + eye.svgY * scaleY;
+          var angle = Math.atan2(lastY - eyeScreenY, lastX - eyeScreenX);
+          var newX = eye.svgX + Math.cos(angle) * maxOffset;
+          var newY = eye.svgY + Math.sin(angle) * maxOffset * 0.85;
+          eye.el.setAttribute('cx', newX.toFixed(2));
+          eye.el.setAttribute('cy', newY.toFixed(2));
+        });
+      }
+      document.addEventListener('mousemove', function(e){
+        lastX = e.clientX;
+        lastY = e.clientY;
+        if(!ticking){ ticking = true; requestAnimationFrame(updatePupils); }
+      }, {passive:true});
+    })();
+  </script>
   <div class="login-card" id="loginCard">
     <a class="login-back-home" id="loginBackHome" href="index.html">← Home</a>
         <div class="login-lang-switcher">
