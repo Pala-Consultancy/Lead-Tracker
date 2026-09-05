@@ -180,6 +180,10 @@
   .login-bg-orb.o3{width:200px;height:200px;background:radial-gradient(circle, var(--c-amber-fg) 0%, transparent 70%);top:55%;right:8%;animation:login-orb-float 9s ease-in-out infinite 4s;}
   @keyframes login-orb-float{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-26px) scale(1.12);}}
   @media (prefers-reduced-motion: reduce){.login-bg-orb{animation:none;}}
+  @media (prefers-reduced-motion: reduce){
+    .welcome-emoji, .welcome-title, .welcome-sub, .welcome-cta{animation:none !important;opacity:1 !important;}
+    .welcome-overlay.open{animation:none;}
+  }
 
   .login-card{
     background:var(--panel);border:1px solid var(--border);border-radius:18px;
@@ -855,6 +859,7 @@
     transition:transform .55s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
   }
   .welcome-overlay.open .welcome-card{transform:scale(1) translateY(0);opacity:1;}
+  .welcome-card-inner{transition:transform .1s ease-out;}
   .welcome-confetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
   .welcome-confetti span{
     position:absolute;top:-10px;width:9px;height:9px;border-radius:2px;
@@ -864,11 +869,28 @@
     0%{opacity:1;transform:translateY(0) rotate(0deg);}
     100%{opacity:0;transform:translateY(100vh) rotate(360deg);}
   }
+  @keyframes welcome-confetti-burst{
+    0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1);}
+    100%{opacity:0;transform:translate(var(--bx), var(--by)) rotate(280deg) scale(.4);}
+  }
+  .welcome-ambient-sparkle{
+    position:absolute;font-size:16px;pointer-events:none;opacity:0;
+    animation:welcome-ambient-twinkle 3s ease-in-out infinite;
+  }
+  @keyframes welcome-ambient-twinkle{
+    0%,100%{opacity:0;transform:translateY(6px) scale(.7);}
+    50%{opacity:.9;transform:translateY(-6px) scale(1);}
+  }
   .welcome-emoji{
     font-size:64px;display:inline-block;margin-bottom:10px;
-    animation:welcome-wave 1.8s ease-in-out .3s 2;transform-origin:70% 70%;
+    transform-origin:70% 70%;
     filter:drop-shadow(0 6px 18px rgba(0,0,0,0.25));
+    opacity:0;
   }
+  .welcome-overlay.open .welcome-emoji{
+    animation:welcome-stagger-in .5s ease .1s forwards, welcome-wave 1.8s ease-in-out .6s 2;
+  }
+  @keyframes welcome-stagger-in{from{opacity:0;transform:translateY(16px) scale(.9);}to{opacity:1;transform:translateY(0) scale(1);}}
   @keyframes welcome-wave{
     0%, 100%{transform:rotate(0deg);}
     15%{transform:rotate(18deg);}
@@ -879,18 +901,27 @@
   }
   .welcome-title{
     font-size:34px;font-weight:800;margin:0 0 10px;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,0.25);
+    opacity:0;
   }
+  .welcome-overlay.open .welcome-title{animation:welcome-stagger-in .5s ease .22s forwards;}
   .welcome-name{
     color:#fff;text-decoration:underline;text-decoration-color:rgba(255,255,255,0.4);text-underline-offset:6px;
   }
-  .welcome-sub{font-size:16px;color:rgba(255,255,255,0.9);margin:0 0 32px;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,0.2);}
+  .welcome-sub{
+    font-size:16px;color:rgba(255,255,255,0.9);margin:0 0 32px;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,0.2);
+    opacity:0;
+  }
+  .welcome-overlay.open .welcome-sub{animation:welcome-stagger-in .5s ease .34s forwards;}
   .welcome-cta{
     display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:700;
     padding:14px 30px;border-radius:14px;border:none;cursor:pointer;color:var(--ink);
     background:#fff;
     box-shadow:0 14px 34px rgba(0,0,0,0.25);
     transition:transform .15s ease, box-shadow .15s ease;
+    opacity:0;
   }
+  .welcome-overlay.open .welcome-cta{animation:welcome-stagger-in .5s ease .46s forwards, welcome-cta-pulse 2s ease-in-out 1.5s infinite;}
+  @keyframes welcome-cta-pulse{0%,100%{box-shadow:0 14px 34px rgba(0,0,0,0.25);}50%{box-shadow:0 14px 34px rgba(0,0,0,0.25), 0 0 0 8px rgba(255,255,255,0.15);}}
   .welcome-cta:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 18px 40px rgba(0,0,0,0.3);}
   .welcome-cta-arrow{display:inline-block;transition:transform .15s ease;}
   .welcome-cta:hover .welcome-cta-arrow{transform:translateX(3px);}
@@ -1272,10 +1303,12 @@
 <div class="welcome-overlay" id="welcomeOverlay">
   <div class="welcome-confetti" id="welcomeConfetti"></div>
   <div class="welcome-card" id="welcomeCard">
-    <div class="welcome-emoji" id="welcomeEmoji">👋</div>
-    <h2 class="welcome-title">Welcome back, <span class="welcome-name" id="welcomeName"></span></h2>
-    <p class="welcome-sub" id="welcomeSub"></p>
-    <button type="button" class="welcome-cta" id="welcomeCtaBtn">Let's go <span class="welcome-cta-arrow">→</span></button>
+    <div class="welcome-card-inner" id="welcomeCardInner">
+      <div class="welcome-emoji" id="welcomeEmoji">👋</div>
+      <h2 class="welcome-title">Welcome back, <span class="welcome-name" id="welcomeName"></span></h2>
+      <p class="welcome-sub" id="welcomeSub"></p>
+      <button type="button" class="welcome-cta" id="welcomeCtaBtn">Let's go <span class="welcome-cta-arrow">→</span></button>
+    </div>
   </div>
 </div>
 
@@ -2754,8 +2787,39 @@
     })();
 
     let welcomeDismissHandlersBound = false;
+    function spawnConfettiBurst(x, y){
+      const holder = document.getElementById('welcomeConfetti');
+      for(let i=0; i<18; i++){
+        const piece = document.createElement('span');
+        const color = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+        const angle = (Math.PI * 2 * i) / 18 + Math.random()*0.3;
+        const distance = 60 + Math.random()*90;
+        piece.style.left = x + 'px';
+        piece.style.top = y + 'px';
+        piece.style.background = color;
+        piece.style.width = piece.style.height = `${4 + Math.random()*5}px`;
+        piece.style.setProperty('--bx', Math.cos(angle)*distance + 'px');
+        piece.style.setProperty('--by', Math.sin(angle)*distance + 'px');
+        piece.style.animation = 'welcome-confetti-burst .9s ease-out forwards';
+        holder.appendChild(piece);
+        setTimeout(()=>piece.remove(), 950);
+      }
+    }
+    function spawnAmbientSparkles(){
+      const holder = document.getElementById('welcomeConfetti');
+      for(let i=0; i<10; i++){
+        const sparkle = document.createElement('span');
+        sparkle.className = 'welcome-ambient-sparkle';
+        sparkle.textContent = '✨';
+        sparkle.style.left = Math.random()*100 + '%';
+        sparkle.style.top = Math.random()*100 + '%';
+        sparkle.style.animationDelay = (Math.random()*3) + 's';
+        holder.appendChild(sparkle);
+      }
+    }
     function showWelcomeModal(name){
       const overlay = document.getElementById('welcomeOverlay');
+      const cardInner = document.getElementById('welcomeCardInner');
       const nameEl = document.getElementById('welcomeName');
       const subEl = document.getElementById('welcomeSub');
       const ctaBtn = document.getElementById('welcomeCtaBtn');
@@ -2763,17 +2827,34 @@
       nameEl.textContent = firstName || 'there';
       subEl.textContent = WELCOME_MESSAGES[Math.floor(Math.random()*WELCOME_MESSAGES.length)];
       launchWelcomeConfetti();
+      spawnAmbientSparkles();
+      playFanfareSound();
       overlay.classList.add('open');
-      let autoDismissTimer = setTimeout(dismiss, 4500);
+      let autoDismissTimer = setTimeout(dismiss, 7000);
       function dismiss(){
         clearTimeout(autoDismissTimer);
         overlay.classList.remove('open');
+        document.getElementById('welcomeConfetti').innerHTML = '';
+        cardInner.style.transform = '';
       }
       if(!welcomeDismissHandlersBound){
         welcomeDismissHandlersBound = true;
         ctaBtn.addEventListener('click', dismiss);
-        overlay.addEventListener('click', (e)=>{ if(e.target === overlay) dismiss(); });
+        overlay.addEventListener('click', (e)=>{
+          if(e.target === overlay){
+            spawnConfettiBurst(e.clientX, e.clientY);
+            clearTimeout(autoDismissTimer);
+            autoDismissTimer = setTimeout(dismiss, 4000);
+          }
+        });
         document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') dismiss(); });
+        overlay.addEventListener('mousemove', (e)=>{
+          if(!overlay.classList.contains('open')) return;
+          const rect = overlay.getBoundingClientRect();
+          const nx = (e.clientX - rect.left) / rect.width - 0.5;
+          const ny = (e.clientY - rect.top) / rect.height - 0.5;
+          cardInner.style.transform = `perspective(700px) rotateY(${(nx*8).toFixed(1)}deg) rotateX(${(-ny*8).toFixed(1)}deg)`;
+        });
       }
     }
     document.getElementById('boardIndustry').addEventListener('change', (e)=>{
