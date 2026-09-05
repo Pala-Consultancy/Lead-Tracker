@@ -881,12 +881,31 @@
     0%,100%{opacity:0;transform:translateY(6px) scale(.7);}
     50%{opacity:.9;transform:translateY(-6px) scale(1);}
   }
+  .welcome-combo-badge{
+    position:fixed;transform:translate(-50%,-100%);font-size:15px;font-weight:800;color:#fff;
+    text-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;white-space:nowrap;
+    animation:welcome-combo-float .9s ease-out forwards;
+  }
+  @keyframes welcome-combo-float{
+    0%{opacity:0;transform:translate(-50%,-100%) scale(.7);}
+    20%{opacity:1;transform:translate(-50%,-140%) scale(1.15);}
+    100%{opacity:0;transform:translate(-50%,-220%) scale(1);}
+  }
+  .welcome-cursor-sparkle{
+    position:fixed;transform:translate(-50%,-50%);font-size:14px;pointer-events:none;
+    animation:welcome-cursor-sparkle-fade .7s ease-out forwards;
+  }
+  @keyframes welcome-cursor-sparkle-fade{
+    0%{opacity:1;transform:translate(-50%,-50%) scale(1);}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(.3) translateY(-14px);}
+  }
   .welcome-emoji{
     font-size:64px;display:inline-block;margin-bottom:10px;
     transform-origin:70% 70%;
     filter:drop-shadow(0 6px 18px rgba(0,0,0,0.25));
-    opacity:0;
+    opacity:0;cursor:pointer;
   }
+  #welcomeEmojiInner{display:inline-block;transition:transform .15s cubic-bezier(.34,1.56,.64,1);}
   .welcome-overlay.open .welcome-emoji{
     animation:welcome-stagger-in .5s ease .1s forwards, welcome-wave 1.8s ease-in-out .6s 2;
   }
@@ -1304,7 +1323,7 @@
   <div class="welcome-confetti" id="welcomeConfetti"></div>
   <div class="welcome-card" id="welcomeCard">
     <div class="welcome-card-inner" id="welcomeCardInner">
-      <div class="welcome-emoji" id="welcomeEmoji">👋</div>
+      <div class="welcome-emoji" id="welcomeEmoji"><span id="welcomeEmojiInner">👋</span></div>
       <h2 class="welcome-title">Welcome back, <span class="welcome-name" id="welcomeName"></span></h2>
       <p class="welcome-sub" id="welcomeSub"></p>
       <button type="button" class="welcome-cta" id="welcomeCtaBtn">Let's go <span class="welcome-cta-arrow">→</span></button>
@@ -1718,6 +1737,22 @@
     return "Please try again.";
   }
 
+  function playPopSound(pitch){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(pitch || 700, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime((pitch || 700) * 1.6, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.14);
+    }catch(e){}
+  }
   function playFanfareSound(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2817,25 +2852,47 @@
         holder.appendChild(sparkle);
       }
     }
+    const WELCOME_EMOJI_CYCLE = ['👋','🎉','⭐','🚀','🔥','🙌'];
+    let welcomeEmojiIndex = 0;
+    let welcomeComboCount = 0;
+    let welcomeComboResetTimer = null;
+    const WELCOME_COMBO_MESSAGES = ['Nice!','Awesome!','Keep going!','You\'re on fire!','Unstoppable! 🔥'];
+    function spawnComboBadge(x, y, text){
+      const badge = document.createElement('div');
+      badge.className = 'welcome-combo-badge';
+      badge.textContent = text;
+      badge.style.left = x + 'px';
+      badge.style.top = y + 'px';
+      document.getElementById('welcomeConfetti').appendChild(badge);
+      setTimeout(()=>badge.remove(), 900);
+    }
     function showWelcomeModal(name){
       const overlay = document.getElementById('welcomeOverlay');
       const cardInner = document.getElementById('welcomeCardInner');
       const nameEl = document.getElementById('welcomeName');
       const subEl = document.getElementById('welcomeSub');
       const ctaBtn = document.getElementById('welcomeCtaBtn');
+      const emojiEl = document.getElementById('welcomeEmoji');
+      const emojiInner = document.getElementById('welcomeEmojiInner');
       const firstName = (name || '').split(/\s+/)[0] || name;
       nameEl.textContent = firstName || 'there';
       subEl.textContent = WELCOME_MESSAGES[Math.floor(Math.random()*WELCOME_MESSAGES.length)];
+      welcomeEmojiIndex = 0;
+      emojiInner.textContent = WELCOME_EMOJI_CYCLE[0];
       launchWelcomeConfetti();
       spawnAmbientSparkles();
       playFanfareSound();
       overlay.classList.add('open');
       let autoDismissTimer = setTimeout(dismiss, 7000);
+      let lastSparkleTime = 0;
       function dismiss(){
         clearTimeout(autoDismissTimer);
+        clearTimeout(welcomeComboResetTimer);
+        welcomeComboCount = 0;
         overlay.classList.remove('open');
         document.getElementById('welcomeConfetti').innerHTML = '';
         cardInner.style.transform = '';
+        emojiInner.style.transform = '';
       }
       if(!welcomeDismissHandlersBound){
         welcomeDismissHandlersBound = true;
@@ -2847,13 +2904,49 @@
             autoDismissTimer = setTimeout(dismiss, 4000);
           }
         });
-        document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') dismiss(); });
+        emojiEl.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          clearTimeout(autoDismissTimer);
+          autoDismissTimer = setTimeout(dismiss, 4000);
+          welcomeEmojiIndex = (welcomeEmojiIndex + 1) % WELCOME_EMOJI_CYCLE.length;
+          emojiInner.textContent = WELCOME_EMOJI_CYCLE[welcomeEmojiIndex];
+          emojiInner.style.transform = 'scale(1.5) rotate(-10deg)';
+          setTimeout(()=>{ emojiInner.style.transform = ''; }, 200);
+          playPopSound(500 + welcomeEmojiIndex * 90);
+          const rect = emojiEl.getBoundingClientRect();
+          spawnConfettiBurst(rect.left + rect.width/2, rect.top + rect.height/2);
+          welcomeComboCount++;
+          clearTimeout(welcomeComboResetTimer);
+          welcomeComboResetTimer = setTimeout(()=>{ welcomeComboCount = 0; }, 1500);
+          const msgIdx = Math.min(welcomeComboCount - 1, WELCOME_COMBO_MESSAGES.length - 1);
+          spawnComboBadge(rect.left + rect.width/2, rect.top - 10, WELCOME_COMBO_MESSAGES[msgIdx]);
+        });
+        document.addEventListener('keydown', (e)=>{
+          if(e.key === 'Escape') dismiss();
+          if(e.key === ' ' && overlay.classList.contains('open')){
+            e.preventDefault();
+            spawnConfettiBurst(window.innerWidth/2 + (Math.random()-0.5)*200, window.innerHeight/2 + (Math.random()-0.5)*200);
+            clearTimeout(autoDismissTimer);
+            autoDismissTimer = setTimeout(dismiss, 4000);
+          }
+        });
         overlay.addEventListener('mousemove', (e)=>{
           if(!overlay.classList.contains('open')) return;
           const rect = overlay.getBoundingClientRect();
           const nx = (e.clientX - rect.left) / rect.width - 0.5;
           const ny = (e.clientY - rect.top) / rect.height - 0.5;
           cardInner.style.transform = `perspective(700px) rotateY(${(nx*8).toFixed(1)}deg) rotateX(${(-ny*8).toFixed(1)}deg)`;
+          const now = Date.now();
+          if(now - lastSparkleTime > 60){
+            lastSparkleTime = now;
+            const trail = document.createElement('span');
+            trail.className = 'welcome-cursor-sparkle';
+            trail.textContent = ['✨','💫','⭐'][Math.floor(Math.random()*3)];
+            trail.style.left = e.clientX + 'px';
+            trail.style.top = e.clientY + 'px';
+            document.getElementById('welcomeConfetti').appendChild(trail);
+            setTimeout(()=>trail.remove(), 700);
+          }
         });
       }
     }
