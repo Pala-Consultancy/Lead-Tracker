@@ -212,6 +212,41 @@
   }
   .chat-thread-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
   .chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;transition:background .2s;}
+
+  .feed-post-list{display:flex;flex-direction:column;gap:10px;}
+  .feed-post{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;
+    box-shadow:0 1px 3px rgba(27,36,48,0.06);position:relative;
+  }
+  .feed-post-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+  .feed-post-avatar{
+    width:38px;height:38px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;overflow:hidden;
+  }
+  .feed-post-avatar img{width:100%;height:100%;object-fit:cover;}
+  .feed-post-meta{min-width:0;flex:1;}
+  .feed-post-author{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.35;}
+  .feed-post-time{font-size:11px;color:var(--slate-light);display:flex;align-items:center;gap:4px;margin-top:1px;}
+  .feed-globe-icon{width:10px;height:10px;flex-shrink:0;}
+  .feed-post-text{font-size:13px;color:var(--ink);line-height:1.55;white-space:pre-wrap;word-break:break-word;margin-bottom:10px;}
+  .feed-show-more{color:var(--slate-light);font-weight:600;cursor:pointer;white-space:nowrap;}
+  .feed-show-more:hover{color:var(--teal);text-decoration:underline;}
+  .feed-post-menu-btn{
+    background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;
+    padding:4px 6px;border-radius:6px;transition:background .15s;flex-shrink:0;
+  }
+  .feed-post-menu-btn:hover{background:var(--c-red-bg, #FBE4E2);}
+  .feed-post-media{max-width:100%;border-radius:9px;display:block;cursor:pointer;margin-bottom:10px;}
+  .feed-post-actions{display:flex;gap:6px;}
+  .feed-like-btn{
+    display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);
+    border-radius:20px;padding:5px 12px;font-size:11.5px;font-weight:600;color:var(--slate);
+    cursor:pointer;transition:background .15s, border-color .15s, transform .1s;
+  }
+  .feed-like-btn:hover{background:var(--c-blue-tint2, #F6FAFE);}
+  .feed-like-btn:active{transform:scale(.95);}
+  .feed-like-btn.liked{border-color:var(--c-red-fg, #C0392B);color:var(--c-red-fg, #C0392B);}
+  .feed-like-icon{font-size:13px;display:inline-block;}
   .chat-messages.bg-default{background:var(--c-blue-tint2, #F6FAFE);}
   .chat-messages.bg-sunset{background:linear-gradient(135deg,#FFD9A0,#FF9D6C,#EE6C9B);}
   .chat-messages.bg-ocean{background:linear-gradient(135deg,#8ED1FC,#4A90E2,#1B59A5);}
@@ -418,6 +453,7 @@
   .chat-send-btn:hover{background:var(--teal-dark);}
   .chat-send-btn:disabled{opacity:.5;cursor:default;}
   .chat-send-btn:active{transform:scale(0.92);}
+  .chat-send-btn.is-post-btn{width:auto;padding:0 18px;font-size:13px;font-weight:700;border-radius:20px;}
   .chat-send-btn.sent-flourish{animation:chat-send-flourish .4s ease;}
   @keyframes chat-send-flourish{
     0%{transform:scale(1) rotate(0deg);}
@@ -1286,6 +1322,7 @@
 
   let currentUserIsAdmin = false;
   let currentUserDisplayName = '';
+  let currentUserPhotoURL = '';
   let directMessagesCollection = null;
   let groupChatsCollection = null;
   let chatActiveGroupId = null;
@@ -1595,6 +1632,9 @@
     document.getElementById('chatThreadView').style.display = 'flex';
     document.getElementById('chatSidebar').classList.add('mobile-hidden');
     document.getElementById('leaveGroupBtn').style.display = 'none';
+    document.getElementById('chatInput').placeholder = 'Type a message...';
+    document.getElementById('chatSendBtn').textContent = '➤';
+    document.getElementById('chatSendBtn').classList.remove('is-post-btn');
     renderChatMemberList();
     updateTypingStatusLine();
 
@@ -1650,9 +1690,13 @@
 
   function renderGroupMessages(messages){
     lastRenderedMessages = messages;
+    const group = groupChatsMap[chatActiveGroupId];
+    if(group && group.isTeamFeed){
+      renderTeamFeedPosts(messages);
+      return;
+    }
     const container = document.getElementById('chatMessages');
     if(!container) return;
-    const group = groupChatsMap[chatActiveGroupId];
     const otherIsTyping = group && group.typing && Object.keys(group.typing).some(uid=>uid !== currentUid && group.typing[uid]);
     if(messages.length === 0 && !otherIsTyping){
       container.innerHTML = `<div class="chat-empty">Say hello to the group 👋</div>`;
@@ -1703,6 +1747,77 @@
     container.scrollTop = container.scrollHeight;
   }
 
+  let expandedFeedPosts = new Set();
+  function formatFeedPostTime(date){
+    const diffMs = Date.now() - date.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if(hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    if(days < 7) return `${days}d`;
+    return date.toLocaleDateString();
+  }
+  function renderTeamFeedPosts(messages){
+    const container = document.getElementById('chatMessages');
+    if(!container) return;
+    if(messages.length === 0){
+      container.innerHTML = `<div class="chat-empty">No updates yet — be the first to share something with the team.</div>`;
+      return;
+    }
+    const posts = messages.slice().reverse();
+    container.innerHTML = `<div class="feed-post-list">` + posts.map(m=>{
+      const time = (m.createdAt && typeof m.createdAt.toDate === 'function') ? formatFeedPostTime(m.createdAt.toDate()) : '';
+      const mine = m.senderId === currentUid;
+      const likes = m.reactions || {};
+      const likeCount = Object.keys(likes).length;
+      const iLiked = !!likes[currentUid];
+      const text = m.text || '';
+      const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || (text ? [text] : []);
+      const hasMore = sentences.length > 2;
+      const expanded = expandedFeedPosts.has(m.id);
+      const displayText = (hasMore && !expanded) ? sentences.slice(0, 2).join('').trim() : text;
+      const textHtml = text
+        ? `<div class="feed-post-text">${esc(displayText)}${hasMore ? (expanded
+            ? ` <span class="feed-show-more" onclick="window.__chatActions.toggleFeedExpand('${m.id}')">show less</span>`
+            : `<span class="feed-show-more" onclick="window.__chatActions.toggleFeedExpand('${m.id}')"> ... more</span>`) : ''}</div>`
+        : '';
+      let mediaHtml = '';
+      if(m.mediaType === 'image' && m.mediaUrl){
+        mediaHtml = `<img class="feed-post-media" src="${m.mediaUrl}" alt="" onclick="window.__chatActions.openLightbox('${m.mediaUrl}')">`;
+      } else if(m.mediaType === 'video' && m.mediaUrl){
+        mediaHtml = `<video class="feed-post-media" src="${m.mediaUrl}" controls></video>`;
+      }
+      const author = teamMembersList.find(x=>x.id === m.senderId) || (mine ? {name: currentUserDisplayName, photoURL: currentUserPhotoURL} : {});
+      const authorName = m.senderName || author.name || 'Team member';
+      const msgMillis = (m.createdAt && typeof m.createdAt.toMillis === 'function') ? m.createdAt.toMillis() : null;
+      const canDelete = mine && msgMillis && (Date.now() - msgMillis) < 30 * 60 * 1000;
+      return `<div class="feed-post">
+        <div class="feed-post-head">
+          <div class="feed-post-avatar">${author.photoURL ? `<img src="${author.photoURL}" alt="">` : esc(initials(authorName))}</div>
+          <div class="feed-post-meta">
+            <div class="feed-post-author">${esc(authorName)}</div>
+            <div class="feed-post-time">${esc(time)} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feed-globe-icon"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          </div>
+          ${canDelete ? `<button type="button" class="feed-post-menu-btn" onclick="window.__chatActions.confirmDeleteMessage('${m.id}')" title="Delete post">🗑️</button>` : ''}
+        </div>
+        ${textHtml}
+        ${mediaHtml}
+        <div class="feed-post-actions">
+          <button type="button" class="feed-like-btn${iLiked?' liked':''}" onclick="window.__chatActions.toggleReaction('${m.id}','❤️')">
+            <span class="feed-like-icon">${iLiked?'❤️':'🤍'}</span> Like${likeCount ? ` · ${likeCount}` : ''}
+          </button>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+  function toggleFeedExpand(messageId){
+    if(expandedFeedPosts.has(messageId)) expandedFeedPosts.delete(messageId);
+    else expandedFeedPosts.add(messageId);
+    renderTeamFeedPosts(lastRenderedMessages);
+  }
+
   function updateGroupHeaderInfo(){
     const group = groupChatsMap[chatActiveGroupId];
     if(!group) return;
@@ -1733,6 +1848,9 @@
     document.getElementById('chatThreadView').style.display = 'flex';
     document.getElementById('chatSidebar').classList.add('mobile-hidden');
     document.getElementById('leaveGroupBtn').style.display = isFeed ? 'none' : '';
+    document.getElementById('chatInput').placeholder = isFeed ? 'Share an update with the team...' : 'Type a message...';
+    document.getElementById('chatSendBtn').textContent = isFeed ? 'Post' : '➤';
+    document.getElementById('chatSendBtn').classList.toggle('is-post-btn', isFeed);
     renderChatMemberList();
     updateGroupHeaderInfo();
 
@@ -2042,7 +2160,7 @@
     if(activeReactionPicker && !activeReactionPicker.contains(e.target)) closeReactionPicker();
   });
 
-  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox, confirmDeleteMessage };
+  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox, confirmDeleteMessage, toggleFeedExpand };
 
   // ---------- Emoji picker ----------
   const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','🙄','😴','😭','😡','🥳','😎','🤩',
@@ -2395,6 +2513,7 @@
           const data = doc.exists ? doc.data() : {};
           notificationPrefs = data.notificationPrefs || {};
           currentUserDisplayName = data.name || user.displayName || '';
+          currentUserPhotoURL = data.photoURL || '';
           myShowOnlineStatus = data.showOnlineStatus !== false;
           chatMsgCount = data.chatMsgCount || 0;
           chatMsgPeriod = data.chatMsgPeriod || '';
