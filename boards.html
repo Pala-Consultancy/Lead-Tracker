@@ -844,14 +844,27 @@
     display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;
     background:linear-gradient(-45deg, var(--teal), var(--c-purple-fg, #7A4FB5), var(--c-amber-fg), var(--teal-dark, #124A8C));
     background-size:400% 400%;
-    opacity:0;pointer-events:none;
-    transition:opacity .5s cubic-bezier(.4,0,.2,1);
+    --reveal-x:50%;--reveal-y:50%;
+    clip-path:circle(0% at var(--reveal-x) var(--reveal-y));
+    pointer-events:none;
+    transition:clip-path .9s cubic-bezier(.65,0,.35,1);
+    will-change:clip-path;
   }
-  .welcome-overlay.open{opacity:1;pointer-events:auto;animation:welcome-gradient-pan 8s ease infinite;}
+  .welcome-overlay.open{clip-path:circle(150% at var(--reveal-x) var(--reveal-y));pointer-events:auto;animation:welcome-gradient-pan 8s ease infinite;}
   @keyframes welcome-gradient-pan{
     0%{background-position:0% 50%;}
     50%{background-position:100% 50%;}
     100%{background-position:0% 50%;}
+  }
+  .welcome-shockwave{
+    position:fixed;top:0;left:0;width:10px;height:10px;border-radius:50%;
+    border:3px solid rgba(255,255,255,0.8);transform:translate(-50%,-50%);
+    pointer-events:none;z-index:601;
+    animation:welcome-shockwave-expand .8s cubic-bezier(.2,.8,.4,1) forwards;
+  }
+  @keyframes welcome-shockwave-expand{
+    0%{width:10px;height:10px;opacity:1;border-width:4px;}
+    100%{width:900px;height:900px;opacity:0;border-width:0px;}
   }
   .welcome-card{
     position:relative;max-width:480px;width:100%;
@@ -2911,6 +2924,14 @@
       balloon.style.opacity = '0';
       setTimeout(()=>{ if(balloon.parentNode) balloon.remove(); }, 150);
     }
+    function spawnShockwave(x, y){
+      const wave = document.createElement('div');
+      wave.className = 'welcome-shockwave';
+      wave.style.left = x + 'px';
+      wave.style.top = y + 'px';
+      document.body.appendChild(wave);
+      setTimeout(()=>wave.remove(), 850);
+    }
     function showWelcomeModal(name){
       const overlay = document.getElementById('welcomeOverlay');
       const cardInner = document.getElementById('welcomeCardInner');
@@ -2920,6 +2941,8 @@
       const firstName = (name || '').split(/\s+/)[0] || name;
       nameEl.textContent = firstName || 'there';
       subEl.textContent = WELCOME_MESSAGES[Math.floor(Math.random()*WELCOME_MESSAGES.length)];
+      overlay.style.setProperty('--reveal-x', '50%');
+      overlay.style.setProperty('--reveal-y', '50%');
       launchWelcomeConfetti();
       spawnAmbientSparkles();
       playFanfareSound();
@@ -2928,35 +2951,47 @@
       for(let i=0; i<5; i++) setTimeout(spawnBalloon, i*350);
       clearInterval(balloonSpawnInterval);
       balloonSpawnInterval = setInterval(spawnBalloon, 1400);
-      let autoDismissTimer = setTimeout(dismiss, 9000);
-      function dismiss(){
+      let lastMouseX = window.innerWidth / 2, lastMouseY = window.innerHeight / 2;
+      let autoDismissTimer = setTimeout(()=>dismiss(lastMouseX, lastMouseY), 9000);
+      function dismiss(x, y){
         clearTimeout(autoDismissTimer);
         clearInterval(balloonSpawnInterval);
+        overlay.style.setProperty('--reveal-x', x + 'px');
+        overlay.style.setProperty('--reveal-y', y + 'px');
+        spawnShockwave(x, y);
+        playPopSound(300);
         overlay.classList.remove('open');
-        document.getElementById('welcomeConfetti').innerHTML = '';
-        cardInner.style.transform = '';
+        setTimeout(()=>{
+          document.getElementById('welcomeConfetti').innerHTML = '';
+          cardInner.style.transform = '';
+        }, 900);
       }
       if(!welcomeDismissHandlersBound){
         welcomeDismissHandlersBound = true;
-        ctaBtn.addEventListener('click', dismiss);
+        ctaBtn.addEventListener('click', (e)=>{
+          const rect = ctaBtn.getBoundingClientRect();
+          dismiss(rect.left + rect.width/2, rect.top + rect.height/2);
+        });
         overlay.addEventListener('click', (e)=>{
           if(e.target === overlay){
             spawnConfettiBurst(e.clientX, e.clientY);
             clearTimeout(autoDismissTimer);
-            autoDismissTimer = setTimeout(dismiss, 4000);
+            autoDismissTimer = setTimeout(()=>dismiss(lastMouseX, lastMouseY), 4000);
           }
         });
         document.addEventListener('keydown', (e)=>{
-          if(e.key === 'Escape') dismiss();
+          if(e.key === 'Escape') dismiss(lastMouseX, lastMouseY);
           if(e.key === ' ' && overlay.classList.contains('open')){
             e.preventDefault();
             spawnConfettiBurst(window.innerWidth/2 + (Math.random()-0.5)*200, window.innerHeight/2 + (Math.random()-0.5)*200);
             clearTimeout(autoDismissTimer);
-            autoDismissTimer = setTimeout(dismiss, 4000);
+            autoDismissTimer = setTimeout(()=>dismiss(lastMouseX, lastMouseY), 4000);
           }
         });
         overlay.addEventListener('mousemove', (e)=>{
           if(!overlay.classList.contains('open')) return;
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
           const rect = overlay.getBoundingClientRect();
           const nx = (e.clientX - rect.left) / rect.width - 0.5;
           const ny = (e.clientY - rect.top) / rect.height - 0.5;
