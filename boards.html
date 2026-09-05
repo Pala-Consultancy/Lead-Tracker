@@ -836,31 +836,38 @@
 
   /* ---------- Welcome-back modal ---------- */
   .welcome-overlay{
-    position:fixed;inset:0;background:rgba(15,23,32,0.55);backdrop-filter:blur(4px);z-index:600;
-    display:flex;align-items:center;justify-content:center;padding:20px;
-    opacity:0;pointer-events:none;transition:opacity .25s ease;
+    position:fixed;inset:0;z-index:600;
+    display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;
+    background:linear-gradient(-45deg, var(--teal), var(--c-purple-fg, #7A4FB5), var(--c-amber-fg), var(--teal-dark, #124A8C));
+    background-size:400% 400%;
+    opacity:0;pointer-events:none;
+    transition:opacity .5s cubic-bezier(.4,0,.2,1);
   }
-  .welcome-overlay.open{opacity:1;pointer-events:auto;}
+  .welcome-overlay.open{opacity:1;pointer-events:auto;animation:welcome-gradient-pan 8s ease infinite;}
+  @keyframes welcome-gradient-pan{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+  }
   .welcome-card{
-    position:relative;overflow:hidden;background:var(--panel);border-radius:20px;
-    padding:44px 34px 34px;max-width:380px;width:100%;text-align:center;
-    box-shadow:0 40px 80px rgba(0,0,0,0.35);
-    transform:scale(0.85) translateY(10px);opacity:0;
-    transition:transform .45s cubic-bezier(.34,1.56,.64,1), opacity .35s ease;
+    position:relative;max-width:480px;width:100%;
+    transform:scale(0.85) translateY(14px);opacity:0;
+    transition:transform .55s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
   }
   .welcome-overlay.open .welcome-card{transform:scale(1) translateY(0);opacity:1;}
-  .welcome-confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+  .welcome-confetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
   .welcome-confetti span{
-    position:absolute;top:-10px;width:8px;height:8px;border-radius:2px;
-    animation:welcome-confetti-fall 1.6s ease-in forwards;opacity:0;
+    position:absolute;top:-10px;width:9px;height:9px;border-radius:2px;
+    animation:welcome-confetti-fall 2.6s ease-in forwards;opacity:0;
   }
   @keyframes welcome-confetti-fall{
     0%{opacity:1;transform:translateY(0) rotate(0deg);}
-    100%{opacity:0;transform:translateY(240px) rotate(340deg);}
+    100%{opacity:0;transform:translateY(100vh) rotate(360deg);}
   }
   .welcome-emoji{
-    font-size:44px;display:inline-block;margin-bottom:6px;
+    font-size:64px;display:inline-block;margin-bottom:10px;
     animation:welcome-wave 1.8s ease-in-out .3s 2;transform-origin:70% 70%;
+    filter:drop-shadow(0 6px 18px rgba(0,0,0,0.25));
   }
   @keyframes welcome-wave{
     0%, 100%{transform:rotate(0deg);}
@@ -871,27 +878,20 @@
     75%{transform:rotate(0deg);}
   }
   .welcome-title{
-    font-size:22px;font-weight:800;margin:0 0 8px;color:var(--ink);
+    font-size:34px;font-weight:800;margin:0 0 10px;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,0.25);
   }
   .welcome-name{
-    background:linear-gradient(90deg, var(--teal), var(--c-purple-fg, #7A4FB5), var(--c-amber-fg));
-    background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
-    animation:welcome-gradient-shift 3s ease infinite;
+    color:#fff;text-decoration:underline;text-decoration-color:rgba(255,255,255,0.4);text-underline-offset:6px;
   }
-  @keyframes welcome-gradient-shift{
-    0%{background-position:0% center;}
-    50%{background-position:100% center;}
-    100%{background-position:0% center;}
-  }
-  .welcome-sub{font-size:14px;color:var(--slate-light);margin:0 0 26px;line-height:1.5;}
+  .welcome-sub{font-size:16px;color:rgba(255,255,255,0.9);margin:0 0 32px;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,0.2);}
   .welcome-cta{
-    display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:700;
-    padding:12px 24px;border-radius:12px;border:none;cursor:pointer;color:#fff;
-    background:linear-gradient(90deg, var(--teal), var(--c-purple-fg, #7A4FB5));
-    box-shadow:0 10px 24px rgba(27,89,165,0.35);
+    display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:700;
+    padding:14px 30px;border-radius:14px;border:none;cursor:pointer;color:var(--ink);
+    background:#fff;
+    box-shadow:0 14px 34px rgba(0,0,0,0.25);
     transition:transform .15s ease, box-shadow .15s ease;
   }
-  .welcome-cta:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(27,89,165,0.45);}
+  .welcome-cta:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 18px 40px rgba(0,0,0,0.3);}
   .welcome-cta-arrow{display:inline-block;transition:transform .15s ease;}
   .welcome-cta:hover .welcome-cta-arrow{transform:translateX(3px);}
   .confirm-modal{
@@ -1266,8 +1266,8 @@
 </div>
 
 <div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-confetti" id="welcomeConfetti"></div>
   <div class="welcome-card" id="welcomeCard">
-    <div class="welcome-confetti" id="welcomeConfetti"></div>
     <div class="welcome-emoji" id="welcomeEmoji">👋</div>
     <h2 class="welcome-title">Welcome back, <span class="welcome-name" id="welcomeName"></span></h2>
     <p class="welcome-sub" id="welcomeSub"></p>
@@ -2528,13 +2528,13 @@
     function launchWelcomeConfetti(){
       const holder = document.getElementById('welcomeConfetti');
       holder.innerHTML = '';
-      const pieceCount = 28;
+      const pieceCount = 70;
       for(let i=0; i<pieceCount; i++){
         const piece = document.createElement('span');
         const color = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
         piece.style.left = `${Math.random()*100}%`;
         piece.style.background = color;
-        piece.style.animationDelay = `${Math.random()*0.4}s`;
+        piece.style.animationDelay = `${Math.random()*0.8}s`;
         piece.style.width = piece.style.height = `${5 + Math.random()*5}px`;
         holder.appendChild(piece);
       }
@@ -2724,7 +2724,9 @@
       subEl.textContent = WELCOME_MESSAGES[Math.floor(Math.random()*WELCOME_MESSAGES.length)];
       launchWelcomeConfetti();
       overlay.classList.add('open');
+      let autoDismissTimer = setTimeout(dismiss, 4500);
       function dismiss(){
+        clearTimeout(autoDismissTimer);
         overlay.classList.remove('open');
       }
       if(!welcomeDismissHandlersBound){
