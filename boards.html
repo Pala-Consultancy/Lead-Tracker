@@ -2193,15 +2193,7 @@
       if(isCancelled && currentLang !== 'en'){
         setLanguage('en');
       }
-      const chatBtnEl = document.getElementById('chatBtn');
-      if(chatBtnEl) chatBtnEl.classList.toggle('locked', isCancelled);
-      if(isCancelled){
-        if(unsubscribeChatConversationsBoards){ unsubscribeChatConversationsBoards(); unsubscribeChatConversationsBoards = null; }
-        if(unsubscribeTeamMembersMap){ unsubscribeTeamMembersMap(); unsubscribeTeamMembersMap = null; }
-        chatConversationsMap = {};
-        const badge = document.getElementById('chatBadge');
-        if(badge) badge.style.display = 'none';
-      } else if(!unsubscribeChatConversationsBoards){
+      if(!unsubscribeChatConversationsBoards){
         initTeamChatSync();
       }
     }, err=>{
@@ -2303,15 +2295,6 @@
       settingsPanel.classList.remove('open');
     }
     document.getElementById('settingsBtn').addEventListener('click', openSettings);
-    const chatBtnEl = document.getElementById('chatBtn');
-    if(chatBtnEl){
-      chatBtnEl.addEventListener('click', (e)=>{
-        if(orgPlan === 'cancelled' || orgPlan === 'free'){
-          e.preventDefault();
-          showToast('Team chat is a paid feature — upgrade to unlock it.', true);
-        }
-      });
-    }
     // ---------- Theme toggle ----------
     function applyTheme(theme){
       if(theme === 'dark'){

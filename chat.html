@@ -327,6 +327,21 @@
   }
   .chat-delete-confirm-card p{font-size:13.5px;color:var(--ink);margin:0 0 16px;}
   .chat-delete-confirm-actions{display:flex;gap:10px;justify-content:center;}
+
+  .chat-limit-overlay{
+    position:fixed;inset:0;background:rgba(10,14,20,0.5);z-index:700;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    animation:chat-thread-fade .15s ease;
+  }
+  .chat-limit-card{
+    background:var(--panel);border-radius:16px;padding:30px 28px;max-width:360px;text-align:center;
+    box-shadow:0 24px 60px rgba(27,36,48,0.3);
+  }
+  .chat-limit-icon{font-size:36px;margin-bottom:12px;}
+  .chat-limit-card h3{font-family:'Sora',sans-serif;font-size:16.5px;margin:0 0 10px;color:var(--ink);}
+  .chat-limit-card p{font-size:13px;color:var(--slate);line-height:1.55;margin:0 0 20px;}
+  .chat-limit-actions{display:flex;gap:10px;justify-content:center;}
+
   .chat-msg-react-btn:hover{transform:scale(1.15);}
 
   .chat-msg-reactions{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
@@ -898,6 +913,18 @@
 
 <div class="toast-stack" id="toastStack"></div>
 
+<div class="chat-limit-overlay" id="chatLimitOverlay" style="display:none">
+  <div class="chat-limit-card">
+    <div class="chat-limit-icon">💬</div>
+    <h3>You've reached your free plan's chat limit</h3>
+    <p>Free plan accounts can send up to 20 chat messages a month. Upgrade to keep chatting with your team without limits.</p>
+    <div class="chat-limit-actions">
+      <button type="button" class="btn" id="chatLimitCloseBtn">Maybe later</button>
+      <a class="btn btn-primary" href="billing.html">Upgrade now →</a>
+    </div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
   <div class="confirm-modal">
     <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
@@ -1224,6 +1251,31 @@
   let notificationPrefs = {};
   function notifEnabled(key){ return notificationPrefs[key] !== false; }
   let myShowOnlineStatus = true;
+  const FREE_CHAT_MONTHLY_LIMIT = 20;
+  let chatMsgCount = 0;
+  let chatMsgPeriod = '';
+  function currentChatPeriod(){
+    const now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+  function canSendChatMessage(){
+    if(!isFreeChatPlan()) return true;
+    if(chatMsgPeriod !== currentChatPeriod()) return true; // will reset on send
+    return chatMsgCount < FREE_CHAT_MONTHLY_LIMIT;
+  }
+  function recordChatMessageSent(){
+    if(!isFreeChatPlan() || !usersCollection || !currentUid) return;
+    const period = currentChatPeriod();
+    if(chatMsgPeriod !== period){ chatMsgPeriod = period; chatMsgCount = 0; }
+    chatMsgCount += 1;
+    usersCollection.doc(currentUid).set({
+      chatMsgCount, chatMsgPeriod
+    }, {merge:true}).catch(()=>{});
+  }
+  function showChatLimitReachedModal(){
+    document.getElementById('chatLimitOverlay').style.display = 'flex';
+  }
+
 
   function formatPresence(member){
     if(!myShowOnlineStatus || member.showOnlineStatus === false) return '';
@@ -1490,6 +1542,7 @@
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     if(!text || !chatActiveOtherUid) return;
+    if(!canSendChatMessage()){ showChatLimitReachedModal(); return; }
     if(chatTypingTimeout){ clearTimeout(chatTypingTimeout); chatTypingTimeout = null; }
     setTypingFlag(false);
     const convId = getConversationId(currentUid, chatActiveOtherUid);
@@ -1507,6 +1560,8 @@
       return convRef.collection('thread').add({
         senderId: currentUid, text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+    }).then(()=>{
+      recordChatMessageSent();
     }).catch(err=>{
       showToast('Could not send message. ' + friendlyErr(err), true);
       input.value = text;
@@ -1550,6 +1605,7 @@
 
   function sendMediaMessage(file){
     if(!chatActiveOtherUid || !storage) return;
+    if(!canSendChatMessage()){ showChatLimitReachedModal(); return; }
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
     const convId = getConversationId(currentUid, chatActiveOtherUid);
@@ -1588,6 +1644,7 @@
           });
         });
       }).then(()=>{
+        recordChatMessageSent();
         progressEl.style.display = 'none';
       }).catch(err=>{
         progressEl.style.display = 'none';
@@ -1596,6 +1653,12 @@
     });
   }
 
+  document.getElementById('chatLimitCloseBtn').addEventListener('click', ()=>{
+    document.getElementById('chatLimitOverlay').style.display = 'none';
+  });
+  document.getElementById('chatLimitOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'chatLimitOverlay') e.currentTarget.style.display = 'none';
+  });
   document.getElementById('chatAttachBtn').addEventListener('click', ()=>{
     if(!chatActiveOtherUid) return;
     document.getElementById('chatFileInput').click();
@@ -1793,23 +1856,24 @@
     });
   }
   let unsubscribeChatOrgPlan = null;
+  let currentOrgPlan = 'growth';
   function initChatPlanGate(){
     if(!workspaceRef) return;
     if(unsubscribeChatOrgPlan) unsubscribeChatOrgPlan();
     unsubscribeChatOrgPlan = workspaceRef.onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
-      const plan = data.plan || 'growth';
-      const isCancelled = plan === 'cancelled' || plan === 'free';
-      document.getElementById('chatLockedState').style.display = isCancelled ? 'flex' : 'none';
-      document.getElementById('chatSidebar').style.display = isCancelled ? 'none' : '';
-      document.getElementById('chatMain').style.display = isCancelled ? 'none' : 'flex';
-      if(!isCancelled){
-        initTeamSync();
-        initChatSync();
-      }
+      currentOrgPlan = data.plan || 'growth';
+      document.getElementById('chatLockedState').style.display = 'none';
+      document.getElementById('chatSidebar').style.display = '';
+      document.getElementById('chatMain').style.display = 'flex';
+      initTeamSync();
+      initChatSync();
     }, err=>{
       console.error('Could not load plan info', err);
     });
+  }
+  function isFreeChatPlan(){
+    return currentOrgPlan === 'cancelled' || currentOrgPlan === 'free';
   }
 
   let previousConversationTimestamps = {};
@@ -1997,6 +2061,8 @@
           const data = doc.exists ? doc.data() : {};
           notificationPrefs = data.notificationPrefs || {};
           myShowOnlineStatus = data.showOnlineStatus !== false;
+          chatMsgCount = data.chatMsgCount || 0;
+          chatMsgPeriod = data.chatMsgPeriod || '';
           if(data.language && data.language !== currentLang) setLanguage(data.language);
           currentUserIsAdmin = data.isAdmin === true;
           requestNotificationPermissionIfNeeded();
