@@ -360,6 +360,12 @@
     width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     background:var(--c-purple-bg);color:var(--c-purple-fg);font-size:16px;flex-shrink:0;
   }
+  .chat-member-row.team-feed{
+    background:var(--c-amber-bg, rgba(255,157,0,0.08));border-bottom:1px solid var(--border);
+    border-radius:0;margin-bottom:4px;
+  }
+  .chat-member-row.team-feed .chat-group-icon{background:var(--c-amber-bg);color:var(--c-amber-fg);}
+  .chat-member-row.team-feed:hover{background:var(--c-amber-bg, rgba(255,157,0,0.14));}
   .chat-msg-sender{font-size:11px;font-weight:700;color:var(--slate);margin:0 0 3px 2px;}
   .chat-msg-wrap.theirs .chat-msg-sender{color:var(--c-purple-fg);}
 
@@ -1407,7 +1413,13 @@
         : `<div class="chat-empty">No chats match "${esc(chatSearchFilter)}".</div>`;
       return;
     }
-    const allRows = dmRows.concat(groupRows).sort((a,b)=>b.t-a.t);
+    const allRows = dmRows.concat(groupRows).sort((a,b)=>{
+      const aIsFeed = a.kind === 'group' && a.group.isTeamFeed;
+      const bIsFeed = b.kind === 'group' && b.group.isTeamFeed;
+      if(aIsFeed && !bIsFeed) return -1;
+      if(bIsFeed && !aIsFeed) return 1;
+      return b.t-a.t;
+    });
     container.innerHTML = allRows.map(row=>{
       if(row.kind === 'group'){
         const g = row.group;
@@ -1422,8 +1434,9 @@
           preview = prefix + (g.lastMessage.text || '');
         }
         const memberCount = (g.participants || []).length;
-        return `<button type="button" class="chat-member-row group${active ? ' active' : ''}${unread ? ' unread' : ''}" data-group-id="${g.id}">
-          <div class="chat-group-icon">👥</div>
+        const isFeed = !!g.isTeamFeed;
+        return `<button type="button" class="chat-member-row group${isFeed ? ' team-feed' : ''}${active ? ' active' : ''}${unread ? ' unread' : ''}" data-group-id="${g.id}">
+          <div class="chat-group-icon">${isFeed ? '📢' : '👥'}</div>
           <div class="chat-member-info">
             <div class="chat-member-name">${esc(g.name || 'Group chat')}</div>
             <div class="chat-member-preview"${isTyping ? ' style="color:var(--teal);font-weight:600;"' : ''}>${esc(preview)}${!g.lastMessage ? '' : ` · ${memberCount} members`}</div>
@@ -1712,13 +1725,14 @@
     chatActiveOtherUid = null;
     chatActiveGroupId = groupId;
     const group = groupChatsMap[groupId];
+    const isFeed = !!(group && group.isTeamFeed);
     document.getElementById('chatHeaderTitle').textContent = (group && group.name) || 'Group chat';
     document.getElementById('chatThreadAvatar').className = 'chat-thread-avatar';
-    document.getElementById('chatThreadAvatar').innerHTML = '👥';
+    document.getElementById('chatThreadAvatar').innerHTML = isFeed ? '📢' : '👥';
     document.getElementById('chatMainEmpty').style.display = 'none';
     document.getElementById('chatThreadView').style.display = 'flex';
     document.getElementById('chatSidebar').classList.add('mobile-hidden');
-    document.getElementById('leaveGroupBtn').style.display = '';
+    document.getElementById('leaveGroupBtn').style.display = isFeed ? 'none' : '';
     renderChatMemberList();
     updateGroupHeaderInfo();
 
@@ -2131,12 +2145,22 @@
     else updateTypingStatusLine();
   }, 30000);
 
+  const TEAM_FEED_ID = '_teamFeed';
+  function ensureTeamFeedMembership(){
+    if(!groupChatsCollection || !currentUid) return;
+    groupChatsCollection.doc(TEAM_FEED_ID).set({
+      name: 'Team Feed',
+      isTeamFeed: true,
+      participants: firebase.firestore.FieldValue.arrayUnion(currentUid)
+    }, {merge:true}).catch(()=>{});
+  }
   function initTeamSync(){
     if(unsubscribeTeam) unsubscribeTeam();
     unsubscribeTeam = usersCollection.onSnapshot(snapshot=>{
       teamMembersList = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(m=>m.id !== currentUid);
       teamMembersList.sort((a,b)=>(a.name||a.email||'').localeCompare(b.name||b.email||''));
       renderChatMemberList();
+      ensureTeamFeedMembership();
     }, err=>{
       console.error('Team sync error', err);
       showToast('Lost connection to the shared database.', true);
