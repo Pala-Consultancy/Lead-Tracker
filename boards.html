@@ -891,19 +891,34 @@
     20%{opacity:1;transform:translate(-50%,-140%) scale(1.15);}
     100%{opacity:0;transform:translate(-50%,-220%) scale(1);}
   }
-  .welcome-cursor-sparkle{
-    position:fixed;transform:translate(-50%,-50%);font-size:14px;pointer-events:none;
-    animation:welcome-cursor-sparkle-fade .7s ease-out forwards;
+  .welcome-balloon{
+    position:absolute;bottom:-140px;border-radius:50% 50% 50% 50% / 58% 58% 42% 42%;
+    cursor:pointer;pointer-events:auto;z-index:2;
+    box-shadow:inset -6px -6px 14px rgba(0,0,0,0.15), 0 8px 20px rgba(0,0,0,0.15);
+    animation-name:welcome-balloon-rise, welcome-balloon-sway;
+    animation-timing-function:linear, ease-in-out;
+    animation-iteration-count:1, infinite;
+    transition:transform .15s ease, opacity .15s ease;
   }
-  @keyframes welcome-cursor-sparkle-fade{
-    0%{opacity:1;transform:translate(-50%,-50%) scale(1);}
-    100%{opacity:0;transform:translate(-50%,-50%) scale(.3) translateY(-14px);}
+  .welcome-balloon:hover{transform:scale(1.08);}
+  .welcome-balloon-string{
+    position:absolute;bottom:-22px;left:50%;width:1px;height:22px;
+    background:rgba(255,255,255,0.5);transform:translateX(-50%);
+  }
+  @keyframes welcome-balloon-rise{
+    0%{bottom:-140px;opacity:0;}
+    8%{opacity:.95;}
+    100%{bottom:112vh;opacity:.95;}
+  }
+  @keyframes welcome-balloon-sway{
+    0%,100%{margin-left:0;}
+    50%{margin-left:26px;}
   }
   .welcome-emoji{
     font-size:64px;display:inline-block;margin-bottom:10px;
     transform-origin:70% 70%;
     filter:drop-shadow(0 6px 18px rgba(0,0,0,0.25));
-    opacity:0;cursor:pointer;
+    opacity:0;
   }
   #welcomeEmojiInner{display:inline-block;transition:transform .15s cubic-bezier(.34,1.56,.64,1);}
   .welcome-overlay.open .welcome-emoji{
@@ -2852,19 +2867,49 @@
         holder.appendChild(sparkle);
       }
     }
-    const WELCOME_EMOJI_CYCLE = ['👋','🎉','⭐','🚀','🔥','🙌'];
-    let welcomeEmojiIndex = 0;
-    let welcomeComboCount = 0;
-    let welcomeComboResetTimer = null;
-    const WELCOME_COMBO_MESSAGES = ['Nice!','Awesome!','Keep going!','You\'re on fire!','Unstoppable! 🔥'];
-    function spawnComboBadge(x, y, text){
+    const BALLOON_COLORS = ['#1B59A5','#7A4FB5','#FF9D00','#1F5C4F','#C0392B','#E85D9C','#17A398'];
+    let balloonSpawnInterval = null;
+    let welcomePopCount = 0;
+    const POP_MESSAGES = ['Nice!','Awesome!','Keep going!','You\'re on fire!','Unstoppable! 🔥'];
+    function spawnBalloon(){
+      const holder = document.getElementById('welcomeConfetti');
+      const balloon = document.createElement('div');
+      balloon.className = 'welcome-balloon';
+      const color = BALLOON_COLORS[Math.floor(Math.random()*BALLOON_COLORS.length)];
+      const size = 46 + Math.random()*30;
+      balloon.style.left = (Math.random()*90 + 2) + '%';
+      balloon.style.width = size + 'px';
+      balloon.style.height = (size*1.2) + 'px';
+      balloon.style.background = `radial-gradient(circle at 32% 28%, color-mix(in srgb, ${color} 60%, white), ${color})`;
+      const duration = 7 + Math.random()*4;
+      balloon.style.animationDuration = duration + 's, ' + (1.6 + Math.random()*0.8) + 's';
+      balloon.style.animationDelay = '0s, ' + (Math.random()*0.5) + 's';
+      balloon.innerHTML = '<span class="welcome-balloon-string"></span>';
+      balloon.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        popBalloon(balloon);
+      });
+      holder.appendChild(balloon);
+      setTimeout(()=>{ if(balloon.parentNode) balloon.remove(); }, duration*1000 + 200);
+    }
+    function popBalloon(balloon){
+      if(balloon.classList.contains('popped')) return;
+      balloon.classList.add('popped');
+      const rect = balloon.getBoundingClientRect();
+      const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+      spawnConfettiBurst(cx, cy);
+      playPopSound(600 + Math.random()*300);
+      welcomePopCount++;
       const badge = document.createElement('div');
       badge.className = 'welcome-combo-badge';
-      badge.textContent = text;
-      badge.style.left = x + 'px';
-      badge.style.top = y + 'px';
+      badge.textContent = POP_MESSAGES[Math.min(welcomePopCount-1, POP_MESSAGES.length-1)];
+      badge.style.left = cx + 'px';
+      badge.style.top = cy + 'px';
       document.getElementById('welcomeConfetti').appendChild(badge);
       setTimeout(()=>badge.remove(), 900);
+      balloon.style.transform = 'scale(1.3)';
+      balloon.style.opacity = '0';
+      setTimeout(()=>{ if(balloon.parentNode) balloon.remove(); }, 150);
     }
     function showWelcomeModal(name){
       const overlay = document.getElementById('welcomeOverlay');
@@ -2872,27 +2917,24 @@
       const nameEl = document.getElementById('welcomeName');
       const subEl = document.getElementById('welcomeSub');
       const ctaBtn = document.getElementById('welcomeCtaBtn');
-      const emojiEl = document.getElementById('welcomeEmoji');
-      const emojiInner = document.getElementById('welcomeEmojiInner');
       const firstName = (name || '').split(/\s+/)[0] || name;
       nameEl.textContent = firstName || 'there';
       subEl.textContent = WELCOME_MESSAGES[Math.floor(Math.random()*WELCOME_MESSAGES.length)];
-      welcomeEmojiIndex = 0;
-      emojiInner.textContent = WELCOME_EMOJI_CYCLE[0];
       launchWelcomeConfetti();
       spawnAmbientSparkles();
       playFanfareSound();
+      welcomePopCount = 0;
       overlay.classList.add('open');
-      let autoDismissTimer = setTimeout(dismiss, 7000);
-      let lastSparkleTime = 0;
+      for(let i=0; i<5; i++) setTimeout(spawnBalloon, i*350);
+      clearInterval(balloonSpawnInterval);
+      balloonSpawnInterval = setInterval(spawnBalloon, 1400);
+      let autoDismissTimer = setTimeout(dismiss, 9000);
       function dismiss(){
         clearTimeout(autoDismissTimer);
-        clearTimeout(welcomeComboResetTimer);
-        welcomeComboCount = 0;
+        clearInterval(balloonSpawnInterval);
         overlay.classList.remove('open');
         document.getElementById('welcomeConfetti').innerHTML = '';
         cardInner.style.transform = '';
-        emojiInner.style.transform = '';
       }
       if(!welcomeDismissHandlersBound){
         welcomeDismissHandlersBound = true;
@@ -2903,23 +2945,6 @@
             clearTimeout(autoDismissTimer);
             autoDismissTimer = setTimeout(dismiss, 4000);
           }
-        });
-        emojiEl.addEventListener('click', (e)=>{
-          e.stopPropagation();
-          clearTimeout(autoDismissTimer);
-          autoDismissTimer = setTimeout(dismiss, 4000);
-          welcomeEmojiIndex = (welcomeEmojiIndex + 1) % WELCOME_EMOJI_CYCLE.length;
-          emojiInner.textContent = WELCOME_EMOJI_CYCLE[welcomeEmojiIndex];
-          emojiInner.style.transform = 'scale(1.5) rotate(-10deg)';
-          setTimeout(()=>{ emojiInner.style.transform = ''; }, 200);
-          playPopSound(500 + welcomeEmojiIndex * 90);
-          const rect = emojiEl.getBoundingClientRect();
-          spawnConfettiBurst(rect.left + rect.width/2, rect.top + rect.height/2);
-          welcomeComboCount++;
-          clearTimeout(welcomeComboResetTimer);
-          welcomeComboResetTimer = setTimeout(()=>{ welcomeComboCount = 0; }, 1500);
-          const msgIdx = Math.min(welcomeComboCount - 1, WELCOME_COMBO_MESSAGES.length - 1);
-          spawnComboBadge(rect.left + rect.width/2, rect.top - 10, WELCOME_COMBO_MESSAGES[msgIdx]);
         });
         document.addEventListener('keydown', (e)=>{
           if(e.key === 'Escape') dismiss();
@@ -2936,17 +2961,6 @@
           const nx = (e.clientX - rect.left) / rect.width - 0.5;
           const ny = (e.clientY - rect.top) / rect.height - 0.5;
           cardInner.style.transform = `perspective(700px) rotateY(${(nx*8).toFixed(1)}deg) rotateX(${(-ny*8).toFixed(1)}deg)`;
-          const now = Date.now();
-          if(now - lastSparkleTime > 60){
-            lastSparkleTime = now;
-            const trail = document.createElement('span');
-            trail.className = 'welcome-cursor-sparkle';
-            trail.textContent = ['✨','💫','⭐'][Math.floor(Math.random()*3)];
-            trail.style.left = e.clientX + 'px';
-            trail.style.top = e.clientY + 'px';
-            document.getElementById('welcomeConfetti').appendChild(trail);
-            setTimeout(()=>trail.remove(), 700);
-          }
         });
       }
     }
