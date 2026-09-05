@@ -363,6 +363,19 @@
   .scope-tab:hover{color:var(--ink);}
   .scope-tab.active{background:var(--panel);color:var(--ink);box-shadow:0 2px 8px rgba(27,36,48,0.12), 0 0 0 1px color-mix(in srgb, var(--teal) 20%, transparent);}
   .scope-note{font-size:12.5px;color:var(--slate-light);margin:0 0 22px;}
+  .date-range-bar{display:inline-flex;align-items:center;gap:10px;margin:0 0 8px 10px;flex-wrap:wrap;vertical-align:top;}
+  .date-range-bar select{
+    padding:8px 14px;border-radius:9px;border:1px solid var(--border);background:var(--panel);
+    color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .date-range-custom{display:flex;align-items:center;gap:8px;}
+  .date-range-custom input{
+    padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel);
+    color:var(--ink);font-family:'Inter',sans-serif;font-size:12.5px;
+  }
+  .date-range-custom span{font-size:12px;color:var(--slate-light);}
+  .date-range-custom .btn{padding:7px 14px;font-size:12.5px;}
+  @media (max-width:700px){.date-range-bar{display:flex;margin-left:0;}}
 
   /* ---------- Floating section nav ---------- */
   .section-nav{
@@ -510,6 +523,24 @@
   }
   @keyframes insight-border-flow{0%{background-position:0 0, 0% 0;}100%{background-position:0 0, 300% 0;}}
   @media (prefers-reduced-motion: reduce){.insight-card{animation:none;}}
+
+  .goal-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .goal-card-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .goal-card-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);font-weight:700;margin-bottom:4px;}
+  .goal-card-value{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;color:var(--ink);}
+  .goal-card-of{font-size:14px;font-weight:600;color:var(--slate-light);}
+  .goal-progress-track{
+    height:10px;border-radius:6px;background:var(--c-blue-tint2);overflow:hidden;margin-top:14px;
+  }
+  .goal-progress-fill{
+    height:100%;border-radius:6px;background:linear-gradient(90deg, var(--c-blue-fg), var(--c-green-fg));
+    transition:width .6s cubic-bezier(.22,1,.36,1);
+  }
+  .goal-card-pct{font-size:12px;color:var(--slate-light);margin-top:6px;font-weight:600;}
   .insight-card-label{
     display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;
     letter-spacing:.07em;color:var(--slate);margin-bottom:12px;
@@ -1015,11 +1046,30 @@
     <button class="section-nav-dot" data-target="sec-countries"><span class="section-nav-label" data-i18n="topCountries">Top countries</span></button>
     <button class="section-nav-dot" data-target="sec-cities"><span class="section-nav-label" data-i18n="topCities">Top cities</span></button>
     <button class="section-nav-dot" data-target="sec-wondeals"><span class="section-nav-label" data-i18n="topWonDeals">Top won deals</span></button>
+    <button class="section-nav-dot" data-target="sec-leaderboard"><span class="section-nav-label">Team leaderboard</span></button>
   </nav>
 
   <div class="scope-switch" id="scopeSwitch">
     <button class="scope-tab active" data-scope="board" data-i18n="scopeThisBoard">This board</button>
     <button class="scope-tab" data-scope="all" data-i18n="scopeAllBoards">All boards</button>
+  </div>
+  <div class="date-range-bar" id="dateRangeBar">
+    <select id="dateRangeSelect">
+      <option value="all">All time</option>
+      <option value="7d">Last 7 days</option>
+      <option value="30d">Last 30 days</option>
+      <option value="thisMonth">This month</option>
+      <option value="lastMonth">Last month</option>
+      <option value="thisQuarter">This quarter</option>
+      <option value="thisYear">This year</option>
+      <option value="custom">Custom range...</option>
+    </select>
+    <div class="date-range-custom" id="dateRangeCustomRow" style="display:none">
+      <input type="date" id="dateRangeCustomStart">
+      <span>to</span>
+      <input type="date" id="dateRangeCustomEnd">
+      <button type="button" class="btn btn-primary" id="dateRangeCustomApply">Apply</button>
+    </div>
   </div>
   <div class="scope-note" id="scopeNote" style="display:none"></div>
 
@@ -1413,6 +1463,7 @@
   let leadsCollection = null;
   let boardsCollection = null;
   let boardDocRef = null;
+  let monthlyRevenueGoal = null;
   let auth = null;
   let firebaseConnected = false;
   const boardId = new URLSearchParams(location.search).get('board');
@@ -1464,6 +1515,10 @@
       if(boardId){
         boardDocRef = boardsCollection.doc(boardId);
         leadsCollection = boardDocRef.collection('leads');
+        boardDocRef.onSnapshot(doc=>{
+          monthlyRevenueGoal = doc.exists ? (doc.data().monthlyRevenueGoal || null) : null;
+          render();
+        });
       }
     });
   }
@@ -1512,6 +1567,58 @@
   };
 
   let leads = [];
+  let allLeadsRaw = [];
+  let dateRangeKey = 'all';
+  let dateRangeStart = null;
+  let dateRangeEnd = null;
+  function applyDateFilter(){
+    if(!dateRangeStart && !dateRangeEnd){
+      leads = allLeadsRaw.slice();
+    } else {
+      leads = allLeadsRaw.filter(l=>{
+        if(!l.dateAdded) return false;
+        const t = new Date(l.dateAdded).getTime();
+        if(isNaN(t)) return false;
+        if(dateRangeStart && t < dateRangeStart) return false;
+        if(dateRangeEnd && t > dateRangeEnd) return false;
+        return true;
+      });
+    }
+    render();
+  }
+  function setDateRange(key){
+    dateRangeKey = key;
+    const now = new Date();
+    const startOfDay = d=>{ const x = new Date(d); x.setHours(0,0,0,0); return x.getTime(); };
+    const endOfDay = d=>{ const x = new Date(d); x.setHours(23,59,59,999); return x.getTime(); };
+    if(key === 'all'){
+      dateRangeStart = null; dateRangeEnd = null;
+    } else if(key === '7d'){
+      dateRangeStart = startOfDay(new Date(now.getTime() - 6*86400000)); dateRangeEnd = endOfDay(now);
+    } else if(key === '30d'){
+      dateRangeStart = startOfDay(new Date(now.getTime() - 29*86400000)); dateRangeEnd = endOfDay(now);
+    } else if(key === 'thisMonth'){
+      dateRangeStart = startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+      dateRangeEnd = endOfDay(now);
+    } else if(key === 'lastMonth'){
+      dateRangeStart = startOfDay(new Date(now.getFullYear(), now.getMonth()-1, 1));
+      dateRangeEnd = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0));
+    } else if(key === 'thisQuarter'){
+      const q = Math.floor(now.getMonth()/3);
+      dateRangeStart = startOfDay(new Date(now.getFullYear(), q*3, 1)); dateRangeEnd = endOfDay(now);
+    } else if(key === 'thisYear'){
+      dateRangeStart = startOfDay(new Date(now.getFullYear(), 0, 1)); dateRangeEnd = endOfDay(now);
+    } else if(key === 'custom'){
+      const startInput = document.getElementById('dateRangeCustomStart');
+      const endInput = document.getElementById('dateRangeCustomEnd');
+      if(startInput && startInput.value) dateRangeStart = startOfDay(new Date(startInput.value));
+      else dateRangeStart = null;
+      if(endInput && endInput.value) dateRangeEnd = endOfDay(new Date(endInput.value));
+      else dateRangeEnd = null;
+    }
+    try{ localStorage.setItem('stats_date_range_pref', key); }catch(e){}
+    applyDateFilter();
+  }
   let currency = "EUR";
   let statsScope = 'board';
   let sourceSortBy = 'count';
@@ -1565,13 +1672,13 @@
     if(statsScope === 'all'){
       unsubscribeLeadsListener = db.collectionGroup('leads').onSnapshot(snapshot=>{
         const boardIdsSeen = new Set();
-        leads = snapshot.docs.map(doc=>{
+        allLeadsRaw = snapshot.docs.map(doc=>{
           const parentBoardId = doc.ref.parent.parent ? doc.ref.parent.parent.id : null;
           if(parentBoardId) boardIdsSeen.add(parentBoardId);
           return {id:doc.id, boardId:parentBoardId, ...doc.data()};
         }).filter(l=>!l.deleted);
         updateScopeNote(Array.from(boardIdsSeen));
-        render();
+        applyDateFilter();
       }, err=>{
         console.error("Firestore sync error", err);
         document.getElementById("content").innerHTML = `<div class="empty-state">
@@ -1582,8 +1689,8 @@
     } else {
       updateScopeNote([]);
       unsubscribeLeadsListener = leadsCollection.onSnapshot(snapshot=>{
-        leads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(l=>!l.deleted);
-        render();
+        allLeadsRaw = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(l=>!l.deleted);
+        applyDateFilter();
       }, err=>{
         console.error("Firestore sync error", err);
         document.getElementById("content").innerHTML = `<div class="empty-state">
@@ -1605,6 +1712,23 @@
       initFirebaseSync();
     });
   });
+  (function(){
+    const sel = document.getElementById('dateRangeSelect');
+    const customRow = document.getElementById('dateRangeCustomRow');
+    let savedRange = 'all';
+    try{ savedRange = localStorage.getItem('stats_date_range_pref') || 'all'; }catch(e){}
+    if(savedRange === 'custom') savedRange = 'all'; // no stored custom dates to restore
+    sel.value = savedRange;
+    customRow.style.display = 'none';
+    if(savedRange !== 'all') setDateRange(savedRange);
+    sel.addEventListener('change', ()=>{
+      customRow.style.display = sel.value === 'custom' ? 'flex' : 'none';
+      if(sel.value !== 'custom') setDateRange(sel.value);
+    });
+    document.getElementById('dateRangeCustomApply').addEventListener('click', ()=>{
+      setDateRange('custom');
+    });
+  })();
   function loadCurrency(){
     try{ currency = localStorage.getItem(CURRENCY_KEY) || "EUR"; } catch(e){ currency = "EUR"; }
   }
@@ -2179,6 +2303,20 @@
       }
     });
 
+    const goalHTML = (statsScope === 'board') ? `
+      <div class="goal-card">
+        <div class="goal-card-top">
+          <div>
+            <div class="goal-card-label">This month's revenue goal</div>
+            <div class="goal-card-value">${formatMoney(thisMonthRevenue)} <span class="goal-card-of">of ${monthlyRevenueGoal ? formatMoney(monthlyRevenueGoal) : '—'}</span></div>
+          </div>
+          <button type="button" class="btn" id="setGoalBtn">${monthlyRevenueGoal ? 'Edit goal' : 'Set a goal'}</button>
+        </div>
+        ${monthlyRevenueGoal ? `<div class="goal-progress-track"><div class="goal-progress-fill" style="width:${Math.min(100, Math.round((thisMonthRevenue/monthlyRevenueGoal)*100))}%"></div></div>
+        <div class="goal-card-pct">${Math.min(100, Math.round((thisMonthRevenue/monthlyRevenueGoal)*100))}% of goal reached</div>` : `<p class="section-sub" style="margin:8px 0 0;">Set a monthly revenue target to track your progress here.</p>`}
+      </div>
+    ` : '';
+
     // KPI row
     const kpiHTML = `<div class="section nav-anchor" id="sec-overview">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.users}</div>${t('overview')}</h2>
@@ -2457,10 +2595,52 @@
       </div>
     `;
 
+    // ---------- Team leaderboard ----------
+    const leaderboardMap = {};
+    leads.forEach(l=>{
+      const person = l.createdByLeadName || 'Unassigned';
+      if(!leaderboardMap[person]) leaderboardMap[person] = {name:person, added:0, won:0, revenue:0, contactDays:[]};
+      const row = leaderboardMap[person];
+      row.added++;
+      if(l.status === 'Won'){ row.won++; row.revenue += parseFloat(l.revenue)||0; }
+      if(l.contactedAt && l.dateAdded){
+        const days = (new Date(l.contactedAt).getTime() - new Date(l.dateAdded).getTime()) / 86400000;
+        if(!isNaN(days) && days >= 0) row.contactDays.push(days);
+      }
+    });
+    const leaderboardRows = Object.values(leaderboardMap).sort((a,b)=>b.added-a.added);
+    const allContactDays = leads.filter(l=>l.contactedAt && l.dateAdded).map(l=>(new Date(l.contactedAt).getTime() - new Date(l.dateAdded).getTime()) / 86400000).filter(d=>!isNaN(d) && d>=0);
+    const overallAvgContact = allContactDays.length ? (allContactDays.reduce((s,d)=>s+d,0)/allContactDays.length) : null;
+    const overallAvgContactLabel = overallAvgContact===null ? 'Not enough data yet' : (overallAvgContact < 1 ? `${Math.round(overallAvgContact*24)} hours` : `${overallAvgContact.toFixed(1)} days`);
+    const leaderboardHTML = `
+      <div class="section nav-anchor" id="sec-leaderboard">
+        <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.users}</div>Team leaderboard</h2>
+        <p class="section-sub">Only counts leads added since this feature was turned on — older leads show as "Unassigned". Workspace-wide average speed to first contact: <strong>${overallAvgContactLabel}</strong>.</p>
+        <div class="table-wrap" style="--table-accent:var(--c-blue-fg)">
+          <table>
+            <thead><tr><th>Team member</th><th>Leads added</th><th>Won</th><th>Win rate</th><th>Revenue</th><th>Avg. speed to contact</th></tr></thead>
+            <tbody>${leaderboardRows.map(r=>{
+              const winRate = r.added>0 ? Math.round((r.won/r.added)*100) : 0;
+              const avgContact = r.contactDays.length ? (r.contactDays.reduce((s,d)=>s+d,0)/r.contactDays.length) : null;
+              const avgContactLabel = avgContact===null ? '—' : (avgContact < 1 ? `${Math.round(avgContact*24)}h` : `${avgContact.toFixed(1)}d`);
+              return `<tr>
+                <td class="name-cell">${esc(r.name)}</td>
+                <td>${r.added}</td>
+                <td>${r.won}</td>
+                <td>${winRate}%</td>
+                <td>${formatMoney(r.revenue)}</td>
+                <td>${avgContactLabel}</td>
+              </tr>`;
+            }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--slate-light);">No data yet</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
     const matrixHTML = renderWinRateMatrix();
     const calendarHTML = renderActivityCalendar();
 
-    container.innerHTML = headlineHTML + insightHTML + kpiHTML + ringsHTML + funnelHTML + tablesHTML + matrixHTML + calendarHTML;
+    container.innerHTML = headlineHTML + goalHTML + insightHTML + kpiHTML + ringsHTML + funnelHTML + tablesHTML + leaderboardHTML + matrixHTML + calendarHTML;
     renderWorldMap(byCountry);
     animateCountUps();
     animateFunnelBars();
@@ -2469,6 +2649,22 @@
     setupScrollReveal();
     setupHeroSpotlight();
   }
+
+  document.getElementById('content').addEventListener('click', (e)=>{
+    if(e.target.id === 'setGoalBtn'){
+      if(!boardDocRef) return;
+      const input = prompt('Set this month\'s revenue goal (numbers only):', monthlyRevenueGoal || '');
+      if(input === null) return;
+      const value = parseFloat(input.replace(/[^0-9.]/g, ''));
+      if(isNaN(value) || value <= 0){
+        showToast('Please enter a valid number.', true);
+        return;
+      }
+      boardDocRef.set({ monthlyRevenueGoal: value }, {merge:true}).catch(err=>{
+        showToast('Could not save goal: ' + friendlyErr(err), true);
+      });
+    }
+  });
 
   // ---------- Funnel bar grow-in ----------
   // ---------- Generic number-text count-up (works on any element with an embedded number) ----------

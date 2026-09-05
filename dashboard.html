@@ -3160,6 +3160,15 @@
     }
     const wasEditing = !!editingId;
     const existingLeadForStamp = wasEditing ? leads.find(x=>x.id===editingId) : null;
+    if(!wasEditing){
+      data.createdByUid = auth.currentUser ? auth.currentUser.uid : null;
+      data.createdByLeadName = currentUserDisplayName || (auth.currentUser ? auth.currentUser.email : '') || '';
+    }
+    if(data.contacted && !(existingLeadForStamp && existingLeadForStamp.contacted)){
+      data.contactedAt = new Date().toISOString();
+    } else if(existingLeadForStamp && existingLeadForStamp.contactedAt){
+      data.contactedAt = existingLeadForStamp.contactedAt;
+    }
     stampCallBookedIfNeeded(data, existingLeadForStamp, data.status);
     if(!firebaseConnected){
       showToast(t('notConnectedShort'), true);
