@@ -1167,6 +1167,19 @@
 
 <div class="toast-stack" id="toastStack"></div>
 
+<div class="confirm-overlay" id="goalModalOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+    <h3>Set this month's revenue goal</h3>
+    <p>What revenue target do you want to track progress toward this month?</p>
+    <input type="number" id="goalModalInput" placeholder="e.g. 10000" min="0" step="any" style="width:100%;font-family:'Inter',sans-serif;font-size:16px;padding:12px 14px;border:1px solid var(--border);border-radius:9px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:18px;box-sizing:border-box;text-align:center;">
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn" id="goalModalCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="goalModalSaveBtn">Save goal</button>
+    </div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
   <div class="confirm-modal">
     <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
@@ -1464,6 +1477,7 @@
   let boardsCollection = null;
   let boardDocRef = null;
   let monthlyRevenueGoal = null;
+  let boardCreatorMap = {};
   let auth = null;
   let firebaseConnected = false;
   const boardId = new URLSearchParams(location.search).get('board');
@@ -1516,10 +1530,18 @@
         boardDocRef = boardsCollection.doc(boardId);
         leadsCollection = boardDocRef.collection('leads');
         boardDocRef.onSnapshot(doc=>{
-          monthlyRevenueGoal = doc.exists ? (doc.data().monthlyRevenueGoal || null) : null;
+          const data = doc.exists ? doc.data() : {};
+          monthlyRevenueGoal = data.monthlyRevenueGoal || null;
+          boardCreatorMap[boardId] = data.createdByName || null;
           render();
         });
       }
+      boardsCollection.onSnapshot(snapshot=>{
+        snapshot.docs.forEach(doc=>{
+          boardCreatorMap[doc.id] = doc.data().createdByName || null;
+        });
+        render();
+      });
     });
   }
   try{
@@ -2598,7 +2620,8 @@
     // ---------- Team leaderboard ----------
     const leaderboardMap = {};
     leads.forEach(l=>{
-      const person = l.createdByLeadName || 'Unassigned';
+      const fallbackName = boardCreatorMap[l.boardId || boardId];
+      const person = l.createdByLeadName || fallbackName || 'Unassigned';
       if(!leaderboardMap[person]) leaderboardMap[person] = {name:person, added:0, won:0, revenue:0, contactDays:[]};
       const row = leaderboardMap[person];
       row.added++;
@@ -2615,7 +2638,7 @@
     const leaderboardHTML = `
       <div class="section nav-anchor" id="sec-leaderboard">
         <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.users}</div>Team leaderboard</h2>
-        <p class="section-sub">Only counts leads added since this feature was turned on — older leads show as "Unassigned". Workspace-wide average speed to first contact: <strong>${overallAvgContactLabel}</strong>.</p>
+        <p class="section-sub">Leads added before this feature existed are credited to whoever created the board — newer leads are credited to whoever actually added them. Workspace-wide average speed to first contact: <strong>${overallAvgContactLabel}</strong>.</p>
         <div class="table-wrap" style="--table-accent:var(--c-blue-fg)">
           <table>
             <thead><tr><th>Team member</th><th>Leads added</th><th>Won</th><th>Win rate</th><th>Revenue</th><th>Avg. speed to contact</th></tr></thead>
@@ -2653,17 +2676,33 @@
   document.getElementById('content').addEventListener('click', (e)=>{
     if(e.target.id === 'setGoalBtn'){
       if(!boardDocRef) return;
-      const input = prompt('Set this month\'s revenue goal (numbers only):', monthlyRevenueGoal || '');
-      if(input === null) return;
-      const value = parseFloat(input.replace(/[^0-9.]/g, ''));
-      if(isNaN(value) || value <= 0){
-        showToast('Please enter a valid number.', true);
-        return;
-      }
-      boardDocRef.set({ monthlyRevenueGoal: value }, {merge:true}).catch(err=>{
-        showToast('Could not save goal: ' + friendlyErr(err), true);
-      });
+      document.getElementById('goalModalInput').value = monthlyRevenueGoal || '';
+      document.getElementById('goalModalOverlay').style.display = 'flex';
+      document.getElementById('goalModalInput').focus();
     }
+  });
+  document.getElementById('goalModalCancelBtn').addEventListener('click', ()=>{
+    document.getElementById('goalModalOverlay').style.display = 'none';
+  });
+  document.getElementById('goalModalOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'goalModalOverlay') e.currentTarget.style.display = 'none';
+  });
+  document.getElementById('goalModalSaveBtn').addEventListener('click', ()=>{
+    if(!boardDocRef) return;
+    const input = document.getElementById('goalModalInput');
+    const value = parseFloat(input.value);
+    if(isNaN(value) || value <= 0){
+      showToast('Please enter a valid number.', true);
+      return;
+    }
+    boardDocRef.set({ monthlyRevenueGoal: value }, {merge:true}).then(()=>{
+      document.getElementById('goalModalOverlay').style.display = 'none';
+    }).catch(err=>{
+      showToast('Could not save goal: ' + friendlyErr(err), true);
+    });
+  });
+  document.getElementById('goalModalInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') document.getElementById('goalModalSaveBtn').click();
   });
 
   // ---------- Funnel bar grow-in ----------
