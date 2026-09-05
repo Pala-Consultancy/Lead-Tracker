@@ -1084,8 +1084,9 @@
           <option data-i18n="ind_legal">Legal</option>
           <option data-i18n="ind_media">Media & Entertainment</option>
           <option data-i18n="ind_nonprofit">Non-profit</option>
-          <option data-i18n="ind_other">Other</option>
+          <option value="__custom__">Other (type your own)</option>
         </select>
+        <input type="text" id="boardIndustryCustom" placeholder="Type your industry" style="display:none;margin-top:8px;">
       </div>
       <div class="field">
         <label for="boardJobTitle" data-i18n="jobTitle">Job title <span class="optional-tag" data-i18n="optional">(optional)</span></label>
@@ -1101,8 +1102,9 @@
           <option>TikTok</option>
           <option>Website</option>
           <option data-i18n="src_referral">Referral</option>
-          <option data-i18n="src_other">Other</option>
+          <option value="__custom__">Other (type your own)</option>
         </select>
+        <input type="text" id="boardSourceCustom" placeholder="Type your lead source" style="display:none;margin-top:8px;">
       </div>
       <div class="field">
         <label for="boardCreatedBy" data-i18n="createdByLabel">Created by</label>
@@ -1161,8 +1163,9 @@
           <option>Legal</option>
           <option>Media & Entertainment</option>
           <option>Non-profit</option>
-          <option>Other</option>
+          <option value="__custom__">Other (type your own)</option>
         </select>
+        <input type="text" id="editBoardIndustryCustom" placeholder="Type your industry" style="display:none;margin-top:8px;">
       </div>
       <div class="field">
         <label for="editBoardJobTitle">Job title <span class="optional-tag">(optional)</span></label>
@@ -1178,8 +1181,9 @@
           <option>TikTok</option>
           <option>Website</option>
           <option>Referral</option>
-          <option>Other</option>
+          <option value="__custom__">Other (type your own)</option>
         </select>
+        <input type="text" id="editBoardSourceCustom" placeholder="Type your lead source" style="display:none;margin-top:8px;">
       </div>
       <div class="field">
         <label for="editBoardCreatedBy">Created by <span class="optional-tag">(optional)</span></label>
@@ -1891,9 +1895,33 @@
       document.getElementById('editBoardName').value = data.name || '';
       document.getElementById('editBoardCountry').value = data.defaultCountry || '';
       document.getElementById('editBoardCity').value = data.defaultCity || '';
-      document.getElementById('editBoardIndustry').value = data.defaultIndustry || '';
+
+      const industrySel = document.getElementById('editBoardIndustry');
+      const industryCustom = document.getElementById('editBoardIndustryCustom');
+      industrySel.value = data.defaultIndustry || '';
+      if(data.defaultIndustry && industrySel.value !== data.defaultIndustry){
+        industrySel.value = '__custom__';
+        industryCustom.value = data.defaultIndustry;
+        industryCustom.style.display = '';
+      } else {
+        industryCustom.value = '';
+        industryCustom.style.display = 'none';
+      }
+
       document.getElementById('editBoardJobTitle').value = data.defaultJobTitle || '';
-      document.getElementById('editBoardSource').value = data.defaultSource || '';
+
+      const sourceSel = document.getElementById('editBoardSource');
+      const sourceCustom = document.getElementById('editBoardSourceCustom');
+      sourceSel.value = data.defaultSource || '';
+      if(data.defaultSource && sourceSel.value !== data.defaultSource){
+        sourceSel.value = '__custom__';
+        sourceCustom.value = data.defaultSource;
+        sourceCustom.style.display = '';
+      } else {
+        sourceCustom.value = '';
+        sourceCustom.style.display = 'none';
+      }
+
       document.getElementById('editBoardCreatedBy').value = data.createdByName || '';
       ['editBoardCountry','editBoardCity','editBoardIndustry','editBoardJobTitle','editBoardSource','editBoardCreatedBy'].forEach(id=>{
         const field = document.getElementById(id);
@@ -1904,6 +1932,14 @@
       showToast('Could not load board: ' + friendlyErr(err), true);
     });
   }
+  document.getElementById('editBoardIndustry').addEventListener('change', (e)=>{
+    document.getElementById('editBoardIndustryCustom').style.display = e.target.value === '__custom__' ? '' : 'none';
+    if(e.target.value === '__custom__') document.getElementById('editBoardIndustryCustom').focus();
+  });
+  document.getElementById('editBoardSource').addEventListener('change', (e)=>{
+    document.getElementById('editBoardSourceCustom').style.display = e.target.value === '__custom__' ? '' : 'none';
+    if(e.target.value === '__custom__') document.getElementById('editBoardSourceCustom').focus();
+  });
   ['editBoardCountry','editBoardCity','editBoardIndustry','editBoardJobTitle','editBoardSource','editBoardCreatedBy'].forEach(id=>{
     const field = document.getElementById(id);
     if(field){
@@ -1929,13 +1965,17 @@
     if(!name || !editingBoardId) return;
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
+    const editIndustryVal = document.getElementById('editBoardIndustry').value;
+    const editIndustryFinal = editIndustryVal === '__custom__' ? document.getElementById('editBoardIndustryCustom').value.trim() : editIndustryVal;
+    const editSourceVal = document.getElementById('editBoardSource').value;
+    const editSourceFinal = editSourceVal === '__custom__' ? document.getElementById('editBoardSourceCustom').value.trim() : editSourceVal;
     boardsCollection.doc(editingBoardId).update({
       name,
       defaultCountry: document.getElementById('editBoardCountry').value.trim(),
       defaultCity: document.getElementById('editBoardCity').value.trim(),
-      defaultIndustry: document.getElementById('editBoardIndustry').value,
+      defaultIndustry: editIndustryFinal,
       defaultJobTitle: document.getElementById('editBoardJobTitle').value.trim(),
-      defaultSource: document.getElementById('editBoardSource').value,
+      defaultSource: editSourceFinal,
       createdByName: document.getElementById('editBoardCreatedBy').value.trim()
     }).then(()=>{
       showToast(t('boardUpdated'));
@@ -2736,6 +2776,14 @@
         document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') dismiss(); });
       }
     }
+    document.getElementById('boardIndustry').addEventListener('change', (e)=>{
+      document.getElementById('boardIndustryCustom').style.display = e.target.value === '__custom__' ? '' : 'none';
+      if(e.target.value === '__custom__') document.getElementById('boardIndustryCustom').focus();
+    });
+    document.getElementById('boardSource').addEventListener('change', (e)=>{
+      document.getElementById('boardSourceCustom').style.display = e.target.value === '__custom__' ? '' : 'none';
+      if(e.target.value === '__custom__') document.getElementById('boardSourceCustom').focus();
+    });
     document.getElementById('createBoardForm').addEventListener('submit', (e)=>{
       e.preventDefault();
       const input = document.getElementById('boardNameInput');
@@ -2754,6 +2802,17 @@
         return;
       }
 
+      function getFieldValue(id){
+        if(id === 'boardIndustry'){
+          const v = document.getElementById('boardIndustry').value;
+          return v === '__custom__' ? document.getElementById('boardIndustryCustom').value.trim() : v;
+        }
+        if(id === 'boardSource'){
+          const v = document.getElementById('boardSource').value;
+          return v === '__custom__' ? document.getElementById('boardSourceCustom').value.trim() : v;
+        }
+        return document.getElementById(id).value.trim();
+      }
       const fieldMap = [
         ['boardCountry', 'country'],
         ['boardCity', 'city'],
@@ -2762,7 +2821,7 @@
         ['boardSource', 'leadSource']
       ];
       const missingLabels = fieldMap
-        .filter(([id]) => !document.getElementById(id).value.trim())
+        .filter(([id]) => !getFieldValue(id))
         .map(([, labelKey]) => t(labelKey));
 
       if(missingLabels.length){
@@ -2796,13 +2855,17 @@
       }
       submitBtn.disabled = true;
       const user = auth.currentUser;
+      const industrySelectVal = document.getElementById('boardIndustry').value;
+      const industryFinal = industrySelectVal === '__custom__' ? document.getElementById('boardIndustryCustom').value.trim() : industrySelectVal;
+      const sourceSelectVal = document.getElementById('boardSource').value;
+      const sourceFinal = sourceSelectVal === '__custom__' ? document.getElementById('boardSourceCustom').value.trim() : sourceSelectVal;
       boardsCollection.add({
         name,
         defaultCountry: document.getElementById('boardCountry').value.trim(),
         defaultCity: document.getElementById('boardCity').value.trim(),
-        defaultIndustry: document.getElementById('boardIndustry').value,
+        defaultIndustry: industryFinal,
         defaultJobTitle: document.getElementById('boardJobTitle').value.trim(),
-        defaultSource: document.getElementById('boardSource').value,
+        defaultSource: sourceFinal,
         createdByName: document.getElementById('boardCreatedBy').value.trim(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: user ? user.email : null
