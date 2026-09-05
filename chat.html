@@ -145,7 +145,14 @@
   .chat-sidebar-header{
     padding:16px 18px;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;color:var(--ink);
     border-bottom:1px solid var(--border);flex-shrink:0;
+    display:flex;align-items:center;justify-content:space-between;
   }
+  .chat-new-group-btn{
+    background:var(--c-blue-bg);color:var(--teal);border:none;border-radius:8px;
+    padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;
+    transition:background .15s ease;
+  }
+  .chat-new-group-btn:hover{background:var(--c-blue-tint2, #F6FAFE);}
   #chatMembersBody{flex:1;overflow-y:auto;padding:8px;}
   .chat-member-row{
     display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;
@@ -341,6 +348,20 @@
   .chat-limit-card h3{font-family:'Sora',sans-serif;font-size:16.5px;margin:0 0 10px;color:var(--ink);}
   .chat-limit-card p{font-size:13px;color:var(--slate);line-height:1.55;margin:0 0 20px;}
   .chat-limit-actions{display:flex;gap:10px;justify-content:center;}
+  .group-member-row{
+    display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:8px;cursor:pointer;
+    transition:background .12s ease;
+  }
+  .group-member-row:hover{background:var(--c-blue-tint2, #F6FAFE);}
+  .group-member-row input{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--teal);}
+  .group-member-row .chat-member-avatar{width:30px;height:30px;font-size:11px;}
+  .group-member-row span{font-size:13px;font-weight:600;color:var(--ink);}
+  .chat-group-icon{
+    width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--c-purple-bg);color:var(--c-purple-fg);font-size:16px;flex-shrink:0;
+  }
+  .chat-msg-sender{font-size:11px;font-weight:700;color:var(--slate);margin:0 0 3px 2px;}
+  .chat-msg-wrap.theirs .chat-msg-sender{color:var(--c-purple-fg);}
 
   .chat-msg-react-btn:hover{transform:scale(1.15);}
 
@@ -851,7 +872,10 @@
       <a class="btn btn-primary" href="billing.html">Upgrade now →</a>
     </div>
     <div class="chat-sidebar" id="chatSidebar">
-      <div class="chat-sidebar-header">Teammates</div>
+      <div class="chat-sidebar-header">
+        <span>Chats</span>
+        <button type="button" class="chat-new-group-btn" id="newGroupBtn" title="New group chat">+ Group</button>
+      </div>
       <div class="chat-search-row">
         <input type="text" id="chatSearchInput" placeholder="Search teammates...">
       </div>
@@ -873,6 +897,7 @@
             <div class="status-line" id="chatTypingStatus"></div>
           </div>
           <button type="button" class="chat-bg-btn" id="chatBgBtn" title="Change chat background">🎨</button>
+          <button type="button" class="chat-bg-btn" id="leaveGroupBtn" title="Leave group" style="display:none">🚪</button>
         </div>
         <div class="chat-bg-picker" id="chatBgPicker" style="display:none">
           <div class="chat-bg-swatch" data-bg="default" style="background:var(--c-blue-tint2, #F6FAFE)"></div>
@@ -912,6 +937,19 @@
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
+
+<div class="chat-limit-overlay" id="newGroupOverlay" style="display:none">
+  <div class="chat-limit-card" style="text-align:left;max-width:380px;">
+    <h3 style="text-align:center;">New group chat</h3>
+    <input type="text" id="newGroupNameInput" placeholder="Group name" maxlength="60" style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:14px;padding:10px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);margin-bottom:8px;">Add teammates</div>
+    <div id="newGroupMemberList" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;margin-bottom:16px;"></div>
+    <div class="chat-limit-actions">
+      <button type="button" class="btn" id="newGroupCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="newGroupCreateBtn">Create group</button>
+    </div>
+  </div>
+</div>
 
 <div class="chat-limit-overlay" id="chatLimitOverlay" style="display:none">
   <div class="chat-limit-card">
@@ -1241,7 +1279,14 @@
   }
 
   let currentUserIsAdmin = false;
+  let currentUserDisplayName = '';
   let directMessagesCollection = null;
+  let groupChatsCollection = null;
+  let chatActiveGroupId = null;
+  let groupChatsMap = {};
+  let unsubscribeGroupChats = null;
+  let unsubscribeGroupThread = null;
+  let groupTypingTimeout = null;
   let teamMembersList = [];
   let chatConversationsMap = {};
   let unsubscribeChatConversations = null;
@@ -1329,31 +1374,65 @@
       renderChatMemberListImmediate();
     }, 500);
   }
+  function isGroupUnread(group, myUid){
+    if(!group || !group.lastMessage) return false;
+    if(group.lastMessage.senderId === myUid) return false;
+    const lastReadAt = group.lastReadAt && group.lastReadAt[myUid];
+    if(!lastReadAt || typeof lastReadAt.toMillis !== 'function') return true;
+    if(!group.lastMessage.createdAt || typeof group.lastMessage.createdAt.toMillis !== 'function') return false;
+    return group.lastMessage.createdAt.toMillis() > lastReadAt.toMillis();
+  }
   function renderChatMemberListImmediate(){
     const container = document.getElementById('chatMembersBody');
     if(!container) return;
-    if(teamMembersList.length === 0){
-      container.innerHTML = `<div class="chat-empty">No other team members yet. Invite someone from the Team page to start chatting.</div>`;
-      return;
-    }
-    const filtered = teamMembersList.filter(m=>{
+    const dmRows = teamMembersList.filter(m=>{
       if(!chatSearchFilter) return true;
       const haystack = ((m.name || '') + ' ' + (m.email || '')).toLowerCase();
       return haystack.includes(chatSearchFilter);
+    }).map(m=>{
+      const conv = chatConversationsMap[getConversationId(currentUid, m.id)];
+      const t = (conv && conv.lastMessage && conv.lastMessage.createdAt && conv.lastMessage.createdAt.toMillis) ? conv.lastMessage.createdAt.toMillis() : 0;
+      return {kind:'dm', id:m.id, member:m, conv, t};
     });
-    if(filtered.length === 0){
-      container.innerHTML = `<div class="chat-empty">No teammates match "${esc(chatSearchFilter)}".</div>`;
+    const groupRows = Object.values(groupChatsMap).filter(g=>{
+      if(!chatSearchFilter) return true;
+      return (g.name || '').toLowerCase().includes(chatSearchFilter);
+    }).map(g=>{
+      const t = (g.lastMessage && g.lastMessage.createdAt && g.lastMessage.createdAt.toMillis) ? g.lastMessage.createdAt.toMillis() : (g.createdAt && g.createdAt.toMillis ? g.createdAt.toMillis() : 0);
+      return {kind:'group', id:g.id, group:g, t};
+    });
+    if(dmRows.length === 0 && groupRows.length === 0){
+      container.innerHTML = teamMembersList.length === 0 && Object.keys(groupChatsMap).length === 0
+        ? `<div class="chat-empty">No other team members yet. Invite someone from the Team page to start chatting.</div>`
+        : `<div class="chat-empty">No chats match "${esc(chatSearchFilter)}".</div>`;
       return;
     }
-    const sorted = filtered.slice().sort((a,b)=>{
-      const convA = chatConversationsMap[getConversationId(currentUid, a.id)];
-      const convB = chatConversationsMap[getConversationId(currentUid, b.id)];
-      const tA = (convA && convA.lastMessage && convA.lastMessage.createdAt && convA.lastMessage.createdAt.toMillis) ? convA.lastMessage.createdAt.toMillis() : 0;
-      const tB = (convB && convB.lastMessage && convB.lastMessage.createdAt && convB.lastMessage.createdAt.toMillis) ? convB.lastMessage.createdAt.toMillis() : 0;
-      return tB - tA;
-    });
-    container.innerHTML = sorted.map(m=>{
-      const conv = chatConversationsMap[getConversationId(currentUid, m.id)];
+    const allRows = dmRows.concat(groupRows).sort((a,b)=>b.t-a.t);
+    container.innerHTML = allRows.map(row=>{
+      if(row.kind === 'group'){
+        const g = row.group;
+        const unread = isGroupUnread(g, currentUid);
+        const active = chatActiveGroupId === g.id;
+        const isTyping = g.typing && Object.keys(g.typing).some(uid=>uid !== currentUid && g.typing[uid]);
+        let preview = 'No messages yet';
+        if(isTyping){
+          preview = 'Typing...';
+        } else if(g.lastMessage){
+          const prefix = g.lastMessage.senderId === currentUid ? 'You: ' : (g.lastMessage.senderName ? g.lastMessage.senderName.split(' ')[0] + ': ' : '');
+          preview = prefix + (g.lastMessage.text || '');
+        }
+        const memberCount = (g.participants || []).length;
+        return `<button type="button" class="chat-member-row group${active ? ' active' : ''}${unread ? ' unread' : ''}" data-group-id="${g.id}">
+          <div class="chat-group-icon">👥</div>
+          <div class="chat-member-info">
+            <div class="chat-member-name">${esc(g.name || 'Group chat')}</div>
+            <div class="chat-member-preview"${isTyping ? ' style="color:var(--teal);font-weight:600;"' : ''}>${esc(preview)}${!g.lastMessage ? '' : ` · ${memberCount} members`}</div>
+          </div>
+          ${unread ? '<div class="chat-unread-dot"></div>' : ''}
+        </button>`;
+      }
+      const m = row.member;
+      const conv = row.conv;
       const unread = isConversationUnread(conv, currentUid);
       const active = m.id === chatActiveOtherUid;
       const isTyping = conv && conv.typing && conv.typing[m.id];
@@ -1395,10 +1474,14 @@
 
   const QUICK_REACTIONS = ['❤️','😂','👍','😮','😢','🙏'];
 
+  function getActiveThreadRef(){
+    if(chatActiveGroupId) return groupChatsCollection.doc(chatActiveGroupId).collection('thread');
+    if(chatActiveOtherUid) return directMessagesCollection.doc(getConversationId(currentUid, chatActiveOtherUid)).collection('thread');
+    return null;
+  }
   function toggleReaction(messageId, emoji){
-    if(!chatActiveOtherUid || !messageId) return;
-    const convId = getConversationId(currentUid, chatActiveOtherUid);
-    const msgRef = directMessagesCollection.doc(convId).collection('thread').doc(messageId);
+    if((!chatActiveOtherUid && !chatActiveGroupId) || !messageId) return;
+    const msgRef = getActiveThreadRef().doc(messageId);
     const existing = lastRenderedMessages.find(m=>m.id === messageId);
     const already = existing && existing.reactions && existing.reactions[currentUid] === emoji;
     msgRef.set({
@@ -1484,6 +1567,9 @@
   function openChatThread(otherUid){
     if(!currentUid || !directMessagesCollection) return;
     clearMediaPreview();
+    if(unsubscribeGroupThread){ unsubscribeGroupThread(); unsubscribeGroupThread = null; }
+    setGroupTypingFlag(false);
+    chatActiveGroupId = null;
     chatActiveOtherUid = otherUid;
     const convId = getConversationId(currentUid, otherUid);
     const otherMember = teamMembersList.find(m=>m.id === otherUid);
@@ -1495,6 +1581,7 @@
     document.getElementById('chatMainEmpty').style.display = 'none';
     document.getElementById('chatThreadView').style.display = 'flex';
     document.getElementById('chatSidebar').classList.add('mobile-hidden');
+    document.getElementById('leaveGroupBtn').style.display = 'none';
     renderChatMemberList();
     updateTypingStatusLine();
 
@@ -1529,37 +1616,153 @@
 
   function closeChatThread(){
     if(unsubscribeChatThread){ unsubscribeChatThread(); unsubscribeChatThread = null; }
+    if(unsubscribeGroupThread){ unsubscribeGroupThread(); unsubscribeGroupThread = null; }
     clearMediaPreview();
     setTypingFlag(false);
+    setGroupTypingFlag(false);
     chatActiveOtherUid = null;
+    chatActiveGroupId = null;
     document.getElementById('chatSidebar').classList.remove('mobile-hidden');
     document.getElementById('chatThreadView').style.display = 'none';
     document.getElementById('chatMainEmpty').style.display = '';
     renderChatMemberList();
   }
 
+  function setGroupTypingFlag(isTyping){
+    if(!chatActiveGroupId || !currentUid || !groupChatsCollection) return;
+    groupChatsCollection.doc(chatActiveGroupId).set({
+      typing: { [currentUid]: isTyping }
+    }, {merge:true}).catch(()=>{});
+  }
+
+  function renderGroupMessages(messages){
+    lastRenderedMessages = messages;
+    const container = document.getElementById('chatMessages');
+    if(!container) return;
+    const group = groupChatsMap[chatActiveGroupId];
+    const otherIsTyping = group && group.typing && Object.keys(group.typing).some(uid=>uid !== currentUid && group.typing[uid]);
+    if(messages.length === 0 && !otherIsTyping){
+      container.innerHTML = `<div class="chat-empty">Say hello to the group 👋</div>`;
+      return;
+    }
+    const messagesHtml = messages.map(m=>{
+      const mine = m.senderId === currentUid;
+      const time = (m.createdAt && typeof m.createdAt.toDate === 'function') ? formatChatTime(m.createdAt.toDate()) : '';
+      const senderHtml = !mine ? `<div class="chat-msg-sender">${esc(m.senderName || 'Team member')}</div>` : '';
+      const reactionCounts = {};
+      if(m.reactions){
+        Object.values(m.reactions).forEach(e=>{ reactionCounts[e] = (reactionCounts[e]||0) + 1; });
+      }
+      const myReaction = m.reactions && m.reactions[currentUid];
+      const reactionsHtml = Object.keys(reactionCounts).length
+        ? `<div class="chat-msg-reactions">${Object.entries(reactionCounts).map(([emoji,count])=>
+            `<button type="button" class="chat-reaction-pill${myReaction===emoji ? ' mine':''}" onclick="window.__chatActions.toggleReaction('${m.id}','${emoji}')">${emoji}${count>1?` ${count}`:''}</button>`
+          ).join('')}</div>`
+        : '';
+      const reactBtnHtml = `<button type="button" class="chat-msg-react-btn" onclick="window.__chatActions.openReactionPicker(event,'${m.id}')" title="React">😊</button>`;
+      let deleteBtnHtml = '';
+      if(mine){
+        const msgMillis = (m.createdAt && typeof m.createdAt.toMillis === 'function') ? m.createdAt.toMillis() : null;
+        const withinWindow = msgMillis && (Date.now() - msgMillis) < 30 * 60 * 1000;
+        if(withinWindow){
+          deleteBtnHtml = `<button type="button" class="chat-msg-delete-btn" onclick="window.__chatActions.confirmDeleteMessage('${m.id}')" title="Delete message">🗑️</button>`;
+        }
+      }
+      let mediaHtml = '';
+      if(m.mediaType === 'image' && m.mediaUrl){
+        mediaHtml = `<img class="chat-media-img" src="${m.mediaUrl}" alt="Photo" onclick="window.__chatActions.openLightbox('${m.mediaUrl}')">`;
+      } else if(m.mediaType === 'video' && m.mediaUrl){
+        mediaHtml = `<video class="chat-media-video" src="${m.mediaUrl}" controls></video>`;
+      }
+      const hasMedia = !!mediaHtml;
+      return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}">
+        ${senderHtml}
+        <div class="chat-msg ${mine ? 'mine' : 'theirs'}${hasMedia ? ' has-media' : ''}" ondblclick="window.__chatActions.toggleReaction('${m.id}','❤️')">${mediaHtml}${m.text ? esc(m.text) : ''}${time ? `<div class="chat-msg-time"${hasMedia ? ' style="padding:0 4px 4px;"' : ''}>${esc(time)}</div>` : ''}</div>
+        ${reactBtnHtml}
+        ${deleteBtnHtml}
+        ${reactionsHtml}
+      </div>`;
+    }).join('');
+    const typingBubbleHtml = otherIsTyping
+      ? `<div class="chat-msg-wrap theirs"><div class="chat-msg theirs chat-typing-bubble"><span></span><span></span><span></span></div></div>`
+      : '';
+    container.innerHTML = messagesHtml + typingBubbleHtml;
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function updateGroupHeaderInfo(){
+    const group = groupChatsMap[chatActiveGroupId];
+    if(!group) return;
+    document.getElementById('chatHeaderTitle').textContent = group.name || 'Group chat';
+    const memberCount = (group.participants || []).length;
+    const otherTyping = group.typing && Object.keys(group.typing).some(uid=>uid !== currentUid && group.typing[uid]);
+    const statusEl = document.getElementById('chatTypingStatus');
+    if(otherTyping){
+      statusEl.innerHTML = `<div class="chat-typing-indicator"><span></span><span></span><span></span></div>`;
+    } else {
+      statusEl.innerHTML = `<span class="chat-presence">${memberCount} members</span>`;
+    }
+  }
+
+  function openGroupThread(groupId){
+    if(!currentUid || !groupChatsCollection) return;
+    clearMediaPreview();
+    if(unsubscribeChatThread){ unsubscribeChatThread(); unsubscribeChatThread = null; }
+    setTypingFlag(false);
+    chatActiveOtherUid = null;
+    chatActiveGroupId = groupId;
+    const group = groupChatsMap[groupId];
+    document.getElementById('chatHeaderTitle').textContent = (group && group.name) || 'Group chat';
+    document.getElementById('chatThreadAvatar').className = 'chat-thread-avatar';
+    document.getElementById('chatThreadAvatar').innerHTML = '👥';
+    document.getElementById('chatMainEmpty').style.display = 'none';
+    document.getElementById('chatThreadView').style.display = 'flex';
+    document.getElementById('chatSidebar').classList.add('mobile-hidden');
+    document.getElementById('leaveGroupBtn').style.display = '';
+    renderChatMemberList();
+    updateGroupHeaderInfo();
+
+    groupChatsCollection.doc(groupId).set({
+      lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
+    }, {merge:true}).catch(()=>{});
+
+    if(unsubscribeGroupThread) unsubscribeGroupThread();
+    lastRenderedMessages = [];
+    unsubscribeGroupThread = groupChatsCollection.doc(groupId).collection('thread').orderBy('createdAt').onSnapshot(snap=>{
+      renderGroupMessages(snap.docs.map(d=>({id:d.id, ...d.data()})));
+      if(chatActiveGroupId === groupId){
+        groupChatsCollection.doc(groupId).set({
+          lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
+        }, {merge:true}).catch(()=>{});
+      }
+    });
+  }
+
   function sendChatMessage(){
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
-    if(!text || !chatActiveOtherUid) return;
+    if(!text || (!chatActiveOtherUid && !chatActiveGroupId)) return;
     if(!canSendChatMessage()){ showChatLimitReachedModal(); return; }
     if(chatTypingTimeout){ clearTimeout(chatTypingTimeout); chatTypingTimeout = null; }
     setTypingFlag(false);
-    const convId = getConversationId(currentUid, chatActiveOtherUid);
-    const convRef = directMessagesCollection.doc(convId);
+    setGroupTypingFlag(false);
+    const isGroup = !!chatActiveGroupId;
+    const parentRef = isGroup ? groupChatsCollection.doc(chatActiveGroupId) : directMessagesCollection.doc(getConversationId(currentUid, chatActiveOtherUid));
     const sendBtn = document.getElementById('chatSendBtn');
     sendBtn.classList.add('sent-flourish');
     setTimeout(()=>sendBtn.classList.remove('sent-flourish'), 400);
     sendBtn.disabled = true;
     input.value = '';
-    convRef.set({
-      participants: [currentUid, chatActiveOtherUid],
-      lastMessage: { text, senderId: currentUid, createdAt: firebase.firestore.FieldValue.serverTimestamp() },
-      lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
-    }, {merge:true}).then(()=>{
-      return convRef.collection('thread').add({
-        senderId: currentUid, text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+    const senderName = currentUserDisplayName || (auth.currentUser && auth.currentUser.email) || 'Someone';
+    const updateData = isGroup
+      ? { lastMessage: { text, senderId: currentUid, senderName, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() } }
+      : { participants: [currentUid, chatActiveOtherUid], lastMessage: { text, senderId: currentUid, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() } };
+    parentRef.set(updateData, {merge:true}).then(()=>{
+      return parentRef.collection('thread').add(
+        isGroup
+          ? { senderId: currentUid, senderName, text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }
+          : { senderId: currentUid, text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }
+      );
     }).then(()=>{
       recordChatMessageSent();
     }).catch(err=>{
@@ -1604,14 +1807,17 @@
   }
 
   function sendMediaMessage(file){
-    if(!chatActiveOtherUid || !storage) return;
+    if(!chatActiveOtherUid && !chatActiveGroupId) return;
+    if(!storage) return;
     if(!canSendChatMessage()){ showChatLimitReachedModal(); return; }
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
-    const convId = getConversationId(currentUid, chatActiveOtherUid);
+    const isGroup = !!chatActiveGroupId;
     const mediaType = isImage ? 'image' : 'video';
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `workspaces/${workspaceId}/chatMedia/${convId}/${Date.now()}_${currentUid}_${safeName}`;
+    const storagePath = isGroup
+      ? `workspaces/${workspaceId}/groupChatMedia/${chatActiveGroupId}/${Date.now()}_${currentUid}_${safeName}`
+      : `workspaces/${workspaceId}/chatMedia/${getConversationId(currentUid, chatActiveOtherUid)}/${Date.now()}_${currentUid}_${safeName}`;
     const storageRef = storage.ref(storagePath);
     const uploadTask = storageRef.put(file);
 
@@ -1631,17 +1837,18 @@
       showToast('Upload failed: ' + friendlyErr(err), true);
     }, ()=>{
       uploadTask.snapshot.ref.getDownloadURL().then(url=>{
-        const convRef = directMessagesCollection.doc(convId);
+        const parentRef = isGroup ? groupChatsCollection.doc(chatActiveGroupId) : directMessagesCollection.doc(getConversationId(currentUid, chatActiveOtherUid));
         const previewText = mediaType === 'image' ? '📷 Photo' : '🎥 Video';
-        return convRef.set({
-          participants: [currentUid, chatActiveOtherUid],
-          lastMessage: { text: previewText, senderId: currentUid, createdAt: firebase.firestore.FieldValue.serverTimestamp() },
-          lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
-        }, {merge:true}).then(()=>{
-          return convRef.collection('thread').add({
-            senderId: currentUid, text: '', mediaUrl: url, mediaType,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
+        const senderName = currentUserDisplayName || (auth.currentUser && auth.currentUser.email) || 'Someone';
+        const updateData = isGroup
+          ? { lastMessage: { text: previewText, senderId: currentUid, senderName, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() } }
+          : { participants: [currentUid, chatActiveOtherUid], lastMessage: { text: previewText, senderId: currentUid, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() } };
+        return parentRef.set(updateData, {merge:true}).then(()=>{
+          return parentRef.collection('thread').add(
+            isGroup
+              ? { senderId: currentUid, senderName, text: '', mediaUrl: url, mediaType, createdAt: firebase.firestore.FieldValue.serverTimestamp() }
+              : { senderId: currentUid, text: '', mediaUrl: url, mediaType, createdAt: firebase.firestore.FieldValue.serverTimestamp() }
+          );
         });
       }).then(()=>{
         recordChatMessageSent();
@@ -1659,8 +1866,80 @@
   document.getElementById('chatLimitOverlay').addEventListener('click', (e)=>{
     if(e.target.id === 'chatLimitOverlay') e.currentTarget.style.display = 'none';
   });
+  document.getElementById('newGroupBtn').addEventListener('click', ()=>{
+    document.getElementById('newGroupNameInput').value = '';
+    const listEl = document.getElementById('newGroupMemberList');
+    if(teamMembersList.length === 0){
+      listEl.innerHTML = `<div class="chat-empty">No teammates to add yet.</div>`;
+    } else {
+      listEl.innerHTML = teamMembersList.map(m=>`
+        <label class="group-member-row">
+          <input type="checkbox" value="${m.id}">
+          <div class="chat-member-avatar ${avatarColorClass(m.id)}">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
+          <span>${esc(m.name || m.email || 'Team member')}</span>
+        </label>
+      `).join('');
+    }
+    document.getElementById('newGroupOverlay').style.display = 'flex';
+  });
+  document.getElementById('newGroupCancelBtn').addEventListener('click', ()=>{
+    document.getElementById('newGroupOverlay').style.display = 'none';
+  });
+  document.getElementById('newGroupOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'newGroupOverlay') e.currentTarget.style.display = 'none';
+  });
+  document.getElementById('newGroupCreateBtn').addEventListener('click', ()=>{
+    const name = document.getElementById('newGroupNameInput').value.trim();
+    if(!name){ showToast('Please give the group a name.', true); return; }
+    const selectedUids = Array.from(document.querySelectorAll('#newGroupMemberList input:checked')).map(el=>el.value);
+    if(selectedUids.length === 0){ showToast('Pick at least one teammate to add.', true); return; }
+    if(!groupChatsCollection || !currentUid) return;
+    const btn = document.getElementById('newGroupCreateBtn');
+    btn.disabled = true;
+    groupChatsCollection.add({
+      name,
+      participants: [currentUid, ...selectedUids],
+      createdBy: currentUid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(doc=>{
+      document.getElementById('newGroupOverlay').style.display = 'none';
+      openGroupThread(doc.id);
+    }).catch(err=>{
+      showToast('Could not create group: ' + friendlyErr(err), true);
+    }).finally(()=>{
+      btn.disabled = false;
+    });
+  });
+
+  document.getElementById('leaveGroupBtn').addEventListener('click', ()=>{
+    if(!chatActiveGroupId) return;
+    const groupId = chatActiveGroupId;
+    const group = groupChatsMap[groupId];
+    const overlay = document.createElement('div');
+    overlay.className = 'chat-delete-confirm';
+    overlay.innerHTML = `<div class="chat-delete-confirm-card">
+      <p>Leave "${esc(group ? group.name : 'this group')}"? You won't see new messages unless someone adds you back.</p>
+      <div class="chat-delete-confirm-actions">
+        <button type="button" class="btn" id="leaveGroupCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="leaveGroupConfirmBtn">Leave group</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.remove(); });
+    document.getElementById('leaveGroupCancelBtn').addEventListener('click', ()=>overlay.remove());
+    document.getElementById('leaveGroupConfirmBtn').addEventListener('click', ()=>{
+      groupChatsCollection.doc(groupId).set({
+        participants: firebase.firestore.FieldValue.arrayRemove(currentUid)
+      }, {merge:true}).then(()=>{
+        overlay.remove();
+        closeChatThread();
+      }).catch(err=>{
+        showToast('Could not leave group: ' + friendlyErr(err), true);
+      });
+    });
+  });
   document.getElementById('chatAttachBtn').addEventListener('click', ()=>{
-    if(!chatActiveOtherUid) return;
+    if(!chatActiveOtherUid && !chatActiveGroupId) return;
     document.getElementById('chatFileInput').click();
   });
   document.getElementById('chatFileInput').addEventListener('change', (e)=>{
@@ -1685,22 +1964,21 @@
   }
 
   function deleteMessage(messageId){
-    if(!chatActiveOtherUid) return;
-    const convId = getConversationId(currentUid, chatActiveOtherUid);
-    const threadRef = directMessagesCollection.doc(convId).collection('thread');
+    if(!chatActiveOtherUid && !chatActiveGroupId) return;
+    const threadRef = getActiveThreadRef();
+    const parentRef = chatActiveGroupId ? groupChatsCollection.doc(chatActiveGroupId) : directMessagesCollection.doc(getConversationId(currentUid, chatActiveOtherUid));
     threadRef.doc(messageId).delete().then(()=>{
       return threadRef.orderBy('createdAt', 'desc').limit(1).get();
     }).then(snap=>{
-      const convRef = directMessagesCollection.doc(convId);
       if(snap.empty){
-        return convRef.set({ lastMessage: firebase.firestore.FieldValue.delete() }, {merge:true});
+        return parentRef.set({ lastMessage: firebase.firestore.FieldValue.delete() }, {merge:true});
       }
       const latest = snap.docs[0].data();
       let previewText = latest.text || '';
       if(!previewText && latest.mediaType === 'image') previewText = '📷 Photo';
       else if(!previewText && latest.mediaType === 'video') previewText = '🎥 Video';
-      return convRef.set({
-        lastMessage: { text: previewText, senderId: latest.senderId, createdAt: latest.createdAt }
+      return parentRef.set({
+        lastMessage: { text: previewText, senderId: latest.senderId, senderName: latest.senderName || null, createdAt: latest.createdAt }
       }, {merge:true});
     }).catch(err=>{
       showToast('Could not delete message: ' + friendlyErr(err), true);
@@ -1821,10 +2099,16 @@
     }
   });
   document.getElementById('chatInput').addEventListener('input', ()=>{
-    if(!chatActiveOtherUid) return;
-    setTypingFlag(true);
-    if(chatTypingTimeout) clearTimeout(chatTypingTimeout);
-    chatTypingTimeout = setTimeout(()=>{ setTypingFlag(false); }, 2500);
+    if(!chatActiveOtherUid && !chatActiveGroupId) return;
+    if(chatActiveGroupId){
+      setGroupTypingFlag(true);
+      if(chatTypingTimeout) clearTimeout(chatTypingTimeout);
+      chatTypingTimeout = setTimeout(()=>{ setGroupTypingFlag(false); }, 2500);
+    } else {
+      setTypingFlag(true);
+      if(chatTypingTimeout) clearTimeout(chatTypingTimeout);
+      chatTypingTimeout = setTimeout(()=>{ setTypingFlag(false); }, 2500);
+    }
   });
   document.getElementById('chatSearchInput').addEventListener('input', (e)=>{
     chatSearchFilter = e.target.value.trim().toLowerCase();
@@ -1836,12 +2120,15 @@
   // underneath it (new messages, typing indicators, delivery updates, etc).
   document.getElementById('chatMembersBody').addEventListener('click', (e)=>{
     const row = e.target.closest('.chat-member-row');
-    if(row && row.dataset.uid) openChatThread(row.dataset.uid);
+    if(!row) return;
+    if(row.dataset.groupId) openGroupThread(row.dataset.groupId);
+    else if(row.dataset.uid) openChatThread(row.dataset.uid);
   });
 
   setInterval(()=>{
     renderChatMemberList();
-    updateTypingStatusLine();
+    if(chatActiveGroupId) updateGroupHeaderInfo();
+    else updateTypingStatusLine();
   }, 30000);
 
   function initTeamSync(){
@@ -1868,6 +2155,7 @@
       document.getElementById('chatMain').style.display = 'flex';
       initTeamSync();
       initChatSync();
+      initGroupChatsSync();
     }, err=>{
       console.error('Could not load plan info', err);
     });
@@ -1935,6 +2223,27 @@
       updateTypingStatusLine();
       if(chatActiveOtherUid) renderChatMessages(lastRenderedMessages);
       chatToastInitialized = true;
+    });
+  }
+
+  function initGroupChatsSync(){
+    if(!groupChatsCollection || !currentUid) return;
+    if(unsubscribeGroupChats) unsubscribeGroupChats();
+    unsubscribeGroupChats = groupChatsCollection.where('participants', 'array-contains', currentUid).onSnapshot(snap=>{
+      groupChatsMap = {};
+      snap.docs.forEach(d=>{
+        groupChatsMap[d.id] = {id:d.id, ...d.data()};
+      });
+      renderChatMemberList();
+      if(chatActiveGroupId){
+        if(!groupChatsMap[chatActiveGroupId]){
+          // We were removed from this group (or it no longer exists) — back out of the thread.
+          closeChatThread();
+        } else {
+          updateGroupHeaderInfo();
+          renderGroupMessages(lastRenderedMessages);
+        }
+      }
     });
   }
 
@@ -2042,6 +2351,7 @@
         workspaceRef = db.collection('workspaces').doc(workspaceId);
         usersCollection = workspaceRef.collection('members');
         directMessagesCollection = workspaceRef.collection('directMessages');
+        groupChatsCollection = workspaceRef.collection('groupChats');
       });
     }
 
@@ -2060,6 +2370,7 @@
         }).then(doc=>{
           const data = doc.exists ? doc.data() : {};
           notificationPrefs = data.notificationPrefs || {};
+          currentUserDisplayName = data.name || user.displayName || '';
           myShowOnlineStatus = data.showOnlineStatus !== false;
           chatMsgCount = data.chatMsgCount || 0;
           chatMsgPeriod = data.chatMsgPeriod || '';
