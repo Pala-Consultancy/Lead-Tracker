@@ -3169,6 +3169,11 @@
     } else if(existingLeadForStamp && existingLeadForStamp.contactedAt){
       data.contactedAt = existingLeadForStamp.contactedAt;
     }
+    if(data.requestAccepted && !(existingLeadForStamp && existingLeadForStamp.requestAccepted)){
+      data.requestAcceptedAt = new Date().toISOString();
+    } else if(existingLeadForStamp && existingLeadForStamp.requestAcceptedAt){
+      data.requestAcceptedAt = existingLeadForStamp.requestAcceptedAt;
+    }
     stampCallBookedIfNeeded(data, existingLeadForStamp, data.status);
     if(!firebaseConnected){
       showToast(t('notConnectedShort'), true);
@@ -3772,6 +3777,18 @@
 
   function computeStaleNewLeads(){
     const now = Date.now();
+    if(addLeadMode === 'linkedin'){
+      const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+      return leads.filter(l=>{
+        if(l.status !== "New") return false;
+        if(!l.requestAccepted) return false;
+        if(l.contacted) return false;
+        if(!l.requestAcceptedAt) return false;
+        const acceptedTime = new Date(l.requestAcceptedAt).getTime();
+        if(isNaN(acceptedTime)) return false;
+        return (now - acceptedTime) >= twoDaysMs;
+      }).sort((a,b)=> new Date(a.requestAcceptedAt) - new Date(b.requestAcceptedAt));
+    }
     const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
     return leads.filter(l=>{
       if(l.status !== "New") return false;
@@ -3807,7 +3824,7 @@
 
   function computeAllReminders(){
     const followUps = notifEnabled('followup') ? computeFollowUpReminders().map(l=>({lead:l, type:'followup', time:l.contactedAt.toDate().getTime()})) : [];
-    const staleNew = notifEnabled('stalenew') ? computeStaleNewLeads().map(l=>({lead:l, type:'stalenew', time:new Date(l.dateAdded).getTime()})) : [];
+    const staleNew = notifEnabled('stalenew') ? computeStaleNewLeads().map(l=>({lead:l, type:'stalenew', time: addLeadMode === 'linkedin' ? new Date(l.requestAcceptedAt).getTime() : new Date(l.dateAdded).getTime()})) : [];
     const missingCallDate = notifEnabled('nocalldate') ? computeMissingCallDateReminders().map(l=>({lead:l, type:'nocalldate', time:l.callBookedAt.toDate().getTime()})) : [];
     const postCall = notifEnabled('postcall') ? computePostCallReminders().map(l=>({lead:l, type:'postcall', time:new Date(l.callDate).getTime()})) : [];
     return followUps.concat(staleNew, missingCallDate, postCall)
