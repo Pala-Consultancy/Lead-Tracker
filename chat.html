@@ -213,8 +213,8 @@
   .chat-thread-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
   .chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;transition:background .2s;}
 
-  .feed-post-list{display:flex;flex-direction:column;gap:6px;padding:0 48px;}
-  @media (max-width:700px){.feed-post-list{padding:0 14px;}}
+  .feed-post-list{display:flex;flex-direction:column;gap:6px;padding:0 22px;}
+  @media (max-width:700px){.feed-post-list{padding:0 10px;}}
   .feed-post{
     background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:9px 10px;
     box-shadow:0 1px 3px rgba(27,36,48,0.06);position:relative;
@@ -232,11 +232,35 @@
   .feed-post-text{font-size:11.5px;color:var(--ink);line-height:1.45;white-space:pre-wrap;word-break:break-word;margin-bottom:6px;}
   .feed-show-more{color:var(--slate-light);font-weight:600;cursor:pointer;white-space:nowrap;}
   .feed-show-more:hover{color:var(--teal);text-decoration:underline;}
+  .feed-post-menu{position:relative;flex-shrink:0;}
   .feed-post-menu-btn{
-    background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:11px;
+    background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;
     padding:3px 5px;border-radius:5px;transition:background .15s;flex-shrink:0;
   }
-  .feed-post-menu-btn:hover{background:var(--c-red-bg, #FBE4E2);}
+  .feed-post-menu-btn:hover{background:var(--c-blue-tint2, #F6FAFE);}
+  .feed-post-menu-dropdown{
+    position:absolute;right:0;top:100%;background:var(--panel);border:1px solid var(--border);
+    border-radius:8px;box-shadow:0 8px 20px rgba(27,36,48,0.18);z-index:20;overflow:hidden;min-width:120px;
+  }
+  .feed-post-menu-dropdown button{
+    display:block;width:100%;text-align:left;background:none;border:none;padding:8px 11px;
+    font-size:11px;color:var(--ink);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .feed-post-menu-dropdown button:hover{background:var(--c-blue-tint2, #F6FAFE);}
+  .feed-post-menu-dropdown button.danger{color:var(--c-red-fg, #C0392B);}
+  .feed-post-menu-dropdown button.danger:hover{background:var(--c-red-bg, #FBE4E2);}
+  .feed-post-edit{margin-bottom:6px;}
+  .feed-post-edit textarea{
+    width:100%;box-sizing:border-box;resize:none;border:1px solid var(--teal);border-radius:8px;
+    padding:7px 9px;font-family:'Inter',sans-serif;font-size:11.5px;color:var(--ink);
+    background:var(--c-blue-tint2, #F6FAFE);margin-bottom:6px;
+  }
+  .feed-post-edit textarea:focus{outline:none;}
+  .feed-edit-actions{display:flex;justify-content:flex-end;gap:6px;}
+  .feed-edit-actions .btn{font-size:10.5px;padding:4px 10px;}
+  .feed-edited-tag{color:var(--slate-light);font-size:9.5px;font-weight:400;}
+  .feed-like-btn.pop .feed-like-icon{animation:feed-like-pop .3s ease;}
+  @keyframes feed-like-pop{0%{transform:scale(1);}45%{transform:scale(1.6);}100%{transform:scale(1);}}
   .feed-post-media{max-width:220px;max-height:220px;border-radius:7px;display:block;cursor:pointer;margin-bottom:6px;object-fit:cover;}
   .feed-post-actions{display:flex;gap:4px;}
   .feed-like-btn{
@@ -1572,6 +1596,51 @@
     }, {merge:true}).catch(()=>{});
   }
 
+  function toggleFeedLike(messageId){
+    const btn = document.getElementById(`feed-like-btn-${messageId}`);
+    if(btn){
+      btn.classList.add('pop');
+      setTimeout(()=>btn.classList.remove('pop'), 300);
+    }
+    toggleReaction(messageId, '❤️');
+  }
+
+  function toggleFeedMenu(event, messageId){
+    event.stopPropagation();
+    const dropdown = document.getElementById(`feed-menu-${messageId}`);
+    if(!dropdown) return;
+    document.querySelectorAll('.feed-post-menu-dropdown').forEach(el=>{ if(el !== dropdown) el.style.display = 'none'; });
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+  }
+  document.addEventListener('click', ()=>{
+    document.querySelectorAll('.feed-post-menu-dropdown').forEach(el=>el.style.display = 'none');
+  });
+
+  function startFeedEdit(messageId){
+    editingFeedPostId = messageId;
+    document.querySelectorAll('.feed-post-menu-dropdown').forEach(el=>el.style.display = 'none');
+    renderTeamFeedPosts(lastRenderedMessages);
+  }
+  function cancelFeedEdit(){
+    editingFeedPostId = null;
+    renderTeamFeedPosts(lastRenderedMessages);
+  }
+  function saveFeedEdit(messageId){
+    const textarea = document.getElementById(`feed-edit-input-${messageId}`);
+    if(!textarea) return;
+    const threadRef = getActiveThreadRef();
+    if(!threadRef) return;
+    const newText = textarea.value.trim();
+    threadRef.doc(messageId).set({
+      text: newText,
+      edited: true
+    }, {merge:true}).then(()=>{
+      editingFeedPostId = null;
+    }).catch(err=>{
+      showToast('Could not save edit: ' + friendlyErr(err), true);
+    });
+  }
+
   function renderChatMessages(messages){
     lastRenderedMessages = messages;
     const container = document.getElementById('chatMessages');
@@ -1792,6 +1861,7 @@
     if(days < 7) return `${days}d`;
     return date.toLocaleDateString();
   }
+  let editingFeedPostId = null;
   function renderTeamFeedPosts(messages){
     const container = document.getElementById('chatMessages');
     if(!container) return;
@@ -1811,11 +1881,20 @@
       const hasMore = sentences.length > 2;
       const expanded = expandedFeedPosts.has(m.id);
       const displayText = (hasMore && !expanded) ? sentences.slice(0, 2).join('').trim() : text;
-      const textHtml = text
-        ? `<div class="feed-post-text">${esc(displayText)}${hasMore ? (expanded
-            ? ` <span class="feed-show-more" onclick="window.__chatActions.toggleFeedExpand('${m.id}')">show less</span>`
-            : `<span class="feed-show-more" onclick="window.__chatActions.toggleFeedExpand('${m.id}')"> ... more</span>`) : ''}</div>`
-        : '';
+      const isEditing = editingFeedPostId === m.id;
+      const textHtml = isEditing
+        ? `<div class="feed-post-edit">
+            <textarea id="feed-edit-input-${m.id}" rows="3">${esc(text)}</textarea>
+            <div class="feed-edit-actions">
+              <button type="button" class="btn" onclick="window.__chatActions.cancelFeedEdit()">Cancel</button>
+              <button type="button" class="btn btn-primary" onclick="window.__chatActions.saveFeedEdit('${m.id}')">Save</button>
+            </div>
+          </div>`
+        : (text
+          ? `<div class="feed-post-text">${esc(displayText)}${hasMore ? (expanded
+              ? ` <span class="feed-show-more" onclick="window.__chatActions.toggleFeedExpand('${m.id}')">show less</span>`
+              : `<span class="feed-show-more" onclick="window.__chatActions.toggleFeedExpand('${m.id}')"> ... more</span>`) : ''}${m.edited ? ' <span class="feed-edited-tag">(edited)</span>' : ''}</div>`
+          : '');
       let mediaHtml = '';
       if(m.mediaType === 'image' && m.mediaUrl){
         mediaHtml = `<img class="feed-post-media" src="${m.mediaUrl}" alt="" onclick="window.__chatActions.openLightbox('${m.mediaUrl}')">`;
@@ -1824,8 +1903,6 @@
       }
       const author = teamMembersList.find(x=>x.id === m.senderId) || (mine ? {name: currentUserDisplayName, photoURL: currentUserPhotoURL} : {});
       const authorName = m.senderName || author.name || 'Team member';
-      const msgMillis = (m.createdAt && typeof m.createdAt.toMillis === 'function') ? m.createdAt.toMillis() : null;
-      const canDelete = mine && msgMillis && (Date.now() - msgMillis) < 30 * 60 * 1000;
       const commentCount = m.commentCount || 0;
       const commentsOpen = openFeedComments.has(m.id);
       const commentsHtml = commentsOpen ? `<div class="feed-comments" id="feed-comments-${m.id}">
@@ -1842,12 +1919,18 @@
             <div class="feed-post-author">${esc(authorName)}</div>
             <div class="feed-post-time">${esc(time)} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feed-globe-icon"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
           </div>
-          ${canDelete ? `<button type="button" class="feed-post-menu-btn" onclick="window.__chatActions.confirmDeleteMessage('${m.id}')" title="Delete post">🗑️</button>` : ''}
+          ${mine ? `<div class="feed-post-menu">
+            <button type="button" class="feed-post-menu-btn" onclick="window.__chatActions.toggleFeedMenu(event,'${m.id}')" title="More">⋯</button>
+            <div class="feed-post-menu-dropdown" id="feed-menu-${m.id}" style="display:none">
+              <button type="button" onclick="window.__chatActions.startFeedEdit('${m.id}')">Edit post</button>
+              <button type="button" class="danger" onclick="window.__chatActions.confirmDeleteMessage('${m.id}')">Delete post</button>
+            </div>
+          </div>` : ''}
         </div>
         ${textHtml}
         ${mediaHtml}
         <div class="feed-post-actions">
-          <button type="button" class="feed-like-btn${iLiked?' liked':''}" onclick="window.__chatActions.toggleReaction('${m.id}','❤️')">
+          <button type="button" class="feed-like-btn${iLiked?' liked':''}" id="feed-like-btn-${m.id}" onclick="window.__chatActions.toggleFeedLike('${m.id}')">
             <span class="feed-like-icon">${iLiked?'❤️':'🤍'}</span> Like${likeCount ? ` · ${likeCount}` : ''}
           </button>
           <button type="button" class="feed-comment-btn" onclick="window.__chatActions.toggleFeedComments('${m.id}')">
@@ -2259,7 +2342,7 @@
     if(activeReactionPicker && !activeReactionPicker.contains(e.target)) closeReactionPicker();
   });
 
-  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox, confirmDeleteMessage, toggleFeedExpand, toggleFeedComments, postFeedComment };
+  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox, confirmDeleteMessage, toggleFeedExpand, toggleFeedComments, postFeedComment, toggleFeedLike, toggleFeedMenu, startFeedEdit, cancelFeedEdit, saveFeedEdit };
 
   // ---------- Emoji picker ----------
   const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','🙄','😴','😭','😡','🥳','😎','🤩',
