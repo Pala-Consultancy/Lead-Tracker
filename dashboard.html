@@ -1257,6 +1257,18 @@
   .drawer-header h3{font-family:'Sora',sans-serif;font-size:17px;margin:0;color:var(--ink);}
   .drawer-body{padding:20px;overflow-y:auto;flex:1;}
   .drawer-section{margin-bottom:20px;}
+  .lead-email-history{margin-top:10px;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
+  .lead-email-loading, .lead-email-empty{font-size:12.5px;color:var(--slate-light);padding:6px 0;}
+  .lead-email-item{
+    border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:var(--c-blue-tint2, #F6FAFE);
+  }
+  .lead-email-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;}
+  .lead-email-subject{font-size:12.5px;font-weight:700;color:var(--ink);}
+  .lead-email-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0;}
+  .lead-email-status.sent{background:var(--c-green-bg);color:var(--c-green-fg);}
+  .lead-email-status.failed{background:var(--c-red-bg, #FBE4E2);color:var(--c-red-fg, #C0392B);}
+  .lead-email-meta{font-size:10.5px;color:var(--slate-light);margin-bottom:5px;}
+  .lead-email-body-preview{font-size:12px;color:var(--slate);line-height:1.5;white-space:pre-wrap;}
   .drawer-section-label{
     font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;
     color:var(--slate);margin-bottom:8px;
@@ -2027,6 +2039,23 @@
 
 <div class="toast-stack" id="toastStack"></div>
 <div class="chat-notify-stack" id="chatNotifyStack"></div>
+
+<div class="confirm-overlay" id="composeEmailOverlay" style="display:none">
+  <div class="confirm-modal" style="max-width:480px;text-align:left;">
+    <div class="confirm-modal-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg);margin:0 0 14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></div>
+    <h3 style="text-align:center;">Send email</h3>
+    <label style="font-size:11.5px;font-weight:700;color:var(--slate);display:block;margin-bottom:4px;">To</label>
+    <input type="email" id="composeEmailTo" style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:12px;">
+    <label style="font-size:11.5px;font-weight:700;color:var(--slate);display:block;margin-bottom:4px;">Subject</label>
+    <input type="text" id="composeEmailSubject" placeholder="Subject" style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:12px;">
+    <label style="font-size:11.5px;font-weight:700;color:var(--slate);display:block;margin-bottom:4px;">Message</label>
+    <textarea id="composeEmailBody" rows="8" placeholder="Write your message..." style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:16px;resize:vertical;"></textarea>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn" id="composeEmailCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="composeEmailSendBtn">Send</button>
+    </div>
+  </div>
+</div>
 
 <div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
   <div class="confirm-modal">
@@ -4364,6 +4393,12 @@ ${buildLeadContext()}`;
   }
 
   let chatWithAlexandreFn = null;
+  let sendLeadEmailFn = null;
+  try{
+    sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
+  }catch(err){
+    console.error('Could not set up email sending (this will not affect the rest of the app):', err);
+  }
   try{
     chatWithAlexandreFn = firebase.functions().httpsCallable('chatWithAlexandre');
   }catch(err){
@@ -4786,6 +4821,13 @@ ${buildLeadContext()}`;
           ${l.buyingSignals.map(key=>`<span class="outreach-chip on signal"><span class="dot"></span>${t(SIG_LABEL_KEYS[key] || key)}</span>`).join('')}
         </div>
       </div>` : ''}
+      <div class="drawer-section">
+        <div class="drawer-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Email</span>
+          <button type="button" class="btn btn-primary" id="composeEmailBtn" style="padding:6px 14px;font-size:12.5px;" ${l.email ? '' : 'disabled title="No email address on file for this lead"'}>✉️ Send email</button>
+        </div>
+        <div id="leadEmailHistory" class="lead-email-history"><div class="lead-email-loading">Loading email history...</div></div>
+      </div>
       <div class="drawer-section drawer-notes">
         <div class="drawer-section-label">${t('notes')}</div>
         <textarea id="drawerNotes" placeholder="${t('notesPlaceholder')}">${esc(l.notes)}</textarea>
@@ -4802,6 +4844,9 @@ ${buildLeadContext()}`;
         showToast(t('couldNotSaveNote') + ' ' + friendlyErr(err), true);
       });
     });
+    loadLeadEmailHistory(l.id);
+    const composeBtn = document.getElementById('composeEmailBtn');
+    if(composeBtn) composeBtn.onclick = ()=>openComposeEmailModal(l);
     drawerOverlay.classList.add('open');
     leadDrawer.classList.add('open');
   }
@@ -4810,6 +4855,94 @@ ${buildLeadContext()}`;
     leadDrawer.classList.remove('open');
     drawerLeadId = null;
   }
+
+  function formatEmailTime(date){
+    return date.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'}) + ' at ' +
+      date.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
+  }
+  function loadLeadEmailHistory(leadId){
+    const container = document.getElementById('leadEmailHistory');
+    if(!container || !leadsCollection) return;
+    leadsCollection.doc(leadId).collection('emails').orderBy('sentAt','desc').limit(20).get().then(snap=>{
+      if(drawerLeadId !== leadId) return; // drawer moved on to another lead before this resolved
+      if(snap.empty){
+        container.innerHTML = `<div class="lead-email-empty">No emails sent to this lead yet.</div>`;
+        return;
+      }
+      container.innerHTML = snap.docs.map(doc=>{
+        const e = doc.data();
+        const time = (e.sentAt && typeof e.sentAt.toDate === 'function') ? formatEmailTime(e.sentAt.toDate()) : '';
+        const statusBadge = e.status === 'failed'
+          ? `<span class="lead-email-status failed">Failed to send</span>`
+          : `<span class="lead-email-status sent">Sent</span>`;
+        return `<div class="lead-email-item">
+          <div class="lead-email-item-head">
+            <span class="lead-email-subject">${esc(e.subject || '(no subject)')}</span>
+            ${statusBadge}
+          </div>
+          <div class="lead-email-meta">To ${esc(e.to || '')} · ${esc(e.sentByName || '')} · ${esc(time)}</div>
+          <div class="lead-email-body-preview">${esc((e.body || '').slice(0, 160))}${(e.body||'').length > 160 ? '…' : ''}</div>
+        </div>`;
+      }).join('');
+    }).catch(err=>{
+      container.innerHTML = `<div class="lead-email-empty">Could not load email history.</div>`;
+      console.error(err);
+    });
+  }
+
+  let composeEmailLead = null;
+  function openComposeEmailModal(lead){
+    composeEmailLead = lead;
+    document.getElementById('composeEmailTo').value = lead.email || '';
+    document.getElementById('composeEmailSubject').value = '';
+    document.getElementById('composeEmailBody').value = '';
+    document.getElementById('composeEmailOverlay').style.display = 'flex';
+    document.getElementById('composeEmailSubject').focus();
+  }
+  function closeComposeEmailModal(){
+    document.getElementById('composeEmailOverlay').style.display = 'none';
+    composeEmailLead = null;
+  }
+  document.getElementById('composeEmailCancelBtn').addEventListener('click', closeComposeEmailModal);
+  document.getElementById('composeEmailOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'composeEmailOverlay') closeComposeEmailModal();
+  });
+  document.getElementById('composeEmailSendBtn').addEventListener('click', ()=>{
+    if(!composeEmailLead) return;
+    const to = document.getElementById('composeEmailTo').value.trim();
+    const subject = document.getElementById('composeEmailSubject').value.trim();
+    const body = document.getElementById('composeEmailBody').value.trim();
+    if(!to){ showToast('Please enter a recipient email address.', true); return; }
+    if(!subject){ showToast('Please enter a subject.', true); return; }
+    if(!body){ showToast('Please write a message.', true); return; }
+    if(!sendLeadEmailFn){
+      showToast('Email sending is not set up yet. Please contact support.', true);
+      return;
+    }
+    const sendBtn = document.getElementById('composeEmailSendBtn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+    const leadId = composeEmailLead.id;
+    sendLeadEmailFn({
+      workspaceId: workspaceId,
+      boardId: boardId,
+      leadId: leadId,
+      to,
+      subject,
+      body
+    }).then(()=>{
+      showToast('Email sent!');
+      closeComposeEmailModal();
+      if(drawerLeadId === leadId) loadLeadEmailHistory(leadId);
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not send email: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+    });
+  });
+
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
   drawerOverlay.addEventListener('click', closeDrawer);
   document.addEventListener('keydown', (e)=>{
