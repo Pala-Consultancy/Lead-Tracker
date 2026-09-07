@@ -95,6 +95,14 @@
   .letter-attachments{margin-top:14px;display:flex;flex-wrap:wrap;gap:7px;}
   .attachment-tag{font-size:11.5px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;background:var(--clay-soft);color:var(--clay);font-weight:600;}
   mark{background:var(--clay-soft);color:var(--clay);border-radius:3px;padding:0 2px;}
+  .letter-actions{margin-top:16px;padding-top:14px;border-top:1px solid var(--border-soft);display:flex;gap:8px;flex-wrap:wrap;}
+  .letter-action-btn{
+    display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;
+    border:1px solid var(--border);background:var(--panel-alt);color:var(--slate);
+    font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .letter-action-btn svg{width:13px;height:13px;}
+  .letter-action-btn:hover{border-color:var(--teal);color:var(--teal);}
 
   .empty-state{text-align:center;padding:70px 20px;color:var(--slate);border:1px dashed var(--border);border-radius:16px;margin-top:20px;}
   .empty-state h3{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--ink);margin:0 0 6px;}
@@ -113,7 +121,7 @@
   @media print{
     :root{--shadow:none;}
     body{background:#fff;}
-    .toolbar, .shared-banner, .expand-btn{display:none !important;}
+    .toolbar, .shared-banner, .expand-btn, .letter-actions{display:none !important;}
     .timeline{padding-left:0;}
     .timeline::before, .date-marker::before, .entry-pip{display:none;}
     .letter{box-shadow:none;border:1px solid #D8D8D8;break-inside:avoid;}
@@ -252,6 +260,7 @@
       const statusIcon = isFailed
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+      const downloadIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
       html += `<div class="entry">
         <span class="entry-pip ${isFailed?'failed':'sent'}"></span>
         <div class="letter">
@@ -266,6 +275,9 @@
           <div class="letter-body ${isLong?'clamped':''}" id="${bodyId}">${highlightText(bodyText, query)}</div>
           ${isLong ? `<button type="button" class="expand-btn" data-target="${bodyId}">Show full email</button>` : ''}
           ${attachmentsHtml}
+          <div class="letter-actions">
+            <button type="button" class="letter-action-btn" data-action="download" data-idx="${idx}">${downloadIcon} Download</button>
+          </div>
         </div>
       </div>`;
     });
@@ -280,6 +292,47 @@
         btn.textContent = collapsing ? 'Show full email' : 'Show less';
       });
     });
+
+    list.querySelectorAll('.letter-action-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const email = lastFilteredList[Number(btn.dataset.idx)];
+        if(email && btn.dataset.action === 'download') downloadEmailAsEml(email);
+      });
+    });
+  }
+
+  // Saves one email as a standard .eml file — openable in Outlook, Apple
+  // Mail, Gmail's import, etc. — not just a text dump.
+  function emlHeaderEncode(text){
+    return /^[\x00-\x7F]*$/.test(text) ? text : `=?UTF-8?B?${btoa(unescape(encodeURIComponent(text)))}?=`;
+  }
+  function downloadEmailAsEml(email){
+    const fromName = email.sentByName || 'PalaTrack';
+    const fromAddr = email.fromEmail || 'no-reply@palatrack.com';
+    const dateStr = email.date ? email.date.toUTCString() : new Date().toUTCString();
+    const lines = [
+      `From: ${emlHeaderEncode(fromName)} <${fromAddr}>`,
+      `To: ${email.to || ''}`,
+    ];
+    if(email.cc && email.cc.length) lines.push(`Cc: ${email.cc.join(', ')}`);
+    lines.push(
+      `Subject: ${emlHeaderEncode(email.subject || '(no subject)')}`,
+      `Date: ${dateStr}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset="UTF-8"',
+      '',
+      email.body || ''
+    );
+    const blob = new Blob([lines.join('\r\n')], {type: 'message/rfc822'});
+    const url = URL.createObjectURL(blob);
+    const safeName = (email.subject || 'email').replace(/[^a-z0-9\-_ ]/gi, '').trim().slice(0, 60) || 'email';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safeName}.eml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   document.getElementById('searchInput').addEventListener('input', renderTimeline);
