@@ -5057,15 +5057,28 @@ ${buildLeadContext()}`;
   composeBodyEl.addEventListener('paste', (e)=>{
     const items = Array.from(e.clipboardData?.items || []);
     const imageItem = items.find(item => item.type.startsWith('image/'));
-    if(!imageItem) return;
-    e.preventDefault();
-    const file = imageItem.getAsFile();
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      document.execCommand('insertHTML', false, `<img src="${reader.result}" style="max-width:100%;">`);
-    };
-    reader.readAsDataURL(file);
+    if(imageItem){
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        document.execCommand('insertHTML', false, `<img src="${reader.result}" style="max-width:100%;">`);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+    // Plain text paste (e.g. copying a draft from Alexandre or elsewhere):
+    // convert its newlines to <br> ourselves rather than letting the
+    // browser decide, since the browser's own paste handling was silently
+    // collapsing blank-line paragraph gaps from the original text.
+    const text = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+    if(text){
+      e.preventDefault();
+      const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const html = escaped.replace(/\r\n/g, '\n').split('\n').join('<br>');
+      document.execCommand('insertHTML', false, html);
+    }
   });
   document.querySelectorAll('.gmail-compose-toolbar [data-cmd]').forEach(btn=>{
     btn.addEventListener('click', ()=>{

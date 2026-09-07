@@ -300,7 +300,14 @@
   // Same reasoning as the compose window: avoid the browser wrapping each
   // line in its own <div>, since email clients add their own spacing
   // around block elements that isn't there in the editor.
-  document.execCommand('defaultParagraphSeparator', false, 'br');
+  // Same reasoning as the compose window — intercept Enter directly rather
+  // than rely on a browser setting that isn't consistently honored.
+  sigBody.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+    }
+  });
 
   // Pasting a screenshot/image directly into this box would otherwise let
   // the browser decide how to represent it — which is sometimes a "blob:"
@@ -312,15 +319,24 @@
   sigBody.addEventListener('paste', (e)=>{
     const items = Array.from(e.clipboardData?.items || []);
     const imageItem = items.find(item => item.type.startsWith('image/'));
-    if(!imageItem) return; // let normal text paste behave as usual
-    e.preventDefault();
-    const file = imageItem.getAsFile();
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      document.execCommand('insertHTML', false, `<img src="${reader.result}" style="max-width:100%;">`);
-    };
-    reader.readAsDataURL(file);
+    if(imageItem){
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        document.execCommand('insertHTML', false, `<img src="${reader.result}" style="max-width:100%;">`);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+    const text = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+    if(text){
+      e.preventDefault();
+      const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const html = escaped.replace(/\r\n/g, '\n').split('\n').join('<br>');
+      document.execCommand('insertHTML', false, html);
+    }
   });
 
   document.querySelectorAll('.es-toolbar [data-cmd]').forEach(btn=>{
