@@ -669,6 +669,15 @@
     <a class="btn btn-primary" href="notification-settings.html" style="flex-shrink:0;">Manage →</a>
   </div>
 
+  <div class="password-card" id="emailConnectCard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+    <div>
+      <h3 style="margin:0 0 4px;">Email sending</h3>
+      <p id="emailConnectStatus" style="margin:0;">Checking your connection status...</p>
+    </div>
+    <button type="button" class="btn btn-primary" id="emailConnectBtn" style="flex-shrink:0;display:none;">Connect Gmail</button>
+    <button type="button" class="btn" id="emailDisconnectBtn" style="flex-shrink:0;display:none;">Disconnect</button>
+  </div>
+
   <div class="password-card" id="passwordCard">
     <h3>Change password</h3>
     <p>Update the password you use to sign in to PalaTrack.</p>
@@ -770,6 +779,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
   // ---------- i18n ----------
@@ -1705,6 +1715,74 @@
         usersCollection = workspaceRef.collection('members');
       });
     }
+    const GOOGLE_OAUTH_CLIENT_ID = '720572896285-l8cp5dl9a5povsdogivo1tbicd3rl9ik.apps.googleusercontent.com';
+    const GMAIL_REDIRECT_URI = 'https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/gmailOAuthCallback';
+    let disconnectGmailFn = null;
+    try{
+      disconnectGmailFn = firebase.functions().httpsCallable('disconnectGmailAccount');
+    }catch(err){
+      console.error('Could not set up Gmail disconnect (this will not affect the rest of the app):', err);
+    }
+
+    function renderEmailConnectionStatus(connected, email){
+      const statusEl = document.getElementById('emailConnectStatus');
+      const connectBtn = document.getElementById('emailConnectBtn');
+      const disconnectBtn = document.getElementById('emailDisconnectBtn');
+      if(connected){
+        statusEl.textContent = `Connected as ${email} — emails to leads send from this address.`;
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = '';
+      } else {
+        statusEl.textContent = 'Connect your Gmail so emails to leads send from your own address instead of a shared one.';
+        connectBtn.style.display = '';
+        disconnectBtn.style.display = 'none';
+      }
+    }
+
+    function initEmailConnectionUI(user){
+      const params = new URLSearchParams(location.search);
+      const connectResult = params.get('gmailConnect');
+      if(connectResult){
+        if(connectResult === 'success') showToast('Gmail connected!');
+        else if(connectResult === 'denied') showToast('Gmail connection was cancelled.', true);
+        else showToast('Could not connect Gmail. Please try again.', true);
+        history.replaceState(null, '', location.pathname);
+      }
+
+      db.doc(`emailConnections/${user.uid}`).get().then(doc=>{
+        renderEmailConnectionStatus(doc.exists, doc.exists ? doc.data().connectedEmail : null);
+      }).catch(err=>{
+        console.error('Could not load email connection status', err);
+      });
+
+      document.getElementById('emailConnectBtn').onclick = ()=>{
+        const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+          client_id: GOOGLE_OAUTH_CLIENT_ID,
+          redirect_uri: GMAIL_REDIRECT_URI,
+          response_type: 'code',
+          scope: 'https://www.googleapis.com/auth/gmail.send',
+          access_type: 'offline',
+          prompt: 'consent',
+          state: user.uid
+        }).toString();
+        location.href = authUrl;
+      };
+
+      document.getElementById('emailDisconnectBtn').onclick = ()=>{
+        if(!disconnectGmailFn) return;
+        const btn = document.getElementById('emailDisconnectBtn');
+        btn.disabled = true;
+        disconnectGmailFn().then(()=>{
+          renderEmailConnectionStatus(false, null);
+          showToast('Gmail disconnected.');
+        }).catch(err=>{
+          showToast('Could not disconnect: ' + (err.message || 'please try again.'), true);
+        }).finally(()=>{
+          btn.disabled = false;
+        });
+      };
+    }
+
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
       if(user){
@@ -1717,6 +1795,7 @@
         resolveWorkspace(user).then(()=>{
           loadProfile(user);
           loadOrgPlan();
+          initEmailConnectionUI(user);
         }).catch(err=>{
           console.error('Could not resolve workspace', err);
         });
