@@ -302,6 +302,27 @@
   // around block elements that isn't there in the editor.
   document.execCommand('defaultParagraphSeparator', false, 'br');
 
+  // Pasting a screenshot/image directly into this box would otherwise let
+  // the browser decide how to represent it — which is sometimes a "blob:"
+  // reference that only means something inside this exact browser tab.
+  // That looks fine here but turns into nothing once saved and sent, since
+  // there's no actual image data behind it anywhere else. Intercepting the
+  // paste and inserting a real embedded (base64) image guarantees there's
+  // always actual portable image data, not just a local pointer.
+  sigBody.addEventListener('paste', (e)=>{
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+    if(!imageItem) return; // let normal text paste behave as usual
+    e.preventDefault();
+    const file = imageItem.getAsFile();
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      document.execCommand('insertHTML', false, `<img src="${reader.result}" style="max-width:100%;">`);
+    };
+    reader.readAsDataURL(file);
+  });
+
   document.querySelectorAll('.es-toolbar [data-cmd]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       sigBody.focus();

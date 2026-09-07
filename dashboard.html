@@ -5039,6 +5039,24 @@ ${buildLeadContext()}`;
   // receiving end. Forcing plain <br> line breaks avoids that mismatch
   // entirely, instead of trying to reverse it after the fact.
   document.execCommand('defaultParagraphSeparator', false, 'br');
+
+  // Same reasoning as the signature editor: a pasted image needs to become
+  // a real embedded (base64) image, not a "blob:" reference that vanishes
+  // once this page is saved/sent — otherwise the picture looks fine here
+  // but silently disappears by the time the email actually goes out.
+  composeBodyEl.addEventListener('paste', (e)=>{
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+    if(!imageItem) return;
+    e.preventDefault();
+    const file = imageItem.getAsFile();
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      document.execCommand('insertHTML', false, `<img src="${reader.result}" style="max-width:100%;">`);
+    };
+    reader.readAsDataURL(file);
+  });
   document.querySelectorAll('.gmail-compose-toolbar [data-cmd]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       composeBodyEl.focus();
