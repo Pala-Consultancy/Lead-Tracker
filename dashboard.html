@@ -1985,6 +1985,11 @@
       <span data-i18n="billingPlansLabel">Billing &amp; plans</span>
       <span class="settings-item-arrow">→</span>
     </a>
+    <a class="settings-item" href="email-settings.html">
+      <span class="settings-item-icon">✉️</span>
+      <span>Email settings</span>
+      <span class="settings-item-arrow">→</span>
+    </a>
     <button class="settings-item" id="notifSettingsToggle">
       <span class="settings-item-icon">🔔</span>
       <span data-i18n="notificationSettings">Notifications</span>
@@ -2057,6 +2062,13 @@
   .gmail-compose-toolbar button{width:36px;height:36px;border:none;background:transparent;border-radius:9px;color:var(--ink);font-size:14.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;}
   .gmail-compose-toolbar button:hover{background:var(--c-blue-bg);color:var(--c-blue-fg);}
   .gmail-compose-toolbar-divider{width:1px;height:22px;background:var(--border);margin:0 4px;}
+  .gmail-compose-attachments{display:flex;flex-wrap:wrap;gap:8px;margin:12px 28px 0;}
+  .gmail-compose-attachment-chip{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:var(--c-blue-tint2, var(--paper));font-size:12.5px;color:var(--ink);max-width:220px;}
+  .gmail-compose-attachment-chip .chip-icon{flex-shrink:0;}
+  .gmail-compose-attachment-chip .chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .gmail-compose-attachment-chip .chip-size{color:var(--slate);flex-shrink:0;font-size:11px;}
+  .gmail-compose-attachment-chip .chip-remove{border:none;background:none;color:var(--slate);cursor:pointer;font-size:14px;padding:0 0 0 2px;flex-shrink:0;}
+  .gmail-compose-attachment-chip .chip-remove:hover{color:var(--c-red-fg);}
   .gmail-compose-emoji-picker{position:absolute;top:48px;left:0;z-index:20;display:grid;grid-template-columns:repeat(6,1fr);gap:3px;background:var(--panel, var(--paper));border:1px solid var(--border);border-radius:12px;padding:10px;box-shadow:0 16px 40px rgba(0,0,0,.22);}
   .gmail-compose-emoji-item{width:34px;height:34px;border:none;background:transparent;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .gmail-compose-emoji-item:hover{background:var(--c-blue-bg);}
@@ -2098,7 +2110,12 @@
         <span class="gmail-compose-toolbar-divider"></span>
         <button type="button" id="composeEmailEmojiBtn" title="Insert emoji">🙂</button>
         <div class="gmail-compose-emoji-picker" id="composeEmailEmojiPicker" style="display:none;"></div>
+        <span class="gmail-compose-toolbar-divider"></span>
+        <button type="button" id="composeEmailAttachBtn" title="Attach photos or videos">📎</button>
+        <input type="file" id="composeEmailAttachInput" accept="image/*,video/*" multiple style="display:none;">
+        <button type="button" id="composeEmailSignatureBtn" title="Insert signature">🖊️</button>
       </div>
+      <div class="gmail-compose-attachments" id="composeEmailAttachments"></div>
       <div class="gmail-compose-body" id="composeEmailBody" contenteditable="true" data-placeholder="Write your message..."></div>
       <div class="confirm-modal-actions" style="padding:20px 28px 26px;">
         <button type="button" class="btn" id="composeEmailCancelBtn">Cancel</button>
@@ -4445,6 +4462,18 @@ ${buildLeadContext()}`;
 
   let chatWithAlexandreFn = null;
   let sendLeadEmailFn = null;
+  let mySignature = {html: '', autoInsert: false};
+  function loadMySignature(uid){
+    db.doc(`emailSignatures/${uid}`).get().then(doc=>{
+      if(doc.exists){
+        const data = doc.data();
+        mySignature.html = data.signatureHtml || '';
+        mySignature.autoInsert = !!data.autoInsert;
+      }
+    }).catch(err=>{
+      console.error('Could not load email signature', err);
+    });
+  }
   try{
     sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
   }catch(err){
@@ -4942,14 +4971,40 @@ ${buildLeadContext()}`;
   }
 
   let composeEmailLead = null;
+  let composeAttachments = []; // {file, name, size, mimeType, base64}
+  function renderComposeAttachments(){
+    const container = document.getElementById('composeEmailAttachments');
+    container.innerHTML = composeAttachments.map((att, i)=>{
+      const icon = att.mimeType.startsWith('video/') ? '🎬' : '🖼️';
+      const sizeKb = Math.round(att.size / 1024);
+      const sizeLabel = sizeKb > 1024 ? (sizeKb/1024).toFixed(1) + ' MB' : sizeKb + ' KB';
+      return `<span class="gmail-compose-attachment-chip">
+        <span class="chip-icon">${icon}</span>
+        <span class="chip-name">${esc(att.name)}</span>
+        <span class="chip-size">${sizeLabel}</span>
+        <button type="button" class="chip-remove" data-idx="${i}" title="Remove">✕</button>
+      </span>`;
+    }).join('');
+    container.querySelectorAll('.chip-remove').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        composeAttachments.splice(Number(btn.dataset.idx), 1);
+        renderComposeAttachments();
+      });
+    });
+  }
+
   function openComposeEmailModal(lead){
     composeEmailLead = lead;
     document.getElementById('composeEmailTo').value = lead.email || '';
     document.getElementById('composeEmailCc').value = '';
     document.getElementById('composeEmailCcRow').style.display = 'none';
     document.getElementById('composeEmailSubject').value = '';
-    document.getElementById('composeEmailBody').innerHTML = '';
+    document.getElementById('composeEmailBody').innerHTML = mySignature.autoInsert && mySignature.html
+      ? '<div><br></div>' + mySignature.html
+      : '';
     document.getElementById('composeEmailEmojiPicker').style.display = 'none';
+    composeAttachments = [];
+    renderComposeAttachments();
     const overlay = document.getElementById('composeEmailOverlay');
     overlay.style.display = 'flex';
     overlay.classList.add('open');
@@ -5006,6 +5061,100 @@ ${buildLeadContext()}`;
     }
   });
 
+  // Attachments: photos get downscaled client-side to keep the email small;
+  // videos are size-capped since we can't compress them in the browser.
+  const MAX_ATTACHMENT_COUNT = 5;
+  const MAX_VIDEO_BYTES = 8 * 1024 * 1024; // 8MB per video
+  const MAX_TOTAL_BYTES = 15 * 1024 * 1024; // 15MB combined, before base64 inflation
+
+  function downscaleImage(file){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        img.onload = ()=>{
+          const MAX_DIM = 1600;
+          let {width, height} = img;
+          if(width > MAX_DIM || height > MAX_DIM){
+            const scale = MAX_DIM / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          resolve(dataUrl.split(',')[1]); // strip the data: prefix, keep base64
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function fileToBase64(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=> resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('composeEmailAttachBtn').addEventListener('click', ()=>{
+    document.getElementById('composeEmailAttachInput').click();
+  });
+  document.getElementById('composeEmailAttachInput').addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // allow picking the same file again later
+    for(const file of files){
+      if(composeAttachments.length >= MAX_ATTACHMENT_COUNT){
+        showToast(`You can attach up to ${MAX_ATTACHMENT_COUNT} files.`, true);
+        break;
+      }
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+      if(!isVideo && !isImage){
+        showToast(`"${file.name}" isn't a photo or video.`, true);
+        continue;
+      }
+      if(isVideo && file.size > MAX_VIDEO_BYTES){
+        showToast(`"${file.name}" is too large (max ${Math.round(MAX_VIDEO_BYTES/1024/1024)}MB for videos).`, true);
+        continue;
+      }
+      const currentTotal = composeAttachments.reduce((sum, a)=> sum + a.size, 0);
+      if(currentTotal + file.size > MAX_TOTAL_BYTES){
+        showToast(`That would put your attachments over ${Math.round(MAX_TOTAL_BYTES/1024/1024)}MB total.`, true);
+        continue;
+      }
+      try{
+        if(isImage){
+          const base64 = await downscaleImage(file);
+          composeAttachments.push({name: file.name, size: Math.round(base64.length * 0.75), mimeType: 'image/jpeg', base64});
+        } else {
+          const base64 = await fileToBase64(file);
+          composeAttachments.push({name: file.name, size: file.size, mimeType: file.type, base64});
+        }
+        renderComposeAttachments();
+      }catch(err){
+        console.error('Could not process attachment', err);
+        showToast(`Could not attach "${file.name}".`, true);
+      }
+    }
+  });
+
+  // Signature button: manually insert the saved signature at the end of the message.
+  document.getElementById('composeEmailSignatureBtn').addEventListener('click', ()=>{
+    if(!mySignature.html){
+      showToast('No signature set up yet — add one in Email settings.', true);
+      return;
+    }
+    composeBodyEl.innerHTML += '<div><br></div>' + mySignature.html;
+    composeBodyEl.focus();
+  });
+
   function parseEmailList(raw){
     return raw.split(',').map(s=>s.trim()).filter(Boolean);
   }
@@ -5031,6 +5180,11 @@ ${buildLeadContext()}`;
     sendBtn.disabled = true;
     sendBtn.textContent = 'Sending...';
     const leadId = composeEmailLead.id;
+    const attachments = composeAttachments.map(a => ({
+      filename: a.name,
+      mimeType: a.mimeType,
+      data: a.base64
+    }));
     sendLeadEmailFn({
       workspaceId: workspaceId,
       boardId: boardId,
@@ -5039,7 +5193,8 @@ ${buildLeadContext()}`;
       cc,
       subject,
       body,
-      htmlBody
+      htmlBody,
+      attachments
     }).then(()=>{
       showToast('Email sent!');
       closeComposeEmailModal();
@@ -5511,6 +5666,7 @@ ${buildLeadContext()}`;
           loadOrgPlan();
           initFirebaseSync();
           requestNotificationPermissionIfNeeded();
+          loadMySignature(user.uid);
           render();
         }).catch(err=>{
           console.error('Could not resolve workspace', err);
