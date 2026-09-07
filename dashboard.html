@@ -5038,7 +5038,17 @@ ${buildLeadContext()}`;
   // default spacing to block elements, making it look double-spaced on the
   // receiving end. Forcing plain <br> line breaks avoids that mismatch
   // entirely, instead of trying to reverse it after the fact.
-  document.execCommand('defaultParagraphSeparator', false, 'br');
+  // "defaultParagraphSeparator" isn't reliably honored by every browser, so
+  // instead of hoping the browser cooperates, intercept Enter directly:
+  // every press inserts exactly one <br> and nothing else — no new <div>
+  // wrapper, no ambiguity about how many line breaks that turns into once
+  // the email is actually sent.
+  composeBodyEl.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+    }
+  });
 
   // Same reasoning as the signature editor: a pasted image needs to become
   // a real embedded (base64) image, not a "blob:" reference that vanishes
