@@ -167,6 +167,19 @@
   .letter-attachments{margin-top:14px;display:flex;flex-wrap:wrap;gap:7px;}
   .attachment-tag{font-size:11.5px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;background:var(--clay-soft);color:var(--clay);font-weight:600;}
 
+  .letter-actions{margin-top:16px;padding-top:14px;border-top:1px solid var(--border-soft);display:flex;gap:8px;flex-wrap:wrap;}
+  .letter-action-btn{
+    display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;
+    border:1px solid var(--border);background:var(--panel-alt);color:var(--slate);
+    font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+    transition:background .12s, color .12s, border-color .12s;
+  }
+  .letter-action-btn svg{width:13px;height:13px;}
+  .letter-action-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .letter-action-btn.resend{border-color:var(--fail);color:var(--fail);}
+  .letter-action-btn.resend:hover{background:var(--fail-soft);}
+  .letter-action-btn:disabled{opacity:.55;cursor:default;}
+
   .empty-state{text-align:center;padding:70px 20px;color:var(--slate);border:1px dashed var(--border);border-radius:16px;margin-top:20px;}
   .empty-state h3{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--ink);margin:0 0 6px;}
   .empty-state p{font-size:13.5px;margin:0;}
@@ -250,6 +263,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
   const firebaseConfig = {
@@ -300,6 +314,24 @@
   const boardId = params.get('board');
   const leadId = params.get('lead');
   let allEmails = [];
+  let currentWorkspaceId = null;
+  let sendLeadEmailFn = null;
+  try{
+    sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
+  }catch(err){
+    console.error('Could not set up email sending (this will not affect the rest of the page):', err);
+  }
+
+  // Same conversion used in the compose window: escape first, then turn
+  // newlines into <br> ourselves so blank lines in quoted text survive.
+  function plainTextToHtml(text){
+    const escaped = esc(text).replace(/\r\n/g, '\n');
+    return escaped.split('\n').join('<br>');
+  }
+  function quotePrefixedHtml(text){
+    const escaped = esc(text).replace(/\r\n/g, '\n');
+    return escaped.split('\n').map(line => '&gt; ' + line).join('<br>');
+  }
   let activeStatusFilter = 'all';
 
   document.getElementById('backBtn').addEventListener('click', (e)=>{
@@ -323,6 +355,8 @@
     }
   }
 
+  let lastFilteredList = [];
+
   function renderTimeline(){
     const list = document.getElementById('historyList');
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -335,6 +369,7 @@
       }
       return true;
     });
+    lastFilteredList = filtered;
 
     if(allEmails.length === 0){
       list.innerHTML = `<div class="empty-state"><h3>No correspondence yet</h3><p>Nothing has been sent to this lead so far.</p></div>`;
@@ -366,6 +401,9 @@
       const statusIcon = isFailed
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+      const replyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 0 1 4 4v1"/></svg>';
+      const forwardIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5"/><path d="M20 12H9a4 4 0 0 0-4 4v1"/></svg>';
+      const resendIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>';
       html += `<div class="entry">
         <span class="entry-pip ${isFailed?'failed':'sent'}"></span>
         <div class="letter">
@@ -380,6 +418,11 @@
           <div class="letter-body ${isLong?'clamped':''}" id="${bodyId}">${highlightText(bodyText, query)}</div>
           ${isLong ? `<button type="button" class="expand-btn" data-target="${bodyId}">Show full email</button>` : ''}
           ${attachmentsHtml}
+          <div class="letter-actions">
+            <button type="button" class="letter-action-btn" data-action="reply" data-idx="${idx}">${replyIcon} Reply</button>
+            <button type="button" class="letter-action-btn" data-action="forward" data-idx="${idx}">${forwardIcon} Forward</button>
+            ${isFailed ? `<button type="button" class="letter-action-btn resend" data-action="resend" data-idx="${idx}">${resendIcon} Resend</button>` : ''}
+          </div>
         </div>
       </div>`;
     });
@@ -397,6 +440,101 @@
         target.classList.toggle('clamped');
         btn.textContent = collapsing ? 'Show full email' : 'Show less';
       });
+    });
+
+    list.querySelectorAll('.letter-action-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const email = lastFilteredList[Number(btn.dataset.idx)];
+        if(!email) return;
+        if(btn.dataset.action === 'reply') startReply(email);
+        else if(btn.dataset.action === 'forward') startForward(email);
+        else if(btn.dataset.action === 'resend') resendEmail(email, btn);
+      });
+    });
+  }
+
+  // Reply/Forward need the real compose window (rich text, attachments,
+  // signature) which only exists on dashboard.html — so we stash what to
+  // prefill and hand off there, instead of rebuilding that editor here.
+  function goToComposeWithPrefill(prefill){
+    try{
+      sessionStorage.setItem('palatrack_compose_prefill', JSON.stringify(prefill));
+    }catch(e){
+      showToast('Could not prepare that — please try again.', true);
+      return;
+    }
+    location.href = `dashboard.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(leadId)}&composePrefill=1`;
+  }
+
+  function startReply(email){
+    const whenWho = `${email.sentByName || 'They'} on ${email.date ? formatDayLabel(email.date) : 'an earlier date'}`;
+    const quoteHeader = `On ${whenWho} wrote:`;
+    const bodyHtml = '<br><br>' + esc(quoteHeader) + '<br>' + quotePrefixedHtml(email.body || '');
+    const subject = /^re:/i.test(email.subject || '') ? email.subject : `Re: ${email.subject || ''}`;
+    const prefill = {
+      subject, bodyHtml,
+      to: email.to || '',
+      cc: (email.cc && email.cc.length) ? email.cc.join(', ') : ''
+    };
+    if(email.attachmentNames && email.attachmentNames.length){
+      prefill.attachmentNote = "Heads up: the original attachments can't be carried over automatically — you'll need to re-attach them if you want to include them again.";
+    }
+    goToComposeWithPrefill(prefill);
+  }
+
+  function startForward(email){
+    const headerBlock = [
+      '---------- Forwarded message ---------',
+      `From: ${email.sentByName || ''}${email.fromEmail ? ' <'+email.fromEmail+'>' : ''}`,
+      `Date: ${email.date ? formatDayLabel(email.date) : ''}`,
+      `Subject: ${email.subject || ''}`,
+      `To: ${email.to || ''}`
+    ].join('\n');
+    const bodyHtml = '<br><br>' + plainTextToHtml(headerBlock) + '<br><br>' + plainTextToHtml(email.body || '');
+    const subject = /^fwd:/i.test(email.subject || '') ? email.subject : `Fwd: ${email.subject || ''}`;
+    const prefill = { subject, bodyHtml, to: '' };
+    if(email.attachmentNames && email.attachmentNames.length){
+      prefill.attachmentNote = "Heads up: the original attachments can't be carried over automatically — you'll need to re-attach them if you want to forward them too.";
+    }
+    goToComposeWithPrefill(prefill);
+  }
+
+  function resendEmail(email, btn){
+    if(!sendLeadEmailFn || !currentWorkspaceId){
+      showToast('Not ready to send yet — please try again in a moment.', true);
+      return;
+    }
+    btn.disabled = true;
+    const originalLabel = btn.innerHTML;
+    btn.textContent = 'Resending...';
+    sendLeadEmailFn({
+      workspaceId: currentWorkspaceId,
+      boardId,
+      leadId,
+      to: email.to,
+      cc: email.cc || [],
+      subject: email.subject,
+      body: email.body || ''
+    }).then(()=>{
+      showToast('Resent!');
+      // Reflect the fresh attempt without a full page reload.
+      const leadRef = db.doc(`workspaces/${currentWorkspaceId}/boards/${boardId}/leads/${leadId}`);
+      leadRef.collection('emails').orderBy('sentAt', 'desc').limit(1).get().then(snap=>{
+        if(snap.empty) return;
+        const doc = snap.docs[0].data();
+        allEmails.unshift({
+          subject: doc.subject, to: doc.to, cc: doc.cc, sentByName: doc.sentByName,
+          fromEmail: doc.fromEmail, status: doc.status, body: doc.body,
+          attachmentNames: doc.attachmentNames,
+          date: (doc.sentAt && typeof doc.sentAt.toDate === 'function') ? doc.sentAt.toDate() : new Date()
+        });
+        renderTimeline();
+      });
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not resend: ' + (err.message || 'please try again.'), true);
+      btn.disabled = false;
+      btn.innerHTML = originalLabel;
     });
   }
 
@@ -496,6 +634,7 @@
         return;
       }
       loadHistory(workspaceId, user);
+      currentWorkspaceId = workspaceId;
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);

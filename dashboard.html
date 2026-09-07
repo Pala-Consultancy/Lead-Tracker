@@ -2998,6 +2998,7 @@
         if(!stillExists) closeDrawer();
         else if(!isTypingNotes) openDrawer(drawerLeadId);
       }
+      applyPendingComposePrefill();
     }, err=>{
       console.error("Firestore sync error", err);
       showToast(t('lostConnection'), true);
@@ -4973,6 +4974,43 @@ ${buildLeadContext()}`;
     overlay.querySelector('.confirm-modal').classList.remove('open');
     overlay.style.display = 'none';
     composeEmailLead = null;
+  }
+
+  // A Reply/Forward click on the history page stashes what to prefill in
+  // sessionStorage and sends the browser back here with ?composePrefill=1.
+  // Once the target lead has actually loaded (leads syncs asynchronously),
+  // this opens its drawer and compose modal with that content already in
+  // place, then clears the flag so it doesn't repeat on a later refresh.
+  let composePrefillHandled = false;
+  function applyPendingComposePrefill(){
+    if(composePrefillHandled) return;
+    const urlParams = new URLSearchParams(location.search);
+    if(urlParams.get('composePrefill') !== '1'){ composePrefillHandled = true; return; }
+    const prefillLeadId = urlParams.get('lead');
+    let prefillRaw;
+    try{ prefillRaw = sessionStorage.getItem('palatrack_compose_prefill'); }catch(e){ prefillRaw = null; }
+    if(!prefillLeadId || !prefillRaw){ composePrefillHandled = true; return; }
+    const lead = leads.find(x=>x.id === prefillLeadId);
+    if(!lead) return; // this lead's data hasn't synced down yet — try again on the next snapshot
+    let prefill;
+    try{ prefill = JSON.parse(prefillRaw); }catch(e){ composePrefillHandled = true; return; }
+    composePrefillHandled = true;
+    try{ sessionStorage.removeItem('palatrack_compose_prefill'); }catch(e){}
+    history.replaceState(null, '', location.pathname + '?board=' + encodeURIComponent(boardId));
+    openDrawer(lead.id);
+    openComposeEmailModal(lead);
+    document.getElementById('composeEmailSubject').value = prefill.subject || '';
+    if(typeof prefill.to === 'string'){
+      document.getElementById('composeEmailTo').value = prefill.to;
+    }
+    if(prefill.cc){
+      document.getElementById('composeEmailCc').value = prefill.cc;
+      document.getElementById('composeEmailCcRow').style.display = 'flex';
+    }
+    document.getElementById('composeEmailBody').innerHTML = prefill.bodyHtml || '';
+    if(prefill.attachmentNote){
+      showToast(prefill.attachmentNote, true);
+    }
   }
   document.getElementById('composeEmailCancelBtn').addEventListener('click', closeComposeEmailModal);
   document.getElementById('composeEmailOverlay').addEventListener('click', (e)=>{
