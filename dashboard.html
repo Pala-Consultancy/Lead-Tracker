@@ -2040,20 +2040,62 @@
 <div class="toast-stack" id="toastStack"></div>
 <div class="chat-notify-stack" id="chatNotifyStack"></div>
 
+<style>
+  .gmail-compose{display:flex;flex-direction:column;}
+  .gmail-compose-header{display:flex;align-items:center;gap:10px;padding:18px 20px 14px;border-bottom:1px solid var(--border);}
+  .gmail-compose-header-icon{width:36px;height:36px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .gmail-compose-header h3{font-family:'Sora',sans-serif;font-size:16px;margin:0;color:var(--ink);}
+  .gmail-compose-field{display:flex;align-items:center;gap:10px;padding:9px 20px;border-bottom:1px solid var(--border);}
+  .gmail-compose-field label{font-size:12px;font-weight:700;color:var(--slate);flex-shrink:0;width:38px;}
+  .gmail-compose-field input{flex:1;border:none;background:transparent;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--ink);outline:none;padding:4px 0;}
+  .gmail-compose-cc-toggle{border:none;background:none;color:var(--c-blue-fg);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 2px;flex-shrink:0;}
+  .gmail-compose-cc-toggle:hover{text-decoration:underline;}
+  .gmail-compose-toolbar{display:flex;align-items:center;gap:2px;padding:8px 16px;border-bottom:1px solid var(--border);position:relative;}
+  .gmail-compose-toolbar button{width:30px;height:30px;border:none;background:transparent;border-radius:6px;color:var(--ink);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .gmail-compose-toolbar button:hover{background:var(--c-blue-bg);color:var(--c-blue-fg);}
+  .gmail-compose-toolbar button.active{background:var(--c-blue-bg);color:var(--c-blue-fg);}
+  .gmail-compose-toolbar-divider{width:1px;height:20px;background:var(--border);margin:0 6px;}
+  .gmail-compose-emoji-picker{position:absolute;top:44px;left:16px;z-index:20;display:grid;grid-template-columns:repeat(6,1fr);gap:2px;background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);}
+  .gmail-compose-emoji-item{width:30px;height:30px;border:none;background:transparent;border-radius:6px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .gmail-compose-emoji-item:hover{background:var(--c-blue-bg);}
+  .gmail-compose-body{min-height:140px;max-height:280px;overflow-y:auto;padding:14px 20px;font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.5;color:var(--ink);outline:none;}
+  .gmail-compose-body:empty:before{content:attr(data-placeholder);color:var(--slate);}
+  .gmail-compose-body b, .gmail-compose-body strong{font-weight:700;}
+  .gmail-compose-body i, .gmail-compose-body em{font-style:italic;}
+  .gmail-compose-body u{text-decoration:underline;}
+</style>
 <div class="confirm-overlay" id="composeEmailOverlay" style="display:none">
-  <div class="confirm-modal" style="max-width:440px;">
-    <div class="confirm-modal-body" style="text-align:left;padding:26px 26px 22px;">
-      <div style="width:44px;height:44px;border-radius:50%;background:var(--c-blue-bg);color:var(--c-blue-fg);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+  <div class="confirm-modal" style="max-width:520px;padding:0;overflow:visible;">
+    <div class="gmail-compose">
+      <div class="gmail-compose-header">
+        <div class="gmail-compose-header-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+        </div>
+        <h3>New message</h3>
       </div>
-      <h3 style="text-align:center;font-family:'Sora',sans-serif;font-size:17px;margin:0 0 18px;">Send email</h3>
-      <label style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);display:block;margin-bottom:5px;">To</label>
-      <input type="email" id="composeEmailTo" style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:14px;">
-      <label style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);display:block;margin-bottom:5px;">Subject</label>
-      <input type="text" id="composeEmailSubject" placeholder="Subject" style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:14px;">
-      <label style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);display:block;margin-bottom:5px;">Message</label>
-      <textarea id="composeEmailBody" rows="6" placeholder="Write your message..." style="width:100%;box-sizing:border-box;font-family:'Inter',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:18px;resize:vertical;"></textarea>
-      <div class="confirm-modal-actions">
+      <div class="gmail-compose-field">
+        <label>To</label>
+        <input type="email" id="composeEmailTo" placeholder="Recipient">
+        <button type="button" class="gmail-compose-cc-toggle" id="composeEmailCcToggle">Cc</button>
+      </div>
+      <div class="gmail-compose-field" id="composeEmailCcRow" style="display:none;">
+        <label>Cc</label>
+        <input type="text" id="composeEmailCc" placeholder="Add people, separated by commas">
+      </div>
+      <div class="gmail-compose-field">
+        <label>Subject</label>
+        <input type="text" id="composeEmailSubject" placeholder="Subject">
+      </div>
+      <div class="gmail-compose-toolbar">
+        <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+        <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+        <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+        <span class="gmail-compose-toolbar-divider"></span>
+        <button type="button" id="composeEmailEmojiBtn" title="Insert emoji">🙂</button>
+        <div class="gmail-compose-emoji-picker" id="composeEmailEmojiPicker" style="display:none;"></div>
+      </div>
+      <div class="gmail-compose-body" id="composeEmailBody" contenteditable="true" data-placeholder="Write your message..."></div>
+      <div class="confirm-modal-actions" style="padding:14px 20px 20px;">
         <button type="button" class="btn" id="composeEmailCancelBtn">Cancel</button>
         <button type="button" class="btn btn-primary" id="composeEmailSendBtn">Send</button>
       </div>
@@ -4898,8 +4940,11 @@ ${buildLeadContext()}`;
   function openComposeEmailModal(lead){
     composeEmailLead = lead;
     document.getElementById('composeEmailTo').value = lead.email || '';
+    document.getElementById('composeEmailCc').value = '';
+    document.getElementById('composeEmailCcRow').style.display = 'none';
     document.getElementById('composeEmailSubject').value = '';
-    document.getElementById('composeEmailBody').value = '';
+    document.getElementById('composeEmailBody').innerHTML = '';
+    document.getElementById('composeEmailEmojiPicker').style.display = 'none';
     const overlay = document.getElementById('composeEmailOverlay');
     overlay.style.display = 'flex';
     overlay.classList.add('open');
@@ -4917,12 +4962,60 @@ ${buildLeadContext()}`;
   document.getElementById('composeEmailOverlay').addEventListener('click', (e)=>{
     if(e.target.id === 'composeEmailOverlay') closeComposeEmailModal();
   });
+
+  // Cc toggle, Gmail-style: hidden until the small "Cc" link is clicked.
+  document.getElementById('composeEmailCcToggle').addEventListener('click', ()=>{
+    const row = document.getElementById('composeEmailCcRow');
+    const showing = row.style.display !== 'none';
+    row.style.display = showing ? 'none' : 'flex';
+    if(!showing) document.getElementById('composeEmailCc').focus();
+  });
+
+  // Formatting toolbar (bold/italic/underline) acting on the contenteditable body.
+  const composeBodyEl = document.getElementById('composeEmailBody');
+  document.querySelectorAll('.gmail-compose-toolbar [data-cmd]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      composeBodyEl.focus();
+      document.execCommand(btn.dataset.cmd, false, null);
+    });
+  });
+
+  // Simple emoji picker: a small grid of common emojis, inserted at the cursor.
+  const EMOJI_LIST = ['😀','😄','😊','🙂','😉','😍','😂','🎉','👍','👏','🙏','👋','✅','⭐','🔥','💡','📌','📅','📞','📧','🤝','💼','📈','☕'];
+  const emojiPicker = document.getElementById('composeEmailEmojiPicker');
+  emojiPicker.innerHTML = EMOJI_LIST.map(e=>`<button type="button" class="gmail-compose-emoji-item">${e}</button>`).join('');
+  document.getElementById('composeEmailEmojiBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'grid' : 'none';
+  });
+  emojiPicker.addEventListener('click', (e)=>{
+    const item = e.target.closest('.gmail-compose-emoji-item');
+    if(!item) return;
+    composeBodyEl.focus();
+    document.execCommand('insertText', false, item.textContent);
+    emojiPicker.style.display = 'none';
+  });
+  document.addEventListener('click', (e)=>{
+    if(emojiPicker.style.display !== 'none' && !emojiPicker.contains(e.target) && e.target.id !== 'composeEmailEmojiBtn'){
+      emojiPicker.style.display = 'none';
+    }
+  });
+
+  function parseEmailList(raw){
+    return raw.split(',').map(s=>s.trim()).filter(Boolean);
+  }
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   document.getElementById('composeEmailSendBtn').addEventListener('click', ()=>{
     if(!composeEmailLead) return;
     const to = document.getElementById('composeEmailTo').value.trim();
+    const ccRaw = document.getElementById('composeEmailCc').value.trim();
+    const cc = ccRaw ? parseEmailList(ccRaw) : [];
     const subject = document.getElementById('composeEmailSubject').value.trim();
-    const body = document.getElementById('composeEmailBody').value.trim();
+    const htmlBody = composeBodyEl.innerHTML.trim();
+    const body = composeBodyEl.innerText.trim();
     if(!to){ showToast('Please enter a recipient email address.', true); return; }
+    if(cc.some(addr => !EMAIL_RE.test(addr))){ showToast('One of the Cc addresses doesn\'t look valid.', true); return; }
     if(!subject){ showToast('Please enter a subject.', true); return; }
     if(!body){ showToast('Please write a message.', true); return; }
     if(!sendLeadEmailFn){
@@ -4938,8 +5031,10 @@ ${buildLeadContext()}`;
       boardId: boardId,
       leadId: leadId,
       to,
+      cc,
       subject,
-      body
+      body,
+      htmlBody
     }).then(()=>{
       showToast('Email sent!');
       closeComposeEmailModal();
