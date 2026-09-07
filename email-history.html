@@ -180,6 +180,34 @@
   .letter-action-btn.resend:hover{background:var(--fail-soft);}
   .letter-action-btn:disabled{opacity:.55;cursor:default;}
 
+  .share-modal-overlay{
+    position:fixed;inset:0;background:rgba(16,32,55,0.45);z-index:200;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .share-modal-overlay.open{display:flex;}
+  .share-modal{
+    background:var(--panel);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,0.28);
+    width:100%;max-width:440px;padding:26px 26px 22px;
+  }
+  .share-modal h3{font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin:0 0 8px;}
+  .share-modal p{font-size:13px;color:var(--slate);line-height:1.5;margin:0 0 16px;}
+  .share-link-row{
+    display:flex;gap:8px;margin-bottom:16px;
+  }
+  .share-link-row input{
+    flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+    background:var(--panel-alt);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+  }
+  .share-modal-actions{display:flex;justify-content:space-between;gap:10px;}
+  .share-modal-btn{
+    padding:9px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;border:1px solid var(--border);background:var(--panel-alt);color:var(--ink);
+  }
+  .share-modal-btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .share-modal-btn.danger{color:var(--fail);border-color:var(--fail);}
+  .share-modal-btn.danger:hover{background:var(--fail-soft);}
+  .share-modal-loading{color:var(--slate);font-size:13px;padding:10px 0;}
+
   .empty-state{text-align:center;padding:70px 20px;color:var(--slate);border:1px dashed var(--border);border-radius:16px;margin-top:20px;}
   .empty-state h3{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--ink);margin:0 0 6px;}
   .empty-state p{font-size:13.5px;margin:0;}
@@ -205,6 +233,27 @@
     .timeline{padding-left:24px;}
     .timeline::before{left:5px;}
     .date-marker::before, .entry-pip{left:-24px;}
+  }
+
+  /* ---------- Print / PDF export ---------- */
+  @media print{
+    :root{
+      --paper:#fff; --panel:#fff; --panel-alt:#fff; --ink:#16202C;
+      --border:#D8D8D8; --border-soft:#E8E8E8; --slate:#444; --slate-light:#777;
+      --teal:#1C5B9E; --success:#1F6F5C; --success-soft:#fff; --fail:#B43B32; --fail-soft:#fff;
+      --shadow:none;
+    }
+    body{background:#fff;}
+    .back-link, .back-to-top, .toolbar, .letter-actions, .copy-icon,
+    .expand-btn, .toast-stack, .share-modal-overlay{display:none !important;}
+    .letterhead{padding-top:0;}
+    .timeline{padding-left:0;margin-top:16px;}
+    .timeline::before, .date-marker::before, .entry-pip{display:none;}
+    .date-marker{margin:22px 0 10px;}
+    .letter{box-shadow:none;border:1px solid var(--border);break-inside:avoid;}
+    .letter-body.clamped{max-height:none !important;overflow:visible !important;}
+    .letter-body.clamped::after{display:none !important;}
+    .lead-crest{box-shadow:none;}
   }
 </style>
 </head>
@@ -250,6 +299,8 @@
       <button type="button" class="status-chip" data-filter="sent">Sent</button>
       <button type="button" class="status-chip" data-filter="failed">Failed</button>
     </div>
+    <button type="button" class="status-chip" id="exportPdfBtn" title="Opens your browser's print dialog — choose 'Save as PDF' there">🖨️ Export as PDF</button>
+    <button type="button" class="status-chip" id="shareLinkBtn">🔗 Share</button>
   </div>
 
   <div id="historyList"></div>
@@ -259,6 +310,19 @@
 <button type="button" class="back-to-top" id="backToTopBtn" title="Back to top" aria-label="Back to top">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 </button>
+
+<div class="share-modal-overlay" id="shareModalOverlay">
+  <div class="share-modal">
+    <h3>Share this correspondence</h3>
+    <p>Anyone with this link can view this lead's email history — no PalaTrack account needed. They can't send emails or see anything else in your workspace.</p>
+    <div id="shareModalBody">
+      <div class="share-modal-loading">Preparing link...</div>
+    </div>
+    <div class="share-modal-actions">
+      <button type="button" class="share-modal-btn" id="shareModalCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
@@ -616,6 +680,85 @@
   }, {passive:true});
   backToTopBtn.addEventListener('click', ()=>{
     window.scrollTo({top:0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+  });
+
+  document.getElementById('exportPdfBtn').addEventListener('click', ()=>{
+    window.print();
+  });
+
+  // ---------- Share link ----------
+  const shareModalOverlay = document.getElementById('shareModalOverlay');
+  const shareModalBody = document.getElementById('shareModalBody');
+
+  function buildShareUrl(token){
+    return `${location.origin}${location.pathname.replace('email-history.html', 'shared-history.html')}?token=${encodeURIComponent(token)}`;
+  }
+  function randomToken(){
+    if(window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID().replace(/-/g, '');
+    return Array.from({length:32}, ()=>Math.floor(Math.random()*16).toString(16)).join('');
+  }
+  function renderShareModalLink(token){
+    const url = buildShareUrl(token);
+    shareModalBody.innerHTML = `
+      <div class="share-link-row">
+        <input type="text" id="shareLinkInput" readonly value="${esc(url)}">
+        <button type="button" class="share-modal-btn primary" id="shareCopyBtn">Copy</button>
+      </div>
+      <button type="button" class="share-modal-btn danger" id="shareRevokeBtn">Revoke this link</button>
+    `;
+    document.getElementById('shareCopyBtn').addEventListener('click', ()=>{
+      copyText(url, 'Link');
+    });
+    document.getElementById('shareRevokeBtn').addEventListener('click', ()=>{
+      db.doc(`shareLinks/${token}`).update({revoked: true}).then(()=>{
+        showToast('Share link revoked.');
+        shareModalOverlay.classList.remove('open');
+      }).catch(err=>{
+        console.error(err);
+        showToast('Could not revoke that link.', true);
+      });
+    });
+  }
+
+  document.getElementById('shareLinkBtn').addEventListener('click', ()=>{
+    if(!currentWorkspaceId){
+      showToast('Not ready yet — please try again in a moment.', true);
+      return;
+    }
+    shareModalBody.innerHTML = `<div class="share-modal-loading">Preparing link...</div>`;
+    shareModalOverlay.classList.add('open');
+    db.collection('shareLinks')
+      .where('workspaceId', '==', currentWorkspaceId)
+      .where('boardId', '==', boardId)
+      .where('leadId', '==', leadId)
+      .where('revoked', '==', false)
+      .limit(1).get().then(snap=>{
+        if(!snap.empty){
+          renderShareModalLink(snap.docs[0].id);
+          return;
+        }
+        const token = randomToken();
+        db.doc(`shareLinks/${token}`).set({
+          workspaceId: currentWorkspaceId, boardId, leadId,
+          createdBy: auth.currentUser.uid,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          revoked: false
+        }).then(()=>{
+          renderShareModalLink(token);
+        }).catch(err=>{
+          console.error(err);
+          shareModalBody.innerHTML = `<p style="color:var(--fail)">Could not create a share link. Please try again.</p>`;
+        });
+      }).catch(err=>{
+        console.error(err);
+        shareModalBody.innerHTML = `<p style="color:var(--fail)">Could not create a share link. Please try again.</p>`;
+      });
+  });
+  document.getElementById('shareModalCloseBtn').addEventListener('click', ()=>{
+    shareModalOverlay.classList.remove('open');
+  });
+  shareModalOverlay.addEventListener('click', (e)=>{
+    if(e.target === shareModalOverlay) shareModalOverlay.classList.remove('open');
   });
 
   auth.onAuthStateChanged(user=>{
