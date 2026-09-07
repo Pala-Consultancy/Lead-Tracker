@@ -5033,6 +5033,12 @@ ${buildLeadContext()}`;
 
   // Formatting toolbar (bold/italic/underline) acting on the contenteditable body.
   const composeBodyEl = document.getElementById('composeEmailBody');
+  // Chrome/Edge wrap each new line in its own <div> by default, which looks
+  // fine here (no CSS margin on <div>) but email clients apply their own
+  // default spacing to block elements, making it look double-spaced on the
+  // receiving end. Forcing plain <br> line breaks avoids that mismatch
+  // entirely, instead of trying to reverse it after the fact.
+  document.execCommand('defaultParagraphSeparator', false, 'br');
   document.querySelectorAll('.gmail-compose-toolbar [data-cmd]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       composeBodyEl.focus();

@@ -297,6 +297,10 @@
   const sigBody = document.getElementById('sigBody');
   const sigAutoInsert = document.getElementById('sigAutoInsert');
   const sigSavedHint = document.getElementById('sigSavedHint');
+  // Same reasoning as the compose window: avoid the browser wrapping each
+  // line in its own <div>, since email clients add their own spacing
+  // around block elements that isn't there in the editor.
+  document.execCommand('defaultParagraphSeparator', false, 'br');
 
   document.querySelectorAll('.es-toolbar [data-cmd]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
