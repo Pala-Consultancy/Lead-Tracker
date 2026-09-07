@@ -82,8 +82,9 @@
     background:linear-gradient(145deg, var(--teal) 0%, var(--teal-deep) 100%);
     color:#fff;display:flex;align-items:center;justify-content:center;
     font-family:'Fraunces',serif;font-size:20px;font-weight:600;
-    box-shadow:0 8px 20px -6px rgba(15,62,114,0.5);
+    box-shadow:0 8px 20px -6px rgba(15,62,114,0.5);overflow:hidden;
   }
+  .lead-crest img{width:100%;height:100%;object-fit:cover;display:block;}
   .fact-row{display:flex;flex-wrap:wrap;gap:0;margin-top:22px;border-top:1px solid var(--border);}
   .fact{padding:14px 20px 0 0;margin-right:20px;border-right:1px solid var(--border-soft);}
   .fact:last-child{border-right:none;margin-right:0;}
@@ -91,7 +92,11 @@
   .fact-value{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--ink);}
   .fact-value.fail{color:var(--fail);}
 
-  .toolbar{display:flex;gap:10px;margin:26px 0 8px;flex-wrap:wrap;}
+  .toolbar{
+    display:flex;gap:10px;margin:26px 0 8px;flex-wrap:wrap;
+    position:sticky;top:0;z-index:10;padding:14px 0;
+    background:linear-gradient(var(--paper) 78%, transparent);
+  }
   .search-wrap{position:relative;flex:1;min-width:200px;}
   .search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--slate-light);pointer-events:none;}
   #searchInput{
@@ -129,7 +134,14 @@
   .entry-pip.sent{background:var(--success);}
   .entry-pip.failed{background:var(--fail);}
 
-  .letter{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);}
+  .letter{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);transition:transform .15s ease, box-shadow .15s ease;}
+  .letter:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(16,32,55,0.06), 0 16px 32px -12px rgba(16,32,55,0.2);}
+  mark{background:var(--clay-soft);color:var(--clay);border-radius:3px;padding:0 2px;}
+  .copy-icon{
+    cursor:pointer;opacity:.55;margin-left:4px;font-size:11px;color:var(--slate);
+    transition:opacity .12s;
+  }
+  .copy-icon:hover{opacity:1;color:var(--teal);}
   .letter-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:10px;}
   .letter-subject{font-size:17px;font-weight:500;line-height:1.35;margin:0;}
   .postmark{
@@ -162,6 +174,17 @@
   .toast-stack{position:fixed;top:18px;right:18px;z-index:400;display:flex;flex-direction:column;gap:8px;}
   .toast{background:var(--toast-bg);color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);}
   .toast.danger{background:var(--fail);}
+
+  .back-to-top{
+    position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;
+    background:var(--teal);color:#fff;border:none;cursor:pointer;
+    box-shadow:0 8px 20px -4px rgba(15,62,114,0.5);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;visibility:hidden;transform:translateY(8px);
+    transition:opacity .2s ease, transform .2s ease, visibility .2s;
+  }
+  .back-to-top.show{opacity:1;visibility:visible;transform:translateY(0);}
+  .back-to-top:hover{background:var(--teal-deep);}
 
   @media (max-width:520px){
     .lead-name{font-size:27px;}
@@ -219,6 +242,10 @@
   <div id="historyList"></div>
 </div>
 </div>
+
+<button type="button" class="back-to-top" id="backToTopBtn" title="Back to top" aria-label="Back to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+</button>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
@@ -281,6 +308,21 @@
     else history.back();
   });
 
+  // Escapes first, then wraps matches of the current search query in <mark>
+  // — safe against HTML injection since escaping always runs first.
+  function highlightText(text, query){
+    const escaped = esc(text);
+    if(!query) return escaped;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return escaped.replace(new RegExp(`(${escapedQuery})`, 'ig'), '<mark>$1</mark>');
+  }
+  function copyText(text, label){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>showToast(`${label} copied`))
+        .catch(()=>showToast('Could not copy', true));
+    }
+  }
+
   function renderTimeline(){
     const list = document.getElementById('historyList');
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -320,6 +362,7 @@
       const bodyText = e.body || '(no message body)';
       const isLong = bodyText.length > 480;
       const bodyId = `letterBody${idx}`;
+      const toAddr = e.to || '';
       const statusIcon = isFailed
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -327,14 +370,14 @@
         <span class="entry-pip ${isFailed?'failed':'sent'}"></span>
         <div class="letter">
           <div class="letter-head">
-            <h3 class="letter-subject serif">${esc(e.subject || '(no subject)')}</h3>
+            <h3 class="letter-subject serif">${highlightText(e.subject || '(no subject)', query)}</h3>
             <span class="postmark ${isFailed?'failed':'sent'}">${statusIcon}${isFailed?'Failed':'Sent'}</span>
           </div>
           <div class="letter-meta">
-            <b>To</b> ${esc(e.to || '')}${ccLine}<br>
+            <b>To</b> ${esc(toAddr)}<span class="copy-icon" data-copy="${esc(toAddr)}" title="Copy email">⧉</span>${ccLine}<br>
             <b>From</b> ${esc(e.sentByName || '')}${e.fromEmail ? ' ('+esc(e.fromEmail)+')' : ''} · ${esc(timeLabel)}
           </div>
-          <div class="letter-body ${isLong?'clamped':''}" id="${bodyId}">${esc(bodyText)}</div>
+          <div class="letter-body ${isLong?'clamped':''}" id="${bodyId}">${highlightText(bodyText, query)}</div>
           ${isLong ? `<button type="button" class="expand-btn" data-target="${bodyId}">Show full email</button>` : ''}
           ${attachmentsHtml}
         </div>
@@ -342,6 +385,10 @@
     });
     html += '</div>';
     list.innerHTML = html;
+
+    list.querySelectorAll('.copy-icon').forEach(icon=>{
+      icon.addEventListener('click', ()=> copyText(icon.dataset.copy, 'Email'));
+    });
 
     list.querySelectorAll('.expand-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -362,7 +409,7 @@
     });
   });
 
-  function loadHistory(workspaceId){
+  function loadHistory(workspaceId, user){
     if(!boardId || !leadId){
       document.getElementById('historyList').innerHTML = `<div class="empty-state"><h3>Missing link details</h3><p>This page needs a board and lead to be specified in the link.</p></div>`;
       return;
@@ -376,9 +423,22 @@
       const lead = leadDoc.data();
       document.getElementById('headerLeadName').textContent = lead.name || 'Unnamed lead';
       document.getElementById('headerLeadCompany').textContent = lead.company || '';
-      document.getElementById('leadCrest').textContent = initials(lead.name);
       document.title = `${lead.name || 'Lead'} — Correspondence Log · PalaTrack`;
     }).catch(()=>{});
+
+    // The crest shows the signed-in user's own photo — a letterhead carries
+    // the sender's mark, not the recipient's.
+    db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get().then(memberDoc=>{
+      const crest = document.getElementById('leadCrest');
+      const data = memberDoc.exists ? memberDoc.data() : {};
+      if(data.photoURL){
+        crest.innerHTML = `<img src="${data.photoURL}" alt="">`;
+      } else {
+        crest.textContent = initials(data.name || user.email);
+      }
+    }).catch(()=>{
+      document.getElementById('leadCrest').textContent = initials(user.email);
+    });
 
     leadRef.collection('emails').orderBy('sentAt', 'desc').limit(200).get().then(snap=>{
       if(snap.empty){
@@ -412,6 +472,14 @@
     });
   }
 
+  const backToTopBtn = document.getElementById('backToTopBtn');
+  window.addEventListener('scroll', ()=>{
+    backToTopBtn.classList.toggle('show', window.scrollY > 500);
+  }, {passive:true});
+  backToTopBtn.addEventListener('click', ()=>{
+    window.scrollTo({top:0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+  });
+
   auth.onAuthStateChanged(user=>{
     document.getElementById('pageLoader').style.display = 'none';
     if(!user){
@@ -427,7 +495,7 @@
         showToast('Could not find your workspace.', true);
         return;
       }
-      loadHistory(workspaceId);
+      loadHistory(workspaceId, user);
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
