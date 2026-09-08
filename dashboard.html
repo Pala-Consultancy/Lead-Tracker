@@ -3003,12 +3003,23 @@
     appRootRevealed = true;
     const loader = document.getElementById('pageLoader');
     const root = document.getElementById('appRoot');
-    root.style.display = 'block';
     root.classList.remove('fade-in');
-    void root.offsetWidth;
-    root.classList.add('fade-in');
-    loader.classList.add('hide');
-    setTimeout(()=>{ loader.style.display = 'none'; }, 420);
+    // appRoot was `display:none` until now, so everything render() just built
+    // (the full lead table, stat cards, etc.) has never been laid out or
+    // painted. Setting opacity:0 here keeps that first expensive paint
+    // invisible, so the stutter it causes never actually shows on screen —
+    // only once that's done (two rAFs later) do we start the fade-in
+    // animation, which then only has to animate already-painted content.
+    root.style.opacity = '0';
+    root.style.display = 'block';
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        root.style.opacity = '';
+        root.classList.add('fade-in');
+        loader.classList.add('hide');
+        setTimeout(()=>{ loader.style.display = 'none'; }, 420);
+      });
+    });
   }
   function initFirebaseSync(){
     if(!firebaseConnected){
