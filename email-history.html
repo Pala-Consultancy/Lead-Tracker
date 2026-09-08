@@ -230,6 +230,43 @@
   }
   .new-badge{background:var(--success);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle;}
 
+  /* ---------- Tags ---------- */
+  .tag-toggle-btn{
+    display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;
+    border:1px solid var(--border);background:var(--panel-alt);color:var(--slate);
+    font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .tag-toggle-btn.on.important{background:var(--clay-soft);border-color:var(--clay);color:var(--clay);}
+  .tag-toggle-btn.on.followup{background:var(--success-soft);border-color:var(--success);color:var(--success);}
+  .tag-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;margin-right:6px;display:inline-flex;align-items:center;gap:3px;}
+  .tag-badge.important{background:var(--clay-soft);color:var(--clay);}
+  .tag-badge.followup{background:var(--success-soft);color:var(--success);}
+  .tag-filters{display:flex;gap:6px;}
+
+  /* ---------- Bulk selection ---------- */
+  .letter-select{width:16px;height:16px;cursor:pointer;accent-color:var(--teal);flex-shrink:0;margin-top:2px;}
+  .bulk-bar{
+    display:none;align-items:center;gap:12px;background:var(--ink);color:#fff;padding:11px 16px;
+    border-radius:10px;margin-bottom:14px;font-size:13px;font-weight:600;flex-wrap:wrap;
+  }
+  .bulk-bar.show{display:flex;}
+  .bulk-bar-btn{
+    padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;
+    border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:#fff;font-family:'Inter',sans-serif;
+  }
+  .bulk-bar-btn:hover{background:rgba(255,255,255,0.2);}
+  .bulk-bar-btn.primary{background:var(--teal);border-color:var(--teal);}
+
+  /* ---------- Compact view ---------- */
+  body.compact-view .letter{padding:13px 16px;}
+  body.compact-view .letter-subject{font-size:14px;}
+  body.compact-view .letter-meta{font-size:11px;line-height:1.5;margin-bottom:8px;}
+  body.compact-view .letter-body{font-size:12.5px;line-height:1.55;}
+  body.compact-view .entry{margin-bottom:10px;}
+  body.compact-view .day-group .date-marker{margin:18px 0 8px;}
+  body.compact-view .day-group:first-child .date-marker{margin-top:0;}
+  body.compact-view .letter-actions{padding-top:10px;margin-top:10px;}
+
   .share-modal-overlay{
     position:fixed;inset:0;background:rgba(16,32,55,0.45);z-index:200;
     display:none;align-items:center;justify-content:center;padding:20px;
@@ -352,13 +389,25 @@
       <button type="button" class="status-chip" data-filter="sent">Sent</button>
       <button type="button" class="status-chip" data-filter="failed">Failed</button>
     </div>
+    <div class="tag-filters" id="tagFilters">
+      <button type="button" class="status-chip" data-tagfilter="important">⭐ Important</button>
+      <button type="button" class="status-chip" data-tagfilter="followup">🚩 Follow-up</button>
+    </div>
+    <button type="button" class="status-chip" id="compactToggleBtn">☰ Compact</button>
     <button type="button" class="status-chip" id="exportPdfBtn" title="Opens your browser's print dialog — choose 'Save as PDF' there">🖨️ Export as PDF</button>
     <button type="button" class="status-chip" id="exportCsvBtn" title="Spreadsheet-style export for reporting">📊 Export as CSV</button>
     <button type="button" class="status-chip" id="shareLinkBtn">🔗 Share</button>
   </div>
 
+  <div class="bulk-bar" id="bulkBar">
+    <span id="bulkCount">0 selected</span>
+    <button type="button" class="bulk-bar-btn primary" id="bulkDownloadBtn">Download selected (.zip)</button>
+    <button type="button" class="bulk-bar-btn" id="bulkClearBtn">Clear selection</button>
+  </div>
+
   <div id="historyList"></div>
 </div>
+
 </div>
 
 <button type="button" class="back-to-top" id="backToTopBtn" title="Back to top" aria-label="Back to top">
@@ -383,6 +432,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 (function(){
   const firebaseConfig = {
@@ -474,6 +524,11 @@
     return escaped.split('\n').map(line => '&gt; ' + line).join('<br>');
   }
   let activeStatusFilter = 'all';
+  let activeTagFilter = null; // null | 'important' | 'followup'
+  const selectedIds = new Set();
+  let compactMode = false;
+  try{ compactMode = localStorage.getItem('palatrack_history_compact') === '1'; }catch(e){}
+  document.body.classList.toggle('compact-view', compactMode);
 
   document.getElementById('backBtn').addEventListener('click', (e)=>{
     e.preventDefault();
@@ -570,7 +625,9 @@
   function jumpToDayKey(key){
     document.getElementById('searchInput').value = '';
     activeStatusFilter = 'all';
+    activeTagFilter = null;
     document.querySelectorAll('.status-chip[data-filter]').forEach(c=>c.classList.toggle('active', c.dataset.filter==='all'));
+    document.querySelectorAll('.tag-filters .status-chip[data-tagfilter]').forEach(c=>c.classList.remove('active'));
     renderTimeline();
     const marker = document.querySelector(`.date-marker[data-daykey="${key}"]`);
     if(marker){
@@ -705,6 +762,7 @@
     const filtered = allEmails.filter(e=>{
       if(activeStatusFilter === 'sent' && e.status === 'failed') return false;
       if(activeStatusFilter === 'failed' && e.status !== 'failed') return false;
+      if(activeTagFilter && !e.tags.includes(activeTagFilter)) return false;
       if(query){
         const hay = (e.subject + ' ' + e.body).toLowerCase();
         if(!hay.includes(query)) return false;
@@ -750,10 +808,14 @@
           ? `<div class="letter-attachments">${e.attachmentNames.map(n=>`<span class="attachment-tag">📎 ${esc(n)}</span>`).join('')}</div>`
           : '';
         const bodyText = e.body || '(no message body)';
-        const isLong = bodyText.length > 480;
+        const isLong = bodyText.length > (compactMode ? 80 : 480);
         const bodyId = `letterBody${idx}`;
         const toAddr = e.to || '';
         const threadBadge = e.threadTotal ? `<span class="thread-badge">${e.threadPosition} of ${e.threadTotal} in this thread</span>` : '';
+        const tagBadges = [
+          e.tags.includes('important') ? '<span class="tag-badge important">⭐ Important</span>' : '',
+          e.tags.includes('followup') ? '<span class="tag-badge followup">🚩 Follow-up</span>' : ''
+        ].join('');
         const statusIcon = isFailed
           ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
           : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -765,12 +827,16 @@
           <span class="entry-pip ${isFailed?'failed':'sent'}"></span>
           <div class="letter" tabindex="-1">
             <div class="letter-head">
-              <h3 class="letter-subject serif">${highlightText(e.subject || '(no subject)', query)}</h3>
+              <span style="display:flex;align-items:flex-start;gap:10px;min-width:0;">
+                <input type="checkbox" class="letter-select" data-id="${esc(e.id||'')}" ${e.id && selectedIds.has(e.id) ? 'checked' : ''} ${e.id ? '' : 'disabled'}>
+                <h3 class="letter-subject serif">${highlightText(e.subject || '(no subject)', query)}</h3>
+              </span>
               <span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
                 <span class="postmark ${isFailed?'failed':'sent'}">${statusIcon}${isFailed?'Failed':'Sent'}</span>
                 ${e.isNewSinceVisit ? '<span class="new-badge">New</span>' : ''}
               </span>
             </div>
+            ${tagBadges}
             ${threadBadge}
             <div class="letter-meta">
               <b>To</b> ${esc(toAddr)}<span class="copy-icon" data-copy="${esc(toAddr)}" title="Copy email">⧉</span>${ccLine}<br>
@@ -780,6 +846,8 @@
             ${isLong ? `<button type="button" class="expand-btn" data-target="${bodyId}">Show full email</button>` : ''}
             ${attachmentsHtml}
             <div class="letter-actions">
+              <button type="button" class="tag-toggle-btn important ${e.tags.includes('important')?'on important':''}" data-action="tag-important" data-idx="${idx}">⭐ Important</button>
+              <button type="button" class="tag-toggle-btn followup ${e.tags.includes('followup')?'on followup':''}" data-action="tag-followup" data-idx="${idx}">🚩 Follow-up</button>
               <button type="button" class="letter-action-btn" data-action="reply" data-idx="${idx}">${replyIcon} Reply</button>
               <button type="button" class="letter-action-btn" data-action="forward" data-idx="${idx}">${forwardIcon} Forward</button>
               ${isFailed ? `<button type="button" class="letter-action-btn resend" data-action="resend" data-idx="${idx}">${resendIcon} Resend</button>` : ''}
@@ -792,6 +860,16 @@
     });
     html += '</div>';
     list.innerHTML = html;
+    updateBulkBar();
+
+    list.querySelectorAll('.letter-select').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const id = cb.dataset.id;
+        if(!id) return;
+        if(cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+        updateBulkBar();
+      });
+    });
 
     list.querySelectorAll('.date-marker').forEach(marker=>{
       marker.addEventListener('click', ()=>{
@@ -822,7 +900,82 @@
         else if(btn.dataset.action === 'download') downloadEmailAsEml(email);
       });
     });
+
+    list.querySelectorAll('.tag-toggle-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const email = lastFilteredList[Number(btn.dataset.idx)];
+        if(!email) return;
+        const tag = btn.dataset.action === 'tag-important' ? 'important' : 'followup';
+        toggleTag(email, tag);
+      });
+    });
   }
+
+  // Tags are the one thing about an email record a workspace member can
+  // change directly (see the Firestore rule) — the email's actual content,
+  // recipient, and send status stay permanently locked to the
+  // sendLeadEmail Cloud Function.
+  function toggleTag(email, tag){
+    if(!email.id || !currentWorkspaceId){
+      showToast('Not ready yet — please try again.', true);
+      return;
+    }
+    const hasTag = email.tags.includes(tag);
+    const newTags = hasTag ? email.tags.filter(t=>t!==tag) : [...email.tags, tag];
+    email.tags = newTags; // optimistic local update
+    renderTimeline();
+    const emailRef = db.doc(`workspaces/${currentWorkspaceId}/boards/${boardId}/leads/${leadId}/emails/${email.id}`);
+    emailRef.update({tags: newTags}).catch(err=>{
+      console.error(err);
+      email.tags = hasTag ? [...newTags, tag] : newTags.filter(t=>t!==tag); // revert
+      renderTimeline();
+      showToast('Could not save that tag.', true);
+    });
+  }
+
+  // ---------- Bulk selection ----------
+  function updateBulkBar(){
+    const bar = document.getElementById('bulkBar');
+    const countEl = document.getElementById('bulkCount');
+    if(selectedIds.size > 0){
+      bar.classList.add('show');
+      countEl.textContent = `${selectedIds.size} selected`;
+    } else {
+      bar.classList.remove('show');
+    }
+  }
+  document.getElementById('bulkClearBtn').addEventListener('click', ()=>{
+    selectedIds.clear();
+    renderTimeline();
+  });
+  document.getElementById('bulkDownloadBtn').addEventListener('click', async ()=>{
+    if(selectedIds.size === 0) return;
+    if(!window.JSZip){
+      showToast('Could not load the zip library — please try again.', true);
+      return;
+    }
+    const selectedEmails = allEmails.filter(e => e.id && selectedIds.has(e.id));
+    const zip = new JSZip();
+    const usedNames = new Set();
+    selectedEmails.forEach(email=>{
+      let base = (email.subject || 'email').replace(/[^a-z0-9\-_ ]/gi, '').trim().slice(0, 50) || 'email';
+      let name = `${base}.eml`;
+      let n = 2;
+      while(usedNames.has(name)){ name = `${base} (${n}).eml`; n++; }
+      usedNames.add(name);
+      zip.file(name, buildEmlString(email));
+    });
+    const blob = await zip.generateAsync({type: 'blob'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'emails.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Downloaded!');
+  });
 
   // Reply/Forward need the real compose window (rich text, attachments,
   // signature) which only exists on dashboard.html — so we stash what to
@@ -894,9 +1047,11 @@
         if(snap.empty) return;
         const doc = snap.docs[0].data();
         allEmails.unshift({
+          id: snap.docs[0].id,
           subject: doc.subject, to: doc.to, cc: doc.cc, sentByName: doc.sentByName,
           fromEmail: doc.fromEmail, status: doc.status, body: doc.body,
           attachmentNames: doc.attachmentNames,
+          tags: Array.isArray(doc.tags) ? doc.tags : [],
           date: (doc.sentAt && typeof doc.sentAt.toDate === 'function') ? doc.sentAt.toDate() : new Date()
         });
         renderTimeline();
@@ -917,7 +1072,7 @@
     // way real mail servers do, so accented characters etc. survive.
     return /^[\x00-\x7F]*$/.test(text) ? text : `=?UTF-8?B?${btoa(unescape(encodeURIComponent(text)))}?=`;
   }
-  function downloadEmailAsEml(email){
+  function buildEmlString(email){
     const fromName = email.sentByName || 'PalaTrack';
     const fromAddr = email.fromEmail || 'no-reply@palatrack.com';
     const dateStr = email.date ? email.date.toUTCString() : new Date().toUTCString();
@@ -934,7 +1089,10 @@
       '',
       email.body || ''
     );
-    const blob = new Blob([lines.join('\r\n')], {type: 'message/rfc822'});
+    return lines.join('\r\n');
+  }
+  function downloadEmailAsEml(email){
+    const blob = new Blob([buildEmlString(email)], {type: 'message/rfc822'});
     const url = URL.createObjectURL(blob);
     const safeName = (email.subject || 'email').replace(/[^a-z0-9\-_ ]/gi, '').trim().slice(0, 60) || 'email';
     const a = document.createElement('a');
@@ -955,6 +1113,25 @@
       renderTimeline();
     });
   });
+  document.querySelectorAll('.tag-filters .status-chip[data-tagfilter]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const tag = chip.dataset.tagfilter;
+      activeTagFilter = activeTagFilter === tag ? null : tag;
+      document.querySelectorAll('.tag-filters .status-chip[data-tagfilter]').forEach(c=>{
+        c.classList.toggle('active', c.dataset.tagfilter === activeTagFilter);
+      });
+      renderTimeline();
+    });
+  });
+  document.getElementById('compactToggleBtn').addEventListener('click', ()=>{
+    compactMode = !compactMode;
+    document.body.classList.toggle('compact-view', compactMode);
+    document.getElementById('compactToggleBtn').textContent = compactMode ? '▤ Cozy' : '☰ Compact';
+    document.getElementById('compactToggleBtn').classList.toggle('active', compactMode);
+    try{ localStorage.setItem('palatrack_history_compact', compactMode ? '1' : '0'); }catch(e){}
+    renderTimeline();
+  });
+  if(compactMode) document.getElementById('compactToggleBtn').textContent = '▤ Cozy';
 
   function loadHistory(workspaceId, user){
     if(!boardId || !leadId){
@@ -995,9 +1172,11 @@
       allEmails = snap.docs.map(doc=>{
         const e = doc.data();
         return {
+          id: doc.id,
           subject: e.subject, to: e.to, cc: e.cc, sentByName: e.sentByName,
           fromEmail: e.fromEmail, status: e.status, body: e.body,
           attachmentNames: e.attachmentNames,
+          tags: Array.isArray(e.tags) ? e.tags : [],
           date: (e.sentAt && typeof e.sentAt.toDate === 'function') ? e.sentAt.toDate() : null
         };
       });
