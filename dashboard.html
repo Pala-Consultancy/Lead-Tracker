@@ -1300,9 +1300,13 @@
 
   /* ---------- Page loader ---------- */
   #pageLoader{
+    position:fixed;inset:0;z-index:500;
     min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:18px;background:radial-gradient(circle at 50% 0%, var(--c-blue-bg) 0%, var(--paper) 65%);
+    opacity:1;transition:opacity .4s ease;
   }
+  #pageLoader.hide{opacity:0;pointer-events:none;}
+  @media (prefers-reduced-motion: reduce){ #pageLoader{transition:none;} }
   .loader-logo{
     width:64px;height:64px;border-radius:16px;overflow:hidden;
     box-shadow:0 8px 20px rgba(27,89,165,0.3);
@@ -2997,12 +3001,14 @@
   function revealAppRoot(){
     if(appRootRevealed) return;
     appRootRevealed = true;
-    document.getElementById('pageLoader').style.display = 'none';
+    const loader = document.getElementById('pageLoader');
     const root = document.getElementById('appRoot');
     root.style.display = 'block';
     root.classList.remove('fade-in');
     void root.offsetWidth;
     root.classList.add('fade-in');
+    loader.classList.add('hide');
+    setTimeout(()=>{ loader.style.display = 'none'; }, 420);
   }
   function initFirebaseSync(){
     if(!firebaseConnected){
@@ -3065,13 +3071,21 @@
     if(code === "unavailable" || code === "auth/network-request-failed") return "Could not connect. Please check your connection and try again.";
     return "Please try again.";
   }
+  const moneyFormatterCache = {};
+  function getMoneyFormatter(curr, minFrac){
+    const key = curr + '_' + minFrac;
+    if(!moneyFormatterCache[key]){
+      moneyFormatterCache[key] = new Intl.NumberFormat('en-US', {
+        style:'currency', currency: curr, currencyDisplay:'narrowSymbol',
+        minimumFractionDigits: minFrac, maximumFractionDigits:2
+      });
+    }
+    return moneyFormatterCache[key];
+  }
   function formatMoney(n){
     const num = parseFloat(n)||0;
     try{
-      return new Intl.NumberFormat('en-US', {
-        style:'currency', currency: currency, currencyDisplay:'narrowSymbol',
-        minimumFractionDigits: num%1===0?0:2, maximumFractionDigits:2
-      }).format(num);
+      return getMoneyFormatter(currency, num%1===0?0:2).format(num);
     }catch(e){
       return num.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
@@ -3681,7 +3695,15 @@
   const filterStatus = document.getElementById('filterStatus');
   const filterTemperature = document.getElementById('filterTemperature');
   const filterMonth = document.getElementById('filterMonth');
-  [searchInput, filterSource, filterStatus, filterTemperature, filterMonth].forEach(el=>el.addEventListener('input', ()=>{
+  let searchDebounceTimer = null;
+  searchInput.addEventListener('input', ()=>{
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(()=>{
+      activeStatusGroup = null;
+      render();
+    }, 180);
+  });
+  [filterSource, filterStatus, filterTemperature, filterMonth].forEach(el=>el.addEventListener('input', ()=>{
     activeStatusGroup = null;
     render();
   }));
@@ -3694,8 +3716,12 @@
     });
   });
 
+  let lastMonthFilterSignature = null;
   function refreshMonthFilterOptions(){
     const keys = Array.from(new Set(leads.map(l=>monthKey(l.dateAdded)))).sort().reverse();
+    const signature = keys.join('|');
+    if(signature === lastMonthFilterSignature) return; // months haven't changed — skip rebuilding the dropdown
+    lastMonthFilterSignature = signature;
     const current = filterMonth.value;
     filterMonth.innerHTML = '<option value="">All months</option>' +
       keys.map(k=>`<option value="${k}">${esc(monthLabel(k))}</option>`).join('');
@@ -5705,6 +5731,7 @@ ${buildLeadContext()}`;
       isSigningOut = true;
       loginScreen.style.display = 'none';
       appRoot.style.display = 'none';
+      pageLoader.classList.remove('hide');
       pageLoader.style.display = 'flex';
       auth.signOut().then(()=>{
         location.href = 'index.html';
