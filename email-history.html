@@ -74,22 +74,38 @@
     text-decoration:none;margin-bottom:18px;
   }
   .back-link:hover{color:var(--teal);}
+  .letterhead-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:18px;
+    box-shadow:0 1px 2px rgba(16,32,55,0.04), 0 16px 36px -16px rgba(16,32,55,0.18);
+    padding:28px 30px 24px;position:relative;overflow:hidden;
+  }
+  .letterhead-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg, var(--teal), var(--clay));
+  }
+  .letterhead-eyebrow{
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--clay);margin-bottom:6px;
+  }
   .letterhead-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
-  .lead-name{font-size:34px;font-weight:600;line-height:1.08;margin:0;letter-spacing:-0.01em;}
-  .lead-company{font-size:14.5px;color:var(--slate);margin-top:5px;}
+  .lead-name{font-size:32px;font-weight:600;line-height:1.08;margin:0;letter-spacing:-0.01em;}
+  .lead-company{font-size:14px;color:var(--slate);margin-top:5px;}
   .lead-crest{
-    width:52px;height:52px;border-radius:50%;flex-shrink:0;
+    width:56px;height:56px;border-radius:50%;flex-shrink:0;
     background:linear-gradient(145deg, var(--teal) 0%, var(--teal-deep) 100%);
     color:#fff;display:flex;align-items:center;justify-content:center;
-    font-family:'Fraunces',serif;font-size:20px;font-weight:600;
+    font-family:'Fraunces',serif;font-size:21px;font-weight:600;
     box-shadow:0 8px 20px -6px rgba(15,62,114,0.5);overflow:hidden;
+    border:3px solid var(--panel-alt);
   }
   .lead-crest img{width:100%;height:100%;object-fit:cover;display:block;}
-  .fact-row{display:flex;flex-wrap:wrap;gap:0;margin-top:22px;border-top:1px solid var(--border);}
-  .fact{padding:14px 20px 0 0;margin-right:20px;border-right:1px solid var(--border-soft);}
-  .fact:last-child{border-right:none;margin-right:0;}
-  .fact-label{font-size:11px;color:var(--slate-light);margin-bottom:3px;}
-  .fact-value{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--ink);}
+  .fact-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;}
+  .fact{
+    display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;
+    background:var(--panel-alt);border:1px solid var(--border-soft);border-left:3px solid var(--teal);
+  }
+  .fact.fail-accent{border-left-color:var(--fail);}
+  .fact-label{font-size:10.5px;color:var(--slate-light);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+  .fact-value{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--ink);}
   .fact-value.fail{color:var(--fail);}
 
   .toolbar{
@@ -332,8 +348,9 @@
     }
     body{background:#fff;}
     .back-link, .back-to-top, .toolbar, .letter-actions, .copy-icon,
-    .expand-btn, .toast-stack, .share-modal-overlay{display:none !important;}
+    .expand-btn, .toast-stack, .share-modal-overlay, .bulk-bar, .letter-select{display:none !important;}
     .letterhead{padding-top:0;}
+    .letterhead-card{box-shadow:none;border:1px solid var(--border);}
     .timeline{padding-left:0;margin-top:16px;}
     .timeline::before, .date-marker::before, .entry-pip{display:none;}
     .date-marker{margin:22px 0 10px;}
@@ -361,20 +378,23 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       Back to lead
     </a>
-    <div class="letterhead-top">
-      <div>
-        <h1 class="lead-name serif" id="headerLeadName">Loading…</h1>
-        <div class="lead-company" id="headerLeadCompany"></div>
+    <div class="letterhead-card">
+      <div class="letterhead-eyebrow">Correspondence with</div>
+      <div class="letterhead-top">
+        <div>
+          <h1 class="lead-name serif" id="headerLeadName">Loading…</h1>
+          <div class="lead-company" id="headerLeadCompany"></div>
+        </div>
+        <div class="lead-crest" id="leadCrest">—</div>
       </div>
-      <div class="lead-crest" id="leadCrest">—</div>
+      <div class="fact-row" id="factRow" style="display:none;">
+        <div class="fact"><div><div class="fact-label">Sent</div><div class="fact-value" id="factSent">0</div></div></div>
+        <div class="fact fail-accent"><div><div class="fact-label">Failed</div><div class="fact-value fail" id="factFailed">0</div></div></div>
+        <div class="fact"><div><div class="fact-label">First contact</div><div class="fact-value" id="factFirst">—</div></div></div>
+        <div class="fact"><div><div class="fact-label">Last contact</div><div class="fact-value" id="factLast">—</div></div></div>
+      </div>
+      <div id="activityHeatmapHolder"></div>
     </div>
-    <div class="fact-row" id="factRow" style="display:none;">
-      <div class="fact"><div class="fact-label">Sent</div><div class="fact-value" id="factSent">0</div></div>
-      <div class="fact"><div class="fact-label">Failed</div><div class="fact-value fail" id="factFailed">0</div></div>
-      <div class="fact"><div class="fact-label">First contact</div><div class="fact-value" id="factFirst">—</div></div>
-      <div class="fact"><div class="fact-label">Last contact</div><div class="fact-value" id="factLast">—</div></div>
-    </div>
-    <div id="activityHeatmapHolder"></div>
   </div>
 
   <div class="new-since-banner" id="newSinceBanner" style="display:none;"></div>
@@ -393,6 +413,7 @@
       <button type="button" class="status-chip" data-tagfilter="important">⭐ Important</button>
       <button type="button" class="status-chip" data-tagfilter="followup">🚩 Follow-up</button>
     </div>
+    <button type="button" class="status-chip" id="selectAllBtn">☑️ Select all</button>
     <button type="button" class="status-chip" id="compactToggleBtn">☰ Compact</button>
     <button type="button" class="status-chip" id="exportPdfBtn" title="Opens your browser's print dialog — choose 'Save as PDF' there">🖨️ Export as PDF</button>
     <button type="button" class="status-chip" id="exportCsvBtn" title="Spreadsheet-style export for reporting">📊 Export as CSV</button>
@@ -943,6 +964,11 @@
     } else {
       bar.classList.remove('show');
     }
+    const visibleIds = lastFilteredList.filter(e=>e.id).map(e=>e.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id=>selectedIds.has(id));
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    selectAllBtn.textContent = allSelected ? '☑️ Deselect all' : '☑️ Select all';
+    selectAllBtn.classList.toggle('active', allSelected);
   }
   document.getElementById('bulkClearBtn').addEventListener('click', ()=>{
     selectedIds.clear();
@@ -1122,6 +1148,16 @@
       });
       renderTimeline();
     });
+  });
+  document.getElementById('selectAllBtn').addEventListener('click', ()=>{
+    const visibleIds = lastFilteredList.filter(e=>e.id).map(e=>e.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id=>selectedIds.has(id));
+    if(allSelected){
+      visibleIds.forEach(id=>selectedIds.delete(id));
+    } else {
+      visibleIds.forEach(id=>selectedIds.add(id));
+    }
+    renderTimeline();
   });
   document.getElementById('compactToggleBtn').addEventListener('click', ()=>{
     compactMode = !compactMode;
