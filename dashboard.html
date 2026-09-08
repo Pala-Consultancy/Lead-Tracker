@@ -3004,22 +3004,11 @@
     const loader = document.getElementById('pageLoader');
     const root = document.getElementById('appRoot');
     root.classList.remove('fade-in');
-    // appRoot was `display:none` until now, so everything render() just built
-    // (the full lead table, stat cards, etc.) has never been laid out or
-    // painted. Setting opacity:0 here keeps that first expensive paint
-    // invisible, so the stutter it causes never actually shows on screen —
-    // only once that's done (two rAFs later) do we start the fade-in
-    // animation, which then only has to animate already-painted content.
-    root.style.opacity = '0';
     root.style.display = 'block';
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        root.style.opacity = '';
-        root.classList.add('fade-in');
-        loader.classList.add('hide');
-        setTimeout(()=>{ loader.style.display = 'none'; }, 420);
-      });
-    });
+    void root.offsetWidth;
+    root.classList.add('fade-in');
+    loader.classList.add('hide');
+    setTimeout(()=>{ loader.style.display = 'none'; }, 420);
   }
   function initFirebaseSync(){
     if(!firebaseConnected){
@@ -3038,19 +3027,34 @@
         const bt = (b.deletedAt && typeof b.deletedAt.toDate === 'function') ? b.deletedAt.toDate().getTime() : 0;
         return bt - at;
       });
-      render();
-      renderTrashPanel();
-      if(currentView==='board') renderBoard();
-      if(currentView==='monthly') renderMonthlyView();
-      if(drawerLeadId){
-        const stillExists = leads.find(l=>l.id===drawerLeadId);
-        const notesEl = document.getElementById('drawerNotes');
-        const isTypingNotes = notesEl && document.activeElement === notesEl;
-        if(!stillExists) closeDrawer();
-        else if(!isTypingNotes) openDrawer(drawerLeadId);
+      function buildFullView(){
+        render();
+        renderTrashPanel();
+        if(currentView==='board') renderBoard();
+        if(currentView==='monthly') renderMonthlyView();
+        if(drawerLeadId){
+          const stillExists = leads.find(l=>l.id===drawerLeadId);
+          const notesEl = document.getElementById('drawerNotes');
+          const isTypingNotes = notesEl && document.activeElement === notesEl;
+          if(!stillExists) closeDrawer();
+          else if(!isTypingNotes) openDrawer(drawerLeadId);
+        }
+        applyPendingComposePrefill();
       }
-      applyPendingComposePrefill();
-      revealAppRoot();
+      if(!appRootRevealed){
+        // First load: start the loading-screen crossfade right away, while
+        // the main thread is still free — then build the actual table/
+        // board/stat cards a couple of frames later. This is what was
+        // making the transition feel janky: rebuilding the whole dashboard
+        // (65 leads, stat cards, etc.) used to happen in the same instant
+        // the fade animation was trying to start, so the animation was
+        // fighting that work for the same frame. Now the animation gets a
+        // clear run, and the (still-fast) content build happens right after.
+        revealAppRoot();
+        requestAnimationFrame(()=>requestAnimationFrame(buildFullView));
+      } else {
+        buildFullView();
+      }
     }, err=>{
       console.error("Firestore sync error", err);
       showToast(t('lostConnection'), true);
