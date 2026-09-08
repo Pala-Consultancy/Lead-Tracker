@@ -207,13 +207,28 @@
   /* ---------- Keyboard focus ---------- */
   .letter.kbd-focus{outline:2px solid var(--teal);outline-offset:3px;}
 
-  /* ---------- Frequency sparkline ---------- */
-  .freq-chart{display:flex;align-items:flex-end;gap:4px;height:36px;margin-top:18px;}
-  .freq-bar-col{flex:1;max-width:14px;display:flex;flex-direction:column;justify-content:flex-end;height:100%;cursor:pointer;}
-  .freq-bar{width:100%;border-radius:3px 3px 1px 1px;background:var(--border);min-height:3px;transition:background .12s, transform .12s;}
-  .freq-bar-col:hover .freq-bar{background:var(--teal);transform:scaleY(1.05);}
-  .freq-bar-col.best .freq-bar{background:var(--clay);}
-  .freq-bar-col.best:hover .freq-bar{background:var(--clay);}
+  /* ---------- Activity heatmap ---------- */
+  .heatmap-wrap{overflow-x:auto;margin-top:18px;padding-bottom:4px;}
+  .heatmap-months{display:flex;gap:3px;margin-bottom:3px;}
+  .heatmap-month-label{font-size:10px;color:var(--slate-light);flex-shrink:0;width:11px;overflow:visible;white-space:nowrap;}
+  .heatmap-body{display:flex;}
+  .heatmap-daylabels{display:flex;flex-direction:column;gap:3px;margin-right:5px;}
+  .heatmap-daylabel{font-size:9px;color:var(--slate-light);height:11px;line-height:11px;width:12px;}
+  .heatmap-weeks{display:flex;gap:3px;}
+  .heatmap-week{display:flex;flex-direction:column;gap:3px;}
+  .heatmap-day{width:11px;height:11px;border-radius:2px;background:var(--border-soft);}
+  .heatmap-day.level-1{background:color-mix(in srgb, var(--teal) 28%, var(--border-soft));cursor:pointer;}
+  .heatmap-day.level-2{background:color-mix(in srgb, var(--teal) 55%, var(--border-soft));cursor:pointer;}
+  .heatmap-day.level-3{background:color-mix(in srgb, var(--teal) 80%, var(--border-soft));cursor:pointer;}
+  .heatmap-day.level-4{background:var(--teal);cursor:pointer;}
+  .heatmap-day.level-1:hover, .heatmap-day.level-2:hover, .heatmap-day.level-3:hover, .heatmap-day.level-4:hover{outline:1.5px solid var(--clay);}
+
+  /* ---------- New-since-last-visit ---------- */
+  .new-since-banner{
+    display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--success);
+    background:var(--success-soft);padding:9px 14px;border-radius:9px;margin-bottom:14px;
+  }
+  .new-badge{background:var(--success);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle;}
 
   .share-modal-overlay{
     position:fixed;inset:0;background:rgba(16,32,55,0.45);z-index:200;
@@ -322,8 +337,10 @@
       <div class="fact"><div class="fact-label">First contact</div><div class="fact-value" id="factFirst">—</div></div>
       <div class="fact"><div class="fact-label">Last contact</div><div class="fact-value" id="factLast">—</div></div>
     </div>
-    <div id="freqChartHolder"></div>
+    <div id="activityHeatmapHolder"></div>
   </div>
+
+  <div class="new-since-banner" id="newSinceBanner" style="display:none;"></div>
 
   <div class="toolbar" id="toolbar" style="display:none;">
     <div class="search-wrap">
@@ -507,15 +524,40 @@
     });
   }
 
+  // Flags any email newer than this browser's last recorded visit to this
+  // lead's history, and shows a small banner if there are any. Stored per
+  // browser in localStorage — there's no account-wide "read" state, this is
+  // just "have I personally looked at this since it changed."
+  function applyNewSinceLastVisit(){
+    const key = `palatrack_history_lastvisit_${boardId}_${leadId}`;
+    let lastVisit = null;
+    try{
+      const raw = localStorage.getItem(key);
+      if(raw) lastVisit = new Date(raw);
+    }catch(e){}
+    if(lastVisit){
+      const newOnes = allEmails.filter(e=> e.date && e.date.getTime() > lastVisit.getTime());
+      if(newOnes.length){
+        newOnes.forEach(e=> e.isNewSinceVisit = true);
+        const banner = document.getElementById('newSinceBanner');
+        banner.style.display = 'flex';
+        banner.textContent = `${newOnes.length} new email${newOnes.length===1?'':'s'} since your last visit`;
+      }
+    }
+    try{ localStorage.setItem(key, new Date().toISOString()); }catch(e){}
+  }
+
   function updateFilterChipCounts(sentCount, failedCount){
     document.querySelector('.status-chip[data-filter="all"]').textContent = `All (${allEmails.length})`;
     document.querySelector('.status-chip[data-filter="sent"]').textContent = `Sent (${sentCount})`;
     document.querySelector('.status-chip[data-filter="failed"]').textContent = `Failed (${failedCount})`;
   }
 
-  // A small "how often did we email them" sparkline, grouped by week.
-  // Clicking a bar clears any active search/filter and scrolls to that
-  // week's first email — a quick way to jump around a long thread.
+  // A GitHub-style day-by-day activity heatmap spanning the correspondence's
+  // actual duration (padded to at least 4 weeks so a short thread still
+  // reads as a real grid). Clicking a day clears any active search/filter
+  // and jumps straight to that day — same "quick way to navigate a long
+  // thread" idea as before, just at day instead of week granularity.
   function mondayOfWeek(date){
     const d = new Date(date);
     const day = (d.getDay() + 6) % 7; // 0 = Monday
@@ -523,42 +565,92 @@
     d.setHours(0,0,0,0);
     return d;
   }
-  function renderFrequencySparkline(){
+  function jumpToDayKey(key){
+    document.getElementById('searchInput').value = '';
+    activeStatusFilter = 'all';
+    document.querySelectorAll('.status-chip[data-filter]').forEach(c=>c.classList.toggle('active', c.dataset.filter==='all'));
+    renderTimeline();
+    const marker = document.querySelector(`.date-marker[data-daykey="${key}"]`);
+    if(marker){
+      marker.closest('.day-group').classList.remove('collapsed');
+      marker.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
+    }
+  }
+  function renderActivityHeatmap(){
     const dated = allEmails.filter(e=>e.date);
-    const holder = document.getElementById('freqChartHolder');
+    const holder = document.getElementById('activityHeatmapHolder');
     if(dated.length < 2){ holder.innerHTML = ''; return; }
-    const buckets = {};
+
+    const counts = {};
     dated.forEach(e=>{
-      const key = mondayOfWeek(e.date).getTime();
-      buckets[key] = (buckets[key] || 0) + 1;
+      const key = dayKey(e.date);
+      counts[key] = (counts[key] || 0) + 1;
     });
-    const weekKeys = Object.keys(buckets).map(Number).sort((a,b)=>a-b);
-    const maxCount = Math.max(...weekKeys.map(k=>buckets[k]));
-    holder.innerHTML = `<div class="freq-chart">${weekKeys.map(k=>{
-      const count = buckets[k];
-      const h = Math.max(3, Math.round((count / maxCount) * 34));
-      const isBest = count === maxCount;
-      const label = new Date(k).toLocaleDateString(undefined, {month:'short', day:'numeric'});
-      return `<div class="freq-bar-col ${isBest?'best':''}" data-weekkey="${k}" title="Week of ${esc(label)}: ${count} email${count===1?'':'s'}">
-        <div class="freq-bar" style="height:${h}px"></div>
-      </div>`;
-    }).join('')}</div>`;
-    holder.querySelectorAll('.freq-bar-col').forEach(col=>{
-      col.addEventListener('click', ()=>{
-        const weekStart = Number(col.dataset.weekkey);
-        const weekEnd = weekStart + 7*24*60*60*1000;
-        const target = allEmails.find(e=>e.date && e.date.getTime() >= weekStart && e.date.getTime() < weekEnd);
-        if(!target) return;
-        document.getElementById('searchInput').value = '';
-        activeStatusFilter = 'all';
-        document.querySelectorAll('.status-chip[data-filter]').forEach(c=>c.classList.toggle('active', c.dataset.filter==='all'));
-        renderTimeline();
-        const marker = document.querySelector(`.date-marker[data-daykey="${dayKey(target.date)}"]`);
-        if(marker){
-          marker.closest('.day-group').classList.remove('collapsed');
-          marker.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
-        }
-      });
+    const maxCount = Math.max(...Object.values(counts));
+
+    // dated is sorted newest-first (same order as allEmails), so the last
+    // item is the earliest email and the first item is the most recent.
+    let start = mondayOfWeek(dated[dated.length - 1].date);
+    const end = mondayOfWeek(dated[0].date);
+    const MIN_WEEKS = 4;
+    const spanWeeks = Math.round((end - start) / (7*24*60*60*1000)) + 1;
+    if(spanWeeks < MIN_WEEKS){
+      start = new Date(end.getTime() - (MIN_WEEKS - 1) * 7*24*60*60*1000);
+    }
+
+    const weeks = [];
+    let cursor = new Date(start);
+    while(cursor <= end){
+      const week = [];
+      for(let d = 0; d < 7; d++){
+        const day = new Date(cursor);
+        day.setDate(day.getDate() + d);
+        week.push(day);
+      }
+      weeks.push(week);
+      cursor = new Date(cursor.getTime() + 7*24*60*60*1000);
+    }
+
+    let lastMonth = null;
+    const monthsHtml = weeks.map(week=>{
+      const m = week[0].getMonth();
+      const label = m !== lastMonth ? week[0].toLocaleDateString(undefined, {month:'short'}) : '';
+      lastMonth = m;
+      return `<div class="heatmap-month-label">${esc(label)}</div>`;
+    }).join('');
+
+    const dayLabels = ['M','','W','','F','',''];
+    const daysColHtml = dayLabels.map(l=>`<div class="heatmap-daylabel">${l}</div>`).join('');
+
+    function levelFor(count){
+      if(!count) return 0;
+      const ratio = count / maxCount;
+      if(ratio > 0.75) return 4;
+      if(ratio > 0.5) return 3;
+      if(ratio > 0.25) return 2;
+      return 1;
+    }
+    const weeksHtml = weeks.map(week=>{
+      const cellsHtml = week.map(day=>{
+        const key = dayKey(day);
+        const count = counts[key] || 0;
+        const label = day.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+        return `<div class="heatmap-day level-${levelFor(count)}" data-daykey="${key}" title="${esc(label)}: ${count} email${count===1?'':'s'}"></div>`;
+      }).join('');
+      return `<div class="heatmap-week">${cellsHtml}</div>`;
+    }).join('');
+
+    holder.innerHTML = `<div class="heatmap-wrap">
+      <div class="heatmap-months" style="margin-left:17px;">${monthsHtml}</div>
+      <div class="heatmap-body">
+        <div class="heatmap-daylabels">${daysColHtml}</div>
+        <div class="heatmap-weeks">${weeksHtml}</div>
+      </div>
+    </div>`;
+
+    holder.querySelectorAll('.heatmap-day').forEach(cell=>{
+      if(!counts[cell.dataset.daykey]) return; // nothing to jump to on an empty day
+      cell.addEventListener('click', ()=> jumpToDayKey(cell.dataset.daykey));
     });
   }
 
@@ -672,7 +764,10 @@
           <div class="letter" tabindex="-1">
             <div class="letter-head">
               <h3 class="letter-subject serif">${highlightText(e.subject || '(no subject)', query)}</h3>
-              <span class="postmark ${isFailed?'failed':'sent'}">${statusIcon}${isFailed?'Failed':'Sent'}</span>
+              <span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <span class="postmark ${isFailed?'failed':'sent'}">${statusIcon}${isFailed?'Failed':'Sent'}</span>
+                ${e.isNewSinceVisit ? '<span class="new-badge">New</span>' : ''}
+              </span>
             </div>
             ${threadBadge}
             <div class="letter-meta">
@@ -916,8 +1011,9 @@
         document.getElementById('factLast').textContent = formatShortDate(dated[0].date);
       }
       computeThreadInfo();
+      applyNewSinceLastVisit();
       updateFilterChipCounts(sentCount, failedCount);
-      renderFrequencySparkline();
+      renderActivityHeatmap();
       renderTimeline();
     }).catch(err=>{
       console.error(err);
