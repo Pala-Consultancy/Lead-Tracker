@@ -423,6 +423,15 @@
     cursor:pointer;text-transform:none;letter-spacing:normal;
   }
   .checkbox-pill input{width:auto;accent-color:var(--teal);cursor:pointer;}
+  .checkbox-pill-custom{cursor:default;padding-right:8px;background:var(--c-purple-bg, #EFE5FA);border-color:transparent;}
+  .checkbox-pill-custom .remove-tag{
+    border:none;background:none;color:var(--c-purple-fg, #7A4FB5);cursor:pointer;font-size:15px;
+    line-height:1;padding:0 0 0 2px;opacity:.7;
+  }
+  .checkbox-pill-custom .remove-tag:hover{opacity:1;color:var(--red);}
+  .tag-add-row{display:flex;gap:6px;margin-top:8px;align-items:center;}
+  .tag-add-row input{flex:1;max-width:240px;padding:8px 11px;font-size:13px;}
+  .tag-add-row button{padding:8px 14px;font-size:12.5px;flex-shrink:0;}
   .temp-select-row{display:flex;gap:8px;flex-wrap:wrap;}
   .temp-pill{
     display:flex;align-items:center;gap:7px;padding:9px 16px;border:1.5px solid var(--border);
@@ -1704,6 +1713,7 @@
           <option value="Non-profit" data-i18n="ind_nonprofit">Non-profit</option>
           <option value="Other" data-i18n="ind_other">Other</option>
         </select>
+        <input type="text" id="f-industry-custom" placeholder="Type the industry..." style="display:none;margin-top:6px;">
       </div>
       <div class="field">
         <label for="f-jobtitle" data-i18n="jobTitle">Job title</label>
@@ -1752,6 +1762,11 @@
             <input type="checkbox" id="f-noShow">
             <span data-i18n="didNotShowUp">Did not show up</span>
           </label>
+          <span id="outreachCustomPillsHolder" style="display:contents;"></span>
+        </div>
+        <div class="tag-add-row">
+          <input type="text" id="f-outreach-custom-input" placeholder="Add your own...">
+          <button type="button" class="btn" id="addOutreachCustomBtn">+ Add</button>
         </div>
       </div>
       <div class="field span3">
@@ -1781,6 +1796,11 @@
             <input type="checkbox" id="f-sig-content">
             <span data-i18n="sigDownloadedContent">Downloaded content or resource</span>
           </label>
+          <span id="buyingSignalsCustomPillsHolder" style="display:contents;"></span>
+        </div>
+        <div class="tag-add-row">
+          <input type="text" id="f-signal-custom-input" placeholder="Add your own...">
+          <button type="button" class="btn" id="addBuyingSignalCustomBtn">+ Add</button>
         </div>
       </div>
       <div class="field span3">
@@ -2973,12 +2993,24 @@
       console.error('Could not load board', err);
     });
   }
+  let appRootRevealed = false;
+  function revealAppRoot(){
+    if(appRootRevealed) return;
+    appRootRevealed = true;
+    document.getElementById('pageLoader').style.display = 'none';
+    const root = document.getElementById('appRoot');
+    root.style.display = 'block';
+    root.classList.remove('fade-in');
+    void root.offsetWidth;
+    root.classList.add('fade-in');
+  }
   function initFirebaseSync(){
     if(!firebaseConnected){
       document.getElementById('tallyStrip').innerHTML = `<div class="empty-state" style="grid-column:1/-1;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)">
         <h3>${t('notConnectedTitle')}</h3>
         <p>${t('notConnectedBody')}</p>
       </div>`;
+      revealAppRoot();
       return;
     }
     unsubscribeLeads = leadsCollection.onSnapshot(snapshot=>{
@@ -3001,9 +3033,11 @@
         else if(!isTypingNotes) openDrawer(drawerLeadId);
       }
       applyPendingComposePrefill();
+      revealAppRoot();
     }, err=>{
       console.error("Firestore sync error", err);
       showToast(t('lostConnection'), true);
+      revealAppRoot(); // don't strand the user behind the loader if the very first sync fails
     });
   }
   function loadCurrency(){
@@ -3100,6 +3134,10 @@
   });
   document.getElementById('f-industry').addEventListener('change', (e)=>{
     if(e.target.value) e.target.classList.remove('field-error');
+    const customEl = document.getElementById('f-industry-custom');
+    customEl.style.display = e.target.value === 'Other' ? '' : 'none';
+    if(e.target.value === 'Other') customEl.focus();
+    else customEl.value = '';
   });
   document.getElementById('f-status').addEventListener('change', (e)=>{
     if(e.target.value) e.target.classList.remove('field-error');
@@ -3144,6 +3182,38 @@
     }
   }
 
+  const FIXED_INDUSTRY_VALUES = ['Technology','Finance','Healthcare','Retail & E-commerce','Real Estate','Manufacturing','Education','Marketing & Advertising','Consulting','Hospitality & Travel','Construction','Transportation & Logistics','Legal','Media & Entertainment','Non-profit'];
+  let customOutreachTags = [];
+  let customBuyingSignalTags = [];
+  function renderCustomTagPills(holderId, tagsArray, rerenderFn){
+    const holder = document.getElementById(holderId);
+    holder.innerHTML = tagsArray.map((tag, i)=>`<span class="checkbox-pill checkbox-pill-custom">${esc(tag)}<button type="button" class="remove-tag" data-idx="${i}" title="Remove">×</button></span>`).join('');
+    holder.querySelectorAll('.remove-tag').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        tagsArray.splice(Number(btn.dataset.idx), 1);
+        rerenderFn();
+      });
+    });
+  }
+  function renderOutreachCustomPills(){ renderCustomTagPills('outreachCustomPillsHolder', customOutreachTags, renderOutreachCustomPills); }
+  function renderBuyingSignalCustomPills(){ renderCustomTagPills('buyingSignalsCustomPillsHolder', customBuyingSignalTags, renderBuyingSignalCustomPills); }
+  function addCustomTag(inputId, tagsArray, rerenderFn){
+    const input = document.getElementById(inputId);
+    const val = input.value.trim();
+    if(!val) return;
+    if(!tagsArray.some(t=>t.toLowerCase()===val.toLowerCase())) tagsArray.push(val);
+    input.value = '';
+    rerenderFn();
+  }
+  document.getElementById('addOutreachCustomBtn').addEventListener('click', ()=> addCustomTag('f-outreach-custom-input', customOutreachTags, renderOutreachCustomPills));
+  document.getElementById('f-outreach-custom-input').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); addCustomTag('f-outreach-custom-input', customOutreachTags, renderOutreachCustomPills); }
+  });
+  document.getElementById('addBuyingSignalCustomBtn').addEventListener('click', ()=> addCustomTag('f-signal-custom-input', customBuyingSignalTags, renderBuyingSignalCustomPills));
+  document.getElementById('f-signal-custom-input').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); addCustomTag('f-signal-custom-input', customBuyingSignalTags, renderBuyingSignalCustomPills); }
+  });
+
   function clearForm(){
     editingId = null;
     ['name','company','email','phone','notes'].forEach(k=>{
@@ -3153,6 +3223,8 @@
     document.getElementById('f-city').value = boardDefaults.city || '';
     document.getElementById('f-source').value = boardDefaults.source || '';
     document.getElementById('f-industry').value = boardDefaults.industry || '';
+    document.getElementById('f-industry-custom').value = '';
+    document.getElementById('f-industry-custom').style.display = 'none';
     document.getElementById('f-jobtitle').value = boardDefaults.jobTitle || '';
     document.getElementById('f-status').value = 'New';
     document.getElementById('f-temperature').value = '';
@@ -3171,6 +3243,10 @@
     document.getElementById('f-sig-budget').checked = false;
     document.getElementById('f-sig-multi').checked = false;
     document.getElementById('f-sig-content').checked = false;
+    customOutreachTags = [];
+    customBuyingSignalTags = [];
+    renderOutreachCustomPills();
+    renderBuyingSignalCustomPills();
     document.getElementById('f-daystoclose').value = '';
     ['f-name','f-source','f-jobtitle','f-date','f-country','f-city','f-industry','f-status'].forEach(id=>document.getElementById(id).classList.remove('field-error'));
     document.getElementById('tempSelectRow').classList.remove('field-error');
@@ -3191,7 +3267,7 @@
     const statusEl = document.getElementById('f-status');
     const temperatureEl = document.getElementById('f-temperature');
     const tempRowEl = document.getElementById('tempSelectRow');
-    [nameEl, sourceEl, jobTitleEl, dateEl, countryEl, cityEl, industryEl, statusEl].forEach(el=>el.classList.remove('field-error'));
+    [nameEl, sourceEl, jobTitleEl, dateEl, countryEl, cityEl, industryEl, statusEl, document.getElementById('f-industry-custom')].forEach(el=>el.classList.remove('field-error'));
     if(tempRowEl) tempRowEl.classList.remove('field-error');
     const missing = [];
     if(!name) missing.push({el:nameEl, label:t('leadName').toLowerCase()});
@@ -3201,6 +3277,7 @@
     if(!statusEl.value) missing.push({el:statusEl, label:t('status').toLowerCase()});
     if(!temperatureEl.value) missing.push({el:tempRowEl || temperatureEl, label:t('temperature').toLowerCase()});
     if(!industryEl.value) missing.push({el:industryEl, label:t('industry').toLowerCase()});
+    else if(industryEl.value === 'Other' && !document.getElementById('f-industry-custom').value.trim()) missing.push({el:document.getElementById('f-industry-custom'), label:t('industry').toLowerCase()});
     if(!jobTitleEl.value.trim()) missing.push({el:jobTitleEl, label:t('jobTitle').toLowerCase()});
     if(!dateEl.value) missing.push({el:dateEl, label:t('dateAdded').toLowerCase()});
     if(missing.length>0){
@@ -3214,6 +3291,9 @@
       showToast(msg, true);
       return;
     }
+    const industryValue = (document.getElementById('f-industry').value === 'Other' && document.getElementById('f-industry-custom').value.trim())
+      ? document.getElementById('f-industry-custom').value.trim()
+      : document.getElementById('f-industry').value;
     const data = {
       name, company,
       country: document.getElementById('f-country').value.trim(),
@@ -3223,7 +3303,7 @@
       temperature: document.getElementById('f-temperature').value,
       email: document.getElementById('f-email').value.trim(),
       phone: document.getElementById('f-phone').value.trim(),
-      industry: document.getElementById('f-industry').value,
+      industry: industryValue,
       jobTitle: document.getElementById('f-jobtitle').value.trim(),
       revenue: parseRevenueInput(document.getElementById('f-revenue').value),
       daysToClose: document.getElementById('f-daystoclose').value ? parseInt(document.getElementById('f-daystoclose').value, 10) : null,
@@ -3236,6 +3316,8 @@
       replied: document.getElementById('f-replied').checked,
       showedUp: document.getElementById('f-showedUp').checked,
       noShow: document.getElementById('f-noShow').checked,
+      customOutreach: [...customOutreachTags],
+      customBuyingSignals: [...customBuyingSignalTags],
       buyingSignals: [
         ['pricing','f-sig-pricing'], ['demo','f-sig-demo'], ['competitor','f-sig-competitor'],
         ['budget','f-sig-budget'], ['multi','f-sig-multi'], ['content','f-sig-content']
@@ -3458,7 +3540,15 @@
     syncTempPillUI(l.temperature || '');
     document.getElementById('f-email').value = l.email;
     document.getElementById('f-phone').value = l.phone;
-    document.getElementById('f-industry').value = l.industry || '';
+    if(l.industry && !FIXED_INDUSTRY_VALUES.includes(l.industry)){
+      document.getElementById('f-industry').value = 'Other';
+      document.getElementById('f-industry-custom').value = l.industry;
+      document.getElementById('f-industry-custom').style.display = '';
+    } else {
+      document.getElementById('f-industry').value = l.industry || '';
+      document.getElementById('f-industry-custom').value = '';
+      document.getElementById('f-industry-custom').style.display = 'none';
+    }
     document.getElementById('f-jobtitle').value = l.jobTitle || '';
     document.getElementById('f-revenue').value = revenueInputDisplay(l.revenue);
     document.getElementById('f-daystoclose').value = (l.daysToClose !== null && l.daysToClose !== undefined) ? l.daysToClose : '';
@@ -3471,6 +3561,10 @@
     document.getElementById('f-replied').checked = !!l.replied;
     document.getElementById('f-showedUp').checked = !!l.showedUp;
     document.getElementById('f-noShow').checked = !!l.noShow;
+    customOutreachTags = Array.isArray(l.customOutreach) ? [...l.customOutreach] : [];
+    customBuyingSignalTags = Array.isArray(l.customBuyingSignals) ? [...l.customBuyingSignals] : [];
+    renderOutreachCustomPills();
+    renderBuyingSignalCustomPills();
     const sigs = Array.isArray(l.buyingSignals) ? l.buyingSignals : [];
     document.getElementById('f-sig-pricing').checked = sigs.includes('pricing');
     document.getElementById('f-sig-demo').checked = sigs.includes('demo');
@@ -4541,12 +4635,16 @@ ${buildLeadContext()}`;
   });
 
   // ---------- CSV export/import ----------
-  const CSV_COLS = ['name','company','country','city','source','status','temperature','requestSent','requestAccepted','contacted','replied','showedUp','noShow','revenue','industry','jobTitle','email','phone','dateAdded','callDate','notes','buyingSignals'];
+  const CSV_COLS = ['name','company','country','city','source','status','temperature','requestSent','requestAccepted','contacted','replied','showedUp','noShow','revenue','industry','jobTitle','email','phone','dateAdded','callDate','notes','buyingSignals','customOutreach','customBuyingSignals'];
   const BOOL_COLS = ['requestSent','requestAccepted','contacted','replied','showedUp','noShow'];
+  const ARRAY_COLS_SEMICOLON = ['customOutreach','customBuyingSignals']; // free-text tags — commas inside a tag are possible, so ';' separates entries instead
   function toCSV(rows){
     const header = CSV_COLS.join(',');
     const lines = rows.map(l=>CSV_COLS.map(c=>{
-      let v = BOOL_COLS.includes(c) ? (l[c] ? 'yes' : 'no') : (l[c]||'').toString().replace(/"/g,'""');
+      let v;
+      if(BOOL_COLS.includes(c)) v = l[c] ? 'yes' : 'no';
+      else if(ARRAY_COLS_SEMICOLON.includes(c)) v = (Array.isArray(l[c]) ? l[c].join('; ') : (l[c]||'')).toString().replace(/"/g,'""');
+      else v = (l[c]||'').toString().replace(/"/g,'""');
       if(v.includes(',')||v.includes('\n')||v.includes('"')) v = `"${v}"`;
       return v;
     }).join(','));
@@ -4612,12 +4710,15 @@ ${buildLeadContext()}`;
           if(BOOL_COLS.includes(key)) val = /^(yes|true|1)$/i.test(val);
           if(key==='revenue') val = parseFloat(val) || 0;
           if(key==='buyingSignals') val = val ? val.split(',').map(s=>s.trim()).filter(Boolean) : [];
+          if(ARRAY_COLS_SEMICOLON.includes(key)) val = val ? val.split(';').map(s=>s.trim()).filter(Boolean) : [];
           obj[key] = val;
         });
         if(!obj.dateAdded) obj.dateAdded = todayISO();
         if(!obj.status) obj.status = 'New';
         if(!obj.source) obj.source = 'Other';
         if(!Array.isArray(obj.buyingSignals)) obj.buyingSignals = [];
+        if(!Array.isArray(obj.customOutreach)) obj.customOutreach = [];
+        if(!Array.isArray(obj.customBuyingSignals)) obj.customBuyingSignals = [];
         BOOL_COLS.forEach(k=>{ if(typeof obj[k] !== 'boolean') obj[k] = false; });
         return obj;
       });
@@ -4883,13 +4984,15 @@ ${buildLeadContext()}`;
           <span class="outreach-chip replied ${l.replied?'on':''}" onclick="window.__leadActions.toggleOutreach('${l.id}','replied');window.__leadActions.openDrawer('${l.id}')"><span class="dot"></span>${t('replied')}</span>
           <span class="outreach-chip showedUp ${l.showedUp?'on':''}" onclick="window.__leadActions.toggleOutreach('${l.id}','showedUp');window.__leadActions.openDrawer('${l.id}')"><span class="dot"></span>${t('showedUp')}</span>
           <span class="outreach-chip noShow ${l.noShow?'on':''}" onclick="window.__leadActions.toggleOutreach('${l.id}','noShow');window.__leadActions.openDrawer('${l.id}')"><span class="dot"></span>${t('noShowWord')}</span>
+          ${(Array.isArray(l.customOutreach) ? l.customOutreach : []).map(tag=>`<span class="outreach-chip on" style="background:var(--c-purple-bg, #EFE5FA);color:var(--c-purple-fg, #7A4FB5);"><span class="dot" style="background:var(--c-purple-fg, #7A4FB5);"></span>${esc(tag)}</span>`).join('')}
         </div>
       </div>
-      ${(Array.isArray(l.buyingSignals) && l.buyingSignals.length) ? `
+      ${((Array.isArray(l.buyingSignals) && l.buyingSignals.length) || (Array.isArray(l.customBuyingSignals) && l.customBuyingSignals.length)) ? `
       <div class="drawer-section">
         <div class="drawer-section-label">${t('buyingSignals')}</div>
         <div class="drawer-outreach">
-          ${l.buyingSignals.map(key=>`<span class="outreach-chip on signal"><span class="dot"></span>${t(SIG_LABEL_KEYS[key] || key)}</span>`).join('')}
+          ${(Array.isArray(l.buyingSignals) ? l.buyingSignals : []).map(key=>`<span class="outreach-chip on signal"><span class="dot"></span>${t(SIG_LABEL_KEYS[key] || key)}</span>`).join('')}
+          ${(Array.isArray(l.customBuyingSignals) ? l.customBuyingSignals : []).map(tag=>`<span class="outreach-chip on signal">${esc(tag)}</span>`).join('')}
         </div>
       </div>` : ''}
       <div class="drawer-section">
@@ -5688,16 +5791,16 @@ ${buildLeadContext()}`;
 
     auth.onAuthStateChanged(user=>{
       if(user){
-        pageLoader.style.display = 'none';
         if(!boardId){
+          pageLoader.style.display = 'none';
           location.href = 'boards.html';
           return;
         }
         loginScreen.style.display = 'none';
-        appRoot.style.display = 'block';
-        appRoot.classList.remove('fade-in');
-        void appRoot.offsetWidth;
-        appRoot.classList.add('fade-in');
+        // appRoot stays hidden behind pageLoader until revealAppRoot() fires,
+        // once the first real leads snapshot has actually arrived — this
+        // avoids a brief flash of the layout with empty/placeholder content
+        // before the real board data has loaded.
         currentUserPill.style.display = '';
         currentUserPill.textContent = '';
         clearLoginError();
@@ -5713,9 +5816,11 @@ ${buildLeadContext()}`;
         }).catch(err=>{
           console.error('Could not resolve workspace', err);
           showToast('Something went wrong loading your workspace.', true);
+          revealAppRoot(); // don't strand them behind the loader if this fails
         });
       } else {
         if(isSigningOut) return; // already navigating away — don't flash the login screen
+        appRootRevealed = false;
         pageLoader.style.display = 'none';
         appRoot.style.display = 'none';
         loginScreen.style.display = 'flex';
