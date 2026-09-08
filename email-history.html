@@ -127,6 +127,10 @@
   }
   .status-chip:hover{border-color:var(--teal);}
   .status-chip.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .status-chip:disabled{
+    cursor:not-allowed;opacity:.5;border-style:dashed;
+  }
+  .status-chip:disabled:hover{border-color:var(--border);}
   .status-chip:focus-visible, #searchInput:focus-visible, .back-link:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
 
   .timeline{position:relative;margin-top:26px;padding-left:30px;}
@@ -470,6 +474,21 @@
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+  // Share links and CSV/PDF export are Starter+ features. The real
+  // enforcement lives server-side (the Firestore rule on shareLinks, and
+  // the export buttons have no server round-trip so this client-side
+  // disable is the only gate they need) — this just keeps the UI honest
+  // about what's actually available.
+  function applyPlanGating(plan){
+    const isPaidPlan = plan === 'starter' || plan === 'premium' || plan === 'growth';
+    if(isPaidPlan) return; // buttons start enabled — nothing to do
+    [['shareLinkBtn','Shareable links'], ['exportCsvBtn','CSV export'], ['exportPdfBtn','PDF export']].forEach(([id, label])=>{
+      const btn = document.getElementById(id);
+      btn.disabled = true;
+      btn.title = `${label} needs the Starter plan or higher — upgrade in Billing.`;
+    });
+  }
   function playSuccessSound(){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1390,6 +1409,11 @@
       }
       loadHistory(workspaceId, user);
       currentWorkspaceId = workspaceId;
+      db.doc(`workspaces/${workspaceId}`).get().then(wsDoc=>{
+        applyPlanGating(wsDoc.exists ? (wsDoc.data().plan || 'free') : 'free');
+      }).catch(()=>{
+        applyPlanGating('free'); // can't confirm the plan — don't unlock paid features on a guess
+      });
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
