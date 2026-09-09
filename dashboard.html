@@ -3078,6 +3078,15 @@
   }
   function todayISO(){ return new Date().toISOString().slice(0,10); }
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  // requestSentAt/requestAcceptedAt/contactedAt can be either a Firestore
+  // Timestamp (set via serverTimestamp() from the drawer's quick-toggle) or
+  // a plain ISO string (set from the main lead-save form) — this handles both.
+  function formatConnectionDate(value){
+    if(!value) return null;
+    const date = (typeof value.toDate === 'function') ? value.toDate() : new Date(value);
+    if(isNaN(date.getTime())) return null;
+    return date.toLocaleDateString(undefined, {day:'numeric', month:'short', year:'numeric'});
+  }
 
   function friendlyErr(err){
     console.error(err);
@@ -3367,6 +3376,11 @@
       data.contactedAt = new Date().toISOString();
     } else if(existingLeadForStamp && existingLeadForStamp.contactedAt){
       data.contactedAt = existingLeadForStamp.contactedAt;
+    }
+    if(data.requestSent && !(existingLeadForStamp && existingLeadForStamp.requestSent)){
+      data.requestSentAt = new Date().toISOString();
+    } else if(existingLeadForStamp && existingLeadForStamp.requestSentAt){
+      data.requestSentAt = existingLeadForStamp.requestSentAt;
     }
     if(data.requestAccepted && !(existingLeadForStamp && existingLeadForStamp.requestAccepted)){
       data.requestAcceptedAt = new Date().toISOString();
@@ -3678,6 +3692,11 @@
     updates[field] = !l[field];
     if(field==='requestAccepted' && updates[field]) updates.requestSent = true;
     if(field==='requestSent' && !updates[field]) updates.requestAccepted = false;
+    if(field==='requestSent' && updates[field] && !l.requestSentAt) updates.requestSentAt = firebase.firestore.FieldValue.serverTimestamp();
+    if(field==='requestAccepted' && updates[field]){
+      if(!l.requestSentAt) updates.requestSentAt = firebase.firestore.FieldValue.serverTimestamp();
+      if(!l.requestAcceptedAt) updates.requestAcceptedAt = firebase.firestore.FieldValue.serverTimestamp();
+    }
     if(field==='replied' && updates[field]) updates.contacted = true;
     if(field==='contacted' && !updates[field]){ updates.replied = false; updates.showedUp = false; updates.noShow = false; updates.contactedAt = null; }
     if(field==='contacted' && updates[field]) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -4676,14 +4695,16 @@ ${buildLeadContext()}`;
   });
 
   // ---------- CSV export/import ----------
-  const CSV_COLS = ['name','company','country','city','source','status','temperature','requestSent','requestAccepted','contacted','replied','showedUp','noShow','revenue','industry','jobTitle','email','phone','dateAdded','callDate','notes','buyingSignals','customOutreach','customBuyingSignals'];
+  const CSV_COLS = ['name','company','country','city','source','status','temperature','requestSent','requestAccepted','requestSentDate','requestAcceptedDate','contacted','replied','showedUp','noShow','revenue','industry','jobTitle','email','phone','dateAdded','callDate','notes','buyingSignals','customOutreach','customBuyingSignals'];
   const BOOL_COLS = ['requestSent','requestAccepted','contacted','replied','showedUp','noShow'];
   const ARRAY_COLS_SEMICOLON = ['customOutreach','customBuyingSignals']; // free-text tags — commas inside a tag are possible, so ';' separates entries instead
+  const CONNECTION_DATE_COLS = {requestSentDate: 'requestSentAt', requestAcceptedDate: 'requestAcceptedAt'}; // derived, read-only — not re-imported
   function toCSV(rows){
     const header = CSV_COLS.join(',');
     const lines = rows.map(l=>CSV_COLS.map(c=>{
       let v;
       if(BOOL_COLS.includes(c)) v = l[c] ? 'yes' : 'no';
+      else if(CONNECTION_DATE_COLS[c]) v = formatConnectionDate(l[CONNECTION_DATE_COLS[c]]) || '';
       else if(ARRAY_COLS_SEMICOLON.includes(c)) v = (Array.isArray(l[c]) ? l[c].join('; ') : (l[c]||'')).toString().replace(/"/g,'""');
       else v = (l[c]||'').toString().replace(/"/g,'""');
       if(v.includes(',')||v.includes('\n')||v.includes('"')) v = `"${v}"`;
@@ -5027,6 +5048,11 @@ ${buildLeadContext()}`;
           <span class="outreach-chip noShow ${l.noShow?'on':''}" onclick="window.__leadActions.toggleOutreach('${l.id}','noShow');window.__leadActions.openDrawer('${l.id}')"><span class="dot"></span>${t('noShowWord')}</span>
           ${(Array.isArray(l.customOutreach) ? l.customOutreach : []).map(tag=>`<span class="outreach-chip on" style="background:var(--c-purple-bg, #EFE5FA);color:var(--c-purple-fg, #7A4FB5);"><span class="dot" style="background:var(--c-purple-fg, #7A4FB5);"></span>${esc(tag)}</span>`).join('')}
         </div>
+        ${(formatConnectionDate(l.requestSentAt) || formatConnectionDate(l.requestAcceptedAt)) ? `
+        <div style="font-size:11.5px;color:var(--slate);margin-top:8px;">
+          ${formatConnectionDate(l.requestSentAt) ? `Connected on ${formatConnectionDate(l.requestSentAt)}` : ''}
+          ${formatConnectionDate(l.requestAcceptedAt) ? `${formatConnectionDate(l.requestSentAt) ? ' &middot; ' : ''}Accepted on ${formatConnectionDate(l.requestAcceptedAt)}` : ''}
+        </div>` : ''}
       </div>
       ${((Array.isArray(l.buyingSignals) && l.buyingSignals.length) || (Array.isArray(l.customBuyingSignals) && l.customBuyingSignals.length)) ? `
       <div class="drawer-section">
