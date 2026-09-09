@@ -1266,6 +1266,17 @@
   .drawer-header h3{font-family:'Sora',sans-serif;font-size:17px;margin:0;color:var(--ink);}
   .drawer-body{padding:20px;overflow-y:auto;flex:1;}
   .drawer-section{margin-bottom:20px;}
+  .scheduled-email-chip{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--c-blue-tint2, #F6FAFE);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;margin-top:8px;font-size:12px;color:var(--slate);
+  }
+  .cancel-scheduled-btn{
+    flex-shrink:0;font-size:11.5px;font-weight:600;color:var(--red, #C0392B);
+    background:none;border:1px solid var(--red, #C0392B);border-radius:6px;padding:4px 10px;cursor:pointer;
+  }
+  .cancel-scheduled-btn:hover{background:var(--c-red-bg, #FBE4E2);}
+  .cancel-scheduled-btn:disabled{opacity:.6;cursor:default;}
   .drawer-section-label{
     font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;
     color:var(--slate);margin-bottom:8px;
@@ -2131,8 +2142,14 @@
       </div>
       <div class="gmail-compose-attachments" id="composeEmailAttachments"></div>
       <div class="gmail-compose-body" id="composeEmailBody" contenteditable="true" data-placeholder="Write your message..."></div>
-      <div class="confirm-modal-actions" style="padding:20px 28px 26px;">
+      <div class="confirm-modal-actions" style="padding:20px 28px 26px;flex-wrap:wrap;gap:10px;">
         <button type="button" class="btn" id="composeEmailCancelBtn">Cancel</button>
+        <div id="composeScheduleRow" style="display:none;align-items:center;gap:8px;">
+          <input type="datetime-local" id="composeScheduleInput">
+          <button type="button" class="btn" id="composeScheduleBackBtn" title="Back to sending now">✕</button>
+          <button type="button" class="btn btn-primary" id="composeScheduleConfirmBtn">Schedule</button>
+        </div>
+        <button type="button" class="btn" id="composeEmailScheduleToggleBtn" title="Choose a time to send this later">🕒 Send later</button>
         <button type="button" class="btn btn-primary" id="composeEmailSendBtn">Send</button>
       </div>
     </div>
@@ -5070,6 +5087,7 @@ ${buildLeadContext()}`;
             <button type="button" class="btn btn-primary" id="composeEmailBtn" style="padding:6px 14px;font-size:12.5px;" ${l.email ? '' : 'disabled title="No email address on file for this lead"'}>✉️ Send email</button>
           </div>
         </div>
+        <div id="scheduledEmailsList"></div>
       </div>
       <div class="drawer-section drawer-notes">
         <div class="drawer-section-label">${t('notes')}</div>
@@ -5089,8 +5107,52 @@ ${buildLeadContext()}`;
     });
     const composeBtn = document.getElementById('composeEmailBtn');
     if(composeBtn) composeBtn.onclick = ()=>openComposeEmailModal(l);
+    loadScheduledEmailsForDrawer(l.id);
     drawerOverlay.classList.add('open');
     leadDrawer.classList.add('open');
+  }
+  // Shows any pending "send later" emails for this lead, each with a
+  // Cancel button — scheduling only ever writes a pending placeholder
+  // (see gatherComposeEmailInput's caller above); sendScheduledEmails.js
+  // is the only thing that ever moves one to sent/failed.
+  function loadScheduledEmailsForDrawer(leadId){
+    const holder = document.getElementById('scheduledEmailsList');
+    if(!holder) return;
+    leadsCollection.doc(leadId).collection('scheduledEmails')
+      .where('status', '==', 'pending')
+      .orderBy('sendAt', 'asc')
+      .get().then(snap=>{
+        if(drawerLeadId !== leadId) return; // drawer moved to a different lead before this resolved
+        if(snap.empty){ holder.innerHTML = ''; return; }
+        holder.innerHTML = snap.docs.map(doc=>{
+          const d = doc.data();
+          const when = (d.sendAt && typeof d.sendAt.toDate === 'function')
+            ? d.sendAt.toDate().toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'})
+            : '—';
+          return `<div class="scheduled-email-chip">
+            <span>🕒 "${esc(d.subject || '(no subject)')}" scheduled for ${esc(when)}</span>
+            <button type="button" class="cancel-scheduled-btn" data-id="${doc.id}" data-lead="${leadId}">Cancel</button>
+          </div>`;
+        }).join('');
+        holder.querySelectorAll('.cancel-scheduled-btn').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            btn.disabled = true;
+            leadsCollection.doc(btn.dataset.lead).collection('scheduledEmails').doc(btn.dataset.id)
+              .update({status: 'cancelled'})
+              .then(()=>{
+                showToast('Scheduled email cancelled.');
+                loadScheduledEmailsForDrawer(btn.dataset.lead);
+              })
+              .catch(err=>{
+                console.error(err);
+                showToast('Could not cancel that: ' + (err.message || 'please try again.'), true);
+                btn.disabled = false;
+              });
+          });
+        });
+      }).catch(err=>{
+        console.error('Could not load scheduled emails', err);
+      });
   }
   function closeDrawer(){
     drawerOverlay.classList.remove('open');
@@ -5134,6 +5196,7 @@ ${buildLeadContext()}`;
     document.getElementById('composeEmailEmojiPicker').style.display = 'none';
     composeAttachments = [];
     renderComposeAttachments();
+    hideScheduleRow();
     const overlay = document.getElementById('composeEmailOverlay');
     overlay.style.display = 'flex';
     overlay.classList.add('open');
@@ -5373,18 +5436,29 @@ ${buildLeadContext()}`;
   }
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  document.getElementById('composeEmailSendBtn').addEventListener('click', ()=>{
-    if(!composeEmailLead) return;
+  function gatherComposeEmailInput(){
     const to = document.getElementById('composeEmailTo').value.trim();
     const ccRaw = document.getElementById('composeEmailCc').value.trim();
     const cc = ccRaw ? parseEmailList(ccRaw) : [];
     const subject = document.getElementById('composeEmailSubject').value.trim();
     const htmlBody = composeBodyEl.innerHTML.trim();
     const body = composeBodyEl.innerText.trim();
-    if(!to){ showToast('Please enter a recipient email address.', true); return; }
-    if(cc.some(addr => !EMAIL_RE.test(addr))){ showToast('One of the Cc addresses doesn\'t look valid.', true); return; }
-    if(!subject){ showToast('Please enter a subject.', true); return; }
-    if(!body){ showToast('Please write a message.', true); return; }
+    if(!to){ showToast('Please enter a recipient email address.', true); return null; }
+    if(cc.some(addr => !EMAIL_RE.test(addr))){ showToast('One of the Cc addresses doesn\'t look valid.', true); return null; }
+    if(!subject){ showToast('Please enter a subject.', true); return null; }
+    if(!body){ showToast('Please write a message.', true); return null; }
+    const attachments = composeAttachments.map(a => ({
+      filename: a.name,
+      mimeType: a.mimeType,
+      data: a.base64
+    }));
+    return {to, cc, subject, body, htmlBody, attachments};
+  }
+
+  document.getElementById('composeEmailSendBtn').addEventListener('click', ()=>{
+    if(!composeEmailLead) return;
+    const input = gatherComposeEmailInput();
+    if(!input) return;
     if(!sendLeadEmailFn){
       showToast('Email sending is not set up yet. Please contact support.', true);
       return;
@@ -5393,21 +5467,11 @@ ${buildLeadContext()}`;
     sendBtn.disabled = true;
     sendBtn.textContent = 'Sending...';
     const leadId = composeEmailLead.id;
-    const attachments = composeAttachments.map(a => ({
-      filename: a.name,
-      mimeType: a.mimeType,
-      data: a.base64
-    }));
     sendLeadEmailFn({
       workspaceId: workspaceId,
       boardId: boardId,
       leadId: leadId,
-      to,
-      cc,
-      subject,
-      body,
-      htmlBody,
-      attachments
+      ...input
     }).then(()=>{
       showToast('Email sent!');
       closeComposeEmailModal();
@@ -5417,6 +5481,73 @@ ${buildLeadContext()}`;
     }).finally(()=>{
       sendBtn.disabled = false;
       sendBtn.textContent = 'Send';
+    });
+  });
+
+  // ---------- Send later ----------
+  const composeScheduleRow = document.getElementById('composeScheduleRow');
+  const composeEmailScheduleToggleBtn = document.getElementById('composeEmailScheduleToggleBtn');
+  const composeEmailSendBtnEl = document.getElementById('composeEmailSendBtn');
+  const composeScheduleInput = document.getElementById('composeScheduleInput');
+
+  function showScheduleRow(){
+    // Default to tomorrow at 9am, and never allow picking a time already in
+    // the past.
+    const now = new Date();
+    const minDt = new Date(now.getTime() + 60000); // at least a minute from now
+    const defaultDt = new Date(now);
+    defaultDt.setDate(defaultDt.getDate() + 1);
+    defaultDt.setHours(9, 0, 0, 0);
+    function toLocalInputValue(d){
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    composeScheduleInput.min = toLocalInputValue(minDt);
+    composeScheduleInput.value = toLocalInputValue(defaultDt);
+    composeScheduleRow.style.display = 'flex';
+    composeEmailScheduleToggleBtn.style.display = 'none';
+    composeEmailSendBtnEl.style.display = 'none';
+  }
+  function hideScheduleRow(){
+    composeScheduleRow.style.display = 'none';
+    composeEmailScheduleToggleBtn.style.display = '';
+    composeEmailSendBtnEl.style.display = '';
+  }
+  composeEmailScheduleToggleBtn.addEventListener('click', showScheduleRow);
+  document.getElementById('composeScheduleBackBtn').addEventListener('click', hideScheduleRow);
+
+  document.getElementById('composeScheduleConfirmBtn').addEventListener('click', ()=>{
+    if(!composeEmailLead) return;
+    const input = gatherComposeEmailInput();
+    if(!input) return;
+    const chosen = composeScheduleInput.value;
+    if(!chosen){ showToast('Please choose a date and time.', true); return; }
+    const sendAtDate = new Date(chosen);
+    if(isNaN(sendAtDate.getTime()) || sendAtDate.getTime() <= Date.now()){
+      showToast('Please choose a time in the future.', true);
+      return;
+    }
+    const confirmBtn = document.getElementById('composeScheduleConfirmBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Scheduling...';
+    const leadId = composeEmailLead.id;
+    leadsCollection.doc(leadId).collection('scheduledEmails').add({
+      workspaceId, boardId, leadId,
+      ...input,
+      sentBy: auth.currentUser.uid,
+      status: 'pending',
+      sendAt: firebase.firestore.Timestamp.fromDate(sendAtDate),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      showToast(`Email scheduled for ${sendAtDate.toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'})}`);
+      closeComposeEmailModal();
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not schedule that email: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Schedule';
+      hideScheduleRow();
     });
   });
 
