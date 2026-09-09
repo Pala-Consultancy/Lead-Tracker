@@ -288,6 +288,9 @@
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   const leadId = params.get('lead');
+  const sequenceIdParam = params.get('sequenceId');
+  const isViewMode = !!sequenceIdParam;
+  let viewSteps = []; // populated in view mode from existing scheduledEmails docs
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
 
   let currentWorkspaceId = null;
@@ -448,7 +451,7 @@
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape' && document.getElementById('seqPanelOverlay').classList.contains('open')) closeEditPanel();
   });
-  document.getElementById('seqPanelDoneBtn').addEventListener('click', ()=>{
+  document.getElementById('seqPanelDoneBtn').onclick = ()=>{
     if(editingIndex === null) return;
     const subject = document.getElementById('seqPanelSubject').value.trim();
     const body = document.getElementById('seqPanelBody').value.trim();
@@ -461,13 +464,102 @@
     }
     closeEditPanel();
     renderCanvas();
-  });
+  };
   document.getElementById('seqPanelRemoveBtn').addEventListener('click', ()=>{
     if(editingIndex === null || editingIndex === 0) return;
     steps.splice(editingIndex, 1);
     closeEditPanel();
     renderCanvas();
   });
+
+  // ---------- View mode: looking at a sequence that's already running ----------
+  const STATUS_META = {
+    pending: {icon:'🕒', color:'var(--amber)', label:'Upcoming'},
+    sending: {icon:'🕒', color:'var(--amber)', label:'Sending now'},
+    sent: {icon:'✓', color:'var(--success)', label:'Sent'},
+    failed: {icon:'✕', color:'var(--fail)', label:'Failed to send'},
+    cancelled: {icon:'—', color:'var(--slate)', label:'Cancelled'},
+    cancelled_replied: {icon:'✓', color:'var(--success)', label:'Stopped — they replied'}
+  };
+  function loadExistingSequence(){
+    return db.collection('scheduledEmails')
+      .where('sequenceId', '==', sequenceIdParam)
+      .orderBy('stepNumber', 'asc')
+      .get()
+      .then(snap=>{
+        viewSteps = snap.docs.map(doc=>({id: doc.id, ...doc.data()}));
+        renderViewCanvas();
+      });
+  }
+  function renderViewCanvas(){
+    const canvas = document.getElementById('seqCanvas');
+    let html = `<div class="seq-node" style="cursor:default;">
+      <div class="seq-node-icon" style="background:var(--success);">✓</div>
+      <div class="seq-node-body">
+        <div class="seq-node-title">Send email</div>
+        <div class="seq-node-subject">Sent when the sequence started — <a href="email-history.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(leadId)}" style="color:var(--teal);">view in history</a></div>
+      </div>
+    </div>`;
+    viewSteps.forEach((step, i)=>{
+      const meta = STATUS_META[step.status] || {icon:'?', color:'var(--slate)', label:step.status};
+      html += `<div class="seq-connector"></div>
+      <div class="seq-node" data-view-idx="${i}">
+        <div class="seq-node-icon" style="background:${meta.color};">${meta.icon}</div>
+        <div class="seq-node-body">
+          <div class="seq-node-title">Follow-up ${step.stepNumber} — ${esc(meta.label)}</div>
+          <div class="seq-node-subject">${esc(step.subject) || '(no subject)'}</div>
+        </div>
+      </div>`;
+    });
+    canvas.innerHTML = html;
+    canvas.querySelectorAll('[data-view-idx]').forEach(el=>{
+      el.addEventListener('click', ()=> openViewStepPanel(Number(el.dataset.viewIdx)));
+    });
+  }
+  function openViewStepPanel(index){
+    const step = viewSteps[index];
+    const meta = STATUS_META[step.status] || {icon:'?', label:step.status};
+    document.getElementById('seqPanelIcon').textContent = meta.icon;
+    document.getElementById('seqPanelTitle').textContent = `Follow-up ${step.stepNumber}`;
+    document.getElementById('seqPanelSubtitle').textContent = meta.label +
+      (step.sendAt && typeof step.sendAt.toDate === 'function' ? ' · ' + step.sendAt.toDate().toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'}) : '');
+    const subjectEl = document.getElementById('seqPanelSubject');
+    const bodyEl = document.getElementById('seqPanelBody');
+    subjectEl.value = step.subject || '';
+    subjectEl.disabled = true;
+    bodyEl.value = step.body || '';
+    bodyEl.disabled = true;
+    bodyEl.style.height = 'auto';
+    bodyEl.style.height = Math.min(bodyEl.scrollHeight, 380) + 'px';
+    document.getElementById('seqSubjectCount').style.display = 'none';
+    document.getElementById('seqBodyCount').style.display = 'none';
+    document.getElementById('seqPanelDelayRow').style.display = 'none';
+    document.getElementById('seqPanelRemoveBtn').style.display = 'none';
+    const doneBtn = document.getElementById('seqPanelDoneBtn');
+    if(step.status === 'pending'){
+      doneBtn.textContent = 'Cancel this step';
+      doneBtn.classList.add('danger');
+      doneBtn.classList.remove('primary');
+      doneBtn.onclick = ()=>{
+        doneBtn.disabled = true;
+        db.doc(`scheduledEmails/${step.id}`).update({status: 'cancelled'}).then(()=>{
+          showToast('That step was cancelled.');
+          closeEditPanel();
+          loadExistingSequence();
+        }).catch(err=>{
+          console.error(err);
+          showToast('Could not cancel that: ' + (err.message || ''), true);
+          doneBtn.disabled = false;
+        });
+      };
+    } else {
+      doneBtn.textContent = 'Close';
+      doneBtn.classList.remove('danger');
+      doneBtn.classList.add('primary');
+      doneBtn.onclick = closeEditPanel;
+    }
+    document.getElementById('seqPanelOverlay').classList.add('open');
+  }
 
   // ---------- Zoom (cosmetic, matches the reference tool's controls) ----------
   function applyZoom(){
@@ -555,6 +647,11 @@
       document.getElementById('seqLeadName').textContent = leadData.name || 'Unnamed lead';
       document.getElementById('seqLeadEmail').textContent = leadData.email || '';
       document.title = `Email sequence for ${leadData.name || 'lead'} · PalaTrack`;
+      if(isViewMode){
+        const startBtn = document.getElementById('seqStartBtn');
+        startBtn.style.display = 'none';
+        return loadExistingSequence();
+      }
       if(!leadData.email){
         showToast('This lead has no email address on file.', true);
         document.getElementById('seqStartBtn').disabled = true;
