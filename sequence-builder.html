@@ -162,16 +162,26 @@
   }
   .seq-condition-node .icon{font-size:14px;}
 
-  .seq-branches{display:flex;gap:70px;margin-top:0;align-items:flex-start;position:relative;}
-  .seq-branches::before{
-    content:"";position:absolute;top:-30px;left:50%;transform:translateX(-50%);
-    width:calc(100% - 40px);height:30px;border-top:2px dotted var(--border);
+  .seq-branch-point{
+    position:relative;display:flex;flex-direction:column;align-items:center;
+    padding-top:30px;margin-bottom:6px;
   }
-  .seq-branch{display:flex;flex-direction:column;align-items:center;position:relative;animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;}
-  .seq-branch::before{content:"";width:2px;height:20px;background-image:linear-gradient(var(--border) 40%, transparent 0%);background-size:2px 8px;background-repeat:repeat-y;margin-bottom:4px;}
-  .seq-branch-label{font-size:12.5px;font-weight:700;margin-bottom:11px;white-space:nowrap;}
+  .seq-branch-point::before{
+    content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:2px;height:20px;background-image:linear-gradient(var(--border) 40%, transparent 0%);
+    background-size:2px 8px;background-repeat:repeat-y;
+  }
+  .seq-branch-point::after{
+    content:"";position:absolute;top:0;left:calc(50% - 280px);width:280px;height:0;border-top:2px dotted var(--border);
+  }
+  .seq-branch-label{font-size:12.5px;font-weight:700;margin-bottom:11px;white-space:nowrap;animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;}
   .seq-branch-label.replied{color:var(--success);}
   .seq-branch-label.noreply{color:var(--fail);}
+  .seq-yes-branch{
+    position:absolute;top:30px;right:calc(50% + 40px);width:220px;
+    display:flex;flex-direction:column;align-items:center;
+    animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;
+  }
   .seq-branch-end{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
     padding:13px 17px;display:flex;align-items:center;gap:12px;min-width:200px;
@@ -190,8 +200,6 @@
   }
   .seq-add-btn:hover{border-color:var(--teal);border-style:solid;color:var(--teal);background:var(--panel-alt);transform:translateY(-1px);}
   .seq-end-btn:hover{border-color:var(--fail);color:var(--fail);}
-
-  .seq-branch-column{display:flex;flex-direction:column;align-items:center;}
 
   /* ---------- Edit panel ---------- */
   .seq-panel-overlay{
@@ -486,51 +494,48 @@
       <button type="button" class="seq-node-edit" data-idx="${i}" title="Edit">✎</button>
     </div>`;
   }
-  // Builds the chain starting at step i, nesting every step after it inside
-  // the "No" branch column so it visually descends from that side rather
-  // than just sitting centered below everything.
-  function renderStepChain(i){
-    if(i >= steps.length) return '';
-    const isLast = i === steps.length - 1;
-    const delay = `${i * 70}ms`;
-    let html = renderStepNodeHTML(i);
-    if(isLast){
-      html += `<div class="seq-connector"></div>
-      <div class="seq-add-end-row" style="animation-delay:${delay}">
-        <button type="button" class="seq-add-btn" id="seqAddStepBtn">+ Add follow-up</button>
-      </div>`;
-    } else {
-      const next = steps[i+1];
-      const unitLabel = next.delayUnit === 'hours' ? 'hrs' : 'days';
-      html += `<div class="seq-connector"></div>
-      <div class="seq-delay-chip" style="animation-delay:${delay}">
-        🕒 <input type="number" class="seq-delay-input" data-idx="${i+1}" min="1" value="${next.delayValue || 2}"> ${unitLabel}
-      </div>
-      <div class="seq-connector"></div>
-      <div class="seq-condition-node" style="animation-delay:${delay}"><span class="icon">✉️</span> If email replied</div>
-      <div class="seq-branches">
-        <div class="seq-branch" style="animation-delay:${delay}">
-          <div class="seq-branch-label replied">Yes</div>
-          <div class="seq-branch-end">
-            <div class="seq-branch-end-icon">⊘</div>
-            <div>
-              <div class="seq-branch-end-title">End of sequence</div>
-              <div class="seq-branch-end-sub">No more follow-ups sent</div>
-            </div>
-          </div>
-        </div>
-        <div class="seq-branch" style="animation-delay:${delay}">
-          <div class="seq-branch-label noreply">No</div>
-          ${renderStepChain(i+1)}
-        </div>
-      </div>`;
-    }
-    return html;
-  }
-
+  // The main chain (Send email, Follow-up 2, Follow-up 3, ...) always stays
+  // in one straight centered column. At each step, the "Yes, they replied"
+  // branch floats off to the side via absolute positioning — it never
+  // takes up flow space, so it can't push the next follow-up further right
+  // the way actually nesting it would.
   function renderCanvas(){
     const canvas = document.getElementById('seqCanvas');
-    canvas.innerHTML = renderStepChain(0);
+    let html = '';
+    steps.forEach((step, i)=>{
+      const isLast = i === steps.length - 1;
+      const delay = `${i * 70}ms`;
+      html += renderStepNodeHTML(i);
+      if(isLast){
+        html += `<div class="seq-connector"></div>
+        <div class="seq-add-end-row" style="animation-delay:${delay}">
+          <button type="button" class="seq-add-btn" id="seqAddStepBtn">+ Add follow-up</button>
+        </div>`;
+      } else {
+        const next = steps[i+1];
+        const unitLabel = next.delayUnit === 'hours' ? 'hrs' : 'days';
+        html += `<div class="seq-connector"></div>
+        <div class="seq-delay-chip" style="animation-delay:${delay}">
+          🕒 <input type="number" class="seq-delay-input" data-idx="${i+1}" min="1" value="${next.delayValue || 2}"> ${unitLabel}
+        </div>
+        <div class="seq-connector"></div>
+        <div class="seq-condition-node" style="animation-delay:${delay}"><span class="icon">✉️</span> If email replied</div>
+        <div class="seq-branch-point" style="animation-delay:${delay}">
+          <div class="seq-yes-branch">
+            <div class="seq-branch-label replied">Yes</div>
+            <div class="seq-branch-end">
+              <div class="seq-branch-end-icon">⊘</div>
+              <div>
+                <div class="seq-branch-end-title">End of sequence</div>
+                <div class="seq-branch-end-sub">No more follow-ups sent</div>
+              </div>
+            </div>
+          </div>
+          <div class="seq-branch-label noreply">No</div>
+        </div>`;
+      }
+    });
+    canvas.innerHTML = html;
     document.getElementById('seqStepPill').textContent = `${steps.length} step${steps.length>1?'s':''}`;
     document.getElementById('seqStepPill').style.display = '';
 
