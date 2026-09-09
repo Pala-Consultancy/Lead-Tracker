@@ -1615,6 +1615,7 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <a class="btn icon-btn-settings" id="chatBtn" href="chat.html" title="Team chat" style="position:relative">💬<span class="notif-badge" id="chatBadge" style="display:none">0</span></a>
           <button class="btn icon-btn-settings" id="notifBtn" title="Follow-up reminders" style="position:relative">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+          <a class="btn icon-btn-settings" id="scheduledEmailsLink" href="#" title="Scheduled emails">🕒</a>
           <a class="btn icon-btn-settings" id="trashBtn" href="trash.html" title="Trash" data-i18n-title="trashLabel" style="position:relative">🗑️<span class="notif-badge" id="trashBadge" style="display:none">0</span></a>
           <button class="btn icon-btn-settings" id="settingsBtn" title="Settings" data-i18n-title="settingsWord">⚙️</button>
         </div>
@@ -2624,6 +2625,8 @@
   let auth = null;
   let firebaseConnected = false;
   const boardId = new URLSearchParams(location.search).get('board');
+  const scheduledEmailsLinkEl = document.getElementById('scheduledEmailsLink');
+  if(scheduledEmailsLinkEl && boardId) scheduledEmailsLinkEl.href = `scheduled-emails.html?board=${encodeURIComponent(boardId)}`;
   const boardIncompleteDismissBtn = document.getElementById('boardIncompleteDismissBtn');
   if(boardIncompleteDismissBtn){
     boardIncompleteDismissBtn.addEventListener('click', ()=>{
@@ -2892,6 +2895,11 @@
   const SOURCES = Object.keys(SOURCE_COLORS);
 
   let leads = [];
+  // leadIds with at least one pending "send later" email — used to show a
+  // small warning badge so a teammate doesn't email the same lead again
+  // while one's already queued up.
+  let leadsWithScheduledEmails = new Set();
+  let unsubscribeScheduledEmails = null;
   let notificationPrefs = {};
   function notifEnabled(key){ return notificationPrefs[key] !== false; }
   let presenceHeartbeatInterval = null;
@@ -3036,6 +3044,17 @@
       revealAppRoot();
       return;
     }
+    unsubscribeScheduledEmails = db.collectionGroup('scheduledEmails')
+      .where('workspaceId', '==', workspaceId)
+      .where('boardId', '==', boardId)
+      .where('status', '==', 'pending')
+      .onSnapshot(snap=>{
+        leadsWithScheduledEmails = new Set(snap.docs.map(d=>d.data().leadId));
+        if(currentView==='board') renderBoard();
+        else render();
+      }, err=>{
+        console.error('Could not sync scheduled emails', err);
+      });
     unsubscribeLeads = leadsCollection.onSnapshot(snapshot=>{
       const allDocs = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
       leads = allDocs.filter(l=>!l.deleted);
@@ -3913,6 +3932,7 @@
         <div class="name-cell" style="cursor:pointer" onclick="window.__leadActions.openDrawer('${l.id}')">
           ${l.temperature && TEMP_COLORS[l.temperature] ? `<span class="tag" style="background:${TEMP_COLORS[l.temperature].bg};color:${TEMP_COLORS[l.temperature].fg};margin-right:6px;cursor:pointer" title="${t(TEMP_LABEL_KEYS[l.temperature])}" onclick="event.stopPropagation();window.__leadActions.filterByTemperature('${l.temperature}')">${TEMP_COLORS[l.temperature].icon}</span>` : ''}
           ${esc(l.name) || '<span style="color:var(--slate-light)">Unnamed</span>'}
+          ${leadsWithScheduledEmails.has(l.id) ? `<span class="tag" style="background:var(--c-blue-bg, #E3EEFA);color:var(--teal);margin-left:6px;" title="This lead has a scheduled email waiting to send">🕒 Scheduled</span>` : ''}
         </div>
         <div class="sub-cell">${esc(l.company)||''}</div>
       </td>
@@ -5535,6 +5555,7 @@ ${buildLeadContext()}`;
       workspaceId, boardId, leadId,
       ...input,
       sentBy: auth.currentUser.uid,
+      sentByName: currentUserDisplayName || (auth.currentUser && auth.currentUser.email) || 'Someone',
       status: 'pending',
       sendAt: firebase.firestore.Timestamp.fromDate(sendAtDate),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -5598,7 +5619,7 @@ ${buildLeadContext()}`;
               return `<div class="board-card" draggable="true" data-id="${l.id}" style="--stat-accent:${stc.fg}">
                 <div class="board-card-avatar" style="background:${sc.dot}">${esc(initials(l.name))}</div>
                 <div class="board-card-body">
-                  <div class="board-card-name">${esc(l.name)||'Unnamed'}</div>
+                  <div class="board-card-name">${esc(l.name)||'Unnamed'}${leadsWithScheduledEmails.has(l.id) ? ` <span title="This lead has a scheduled email waiting to send">🕒</span>` : ''}</div>
                   <div class="board-card-company">${esc(l.company)||''}</div>
                   <div class="board-card-meta">
                     <span class="tag" style="background:${sc.bg};color:${sc.fg};font-size:10.5px;padding:2px 7px"><span class="tag-dot" style="background:${sc.dot}"></span>${esc(l.source)}</span>
@@ -5899,6 +5920,7 @@ ${buildLeadContext()}`;
     settingsOverlay.addEventListener('click', closeSettings);
     document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeLeads){ unsubscribeLeads(); unsubscribeLeads = null; }
+      if(unsubscribeScheduledEmails){ unsubscribeScheduledEmails(); unsubscribeScheduledEmails = null; }
       if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
       isSigningOut = true;
       loginScreen.style.display = 'none';
