@@ -47,6 +47,7 @@
   .sched-badge.sent{background:var(--success-soft);color:var(--success);}
   .sched-badge.failed{background:var(--fail-soft);color:var(--fail);}
   .sched-badge.cancelled{background:var(--border-soft);color:var(--slate);}
+  .sched-badge.cancelled_replied{background:var(--success-soft);color:var(--success);}
   .sched-meta{font-size:12.5px;color:var(--slate);line-height:1.8;margin-bottom:10px;}
   .sched-meta b{color:var(--ink);font-weight:600;}
   .sched-meta a{color:var(--teal);font-weight:600;text-decoration:none;}
@@ -151,14 +152,16 @@
 
   function renderList(){
     const holder = document.getElementById('listHolder');
-    const filtered = activeFilter === 'all' ? allScheduled : allScheduled.filter(e=>e.status === activeFilter);
+    const filtered = activeFilter === 'all' ? allScheduled
+      : activeFilter === 'cancelled' ? allScheduled.filter(e=>e.status === 'cancelled' || e.status === 'cancelled_replied')
+      : allScheduled.filter(e=>e.status === activeFilter);
     if(filtered.length === 0){
       holder.innerHTML = `<div class="empty-state"><h3>Nothing here</h3><p>${activeFilter === 'pending' ? "No emails currently scheduled to send." : "No emails match this filter."}</p></div>`;
       return;
     }
     holder.innerHTML = filtered.map((e, idx)=>{
       const when = e.sendAt ? formatWhen(e.sendAt) : '—';
-      const statusLabel = {pending:'Upcoming', sending:'Sending', sent:'Sent', failed:'Failed', cancelled:'Cancelled'}[e.status] || e.status;
+      const statusLabel = {pending:'Upcoming', sending:'Sending', sent:'Sent', failed:'Failed', cancelled:'Cancelled', cancelled_replied:'Stopped (replied)'}[e.status] || e.status;
       return `<div class="sched-item" data-idx="${idx}">
         <div class="sched-item-head">
           <h3 class="sched-subject">${esc(e.subject || '(no subject)')}</h3>
@@ -168,6 +171,7 @@
           <b>Lead</b> <a href="email-history.html?board=${encodeURIComponent(e.boardId)}&lead=${encodeURIComponent(e.leadId)}" class="sched-lead-link" data-key="${esc(e.boardId)}/${esc(e.leadId)}">Loading…</a><br>
           <b>To</b> ${esc(e.to || '')}<br>
           <b>Scheduled by</b> ${esc(e.sentByName || 'Someone')} &middot; <span class="sched-when">${esc(when)}</span>
+          ${e.sequenceId ? `<br><b>Sequence</b> step ${esc(e.stepNumber || '?')}` : ''}
           ${e.status === 'failed' && e.error ? `<br><b>Error</b> ${esc(e.error)}` : ''}
         </div>
         ${e.status === 'pending' ? `<div class="sched-actions"><button type="button" class="sched-cancel-btn" data-ref="${idx}">Cancel</button></div>` : ''}
@@ -223,6 +227,7 @@
             workspaceId: d.workspaceId, boardId: d.boardId, leadId: d.leadId,
             to: d.to, subject: d.subject, status: d.status || 'pending',
             sentByName: d.sentByName, error: d.error,
+            sequenceId: d.sequenceId, stepNumber: d.stepNumber,
             sendAt: (d.sendAt && typeof d.sendAt.toDate === 'function') ? d.sendAt.toDate() : null
           };
         });

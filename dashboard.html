@@ -430,6 +430,13 @@
   }
   .checkbox-pill-custom .remove-tag:hover{opacity:1;color:var(--red);}
   .tag-add-row{display:flex;gap:6px;margin-top:8px;align-items:center;}
+  .sequence-step{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;background:var(--c-blue-tint2, #F6FAFE);}
+  .sequence-step-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12.5px;font-weight:600;color:var(--ink);flex-wrap:wrap;}
+  .sequence-step-delay{width:52px;padding:5px 7px;font-size:12.5px;text-align:center;}
+  .sequence-step-remove{margin-left:auto;background:none;border:1px solid var(--border);border-radius:6px;color:var(--red, #C0392B);cursor:pointer;padding:3px 9px;font-size:12px;}
+  .sequence-step-remove:hover{background:var(--c-red-bg, #FBE4E2);}
+  .sequence-step-subject{width:100%;margin-bottom:8px;padding:9px 11px;font-size:13.5px;border:1px solid var(--border);border-radius:7px;}
+  .sequence-step-body{width:100%;padding:9px 11px;font-size:13px;border:1px solid var(--border);border-radius:7px;font-family:inherit;resize:vertical;}
   .tag-add-row input{flex:1;max-width:240px;padding:8px 11px;font-size:13px;}
   .tag-add-row button{padding:8px 14px;font-size:12.5px;flex-shrink:0;}
   .temp-select-row{display:flex;gap:8px;flex-wrap:wrap;}
@@ -2153,6 +2160,24 @@
         <button type="button" class="btn" id="composeEmailScheduleToggleBtn" title="Choose a time to send this later">🕒 Send later</button>
         <button type="button" class="btn btn-primary" id="composeEmailSendBtn">Send</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="sequenceOverlay" style="display:none">
+  <div class="confirm-modal" style="max-width:640px;width:94vw;text-align:left;">
+    <div style="padding:22px 26px 0;">
+      <h3 style="margin:0 0 4px;">Email sequence</h3>
+      <p style="font-size:13px;color:var(--slate);margin:0 0 6px;" id="sequenceLeadLabel">For this lead</p>
+      <p style="font-size:12.5px;color:var(--slate-light, var(--slate));margin:0 0 14px;">The first email sends right away. Each step after that only sends if this lead hasn't replied yet — the moment they do, everything still waiting in this sequence is cancelled automatically.</p>
+    </div>
+    <div id="sequenceStepsHolder" style="padding:0 26px;max-height:48vh;overflow-y:auto;"></div>
+    <div style="padding:12px 26px;">
+      <button type="button" class="btn" id="sequenceAddStepBtn">+ Add follow-up step</button>
+    </div>
+    <div class="confirm-modal-actions" style="padding:16px 26px 24px;">
+      <button type="button" class="btn" id="sequenceCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="sequenceStartBtn">Start sequence</button>
     </div>
   </div>
 </div>
@@ -5104,6 +5129,7 @@ ${buildLeadContext()}`;
           <span>Email</span>
           <div style="display:flex;gap:8px;align-items:center;">
             <a href="email-history.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(l.id)}" style="font-size:12px;font-weight:600;color:var(--teal);text-decoration:underline;">View full history →</a>
+            <button type="button" class="btn" id="startSequenceBtn" style="padding:6px 14px;font-size:12.5px;" ${l.email ? '' : 'disabled title="No email address on file for this lead"'}>📧 Sequence</button>
             <button type="button" class="btn btn-primary" id="composeEmailBtn" style="padding:6px 14px;font-size:12.5px;" ${l.email ? '' : 'disabled title="No email address on file for this lead"'}>✉️ Send email</button>
           </div>
         </div>
@@ -5127,6 +5153,8 @@ ${buildLeadContext()}`;
     });
     const composeBtn = document.getElementById('composeEmailBtn');
     if(composeBtn) composeBtn.onclick = ()=>openComposeEmailModal(l);
+    const startSeqBtn = document.getElementById('startSequenceBtn');
+    if(startSeqBtn) startSeqBtn.onclick = ()=>openSequenceModal(l);
     loadScheduledEmailsForDrawer(l.id);
     drawerOverlay.classList.add('open');
     leadDrawer.classList.add('open');
@@ -5570,6 +5598,126 @@ ${buildLeadContext()}`;
       confirmBtn.disabled = false;
       confirmBtn.textContent = 'Schedule';
       hideScheduleRow();
+    });
+  });
+
+  // ---------- Email sequences ----------
+  let sequenceLead = null;
+  const MAX_SEQUENCE_STEPS = 5;
+
+  function buildSequenceStepHTML(index){
+    const stepNum = index + 1;
+    const isFirst = index === 0;
+    return `<div class="sequence-step" data-step="${index}">
+      <div class="sequence-step-head">
+        <span>${isFirst ? 'Step 1 — sends right away' : `Step ${stepNum} — if no reply, sends after`}</span>
+        ${!isFirst ? `<input type="number" class="sequence-step-delay" min="1" max="30" value="2"> days` : ''}
+        ${!isFirst ? `<button type="button" class="sequence-step-remove" title="Remove this step">✕</button>` : ''}
+      </div>
+      <input type="text" class="sequence-step-subject" placeholder="Subject">
+      <textarea class="sequence-step-body" placeholder="Write your message..." rows="4"></textarea>
+    </div>`;
+  }
+  function renumberSequenceSteps(){
+    document.querySelectorAll('#sequenceStepsHolder .sequence-step').forEach((el, i)=>{
+      el.dataset.step = i;
+      const label = el.querySelector('.sequence-step-head span');
+      label.textContent = i === 0 ? 'Step 1 — sends right away' : `Step ${i+1} — if no reply, sends after`;
+    });
+  }
+  function wireSequenceStepRemovalButtons(){
+    document.querySelectorAll('.sequence-step-remove').forEach(btn=>{
+      btn.onclick = ()=>{
+        btn.closest('.sequence-step').remove();
+        renumberSequenceSteps();
+      };
+    });
+  }
+  function openSequenceModal(lead){
+    sequenceLead = lead;
+    document.getElementById('sequenceLeadLabel').textContent = `For ${lead.name || 'this lead'}${lead.email ? ' ('+lead.email+')' : ''}`;
+    const holder = document.getElementById('sequenceStepsHolder');
+    holder.innerHTML = buildSequenceStepHTML(0);
+    wireSequenceStepRemovalButtons();
+    const overlay = document.getElementById('sequenceOverlay');
+    overlay.style.display = 'flex';
+    overlay.classList.add('open');
+    overlay.querySelector('.confirm-modal').classList.add('open');
+  }
+  function closeSequenceModal(){
+    const overlay = document.getElementById('sequenceOverlay');
+    overlay.classList.remove('open');
+    overlay.querySelector('.confirm-modal').classList.remove('open');
+    overlay.style.display = 'none';
+    sequenceLead = null;
+  }
+  document.getElementById('sequenceAddStepBtn').addEventListener('click', ()=>{
+    const holder = document.getElementById('sequenceStepsHolder');
+    const count = holder.querySelectorAll('.sequence-step').length;
+    if(count >= MAX_SEQUENCE_STEPS){ showToast(`You can add up to ${MAX_SEQUENCE_STEPS} steps.`, true); return; }
+    holder.insertAdjacentHTML('beforeend', buildSequenceStepHTML(count));
+    wireSequenceStepRemovalButtons();
+  });
+  document.getElementById('sequenceCancelBtn').addEventListener('click', closeSequenceModal);
+  document.getElementById('sequenceOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'sequenceOverlay') closeSequenceModal();
+  });
+
+  document.getElementById('sequenceStartBtn').addEventListener('click', ()=>{
+    if(!sequenceLead) return;
+    const stepEls = Array.from(document.querySelectorAll('#sequenceStepsHolder .sequence-step'));
+    const steps = [];
+    for(const el of stepEls){
+      const subject = el.querySelector('.sequence-step-subject').value.trim();
+      const body = el.querySelector('.sequence-step-body').value.trim();
+      const delayInput = el.querySelector('.sequence-step-delay');
+      const delayDays = delayInput ? parseInt(delayInput.value, 10) : 0;
+      if(!subject || !body){ showToast('Please fill in a subject and message for every step.', true); return; }
+      if(delayInput && (!delayDays || delayDays < 1)){ showToast('Follow-up delay must be at least 1 day.', true); return; }
+      steps.push({subject, body, delayDays: delayDays || 0});
+    }
+    if(!sendLeadEmailFn){ showToast('Email sending is not set up yet. Please contact support.', true); return; }
+    const startBtn = document.getElementById('sequenceStartBtn');
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting...';
+    const leadId = sequenceLead.id;
+    const leadEmail = sequenceLead.email;
+    // Step 1 sends right away, the normal way — the same path a regular
+    // Send click uses. Everything after that is a scheduled follow-up,
+    // tagged so checkForReplies.js (and sendScheduledEmails.js's own
+    // safety-net check) will cancel it automatically the moment this lead
+    // actually replies.
+    sendLeadEmailFn({
+      workspaceId, boardId, leadId,
+      to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: '', attachments: []
+    }).then(()=>{
+      if(steps.length === 1) return Promise.resolve();
+      const sequenceId = db.collection('scheduledEmails').doc().id;
+      let cumulativeMs = Date.now();
+      const writes = [];
+      for(let i=1; i<steps.length; i++){
+        cumulativeMs += steps[i].delayDays * 24*60*60*1000;
+        writes.push(db.collection('scheduledEmails').add({
+          workspaceId, boardId, leadId,
+          to: leadEmail, cc: [], subject: steps[i].subject, body: steps[i].body, htmlBody: '', attachments: [],
+          sentBy: auth.currentUser.uid,
+          sentByName: currentUserDisplayName || (auth.currentUser && auth.currentUser.email) || 'Someone',
+          status: 'pending',
+          sendAt: firebase.firestore.Timestamp.fromDate(new Date(cumulativeMs)),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          sequenceId, stepNumber: i+1, cancelIfReplied: true
+        }));
+      }
+      return Promise.all(writes);
+    }).then(()=>{
+      showToast(`Sequence started — ${steps.length} email${steps.length>1?'s':''}, first one sent now.`);
+      closeSequenceModal();
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not start the sequence: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      startBtn.disabled = false;
+      startBtn.textContent = 'Start sequence';
     });
   });
 
