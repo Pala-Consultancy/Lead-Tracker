@@ -27,27 +27,43 @@
   #appRoot{display:none;height:100vh;display:flex;flex-direction:column;}
   .seq-header{
     display:flex;align-items:center;justify-content:space-between;gap:16px;
-    padding:14px 22px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;
+    padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;
+    box-shadow:0 1px 0 rgba(16,32,55,0.03);
   }
-  .seq-header-left{display:flex;align-items:center;gap:12px;}
-  .back-link{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--slate);text-decoration:none;}
-  .back-link:hover{color:var(--teal);}
+  .seq-header-left{display:flex;align-items:center;gap:14px;}
+  .back-link{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--slate);text-decoration:none;transition:color .12s, transform .12s;}
+  .back-link:hover{color:var(--teal);transform:translateX(-2px);}
+  .seq-lead-avatar{
+    width:38px;height:38px;border-radius:50%;flex-shrink:0;color:#fff;font-size:13.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg, var(--teal), var(--teal-deep));
+    box-shadow:0 3px 8px rgba(28,91,158,0.28);
+  }
   .seq-lead-name{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;}
   .seq-lead-email{font-size:12px;color:var(--slate);}
-  .seq-start-btn{
-    background:var(--teal);color:#fff;border:none;border-radius:9px;padding:10px 20px;
-    font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;
+  .seq-step-pill{
+    font-size:11px;font-weight:700;color:var(--teal);background:var(--panel-alt);
+    border:1px solid var(--border-soft);border-radius:20px;padding:3px 10px;margin-left:8px;
   }
-  .seq-start-btn:hover{background:var(--teal-deep);}
-  .seq-start-btn:disabled{opacity:.6;cursor:default;}
+  .seq-start-btn{
+    background:linear-gradient(135deg, var(--teal), var(--teal-deep));color:#fff;border:none;border-radius:10px;padding:11px 22px;
+    font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;
+    box-shadow:0 4px 14px rgba(28,91,158,0.32);transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .seq-start-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(28,91,158,0.4);}
+  .seq-start-btn:active{transform:translateY(0) scale(.98);}
+  .seq-start-btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none;}
+  .seq-start-btn.launching{animation:seqPulse 1s ease-in-out infinite;}
+  @keyframes seqPulse{0%,100%{box-shadow:0 4px 14px rgba(28,91,158,0.32);}50%{box-shadow:0 4px 22px rgba(28,91,158,0.6);}}
 
   .seq-canvas-wrap{flex:1;position:relative;overflow:auto;}
+  .seq-canvas-wrap.grabbing{cursor:grabbing;user-select:none;}
   .seq-canvas{
-    min-height:100%;min-width:100%;padding:60px 40px 120px;
+    min-height:100%;min-width:100%;padding:60px 40px 140px;
     background-image:radial-gradient(circle, #C9D8EA 1.4px, transparent 1.4px);
     background-size:22px 22px;
-    display:flex;flex-direction:column;align-items:center;
-    transform-origin:top center;transition:transform .15s ease;
+    display:flex;flex-direction:column;align-items:center;cursor:grab;
+    transform-origin:top center;transition:transform .18s ease;
   }
 
   .seq-zoom-controls{
@@ -56,56 +72,71 @@
   }
   .seq-zoom-controls button{
     width:34px;height:34px;border:none;background:none;cursor:pointer;font-size:16px;color:var(--slate);
-    border-bottom:1px solid var(--border-soft);
+    border-bottom:1px solid var(--border-soft);transition:background .1s, color .1s;
   }
   .seq-zoom-controls button:last-child{border-bottom:none;}
   .seq-zoom-controls button:hover{background:var(--panel-alt);color:var(--teal);}
 
+  @keyframes seqNodeIn{from{opacity:0;transform:translateY(14px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
   .seq-node{
-    background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);
-    padding:12px 16px;display:flex;align-items:center;gap:11px;cursor:pointer;min-width:230px;
-    transition:border-color .12s, box-shadow .12s;
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
+    padding:13px 17px;display:flex;align-items:center;gap:12px;cursor:pointer;min-width:250px;
+    transition:border-color .15s, box-shadow .15s, transform .15s;
+    animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;
   }
-  .seq-node:hover{border-color:var(--teal);}
+  .seq-node:hover{border-color:var(--teal);box-shadow:0 4px 18px -4px rgba(28,91,158,0.3);transform:translateY(-2px);}
   .seq-node-icon{
-    width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;
-    display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+    width:36px;height:36px;border-radius:50%;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+    background:linear-gradient(135deg, var(--teal), var(--teal-deep));
+    box-shadow:0 2px 8px rgba(28,91,158,0.3);
   }
   .seq-node-body{flex:1;min-width:0;}
-  .seq-node-title{font-size:13px;font-weight:700;color:var(--ink);}
-  .seq-node-subject{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;}
-  .seq-node-edit{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:14px;flex-shrink:0;}
-  .seq-node-edit:hover{color:var(--teal);}
+  .seq-node-title{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .seq-node-subject{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;}
+  .seq-node-edit{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:14px;flex-shrink:0;transition:color .12s, transform .12s;}
+  .seq-node-edit:hover{color:var(--teal);transform:scale(1.15);}
 
-  .seq-connector{width:2px;height:26px;background-image:linear-gradient(var(--border-light,#B9CBE2) 40%, transparent 0%);background-size:2px 8px;background-repeat:repeat-y;}
+  @keyframes seqFlow{to{background-position:0 -16px;}}
+  .seq-connector{
+    width:2px;height:30px;
+    background-image:linear-gradient(var(--teal) 45%, transparent 0%);
+    background-size:2px 8px;background-repeat:repeat-y;
+    animation:seqFlow 1.1s linear infinite;
+    opacity:.55;
+  }
 
+  @keyframes seqChipIn{from{opacity:0;transform:scale(.85);}to{opacity:1;transform:scale(1);}}
   .seq-delay-chip{
-    display:flex;align-items:center;gap:6px;background:var(--panel-alt);border:1px solid var(--border);
-    border-radius:20px;padding:6px 14px;font-size:12.5px;font-weight:700;color:var(--teal);
+    display:flex;align-items:center;gap:7px;background:linear-gradient(135deg, var(--panel-alt), #EAF2FB);
+    border:1px solid var(--border);border-radius:20px;padding:7px 15px;font-size:12.5px;font-weight:700;color:var(--teal);
+    box-shadow:0 2px 6px rgba(28,91,158,0.08);animation:seqChipIn .3s ease both;
   }
   .seq-delay-chip input{width:36px;border:none;background:none;font:inherit;font-weight:700;color:var(--teal);text-align:center;padding:0;}
 
   .seq-branches{display:flex;gap:60px;margin-top:0;align-items:flex-start;position:relative;}
   .seq-branches::before{
-    content:"";position:absolute;top:-26px;left:50%;transform:translateX(-50%);
-    width:calc(100% - 40px);height:26px;border-top:2px dotted var(--border);
+    content:"";position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+    width:calc(100% - 40px);height:30px;border-top:2px dotted var(--border);
   }
-  .seq-branch{display:flex;flex-direction:column;align-items:center;position:relative;}
+  .seq-branch{display:flex;flex-direction:column;align-items:center;position:relative;animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;}
   .seq-branch::before{content:"";width:2px;height:20px;background-image:linear-gradient(var(--border) 40%, transparent 0%);background-size:2px 8px;background-repeat:repeat-y;margin-bottom:4px;}
-  .seq-branch-label{font-size:11.5px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:10px;white-space:nowrap;}
+  .seq-branch-label{font-size:11.5px;font-weight:700;padding:5px 13px;border-radius:20px;margin-bottom:11px;white-space:nowrap;display:flex;align-items:center;gap:5px;}
   .seq-branch-label.replied{background:var(--success-soft);color:var(--success);}
   .seq-branch-label.noreply{background:var(--fail-soft);color:var(--fail);}
   .seq-branch-end{
-    font-size:12px;color:var(--slate);border:1px dashed var(--border);border-radius:10px;
-    padding:12px 16px;text-align:center;background:var(--panel-alt);min-width:150px;
+    font-size:12px;color:var(--slate);border:1.5px dashed var(--border);border-radius:12px;
+    padding:14px 18px;text-align:center;background:var(--panel-alt);min-width:160px;
+    transition:border-color .15s;
   }
-  .seq-add-end-row{display:flex;gap:8px;margin-top:4px;}
+  .seq-branch-end:hover{border-color:var(--success);}
+  .seq-add-end-row{display:flex;gap:8px;margin-top:4px;animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;}
   .seq-add-btn, .seq-end-btn{
     display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;
-    border:1px solid var(--border);border-radius:9px;padding:9px 15px;cursor:pointer;
-    background:var(--panel);color:var(--ink);font-family:'Inter',sans-serif;
+    border:1.5px dashed var(--border);border-radius:11px;padding:11px 18px;cursor:pointer;
+    background:var(--panel);color:var(--ink);font-family:'Inter',sans-serif;transition:all .15s;
   }
-  .seq-add-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .seq-add-btn:hover{border-color:var(--teal);border-style:solid;color:var(--teal);background:var(--panel-alt);transform:translateY(-1px);}
   .seq-end-btn:hover{border-color:var(--fail);color:var(--fail);}
 
   .seq-branch-column{display:flex;flex-direction:column;align-items:center;}
@@ -191,15 +222,18 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         Back to lead
       </a>
+      <div class="seq-lead-avatar" id="seqLeadAvatar">?</div>
       <div>
-        <div class="seq-lead-name" id="seqLeadName">Loading…</div>
+        <div class="seq-lead-name">
+          <span id="seqLeadName">Loading…</span><span class="seq-step-pill" id="seqStepPill" style="display:none;"></span>
+        </div>
         <div class="seq-lead-email" id="seqLeadEmail"></div>
       </div>
     </div>
     <button type="button" class="seq-start-btn" id="seqStartBtn">Start sequence</button>
   </div>
 
-  <div class="seq-canvas-wrap">
+  <div class="seq-canvas-wrap" id="seqCanvasWrap">
     <div class="seq-zoom-controls">
       <button type="button" id="seqZoomIn">+</button>
       <button type="button" id="seqZoomOut">−</button>
@@ -272,6 +306,11 @@
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function initials(name){
+    const parts = (name||'').trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return '?';
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
   function showToast(message, danger){
     const stack = document.getElementById('toastStack');
     const el = document.createElement('div');
@@ -315,7 +354,8 @@
     let html = '';
     steps.forEach((step, i)=>{
       const isLast = i === steps.length - 1;
-      html += `<div class="seq-node" data-idx="${i}">
+      const delay = `${i * 70}ms`;
+      html += `<div class="seq-node" data-idx="${i}" style="animation-delay:${delay}">
         <div class="seq-node-icon">${nodeIconFor(i)}</div>
         <div class="seq-node-body">
           <div class="seq-node-title">${esc(nodeTitleFor(i))}</div>
@@ -325,28 +365,30 @@
       </div>`;
       if(isLast){
         html += `<div class="seq-connector"></div>
-        <div class="seq-add-end-row">
+        <div class="seq-add-end-row" style="animation-delay:${delay}">
           <button type="button" class="seq-add-btn" id="seqAddStepBtn">+ Add follow-up</button>
         </div>`;
       } else {
         const next = steps[i+1];
         const unitLabel = next.delayUnit === 'hours' ? 'hrs' : 'days';
         html += `<div class="seq-connector"></div>
-        <div class="seq-delay-chip">
+        <div class="seq-delay-chip" style="animation-delay:${delay}">
           🕒 <input type="number" class="seq-delay-input" data-idx="${i+1}" min="1" value="${next.delayValue || 2}"> ${unitLabel}
         </div>
         <div class="seq-branches">
-          <div class="seq-branch">
+          <div class="seq-branch" style="animation-delay:${delay}">
             <div class="seq-branch-label replied">✓ Replied</div>
             <div class="seq-branch-end">Sequence stops here</div>
           </div>
-          <div class="seq-branch">
+          <div class="seq-branch" style="animation-delay:${delay}">
             <div class="seq-branch-label noreply">✕ No reply</div>
           </div>
         </div>`;
       }
     });
     canvas.innerHTML = html;
+    document.getElementById('seqStepPill').textContent = `${steps.length} step${steps.length>1?'s':''}`;
+    document.getElementById('seqStepPill').style.display = '';
 
     canvas.querySelectorAll('.seq-node, .seq-node-edit').forEach(el=>{
       el.addEventListener('click', (e)=>{
@@ -502,8 +544,9 @@
     </div>`;
     viewSteps.forEach((step, i)=>{
       const meta = STATUS_META[step.status] || {icon:'?', color:'var(--slate)', label:step.status};
+      const delay = `${(i+1) * 70}ms`;
       html += `<div class="seq-connector"></div>
-      <div class="seq-node" data-view-idx="${i}">
+      <div class="seq-node" data-view-idx="${i}" style="animation-delay:${delay}">
         <div class="seq-node-icon" style="background:${meta.color};">${meta.icon}</div>
         <div class="seq-node-body">
           <div class="seq-node-title">Follow-up ${step.stepNumber} — ${esc(meta.label)}</div>
@@ -512,6 +555,8 @@
       </div>`;
     });
     canvas.innerHTML = html;
+    document.getElementById('seqStepPill').textContent = `${viewSteps.length + 1} step${viewSteps.length ? 's' : ''}`;
+    document.getElementById('seqStepPill').style.display = '';
     canvas.querySelectorAll('[data-view-idx]').forEach(el=>{
       el.addEventListener('click', ()=> openViewStepPanel(Number(el.dataset.viewIdx)));
     });
@@ -569,6 +614,28 @@
   document.getElementById('seqZoomOut').addEventListener('click', ()=>{ zoomLevel = Math.max(0.5, zoomLevel - 0.1); applyZoom(); });
   document.getElementById('seqZoomReset').addEventListener('click', ()=>{ zoomLevel = 1; applyZoom(); });
 
+  // ---------- Click-and-drag panning ----------
+  (function(){
+    const wrap = document.getElementById('seqCanvasWrap') || document.querySelector('.seq-canvas-wrap');
+    let dragging = false, startX = 0, startY = 0, startScrollX = 0, startScrollY = 0;
+    wrap.addEventListener('mousedown', (e)=>{
+      if(e.target.closest('.seq-node, .seq-delay-chip, .seq-add-btn, .seq-branch-end')) return;
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      startScrollX = wrap.scrollLeft; startScrollY = wrap.scrollTop;
+      wrap.classList.add('grabbing');
+    });
+    window.addEventListener('mousemove', (e)=>{
+      if(!dragging) return;
+      wrap.scrollLeft = startScrollX - (e.clientX - startX);
+      wrap.scrollTop = startScrollY - (e.clientY - startY);
+    });
+    window.addEventListener('mouseup', ()=>{
+      dragging = false;
+      wrap.classList.remove('grabbing');
+    });
+  })();
+
   // ---------- Start sequence ----------
   document.getElementById('seqStartBtn').addEventListener('click', ()=>{
     if(!leadData || !currentWorkspaceId) return;
@@ -581,7 +648,8 @@
     }
     const startBtn = document.getElementById('seqStartBtn');
     startBtn.disabled = true;
-    startBtn.textContent = 'Starting...';
+    startBtn.textContent = '🚀 Launching...';
+    startBtn.classList.add('launching');
     const leadEmail = leadData.email;
     sendLeadEmailFn({
       workspaceId: currentWorkspaceId, boardId, leadId,
@@ -606,11 +674,15 @@
       }
       return Promise.all(writes);
     }).then(()=>{
+      startBtn.classList.remove('launching');
+      startBtn.textContent = '✓ Sequence live';
+      startBtn.style.background = 'linear-gradient(135deg, var(--success), #164F41)';
       showToast(`Sequence started — ${steps.length} email${steps.length>1?'s':''}, first one sent now.`);
       setTimeout(()=>{ location.href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 1200);
     }).catch(err=>{
       console.error(err);
       showToast('Could not start the sequence: ' + (err.message || 'please try again.'), true);
+      startBtn.classList.remove('launching');
       startBtn.disabled = false;
       startBtn.textContent = 'Start sequence';
     });
@@ -645,6 +717,7 @@
       leadData = leadDoc.data();
       leadData.__senderName = memberDoc.exists ? memberDoc.data().name : null;
       document.getElementById('seqLeadName').textContent = leadData.name || 'Unnamed lead';
+      document.getElementById('seqLeadAvatar').textContent = initials(leadData.name);
       document.getElementById('seqLeadEmail').textContent = leadData.email || '';
       document.title = `Email sequence for ${leadData.name || 'lead'} · PalaTrack`;
       if(isViewMode){
