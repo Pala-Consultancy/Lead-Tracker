@@ -136,6 +136,7 @@
   .seq-node-body{flex:1;min-width:0;}
   .seq-node-title{font-size:13.5px;font-weight:700;color:var(--ink);}
   .seq-node-subject{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;}
+  .seq-node-scheduled{font-size:11px;font-weight:700;color:var(--amber);margin-top:2px;}
   .seq-node-edit{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:14px;flex-shrink:0;transition:color .12s, transform .12s;}
   .seq-node-edit:hover{color:var(--teal);transform:scale(1.15);}
 
@@ -391,6 +392,16 @@
         <label>Message <span class="seq-char-count" id="seqBodyCount">0 characters</span></label>
         <textarea id="seqPanelBody" placeholder="Write your message..."></textarea>
       </div>
+      <div id="seqPanelSendTimeRow" style="display:none;">
+        <label>When should this send?</label>
+        <div class="seq-unit-chips" style="display:inline-flex;margin-bottom:10px;">
+          <button type="button" class="seq-unit-chip active" data-sendmode="now">Send now</button>
+          <button type="button" class="seq-unit-chip" data-sendmode="scheduled">Schedule for later</button>
+        </div>
+        <div id="seqPanelScheduleAtWrap" style="display:none;">
+          <input type="datetime-local" id="seqPanelScheduleAt">
+        </div>
+      </div>
       <div id="seqPanelDelayRow" style="display:none;">
         <label>If no reply, send after</label>
         <div class="seq-unit-toggle">
@@ -474,7 +485,6 @@
 
   let currentWorkspaceId = null;
   let leadData = null;
-  const MAX_STEPS = 5;
   // steps[0] = {subject, body} (sends immediately). steps[1..] additionally
   // have delayValue + delayUnit ('hours'|'days') — if no reply since the
   // previous step, wait this long before sending.
@@ -494,12 +504,16 @@
     const step = steps[i];
     const delay = `${i * 70}ms`;
     const draggable = i > 0; // step 1 (the immediate send) stays fixed as the anchor
+    const scheduledBadge = (i === 0 && step.sendMode === 'scheduled' && step.scheduledAt)
+      ? `<div class="seq-node-scheduled">🕒 ${esc(new Date(step.scheduledAt).toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'}))}</div>`
+      : '';
     return `<div class="seq-node" data-idx="${i}" style="animation-delay:${delay}" ${draggable ? 'draggable="true"' : ''}>
       ${draggable ? `<span class="seq-node-handle" title="Drag to reorder">⠿</span>` : ''}
       <div class="seq-node-icon">${nodeIconFor(i)}</div>
       <div class="seq-node-body">
         <div class="seq-node-title">${esc(nodeTitleFor(i))}</div>
         <div class="seq-node-subject">${esc(step.subject) || 'Click to write this email'}</div>
+        ${scheduledBadge}
       </div>
       <button type="button" class="seq-node-edit" data-idx="${i}" title="Edit">✎</button>
     </div>`;
@@ -607,7 +621,6 @@
     });
     const addBtn = document.getElementById('seqAddStepBtn');
     if(addBtn) addBtn.addEventListener('click', ()=>{
-      if(steps.length >= MAX_STEPS){ showToast(`You can add up to ${MAX_STEPS} steps.`, true); return; }
       steps.push({subject:'', body:'', delayValue:2, delayUnit:'days'});
       renderCanvas();
       openEditPanel(steps.length - 1);
@@ -639,8 +652,12 @@
     document.getElementById('seqBodyCount').textContent = `${v.length} character${v.length===1?'':'s'}`;
   }
   function activeUnit(){
-    const chip = document.querySelector('.seq-unit-chip.active');
+    const chip = document.querySelector('#seqPanelDelayRow .seq-unit-chip.active');
     return chip ? chip.dataset.unit : 'days';
+  }
+  function activeSendMode(){
+    const chip = document.querySelector('#seqPanelSendTimeRow .seq-unit-chip.active');
+    return chip ? chip.dataset.sendmode : 'now';
   }
   function updateTimingPreview(){
     if(editingIndex === null || editingIndex === 0) return;
@@ -660,7 +677,7 @@
     document.getElementById('seqPanelIcon').textContent = nodeIconFor(index);
     document.getElementById('seqPanelTitle').textContent = nodeTitleFor(index);
     document.getElementById('seqPanelSubtitle').textContent = index === 0
-      ? 'Sends right away when the sequence starts.'
+      ? (step.sendMode === 'scheduled' ? 'Sends at the time you choose below.' : 'Sends right away when the sequence starts.')
       : "Only sends if this lead still hasn't replied by then.";
     document.getElementById('seqPanelSubject').value = step.subject || '';
     const bodyEl = document.getElementById('seqPanelBody');
@@ -669,13 +686,33 @@
     bodyEl.style.height = Math.min(bodyEl.scrollHeight, 380) + 'px';
     updateSubjectCount();
     updateBodyCount();
+    const sendTimeRow = document.getElementById('seqPanelSendTimeRow');
     const delayRow = document.getElementById('seqPanelDelayRow');
     if(index === 0){
       delayRow.style.display = 'none';
+      sendTimeRow.style.display = '';
+      const mode = step.sendMode === 'scheduled' ? 'scheduled' : 'now';
+      sendTimeRow.querySelectorAll('.seq-unit-chip').forEach(chip=>{
+        chip.classList.toggle('active', chip.dataset.sendmode === mode);
+      });
+      const scheduleWrap = document.getElementById('seqPanelScheduleAtWrap');
+      scheduleWrap.style.display = (mode === 'scheduled') ? '' : 'none';
+      const scheduleInput = document.getElementById('seqPanelScheduleAt');
+      if(step.scheduledAt){
+        scheduleInput.value = step.scheduledAt;
+      } else {
+        const d = new Date(Date.now() + 60*60*1000); // default: an hour from now
+        const pad = n => String(n).padStart(2, '0');
+        scheduleInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+      const minD = new Date(Date.now() + 60000);
+      const padMin = n => String(n).padStart(2, '0');
+      scheduleInput.min = `${minD.getFullYear()}-${padMin(minD.getMonth()+1)}-${padMin(minD.getDate())}T${padMin(minD.getHours())}:${padMin(minD.getMinutes())}`;
     } else {
+      sendTimeRow.style.display = 'none';
       delayRow.style.display = '';
       document.getElementById('seqPanelDelay').value = step.delayValue || 2;
-      document.querySelectorAll('.seq-unit-chip').forEach(chip=>{
+      delayRow.querySelectorAll('.seq-unit-chip').forEach(chip=>{
         chip.classList.toggle('active', chip.dataset.unit === (step.delayUnit || 'days'));
       });
       updateTimingPreview();
@@ -717,11 +754,22 @@
   });
 
   document.getElementById('seqPanelDelay').addEventListener('input', updateTimingPreview);
-  document.querySelectorAll('.seq-unit-chip').forEach(chip=>{
+  document.querySelectorAll('#seqPanelDelayRow .seq-unit-chip').forEach(chip=>{
     chip.addEventListener('click', ()=>{
-      document.querySelectorAll('.seq-unit-chip').forEach(c=>c.classList.remove('active'));
+      document.querySelectorAll('#seqPanelDelayRow .seq-unit-chip').forEach(c=>c.classList.remove('active'));
       chip.classList.add('active');
       updateTimingPreview();
+    });
+  });
+  document.querySelectorAll('#seqPanelSendTimeRow .seq-unit-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#seqPanelSendTimeRow .seq-unit-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      const scheduled = chip.dataset.sendmode === 'scheduled';
+      document.getElementById('seqPanelScheduleAtWrap').style.display = scheduled ? '' : 'none';
+      document.getElementById('seqPanelSubtitle').textContent = scheduled
+        ? 'Sends at the time you choose below.'
+        : 'Sends right away when the sequence starts.';
     });
   });
   document.getElementById('seqPanelCloseX').addEventListener('click', closeEditPanel);
@@ -738,6 +786,20 @@
     const body = document.getElementById('seqPanelBody').value.trim();
     steps[editingIndex].subject = subject;
     steps[editingIndex].body = body;
+    if(editingIndex === 0){
+      const mode = activeSendMode();
+      steps[0].sendMode = mode;
+      if(mode === 'scheduled'){
+        const raw = document.getElementById('seqPanelScheduleAt').value;
+        if(!raw || new Date(raw).getTime() <= Date.now()){
+          showToast('Please choose a time in the future.', true);
+          return;
+        }
+        steps[0].scheduledAt = raw;
+      } else {
+        steps[0].scheduledAt = null;
+      }
+    }
     if(editingIndex > 0){
       const d = parseInt(document.getElementById('seqPanelDelay').value, 10);
       steps[editingIndex].delayValue = (d && d > 0) ? d : 1;
@@ -931,6 +993,13 @@
         return;
       }
     }
+    const isScheduledStart = steps[0].sendMode === 'scheduled' && !!steps[0].scheduledAt;
+    const firstSendAtMs = isScheduledStart ? new Date(steps[0].scheduledAt).getTime() : Date.now();
+    if(isScheduledStart && (!firstSendAtMs || firstSendAtMs <= Date.now())){
+      showToast('The first email\'s scheduled time needs to be in the future — please fix that before starting.', true);
+      openEditPanel(0);
+      return;
+    }
     const startBtn = document.getElementById('seqStartBtn');
     startBtn.disabled = true;
     startBtn.textContent = '🚀 Launching...';
@@ -940,13 +1009,28 @@
     const sequenceId = sequenceRef.id;
 
     sequenceRef.set({...buildSequencePayload('active'), startedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge: true}).then(()=>{
+      if(isScheduledStart){
+        // First email is scheduled for later too — it becomes a regular
+        // scheduledEmails step, same machinery as the follow-ups, just
+        // with nothing before it to cancel against.
+        return db.collection('scheduledEmails').add({
+          workspaceId: currentWorkspaceId, boardId, leadId,
+          to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: '', attachments: [],
+          sentBy: auth.currentUser.uid,
+          sentByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
+          status: 'pending',
+          sendAt: firebase.firestore.Timestamp.fromDate(new Date(firstSendAtMs)),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          sequenceId, stepNumber: 1, cancelIfReplied: false
+        });
+      }
       return sendLeadEmailFn({
         workspaceId: currentWorkspaceId, boardId, leadId,
         to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: '', attachments: []
       });
     }).then(()=>{
       if(steps.length === 1) return Promise.resolve();
-      let cumulativeMs = Date.now();
+      let cumulativeMs = firstSendAtMs;
       const writes = [];
       for(let i=1; i<steps.length; i++){
         cumulativeMs += delayMs(steps[i]);
@@ -966,7 +1050,9 @@
       startBtn.classList.remove('launching');
       startBtn.textContent = '✓ Sequence live';
       startBtn.style.background = 'linear-gradient(135deg, var(--success), #164F41)';
-      showToast(`Sequence started — ${steps.length} email${steps.length>1?'s':''}, first one sent now.`);
+      showToast(isScheduledStart
+        ? `Sequence started — ${steps.length} email${steps.length>1?'s':''}, first one scheduled.`
+        : `Sequence started — ${steps.length} email${steps.length>1?'s':''}, first one sent now.`);
       setTimeout(()=>{ location.href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 1200);
     }).catch(err=>{
       console.error(err);
