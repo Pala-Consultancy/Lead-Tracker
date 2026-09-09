@@ -79,6 +79,20 @@
   .seq-start-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(28,91,158,0.4);}
   .seq-start-btn:active{transform:translateY(0) scale(.98);}
   .seq-start-btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none;}
+  .seq-secondary-btn{
+    background:var(--panel);color:var(--ink);border:1px solid var(--border);border-radius:10px;padding:10px 18px;
+    font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s;
+  }
+  .seq-secondary-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .seq-secondary-btn.danger:hover{border-color:var(--fail);color:var(--fail);background:var(--fail-soft);}
+  .seq-secondary-btn.warn{background:var(--amber-soft);border-color:var(--amber-soft);color:var(--amber);}
+  .seq-secondary-btn:disabled{opacity:.5;cursor:default;}
+
+  .seq-node[draggable="true"]{cursor:grab;}
+  .seq-node.dragging{opacity:.4;}
+  .seq-node.drag-over{border-color:var(--teal);box-shadow:0 0 0 3px rgba(28,91,158,0.18);}
+  .seq-node-handle{color:var(--slate-light);font-size:15px;cursor:grab;flex-shrink:0;line-height:1;letter-spacing:-2px;}
+  .seq-node-handle:active{cursor:grabbing;}
   .seq-start-btn.launching{animation:seqPulse 1s ease-in-out infinite;}
   @keyframes seqPulse{0%,100%{box-shadow:0 4px 14px rgba(28,91,158,0.32);}50%{box-shadow:0 4px 22px rgba(28,91,158,0.6);}}
 
@@ -296,7 +310,12 @@
           <div class="seq-lead-email" id="seqLeadEmail"></div>
         </div>
       </div>
-      <button type="button" class="seq-start-btn" id="seqStartBtn">Start sequence</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button type="button" class="seq-secondary-btn" id="seqDeleteBtn" style="display:none;">🗑️ Delete sequence</button>
+        <button type="button" class="seq-secondary-btn" id="seqPauseBtn" style="display:none;">⏸ Pause</button>
+        <button type="button" class="seq-secondary-btn" id="seqSaveDraftBtn">Save as draft</button>
+        <button type="button" class="seq-start-btn" id="seqStartBtn">Start sequence</button>
+      </div>
     </div>
 
     <div class="seq-canvas-wrap" id="seqCanvasWrap">
@@ -407,7 +426,13 @@
   const boardId = params.get('board');
   const leadId = params.get('lead');
   const sequenceIdParam = params.get('sequenceId');
-  const isViewMode = !!sequenceIdParam;
+  // 'create' = building a brand new sequence, nothing saved yet.
+  // 'draft'  = editing a previously-saved-but-not-started sequence.
+  // 'view'   = looking at a sequence that's already active/paused/done —
+  //            read-only content, but Pause/Resume/Delete controls apply.
+  let pageMode = sequenceIdParam ? null : 'create'; // null = "not yet determined, fetching"
+  let currentSequenceDocId = sequenceIdParam || null;
+  let currentSequenceStatus = null;
   let viewSteps = []; // populated in view mode from existing scheduledEmails docs
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
   const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
@@ -425,6 +450,7 @@
   let steps = [{subject:'', body:''}];
   let editingIndex = null;
   let zoomLevel = 1;
+  let dragSrcIndex = null;
 
   function nodeIconFor(index){ return index === 0 ? '✉️' : '↻'; }
   function nodeTitleFor(index){ return index === 0 ? 'Send email' : `Follow-up ${index+1}`; }
@@ -439,7 +465,9 @@
     steps.forEach((step, i)=>{
       const isLast = i === steps.length - 1;
       const delay = `${i * 70}ms`;
-      html += `<div class="seq-node" data-idx="${i}" style="animation-delay:${delay}">
+      const draggable = i > 0; // step 1 (the immediate send) stays fixed as the anchor
+      html += `<div class="seq-node" data-idx="${i}" style="animation-delay:${delay}" ${draggable ? 'draggable="true"' : ''}>
+        ${draggable ? `<span class="seq-node-handle" title="Drag to reorder">⠿</span>` : ''}
         <div class="seq-node-icon">${nodeIconFor(i)}</div>
         <div class="seq-node-body">
           <div class="seq-node-title">${esc(nodeTitleFor(i))}</div>
@@ -478,6 +506,36 @@
       el.addEventListener('click', (e)=>{
         e.stopPropagation();
         openEditPanel(Number(el.dataset.idx));
+      });
+    });
+    // ---------- Drag-and-drop reordering (follow-up steps only) ----------
+    canvas.querySelectorAll('.seq-node[draggable="true"]').forEach(node=>{
+      node.addEventListener('dragstart', (e)=>{
+        e.stopPropagation();
+        dragSrcIndex = Number(node.dataset.idx);
+        node.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      node.addEventListener('dragend', ()=>{
+        node.classList.remove('dragging');
+        canvas.querySelectorAll('.seq-node').forEach(n=>n.classList.remove('drag-over'));
+      });
+      node.addEventListener('dragover', (e)=>{
+        if(Number(node.dataset.idx) === 0) return; // never drop onto the fixed first step
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        node.classList.add('drag-over');
+      });
+      node.addEventListener('dragleave', ()=> node.classList.remove('drag-over'));
+      node.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        node.classList.remove('drag-over');
+        const targetIdx = Number(node.dataset.idx);
+        if(dragSrcIndex === null || targetIdx === 0 || targetIdx === dragSrcIndex) return;
+        const [moved] = steps.splice(dragSrcIndex, 1);
+        steps.splice(targetIdx, 0, moved);
+        dragSrcIndex = null;
+        renderCanvas();
       });
     });
     const addBtn = document.getElementById('seqAddStepBtn');
@@ -744,6 +802,37 @@
   })();
 
   // ---------- Start sequence ----------
+  function buildSequencePayload(status){
+    const payload = {
+      workspaceId: currentWorkspaceId, boardId, leadId,
+      status, steps,
+      createdBy: auth.currentUser.uid,
+      createdByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if(!currentSequenceDocId) payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    return payload;
+  }
+
+  document.getElementById('seqSaveDraftBtn').addEventListener('click', ()=>{
+    if(!leadData || !currentWorkspaceId) return;
+    const saveBtn = document.getElementById('seqSaveDraftBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    const sequenceRef = currentSequenceDocId ? db.collection('sequences').doc(currentSequenceDocId) : db.collection('sequences').doc();
+    sequenceRef.set(buildSequencePayload('draft'), {merge: true}).then(()=>{
+      currentSequenceDocId = sequenceRef.id;
+      showToast('Saved as draft.');
+      setTimeout(()=>{ location.href = boardId ? `sequences.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 900);
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not save draft: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save as draft';
+    });
+  });
+
   document.getElementById('seqStartBtn').addEventListener('click', ()=>{
     if(!leadData || !currentWorkspaceId) return;
     for(let i=0; i<steps.length; i++){
@@ -758,12 +847,16 @@
     startBtn.textContent = '🚀 Launching...';
     startBtn.classList.add('launching');
     const leadEmail = leadData.email;
-    sendLeadEmailFn({
-      workspaceId: currentWorkspaceId, boardId, leadId,
-      to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: '', attachments: []
+    const sequenceRef = currentSequenceDocId ? db.collection('sequences').doc(currentSequenceDocId) : db.collection('sequences').doc();
+    const sequenceId = sequenceRef.id;
+
+    sequenceRef.set({...buildSequencePayload('active'), startedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge: true}).then(()=>{
+      return sendLeadEmailFn({
+        workspaceId: currentWorkspaceId, boardId, leadId,
+        to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: '', attachments: []
+      });
     }).then(()=>{
       if(steps.length === 1) return Promise.resolve();
-      const sequenceId = db.collection('scheduledEmails').doc().id;
       let cumulativeMs = Date.now();
       const writes = [];
       for(let i=1; i<steps.length; i++){
@@ -795,6 +888,71 @@
     });
   });
 
+  // ---------- Pause / Resume ----------
+  document.getElementById('seqPauseBtn').addEventListener('click', ()=>{
+    if(!currentSequenceDocId) return;
+    const btn = document.getElementById('seqPauseBtn');
+    const resuming = currentSequenceStatus === 'paused';
+    btn.disabled = true;
+    db.collection('sequences').doc(currentSequenceDocId)
+      .update({status: resuming ? 'active' : 'paused', updatedAt: firebase.firestore.FieldValue.serverTimestamp()})
+      .then(()=>{
+        currentSequenceStatus = resuming ? 'active' : 'paused';
+        btn.textContent = resuming ? '⏸ Pause' : '▶ Resume';
+        btn.classList.toggle('warn', !resuming);
+        showToast(resuming ? 'Sequence resumed.' : 'Sequence paused — nothing more will send until you resume it.');
+      })
+      .catch(err=>{
+        console.error(err);
+        showToast('Could not update that: ' + (err.message || 'please try again.'), true);
+      })
+      .finally(()=>{ btn.disabled = false; });
+  });
+
+  // ---------- Delete sequence entirely ----------
+  document.getElementById('seqDeleteBtn').addEventListener('click', ()=>{
+    if(!currentSequenceDocId) return;
+    if(!confirm('Delete this sequence entirely? Any emails already sent stay in the lead\'s history, but everything still scheduled will be cancelled and removed. This can\'t be undone.')) return;
+    const btn = document.getElementById('seqDeleteBtn');
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    db.collection('scheduledEmails').where('sequenceId', '==', currentSequenceDocId).get()
+      .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
+      .then(()=> db.collection('sequences').doc(currentSequenceDocId).delete())
+      .then(()=>{
+        showToast('Sequence deleted.');
+        setTimeout(()=>{ location.href = boardId ? `sequences.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 700);
+      })
+      .catch(err=>{
+        console.error(err);
+        showToast('Could not delete that: ' + (err.message || 'please try again.'), true);
+        btn.disabled = false;
+        btn.textContent = '🗑️ Delete sequence';
+      });
+  });
+
+  function setupCreateOrDraftMode(){
+    if(!leadData.email){
+      showToast('This lead has no email address on file.', true);
+      document.getElementById('seqStartBtn').disabled = true;
+    }
+    document.getElementById('seqDeleteBtn').style.display = currentSequenceDocId ? '' : 'none';
+    renderCanvas();
+  }
+  function setupViewMode(){
+    document.getElementById('seqStartBtn').style.display = 'none';
+    document.getElementById('seqSaveDraftBtn').style.display = 'none';
+    document.getElementById('seqDeleteBtn').style.display = '';
+    const pauseBtn = document.getElementById('seqPauseBtn');
+    if(currentSequenceStatus === 'active' || currentSequenceStatus === 'paused'){
+      pauseBtn.style.display = '';
+      const paused = currentSequenceStatus === 'paused';
+      pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+      pauseBtn.classList.toggle('warn', paused);
+    }
+    return loadExistingSequence();
+  }
+
   auth.onAuthStateChanged(user=>{
     document.getElementById('pageLoader').style.display = 'none';
     if(!user){
@@ -810,13 +968,15 @@
       const workspaceId = doc.exists ? doc.data().workspaceId : null;
       if(!workspaceId){ showToast('Could not find your workspace.', true); return; }
       currentWorkspaceId = workspaceId;
-      return Promise.all([
+      const lookups = [
         db.doc(`workspaces/${workspaceId}/boards/${boardId}/leads/${leadId}`).get(),
         db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get()
-      ]);
+      ];
+      if(sequenceIdParam) lookups.push(db.collection('sequences').doc(sequenceIdParam).get());
+      return Promise.all(lookups);
     }).then(results=>{
       if(!results) return;
-      const [leadDoc, memberDoc] = results;
+      const [leadDoc, memberDoc, sequenceDoc] = results;
       if(!leadDoc.exists){
         document.getElementById('seqLeadName').textContent = 'Lead not found';
         return;
@@ -830,16 +990,29 @@
       document.getElementById('seqLeadAvatar').textContent = initials(leadData.name);
       document.getElementById('seqLeadEmail').textContent = leadData.email || '';
       document.title = `Email sequence for ${leadData.name || 'lead'} · PalaTrack`;
-      if(isViewMode){
-        const startBtn = document.getElementById('seqStartBtn');
-        startBtn.style.display = 'none';
-        return loadExistingSequence();
+
+      if(sequenceIdParam){
+        if(!sequenceDoc || !sequenceDoc.exists){
+          showToast('That sequence could not be found — it may have been deleted.', true);
+          document.getElementById('seqCanvas').innerHTML = '<div style="padding:40px;color:var(--slate);">This sequence no longer exists.</div>';
+          document.getElementById('seqStartBtn').style.display = 'none';
+          document.getElementById('seqSaveDraftBtn').style.display = 'none';
+          return;
+        }
+        const seqData = sequenceDoc.data();
+        currentSequenceStatus = seqData.status;
+        if(seqData.status === 'draft'){
+          pageMode = 'draft';
+          steps = Array.isArray(seqData.steps) && seqData.steps.length ? seqData.steps : steps;
+          setupCreateOrDraftMode();
+        } else {
+          pageMode = 'view';
+          return setupViewMode();
+        }
+      } else {
+        pageMode = 'create';
+        setupCreateOrDraftMode();
       }
-      if(!leadData.email){
-        showToast('This lead has no email address on file.', true);
-        document.getElementById('seqStartBtn').disabled = true;
-      }
-      renderCanvas();
     }).catch(err=>{
       console.error(err);
       showToast('Could not load this lead.', true);

@@ -57,6 +57,8 @@
   .seq-card-name{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;}
   .seq-card-meta{font-size:12px;color:var(--slate);margin-top:3px;}
   .seq-card-badge{flex-shrink:0;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;}
+  .seq-card-badge.draft{background:var(--border-soft);color:var(--slate);}
+  .seq-card-badge.paused{background:var(--amber-soft);color:var(--amber);}
   .seq-card-badge.active{background:var(--amber-soft);color:var(--amber);}
   .seq-card-badge.completed{background:var(--success-soft);color:var(--success);}
   .seq-card-badge.stopped_replied{background:var(--success-soft);color:var(--success);}
@@ -125,7 +127,9 @@
 
   <div class="status-filters" id="statusFilters">
     <button type="button" class="status-chip active" data-filter="all">All</button>
+    <button type="button" class="status-chip" data-filter="draft">Drafts</button>
     <button type="button" class="status-chip" data-filter="active">Active</button>
+    <button type="button" class="status-chip" data-filter="paused">Paused</button>
     <button type="button" class="status-chip" data-filter="completed">Completed</button>
     <button type="button" class="status-chip" data-filter="needs_attention">Needs attention</button>
   </div>
@@ -193,34 +197,38 @@
   let activeFilter = 'all';
   let boardLeads = []; // for the picker
 
-  function deriveSequenceStatus(steps){
-    if(steps.some(s=>s.status==='pending' || s.status==='sending')) return 'active';
-    if(steps.some(s=>s.status==='failed')) return 'needs_attention';
-    if(steps.some(s=>s.status==='cancelled_replied')) return 'stopped_replied';
+  function deriveActiveStatus(followUps){
+    if(followUps.length === 0) return 'active';
+    if(followUps.some(s=>s.status==='pending' || s.status==='sending')) return 'active';
+    if(followUps.some(s=>s.status==='failed')) return 'needs_attention';
+    if(followUps.some(s=>s.status==='cancelled_replied')) return 'stopped_replied';
     return 'completed';
   }
-  const STATUS_LABEL = {active:'Active', completed:'Completed', stopped_replied:'They replied', needs_attention:'Needs attention'};
+  const STATUS_LABEL = {
+    draft:'Draft', paused:'Paused', active:'Active', completed:'Completed',
+    stopped_replied:'They replied', needs_attention:'Needs attention'
+  };
 
-  function groupIntoSequences(){
-    const groups = {};
+  function buildSequenceList(){
+    const scheduledBySeq = {};
     allScheduled.forEach(e=>{
-      if(!e.sequenceId) return; // a one-off scheduled email, not part of a sequence
-      if(!groups[e.sequenceId]) groups[e.sequenceId] = [];
-      groups[e.sequenceId].push(e);
+      if(!e.sequenceId) return;
+      if(!scheduledBySeq[e.sequenceId]) scheduledBySeq[e.sequenceId] = [];
+      scheduledBySeq[e.sequenceId].push(e);
     });
-    return Object.keys(groups).map(sequenceId=>{
-      const steps = groups[sequenceId].sort((a,b)=>(a.stepNumber||0)-(b.stepNumber||0));
-      const first = steps[0];
+    return allSequenceDocs.map(seq=>{
+      const followUps = (scheduledBySeq[seq.id] || []).sort((a,b)=>(a.stepNumber||0)-(b.stepNumber||0));
+      const status = seq.status === 'active' ? deriveActiveStatus(followUps) : seq.status;
       return {
-        sequenceId, leadId: first.leadId, boardId: first.boardId,
-        sentByName: first.sentByName,
-        createdAt: steps.reduce((min, s)=> (s.createdAt && (!min || s.createdAt.toMillis() < min.toMillis())) ? s.createdAt : min, null),
-        stepCount: steps.length,
-        status: deriveSequenceStatus(steps)
+        sequenceId: seq.id, leadId: seq.leadId, boardId: seq.boardId,
+        sentByName: seq.createdByName,
+        updatedAt: seq.updatedAt || seq.createdAt,
+        stepCount: Array.isArray(seq.steps) ? seq.steps.length : (followUps.length + 1),
+        status
       };
     }).sort((a,b)=>{
-      const at = a.createdAt ? a.createdAt.toMillis() : 0;
-      const bt = b.createdAt ? b.createdAt.toMillis() : 0;
+      const at = a.updatedAt ? a.updatedAt.toMillis() : 0;
+      const bt = b.updatedAt ? b.updatedAt.toMillis() : 0;
       return bt - at;
     });
   }
@@ -236,7 +244,7 @@
 
   function renderList(){
     const holder = document.getElementById('listHolder');
-    const sequences = groupIntoSequences();
+    const sequences = buildSequenceList();
     const filtered = activeFilter === 'all' ? sequences : sequences.filter(s=>{
       if(activeFilter === 'completed') return s.status === 'completed' || s.status === 'stopped_replied';
       return s.status === activeFilter;
@@ -253,7 +261,7 @@
         <div class="seq-card-icon">📧</div>
         <div class="seq-card-body">
           <div class="seq-card-name" data-lead-name="${s.boardId}/${s.leadId}">Loading…</div>
-          <div class="seq-card-meta">${s.stepCount} follow-up${s.stepCount===1?'':'s'} &middot; started by ${esc(s.sentByName || 'Someone')}</div>
+          <div class="seq-card-meta">${s.stepCount} step${s.stepCount===1?'':'s'} &middot; started by ${esc(s.sentByName || 'Someone')}</div>
         </div>
         <span class="seq-card-badge ${esc(s.status)}">${esc(STATUS_LABEL[s.status] || s.status)}</span>
         <span class="seq-card-chevron">
@@ -326,26 +334,49 @@
   });
   document.getElementById('pickerSearch').addEventListener('input', (e)=> renderPickerList(e.target.value));
 
-  let unsubscribe = null;
+  let unsubscribeSequences = null;
+  let unsubscribeScheduled = null;
+  let allSequenceDocs = [];
+  let sequencesLoaded = false, scheduledLoaded = false;
+
+  function revealAndRender(){
+    if(!sequencesLoaded || !scheduledLoaded) return;
+    document.getElementById('pageLoader').style.display = 'none';
+    const appRoot = document.getElementById('appRoot');
+    appRoot.style.display = 'block';
+    appRoot.classList.add('reveal');
+    renderList();
+  }
+
   function startListening(workspaceId){
     currentWorkspaceId = workspaceId;
-    unsubscribe = db.collection('scheduledEmails')
+    unsubscribeSequences = db.collection('sequences')
+      .where('workspaceId', '==', workspaceId)
+      .where('boardId', '==', boardId)
+      .orderBy('updatedAt', 'desc')
+      .limit(300)
+      .onSnapshot(snap=>{
+        allSequenceDocs = snap.docs.map(doc=>({id: doc.id, ...doc.data()}));
+        sequencesLoaded = true;
+        revealAndRender();
+      }, err=>{
+        console.error('Could not load sequences', err);
+        sequencesLoaded = true;
+        revealAndRender();
+      });
+    unsubscribeScheduled = db.collection('scheduledEmails')
       .where('workspaceId', '==', workspaceId)
       .where('boardId', '==', boardId)
       .orderBy('sendAt', 'asc')
       .limit(500)
       .onSnapshot(snap=>{
         allScheduled = snap.docs.map(doc=>({id: doc.id, ...doc.data()}));
-        document.getElementById('pageLoader').style.display = 'none';
-        const appRoot = document.getElementById('appRoot');
-        appRoot.style.display = 'block';
-        appRoot.classList.add('reveal');
-        renderList();
+        scheduledLoaded = true;
+        revealAndRender();
       }, err=>{
-        console.error('Could not load sequences', err);
-        document.getElementById('pageLoader').style.display = 'none';
-        document.getElementById('appRoot').style.display = 'block';
-        document.getElementById('listHolder').innerHTML = `<div class="empty-state"><h3>Could not load this</h3><p>Please try again later.</p></div>`;
+        console.error('Could not load scheduled emails', err);
+        scheduledLoaded = true;
+        revealAndRender();
       });
   }
 
