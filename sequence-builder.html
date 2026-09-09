@@ -155,43 +155,6 @@
   }
   .seq-delay-chip input{width:36px;border:none;background:none;font:inherit;font-weight:700;color:var(--teal);text-align:center;padding:0;}
 
-  .seq-condition-node{
-    display:flex;align-items:center;gap:8px;background:#EFE9FE;border:1px solid #D9CBFB;color:#6D4FD1;
-    border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:700;animation:seqChipIn .3s ease both;
-    box-shadow:0 2px 6px rgba(109,79,209,0.12);
-  }
-  .seq-condition-node .icon{font-size:14px;}
-
-  .seq-branch-point{
-    position:relative;display:flex;flex-direction:column;align-items:center;
-    padding-top:30px;margin-bottom:6px;
-  }
-  .seq-branch-point::before{
-    content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
-    width:2px;height:20px;background-image:linear-gradient(var(--border) 40%, transparent 0%);
-    background-size:2px 8px;background-repeat:repeat-y;
-  }
-  .seq-branch-point::after{
-    content:"";position:absolute;top:0;left:calc(50% - 280px);width:280px;height:0;border-top:2px dotted var(--border);
-  }
-  .seq-branch-label{font-size:12.5px;font-weight:700;margin-bottom:11px;white-space:nowrap;animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;}
-  .seq-branch-label.replied{color:var(--success);}
-  .seq-branch-label.noreply{color:var(--fail);}
-  .seq-yes-branch{
-    position:absolute;top:30px;right:calc(50% + 40px);width:220px;
-    display:flex;flex-direction:column;align-items:center;
-    animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;
-  }
-  .seq-branch-end{
-    background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
-    padding:13px 17px;display:flex;align-items:center;gap:12px;min-width:200px;
-  }
-  .seq-branch-end-icon{
-    width:36px;height:36px;border-radius:50%;background:var(--border-soft);color:var(--slate);
-    display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
-  }
-  .seq-branch-end-title{font-size:13.5px;font-weight:700;color:var(--ink);}
-  .seq-branch-end-sub{font-size:11px;color:var(--slate);}
   .seq-add-end-row{display:flex;gap:8px;margin-top:4px;animation:seqNodeIn .35s cubic-bezier(.2,.8,.3,1) both;}
   .seq-add-btn, .seq-end-btn{
     display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;
@@ -200,6 +163,11 @@
   }
   .seq-add-btn:hover{border-color:var(--teal);border-style:solid;color:var(--teal);background:var(--panel-alt);transform:translateY(-1px);}
   .seq-end-btn:hover{border-color:var(--fail);color:var(--fail);}
+
+  .seq-canvas-footnote{
+    position:absolute;left:22px;bottom:16px;max-width:420px;font-size:11.5px;color:var(--slate);
+    line-height:1.5;background:rgba(255,255,255,0.85);padding:8px 12px;border-radius:8px;
+  }
 
   /* ---------- Edit panel ---------- */
   .seq-panel-overlay{
@@ -346,6 +314,7 @@
         <button type="button" id="seqZoomReset">⟳</button>
       </div>
       <div class="seq-canvas" id="seqCanvas"></div>
+      <div class="seq-canvas-footnote">Any lead who replies has the rest of this sequence stopped automatically — no follow-up ever sends after that.</div>
     </div>
   </div>
 </div>
@@ -517,21 +486,6 @@
         html += `<div class="seq-connector"></div>
         <div class="seq-delay-chip" style="animation-delay:${delay}">
           🕒 <input type="number" class="seq-delay-input" data-idx="${i+1}" min="1" value="${next.delayValue || 2}"> ${unitLabel}
-        </div>
-        <div class="seq-connector"></div>
-        <div class="seq-condition-node" style="animation-delay:${delay}"><span class="icon">✉️</span> If email replied</div>
-        <div class="seq-branch-point" style="animation-delay:${delay}">
-          <div class="seq-yes-branch">
-            <div class="seq-branch-label replied">Yes</div>
-            <div class="seq-branch-end">
-              <div class="seq-branch-end-icon">⊘</div>
-              <div>
-                <div class="seq-branch-end-title">End of sequence</div>
-                <div class="seq-branch-end-sub">No more follow-ups sent</div>
-              </div>
-            </div>
-          </div>
-          <div class="seq-branch-label noreply">No</div>
         </div>`;
       }
     });
@@ -831,7 +785,7 @@
     const wrap = document.getElementById('seqCanvasWrap') || document.querySelector('.seq-canvas-wrap');
     let dragging = false, startX = 0, startY = 0, startScrollX = 0, startScrollY = 0;
     wrap.addEventListener('mousedown', (e)=>{
-      if(e.target.closest('.seq-node, .seq-delay-chip, .seq-add-btn, .seq-branch-end')) return;
+      if(e.target.closest('.seq-node, .seq-delay-chip, .seq-add-btn')) return;
       dragging = true;
       startX = e.clientX; startY = e.clientY;
       startScrollX = wrap.scrollLeft; startScrollY = wrap.scrollTop;
