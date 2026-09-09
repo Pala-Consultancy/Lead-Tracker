@@ -370,7 +370,7 @@
     width:9px;height:9px;border-radius:50%;background:#FF9D00;
     box-shadow:16px 0 0 #E9E9E9, 32px 0 0 #DEF0EA;
   }
-  .pv-window-body{padding:20px;}
+  .pv-window-body{padding:20px;position:relative;}
   .pv-tabs{display:flex;gap:6px;margin-bottom:16px;}
   .pv-tab{font-size:11.5px;font-weight:700;color:var(--slate);background:#F6FAFE;border:1px solid var(--border);border-radius:8px;padding:6px 12px;}
   .pv-tab.active{background:var(--teal);color:#fff;border-color:var(--teal);}
@@ -384,6 +384,60 @@
   .pv-pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-block;width:fit-content;}
   .pv-pill-blue{background:#E3EEFA;color:#1B59A5;}
   .pv-pill-green{background:#DEF0EA;color:#1F5C4F;}
+  .pv-email-compose{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;background:#F6FAFE;}
+  .pv-email-compose-to{font-size:11px;color:var(--slate);margin-bottom:4px;}
+  .pv-email-compose-to b{color:var(--ink);font-weight:700;}
+  .pv-email-compose-subject{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+  .pv-email-send-btn{font-size:11.5px;font-weight:700;padding:6px 14px;border-radius:7px;border:none;background:#1B59A5;color:#fff;cursor:pointer;transition:background .12s, transform .1s;}
+  .pv-email-send-btn:hover{background:#124A8C;}
+  .pv-email-send-btn:active{transform:scale(.96);}
+  .pv-email-send-btn:disabled{opacity:.7;cursor:default;}
+  .pv-email-input{border:none;background:transparent;font:inherit;color:inherit;padding:2px 0;cursor:default;caret-color:transparent;}
+  .pv-email-input:focus{outline:none;}
+  .pv-email-to-input{width:150px;font-size:11px;color:var(--slate);}
+  .pv-email-subject-input{width:100%;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;display:block;}
+  @keyframes pv-email-item-in{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+  .pv-email-item.pv-email-item-new{animation:pv-email-item-in .35s ease both;}
+  .pv-fake-cursor{
+    position:absolute;top:0;left:0;width:20px;height:20px;
+    transform:translate(-3px,-2px);transition:left .5s ease, top .5s ease;
+    opacity:0;pointer-events:none;z-index:5;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+  }
+  .pv-fake-cursor.show{opacity:1;}
+  .pv-fake-cursor::after{
+    content:"";position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;
+    background:rgba(27,89,165,0.35);opacity:0;
+  }
+  .pv-fake-cursor.click::after{animation:pv-cursor-click .45s ease-out;}
+  @keyframes pv-cursor-click{from{transform:scale(0.3);opacity:1;}to{transform:scale(1.9);opacity:0;}}
+  .pv-email-thread{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .pv-email-item{padding:11px 14px 11px 17px;border-top:1px solid var(--border);border-left:3px solid transparent;}
+  .pv-email-item-incoming{border-left-color:#1B59A5;background:#F8FBFE;}
+  .pv-email-snippet{font-size:10.5px;color:var(--slate);margin-top:4px;line-height:1.4;}
+  .pv-email-item:first-child{border-top:none;}
+  .pv-email-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .pv-email-subject{font-size:12.5px;font-weight:700;color:var(--ink);}
+  .pv-email-meta{font-size:10.5px;color:var(--slate);margin-top:3px;}
+  .pv-chat-mock{display:flex;gap:12px;}
+  .pv-chat-list{flex:1;min-width:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .pv-chat-list-item{display:flex;gap:8px;align-items:center;padding:10px 11px;border-top:1px solid var(--border);}
+  .pv-chat-list-item:first-child{border-top:none;}
+  .pv-chat-list-item.active{background:#F6FAFE;}
+  .pv-chat-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0;}
+  .pv-chat-list-name{font-size:12px;font-weight:700;color:var(--ink);}
+  .pv-chat-list-preview{font-size:10.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;}
+  .pv-chat-thread{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;justify-content:flex-end;}
+  .pv-chat-bubble{font-size:11.5px;font-weight:600;padding:8px 11px;border-radius:12px;max-width:88%;line-height:1.4;}
+  .pv-chat-bubble.them{background:#F0F3F7;color:var(--ink);align-self:flex-start;border-bottom-left-radius:3px;}
+  .pv-chat-bubble.me{background:#1B59A5;color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
+  @media (max-width:520px){ .pv-chat-mock{flex-direction:column;} }
+  @keyframes pv-chat-bubble-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .pv-chat-bubble.pv-chat-bubble-new{animation:pv-chat-bubble-in .3s ease both;}
+  .pv-chat-typing{align-self:flex-start;display:flex;gap:3px;padding:9px 12px;border-radius:12px;border-bottom-left-radius:3px;background:#F0F3F7;}
+  .pv-chat-typing span{width:5px;height:5px;border-radius:50%;background:var(--slate);animation:pv-chat-typing-bounce 1s ease-in-out infinite;}
+  .pv-chat-typing span:nth-child(2){animation-delay:.15s;}
+  .pv-chat-typing span:nth-child(3){animation-delay:.3s;}
+  @keyframes pv-chat-typing-bounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-3px);opacity:1;}}
   .pv-pill-purple{background:#EFE5FA;color:#7A4FB5;}
   .pv-hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
   .pv-hero-stat{border:1px solid var(--border);border-radius:10px;padding:12px;}
@@ -619,7 +673,6 @@
 
   <section class="hero">
     <div class="hero-content">
-      <div class="hero-eyebrow"><span class="dot"></span>Exclusive access for PalaTrack and its clients</div>
       <h1>Every lead, every deal,<br>tracked in <span class="accent">real time</span>.</h1>
       <p>PalaTrack is the internal system your team uses to move leads from first contact to closed deal — shared boards, live updates, and the numbers that matter, all in one place.</p>
       <div class="hero-ctas">
@@ -711,6 +764,14 @@
         <span class="topic-pill-icon" style="background:#EFE5FA;color:#7A4FB5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>
         Pipeline &amp; leads
       </button>
+      <button class="topic-pill" data-topic="email" type="button">
+        <span class="topic-pill-icon" style="background:#FDE6EE;color:#B5316B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span>
+        Email &amp; conversations
+      </button>
+      <button class="topic-pill" data-topic="messaging" type="button">
+        <span class="topic-pill-icon" style="background:#DCF4F7;color:#0E7C8C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+        Team messaging
+      </button>
       <button class="topic-pill" data-topic="stats" type="button">
         <span class="topic-pill-icon" style="background:#DEF0EA;color:#1F5C4F"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-8"/></svg></span>
         Statistics
@@ -794,6 +855,84 @@
                 <div class="pv-table-row"><span>Tomasz Wolski</span><span class="pv-pill pv-pill-purple">Referral</span><span class="pv-pill pv-pill-purple">Call booked</span><span>&mdash;</span></div>
                 <div class="pv-table-row"><span>Elena Rossi</span><span class="pv-pill pv-pill-blue">Website</span><span class="pv-pill pv-pill-blue">New</span><span>&mdash;</span></div>
                 <div class="pv-table-row"><span>Jonas Weber</span><span class="pv-pill pv-pill-blue">LinkedIn</span><span class="pv-pill pv-pill-blue">New</span><span>&mdash;</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-panel reverse" data-topic="email">
+        <div class="topic-panel-text">
+          <div class="section-eyebrow" style="margin:0 0 8px">Email &amp; conversations</div>
+          <h2>Send real emails, right from the app</h2>
+          <p>Compose and send emails to any lead straight from PalaTrack &mdash; from your own connected Gmail, with attachments and a saved signature. Every message you send, and every reply that comes back, is logged automatically &mdash; so the full conversation with that lead is always right there, searchable and exportable at any time.</p>
+        </div>
+        <div class="topic-panel-visual">
+          <div class="pv-window">
+            <div class="pv-window-bar"></div>
+            <div class="pv-window-body">
+              <div class="pv-fake-cursor" id="pvEmailCursor">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="#1B2430" stroke="white" stroke-width="1"><path d="M4 2l16 8-6.5 2L11 20z"/></svg>
+              </div>
+              <div class="pv-email-compose">
+                <div class="pv-email-compose-to"><b>To</b> <input type="text" id="pvEmailToInput" class="pv-email-input pv-email-to-input" value="jordan@acme.com" readonly tabindex="-1"></div>
+                <input type="text" id="pvEmailSubjectInput" class="pv-email-input pv-email-subject-input" value="Following up on our call" readonly tabindex="-1">
+                <button type="button" class="pv-email-send-btn" id="pvEmailSendBtn">Send</button>
+              </div>
+              <div class="pv-email-thread" id="pvEmailThread">
+                <div class="pv-email-item">
+                  <div class="pv-email-item-head"><span class="pv-email-subject">Following up on our call</span><span class="pv-pill pv-pill-green">Sent</span></div>
+                  <div class="pv-email-meta">To jordan@acme.com &middot; 2 days ago</div>
+                </div>
+                <div class="pv-email-item pv-email-item-incoming">
+                  <div class="pv-email-item-head"><span class="pv-email-subject">Re: Quick intro &amp; next steps</span><span class="pv-pill pv-pill-blue">Replied</span></div>
+                  <div class="pv-email-meta">From jordan@acme.com &middot; 5 days ago</div>
+                  <div class="pv-email-snippet">Thanks for reaching out &mdash; happy to hear more.</div>
+                </div>
+                <div class="pv-email-item">
+                  <div class="pv-email-item-head"><span class="pv-email-subject">Quick intro &amp; next steps</span><span class="pv-pill pv-pill-green">Sent</span></div>
+                  <div class="pv-email-meta">To jordan@acme.com &middot; 1 week ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-panel" data-topic="messaging">
+        <div class="topic-panel-text">
+          <div class="section-eyebrow" style="margin:0 0 8px">Team messaging</div>
+          <h2>Talk to your team without leaving the tracker</h2>
+          <p>Message any teammate one-on-one, or spin up a group chat for a whole team or project &mdash; complete with reactions, comments, and a shared Team Feed. No separate app to open, no context switching.</p>
+        </div>
+        <div class="topic-panel-visual">
+          <div class="pv-window">
+            <div class="pv-window-bar"></div>
+            <div class="pv-window-body">
+              <div class="pv-fake-cursor" id="pvChatCursor">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="#1B2430" stroke="white" stroke-width="1"><path d="M4 2l16 8-6.5 2L11 20z"/></svg>
+              </div>
+              <div class="pv-chat-mock">
+                <div class="pv-chat-list">
+                  <div class="pv-chat-list-item active" id="pvChatItemDM">
+                    <div class="pv-chat-avatar" style="background:#1B59A5">TW</div>
+                    <div>
+                      <div class="pv-chat-list-name">Tomasz Wolski</div>
+                      <div class="pv-chat-list-preview" id="pvChatPreviewDM">Sounds good, I'll call them today</div>
+                    </div>
+                  </div>
+                  <div class="pv-chat-list-item" id="pvChatItemGroup">
+                    <div class="pv-chat-avatar" style="background:#7A4FB5">#</div>
+                    <div>
+                      <div class="pv-chat-list-name">Sales Team</div>
+                      <div class="pv-chat-list-preview" id="pvChatPreviewGroup">Julia: New lead just came in!</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="pv-chat-thread" id="pvChatThread">
+                  <div class="pv-chat-bubble them">Did you see the new lead from LinkedIn?</div>
+                  <div class="pv-chat-bubble me">Yep, following up now</div>
+                </div>
               </div>
             </div>
           </div>
@@ -1399,6 +1538,202 @@
     });
   }
 
+  let emailDemoRunning = false;
+  let emailDemoTimer = null;
+  (function(){
+    const sendBtn = document.getElementById('pvEmailSendBtn');
+    const toInput = document.getElementById('pvEmailToInput');
+    const subjectInput = document.getElementById('pvEmailSubjectInput');
+    const thread = document.getElementById('pvEmailThread');
+    if(!sendBtn || !thread) return;
+    function escHtml(s){
+      return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    }
+    function performSend(replySnippet){
+      const to = (toInput.value || 'jordan@acme.com').trim();
+      const subject = (subjectInput.value || 'New message').trim();
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+      setTimeout(()=>{
+        const item = document.createElement('div');
+        item.className = 'pv-email-item pv-email-item-new';
+        item.innerHTML = `<div class="pv-email-item-head"><span class="pv-email-subject">${escHtml(subject)}</span><span class="pv-pill pv-pill-green">Sent</span></div><div class="pv-email-meta">To ${escHtml(to)} &middot; Just now</div>`;
+        thread.insertBefore(item, thread.firstChild);
+        while(thread.children.length > 3){
+          thread.removeChild(thread.lastChild);
+        }
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        if(replySnippet && emailDemoRunning){
+          emailDemoTimer = setTimeout(()=>{
+            if(!emailDemoRunning) return;
+            const reply = document.createElement('div');
+            reply.className = 'pv-email-item pv-email-item-new pv-email-item-incoming';
+            reply.innerHTML = `<div class="pv-email-item-head"><span class="pv-email-subject">Re: ${escHtml(subject)}</span><span class="pv-pill pv-pill-blue">Replied</span></div><div class="pv-email-meta">From ${escHtml(to)} &middot; Just now</div><div class="pv-email-snippet">${escHtml(replySnippet)}</div>`;
+            thread.insertBefore(reply, thread.firstChild);
+            while(thread.children.length > 3){
+              thread.removeChild(thread.lastChild);
+            }
+          }, 1000);
+        }
+      }, 450);
+    }
+    sendBtn.addEventListener('click', ()=>performSend());
+
+    // ---------- Auto-play cursor demo ----------
+    const EMAIL_DEMO_EXAMPLES = [
+      {to: 'jordan@acme.com', subject: 'Following up on our call', reply: "Thanks for following up — yes, let's move forward!"},
+      {to: 'maria@brightco.io', subject: 'Quick recap + next steps', reply: "Great summary, I'll loop in my team by Friday."},
+      {to: 'tomasz@wolski.dev', subject: 'Proposal attached', reply: 'This looks good — sending it to legal for review.'}
+    ];
+    const cursor = document.getElementById('pvEmailCursor');
+    const container = sendBtn.closest('.pv-window-body');
+    function moveCursorTo(targetEl){
+      const cRect = container.getBoundingClientRect();
+      const tRect = targetEl.getBoundingClientRect();
+      cursor.style.left = (tRect.left - cRect.left + tRect.width/2) + 'px';
+      cursor.style.top = (tRect.top - cRect.top + tRect.height/2) + 'px';
+    }
+    function typeInto(field, text, onDone){
+      field.value = '';
+      let i = 0;
+      (function step(){
+        if(!emailDemoRunning) return;
+        field.value = text.slice(0, i+1);
+        i++;
+        if(i < text.length) emailDemoTimer = setTimeout(step, 40 + Math.random()*40);
+        else onDone();
+      })();
+    }
+    function runDemoStep(exampleIdx){
+      if(!emailDemoRunning || !cursor || !container) return;
+      const example = EMAIL_DEMO_EXAMPLES[exampleIdx % EMAIL_DEMO_EXAMPLES.length];
+      cursor.classList.add('show');
+      moveCursorTo(toInput);
+      emailDemoTimer = setTimeout(()=>{
+        if(!emailDemoRunning) return;
+        typeInto(toInput, example.to, ()=>{
+          moveCursorTo(subjectInput);
+          emailDemoTimer = setTimeout(()=>{
+            if(!emailDemoRunning) return;
+            typeInto(subjectInput, example.subject, ()=>{
+              moveCursorTo(sendBtn);
+              emailDemoTimer = setTimeout(()=>{
+                if(!emailDemoRunning) return;
+                cursor.classList.add('click');
+                performSend(example.reply);
+                setTimeout(()=>{ if(cursor) cursor.classList.remove('click'); }, 250);
+                emailDemoTimer = setTimeout(()=>runDemoStep(exampleIdx+1), 3200);
+              }, 450);
+            });
+          }, 350);
+        });
+      }, 500);
+    }
+    window.__startEmailDemoCycle = function(){
+      if(emailDemoRunning) return;
+      emailDemoRunning = true;
+      runDemoStep(0);
+    };
+    window.__stopEmailDemoCycle = function(){
+      emailDemoRunning = false;
+      clearTimeout(emailDemoTimer);
+      if(cursor) cursor.classList.remove('show', 'click');
+    };
+  })();
+
+  let chatDemoRunning = false;
+  let chatDemoTimer = null;
+  (function(){
+    const cursor = document.getElementById('pvChatCursor');
+    const thread = document.getElementById('pvChatThread');
+    const container = thread ? thread.closest('.pv-window-body') : null;
+    const itemDM = document.getElementById('pvChatItemDM');
+    const itemGroup = document.getElementById('pvChatItemGroup');
+    if(!cursor || !thread || !container || !itemDM || !itemGroup) return;
+
+    const CONVERSATIONS = [
+      {
+        item: itemDM,
+        messages: [
+          {from:'them', text:'Did you see the new lead from LinkedIn?'},
+          {from:'me', text:'Yep, following up now'}
+        ]
+      },
+      {
+        item: itemGroup,
+        messages: [
+          {from:'them', text:'Julia: New lead just came in!'},
+          {from:'me', text:'On it \u2014 calling them today'}
+        ]
+      }
+    ];
+
+    function moveCursorTo(targetEl){
+      const cRect = container.getBoundingClientRect();
+      const tRect = targetEl.getBoundingClientRect();
+      cursor.style.left = (tRect.left - cRect.left + 16) + 'px';
+      cursor.style.top = (tRect.top - cRect.top + tRect.height/2) + 'px';
+    }
+    function showTyping(onDone){
+      const typing = document.createElement('div');
+      typing.className = 'pv-chat-typing';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+      thread.appendChild(typing);
+      chatDemoTimer = setTimeout(()=>{
+        typing.remove();
+        if(!chatDemoRunning) return;
+        onDone();
+      }, 700 + Math.random()*300);
+    }
+    function addBubble(msg){
+      const bubble = document.createElement('div');
+      bubble.className = `pv-chat-bubble ${msg.from} pv-chat-bubble-new`;
+      bubble.textContent = msg.text;
+      thread.appendChild(bubble);
+      while(thread.children.length > 3){
+        thread.removeChild(thread.firstChild);
+      }
+    }
+    function playMessages(convo, msgIdx, onFinished){
+      if(!chatDemoRunning) return;
+      if(msgIdx >= convo.messages.length){ onFinished(); return; }
+      showTyping(()=>{
+        addBubble(convo.messages[msgIdx]);
+        chatDemoTimer = setTimeout(()=>playMessages(convo, msgIdx+1, onFinished), 500);
+      });
+    }
+    function runChatDemoStep(convoIdx){
+      if(!chatDemoRunning) return;
+      const convo = CONVERSATIONS[convoIdx];
+      cursor.classList.add('show');
+      moveCursorTo(convo.item);
+      chatDemoTimer = setTimeout(()=>{
+        if(!chatDemoRunning) return;
+        cursor.classList.add('click');
+        setTimeout(()=>{ if(cursor) cursor.classList.remove('click'); }, 250);
+        CONVERSATIONS.forEach(c=>c.item.classList.remove('active'));
+        convo.item.classList.add('active');
+        thread.innerHTML = '';
+        chatDemoTimer = setTimeout(()=>{
+          playMessages(convo, 0, ()=>{
+            chatDemoTimer = setTimeout(()=>runChatDemoStep(convoIdx === 0 ? 1 : 0), 2200);
+          });
+        }, 400);
+      }, 500);
+    }
+    window.__startChatDemoCycle = function(){
+      if(chatDemoRunning) return;
+      chatDemoRunning = true;
+      runChatDemoStep(1); // DM is already active by default, so start by switching to the group chat
+    };
+    window.__stopChatDemoCycle = function(){
+      chatDemoRunning = false;
+      clearTimeout(chatDemoTimer);
+      if(cursor) cursor.classList.remove('show', 'click');
+    };
+  })();
+
   const topicPills = document.querySelectorAll('.topic-pill');
   const topicPanels = document.querySelectorAll('.topic-panel');
   topicPills.forEach(pill=>{
@@ -1416,6 +1751,8 @@
       if(topic === 'languages'){ startLangCycle(); } else { stopLangCycle(); }
       if(topic === 'dark'){ startThemeCycle(); } else { stopThemeCycle(); }
       if(topic === 'stats'){ showStatsSlide(0); startStatsCycle(); loadMiniWorldMap(); } else { stopStatsCycle(); }
+      if(topic === 'email'){ window.__startEmailDemoCycle && window.__startEmailDemoCycle(); } else { window.__stopEmailDemoCycle && window.__stopEmailDemoCycle(); }
+      if(topic === 'messaging'){ window.__startChatDemoCycle && window.__startChatDemoCycle(); } else { window.__stopChatDemoCycle && window.__stopChatDemoCycle(); }
     });
   });
 
