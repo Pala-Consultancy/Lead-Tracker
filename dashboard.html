@@ -3044,7 +3044,7 @@
       revealAppRoot();
       return;
     }
-    unsubscribeScheduledEmails = db.collectionGroup('scheduledEmails')
+    unsubscribeScheduledEmails = db.collection('scheduledEmails')
       .where('workspaceId', '==', workspaceId)
       .where('boardId', '==', boardId)
       .where('status', '==', 'pending')
@@ -5138,7 +5138,8 @@ ${buildLeadContext()}`;
   function loadScheduledEmailsForDrawer(leadId){
     const holder = document.getElementById('scheduledEmailsList');
     if(!holder) return;
-    leadsCollection.doc(leadId).collection('scheduledEmails')
+    db.collection('scheduledEmails')
+      .where('leadId', '==', leadId)
       .where('status', '==', 'pending')
       .orderBy('sendAt', 'asc')
       .get().then(snap=>{
@@ -5157,7 +5158,7 @@ ${buildLeadContext()}`;
         holder.querySelectorAll('.cancel-scheduled-btn').forEach(btn=>{
           btn.addEventListener('click', ()=>{
             btn.disabled = true;
-            leadsCollection.doc(btn.dataset.lead).collection('scheduledEmails').doc(btn.dataset.id)
+            db.collection('scheduledEmails').doc(btn.dataset.id)
               .update({status: 'cancelled'})
               .then(()=>{
                 showToast('Scheduled email cancelled.');
@@ -5551,7 +5552,7 @@ ${buildLeadContext()}`;
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Scheduling...';
     const leadId = composeEmailLead.id;
-    leadsCollection.doc(leadId).collection('scheduledEmails').add({
+    db.collection('scheduledEmails').add({
       workspaceId, boardId, leadId,
       ...input,
       sentBy: auth.currentUser.uid,

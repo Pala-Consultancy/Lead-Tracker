@@ -187,7 +187,7 @@
         const item = filtered[Number(btn.dataset.ref)];
         btn.disabled = true;
         btn.textContent = 'Cancelling...';
-        db.doc(`workspaces/${item.workspaceId}/boards/${item.boardId}/leads/${item.leadId}/scheduledEmails/${item.id}`)
+        db.doc(`scheduledEmails/${item.id}`)
           .update({status: 'cancelled'})
           .then(()=> showToast('Scheduled email cancelled.'))
           .catch(err=>{
@@ -211,7 +211,7 @@
   let unsubscribe = null;
   function startListening(workspaceId){
     currentWorkspaceId = workspaceId;
-    unsubscribe = db.collectionGroup('scheduledEmails')
+    unsubscribe = db.collection('scheduledEmails')
       .where('workspaceId', '==', workspaceId)
       .orderBy('sendAt', 'asc')
       .limit(300)
