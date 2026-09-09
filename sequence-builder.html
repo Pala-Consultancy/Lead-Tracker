@@ -137,6 +137,8 @@
   .seq-node-title{font-size:13.5px;font-weight:700;color:var(--ink);}
   .seq-node-subject{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;}
   .seq-node-scheduled{font-size:11px;font-weight:700;color:var(--amber);margin-top:2px;}
+  .seq-node-scheduled.now{color:var(--teal);}
+  .seq-node-scheduled.estimate{color:var(--slate);font-weight:600;}
   .seq-node-edit{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:14px;flex-shrink:0;transition:color .12s, transform .12s;}
   .seq-node-edit:hover{color:var(--teal);transform:scale(1.15);}
 
@@ -500,13 +502,33 @@
     return (step.delayValue || 1) * unitMs;
   }
 
+  // Estimated send time for step `index`, based on step 0's actual send
+  // time (now, or its chosen schedule) plus every delay up to that step.
+  // For steps after the first, this is only an estimate — it assumes no
+  // reply comes in before then, which is exactly the condition that has
+  // to hold for that step to actually fire.
+  function computeStepSendTime(index){
+    let ms = (steps[0].sendMode === 'scheduled' && steps[0].scheduledAt)
+      ? new Date(steps[0].scheduledAt).getTime()
+      : Date.now();
+    for(let i = 1; i <= index; i++) ms += delayMs(steps[i]);
+    return new Date(ms);
+  }
+  function formatNodeTime(d){
+    return d.toLocaleString(undefined, {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  }
   function renderStepNodeHTML(i){
     const step = steps[i];
     const delay = `${i * 70}ms`;
     const draggable = i > 0; // step 1 (the immediate send) stays fixed as the anchor
-    const scheduledBadge = (i === 0 && step.sendMode === 'scheduled' && step.scheduledAt)
-      ? `<div class="seq-node-scheduled">🕒 ${esc(new Date(step.scheduledAt).toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'}))}</div>`
-      : '';
+    let scheduledBadge;
+    if(i === 0){
+      scheduledBadge = (step.sendMode === 'scheduled' && step.scheduledAt)
+        ? `<div class="seq-node-scheduled">🕒 ${esc(formatNodeTime(new Date(step.scheduledAt)))}</div>`
+        : `<div class="seq-node-scheduled now">🕒 Sends now</div>`;
+    } else {
+      scheduledBadge = `<div class="seq-node-scheduled estimate">🕒 ~${esc(formatNodeTime(computeStepSendTime(i)))}</div>`;
+    }
     return `<div class="seq-node" data-idx="${i}" style="animation-delay:${delay}" ${draggable ? 'draggable="true"' : ''}>
       ${draggable ? `<span class="seq-node-handle" title="Drag to reorder">⠿</span>` : ''}
       <div class="seq-node-icon">${nodeIconFor(i)}</div>
@@ -630,7 +652,7 @@
         const idx = Number(input.dataset.idx);
         const val = parseInt(input.value, 10);
         steps[idx].delayValue = (val && val > 0) ? val : 1;
-        input.value = steps[idx].delayValue;
+        renderCanvas();
       });
     });
     canvas.querySelectorAll('.seq-delay-unit-btn').forEach(btn=>{
@@ -638,7 +660,7 @@
         e.stopPropagation();
         const idx = Number(btn.dataset.idx);
         steps[idx].delayUnit = (steps[idx].delayUnit === 'hours') ? 'days' : 'hours';
-        btn.textContent = steps[idx].delayUnit === 'hours' ? 'hrs' : 'days';
+        renderCanvas();
       });
     });
   }
