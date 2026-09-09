@@ -112,24 +112,68 @@
 
   /* ---------- Edit panel ---------- */
   .seq-panel-overlay{
-    position:fixed;inset:0;background:rgba(16,32,55,0.35);z-index:200;
-    display:none;align-items:stretch;justify-content:flex-end;
+    position:fixed;inset:0;background:rgba(16,32,55,0.4);z-index:200;
+    display:flex;align-items:stretch;justify-content:flex-end;
+    opacity:0;visibility:hidden;transition:opacity .2s ease, visibility 0s linear .2s;
   }
-  .seq-panel-overlay.open{display:flex;}
+  .seq-panel-overlay.open{opacity:1;visibility:visible;transition:opacity .2s ease;}
   .seq-panel{
-    width:400px;max-width:92vw;background:var(--panel);height:100%;box-shadow:-10px 0 30px rgba(0,0,0,0.12);
-    padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;
+    width:420px;max-width:92vw;background:var(--panel);height:100%;box-shadow:-14px 0 40px rgba(16,32,55,0.18);
+    overflow-y:auto;display:flex;flex-direction:column;
+    transform:translateX(24px);opacity:0;transition:transform .22s cubic-bezier(.2,.8,.3,1), opacity .18s ease;
   }
-  .seq-panel h3{margin:0;font-family:'Sora',sans-serif;font-size:17px;}
-  .seq-panel label{font-size:11.5px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;display:block;}
+  .seq-panel-overlay.open .seq-panel{transform:translateX(0);opacity:1;}
+  .seq-panel-head{
+    display:flex;align-items:flex-start;gap:12px;padding:24px 24px 18px;
+    background:linear-gradient(180deg, var(--panel-alt), var(--panel));border-bottom:1px solid var(--border-soft);
+  }
+  .seq-panel-head-icon{
+    width:38px;height:38px;border-radius:50%;background:var(--teal);color:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+  }
+  .seq-panel-head h3{margin:0 0 3px;font-family:'Sora',sans-serif;font-size:17px;}
+  .seq-panel-head p{margin:0;font-size:12px;color:var(--slate);line-height:1.4;}
+  .seq-panel-close{
+    margin-left:auto;background:none;border:none;font-size:20px;line-height:1;color:var(--slate-light);
+    cursor:pointer;padding:2px 4px;flex-shrink:0;
+  }
+  .seq-panel-close:hover{color:var(--ink);}
+  .seq-panel-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px;flex:1;}
+  .seq-panel label{font-size:11.5px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+  .seq-panel label .seq-char-count{font-weight:600;text-transform:none;letter-spacing:0;color:var(--slate-light);font-size:11px;}
   .seq-panel input[type="text"], .seq-panel textarea, .seq-panel input[type="number"]{
-    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:13.5px;
+    width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;
+    transition:border-color .12s, box-shadow .12s;
   }
-  .seq-panel textarea{min-height:160px;resize:vertical;font-family:inherit;}
-  .seq-panel-actions{display:flex;justify-content:space-between;gap:10px;margin-top:auto;padding-top:10px;}
-  .seq-panel-btn{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--panel);font-family:'Inter',sans-serif;}
+  .seq-panel input:focus, .seq-panel textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(28,91,158,0.12);}
+  .seq-panel textarea{min-height:150px;resize:vertical;font-family:inherit;line-height:1.55;}
+
+  .seq-unit-toggle{display:flex;gap:8px;align-items:center;}
+  .seq-unit-toggle input[type="number"]{width:76px;flex-shrink:0;}
+  .seq-unit-chips{display:flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
+  .seq-unit-chip{
+    padding:10px 14px;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--panel);color:var(--slate);
+    border:none;border-right:1px solid var(--border);font-family:'Inter',sans-serif;
+  }
+  .seq-unit-chip:last-child{border-right:none;}
+  .seq-unit-chip.active{background:var(--teal);color:#fff;}
+
+  .seq-timing-preview{
+    display:flex;align-items:center;gap:9px;background:var(--panel-alt);border:1px solid var(--border-soft);
+    border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--slate);
+  }
+  .seq-timing-preview b{color:var(--teal);font-weight:700;}
+
+  .seq-panel-actions{
+    display:flex;justify-content:space-between;gap:10px;padding:16px 24px 22px;
+    border-top:1px solid var(--border-soft);background:var(--panel-alt);
+  }
+  .seq-panel-btn{padding:10px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--panel);font-family:'Inter',sans-serif;transition:transform .1s ease;}
+  .seq-panel-btn:active{transform:scale(.96);}
   .seq-panel-btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .seq-panel-btn.primary:hover{background:var(--teal-deep);}
   .seq-panel-btn.danger{color:var(--fail);border-color:var(--fail);}
+  .seq-panel-btn.danger:hover{background:var(--fail-soft);}
 
   .toast-stack{position:fixed;top:18px;right:18px;z-index:400;display:flex;flex-direction:column;gap:8px;}
   .toast{background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);}
@@ -167,18 +211,36 @@
 
 <div class="seq-panel-overlay" id="seqPanelOverlay">
   <div class="seq-panel">
-    <h3 id="seqPanelTitle">Send email</h3>
-    <div>
-      <label>Subject</label>
-      <input type="text" id="seqPanelSubject" placeholder="Subject">
+    <div class="seq-panel-head">
+      <div class="seq-panel-head-icon" id="seqPanelIcon">✉️</div>
+      <div>
+        <h3 id="seqPanelTitle">Send email</h3>
+        <p id="seqPanelSubtitle">Sends right away when the sequence starts.</p>
+      </div>
+      <button type="button" class="seq-panel-close" id="seqPanelCloseX" title="Close">×</button>
     </div>
-    <div>
-      <label>Message</label>
-      <textarea id="seqPanelBody" placeholder="Write your message..."></textarea>
-    </div>
-    <div id="seqPanelDelayRow" style="display:none;">
-      <label>If no reply, send after</label>
-      <input type="number" id="seqPanelDelay" min="1" max="30" value="2" style="width:80px;">
+    <div class="seq-panel-body">
+      <div>
+        <label>Subject <span class="seq-char-count" id="seqSubjectCount">0/150</span></label>
+        <input type="text" id="seqPanelSubject" placeholder="Subject" maxlength="150">
+      </div>
+      <div>
+        <label>Message <span class="seq-char-count" id="seqBodyCount">0 characters</span></label>
+        <textarea id="seqPanelBody" placeholder="Write your message..."></textarea>
+      </div>
+      <div id="seqPanelDelayRow" style="display:none;">
+        <label>If no reply, send after</label>
+        <div class="seq-unit-toggle">
+          <input type="number" id="seqPanelDelay" min="1" value="2">
+          <div class="seq-unit-chips">
+            <button type="button" class="seq-unit-chip" data-unit="hours">Hours</button>
+            <button type="button" class="seq-unit-chip active" data-unit="days">Days</button>
+          </div>
+        </div>
+        <div class="seq-timing-preview" id="seqTimingPreview" style="margin-top:12px;">
+          🕒 Sends around <b id="seqTimingWhen">—</b>, if they haven't replied by then
+        </div>
+      </div>
     </div>
     <div class="seq-panel-actions">
       <button type="button" class="seq-panel-btn danger" id="seqPanelRemoveBtn" style="display:none;">Remove step</button>
@@ -232,13 +294,18 @@
   let leadData = null;
   const MAX_STEPS = 5;
   // steps[0] = {subject, body} (sends immediately). steps[1..] additionally
-  // have delayDays (if no reply since the previous step, wait this long).
+  // have delayValue + delayUnit ('hours'|'days') — if no reply since the
+  // previous step, wait this long before sending.
   let steps = [{subject:'', body:''}];
   let editingIndex = null;
   let zoomLevel = 1;
 
   function nodeIconFor(index){ return index === 0 ? '✉️' : '↻'; }
   function nodeTitleFor(index){ return index === 0 ? 'Send email' : `Follow-up ${index+1}`; }
+  function delayMs(step){
+    const unitMs = step.delayUnit === 'hours' ? 60*60*1000 : 24*60*60*1000;
+    return (step.delayValue || 1) * unitMs;
+  }
 
   function renderCanvas(){
     const canvas = document.getElementById('seqCanvas');
@@ -253,10 +320,6 @@
         </div>
         <button type="button" class="seq-node-edit" data-idx="${i}" title="Edit">✎</button>
       </div>`;
-      if(i > 0){
-        // The delay chip sits ABOVE the branch split for step i, showing how
-        // long we waited since the previous step before this one fired.
-      }
       if(isLast){
         html += `<div class="seq-connector"></div>
         <div class="seq-add-end-row">
@@ -264,9 +327,10 @@
         </div>`;
       } else {
         const next = steps[i+1];
+        const unitLabel = next.delayUnit === 'hours' ? 'hrs' : 'days';
         html += `<div class="seq-connector"></div>
         <div class="seq-delay-chip">
-          🕒 <input type="number" class="seq-delay-input" data-idx="${i+1}" min="1" max="30" value="${next.delayDays || 2}"> days
+          🕒 <input type="number" class="seq-delay-input" data-idx="${i+1}" min="1" value="${next.delayValue || 2}"> ${unitLabel}
         </div>
         <div class="seq-branches">
           <div class="seq-branch">
@@ -290,7 +354,7 @@
     const addBtn = document.getElementById('seqAddStepBtn');
     if(addBtn) addBtn.addEventListener('click', ()=>{
       if(steps.length >= MAX_STEPS){ showToast(`You can add up to ${MAX_STEPS} steps.`, true); return; }
-      steps.push({subject:'', body:'', delayDays:2});
+      steps.push({subject:'', body:'', delayValue:2, delayUnit:'days'});
       renderCanvas();
       openEditPanel(steps.length - 1);
     });
@@ -298,24 +362,61 @@
       input.addEventListener('change', ()=>{
         const idx = Number(input.dataset.idx);
         const val = parseInt(input.value, 10);
-        steps[idx].delayDays = (val && val > 0) ? val : 1;
-        input.value = steps[idx].delayDays;
+        steps[idx].delayValue = (val && val > 0) ? val : 1;
+        input.value = steps[idx].delayValue;
       });
     });
+  }
+
+  function updateSubjectCount(){
+    const v = document.getElementById('seqPanelSubject').value;
+    document.getElementById('seqSubjectCount').textContent = `${v.length}/150`;
+  }
+  function updateBodyCount(){
+    const v = document.getElementById('seqPanelBody').value;
+    document.getElementById('seqBodyCount').textContent = `${v.length} character${v.length===1?'':'s'}`;
+  }
+  function activeUnit(){
+    const chip = document.querySelector('.seq-unit-chip.active');
+    return chip ? chip.dataset.unit : 'days';
+  }
+  function updateTimingPreview(){
+    if(editingIndex === null || editingIndex === 0) return;
+    const delayVal = parseInt(document.getElementById('seqPanelDelay').value, 10) || 1;
+    const unit = activeUnit();
+    let ms = 0;
+    for(let i=1; i<editingIndex; i++) ms += delayMs(steps[i]);
+    ms += delayVal * (unit === 'hours' ? 60*60*1000 : 24*60*60*1000);
+    const when = new Date(Date.now() + ms);
+    document.getElementById('seqTimingWhen').textContent =
+      when.toLocaleString(undefined, {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
   }
 
   function openEditPanel(index){
     editingIndex = index;
     const step = steps[index];
+    document.getElementById('seqPanelIcon').textContent = nodeIconFor(index);
     document.getElementById('seqPanelTitle').textContent = nodeTitleFor(index);
+    document.getElementById('seqPanelSubtitle').textContent = index === 0
+      ? 'Sends right away when the sequence starts.'
+      : "Only sends if this lead still hasn't replied by then.";
     document.getElementById('seqPanelSubject').value = step.subject || '';
-    document.getElementById('seqPanelBody').value = step.body || '';
+    const bodyEl = document.getElementById('seqPanelBody');
+    bodyEl.value = step.body || '';
+    bodyEl.style.height = 'auto';
+    bodyEl.style.height = Math.min(bodyEl.scrollHeight, 380) + 'px';
+    updateSubjectCount();
+    updateBodyCount();
     const delayRow = document.getElementById('seqPanelDelayRow');
     if(index === 0){
       delayRow.style.display = 'none';
     } else {
       delayRow.style.display = '';
-      document.getElementById('seqPanelDelay').value = step.delayDays || 2;
+      document.getElementById('seqPanelDelay').value = step.delayValue || 2;
+      document.querySelectorAll('.seq-unit-chip').forEach(chip=>{
+        chip.classList.toggle('active', chip.dataset.unit === (step.delayUnit || 'days'));
+      });
+      updateTimingPreview();
     }
     document.getElementById('seqPanelRemoveBtn').style.display = (index > 0) ? '' : 'none';
     document.getElementById('seqPanelOverlay').classList.add('open');
@@ -325,9 +426,27 @@
     document.getElementById('seqPanelOverlay').classList.remove('open');
     editingIndex = null;
   }
+  document.getElementById('seqPanelSubject').addEventListener('input', updateSubjectCount);
+  document.getElementById('seqPanelBody').addEventListener('input', (e)=>{
+    updateBodyCount();
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 380) + 'px';
+  });
+  document.getElementById('seqPanelDelay').addEventListener('input', updateTimingPreview);
+  document.querySelectorAll('.seq-unit-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('.seq-unit-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      updateTimingPreview();
+    });
+  });
+  document.getElementById('seqPanelCloseX').addEventListener('click', closeEditPanel);
   document.getElementById('seqPanelCancelBtn').addEventListener('click', closeEditPanel);
   document.getElementById('seqPanelOverlay').addEventListener('click', (e)=>{
     if(e.target.id === 'seqPanelOverlay') closeEditPanel();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && document.getElementById('seqPanelOverlay').classList.contains('open')) closeEditPanel();
   });
   document.getElementById('seqPanelDoneBtn').addEventListener('click', ()=>{
     if(editingIndex === null) return;
@@ -337,7 +456,8 @@
     steps[editingIndex].body = body;
     if(editingIndex > 0){
       const d = parseInt(document.getElementById('seqPanelDelay').value, 10);
-      steps[editingIndex].delayDays = (d && d > 0) ? d : 1;
+      steps[editingIndex].delayValue = (d && d > 0) ? d : 1;
+      steps[editingIndex].delayUnit = activeUnit();
     }
     closeEditPanel();
     renderCanvas();
@@ -380,7 +500,7 @@
       let cumulativeMs = Date.now();
       const writes = [];
       for(let i=1; i<steps.length; i++){
-        cumulativeMs += steps[i].delayDays * 24*60*60*1000;
+        cumulativeMs += delayMs(steps[i]);
         writes.push(db.collection('scheduledEmails').add({
           workspaceId: currentWorkspaceId, boardId, leadId,
           to: leadEmail, cc: [], subject: steps[i].subject, body: steps[i].body, htmlBody: '', attachments: [],
