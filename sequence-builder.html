@@ -24,7 +24,33 @@
   .loader-spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  #appRoot{display:none;height:100vh;display:flex;flex-direction:column;}
+  #appRoot{display:none;height:100vh;flex-direction:row;}
+  .seq-sidebar{
+    width:200px;flex-shrink:0;height:100%;background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;padding:20px 14px;overflow-y:auto;
+  }
+  .seq-sidebar-logo{
+    width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg, var(--teal), var(--teal-deep));
+    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Sora',sans-serif;
+    font-size:16px;margin-bottom:20px;box-shadow:0 3px 8px rgba(28,91,158,0.28);
+  }
+  .seq-sidebar-user{display:flex;align-items:center;gap:9px;padding:6px 8px;margin-bottom:22px;}
+  .seq-sidebar-avatar{
+    width:30px;height:30px;border-radius:50%;background:var(--panel-alt);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--teal);flex-shrink:0;
+  }
+  .seq-sidebar-user span{font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .seq-sidebar-nav{display:flex;flex-direction:column;gap:2px;}
+  .seq-sidebar-link{
+    display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:9px;
+    text-decoration:none;color:var(--slate);font-size:13px;font-weight:600;transition:background .12s, color .12s;
+  }
+  .seq-sidebar-link .icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+  .seq-sidebar-link:hover{background:var(--panel-alt);color:var(--ink);}
+  .seq-sidebar-link.active{background:var(--panel-alt);color:var(--teal);}
+  .seq-sidebar-bottom{margin-top:auto;padding-top:14px;border-top:1px solid var(--border-soft);}
+
+  .seq-main{flex:1;min-width:0;display:flex;flex-direction:column;height:100%;}
   .seq-header{
     display:flex;align-items:center;justify-content:space-between;gap:16px;
     padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;
@@ -189,6 +215,15 @@
   .seq-unit-chip:last-child{border-right:none;}
   .seq-unit-chip.active{background:var(--teal);color:#fff;}
 
+  .seq-var-row{display:flex;flex-wrap:wrap;gap:7px;}
+  .seq-var-chip{
+    font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:16px;
+    border:1px solid var(--border);background:var(--panel-alt);color:var(--teal);cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .12s;
+  }
+  .seq-var-chip:hover{background:var(--teal);color:#fff;border-color:var(--teal);transform:translateY(-1px);}
+  .seq-var-chip:active{transform:scale(.95);}
+
   .seq-timing-preview{
     display:flex;align-items:center;gap:9px;background:var(--panel-alt);border:1px solid var(--border-soft);
     border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--slate);
@@ -216,30 +251,62 @@
 <div class="toast-stack" id="toastStack"></div>
 
 <div id="appRoot">
-  <div class="seq-header">
-    <div class="seq-header-left">
-      <a class="back-link" id="backBtn" href="#">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Back to lead
-      </a>
-      <div class="seq-lead-avatar" id="seqLeadAvatar">?</div>
-      <div>
-        <div class="seq-lead-name">
-          <span id="seqLeadName">Loading…</span><span class="seq-step-pill" id="seqStepPill" style="display:none;"></span>
-        </div>
-        <div class="seq-lead-email" id="seqLeadEmail"></div>
-      </div>
+  <div class="seq-sidebar">
+    <div class="seq-sidebar-logo">P</div>
+    <div class="seq-sidebar-user" id="seqSidebarUser">
+      <div class="seq-sidebar-avatar" id="seqSidebarAvatar">?</div>
+      <span id="seqSidebarUserName">…</span>
     </div>
-    <button type="button" class="seq-start-btn" id="seqStartBtn">Start sequence</button>
+    <div class="seq-sidebar-nav">
+      <a class="seq-sidebar-link" id="navDashboard" href="#">
+        <span class="icon">▦</span> Dashboard
+      </a>
+      <a class="seq-sidebar-link active" id="navSequences" href="#">
+        <span class="icon">📧</span> Sequences
+      </a>
+      <a class="seq-sidebar-link" id="navScheduled" href="#">
+        <span class="icon">🕒</span> Scheduled
+      </a>
+      <a class="seq-sidebar-link" id="navChat" href="chat.html">
+        <span class="icon">💬</span> Team chat
+      </a>
+      <a class="seq-sidebar-link" id="navTrash" href="#">
+        <span class="icon">🗑️</span> Trash
+      </a>
+    </div>
+    <div class="seq-sidebar-bottom">
+      <a class="seq-sidebar-link" id="navSettings" href="account.html">
+        <span class="icon">⚙️</span> Settings
+      </a>
+    </div>
   </div>
 
-  <div class="seq-canvas-wrap" id="seqCanvasWrap">
-    <div class="seq-zoom-controls">
-      <button type="button" id="seqZoomIn">+</button>
-      <button type="button" id="seqZoomOut">−</button>
-      <button type="button" id="seqZoomReset">⟳</button>
+  <div class="seq-main">
+    <div class="seq-header">
+      <div class="seq-header-left">
+        <a class="back-link" id="backBtn" href="#">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back to lead
+        </a>
+        <div class="seq-lead-avatar" id="seqLeadAvatar">?</div>
+        <div>
+          <div class="seq-lead-name">
+            <span id="seqLeadName">Loading…</span><span class="seq-step-pill" id="seqStepPill" style="display:none;"></span>
+          </div>
+          <div class="seq-lead-email" id="seqLeadEmail"></div>
+        </div>
+      </div>
+      <button type="button" class="seq-start-btn" id="seqStartBtn">Start sequence</button>
     </div>
-    <div class="seq-canvas" id="seqCanvas"></div>
+
+    <div class="seq-canvas-wrap" id="seqCanvasWrap">
+      <div class="seq-zoom-controls">
+        <button type="button" id="seqZoomIn">+</button>
+        <button type="button" id="seqZoomOut">−</button>
+        <button type="button" id="seqZoomReset">⟳</button>
+      </div>
+      <div class="seq-canvas" id="seqCanvas"></div>
+    </div>
   </div>
 </div>
 
@@ -257,6 +324,18 @@
       <div>
         <label>Subject <span class="seq-char-count" id="seqSubjectCount">0/150</span></label>
         <input type="text" id="seqPanelSubject" placeholder="Subject" maxlength="150">
+      </div>
+      <div id="seqVarRowWrap">
+        <label>Insert a variable — fills in automatically when it sends</label>
+        <div class="seq-var-row" id="seqVarRow">
+          <button type="button" class="seq-var-chip" data-tag="%%first_name%%">First name</button>
+          <button type="button" class="seq-var-chip" data-tag="%%last_name%%">Last name</button>
+          <button type="button" class="seq-var-chip" data-tag="%%company%%">Company</button>
+          <button type="button" class="seq-var-chip" data-tag="%%job_title%%">Job title</button>
+          <button type="button" class="seq-var-chip" data-tag="%%city%%">City</button>
+          <button type="button" class="seq-var-chip" data-tag="%%country%%">Country</button>
+          <button type="button" class="seq-var-chip" data-tag="%%industry%%">Industry</button>
+        </div>
       </div>
       <div>
         <label>Message <span class="seq-char-count" id="seqBodyCount">0 characters</span></label>
@@ -331,6 +410,11 @@
   const isViewMode = !!sequenceIdParam;
   let viewSteps = []; // populated in view mode from existing scheduledEmails docs
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
+  const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
+  document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;
+  document.getElementById('navSequences').href = `sequences.html${boardQS}`;
+  document.getElementById('navScheduled').href = `scheduled-emails.html${boardQS}`;
+  document.getElementById('navTrash').href = `trash.html${boardQS}`;
 
   let currentWorkspaceId = null;
   let leadData = null;
@@ -477,6 +561,28 @@
     e.target.style.height = 'auto';
     e.target.style.height = Math.min(e.target.scrollHeight, 380) + 'px';
   });
+
+  // ---------- Merge-tag variables ----------
+  let lastFocusedField = 'body';
+  document.getElementById('seqPanelSubject').addEventListener('focus', ()=>{ lastFocusedField = 'subject'; });
+  document.getElementById('seqPanelBody').addEventListener('focus', ()=>{ lastFocusedField = 'body'; });
+  function insertAtCursor(el, text){
+    const start = el.selectionStart != null ? el.selectionStart : el.value.length;
+    const end = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+    const val = el.value;
+    el.value = val.slice(0, start) + text + val.slice(end);
+    const newPos = start + text.length;
+    el.focus();
+    el.setSelectionRange(newPos, newPos);
+    el.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+  document.querySelectorAll('.seq-var-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const targetEl = lastFocusedField === 'subject' ? document.getElementById('seqPanelSubject') : document.getElementById('seqPanelBody');
+      insertAtCursor(targetEl, chip.dataset.tag);
+    });
+  });
+
   document.getElementById('seqPanelDelay').addEventListener('input', updateTimingPreview);
   document.querySelectorAll('.seq-unit-chip').forEach(chip=>{
     chip.addEventListener('click', ()=>{
@@ -578,6 +684,7 @@
     bodyEl.style.height = Math.min(bodyEl.scrollHeight, 380) + 'px';
     document.getElementById('seqSubjectCount').style.display = 'none';
     document.getElementById('seqBodyCount').style.display = 'none';
+    document.getElementById('seqVarRowWrap').style.display = 'none';
     document.getElementById('seqPanelDelayRow').style.display = 'none';
     document.getElementById('seqPanelRemoveBtn').style.display = 'none';
     const doneBtn = document.getElementById('seqPanelDoneBtn');
@@ -716,6 +823,9 @@
       }
       leadData = leadDoc.data();
       leadData.__senderName = memberDoc.exists ? memberDoc.data().name : null;
+      const myName = leadData.__senderName || (user.email || 'You');
+      document.getElementById('seqSidebarUserName').textContent = myName;
+      document.getElementById('seqSidebarAvatar').textContent = initials(myName);
       document.getElementById('seqLeadName').textContent = leadData.name || 'Unnamed lead';
       document.getElementById('seqLeadAvatar').textContent = initials(leadData.name);
       document.getElementById('seqLeadEmail').textContent = leadData.email || '';
