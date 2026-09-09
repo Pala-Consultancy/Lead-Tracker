@@ -153,8 +153,10 @@
   }
   .entry-pip.sent{background:var(--success);}
   .entry-pip.failed{background:var(--fail);}
+  .entry-pip.replied{background:var(--teal);}
 
   .letter{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);transition:transform .15s ease, box-shadow .15s ease;}
+  .letter-incoming{border-left:3px solid var(--teal);background:var(--panel-alt);}
   .letter:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(16,32,55,0.06), 0 16px 32px -12px rgba(16,32,55,0.2);}
   mark{background:var(--clay-soft);color:var(--clay);border-radius:3px;padding:0 2px;}
   .copy-icon{
@@ -171,6 +173,7 @@
   .postmark svg{width:12px;height:12px;}
   .postmark.sent{background:var(--success-soft);color:var(--success);}
   .postmark.failed{background:var(--fail-soft);color:var(--fail);}
+  .postmark.replied{background:var(--c-blue-bg, #E3EEFA);color:var(--teal);}
 
   .letter-meta{font-size:12.5px;color:var(--slate);line-height:1.9;margin-bottom:14px;}
   .letter-meta b{color:var(--ink);font-weight:600;}
@@ -411,6 +414,7 @@
     <div class="status-filters" id="statusFilters">
       <button type="button" class="status-chip active" data-filter="all">All</button>
       <button type="button" class="status-chip" data-filter="sent">Sent</button>
+      <button type="button" class="status-chip" data-filter="replied">Replied</button>
       <button type="button" class="status-chip" data-filter="failed">Failed</button>
     </div>
     <div class="tag-filters" id="tagFilters">
@@ -800,8 +804,9 @@
     const list = document.getElementById('historyList');
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
     const filtered = allEmails.filter(e=>{
-      if(activeStatusFilter === 'sent' && e.status === 'failed') return false;
+      if(activeStatusFilter === 'sent' && (e.status === 'failed' || e.direction === 'inbound')) return false;
       if(activeStatusFilter === 'failed' && e.status !== 'failed') return false;
+      if(activeStatusFilter === 'replied' && e.direction !== 'inbound') return false;
       if(activeTagFilter && !e.tags.includes(activeTagFilter)) return false;
       if(query){
         const hay = (e.subject + ' ' + e.body).toLowerCase();
@@ -842,6 +847,7 @@
         <div class="day-entries">`;
       group.items.forEach(({e, idx})=>{
         const isFailed = e.status === 'failed';
+        const isInbound = e.direction === 'inbound';
         const timeLabel = e.date ? formatTime(e.date) : '—';
         const ccLine = (e.cc && e.cc.length) ? `<br><b>Cc</b> ${esc(e.cc.join(', '))}` : '';
         const attachmentsHtml = (e.attachmentNames && e.attachmentNames.length)
@@ -856,31 +862,37 @@
           e.tags.includes('important') ? '<span class="tag-badge important">⭐ Important</span>' : '',
           e.tags.includes('followup') ? '<span class="tag-badge followup">🚩 Follow-up</span>' : ''
         ].join('');
-        const statusIcon = isFailed
+        const statusIcon = isInbound
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 0 1 4 4v1"/></svg>'
+          : isFailed
           ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
           : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+        const postmarkClass = isInbound ? 'replied' : (isFailed ? 'failed' : 'sent');
+        const postmarkLabel = isInbound ? 'Replied' : (isFailed ? 'Failed' : 'Sent');
+        const metaLine = isInbound
+          ? `<b>From</b> ${esc(e.fromEmail || '')}${e.fromEmail ? `<span class="copy-icon" data-copy="${esc(e.fromEmail)}" title="Copy email">⧉</span>` : ''}${ccLine}<br><b>To</b> you · ${esc(timeLabel)}`
+          : `<b>To</b> ${esc(toAddr)}<span class="copy-icon" data-copy="${esc(toAddr)}" title="Copy email">⧉</span>${ccLine}<br><b>From</b> ${esc(e.sentByName || '')}${e.fromEmail ? ' ('+esc(e.fromEmail)+')' : ''} · ${esc(timeLabel)}`;
         const replyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 0 1 4 4v1"/></svg>';
         const forwardIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5"/><path d="M20 12H9a4 4 0 0 0-4 4v1"/></svg>';
         const resendIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>';
         const downloadIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
         html += `<div class="entry">
-          <span class="entry-pip ${isFailed?'failed':'sent'}"></span>
-          <div class="letter" tabindex="-1">
+          <span class="entry-pip ${isInbound ? 'replied' : (isFailed?'failed':'sent')}"></span>
+          <div class="letter ${isInbound ? 'letter-incoming' : ''}" tabindex="-1">
             <div class="letter-head">
               <span style="display:flex;align-items:flex-start;gap:10px;min-width:0;">
                 <input type="checkbox" class="letter-select" data-id="${esc(e.id||'')}" ${e.id && selectedIds.has(e.id) ? 'checked' : ''} ${e.id ? '' : 'disabled'}>
                 <h3 class="letter-subject serif">${highlightText(e.subject || '(no subject)', query)}</h3>
               </span>
               <span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                <span class="postmark ${isFailed?'failed':'sent'}">${statusIcon}${isFailed?'Failed':'Sent'}</span>
+                <span class="postmark ${postmarkClass}">${statusIcon}${postmarkLabel}</span>
                 ${e.isNewSinceVisit ? '<span class="new-badge">New</span>' : ''}
               </span>
             </div>
             ${tagBadges}
             ${threadBadge}
             <div class="letter-meta">
-              <b>To</b> ${esc(toAddr)}<span class="copy-icon" data-copy="${esc(toAddr)}" title="Copy email">⧉</span>${ccLine}<br>
-              <b>From</b> ${esc(e.sentByName || '')}${e.fromEmail ? ' ('+esc(e.fromEmail)+')' : ''} · ${esc(timeLabel)}
+              ${metaLine}
             </div>
             <div class="letter-body ${isLong?'clamped':''}" id="${bodyId}">${highlightText(bodyText, query)}</div>
             ${isLong ? `<button type="button" class="expand-btn" data-target="${bodyId}">Show full email</button>` : ''}
@@ -889,7 +901,7 @@
               <button type="button" class="tag-toggle-btn important ${e.tags.includes('important')?'on important':''}" data-action="tag-important" data-idx="${idx}">⭐ Important</button>
               <button type="button" class="tag-toggle-btn followup ${e.tags.includes('followup')?'on followup':''}" data-action="tag-followup" data-idx="${idx}">🚩 Follow-up</button>
               <button type="button" class="letter-action-btn" data-action="reply" data-idx="${idx}">${replyIcon} Reply</button>
-              <button type="button" class="letter-action-btn" data-action="forward" data-idx="${idx}">${forwardIcon} Forward</button>
+              ${!isInbound ? `<button type="button" class="letter-action-btn" data-action="forward" data-idx="${idx}">${forwardIcon} Forward</button>` : ''}
               ${isFailed ? `<button type="button" class="letter-action-btn resend" data-action="resend" data-idx="${idx}">${resendIcon} Resend</button>` : ''}
               <button type="button" class="letter-action-btn" data-action="download" data-idx="${idx}">${downloadIcon} Download</button>
             </div>
@@ -1042,7 +1054,7 @@
     const subject = /^re:/i.test(email.subject || '') ? email.subject : `Re: ${email.subject || ''}`;
     const prefill = {
       subject, bodyHtml,
-      to: email.to || '',
+      to: email.direction === 'inbound' ? (email.fromEmail || '') : (email.to || ''),
       cc: (email.cc && email.cc.length) ? email.cc.join(', ') : ''
     };
     if(email.attachmentNames && email.attachmentNames.length){
@@ -1232,11 +1244,13 @@
           fromEmail: e.fromEmail, status: e.status, body: e.body,
           attachmentNames: e.attachmentNames,
           tags: Array.isArray(e.tags) ? e.tags : [],
+          direction: e.direction === 'inbound' ? 'inbound' : 'outbound',
           date: (e.sentAt && typeof e.sentAt.toDate === 'function') ? e.sentAt.toDate() : null
         };
       });
-      const sentCount = allEmails.filter(e=>e.status !== 'failed').length;
+      const sentCount = allEmails.filter(e=>e.direction !== 'inbound' && e.status !== 'failed').length;
       const failedCount = allEmails.filter(e=>e.status === 'failed').length;
+      const repliedCount = allEmails.filter(e=>e.direction === 'inbound').length;
       const dated = allEmails.filter(e=>e.date);
       document.getElementById('factRow').style.display = '';
       document.getElementById('toolbar').style.display = '';
@@ -1248,7 +1262,7 @@
       }
       computeThreadInfo();
       applyNewSinceLastVisit();
-      updateFilterChipCounts(sentCount, failedCount);
+      updateFilterChipCounts(sentCount, failedCount, repliedCount);
       renderActivityHeatmap();
       renderTimeline();
     }).catch(err=>{
