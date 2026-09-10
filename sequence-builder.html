@@ -919,6 +919,7 @@
   };
   function loadExistingSequence(){
     return db.collection('scheduledEmails')
+      .where('workspaceId', '==', currentWorkspaceId)
       .where('sequenceId', '==', sequenceIdParam)
       .orderBy('stepNumber', 'asc')
       .get()
@@ -1194,7 +1195,7 @@
       const btn = document.getElementById('seqDeleteBtn');
       btn.disabled = true;
       btn.textContent = 'Deleting...';
-      db.collection('scheduledEmails').where('sequenceId', '==', currentSequenceDocId).get()
+      db.collection('scheduledEmails').where('workspaceId', '==', currentWorkspaceId).where('sequenceId', '==', currentSequenceDocId).get()
         .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
         .then(()=> db.collection('sequences').doc(currentSequenceDocId).delete())
         .then(()=>{
