@@ -20,25 +20,95 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;overflow:hidden;}
   #pageLoader{min-height:100vh;display:flex;align-items:center;justify-content:center;}
   .loader-spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  .shell{max-width:760px;margin:0 auto;padding:0 22px 90px;}
+  #appRoot{display:none;height:100vh;}
   #appRoot.reveal{animation:pageFade .4s ease both;}
   @keyframes pageFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
-  .back-link{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--slate);text-decoration:none;margin:24px 0 18px;}
-  .back-link:hover{color:var(--teal);}
+  .seq-sidebar{
+    width:200px;flex-shrink:0;height:100%;background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;padding:20px 14px;overflow-y:auto;
+  }
+  .seq-sidebar-logo{width:34px;height:34px;border-radius:10px;overflow:hidden;margin-bottom:20px;box-shadow:0 3px 8px rgba(28,91,158,0.28);}
+  .seq-sidebar-user{display:flex;align-items:center;gap:9px;padding:6px 8px;margin-bottom:22px;}
+  .seq-sidebar-avatar{
+    width:30px;height:30px;border-radius:50%;background:var(--panel-alt);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--teal);flex-shrink:0;
+  }
+  .seq-sidebar-user span{font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .seq-sidebar-nav{display:flex;flex-direction:column;gap:2px;}
+  .seq-sidebar-link{
+    display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:9px;
+    text-decoration:none;color:var(--slate);font-size:13px;font-weight:600;transition:background .12s, color .12s;
+  }
+  .seq-sidebar-link .icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+  .seq-sidebar-link:hover{background:var(--panel-alt);color:var(--ink);}
+  .seq-sidebar-link.active{background:var(--panel-alt);color:var(--teal);}
+  .seq-sidebar-bottom{margin-top:auto;padding-top:14px;border-top:1px solid var(--border-soft);}
+
+  .seq-main{flex:1;min-width:0;height:100%;overflow-y:auto;}
+  .shell{max-width:760px;margin:0 auto;padding:36px 22px 90px;}
+
+  .back-link{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--slate);text-decoration:none;margin:0 0 18px;transition:color .12s, transform .12s;}
+  .back-link:hover{color:var(--teal);transform:translateX(-2px);}
   .page-title{font-family:'Sora',sans-serif;font-size:28px;font-weight:800;margin:0 0 4px;}
   .page-sub{font-size:13.5px;color:var(--slate);margin:0 0 20px;}
 
-  .status-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
-  .status-chip{padding:9px 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--slate);font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
-  .status-chip:hover{border-color:var(--teal);}
-  .status-chip.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .sched-search-row{position:relative;margin-bottom:14px;}
+  .sched-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--slate-light);pointer-events:none;}
+  #schedSearchInput{
+    width:100%;padding:11px 14px 11px 38px;border:1px solid var(--border);border-radius:10px;
+    font:inherit;font-size:13.5px;background:var(--panel);transition:border-color .12s, box-shadow .12s;
+  }
+  #schedSearchInput:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(28,91,158,0.12);}
 
-  .sched-item{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:12px;}
+  .status-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
+  .status-chip{padding:9px 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--slate);font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;}
+  .status-chip:hover{border-color:var(--teal);color:var(--teal);transform:translateY(-1px);}
+  .status-chip.active{background:linear-gradient(135deg, var(--teal), var(--teal-deep));border-color:var(--teal);color:#fff;box-shadow:0 3px 10px rgba(28,91,158,0.28);}
+
+  @keyframes schedItemIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  @keyframes leadGroupIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .lead-group{margin-bottom:10px;}
+  .lead-group-header{
+    width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:13px 16px;cursor:pointer;font-family:'Inter',sans-serif;text-align:left;
+    transition:border-color .12s, background .12s;animation:leadGroupIn .3s cubic-bezier(.2,.8,.3,1) both;
+  }
+  .lead-group-header:hover{border-color:var(--teal);}
+  .lead-group-header.open{border-bottom-left-radius:0;border-bottom-right-radius:0;background:var(--panel-alt);}
+  .lead-group-chevron{color:var(--slate-light);font-size:11px;transition:transform .15s;flex-shrink:0;}
+  .lead-group-header.open .lead-group-chevron{transform:rotate(90deg);color:var(--teal);}
+  .lead-group-name{font-family:'Sora',sans-serif;font-size:14.5px;font-weight:700;flex:1;}
+  .lead-group-count{
+    flex-shrink:0;background:var(--panel-alt);color:var(--slate);font-size:11.5px;font-weight:700;
+    padding:2px 10px;border-radius:20px;
+  }
+  .lead-group-header.open .lead-group-count{background:var(--panel);}
+  .lead-group-items{
+    border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:14px 14px 4px;
+    background:var(--paper);
+  }
+  .lead-group-items .sched-item{animation:none;}
+  .sched-item{
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);
+    margin-bottom:12px;display:flex;gap:14px;transition:border-color .15s, transform .15s, box-shadow .15s;
+    animation:schedItemIn .3s cubic-bezier(.2,.8,.3,1) both;
+  }
+  .sched-item:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 8px 22px -8px rgba(28,91,158,0.25);}
+  .sched-item-icon{
+    width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:16px;flex-shrink:0;color:#fff;
+  }
+  .sched-item-icon.pending, .sched-item-icon.sending{background:linear-gradient(135deg, var(--amber), #A8650A);}
+  .sched-item-icon.sent, .sched-item-icon.cancelled_replied{background:linear-gradient(135deg, var(--success), #164F41);}
+  .sched-item-icon.failed{background:linear-gradient(135deg, var(--fail), #8A2A24);}
+  .sched-item-icon.cancelled{background:linear-gradient(135deg, var(--slate), #46525F);}
+  .sched-item-body{flex:1;min-width:0;}
   .sched-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;}
   .sched-subject{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin:0;}
   .sched-badge{flex-shrink:0;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
@@ -56,10 +126,10 @@
   .sched-actions{display:flex;gap:8px;}
   .sched-cancel-btn{
     font-size:12px;font-weight:600;color:var(--fail);background:none;border:1px solid var(--fail);
-    border-radius:8px;padding:6px 13px;cursor:pointer;font-family:'Inter',sans-serif;
+    border-radius:8px;padding:6px 13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s;
   }
-  .sched-cancel-btn:hover{background:var(--fail-soft);}
-  .sched-cancel-btn:disabled{opacity:.6;cursor:default;}
+  .sched-cancel-btn:hover{background:var(--fail-soft);transform:translateY(-1px);}
+  .sched-cancel-btn:disabled{opacity:.6;cursor:default;transform:none;}
 
   .empty-state{text-align:center;padding:70px 20px;color:var(--slate);border:1px dashed var(--border);border-radius:16px;}
   .empty-state h3{font-family:'Sora',sans-serif;font-size:19px;font-weight:700;color:var(--ink);margin:0 0 6px;}
@@ -74,14 +144,50 @@
 <div id="pageLoader"><div class="loader-spinner"></div></div>
 <div class="toast-stack" id="toastStack"></div>
 
-<div id="appRoot" style="display:none;">
-<div class="shell">
+<div id="appRoot">
+  <div class="seq-sidebar">
+    <div class="seq-sidebar-logo"><img id="sidebarLogoImg" alt="PalaTrack logo" style="width:100%;height:100%;object-fit:contain;"></div>
+    <div class="seq-sidebar-user">
+      <div class="seq-sidebar-avatar" id="seqSidebarAvatar">?</div>
+      <span id="seqSidebarUserName">…</span>
+    </div>
+    <div class="seq-sidebar-nav">
+      <a class="seq-sidebar-link" id="navDashboard" href="#">
+        <span class="icon">▦</span> Dashboard
+      </a>
+      <a class="seq-sidebar-link" id="navSequences" href="#">
+        <span class="icon">📧</span> Sequences
+      </a>
+      <a class="seq-sidebar-link active" id="navScheduled" href="#">
+        <span class="icon">🕒</span> Scheduled
+      </a>
+      <a class="seq-sidebar-link" id="navChat" href="chat.html">
+        <span class="icon">💬</span> Team chat
+      </a>
+      <a class="seq-sidebar-link" id="navTrash" href="#">
+        <span class="icon">🗑️</span> Trash
+      </a>
+    </div>
+    <div class="seq-sidebar-bottom">
+      <a class="seq-sidebar-link" id="navSettings" href="account.html">
+        <span class="icon">⚙️</span> Settings
+      </a>
+    </div>
+  </div>
+
+  <div class="seq-main">
+  <div class="shell">
   <a class="back-link" id="backBtn" href="boards.html">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     Back
   </a>
   <h1 class="page-title">Scheduled emails</h1>
   <p class="page-sub">Every "send later" email across your workspace, so nobody on the team emails the same lead twice.</p>
+
+  <div class="sched-search-row">
+    <svg class="sched-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="schedSearchInput" placeholder="Search by lead, subject, or email address...">
+  </div>
 
   <div class="status-filters" id="statusFilters">
     <button type="button" class="status-chip active" data-filter="pending">Upcoming</button>
@@ -92,7 +198,8 @@
   </div>
 
   <div id="listHolder"></div>
-</div>
+  </div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -112,6 +219,8 @@
   const db = firebase.firestore();
   const auth = firebase.auth();
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+  const faviconLink = document.querySelector('link[rel="icon"]');
+  if(faviconLink) document.getElementById('sidebarLogoImg').src = faviconLink.href;
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
   function showToast(message, danger){
@@ -134,6 +243,8 @@
   let currentWorkspaceId = null;
   let allScheduled = [];
   let activeFilter = 'pending';
+  let searchQuery = '';
+  const expandedGroups = new Set(); // which lead groups the user has opened, kept open across re-renders
 
   // Cached lead names, fetched lazily as they show up in results — avoids
   // fetching every lead in the workspace up front just to show a name.
@@ -150,48 +261,103 @@
     });
   }
 
+  function renderSchedItemHTML(e){
+    const when = e.sendAt ? formatWhen(e.sendAt) : '—';
+    const statusLabel = {pending:'Upcoming', sending:'Sending', sent:'Sent', failed:'Failed', cancelled:'Cancelled', cancelled_replied:'Stopped (replied)'}[e.status] || e.status;
+    const statusIcon = {pending:'🕒', sending:'🕒', sent:'✓', failed:'✕', cancelled:'—', cancelled_replied:'✓'}[e.status] || '?';
+    return `<div class="sched-item">
+      <div class="sched-item-icon ${esc(e.status)}">${statusIcon}</div>
+      <div class="sched-item-body">
+      <div class="sched-item-head">
+        <h3 class="sched-subject">${esc(e.subject || '(no subject)')}</h3>
+        <span class="sched-badge ${esc(e.status)}">${esc(statusLabel)}</span>
+      </div>
+      <div class="sched-meta">
+        <b>To</b> ${esc(e.to || '')}<br>
+        <b>Scheduled by</b> ${esc(e.sentByName || 'Someone')} &middot; <span class="sched-when">${esc(when)}</span>
+        ${e.sequenceId ? `<br><b>Sequence</b> step ${esc(e.stepNumber || '?')}` : ''}
+        ${e.status === 'failed' && e.error ? `<br><b>Error</b> ${esc(e.error)}` : ''}
+      </div>
+      ${e.status === 'pending' ? `<div class="sched-actions"><button type="button" class="sched-cancel-btn" data-id="${esc(e.id)}">Cancel</button></div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // Groups scheduled emails by lead, so the page reads as "here's
+  // everything for this lead" instead of one long undifferentiated list.
+  function buildLeadGroups(items){
+    const groups = {};
+    items.forEach(e=>{
+      const key = `${e.boardId}/${e.leadId}`;
+      if(!groups[key]) groups[key] = {boardId: e.boardId, leadId: e.leadId, key, items: []};
+      groups[key].items.push(e);
+    });
+    return Object.values(groups)
+      .map(g=>({...g, leadName: leadNameCache[g.key] || 'Loading…'}))
+      .sort((a,b)=> a.leadName.localeCompare(b.leadName));
+  }
+
   function renderList(){
     const holder = document.getElementById('listHolder');
-    const filtered = activeFilter === 'all' ? allScheduled
+    let filtered = activeFilter === 'all' ? allScheduled
       : activeFilter === 'cancelled' ? allScheduled.filter(e=>e.status === 'cancelled' || e.status === 'cancelled_replied')
       : allScheduled.filter(e=>e.status === activeFilter);
+
+    if(searchQuery){
+      filtered = filtered.filter(e=>{
+        const leadName = (leadNameCache[`${e.boardId}/${e.leadId}`] || '').toLowerCase();
+        return leadName.includes(searchQuery) ||
+          (e.subject || '').toLowerCase().includes(searchQuery) ||
+          (e.to || '').toLowerCase().includes(searchQuery);
+      });
+    }
+
     if(filtered.length === 0){
-      holder.innerHTML = `<div class="empty-state"><h3>Nothing here</h3><p>${activeFilter === 'pending' ? "No emails currently scheduled to send." : "No emails match this filter."}</p></div>`;
+      holder.innerHTML = `<div class="empty-state"><h3>Nothing here</h3><p>${searchQuery ? "No scheduled emails match your search." : (activeFilter === 'pending' ? "No emails currently scheduled to send." : "No emails match this filter.")}</p></div>`;
       return;
     }
-    holder.innerHTML = filtered.map((e, idx)=>{
-      const when = e.sendAt ? formatWhen(e.sendAt) : '—';
-      const statusLabel = {pending:'Upcoming', sending:'Sending', sent:'Sent', failed:'Failed', cancelled:'Cancelled', cancelled_replied:'Stopped (replied)'}[e.status] || e.status;
-      return `<div class="sched-item" data-idx="${idx}">
-        <div class="sched-item-head">
-          <h3 class="sched-subject">${esc(e.subject || '(no subject)')}</h3>
-          <span class="sched-badge ${esc(e.status)}">${esc(statusLabel)}</span>
+
+    const groups = buildLeadGroups(filtered);
+    holder.innerHTML = groups.map((g, gIdx)=>{
+      const wasOpen = expandedGroups.has(g.key) || !!searchQuery; // auto-expand while searching, so matches are visible
+      return `<div class="lead-group">
+        <button type="button" class="lead-group-header ${wasOpen ? 'open' : ''}" data-key="${esc(g.key)}" style="animation-delay:${gIdx * 40}ms">
+          <span class="lead-group-chevron">▸</span>
+          <span class="lead-group-name" data-lead-name="${esc(g.key)}">${esc(g.leadName)}</span>
+          <span class="lead-group-count">${g.items.length}</span>
+        </button>
+        <div class="lead-group-items" data-group="${esc(g.key)}" style="display:${wasOpen ? 'block' : 'none'};">
+          ${g.items.map(e=>renderSchedItemHTML(e)).join('')}
         </div>
-        <div class="sched-meta">
-          <b>Lead</b> <a href="email-history.html?board=${encodeURIComponent(e.boardId)}&lead=${encodeURIComponent(e.leadId)}" class="sched-lead-link" data-key="${esc(e.boardId)}/${esc(e.leadId)}">Loading…</a><br>
-          <b>To</b> ${esc(e.to || '')}<br>
-          <b>Scheduled by</b> ${esc(e.sentByName || 'Someone')} &middot; <span class="sched-when">${esc(when)}</span>
-          ${e.sequenceId ? `<br><b>Sequence</b> step ${esc(e.stepNumber || '?')}` : ''}
-          ${e.status === 'failed' && e.error ? `<br><b>Error</b> ${esc(e.error)}` : ''}
-        </div>
-        ${e.status === 'pending' ? `<div class="sched-actions"><button type="button" class="sched-cancel-btn" data-ref="${idx}">Cancel</button></div>` : ''}
       </div>`;
     }).join('');
 
-    // Fill in lead names asynchronously once the list is on screen.
-    holder.querySelectorAll('.sched-lead-link').forEach(link=>{
-      const [boardId, leadId] = link.dataset.key.split('/');
-      getLeadName(currentWorkspaceId, boardId, leadId).then(name=>{
-        link.textContent = name;
+    // Resolve any lead names we don't have cached yet, then refresh once
+    // they're in so the group headers and search both work off real names.
+    const missing = groups.filter(g=>g.leadName === 'Loading…');
+    if(missing.length){
+      Promise.all(missing.map(g=>getLeadName(currentWorkspaceId, g.boardId, g.leadId).then(name=>{ leadNameCache[g.key] = name; })))
+        .then(()=>renderList());
+    }
+
+    holder.querySelectorAll('.lead-group-header').forEach(header=>{
+      header.addEventListener('click', ()=>{
+        const key = header.dataset.key;
+        const itemsEl = holder.querySelector(`.lead-group-items[data-group="${CSS.escape(key)}"]`);
+        const nowOpen = itemsEl.style.display === 'none';
+        itemsEl.style.display = nowOpen ? 'block' : 'none';
+        header.classList.toggle('open', nowOpen);
+        if(nowOpen) expandedGroups.add(key); else expandedGroups.delete(key);
       });
     });
 
     holder.querySelectorAll('.sched-cancel-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const item = filtered[Number(btn.dataset.ref)];
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.id;
         btn.disabled = true;
         btn.textContent = 'Cancelling...';
-        db.doc(`scheduledEmails/${item.id}`)
+        db.doc(`scheduledEmails/${id}`)
           .update({status: 'cancelled'})
           .then(()=> showToast('Scheduled email cancelled.'))
           .catch(err=>{
@@ -210,6 +376,16 @@
       document.querySelectorAll('.status-chip[data-filter]').forEach(c=>c.classList.toggle('active', c===chip));
       renderList();
     });
+  });
+
+  let searchDebounceTimer = null;
+  document.getElementById('schedSearchInput').addEventListener('input', (e)=>{
+    clearTimeout(searchDebounceTimer);
+    const value = e.target.value;
+    searchDebounceTimer = setTimeout(()=>{
+      searchQuery = value.trim().toLowerCase();
+      renderList();
+    }, 150);
   });
 
   let unsubscribe = null;
@@ -233,13 +409,13 @@
         });
         document.getElementById('pageLoader').style.display = 'none';
         const appRoot = document.getElementById('appRoot');
-        appRoot.style.display = 'block';
+        appRoot.style.display = 'flex';
         appRoot.classList.add('reveal');
         renderList();
       }, err=>{
         console.error('Could not load scheduled emails', err);
         document.getElementById('pageLoader').style.display = 'none';
-        document.getElementById('appRoot').style.display = 'block';
+        document.getElementById('appRoot').style.display = 'flex';
         document.getElementById('listHolder').innerHTML = `<div class="empty-state"><h3>Could not load this</h3><p>Please try again later.</p></div>`;
       });
   }
@@ -247,6 +423,10 @@
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
+  const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
+  document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;
+  document.getElementById('navSequences').href = `sequences.html${boardQS}`;
+  document.getElementById('navTrash').href = `trash.html${boardQS}`;
 
   auth.onAuthStateChanged(user=>{
     if(!user){
@@ -260,6 +440,11 @@
         return;
       }
       startListening(workspaceId);
+      db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get().then(memberDoc=>{
+        const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
+        document.getElementById('seqSidebarUserName').textContent = myName;
+        document.getElementById('seqSidebarAvatar').textContent = myName.trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '?';
+      }).catch(()=>{});
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
