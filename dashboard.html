@@ -3096,16 +3096,23 @@
         applyPendingComposePrefill();
       }
       if(!appRootRevealed){
-        // First load: start the loading-screen crossfade right away, while
-        // the main thread is still free — then build the actual table/
-        // board/stat cards a couple of frames later. This is what was
-        // making the transition feel janky: rebuilding the whole dashboard
-        // (65 leads, stat cards, etc.) used to happen in the same instant
-        // the fade animation was trying to start, so the animation was
-        // fighting that work for the same frame. Now the animation gets a
-        // clear run, and the (still-fast) content build happens right after.
-        revealAppRoot();
-        requestAnimationFrame(()=>requestAnimationFrame(buildFullView));
+        // First load: build the actual table/board/stat cards WHILE still
+        // hidden behind the loader, and only reveal once that's fully
+        // done. The previous approach started the loader's fade-out and
+        // the heavy content build at roughly the same time, hoping the
+        // build would finish inside the fade's short window — but with
+        // enough leads, the build can take longer than the fade itself,
+        // so the loader would vanish (on its own fixed timer) before the
+        // content had actually finished changing underneath it. That's
+        // what produced the freeze-then-pop: a beat of stale/partial
+        // content, then a sudden jump once the build caught up. Building
+        // everything first means the fade only ever animates between two
+        // STABLE states — nothing is still mutating underneath it — so it
+        // can't stutter no matter how long the build takes.
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          buildFullView();
+          revealAppRoot();
+        }));
       } else {
         buildFullView();
       }
