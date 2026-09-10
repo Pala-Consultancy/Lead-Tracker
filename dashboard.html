@@ -4647,6 +4647,7 @@ ${buildLeadContext()}`;
 
   let chatWithAlexandreFn = null;
   let sendLeadEmailFn = null;
+  let scheduleLeadEmailFn = null;
   let mySignature = {html: '', autoInsert: false};
   function loadMySignature(uid){
     db.doc(`emailSignatures/${uid}`).get().then(doc=>{
@@ -4663,6 +4664,11 @@ ${buildLeadContext()}`;
     sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
   }catch(err){
     console.error('Could not set up email sending (this will not affect the rest of the app):', err);
+  }
+  try{
+    scheduleLeadEmailFn = firebase.functions().httpsCallable('scheduleLeadEmail');
+  }catch(err){
+    console.error('Could not set up email scheduling (this will not affect the rest of the app):', err);
   }
   try{
     chatWithAlexandreFn = firebase.functions().httpsCallable('chatWithAlexandre');
@@ -5552,18 +5558,18 @@ ${buildLeadContext()}`;
       showToast('Please choose a time in the future.', true);
       return;
     }
+    if(!scheduleLeadEmailFn){
+      showToast('Email scheduling is not set up yet. Please contact support.', true);
+      return;
+    }
     const confirmBtn = document.getElementById('composeScheduleConfirmBtn');
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Scheduling...';
     const leadId = composeEmailLead.id;
-    db.collection('scheduledEmails').add({
+    scheduleLeadEmailFn({
       workspaceId, boardId, leadId,
       ...input,
-      sentBy: auth.currentUser.uid,
-      sentByName: currentUserDisplayName || (auth.currentUser && auth.currentUser.email) || 'Someone',
-      status: 'pending',
-      sendAt: firebase.firestore.Timestamp.fromDate(sendAtDate),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      sendAt: sendAtDate.toISOString()
     }).then(()=>{
       showToast(`Email scheduled for ${sendAtDate.toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'})}`);
       closeComposeEmailModal();

@@ -634,6 +634,7 @@
   const db = firebase.firestore();
   const auth = firebase.auth();
   const sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
+  const createSequenceFn = firebase.functions().httpsCallable('createSequence');
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -732,19 +733,13 @@
       stepsCopy[0].sendMode = 'now';
       stepsCopy[0].scheduledAt = null;
     }
-    const newSeqRef = db.collection('sequences').doc();
-    newSeqRef.set({
+    createSequenceFn({
       workspaceId: currentWorkspaceId, boardId, leadId: newLeadId,
-      status: 'draft',
-      steps: stepsCopy, sendingWindow,
-      createdBy: auth.currentUser.uid,
-      createdByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
+      status: 'draft', steps: stepsCopy, sendingWindow
+    }).then(result=>{
       showToast('Duplicated — opening the new draft.');
       setTimeout(()=>{
-        location.href = `sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(newLeadId)}&sequenceId=${encodeURIComponent(newSeqRef.id)}`;
+        location.href = `sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(newLeadId)}&sequenceId=${encodeURIComponent(result.data.sequenceId)}`;
       }, 600);
     }).catch(err=>{
       console.error(err);
@@ -1438,15 +1433,11 @@
 
   // ---------- Start sequence ----------
   function buildSequencePayload(status){
-    const payload = {
+    return {
+      sequenceId: currentSequenceDocId || undefined,
       workspaceId: currentWorkspaceId, boardId, leadId,
-      status, steps, sendingWindow,
-      createdBy: auth.currentUser.uid,
-      createdByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      status, steps, sendingWindow
     };
-    if(!currentSequenceDocId) payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-    return payload;
   }
 
   document.getElementById('seqSaveDraftBtn').addEventListener('click', ()=>{
@@ -1457,9 +1448,8 @@
     const saveBtn = document.getElementById('seqSaveDraftBtn');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
-    const sequenceRef = currentSequenceDocId ? db.collection('sequences').doc(currentSequenceDocId) : db.collection('sequences').doc();
-    sequenceRef.set(buildSequencePayload('draft'), {merge: true}).then(()=>{
-      currentSequenceDocId = sequenceRef.id;
+    createSequenceFn(buildSequencePayload('draft')).then(result=>{
+      currentSequenceDocId = result.data.sequenceId;
       showToast('Saved as draft.');
       setTimeout(()=>{ location.href = boardId ? `sequences.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 900);
     }).catch(err=>{
@@ -1506,10 +1496,11 @@
     startBtn.textContent = '🚀 Launching...';
     startBtn.classList.add('launching');
     const leadEmail = leadData.email;
-    const sequenceRef = currentSequenceDocId ? db.collection('sequences').doc(currentSequenceDocId) : db.collection('sequences').doc();
-    const sequenceId = sequenceRef.id;
+    let sequenceId; // set once createSequenceFn resolves with the real id
 
-    sequenceRef.set({...buildSequencePayload('active'), startedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge: true}).then(()=>{
+    createSequenceFn({...buildSequencePayload('active'), stampStartedAt: true}).then(result=>{
+      sequenceId = result.data.sequenceId;
+      currentSequenceDocId = sequenceId;
       if(isScheduledStart){
         // First email is scheduled for later too — it becomes a regular
         // scheduledEmails step, same machinery as the follow-ups, just
