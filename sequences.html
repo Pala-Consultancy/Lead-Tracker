@@ -98,6 +98,12 @@
   .seq-card-badge.needs_attention{background:var(--fail-soft);color:var(--fail);}
   .seq-card-chevron{color:var(--slate-light);flex-shrink:0;transition:transform .15s;}
   .seq-card:hover .seq-card-chevron{transform:translateX(3px);color:var(--teal);}
+  .seq-customize-btn{
+    flex-shrink:0;background:none;border:1px solid transparent;border-radius:8px;font-size:15px;
+    padding:6px 8px;cursor:pointer;opacity:0;transition:opacity .12s, border-color .12s, background .12s;
+  }
+  .seq-card:hover .seq-customize-btn{opacity:1;}
+  .seq-customize-btn:hover{border-color:var(--border);background:var(--panel-alt);}
 
   .seq-card.trashed{cursor:default;opacity:.85;}
   .seq-card.trashed:hover{transform:none;box-shadow:var(--shadow);border-color:var(--border);}
@@ -115,6 +121,44 @@
   .empty-state{text-align:center;padding:70px 20px;color:var(--slate);border:1px dashed var(--border);border-radius:16px;}
   .empty-state h3{font-family:'Sora',sans-serif;font-size:19px;font-weight:700;color:var(--ink);margin:0 0 6px;}
   .empty-state p{font-size:13.5px;margin:0 0 16px;}
+
+  /* ---------- Customize sequence modal ---------- */
+  .customize-overlay{
+    position:fixed;inset:0;background:rgba(16,32,55,0.45);z-index:300;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;visibility:hidden;transition:opacity .18s ease, visibility 0s linear .18s;
+  }
+  .customize-overlay.open{opacity:1;visibility:visible;transition:opacity .18s ease;}
+  .customize-modal{
+    width:380px;max-width:90vw;background:var(--panel);border-radius:16px;padding:24px 26px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.28);transform:scale(.94);transition:transform .18s ease;
+  }
+  .customize-overlay.open .customize-modal{transform:scale(1);}
+  .customize-modal h3{margin:0 0 6px;font-family:'Sora',sans-serif;font-size:17px;}
+  .customize-sub{margin:0 0 18px;font-size:12px;color:var(--slate);line-height:1.5;}
+  .customize-modal label{font-size:11.5px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:8px;}
+  .customize-emoji-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;}
+  .customize-emoji-btn{
+    width:36px;height:36px;border-radius:9px;border:1.5px solid var(--border);background:var(--panel);
+    font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;
+  }
+  .customize-emoji-btn:hover{border-color:var(--teal);}
+  .customize-emoji-btn.active{border-color:var(--teal);background:var(--panel-alt);box-shadow:0 0 0 2px rgba(28,91,158,0.18);}
+  .customize-color-row{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:6px;}
+  .customize-color-btn{
+    width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;
+    transition:transform .12s, border-color .12s;
+  }
+  .customize-color-btn:hover{transform:scale(1.1);}
+  .customize-color-btn.active{border-color:var(--ink);transform:scale(1.1);}
+  .customize-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .customize-btn{
+    padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid var(--border);background:var(--panel);font-family:'Inter',sans-serif;transition:all .12s;
+  }
+  .customize-btn:hover{border-color:var(--slate);}
+  .customize-btn.primary{background:linear-gradient(135deg, var(--teal), var(--teal-deep));border-color:var(--teal);color:#fff;}
+  .customize-btn.primary:hover{opacity:.92;}
 
   /* ---------- In-app confirm modal (replaces native browser confirm) ---------- */
   .app-confirm-overlay{
@@ -241,6 +285,21 @@
 </div>
 </div>
 
+<div class="customize-overlay" id="customizeOverlay">
+  <div class="customize-modal">
+    <h3>Customize this sequence</h3>
+    <p class="customize-sub">Just for you to tell them apart at a glance — this doesn't change anything about how the sequence runs.</p>
+    <label>Icon</label>
+    <div class="customize-emoji-row" id="customizeEmojiRow"></div>
+    <label>Accent color</label>
+    <div class="customize-color-row" id="customizeColorRow"></div>
+    <div class="customize-actions">
+      <button type="button" class="customize-btn" id="customizeCancelBtn">Cancel</button>
+      <button type="button" class="customize-btn primary" id="customizeSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="app-confirm-overlay" id="appConfirmOverlay">
   <div class="app-confirm-box">
     <h3 id="appConfirmTitle">Are you sure?</h3>
@@ -329,6 +388,64 @@
     });
   }
 
+  // ---------- Customize (emoji + color per saved sequence) ----------
+  const EMOJI_OPTIONS = ['📧','🚀','🔥','💼','⭐','🎯','💬','📞','✅','⚡','🎉','🧊','👋','📌','🏆','💰'];
+  const COLOR_OPTIONS = [
+    '#1C5B9E', '#6D4FD1', '#1F6F5C', '#C97C00', '#B43B32', '#C23B7A', '#5C6B7C', '#0F3E72'
+  ];
+  let customizingSequenceId = null;
+  let customizeEmoji = '📧';
+  let customizeColor = COLOR_OPTIONS[0];
+
+  function renderCustomizeOptions(){
+    document.getElementById('customizeEmojiRow').innerHTML = EMOJI_OPTIONS.map(e=>
+      `<button type="button" class="customize-emoji-btn ${e === customizeEmoji ? 'active' : ''}" data-emoji="${e}">${e}</button>`
+    ).join('');
+    document.getElementById('customizeColorRow').innerHTML = COLOR_OPTIONS.map(c=>
+      `<button type="button" class="customize-color-btn ${c === customizeColor ? 'active' : ''}" data-color="${c}" style="background:${c};"></button>`
+    ).join('');
+    document.querySelectorAll('.customize-emoji-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ customizeEmoji = btn.dataset.emoji; renderCustomizeOptions(); });
+    });
+    document.querySelectorAll('.customize-color-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ customizeColor = btn.dataset.color; renderCustomizeOptions(); });
+    });
+  }
+  function openCustomizeModal(seq){
+    customizingSequenceId = seq.sequenceId;
+    customizeEmoji = seq.customEmoji || '📧';
+    customizeColor = seq.customColor || COLOR_OPTIONS[0];
+    renderCustomizeOptions();
+    document.getElementById('customizeOverlay').classList.add('open');
+  }
+  function closeCustomizeModal(){
+    document.getElementById('customizeOverlay').classList.remove('open');
+    customizingSequenceId = null;
+  }
+  document.getElementById('customizeCancelBtn').addEventListener('click', closeCustomizeModal);
+  document.getElementById('customizeOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'customizeOverlay') closeCustomizeModal();
+  });
+  document.getElementById('customizeSaveBtn').addEventListener('click', ()=>{
+    if(!customizingSequenceId) return;
+    const saveBtn = document.getElementById('customizeSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    db.collection('sequences').doc(customizingSequenceId).update({
+      customEmoji: customizeEmoji,
+      customColor: customizeColor
+    }).then(()=>{
+      showToast('Updated.');
+      closeCustomizeModal();
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not save that: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    });
+  });
+
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
@@ -370,7 +487,8 @@
         sentByName: seq.createdByName,
         updatedAt: seq.updatedAt || seq.createdAt,
         stepCount: Array.isArray(seq.steps) ? seq.steps.length : (followUps.length + 1),
-        status, previousStatus: seq.previousStatus
+        status, previousStatus: seq.previousStatus,
+        customEmoji: seq.customEmoji, customColor: seq.customColor
       };
     }).sort((a,b)=>{
       const at = a.updatedAt ? a.updatedAt.toMillis() : 0;
@@ -406,9 +524,13 @@
       </div>`;
       return;
     }
-    holder.innerHTML = filtered.map((s, idx)=>`
-      <div class="seq-card ${isTrash ? 'trashed' : ''}" data-idx="${idx}" style="animation-delay:${idx * 40}ms">
-        <div class="seq-card-icon">${isTrash ? '🗑️' : '📧'}</div>
+    holder.innerHTML = filtered.map((s, idx)=>{
+      const iconEmoji = isTrash ? '🗑️' : (s.customEmoji || '📧');
+      const iconStyle = (!isTrash && s.customColor) ? ` style="background:${esc(s.customColor)};"` : '';
+      const cardStyle = (!isTrash && s.customColor) ? ` style="animation-delay:${idx * 40}ms;border-left:3px solid ${esc(s.customColor)};"` : ` style="animation-delay:${idx * 40}ms;"`;
+      return `
+      <div class="seq-card ${isTrash ? 'trashed' : ''}" data-idx="${idx}"${cardStyle}>
+        <div class="seq-card-icon"${iconStyle}>${iconEmoji}</div>
         <div class="seq-card-body">
           <div class="seq-card-name" data-lead-name="${s.boardId}/${s.leadId}">Loading…</div>
           <div class="seq-card-meta">${s.stepCount} step${s.stepCount===1?'':'s'} &middot; started by ${esc(s.sentByName || 'Someone')}</div>
@@ -419,13 +541,24 @@
             <button type="button" class="seq-trash-btn forever" data-ref="${idx}">Delete forever</button>
           </div>
         ` : `
+          <button type="button" class="seq-customize-btn" data-ref="${idx}" title="Customize">🎨</button>
           <span class="seq-card-badge ${esc(s.status)}">${esc(STATUS_LABEL[s.status] || s.status)}</span>
           <span class="seq-card-chevron">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
           </span>
         `}
       </div>
-    `).join('');
+    `;
+    }).join('');
+
+    if(!isTrash){
+      holder.querySelectorAll('.seq-customize-btn').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          openCustomizeModal(filtered[Number(btn.dataset.ref)]);
+        });
+      });
+    }
 
     if(isTrash){
       holder.querySelectorAll('.seq-trash-btn.restore').forEach(btn=>{
