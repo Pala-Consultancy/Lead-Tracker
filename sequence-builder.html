@@ -241,6 +241,60 @@
   .app-confirm-btn.primary{background:var(--fail);border-color:var(--fail);color:#fff;}
   .app-confirm-btn.primary:hover{background:#96302A;}
 
+  /* ---------- Sending-hours modal ---------- */
+  .window-overlay{
+    position:fixed;inset:0;background:rgba(16,32,55,0.4);z-index:250;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;visibility:hidden;transition:opacity .18s ease, visibility 0s linear .18s;
+  }
+  .window-overlay.open{opacity:1;visibility:visible;transition:opacity .18s ease;}
+  .window-modal{
+    width:420px;max-width:92vw;background:var(--panel);border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);display:flex;flex-direction:column;
+    transform:scale(.96);transition:transform .18s ease;max-height:88vh;overflow-y:auto;
+  }
+  .window-overlay.open .window-modal{transform:scale(1);}
+  .window-head{display:flex;gap:13px;padding:22px 24px 16px;border-bottom:1px solid var(--border-soft);}
+  .window-head-icon{
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, var(--teal), var(--teal-deep));
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+  }
+  .window-head h3{margin:0 0 5px;font-family:'Sora',sans-serif;font-size:16.5px;}
+  .window-head p{margin:0;font-size:12px;color:var(--slate);line-height:1.5;}
+  .window-body{padding:18px 24px 6px;display:flex;flex-direction:column;gap:16px;}
+  .window-toggle-row{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;
+    font-size:13.5px;font-weight:600;color:var(--ink);
+  }
+  .window-switch{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
+  .window-switch input{opacity:0;width:0;height:0;position:absolute;}
+  .window-switch-track{
+    position:absolute;inset:0;background:var(--border);border-radius:22px;transition:background .15s;
+  }
+  .window-switch-track::before{
+    content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:transform .15s;
+  }
+  .window-switch input:checked + .window-switch-track{background:var(--teal);}
+  .window-switch input:checked + .window-switch-track::before{transform:translateX(18px);}
+  .window-fields{display:none;flex-direction:column;gap:16px;padding:14px;background:var(--panel-alt);border-radius:12px;}
+  .window-field-group{display:flex;flex-direction:column;}
+  .window-field-label{font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.03em;margin-bottom:7px;}
+  .window-select{
+    width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font:inherit;font-size:13px;
+    background:var(--panel);color:var(--ink);
+  }
+  .window-select:focus{outline:none;border-color:var(--teal);}
+  .window-field-hint{font-size:11px;color:var(--slate-light);margin:6px 0 0;line-height:1.4;}
+  .window-time-row{display:flex;align-items:center;gap:10px;}
+  .window-time-row input[type="time"]{
+    flex:1;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;
+    background:var(--panel);
+  }
+  .window-time-row input[type="time"]:focus{outline:none;border-color:var(--teal);}
+  .window-time-row span{font-size:12.5px;color:var(--slate);font-weight:600;}
+  .window-actions{display:flex;justify-content:flex-end;gap:10px;padding:18px 24px 22px;}
+
   /* ---------- Lead picker modal ---------- */
   .picker-overlay{
     position:fixed;inset:0;background:rgba(16,32,55,0.4);z-index:200;
@@ -428,31 +482,47 @@
   </div>
 </div>
 
-<div class="picker-overlay" id="windowOverlay">
-  <div class="picker-modal" style="width:380px;">
-    <div class="picker-head" style="border-bottom:none;">
-      <h3>Sending hours</h3>
-      <p>Keep any follow-up from going out at an awkward time, like the middle of the night. This only affects when a step is allowed to send — the reply-tracking and delays work exactly the same.</p>
+<div class="window-overlay" id="windowOverlay">
+  <div class="window-modal">
+    <div class="window-head">
+      <div class="window-head-icon">⏰</div>
+      <div>
+        <h3>Sending hours</h3>
+        <p>Keep follow-ups from landing at an awkward time. This only changes when a step is allowed to send — the delays and reply-tracking work exactly the same either way.</p>
+      </div>
     </div>
-    <div style="padding:0 22px 20px;display:flex;flex-direction:column;gap:14px;">
-      <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">
-        <input type="checkbox" id="windowEnabled" style="width:16px;height:16px;">
-        Only send within a certain time window
+    <div class="window-body">
+      <label class="window-toggle-row">
+        <span>Only send within a time window</span>
+        <span class="window-switch">
+          <input type="checkbox" id="windowEnabled">
+          <span class="window-switch-track"></span>
+        </span>
       </label>
-      <div id="windowFields" style="display:none;flex-direction:column;gap:12px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:12.5px;color:var(--slate);width:36px;">From</span>
-          <input type="time" id="windowStart" value="09:00" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;">
-          <span style="font-size:12.5px;color:var(--slate);">to</span>
-          <input type="time" id="windowEnd" value="18:00" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;">
+      <div id="windowFields" class="window-fields">
+        <div class="window-field-group">
+          <label class="window-field-label">Time zone</label>
+          <select id="windowTimeZone" class="window-select"></select>
+          <p class="window-field-hint">Times below are in this zone — set it to match your lead's, and the window shifts with them automatically.</p>
         </div>
-        <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">
-          <input type="checkbox" id="windowWeekdaysOnly" style="width:16px;height:16px;">
-          Weekdays only (skip Saturday and Sunday)
+        <div class="window-field-group">
+          <label class="window-field-label">Allowed hours</label>
+          <div class="window-time-row">
+            <input type="time" id="windowStart" value="09:00">
+            <span>to</span>
+            <input type="time" id="windowEnd" value="18:00">
+          </div>
+        </div>
+        <label class="window-toggle-row" style="padding-top:2px;">
+          <span>Weekdays only <span class="window-field-hint" style="display:inline;">(skip Sat &amp; Sun)</span></span>
+          <span class="window-switch">
+            <input type="checkbox" id="windowWeekdaysOnly">
+            <span class="window-switch-track"></span>
+          </span>
         </label>
       </div>
     </div>
-    <div class="picker-close" style="display:flex;justify-content:flex-end;gap:10px;">
+    <div class="window-actions">
       <button type="button" id="windowCancelBtn" class="seq-panel-btn">Cancel</button>
       <button type="button" id="windowSaveBtn" class="seq-panel-btn primary">Save</button>
     </div>
@@ -720,7 +790,10 @@
   // Only affects automatically-computed follow-up times — the first email
   // (whether "send now" or an explicit chosen time) is left exactly as the
   // person set it, since that's a deliberate choice, not a computed one.
-  let sendingWindow = {enabled: false, startTime: '09:00', endTime: '18:00', weekdaysOnly: false};
+  let sendingWindow = {
+    enabled: false, startTime: '09:00', endTime: '18:00', weekdaysOnly: false,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  };
 
   function nodeIconFor(index){ return index === 0 ? '✉️' : '↻'; }
   function nodeTitleFor(index){ return index === 0 ? 'Send email' : `Follow-up ${index+1}`; }
@@ -729,44 +802,125 @@
     return (step.delayValue || 1) * unitMs;
   }
 
+  // A practical, curated list rather than every IANA zone — covers the
+  // regions a sales team is actually likely to need, each labeled with a
+  // city so it's recognizable without knowing UTC offsets by heart.
+  const TIMEZONE_OPTIONS = [
+    {tz:'Pacific/Honolulu', label:'Honolulu'},
+    {tz:'America/Anchorage', label:'Anchorage'},
+    {tz:'America/Los_Angeles', label:'Los Angeles / Seattle'},
+    {tz:'America/Denver', label:'Denver'},
+    {tz:'America/Chicago', label:'Chicago'},
+    {tz:'America/New_York', label:'New York / Toronto'},
+    {tz:'America/Sao_Paulo', label:'São Paulo'},
+    {tz:'UTC', label:'UTC'},
+    {tz:'Europe/London', label:'London / Dublin'},
+    {tz:'Europe/Brussels', label:'Brussels / Amsterdam / Paris'},
+    {tz:'Europe/Berlin', label:'Berlin / Madrid / Rome'},
+    {tz:'Europe/Athens', label:'Athens / Helsinki'},
+    {tz:'Europe/Moscow', label:'Moscow'},
+    {tz:'Africa/Johannesburg', label:'Johannesburg'},
+    {tz:'Asia/Dubai', label:'Dubai'},
+    {tz:'Asia/Kolkata', label:'Mumbai / New Delhi'},
+    {tz:'Asia/Bangkok', label:'Bangkok / Jakarta'},
+    {tz:'Asia/Singapore', label:'Singapore / Kuala Lumpur'},
+    {tz:'Asia/Shanghai', label:'Beijing / Shanghai / Hong Kong'},
+    {tz:'Asia/Tokyo', label:'Tokyo / Seoul'},
+    {tz:'Australia/Sydney', label:'Sydney / Melbourne'},
+    {tz:'Pacific/Auckland', label:'Auckland'}
+  ];
+
+  // Reads what the wall-clock date/time is in a given IANA timezone for a
+  // specific instant — e.g. "it's 3:45 PM on a Tuesday in America/New_York
+  // right now", regardless of what timezone the browser itself is in.
+  function getZonedParts(date, timeZone){
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone, hour12: false, year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', weekday:'short'
+    });
+    const map = {};
+    fmt.formatToParts(date).forEach(p=>{ map[p.type] = p.value; });
+    return {
+      year: parseInt(map.year, 10), month: parseInt(map.month, 10), day: parseInt(map.day, 10),
+      hour: parseInt(map.hour, 10) % 24, minute: parseInt(map.minute, 10),
+      weekday: map.weekday // 'Mon', 'Tue', ...
+    };
+  }
+
+  // The reverse of the above: given a wall-clock date/time meant to be
+  // read IN a specific timezone (e.g. "9:00 AM on March 3rd in
+  // America/New_York"), returns the actual UTC instant that represents.
+  // Needed because a timezone's offset from UTC isn't constant (daylight
+  // saving), so this can't just be a fixed number added/subtracted —
+  // it converges by checking what the guess actually reads as in that
+  // zone and correcting the difference, which settles within 1-2 passes.
+  function zonedTimeToUtcMs(year, month, day, hour, minute, timeZone){
+    let guessMs = Date.UTC(year, month-1, day, hour, minute, 0);
+    for(let i=0; i<3; i++){
+      const zoned = getZonedParts(new Date(guessMs), timeZone);
+      const zonedAsUtcMs = Date.UTC(zoned.year, zoned.month-1, zoned.day, zoned.hour, zoned.minute, 0);
+      const wantedAsUtcMs = Date.UTC(year, month-1, day, hour, minute, 0);
+      const diff = wantedAsUtcMs - zonedAsUtcMs;
+      if(diff === 0) break;
+      guessMs += diff;
+    }
+    return guessMs;
+  }
+
+  const WEEKEND_DAYS = ['Sat', 'Sun'];
+
   // Nudges a computed timestamp forward to the nearest moment that falls
-  // inside the configured sending window, if one's set. Only ever moves
-  // things later, never earlier, and only ever forward in time — a
-  // capped loop just in case something about the inputs would otherwise
-  // spin forever.
+  // inside the configured sending window, evaluated in the chosen
+  // timezone — so "9am–6pm" means 9am–6pm for the lead (or whichever zone
+  // was picked), not 9am–6pm wherever the browser happens to be. Only
+  // ever moves things later, never earlier.
   function adjustToSendingWindow(ms){
     if(!sendingWindow.enabled) return ms;
+    const tz = sendingWindow.timeZone || 'UTC';
     const [startH, startM] = sendingWindow.startTime.split(':').map(Number);
     const [endH, endM] = sendingWindow.endTime.split(':').map(Number);
-    let d = new Date(ms);
+    let current = ms;
     for(let i=0; i<30; i++){
-      const day = d.getDay(); // 0=Sun .. 6=Sat
-      if(sendingWindow.weekdaysOnly && (day === 0 || day === 6)){
-        d.setDate(d.getDate() + 1);
-        d.setHours(startH, startM, 0, 0);
+      const zoned = getZonedParts(new Date(current), tz);
+      if(sendingWindow.weekdaysOnly && WEEKEND_DAYS.includes(zoned.weekday)){
+        // Advance to the same clock time tomorrow and re-check from
+        // there — repeats naturally until it lands on a weekday.
+        const nextDayMs = zonedTimeToUtcMs(zoned.year, zoned.month, zoned.day, startH, startM, tz) + 24*60*60*1000;
+        const nextDayZoned = getZonedParts(new Date(nextDayMs), tz);
+        current = zonedTimeToUtcMs(nextDayZoned.year, nextDayZoned.month, nextDayZoned.day, startH, startM, tz);
         continue;
       }
-      const startOfWindow = new Date(d); startOfWindow.setHours(startH, startM, 0, 0);
-      const endOfWindow = new Date(d); endOfWindow.setHours(endH, endM, 0, 0);
-      if(d.getTime() < startOfWindow.getTime()){
-        d = startOfWindow;
-        continue;
-      }
-      if(d.getTime() > endOfWindow.getTime()){
-        d.setDate(d.getDate() + 1);
-        d.setHours(startH, startM, 0, 0);
+      const startMs = zonedTimeToUtcMs(zoned.year, zoned.month, zoned.day, startH, startM, tz);
+      const endMs = zonedTimeToUtcMs(zoned.year, zoned.month, zoned.day, endH, endM, tz);
+      if(current < startMs){ current = startMs; continue; }
+      if(current > endMs){
+        // Move to the same time tomorrow, then re-check from there —
+        // handles weekends and month/year rollovers correctly since it's
+        // driven by the actual calendar day plus one, not raw ms math.
+        const nextDayMs = zonedTimeToUtcMs(zoned.year, zoned.month, zoned.day, startH, startM, tz) + 24*60*60*1000;
+        const nextDayZoned = getZonedParts(new Date(nextDayMs), tz);
+        current = zonedTimeToUtcMs(nextDayZoned.year, nextDayZoned.month, nextDayZoned.day, startH, startM, tz);
         continue;
       }
       break; // already inside the window
     }
-    return d.getTime();
+    return current;
+  }
+
+  function populateTimezoneSelect(){
+    const select = document.getElementById('windowTimeZone');
+    if(select.dataset.populated) return;
+    select.innerHTML = TIMEZONE_OPTIONS.map(o=>`<option value="${o.tz}">${esc(o.label)}</option>`).join('');
+    select.dataset.populated = '1';
   }
 
   function openWindowModal(){
+    populateTimezoneSelect();
     document.getElementById('windowEnabled').checked = sendingWindow.enabled;
     document.getElementById('windowStart').value = sendingWindow.startTime;
     document.getElementById('windowEnd').value = sendingWindow.endTime;
     document.getElementById('windowWeekdaysOnly').checked = sendingWindow.weekdaysOnly;
+    document.getElementById('windowTimeZone').value = sendingWindow.timeZone;
     document.getElementById('windowFields').style.display = sendingWindow.enabled ? 'flex' : 'none';
     document.getElementById('windowOverlay').classList.add('open');
   }
@@ -786,14 +940,16 @@
     const startTime = document.getElementById('windowStart').value || '09:00';
     const endTime = document.getElementById('windowEnd').value || '18:00';
     const weekdaysOnly = document.getElementById('windowWeekdaysOnly').checked;
+    const timeZone = document.getElementById('windowTimeZone').value || 'UTC';
     if(enabled && startTime >= endTime){
       showToast('The start time needs to be earlier than the end time.', true);
       return;
     }
-    sendingWindow = {enabled, startTime, endTime, weekdaysOnly};
+    sendingWindow = {enabled, startTime, endTime, weekdaysOnly, timeZone};
     closeWindowModal();
+    const tzLabel = (TIMEZONE_OPTIONS.find(o=>o.tz===timeZone) || {label:timeZone}).label;
     showToast(enabled
-      ? `Sending hours set: ${startTime}–${endTime}${weekdaysOnly ? ', weekdays only' : ''}.`
+      ? `Sending hours set: ${startTime}–${endTime} (${tzLabel})${weekdaysOnly ? ', weekdays only' : ''}.`
       : 'Sending hours turned off — follow-ups can go out any time.');
   });
 
