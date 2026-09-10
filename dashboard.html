@@ -1421,7 +1421,24 @@
     padding:6px 12px;text-decoration:none;transition:background .15s, color .15s;
   }
   .login-back-home:hover{background:var(--c-hover-bg);color:var(--teal);}
-  #appRoot{display:none;}
+  /* visibility:hidden (not display:none) is deliberate: an element with
+     display:none gets ZERO layout work done on it or its descendants —
+     meaning while buildFullView() is populating the table, board, and
+     stat cards underneath, the browser does nothing at all with any of
+     it, and the ENTIRE tree's layout+paint gets dumped into one giant
+     synchronous burst the instant display flips to block. That burst is
+     what was actually causing the janky reveal, no matter how carefully
+     the JS sequenced *when* it happened. visibility:hidden elements are
+     still laid out normally (just not painted) — so that work happens
+     incrementally, spread across the loading period, as content is
+     actually added — leaving only a cheap visibility flip at reveal
+     time instead of a big one-shot layout. position:absolute keeps it
+     out of normal document flow while hidden, so its (potentially very
+     tall) layout doesn't affect the loader's centering or the page's
+     scroll height in the meantime.
+  */
+  #appRoot{visibility:hidden;position:absolute;top:0;left:0;width:100%;pointer-events:none;}
+  #appRoot.revealed{visibility:visible;position:static;pointer-events:auto;}
   @keyframes toast-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
   @media (max-width:720px){
@@ -3040,26 +3057,20 @@
     appRootRevealed = true;
     const loader = document.getElementById('pageLoader');
     const root = document.getElementById('appRoot');
-    // Start the loader's own fade-out first, on its own — it's a cheap,
-    // compositor-only opacity transition. Revealing #appRoot below forces
-    // a big synchronous layout (it's a huge tree, first time it's ever
-    // been laid out), which blocks the main thread for a beat — if that
-    // happens BEFORE the loader's fade has had a chance to actually start
-    // painting, the transition stalls behind it and then jumps straight
-    // to its end state instead of animating smoothly. Kicking the fade
-    // off first, and giving it two rendered frames' head start via the
-    // double rAF below, means it's already running on the compositor by
-    // the time the heavy layout work blocks the main thread — so it
-    // keeps animating smoothly through that instead of freezing.
+    // #appRoot has been visibility:hidden (not display:none) this whole
+    // time, so the browser has already been laying out its content
+    // incrementally as buildFullView() populated it — there's no big
+    // synchronous layout left to force here, just a visibility flip and
+    // an opacity/transform animation, both cheap and compositor-driven.
+    // That's what actually fixes the freeze-then-pop: previously
+    // display:none meant ALL of that layout work got dumped into one
+    // synchronous burst right here, no matter how carefully the JS
+    // sequenced when this function ran relative to the content build.
+    root.classList.remove('fade-in');
+    root.classList.add('revealed');
+    void root.offsetWidth; // restart the fade-in-up animation cleanly
+    root.classList.add('fade-in');
     loader.classList.add('hide');
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        root.classList.remove('fade-in');
-        root.style.display = 'block';
-        void root.offsetWidth;
-        root.classList.add('fade-in');
-      });
-    });
     setTimeout(()=>{ loader.style.display = 'none'; }, 420);
   }
   function initFirebaseSync(){
@@ -5838,7 +5849,7 @@ ${buildLeadContext()}`;
       <div class="login-sub" style="margin-top:8px;line-height:1.5">This tracker isn't connected to Firebase yet. Add your Firebase project config near the top of this file's script.</div>
     </div>`;
     loginScreen.style.display = 'flex';
-    appRoot.style.display = 'none';
+    appRoot.classList.remove('revealed');
   } else {
     document.getElementById('loginForm').addEventListener('submit', (e)=>{
       e.preventDefault();
@@ -5966,7 +5977,7 @@ ${buildLeadContext()}`;
       if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
       isSigningOut = true;
       loginScreen.style.display = 'none';
-      appRoot.style.display = 'none';
+      appRoot.classList.remove('revealed');
       pageLoader.classList.remove('hide');
       pageLoader.style.display = 'flex';
       auth.signOut().then(()=>{
@@ -6085,7 +6096,7 @@ ${buildLeadContext()}`;
         if(isSigningOut) return; // already navigating away — don't flash the login screen
         appRootRevealed = false;
         pageLoader.style.display = 'none';
-        appRoot.style.display = 'none';
+        appRoot.classList.remove('revealed');
         loginScreen.style.display = 'flex';
         loginScreen.classList.remove('fade-in');
         void loginScreen.offsetWidth;
