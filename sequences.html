@@ -95,6 +95,7 @@
   .seq-card-badge.active{background:var(--amber-soft);color:var(--amber);}
   .seq-card-badge.completed{background:var(--success-soft);color:var(--success);}
   .seq-card-badge.stopped_replied{background:var(--success-soft);color:var(--success);}
+  .seq-card-badge.stopped_status_change{background:var(--success-soft);color:var(--success);}
   .seq-card-badge.needs_attention{background:var(--fail-soft);color:var(--fail);}
   .seq-card-chevron{color:var(--slate-light);flex-shrink:0;transition:transform .15s;}
   .seq-card:hover .seq-card-chevron{transform:translateX(3px);color:var(--teal);}
@@ -465,11 +466,12 @@
     if(followUps.some(s=>s.status==='pending' || s.status==='sending')) return 'active';
     if(followUps.some(s=>s.status==='failed')) return 'needs_attention';
     if(followUps.some(s=>s.status==='cancelled_replied')) return 'stopped_replied';
+    if(followUps.some(s=>s.status==='cancelled_status_change')) return 'stopped_status_change';
     return 'completed';
   }
   const STATUS_LABEL = {
     draft:'Draft', paused:'Paused', active:'Active', completed:'Completed',
-    stopped_replied:'They replied', needs_attention:'Needs attention'
+    stopped_replied:'They replied', stopped_status_change:'Lead won/lost', needs_attention:'Needs attention'
   };
 
   function buildSequenceList(){
@@ -514,7 +516,7 @@
       if(isTrash) return s.status === 'deleted';
       if(s.status === 'deleted') return false; // never show trashed sequences in any other view
       if(activeFilter === 'all') return true;
-      if(activeFilter === 'completed') return s.status === 'completed' || s.status === 'stopped_replied';
+      if(activeFilter === 'completed') return s.status === 'completed' || s.status === 'stopped_replied' || s.status === 'stopped_status_change';
       return s.status === activeFilter;
     });
     if(filtered.length === 0){
