@@ -99,9 +99,45 @@
   .seq-card-chevron{color:var(--slate-light);flex-shrink:0;transition:transform .15s;}
   .seq-card:hover .seq-card-chevron{transform:translateX(3px);color:var(--teal);}
 
+  .seq-card.trashed{cursor:default;opacity:.85;}
+  .seq-card.trashed:hover{transform:none;box-shadow:var(--shadow);border-color:var(--border);}
+  .seq-card.trashed .seq-card-icon{background:var(--border-soft);color:var(--slate);}
+  .seq-card-trash-actions{display:flex;gap:8px;flex-shrink:0;}
+  .seq-trash-btn{
+    font-size:12px;font-weight:600;padding:7px 13px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;
+    border:1px solid var(--border);background:var(--panel);transition:all .12s;
+  }
+  .seq-trash-btn.restore:hover{border-color:var(--success);color:var(--success);background:var(--success-soft);}
+  .seq-trash-btn.forever{color:var(--fail);border-color:var(--fail);}
+  .seq-trash-btn.forever:hover{background:var(--fail-soft);}
+  .seq-trash-btn:disabled{opacity:.6;cursor:default;}
+
   .empty-state{text-align:center;padding:70px 20px;color:var(--slate);border:1px dashed var(--border);border-radius:16px;}
   .empty-state h3{font-family:'Sora',sans-serif;font-size:19px;font-weight:700;color:var(--ink);margin:0 0 6px;}
   .empty-state p{font-size:13.5px;margin:0 0 16px;}
+
+  /* ---------- In-app confirm modal (replaces native browser confirm) ---------- */
+  .app-confirm-overlay{
+    position:fixed;inset:0;background:rgba(16,32,55,0.45);z-index:300;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;visibility:hidden;transition:opacity .18s ease, visibility 0s linear .18s;
+  }
+  .app-confirm-overlay.open{opacity:1;visibility:visible;transition:opacity .18s ease;}
+  .app-confirm-box{
+    width:400px;max-width:90vw;background:var(--panel);border-radius:16px;padding:24px 26px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.28);transform:scale(.94);transition:transform .18s ease;
+  }
+  .app-confirm-overlay.open .app-confirm-box{transform:scale(1);}
+  .app-confirm-box h3{margin:0 0 10px;font-family:'Sora',sans-serif;font-size:17px;}
+  .app-confirm-box p{margin:0;font-size:13.5px;color:var(--slate);line-height:1.55;}
+  .app-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .app-confirm-btn{
+    padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid var(--border);background:var(--panel);font-family:'Inter',sans-serif;transition:all .12s;
+  }
+  .app-confirm-btn:hover{border-color:var(--slate);}
+  .app-confirm-btn.primary{background:var(--fail);border-color:var(--fail);color:#fff;}
+  .app-confirm-btn.primary:hover{background:#96302A;}
 
   /* ---------- Lead picker modal ---------- */
   .picker-overlay{
@@ -197,11 +233,23 @@
     <button type="button" class="status-chip" data-filter="paused">Paused</button>
     <button type="button" class="status-chip" data-filter="completed">Completed</button>
     <button type="button" class="status-chip" data-filter="needs_attention">Needs attention</button>
+    <button type="button" class="status-chip" data-filter="trash">🗑️ Trash</button>
   </div>
 
   <div id="listHolder"></div>
 </div>
 </div>
+</div>
+
+<div class="app-confirm-overlay" id="appConfirmOverlay">
+  <div class="app-confirm-box">
+    <h3 id="appConfirmTitle">Are you sure?</h3>
+    <p id="appConfirmMessage"></p>
+    <div class="app-confirm-actions">
+      <button type="button" class="app-confirm-btn" id="appConfirmCancelBtn">Cancel</button>
+      <button type="button" class="app-confirm-btn primary" id="appConfirmOkBtn">OK</button>
+    </div>
+  </div>
 </div>
 
 <div class="picker-overlay" id="pickerOverlay">
@@ -253,6 +301,34 @@
     }, 3200);
   }
 
+  // In-app replacement for the native browser confirm() dialog — matches
+  // the rest of the app's styling instead of showing the browser's own
+  // "this site says" popup. Returns a Promise<boolean>.
+  function showConfirmModal({title, message, confirmLabel = 'OK'}){
+    return new Promise(resolve=>{
+      document.getElementById('appConfirmTitle').textContent = title;
+      document.getElementById('appConfirmMessage').textContent = message;
+      const okBtn = document.getElementById('appConfirmOkBtn');
+      const cancelBtn = document.getElementById('appConfirmCancelBtn');
+      const overlay = document.getElementById('appConfirmOverlay');
+      okBtn.textContent = confirmLabel;
+      overlay.classList.add('open');
+      function cleanup(result){
+        overlay.classList.remove('open');
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        overlay.removeEventListener('click', onBackdrop);
+        resolve(result);
+      }
+      function onOk(){ cleanup(true); }
+      function onCancel(){ cleanup(false); }
+      function onBackdrop(e){ if(e.target === overlay) cleanup(false); }
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      overlay.addEventListener('click', onBackdrop);
+    });
+  }
+
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
@@ -294,7 +370,7 @@
         sentByName: seq.createdByName,
         updatedAt: seq.updatedAt || seq.createdAt,
         stepCount: Array.isArray(seq.steps) ? seq.steps.length : (followUps.length + 1),
-        status
+        status, previousStatus: seq.previousStatus
       };
     }).sort((a,b)=>{
       const at = a.updatedAt ? a.updatedAt.toMillis() : 0;
@@ -315,38 +391,100 @@
   function renderList(){
     const holder = document.getElementById('listHolder');
     const sequences = buildSequenceList();
-    const filtered = activeFilter === 'all' ? sequences : sequences.filter(s=>{
+    const isTrash = activeFilter === 'trash';
+    const filtered = sequences.filter(s=>{
+      if(isTrash) return s.status === 'deleted';
+      if(s.status === 'deleted') return false; // never show trashed sequences in any other view
+      if(activeFilter === 'all') return true;
       if(activeFilter === 'completed') return s.status === 'completed' || s.status === 'stopped_replied';
       return s.status === activeFilter;
     });
     if(filtered.length === 0){
       holder.innerHTML = `<div class="empty-state">
         <h3>No sequences ${activeFilter === 'all' ? 'yet' : 'here'}</h3>
-        <p>${activeFilter === 'all' ? "Start one from a lead's drawer, or click \"+ New sequence\" above." : "No sequences match this filter."}</p>
+        <p>${isTrash ? "Nothing in the trash right now." : (activeFilter === 'all' ? "Start one from a lead's drawer, or click \"+ New sequence\" above." : "No sequences match this filter.")}</p>
       </div>`;
       return;
     }
     holder.innerHTML = filtered.map((s, idx)=>`
-      <div class="seq-card" data-idx="${idx}" style="animation-delay:${idx * 40}ms">
-        <div class="seq-card-icon">📧</div>
+      <div class="seq-card ${isTrash ? 'trashed' : ''}" data-idx="${idx}" style="animation-delay:${idx * 40}ms">
+        <div class="seq-card-icon">${isTrash ? '🗑️' : '📧'}</div>
         <div class="seq-card-body">
           <div class="seq-card-name" data-lead-name="${s.boardId}/${s.leadId}">Loading…</div>
           <div class="seq-card-meta">${s.stepCount} step${s.stepCount===1?'':'s'} &middot; started by ${esc(s.sentByName || 'Someone')}</div>
         </div>
-        <span class="seq-card-badge ${esc(s.status)}">${esc(STATUS_LABEL[s.status] || s.status)}</span>
-        <span class="seq-card-chevron">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
-        </span>
+        ${isTrash ? `
+          <div class="seq-card-trash-actions">
+            <button type="button" class="seq-trash-btn restore" data-ref="${idx}">Restore</button>
+            <button type="button" class="seq-trash-btn forever" data-ref="${idx}">Delete forever</button>
+          </div>
+        ` : `
+          <span class="seq-card-badge ${esc(s.status)}">${esc(STATUS_LABEL[s.status] || s.status)}</span>
+          <span class="seq-card-chevron">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </span>
+        `}
       </div>
     `).join('');
 
-    holder.querySelectorAll('.seq-card').forEach(card=>{
-      const s = filtered[Number(card.dataset.idx)];
-      card.addEventListener('click', ()=>{
-        location.href = `sequence-builder.html?board=${encodeURIComponent(s.boardId)}&lead=${encodeURIComponent(s.leadId)}&sequenceId=${encodeURIComponent(s.sequenceId)}`;
+    if(isTrash){
+      holder.querySelectorAll('.seq-trash-btn.restore').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const s = filtered[Number(btn.dataset.ref)];
+          btn.disabled = true;
+          btn.textContent = 'Restoring...';
+          db.collection('sequences').doc(s.sequenceId).update({
+            status: s.previousStatus || 'active',
+            previousStatus: firebase.firestore.FieldValue.delete(),
+            deletedAt: firebase.firestore.FieldValue.delete()
+          }).then(()=>{
+            showToast('Sequence restored.');
+          }).catch(err=>{
+            console.error(err);
+            showToast('Could not restore that: ' + (err.message || 'please try again.'), true);
+            btn.disabled = false;
+            btn.textContent = 'Restore';
+          });
+        });
       });
-      const nameEl = card.querySelector('[data-lead-name]');
-      getLeadInfo(s.boardId, s.leadId).then(info=>{ nameEl.textContent = info.name; });
+      holder.querySelectorAll('.seq-trash-btn.forever').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const s = filtered[Number(btn.dataset.ref)];
+          showConfirmModal({
+            title: 'Delete this sequence forever?',
+            message: "This removes it completely, along with anything still scheduled. Emails already sent stay in the lead's history. This can't be undone.",
+            confirmLabel: 'Delete forever'
+          }).then(ok=>{
+            if(!ok) return;
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+            db.collection('scheduledEmails').where('workspaceId', '==', currentWorkspaceId).where('sequenceId', '==', s.sequenceId).get()
+              .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
+              .then(()=> db.collection('sequences').doc(s.sequenceId).delete())
+              .then(()=>{
+                showToast('Deleted for good.');
+              }).catch(err=>{
+                console.error(err);
+                showToast('Could not delete that: ' + (err.message || 'please try again.'), true);
+                btn.disabled = false;
+                btn.textContent = 'Delete forever';
+              });
+          });
+        });
+      });
+    } else {
+      holder.querySelectorAll('.seq-card').forEach(card=>{
+        const s = filtered[Number(card.dataset.idx)];
+        card.addEventListener('click', ()=>{
+          location.href = `sequence-builder.html?board=${encodeURIComponent(s.boardId)}&lead=${encodeURIComponent(s.leadId)}&sequenceId=${encodeURIComponent(s.sequenceId)}`;
+        });
+      });
+    }
+    holder.querySelectorAll('[data-lead-name]').forEach(nameEl=>{
+      const [bId, lId] = nameEl.dataset.leadName.split('/');
+      getLeadInfo(bId, lId).then(info=>{ nameEl.textContent = info.name; });
     });
   }
 

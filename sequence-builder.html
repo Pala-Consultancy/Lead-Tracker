@@ -366,7 +366,7 @@
         </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
-        <button type="button" class="seq-secondary-btn" id="seqDeleteBtn" style="display:none;">🗑️ Delete sequence</button>
+        <button type="button" class="seq-secondary-btn" id="seqDeleteBtn" style="display:none;">🗑️ Move to trash</button>
         <button type="button" class="seq-secondary-btn" id="seqPauseBtn" style="display:none;">⏸ Pause</button>
         <button type="button" class="seq-secondary-btn" id="seqSaveDraftBtn">Save as draft</button>
         <button type="button" class="seq-start-btn" id="seqStartBtn">Start sequence</button>
@@ -1172,7 +1172,7 @@
       .finally(()=>{ btn.disabled = false; });
   });
 
-  // ---------- Delete sequence entirely ----------
+  // ---------- Move sequence to trash (soft delete — recoverable from sequences.html) ----------
   document.getElementById('seqDeleteBtn').addEventListener('click', ()=>{
     if(!currentSequenceDocId){
       // Nothing saved yet — there's nothing to delete server-side, this
@@ -1187,26 +1187,28 @@
       return;
     }
     showConfirmModal({
-      title: 'Delete this sequence?',
-      message: "Any emails already sent stay in the lead's history, but everything still scheduled will be cancelled and removed. This can't be undone.",
-      confirmLabel: 'Delete'
+      title: 'Move this sequence to trash?',
+      message: "It'll stop sending anything further and move to the Trash on the sequences page, where you can restore it or delete it for good later. Anything already sent stays in the lead's history either way.",
+      confirmLabel: 'Move to trash'
     }).then(ok=>{
       if(!ok) return;
       const btn = document.getElementById('seqDeleteBtn');
       btn.disabled = true;
-      btn.textContent = 'Deleting...';
-      db.collection('scheduledEmails').where('workspaceId', '==', currentWorkspaceId).where('sequenceId', '==', currentSequenceDocId).get()
-        .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
-        .then(()=> db.collection('sequences').doc(currentSequenceDocId).delete())
+      btn.textContent = 'Moving to trash...';
+      db.collection('sequences').doc(currentSequenceDocId).update({
+        status: 'deleted',
+        previousStatus: currentSequenceStatus,
+        deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+      })
         .then(()=>{
-          showToast('Sequence deleted.');
+          showToast('Moved to trash.');
           setTimeout(()=>{ location.href = boardId ? `sequences.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 700);
         })
         .catch(err=>{
           console.error(err);
-          showToast('Could not delete that: ' + (err.message || 'please try again.'), true);
+          showToast('Could not move that to trash: ' + (err.message || 'please try again.'), true);
           btn.disabled = false;
-          btn.textContent = '🗑️ Delete sequence';
+          btn.textContent = '🗑️ Move to trash';
         });
     });
   });
@@ -1217,7 +1219,7 @@
       document.getElementById('seqStartBtn').disabled = true;
     }
     document.getElementById('seqDeleteBtn').style.display = '';
-    document.getElementById('seqDeleteBtn').textContent = currentSequenceDocId ? '🗑️ Delete sequence' : '🗑️ Discard';
+    document.getElementById('seqDeleteBtn').textContent = currentSequenceDocId ? '🗑️ Move to trash' : '🗑️ Discard';
     renderCanvas();
   }
   function setupViewMode(){
