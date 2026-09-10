@@ -50,6 +50,11 @@
   .seq-sidebar-bottom{margin-top:auto;padding-top:14px;border-top:1px solid var(--border-soft);}
 
   .seq-main{flex:1;min-width:0;display:flex;flex-direction:column;height:100%;}
+  #duplicateWarningBanner{
+    background:var(--amber-soft);color:#8A5A00;padding:11px 24px;font-size:13px;font-weight:600;
+    border-bottom:1px solid rgba(201,124,0,0.25);flex-shrink:0;
+  }
+  #duplicateWarningBanner a{color:#8A5A00;text-decoration:underline;margin-left:6px;}
   .seq-header{
     display:flex;align-items:center;justify-content:space-between;gap:16px;
     padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;
@@ -236,6 +241,37 @@
   .app-confirm-btn.primary{background:var(--fail);border-color:var(--fail);color:#fff;}
   .app-confirm-btn.primary:hover{background:#96302A;}
 
+  /* ---------- Lead picker modal ---------- */
+  .picker-overlay{
+    position:fixed;inset:0;background:rgba(16,32,55,0.4);z-index:200;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;visibility:hidden;transition:opacity .18s ease, visibility 0s linear .18s;
+  }
+  .picker-overlay.open{opacity:1;visibility:visible;transition:opacity .18s ease;}
+  .picker-modal{
+    width:440px;max-width:92vw;max-height:78vh;background:var(--panel);border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);display:flex;flex-direction:column;
+    transform:scale(.96);transition:transform .18s ease;
+  }
+  .picker-overlay.open .picker-modal{transform:scale(1);}
+  .picker-head{padding:20px 22px 14px;border-bottom:1px solid var(--border-soft);}
+  .picker-head h3{margin:0 0 4px;font-family:'Sora',sans-serif;font-size:17px;}
+  .picker-head p{margin:0 0 12px;font-size:12.5px;color:var(--slate);}
+  .picker-search{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:9px;font:inherit;font-size:13.5px;}
+  .picker-search:focus{outline:none;border-color:var(--teal);}
+  .picker-list{overflow-y:auto;padding:8px;flex:1;}
+  .picker-item{
+    display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;cursor:pointer;
+  }
+  .picker-item:hover{background:var(--panel-alt);}
+  .picker-item-avatar{
+    width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--teal), var(--teal-deep));color:#fff;font-size:12.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .picker-item-name{font-size:13.5px;font-weight:600;}
+  .picker-item-email{font-size:11.5px;color:var(--slate);}
+  .picker-empty{padding:30px;text-align:center;color:var(--slate);font-size:13px;}
+
   /* ---------- Edit panel ---------- */
   .seq-panel-overlay{
     position:fixed;inset:0;background:rgba(16,32,55,0.4);z-index:200;
@@ -366,6 +402,8 @@
         </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
+        <button type="button" class="seq-secondary-btn" id="seqWindowBtn">⏰ Sending hours</button>
+        <button type="button" class="seq-secondary-btn" id="seqDuplicateBtn" style="display:none;">📋 Duplicate to another lead</button>
         <button type="button" class="seq-secondary-btn" id="seqDeleteBtn" style="display:none;">🗑️ Move to trash</button>
         <button type="button" class="seq-secondary-btn" id="seqPauseBtn" style="display:none;">⏸ Pause</button>
         <button type="button" class="seq-secondary-btn" id="seqSaveDraftBtn">Save as draft</button>
@@ -373,6 +411,10 @@
       </div>
     </div>
 
+    <div id="duplicateWarningBanner" style="display:none;">
+      ⚠️ This lead already has another sequence running — starting this one too could mean they get emailed twice.
+      <a id="duplicateWarningLink" href="#" target="_blank">View it</a>
+    </div>
     <div class="seq-canvas-wrap" id="seqCanvasWrap">
       <div class="seq-zoom-controls">
         <button type="button" id="seqZoomIn">+</button>
@@ -383,6 +425,49 @@
       <div class="seq-canvas" id="seqCanvas"></div>
       <div class="seq-canvas-footnote">Any lead who replies has the rest of this sequence stopped automatically — no follow-up ever sends after that.</div>
     </div>
+  </div>
+</div>
+
+<div class="picker-overlay" id="windowOverlay">
+  <div class="picker-modal" style="width:380px;">
+    <div class="picker-head" style="border-bottom:none;">
+      <h3>Sending hours</h3>
+      <p>Keep any follow-up from going out at an awkward time, like the middle of the night. This only affects when a step is allowed to send — the reply-tracking and delays work exactly the same.</p>
+    </div>
+    <div style="padding:0 22px 20px;display:flex;flex-direction:column;gap:14px;">
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">
+        <input type="checkbox" id="windowEnabled" style="width:16px;height:16px;">
+        Only send within a certain time window
+      </label>
+      <div id="windowFields" style="display:none;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:12.5px;color:var(--slate);width:36px;">From</span>
+          <input type="time" id="windowStart" value="09:00" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;">
+          <span style="font-size:12.5px;color:var(--slate);">to</span>
+          <input type="time" id="windowEnd" value="18:00" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;">
+        </div>
+        <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="windowWeekdaysOnly" style="width:16px;height:16px;">
+          Weekdays only (skip Saturday and Sunday)
+        </label>
+      </div>
+    </div>
+    <div class="picker-close" style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" id="windowCancelBtn" class="seq-panel-btn">Cancel</button>
+      <button type="button" id="windowSaveBtn" class="seq-panel-btn primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="picker-overlay" id="pickerOverlay">
+  <div class="picker-modal">
+    <div class="picker-head">
+      <h3>Duplicate to another lead</h3>
+      <p>Pick which lead gets a copy of this sequence — as a new draft, so you can review it before starting.</p>
+      <input type="text" class="picker-search" id="pickerSearch" placeholder="Search leads by name or company...">
+    </div>
+    <div class="picker-list" id="pickerList"></div>
+    <div class="picker-close"><button type="button" id="pickerCloseBtn">Cancel</button></div>
   </div>
 </div>
 
@@ -528,6 +613,81 @@
     });
   }
 
+  // ---------- Duplicate this sequence to another lead ----------
+  function openPicker(){
+    document.getElementById('pickerSearch').value = '';
+    renderPickerList('');
+    document.getElementById('pickerOverlay').classList.add('open');
+    document.getElementById('pickerSearch').focus();
+  }
+  function closePicker(){
+    document.getElementById('pickerOverlay').classList.remove('open');
+  }
+  function renderPickerList(query){
+    const list = document.getElementById('pickerList');
+    const q = query.trim().toLowerCase();
+    const filtered = !q ? boardLeads : boardLeads.filter(l=>
+      (l.name||'').toLowerCase().includes(q) || (l.company||'').toLowerCase().includes(q));
+    if(filtered.length === 0){
+      list.innerHTML = `<div class="picker-empty">No leads match "${esc(query)}".</div>`;
+      return;
+    }
+    list.innerHTML = filtered.slice(0, 50).map(l=>`
+      <div class="picker-item" data-id="${esc(l.id)}">
+        <div class="picker-item-avatar">${esc(initials(l.name))}</div>
+        <div>
+          <div class="picker-item-name">${esc(l.name || 'Unnamed lead')}</div>
+          <div class="picker-item-email">${esc(l.email || 'No email on file')}</div>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.picker-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        const lead = boardLeads.find(l=>l.id === item.dataset.id);
+        if(lead && !lead.email){
+          showToast('This lead has no email address on file.', true);
+          return;
+        }
+        duplicateSequenceToLead(item.dataset.id);
+      });
+    });
+  }
+  function duplicateSequenceToLead(newLeadId){
+    closePicker();
+    // Deep copy the steps — a duplicate shouldn't inherit a specific
+    // scheduled date/time from the original, that wouldn't make sense
+    // for a different lead, so it resets to "send now" instead.
+    const stepsCopy = JSON.parse(JSON.stringify(steps));
+    if(stepsCopy[0]){
+      stepsCopy[0].sendMode = 'now';
+      stepsCopy[0].scheduledAt = null;
+    }
+    const newSeqRef = db.collection('sequences').doc();
+    newSeqRef.set({
+      workspaceId: currentWorkspaceId, boardId, leadId: newLeadId,
+      status: 'draft',
+      steps: stepsCopy, sendingWindow,
+      createdBy: auth.currentUser.uid,
+      createdByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      showToast('Duplicated — opening the new draft.');
+      setTimeout(()=>{
+        location.href = `sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(newLeadId)}&sequenceId=${encodeURIComponent(newSeqRef.id)}`;
+      }, 600);
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not duplicate that: ' + (err.message || 'please try again.'), true);
+    });
+  }
+  document.getElementById('seqDuplicateBtn').addEventListener('click', openPicker);
+  document.getElementById('pickerCloseBtn').addEventListener('click', closePicker);
+  document.getElementById('pickerOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'pickerOverlay') closePicker();
+  });
+  document.getElementById('pickerSearch').addEventListener('input', (e)=> renderPickerList(e.target.value));
+
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   const leadId = params.get('lead');
@@ -549,6 +709,7 @@
 
   let currentWorkspaceId = null;
   let leadData = null;
+  let boardLeads = []; // for the duplicate-to-another-lead picker
   // steps[0] = {subject, body} (sends immediately). steps[1..] additionally
   // have delayValue + delayUnit ('hours'|'days') — if no reply since the
   // previous step, wait this long before sending.
@@ -556,6 +717,10 @@
   let editingIndex = null;
   let zoomLevel = 1;
   let dragSrcIndex = null;
+  // Only affects automatically-computed follow-up times — the first email
+  // (whether "send now" or an explicit chosen time) is left exactly as the
+  // person set it, since that's a deliberate choice, not a computed one.
+  let sendingWindow = {enabled: false, startTime: '09:00', endTime: '18:00', weekdaysOnly: false};
 
   function nodeIconFor(index){ return index === 0 ? '✉️' : '↻'; }
   function nodeTitleFor(index){ return index === 0 ? 'Send email' : `Follow-up ${index+1}`; }
@@ -563,6 +728,74 @@
     const unitMs = step.delayUnit === 'hours' ? 60*60*1000 : 24*60*60*1000;
     return (step.delayValue || 1) * unitMs;
   }
+
+  // Nudges a computed timestamp forward to the nearest moment that falls
+  // inside the configured sending window, if one's set. Only ever moves
+  // things later, never earlier, and only ever forward in time — a
+  // capped loop just in case something about the inputs would otherwise
+  // spin forever.
+  function adjustToSendingWindow(ms){
+    if(!sendingWindow.enabled) return ms;
+    const [startH, startM] = sendingWindow.startTime.split(':').map(Number);
+    const [endH, endM] = sendingWindow.endTime.split(':').map(Number);
+    let d = new Date(ms);
+    for(let i=0; i<30; i++){
+      const day = d.getDay(); // 0=Sun .. 6=Sat
+      if(sendingWindow.weekdaysOnly && (day === 0 || day === 6)){
+        d.setDate(d.getDate() + 1);
+        d.setHours(startH, startM, 0, 0);
+        continue;
+      }
+      const startOfWindow = new Date(d); startOfWindow.setHours(startH, startM, 0, 0);
+      const endOfWindow = new Date(d); endOfWindow.setHours(endH, endM, 0, 0);
+      if(d.getTime() < startOfWindow.getTime()){
+        d = startOfWindow;
+        continue;
+      }
+      if(d.getTime() > endOfWindow.getTime()){
+        d.setDate(d.getDate() + 1);
+        d.setHours(startH, startM, 0, 0);
+        continue;
+      }
+      break; // already inside the window
+    }
+    return d.getTime();
+  }
+
+  function openWindowModal(){
+    document.getElementById('windowEnabled').checked = sendingWindow.enabled;
+    document.getElementById('windowStart').value = sendingWindow.startTime;
+    document.getElementById('windowEnd').value = sendingWindow.endTime;
+    document.getElementById('windowWeekdaysOnly').checked = sendingWindow.weekdaysOnly;
+    document.getElementById('windowFields').style.display = sendingWindow.enabled ? 'flex' : 'none';
+    document.getElementById('windowOverlay').classList.add('open');
+  }
+  function closeWindowModal(){
+    document.getElementById('windowOverlay').classList.remove('open');
+  }
+  document.getElementById('seqWindowBtn').addEventListener('click', openWindowModal);
+  document.getElementById('windowCancelBtn').addEventListener('click', closeWindowModal);
+  document.getElementById('windowOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'windowOverlay') closeWindowModal();
+  });
+  document.getElementById('windowEnabled').addEventListener('change', (e)=>{
+    document.getElementById('windowFields').style.display = e.target.checked ? 'flex' : 'none';
+  });
+  document.getElementById('windowSaveBtn').addEventListener('click', ()=>{
+    const enabled = document.getElementById('windowEnabled').checked;
+    const startTime = document.getElementById('windowStart').value || '09:00';
+    const endTime = document.getElementById('windowEnd').value || '18:00';
+    const weekdaysOnly = document.getElementById('windowWeekdaysOnly').checked;
+    if(enabled && startTime >= endTime){
+      showToast('The start time needs to be earlier than the end time.', true);
+      return;
+    }
+    sendingWindow = {enabled, startTime, endTime, weekdaysOnly};
+    closeWindowModal();
+    showToast(enabled
+      ? `Sending hours set: ${startTime}–${endTime}${weekdaysOnly ? ', weekdays only' : ''}.`
+      : 'Sending hours turned off — follow-ups can go out any time.');
+  });
 
   // Estimated send time for step `index`, based on step 0's actual send
   // time (now, or its chosen schedule) plus every delay up to that step.
@@ -573,7 +806,10 @@
     let ms = (steps[0].sendMode === 'scheduled' && steps[0].scheduledAt)
       ? new Date(steps[0].scheduledAt).getTime()
       : Date.now();
-    for(let i = 1; i <= index; i++) ms += delayMs(steps[i]);
+    for(let i = 1; i <= index; i++){
+      ms += delayMs(steps[i]);
+      ms = adjustToSendingWindow(ms);
+    }
     return new Date(ms);
   }
   function formatNodeTime(d){
@@ -747,10 +983,16 @@
     if(editingIndex === null || editingIndex === 0) return;
     const delayVal = parseInt(document.getElementById('seqPanelDelay').value, 10) || 1;
     const unit = activeUnit();
-    let ms = 0;
-    for(let i=1; i<editingIndex; i++) ms += delayMs(steps[i]);
+    let ms = (steps[0].sendMode === 'scheduled' && steps[0].scheduledAt)
+      ? new Date(steps[0].scheduledAt).getTime()
+      : Date.now();
+    for(let i=1; i<editingIndex; i++){
+      ms += delayMs(steps[i]);
+      ms = adjustToSendingWindow(ms);
+    }
     ms += delayVal * (unit === 'hours' ? 60*60*1000 : 24*60*60*1000);
-    const when = new Date(Date.now() + ms);
+    ms = adjustToSendingWindow(ms);
+    const when = new Date(ms);
     document.getElementById('seqTimingWhen').textContent =
       when.toLocaleString(undefined, {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
   }
@@ -1042,7 +1284,7 @@
   function buildSequencePayload(status){
     const payload = {
       workspaceId: currentWorkspaceId, boardId, leadId,
-      status, steps,
+      status, steps, sendingWindow,
       createdBy: auth.currentUser.uid,
       createdByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1089,6 +1331,20 @@
       openEditPanel(0);
       return;
     }
+    if(document.getElementById('duplicateWarningBanner').style.display !== 'none'){
+      showConfirmModal({
+        title: 'Start this anyway?',
+        message: 'This lead already has another sequence running. Starting this one too means they could get emailed twice around the same time.',
+        confirmLabel: 'Start anyway'
+      }).then(ok=>{
+        if(ok) actuallyStartSequence(isScheduledStart, firstSendAtMs);
+      });
+      return;
+    }
+    actuallyStartSequence(isScheduledStart, firstSendAtMs);
+  });
+
+  function actuallyStartSequence(isScheduledStart, firstSendAtMs){
     const startBtn = document.getElementById('seqStartBtn');
     startBtn.disabled = true;
     startBtn.textContent = '🚀 Launching...';
@@ -1123,16 +1379,20 @@
       const writes = [];
       for(let i=1; i<steps.length; i++){
         cumulativeMs += delayMs(steps[i]);
+        const adjustedMs = adjustToSendingWindow(cumulativeMs);
         writes.push(db.collection('scheduledEmails').add({
           workspaceId: currentWorkspaceId, boardId, leadId,
           to: leadEmail, cc: [], subject: steps[i].subject, body: steps[i].body, htmlBody: '', attachments: [],
           sentBy: auth.currentUser.uid,
           sentByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
           status: 'pending',
-          sendAt: firebase.firestore.Timestamp.fromDate(new Date(cumulativeMs)),
+          sendAt: firebase.firestore.Timestamp.fromDate(new Date(adjustedMs)),
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           sequenceId, stepNumber: i+1, cancelIfReplied: true
         }));
+        // The next step's delay counts from when this one actually lands
+        // (post-adjustment), not the theoretical un-adjusted time.
+        cumulativeMs = adjustedMs;
       }
       return Promise.all(writes);
     }).then(()=>{
@@ -1150,7 +1410,7 @@
       startBtn.disabled = false;
       startBtn.textContent = 'Start sequence';
     });
-  });
+  }
 
   // ---------- Pause / Resume ----------
   document.getElementById('seqPauseBtn').addEventListener('click', ()=>{
@@ -1214,6 +1474,23 @@
     });
   });
 
+  function checkForExistingActiveSequence(){
+    db.collection('sequences')
+      .where('workspaceId', '==', currentWorkspaceId)
+      .where('leadId', '==', leadId)
+      .where('status', 'in', ['active', 'paused'])
+      .get()
+      .then(snap=>{
+        const others = snap.docs.filter(d => d.id !== currentSequenceDocId);
+        if(others.length === 0) return;
+        const banner = document.getElementById('duplicateWarningBanner');
+        banner.style.display = 'block';
+        document.getElementById('duplicateWarningLink').href =
+          `sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(leadId)}&sequenceId=${encodeURIComponent(others[0].id)}`;
+      })
+      .catch(err=>console.error('Could not check for an existing sequence', err));
+  }
+
   function setupCreateOrDraftMode(){
     if(!leadData.email){
       showToast('This lead has no email address on file.', true);
@@ -1221,12 +1498,15 @@
     }
     document.getElementById('seqDeleteBtn').style.display = '';
     document.getElementById('seqDeleteBtn').textContent = currentSequenceDocId ? '🗑️ Move to trash' : '🗑️ Discard';
+    document.getElementById('seqDuplicateBtn').style.display = currentSequenceDocId ? '' : 'none';
     renderCanvas();
   }
   function setupViewMode(){
+    document.getElementById('seqWindowBtn').style.display = 'none';
     document.getElementById('seqStartBtn').style.display = 'none';
     document.getElementById('seqSaveDraftBtn').style.display = 'none';
     document.getElementById('seqDeleteBtn').style.display = '';
+    document.getElementById('seqDuplicateBtn').style.display = '';
     const pauseBtn = document.getElementById('seqPauseBtn');
     if(currentSequenceStatus === 'active' || currentSequenceStatus === 'paused'){
       pauseBtn.style.display = '';
@@ -1252,6 +1532,9 @@
       const workspaceId = doc.exists ? doc.data().workspaceId : null;
       if(!workspaceId){ showToast('Could not find your workspace.', true); return; }
       currentWorkspaceId = workspaceId;
+      db.collection(`workspaces/${workspaceId}/boards/${boardId}/leads`).get().then(snap=>{
+        boardLeads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
+      }).catch(err=>console.error('Could not load leads for picker', err));
       const lookups = [
         db.doc(`workspaces/${workspaceId}/boards/${boardId}/leads/${leadId}`).get(),
         db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get()
@@ -1285,10 +1568,12 @@
         }
         const seqData = sequenceDoc.data();
         currentSequenceStatus = seqData.status;
+        steps = Array.isArray(seqData.steps) && seqData.steps.length ? seqData.steps : steps;
+        if(seqData.sendingWindow) sendingWindow = seqData.sendingWindow;
         if(seqData.status === 'draft'){
           pageMode = 'draft';
-          steps = Array.isArray(seqData.steps) && seqData.steps.length ? seqData.steps : steps;
           setupCreateOrDraftMode();
+          checkForExistingActiveSequence();
         } else {
           pageMode = 'view';
           return setupViewMode();
@@ -1296,6 +1581,7 @@
       } else {
         pageMode = 'create';
         setupCreateOrDraftMode();
+        checkForExistingActiveSequence();
       }
     }).catch(err=>{
       console.error(err);
