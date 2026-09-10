@@ -3031,11 +3031,26 @@
     appRootRevealed = true;
     const loader = document.getElementById('pageLoader');
     const root = document.getElementById('appRoot');
-    root.classList.remove('fade-in');
-    root.style.display = 'block';
-    void root.offsetWidth;
-    root.classList.add('fade-in');
+    // Start the loader's own fade-out first, on its own — it's a cheap,
+    // compositor-only opacity transition. Revealing #appRoot below forces
+    // a big synchronous layout (it's a huge tree, first time it's ever
+    // been laid out), which blocks the main thread for a beat — if that
+    // happens BEFORE the loader's fade has had a chance to actually start
+    // painting, the transition stalls behind it and then jumps straight
+    // to its end state instead of animating smoothly. Kicking the fade
+    // off first, and giving it two rendered frames' head start via the
+    // double rAF below, means it's already running on the compositor by
+    // the time the heavy layout work blocks the main thread — so it
+    // keeps animating smoothly through that instead of freezing.
     loader.classList.add('hide');
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        root.classList.remove('fade-in');
+        root.style.display = 'block';
+        void root.offsetWidth;
+        root.classList.add('fade-in');
+      });
+    });
     setTimeout(()=>{ loader.style.display = 'none'; }, 420);
   }
   function initFirebaseSync(){
