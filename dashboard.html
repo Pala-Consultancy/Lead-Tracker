@@ -3088,6 +3088,19 @@
       .where('status', '==', 'pending')
       .onSnapshot(snap=>{
         leadsWithScheduledEmails = new Set(snap.docs.map(d=>d.data().leadId));
+        // This listener fires completely independently of the leads one
+        // below — nothing ties their timing together. If it happens to
+        // land right as the initial reveal is fading in, forcing a full
+        // render()/renderBoard() here (rebuilding the entire table via
+        // innerHTML) blocks the main thread for however long that takes,
+        // stalling the fade transition and leaving the loader visibly
+        // stuck on top of already-sharp content for much longer than it
+        // should be. Skipping it before the first reveal is safe: the
+        // leads listener's own buildFullView() below will already read
+        // whatever's in leadsWithScheduledEmails by the time IT runs, so
+        // the "scheduled" badges still end up correct on first paint —
+        // this just avoids a second, badly-timed rebuild on top of that.
+        if(!appRootRevealed) return;
         if(currentView==='board') renderBoard();
         else render();
       }, err=>{
