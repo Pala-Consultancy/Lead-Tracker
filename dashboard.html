@@ -1315,7 +1315,7 @@
     position:fixed;inset:0;z-index:500;
     min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:18px;background:radial-gradient(circle at 50% 0%, var(--c-blue-bg) 0%, var(--paper) 65%);
-    opacity:1;transition:opacity .4s ease;
+    opacity:1;transition:opacity .35s ease; /* matches .fade-in-up's .35s exactly, so the loader is fully gone the instant the content finishes appearing — no lingering ghost */
   }
   #pageLoader.hide{opacity:0;pointer-events:none;}
   @media (prefers-reduced-motion: reduce){ #pageLoader{transition:none;} }
@@ -3071,7 +3071,7 @@
     void root.offsetWidth; // restart the fade-in-up animation cleanly
     root.classList.add('fade-in');
     loader.classList.add('hide');
-    setTimeout(()=>{ loader.style.display = 'none'; }, 420);
+    setTimeout(()=>{ loader.style.display = 'none'; }, 370); // fade is 350ms; small buffer for the transitionend to actually land
   }
   function initFirebaseSync(){
     if(!firebaseConnected){
