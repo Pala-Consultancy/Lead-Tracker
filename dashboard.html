@@ -634,7 +634,7 @@
   /* ---------- Table ---------- */
   .table-wrap{
     background:var(--panel);border:1px solid var(--border);border-radius:10px;
-    overflow:auto;box-shadow:var(--shadow);
+    overflow:auto;box-shadow:var(--shadow);contain:paint;
   }
   table{width:100%;border-collapse:collapse;min-width:960px;}
   thead th{
@@ -758,7 +758,7 @@
     font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#fff;
     background:var(--stat-accent, var(--slate));padding:2px 8px;border-radius:10px;
   }
-  .board-col-cards{overflow-y:auto;flex:1;padding:10px;min-height:80px;}
+  .board-col-cards{overflow-y:auto;flex:1;padding:10px;min-height:80px;contain:layout style paint;}
   .board-col-total{
     font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;color:var(--ink);
     padding:10px 14px;background:rgba(255,255,255,0.55);border-top:1px solid rgba(27,36,48,0.07);
@@ -767,6 +767,7 @@
     background:var(--panel);border-radius:10px;border-left:4px solid var(--stat-accent, var(--teal));
     padding:12px 13px;margin-bottom:9px;cursor:grab;box-shadow:0 1px 3px rgba(27,36,48,0.08);
     transition:box-shadow .15s, transform .1s;display:flex;gap:10px;align-items:flex-start;
+    content-visibility:auto;contain-intrinsic-size:auto 84px;
   }
   .board-card:hover{box-shadow:0 5px 16px rgba(27,36,48,0.14);transform:translateY(-1px);}
   .board-card.dragging{opacity:.35;transform:scale(.98);}
@@ -1440,7 +1441,15 @@
       radial-gradient(circle at 92% 6%, rgba(122,79,181,0.12) 0%, transparent 42%),
       radial-gradient(circle at 50% 100%, rgba(255,179,56,0.07) 0%, transparent 48%),
       var(--paper);
-    background-attachment:fixed;
+    /* No background-attachment:fixed here on purpose — it forces the
+       browser to repaint this whole multi-layer gradient on every single
+       scroll frame, which is one of the most well-documented causes of
+       page-wide scroll jank. Dropping it means the background just
+       scrolls with the page like a normal image would — cheap, no
+       per-frame repaint needed — and visually the difference is
+       negligible since the gradient already fades out well before the
+       page's typical scroll distance.
+    */
   }
   [data-theme="dark"] .title-block{
     position:relative;overflow:hidden;isolation:isolate;
