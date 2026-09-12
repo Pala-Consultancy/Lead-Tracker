@@ -610,6 +610,7 @@
     <div class="seq-panel-actions">
       <button type="button" class="seq-panel-btn danger" id="seqPanelRemoveBtn" style="display:none;">Remove step</button>
       <span style="flex:1;"></span>
+      <button type="button" class="seq-panel-btn" id="seqPanelTestSendBtn">✈️ Send test to myself</button>
       <button type="button" class="seq-panel-btn" id="seqPanelCancelBtn">Cancel</button>
       <button type="button" class="seq-panel-btn primary" id="seqPanelDoneBtn">Done</button>
     </div>
@@ -635,6 +636,7 @@
   const auth = firebase.auth();
   const sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
   const createSequenceFn = firebase.functions().httpsCallable('createSequence');
+  const sendTestEmailFn = firebase.functions().httpsCallable('sendTestEmail');
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -1293,6 +1295,27 @@
   };
   document.getElementById('seqPanelSubject').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter') document.getElementById('seqPanelDoneBtn').click();
+  });
+  document.getElementById('seqPanelTestSendBtn').addEventListener('click', ()=>{
+    if(!leadData || !currentWorkspaceId) return;
+    const subject = document.getElementById('seqPanelSubject').value.trim();
+    const body = document.getElementById('seqPanelBody').value.trim();
+    if(!subject || !body){
+      showToast('Please write a subject and message first.', true);
+      return;
+    }
+    const btn = document.getElementById('seqPanelTestSendBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    sendTestEmailFn({workspaceId: currentWorkspaceId, boardId, leadId, subject, body}).then(result=>{
+      showToast(`Test sent to ${result.data.sentTo} — merge tags filled in using ${leadData.name || 'this lead'}'s real info.`);
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not send the test: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      btn.disabled = false;
+      btn.textContent = '✈️ Send test to myself';
+    });
   });
   document.getElementById('seqPanelRemoveBtn').addEventListener('click', ()=>{
     if(editingIndex === null || editingIndex === 0) return;
