@@ -670,8 +670,11 @@
   }
   .tag-dot{width:6px;height:6px;border-radius:50%;}
   .status-select{
-    font-size:12px;padding:6px 9px;border-radius:6px;font-weight:600;border:1px solid var(--border);
-    cursor:pointer;
+    font-size:12px;padding:6px 26px 6px 10px;border-radius:8px;font-weight:700;border:1px solid var(--border);
+    cursor:pointer;width:auto;min-width:118px;max-width:100%;
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23647084' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center;background-size:13px;
   }
   .outreach-group{display:flex;gap:5px;flex-wrap:wrap;}
   .outreach-chip{
@@ -4083,7 +4086,7 @@
       <td>${esc([l.city,l.country].filter(Boolean).join(', ')) || '<span style="color:var(--slate-light)">—</span>'}</td>
       <td><span class="tag" style="background:${sc.bg};color:${sc.fg};cursor:pointer" onclick="window.__leadActions.filterBySource('${esc(l.source)}')"><span class="tag-dot" style="background:${sc.dot}"></span>${esc(l.source)}</span></td>
       <td>
-        <select class="status-select" style="background:${stc.bg};color:${stc.fg}" onchange="window.__leadActions.updateStatus('${l.id}', this.value)">
+        <select class="status-select" style="background-color:${stc.bg};color:${stc.fg}" onchange="window.__leadActions.updateStatus('${l.id}', this.value)">
           ${['New','Contacted','Call booked','Won','Lost'].map(s=>`<option value="${s}" ${s===l.status?'selected':''}>${t(STATUS_LABEL_KEYS[s])}</option>`).join('')}
         </select>
       </td>
