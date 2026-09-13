@@ -358,6 +358,26 @@
     font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
   }
   .optional-tag{text-transform:none;font-weight:500;color:var(--slate-light);letter-spacing:normal;}
+  .info-icon-wrap{position:relative;display:inline-block;margin-left:4px;}
+  .info-icon{
+    display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;
+    background:var(--border);color:var(--slate);font-size:10px;font-style:italic;font-weight:700;
+    font-family:Georgia,serif;cursor:help;vertical-align:middle;text-transform:none;letter-spacing:normal;
+  }
+  .info-icon:hover, .info-icon:focus{background:var(--teal, #1C5B9E);color:#fff;outline:none;}
+  .info-tooltip{
+    position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);
+    width:240px;background:var(--ink, #1B2430);color:#fff;font-size:11.5px;font-weight:400;line-height:1.5;
+    text-transform:none;letter-spacing:normal;padding:10px 12px;border-radius:9px;box-shadow:0 10px 26px rgba(0,0,0,0.25);
+    opacity:0;visibility:hidden;transition:opacity .15s ease, transform .15s ease;pointer-events:none;z-index:40;
+  }
+  .info-tooltip:after{
+    content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:6px solid transparent;border-top-color:var(--ink, #1B2430);
+  }
+  .info-icon:hover + .info-tooltip, .info-icon:focus + .info-tooltip{
+    opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);
+  }
   .field-missing{border-color:var(--c-red-fg, #C0392B) !important;background:var(--c-red-bg, #FBE8E6) !important;}
   #createBoardForm input, #createBoardForm select{
     font-family:'Inter',sans-serif;font-size:14.5px;padding:10px 13px;
@@ -1120,6 +1140,16 @@
       <div class="field">
         <label for="boardCreatedBy" data-i18n="createdByLabel">Created by</label>
         <input id="boardCreatedBy" type="text" placeholder="e.g. Tom" data-i18n-placeholder="createdByPlaceholder" required>
+      </div>
+      <div class="field">
+        <label for="boardPasswordCreate">
+          🔒 Password protection <span class="optional-tag">(optional)</span>
+          <span class="info-icon-wrap">
+            <span class="info-icon" tabindex="0">i</span>
+            <span class="info-tooltip">Anyone in your workspace can normally open any board. Set a password here and only you (the creator) will get in freely — everyone else has to enter it first. Useful for boards with leads that shouldn't be open to the whole team.</span>
+          </span>
+        </label>
+        <input type="password" id="boardPasswordCreate" placeholder="Leave blank for no password" autocomplete="new-password">
       </div>
       <div class="field span-full" style="flex:0">
         <button type="submit" class="btn btn-primary" data-i18n="createBoardBtn">+ Create board</button>
@@ -3010,6 +3040,12 @@
         return;
       }
 
+      const passwordValue = document.getElementById('boardPasswordCreate').value.trim();
+      if(passwordValue && passwordValue.length < 4){
+        showToast('Please choose a password at least 4 characters long, or leave it blank.', true);
+        document.getElementById('boardPasswordCreate').focus();
+        return;
+      }
       function getFieldValue(id){
         if(id === 'boardIndustry'){
           const v = document.getElementById('boardIndustry').value;
@@ -3078,7 +3114,18 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: user ? user.email : null
       }).then(doc=>{
+        const password = document.getElementById('boardPasswordCreate').value.trim();
         formEl.reset();
+        if(password && manageBoardPasswordFn){
+          return manageBoardPasswordFn({workspaceId, boardId: doc.id, password}).then(()=>{
+            showToast(`"${name}" created with a password — click it below to open it`);
+          }).catch(err=>{
+            // The board itself was created fine — only the password part
+            // failed, so don't make it look like the whole thing failed.
+            console.error('Could not set the password on the new board', err);
+            showToast(`"${name}" created, but the password could not be set: ${err.message || 'please try again from Edit board'}`, true);
+          });
+        }
         showToast(`"${name}" created — click it below to open it`);
       }).catch(err=>{
         showToast(t('couldNotCreateBoard') + ' ' + friendlyErr(err), true);
