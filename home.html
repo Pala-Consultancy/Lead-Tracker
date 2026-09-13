@@ -133,7 +133,7 @@
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
   }
-  .app{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
+  .app{max-width:1320px;margin:0 auto;padding:28px 24px 80px;}
 
   .boards-main-column{flex:1;min-width:0;}
 
@@ -337,6 +337,8 @@
     font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--slate);
     background:var(--c-neutral-bg);padding:6px 10px;border-radius:20px;
   }
+  /* The greeting is already shown in the header title on this page — never show the duplicate pill */
+  #currentUserPill{display:none !important;}
   .pill-settings-link{color:var(--teal);font-weight:700;text-decoration:underline;}
   .pill-settings-link:hover{color:var(--teal-dark, var(--teal));}
   button{font-family:'Inter',sans-serif;cursor:pointer;border:none;}
@@ -604,25 +606,19 @@
   .chat-notify-name{font-size:13px;font-weight:700;color:var(--ink);}
   .chat-notify-preview{font-size:12px;color:var(--slate-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 
-  /* ---------- Settings slide panel ---------- */
-  .settings-overlay{
-    position:fixed;inset:0;background:rgba(27,36,48,0.4);z-index:95;
-    opacity:0;visibility:hidden;transition:opacity .2s ease;
+  /* ---------- Persistent left sidebar ---------- */
+  .home-layout{
+    display:flex;align-items:flex-start;gap:24px;
   }
-  .settings-overlay.open{opacity:1;visibility:visible;}
-  .settings-panel{
-    position:fixed;top:0;right:0;height:100%;width:340px;max-width:90vw;
-    background:var(--panel);z-index:96;box-shadow:-8px 0 30px rgba(27,36,48,0.18);
-    transform:translateX(100%);transition:transform .25s ease;
-    display:flex;flex-direction:column;
+  .home-sidebar{
+    flex:0 0 250px;width:250px;position:sticky;top:24px;
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg, 16px);
+    box-shadow:var(--shadow);padding:22px 18px;display:flex;flex-direction:column;
   }
-  .settings-panel.open{transform:translateX(0);}
-  .settings-panel-header{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:20px 22px;border-bottom:1px solid var(--border);
+  @media (max-width:900px){
+    .home-layout{flex-direction:column;}
+    .home-sidebar{width:100%;position:static;}
   }
-  .settings-panel-header h3{font-family:'Sora',sans-serif;font-size:17px;margin:0;color:var(--ink);}
-  .settings-panel-body{padding:22px;}
     .theme-toggle-row{
     display:flex;gap:8px;margin-bottom:16px;
   }
@@ -1146,6 +1142,59 @@
 
 <div id="appRoot">
 <div class="app">
+  <div class="home-layout">
+  <aside class="home-sidebar" id="settingsPanel">
+    <div class="settings-user-block">
+      <div class="settings-avatar" id="settingsAvatar">?</div>
+      <div>
+        <div class="settings-user-name" id="settingsUserName">—</div>
+        <div class="settings-user-role" id="settingsUserRole" style="display:none"></div>
+        <div class="settings-user-email" id="settingsUserEmail">—</div>
+      </div>
+    </div>
+    <div class="theme-toggle-row">
+      <button class="theme-toggle-btn" id="themeLightBtn">☀️ <span data-i18n="lightMode">Light</span></button>
+      <button class="theme-toggle-btn" id="themeDarkBtn">🌙 <span data-i18n="darkMode">Dark</span></button>
+    </div>
+    <a class="settings-item" href="account.html">
+      <span class="settings-item-icon">👤</span>
+      <span data-i18n="manageAccount">Manage account</span>
+      <span class="settings-item-arrow">→</span>
+    </a>
+    <a class="settings-item" href="team.html">
+      <span class="settings-item-icon">👥</span>
+      <span data-i18n="manageTeam">Manage team</span>
+      <span class="settings-item-arrow">→</span>
+    </a>
+    <a class="settings-item" href="billing.html">
+      <span class="settings-item-icon">💳</span>
+      <span data-i18n="billingPlansLabel">Billing &amp; plans</span>
+      <span class="settings-item-arrow">→</span>
+    </a>
+    <button class="settings-item" id="helpMenuToggle">
+      <span class="settings-item-icon">❓</span>
+      <span data-i18n="helpMenuLabel">Help</span>
+      <span class="settings-item-arrow chevron" id="helpMenuChevron">▾</span>
+    </button>
+    <div class="help-submenu" id="helpSubmenu">
+      <a class="help-submenu-item" href="privacy-policy.html">
+        <span class="icon">🔒</span>
+        <span data-i18n="privacyPolicy">Privacy Policy</span>
+      </a>
+      <a class="help-submenu-item" href="help-center.html">
+        <span class="icon">📚</span>
+        <span data-i18n="helpCenter">Help Center</span>
+      </a>
+      <a class="help-submenu-item" href="feedback.html">
+        <span class="icon">💬</span>
+        <span data-i18n="sendFeedback">Send Feedback</span>
+      </a>
+    </div>
+    <button class="settings-item danger" id="signOutItem">
+      <span class="settings-item-icon">🚪</span>
+      <span data-i18n="signOut">Sign out</span>
+    </button>
+  </aside>
   <div class="boards-main-column">
   <header>
     <div class="title-block">
@@ -1161,15 +1210,14 @@
     </div>
     <div class="header-right">
       <span class="live-badge"><span class="live-dot"></span><span data-i18n="realtimeUpdates">Real-time updates</span></span>
-      <span class="count-pill" id="currentUserPill" style="display:none"></span>
+      <span class="count-pill" id="currentUserPill" style="display:none !important"></span>
       <a class="btn icon-btn-settings" id="chatBtn" href="chat.html" title="Team chat" style="position:relative">💬<span class="notif-badge" id="chatBadge" style="display:none">0</span></a>
       <a class="btn icon-btn-settings" href="boards-trash.html" title="Board Trash">🗑️</a>
-      <button class="btn icon-btn-settings" id="settingsBtn" title="Settings">⚙️</button>
     </div>
   </header>
 
   <div class="home-hub">
-    <a class="home-hub-card" id="homeGoBoards" href="boards.html">
+    <a class="home-hub-card" id="homeGoBoards" href="boards.html?from=home">
       <div class="home-hub-glow"></div>
       <div class="home-hub-icon" style="--hub-accent:var(--teal);--hub-accent2:var(--teal-dark);--hub-accent-soft:var(--c-blue-bg)">📋</div>
       <div class="home-hub-kicker" style="--hub-accent:var(--teal)">Pipeline</div>
@@ -1180,7 +1228,7 @@
         <span class="home-hub-cta">Open <span class="home-hub-arrow">→</span></span>
       </div>
     </a>
-    <a class="home-hub-card" id="homeGoCampaigns" href="campaigns.html">
+    <a class="home-hub-card" id="homeGoCampaigns" href="campaigns.html?from=home">
       <div class="home-hub-glow"></div>
       <div class="home-hub-icon" style="--hub-accent:var(--c-purple-fg);--hub-accent2:var(--c-purple-hover, var(--c-purple-fg));--hub-accent-soft:var(--c-purple-bg)">🎯</div>
       <div class="home-hub-kicker" style="--hub-accent:var(--c-purple-fg)">Outreach</div>
@@ -1195,19 +1243,19 @@
 
   <div class="home-quick-label">Quick access</div>
   <div class="home-quick-grid">
-    <a class="home-quick-card" href="chat.html" style="--hub-accent:var(--teal)">
+    <a class="home-quick-card" href="chat.html?from=home" style="--hub-accent:var(--teal)">
       <div class="home-quick-icon">💬<span class="home-quick-badge" id="homeMessagesBadge" style="display:none">0</span></div>
       <div class="home-quick-label-text">Messages</div>
     </a>
-    <a class="home-quick-card" href="scheduled-emails.html" style="--hub-accent:var(--c-amber-fg)">
+    <a class="home-quick-card" href="scheduled-emails.html?from=home" style="--hub-accent:var(--c-amber-fg)">
       <div class="home-quick-icon">🕒<span class="home-quick-badge" id="homeScheduledBadge" style="display:none">0</span></div>
       <div class="home-quick-label-text">Scheduled emails</div>
     </a>
-    <a class="home-quick-card" href="statistics.html" style="--hub-accent:var(--c-purple-fg)">
+    <a class="home-quick-card" href="statistics.html?from=home" style="--hub-accent:var(--c-purple-fg)">
       <div class="home-quick-icon">📊</div>
       <div class="home-quick-label-text">Statistics</div>
     </a>
-    <a class="home-quick-card" href="team.html" style="--hub-accent:var(--c-green-mid)">
+    <a class="home-quick-card" href="team.html?from=home" style="--hub-accent:var(--c-green-mid)">
       <div class="home-quick-icon">👥</div>
       <div class="home-quick-label-text">Team</div>
     </a>
@@ -1296,6 +1344,7 @@
 
   <footer data-i18n="footerText">© 2026 by PalaTrack BV. - All Rights Reserved</footer>
   </div>
+  </div>
 </div>
 </div>
 
@@ -1378,66 +1427,6 @@
         <button type="submit" class="btn btn-primary" data-i18n="saveChanges">Save changes</button>
       </div>
     </form>
-  </div>
-</div>
-
-<div class="settings-overlay" id="settingsOverlay"></div>
-<div class="settings-panel" id="settingsPanel">
-  <div class="settings-panel-header">
-    <h3 data-i18n="settingsTitle">Settings</h3>
-    <button class="modal-close" id="settingsClose" title="Close">✕</button>
-  </div>
-  <div class="settings-panel-body">
-    <div class="settings-user-block">
-      <div class="settings-avatar" id="settingsAvatar">?</div>
-      <div>
-        <div class="settings-user-name" id="settingsUserName">—</div>
-        <div class="settings-user-role" id="settingsUserRole" style="display:none"></div>
-        <div class="settings-user-email" id="settingsUserEmail">—</div>
-      </div>
-    </div>
-    <div class="theme-toggle-row">
-      <button class="theme-toggle-btn" id="themeLightBtn">☀️ <span data-i18n="lightMode">Light</span></button>
-      <button class="theme-toggle-btn" id="themeDarkBtn">🌙 <span data-i18n="darkMode">Dark</span></button>
-    </div>
-    <a class="settings-item" href="account.html">
-      <span class="settings-item-icon">👤</span>
-      <span data-i18n="manageAccount">Manage account</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <a class="settings-item" href="team.html">
-      <span class="settings-item-icon">👥</span>
-      <span data-i18n="manageTeam">Manage team</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <a class="settings-item" href="billing.html">
-      <span class="settings-item-icon">💳</span>
-      <span data-i18n="billingPlansLabel">Billing &amp; plans</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <button class="settings-item" id="helpMenuToggle">
-      <span class="settings-item-icon">❓</span>
-      <span data-i18n="helpMenuLabel">Help</span>
-      <span class="settings-item-arrow chevron" id="helpMenuChevron">▾</span>
-    </button>
-    <div class="help-submenu" id="helpSubmenu">
-      <a class="help-submenu-item" href="privacy-policy.html">
-        <span class="icon">🔒</span>
-        <span data-i18n="privacyPolicy">Privacy Policy</span>
-      </a>
-      <a class="help-submenu-item" href="help-center.html">
-        <span class="icon">📚</span>
-        <span data-i18n="helpCenter">Help Center</span>
-      </a>
-      <a class="help-submenu-item" href="feedback.html">
-        <span class="icon">💬</span>
-        <span data-i18n="sendFeedback">Send Feedback</span>
-      </a>
-    </div>
-    <button class="settings-item danger" id="signOutItem">
-      <span class="settings-item-icon">🚪</span>
-      <span data-i18n="signOut">Sign out</span>
-    </button>
   </div>
 </div>
 
@@ -2726,18 +2715,6 @@
         loginSuccessEl.style.display = 'block';
       });
     });
-    // ---------- Settings panel ----------
-    const settingsOverlay = document.getElementById('settingsOverlay');
-    const settingsPanel = document.getElementById('settingsPanel');
-    function openSettings(){
-      settingsOverlay.classList.add('open');
-      settingsPanel.classList.add('open');
-    }
-    function closeSettings(){
-      settingsOverlay.classList.remove('open');
-      settingsPanel.classList.remove('open');
-    }
-    document.getElementById('settingsBtn').addEventListener('click', openSettings);
     // ---------- Theme toggle ----------
     function applyTheme(theme){
       if(theme === 'dark'){
@@ -2769,11 +2746,6 @@
       });
     }
 
-    document.getElementById('settingsClose').addEventListener('click', closeSettings);
-    settingsOverlay.addEventListener('click', closeSettings);
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape') closeSettings();
-    });
     document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeBoards){ unsubscribeBoards(); unsubscribeBoards = null; }
       if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
@@ -3371,7 +3343,6 @@
         void loginScreen.offsetWidth;
         loginScreen.classList.add('fade-in');
         currentUserPill.style.display = 'none';
-        closeSettings();
       }
     });
   }
