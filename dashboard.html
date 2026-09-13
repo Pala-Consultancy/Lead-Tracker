@@ -1726,6 +1726,7 @@
       </div>
       <div class="all-boards-group">
         <div style="display:flex;gap:8px;align-items:center;">
+          <a class="btn icon-btn-settings" href="home.html" title="Home">🏠</a>
           <a class="btn icon-btn-settings" id="chatBtn" href="chat.html" title="Team chat" style="position:relative">💬<span class="notif-badge" id="chatBadge" style="display:none">0</span></a>
           <button class="btn icon-btn-settings" id="notifBtn" title="Follow-up reminders" style="position:relative">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
           <a class="btn icon-btn-settings" id="scheduledEmailsLink" href="#" title="Scheduled emails">🕒</a>
@@ -5992,7 +5993,7 @@ ${buildLeadContext()}`;
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
       auth.signInWithEmailAndPassword(email, password).then(()=>{
-        location.href = 'boards.html';
+        location.href = 'home.html';
       }).catch(err=>{
         if(err.code === 'auth/multi-factor-auth-required'){
           showMfaForm(err.resolver);
@@ -6044,7 +6045,7 @@ ${buildLeadContext()}`;
       const hint = pendingMfaResolver.hints[0];
       const assertion = firebase.auth.TotpMultiFactorGenerator.assertionForSignIn(hint.uid, code);
       pendingMfaResolver.resolveSignIn(assertion).then(()=>{
-        location.href = 'boards.html';
+        location.href = 'home.html';
       }).catch(err=>{
         errorEl.textContent = "That code didn't work — please try again.";
         errorEl.style.display = '';
