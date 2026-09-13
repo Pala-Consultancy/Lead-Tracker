@@ -70,6 +70,13 @@
     box-shadow:0 3px 8px rgba(28,91,158,0.28);
   }
   .seq-lead-name{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;}
+  .seq-campaign-name-input{
+    font-family:'Sora',sans-serif;font-size:16px;font-weight:700;border:none;background:none;
+    padding:2px 4px;border-radius:6px;color:var(--ink);min-width:180px;
+  }
+  .seq-campaign-name-input:hover, .seq-campaign-name-input:focus{background:var(--panel-alt);outline:none;}
+  .seq-inline-link-btn{border:none;background:none;color:var(--teal);cursor:pointer;font:inherit;padding:0;text-decoration:underline;}
+  .seq-inline-link-btn:hover{color:var(--teal-deep);}
   .seq-lead-email{font-size:12px;color:var(--slate);}
   .seq-step-pill{
     font-size:11px;font-weight:700;color:var(--teal);background:var(--panel-alt);
@@ -325,6 +332,15 @@
   .picker-item-name{font-size:13.5px;font-weight:600;}
   .picker-item-email{font-size:11.5px;color:var(--slate);}
   .picker-empty{padding:30px;text-align:center;color:var(--slate);font-size:13px;}
+  .picker-close{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--border-soft);}
+  .picker-close #pickerCloseBtn{padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--panel);font-family:'Inter',sans-serif;}
+  .picker-close #pickerCloseBtn:hover{background:var(--panel-alt);}
+  .picker-item.multi{gap:9px;}
+  .picker-item-check{
+    width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;transition:all .12s;
+  }
+  .picker-item.selected .picker-item-check{background:var(--teal);border-color:var(--teal);}
 
   /* ---------- Edit panel ---------- */
   .seq-panel-overlay{
@@ -471,6 +487,9 @@
       <a class="seq-sidebar-link active" id="navSequences" href="#">
         <span class="icon">📧</span> Sequences
       </a>
+      <a class="seq-sidebar-link" id="navCampaigns" href="#">
+        <span class="icon">🎯</span> Campaigns
+      </a>
       <a class="seq-sidebar-link" id="navScheduled" href="#">
         <span class="icon">🕒</span> Scheduled
       </a>
@@ -496,11 +515,20 @@
           Back to sequences
         </a>
         <div class="seq-lead-avatar" id="seqLeadAvatar">?</div>
-        <div>
+        <div id="seqLeadHeaderInfo">
           <div class="seq-lead-name">
             <span id="seqLeadName">Loading…</span><span class="seq-step-pill" id="seqStepPill" style="display:none;"></span>
           </div>
           <div class="seq-lead-email" id="seqLeadEmail"></div>
+        </div>
+        <div id="seqCampaignHeaderInfo" style="display:none;">
+          <div class="seq-lead-name">
+            <input type="text" id="seqCampaignNameInput" placeholder="Untitled campaign" class="seq-campaign-name-input">
+            <span class="seq-step-pill" id="seqStepPillCampaign" style="display:none;"></span>
+          </div>
+          <div class="seq-lead-email">
+            <span id="seqCampaignLeadCount">0 leads selected</span> · <button type="button" id="seqChangeLeadsBtn" class="seq-inline-link-btn">Change leads</button>
+          </div>
         </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
@@ -580,12 +608,15 @@
 <div class="picker-overlay" id="pickerOverlay">
   <div class="picker-modal">
     <div class="picker-head">
-      <h3>Duplicate to another lead</h3>
-      <p>Pick which lead gets a copy of this sequence — as a new draft, so you can review it before starting.</p>
+      <h3 id="pickerTitle">Duplicate to another lead</h3>
+      <p id="pickerDesc">Pick which lead gets a copy of this sequence — as a new draft, so you can review it before starting.</p>
       <input type="text" class="picker-search" id="pickerSearch" placeholder="Search leads by name or company...">
     </div>
     <div class="picker-list" id="pickerList"></div>
-    <div class="picker-close"><button type="button" id="pickerCloseBtn">Cancel</button></div>
+    <div class="picker-close">
+      <button type="button" id="pickerConfirmBtn" class="seq-panel-btn primary" style="display:none;">Confirm selection</button>
+      <button type="button" id="pickerCloseBtn">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -702,6 +733,7 @@
   const auth = firebase.auth();
   const sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
   const createSequenceFn = firebase.functions().httpsCallable('createSequence');
+  const createCampaignFn = firebase.functions().httpsCallable('createCampaign');
   const sendTestEmailFn = firebase.functions().httpsCallable('sendTestEmail');
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
@@ -767,8 +799,18 @@
     });
   }
 
-  // ---------- Duplicate this sequence to another lead ----------
-  function openPicker(){
+  // ---------- Lead picker — single-select (duplicate) or multi-select (campaign) ----------
+  let pickerMultiSelect = false;
+  let pickerSelectedIds = new Set();
+  let pickerOnConfirm = null;
+  function openPicker(options = {}){
+    pickerMultiSelect = !!options.multiSelect;
+    pickerSelectedIds = new Set(options.preselected || []);
+    pickerOnConfirm = options.onConfirm || null;
+    document.getElementById('pickerTitle').textContent = options.title || 'Duplicate to another lead';
+    document.getElementById('pickerDesc').textContent = options.desc ||
+      'Pick which lead gets a copy of this sequence — as a new draft, so you can review it before starting.';
+    document.getElementById('pickerConfirmBtn').style.display = pickerMultiSelect ? '' : 'none';
     document.getElementById('pickerSearch').value = '';
     renderPickerList('');
     document.getElementById('pickerOverlay').classList.add('open');
@@ -786,15 +828,17 @@
       list.innerHTML = `<div class="picker-empty">No leads match "${esc(query)}".</div>`;
       return;
     }
-    list.innerHTML = filtered.slice(0, 50).map(l=>`
-      <div class="picker-item" data-id="${esc(l.id)}">
+    list.innerHTML = filtered.slice(0, 50).map(l=>{
+      const selected = pickerMultiSelect && pickerSelectedIds.has(l.id);
+      return `<div class="picker-item ${pickerMultiSelect ? 'multi' : ''} ${selected ? 'selected' : ''}" data-id="${esc(l.id)}">
+        ${pickerMultiSelect ? `<span class="picker-item-check">${selected ? '✓' : ''}</span>` : ''}
         <div class="picker-item-avatar">${esc(initials(l.name))}</div>
         <div>
           <div class="picker-item-name">${esc(l.name || 'Unnamed lead')}</div>
           <div class="picker-item-email">${esc(l.email || 'No email on file')}</div>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
     list.querySelectorAll('.picker-item').forEach(item=>{
       item.addEventListener('click', ()=>{
         const lead = boardLeads.find(l=>l.id === item.dataset.id);
@@ -802,10 +846,25 @@
           showToast('This lead has no email address on file.', true);
           return;
         }
-        duplicateSequenceToLead(item.dataset.id);
+        if(pickerMultiSelect){
+          if(pickerSelectedIds.has(item.dataset.id)) pickerSelectedIds.delete(item.dataset.id);
+          else pickerSelectedIds.add(item.dataset.id);
+          renderPickerList(document.getElementById('pickerSearch').value);
+        } else {
+          duplicateSequenceToLead(item.dataset.id);
+        }
       });
     });
   }
+  document.getElementById('pickerConfirmBtn').addEventListener('click', ()=>{
+    if(pickerSelectedIds.size === 0){
+      showToast('Please select at least one lead.', true);
+      return;
+    }
+    const ids = Array.from(pickerSelectedIds);
+    closePicker();
+    if(pickerOnConfirm) pickerOnConfirm(ids);
+  });
   function duplicateSequenceToLead(newLeadId){
     closePicker();
     // Deep copy the steps — a duplicate shouldn't inherit a specific
@@ -829,17 +888,53 @@
       showToast('Could not duplicate that: ' + (err.message || 'please try again.'), true);
     });
   }
-  document.getElementById('seqDuplicateBtn').addEventListener('click', openPicker);
+  document.getElementById('seqDuplicateBtn').addEventListener('click', ()=> openPicker());
   document.getElementById('pickerCloseBtn').addEventListener('click', closePicker);
   document.getElementById('pickerOverlay').addEventListener('click', (e)=>{
     if(e.target.id === 'pickerOverlay') closePicker();
   });
   document.getElementById('pickerSearch').addEventListener('input', (e)=> renderPickerList(e.target.value));
 
+  // ---------- Campaign mode: picking which leads it applies to ----------
+  function updateCampaignLeadCountUI(){
+    document.getElementById('seqCampaignLeadCount').textContent =
+      `${selectedLeads.length} lead${selectedLeads.length === 1 ? '' : 's'} selected`;
+    document.getElementById('seqStartBtn').disabled = selectedLeads.length === 0;
+    if(selectedLeads.length > 0){
+      // Preview/test-send now reflects a real lead instead of the
+      // placeholder — first-selected, since that's the most predictable
+      // choice from the user's point of view.
+      const first = selectedLeads[0];
+      leadData = {...leadData, name: first.name, company: first.company || '', email: first.email};
+    }
+  }
+  function openLeadMultiPicker(){
+    openPicker({
+      multiSelect: true,
+      preselected: selectedLeads.map(l=>l.id),
+      title: 'Who is this campaign for?',
+      desc: `Pick every lead this campaign should send to. Up to 200 leads, and each one still stops on its own if that lead replies or their status changes.`,
+      onConfirm: (ids)=>{
+        selectedLeads = ids.map(id=>{
+          const l = boardLeads.find(b=>b.id === id);
+          return {id, name: l ? l.name : 'Unnamed lead', company: l ? l.company : '', email: l ? l.email : ''};
+        });
+        updateCampaignLeadCountUI();
+      }
+    });
+  }
+  document.getElementById('seqChangeLeadsBtn').addEventListener('click', openLeadMultiPicker);
+  document.getElementById('seqCampaignNameInput').addEventListener('input', (e)=>{
+    campaignName = e.target.value;
+  });
+
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   const leadId = params.get('lead');
   const sequenceIdParam = params.get('sequenceId');
+  const isCampaignMode = params.get('campaign') === '1' && !leadId;
+  let selectedLeads = []; // campaign mode only: [{id, name, email}]
+  let campaignName = '';
   // 'create' = building a brand new sequence, nothing saved yet.
   // 'draft'  = editing a previously-saved-but-not-started sequence.
   // 'view'   = looking at a sequence that's already active/paused/done —
@@ -852,6 +947,7 @@
   const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
   document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;
   document.getElementById('navSequences').href = `sequences.html${boardQS}`;
+  document.getElementById('navCampaigns').href = `campaigns.html${boardQS}`;
   document.getElementById('navScheduled').href = `scheduled-emails.html${boardQS}`;
   document.getElementById('navTrash').href = `trash.html${boardQS}`;
 
@@ -1574,6 +1670,11 @@
   });
   document.getElementById('seqPanelTestSendBtn').addEventListener('click', ()=>{
     if(!leadData || !currentWorkspaceId) return;
+    const testLeadId = isCampaignMode ? (selectedLeads[0] && selectedLeads[0].id) : leadId;
+    if(isCampaignMode && !testLeadId){
+      showToast('Pick at least one lead first — a test send needs a real lead to preview merge tags with.', true);
+      return;
+    }
     const subject = document.getElementById('seqPanelSubject').value.trim();
     const bodyHtml = document.getElementById('seqPanelBody').innerHTML.trim();
     const body = htmlToPlainText(bodyHtml).trim();
@@ -1585,7 +1686,7 @@
     btn.disabled = true;
     btn.textContent = 'Sending...';
     const attachments = stepAttachments.map(a=>({filename: a.name, mimeType: a.mimeType, data: a.base64}));
-    sendTestEmailFn({workspaceId: currentWorkspaceId, boardId, leadId, subject, body, htmlBody: bodyHtml, attachments}).then(result=>{
+    sendTestEmailFn({workspaceId: currentWorkspaceId, boardId, leadId: testLeadId, subject, body, htmlBody: bodyHtml, attachments}).then(result=>{
       showToast(`Test sent to ${result.data.sentTo} — merge tags filled in using ${leadData.name || 'this lead'}'s real info.`);
     }).catch(err=>{
       console.error(err);
@@ -1752,13 +1853,27 @@
       showToast('This page is still loading — please wait a moment and try again.', true);
       return;
     }
+    if(isCampaignMode && selectedLeads.length === 0){
+      showToast('Please pick at least one lead for this campaign first.', true);
+      return;
+    }
     const saveBtn = document.getElementById('seqSaveDraftBtn');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
-    createSequenceFn(buildSequencePayload('draft')).then(result=>{
-      currentSequenceDocId = result.data.sequenceId;
-      showToast('Saved as draft.');
-      setTimeout(()=>{ location.href = boardId ? `sequences.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 900);
+    const savePromise = isCampaignMode
+      ? createCampaignFn({
+          workspaceId: currentWorkspaceId, boardId, name: campaignName || 'Untitled campaign',
+          steps, sendingWindow, status: 'draft', leadIds: selectedLeads.map(l=>l.id)
+        })
+      : createSequenceFn(buildSequencePayload('draft'));
+    savePromise.then(result=>{
+      if(!isCampaignMode) currentSequenceDocId = result.data.sequenceId;
+      showToast(isCampaignMode ? 'Campaign saved as draft.' : 'Saved as draft.');
+      setTimeout(()=>{
+        location.href = isCampaignMode
+          ? (boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'boards.html')
+          : (boardId ? `sequences.html?board=${encodeURIComponent(boardId)}` : 'boards.html');
+      }, 900);
     }).catch(err=>{
       console.error(err);
       showToast('Could not save draft: ' + (err.message || 'please try again.'), true);
@@ -1768,8 +1883,51 @@
     });
   });
 
+  // Sends (or schedules) step 1 for one lead/sequence, then schedules every
+  // follow-up step — exactly what a single sequence's "Start" does, pulled
+  // out into its own function so a campaign can call this once per lead
+  // instead of duplicating the logic in a loop.
+  function sendAndScheduleForLead(leadEmail, targetLeadId, sequenceId, senderName, isScheduledStart, firstSendAtMs){
+    const first = isScheduledStart
+      ? db.collection('scheduledEmails').add({
+          workspaceId: currentWorkspaceId, boardId, leadId: targetLeadId,
+          to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: steps[0].bodyHtml || '', attachments: steps[0].attachments || [],
+          sentBy: auth.currentUser.uid, sentByName: senderName, status: 'pending',
+          sendAt: firebase.firestore.Timestamp.fromDate(new Date(firstSendAtMs)),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          sequenceId, stepNumber: 1, cancelIfReplied: false
+        })
+      : sendLeadEmailFn({
+          workspaceId: currentWorkspaceId, boardId, leadId: targetLeadId,
+          to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: steps[0].bodyHtml || '', attachments: steps[0].attachments || []
+        });
+    return first.then(()=>{
+      if(steps.length === 1) return Promise.resolve();
+      let cumulativeMs = firstSendAtMs;
+      const writes = [];
+      for(let i=1; i<steps.length; i++){
+        cumulativeMs += delayMs(steps[i]);
+        const adjustedMs = adjustToSendingWindow(cumulativeMs);
+        writes.push(db.collection('scheduledEmails').add({
+          workspaceId: currentWorkspaceId, boardId, leadId: targetLeadId,
+          to: leadEmail, cc: [], subject: steps[i].subject, body: steps[i].body, htmlBody: steps[i].bodyHtml || '', attachments: steps[i].attachments || [],
+          sentBy: auth.currentUser.uid, sentByName: senderName, status: 'pending',
+          sendAt: firebase.firestore.Timestamp.fromDate(new Date(adjustedMs)),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          sequenceId, stepNumber: i+1, cancelIfReplied: true
+        }));
+        cumulativeMs = adjustedMs;
+      }
+      return Promise.all(writes);
+    });
+  }
+
   document.getElementById('seqStartBtn').addEventListener('click', ()=>{
     if(!leadData || !currentWorkspaceId) return;
+    if(isCampaignMode && selectedLeads.length === 0){
+      showToast('Please pick at least one lead for this campaign first.', true);
+      return;
+    }
     for(let i=0; i<steps.length; i++){
       if(!steps[i].subject || !steps[i].body){
         showToast(`Please finish writing ${i===0 ? 'the first email' : 'step '+(i+1)} before starting.`, true);
@@ -1784,7 +1942,7 @@
       openEditPanel(0);
       return;
     }
-    if(document.getElementById('duplicateWarningBanner').style.display !== 'none'){
+    if(!isCampaignMode && document.getElementById('duplicateWarningBanner').style.display !== 'none'){
       showConfirmModal({
         title: 'Start this anyway?',
         message: 'This lead already has another sequence running. Starting this one too means they could get emailed twice around the same time.',
@@ -1797,58 +1955,62 @@
     actuallyStartSequence(isScheduledStart, firstSendAtMs);
   });
 
+  function actuallyStartCampaign(isScheduledStart, firstSendAtMs){
+    const startBtn = document.getElementById('seqStartBtn');
+    startBtn.disabled = true;
+    startBtn.textContent = '🚀 Launching...';
+    startBtn.classList.add('launching');
+    const senderName = (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone';
+
+    createCampaignFn({
+      workspaceId: currentWorkspaceId, boardId, name: campaignName || 'Untitled campaign',
+      steps, sendingWindow, status: 'active', leadIds: selectedLeads.map(l=>l.id)
+    }).then(result=>{
+      const {sequences, skippedLeads} = result.data;
+      // Bounded concurrency (5 at a time) rather than firing every lead's
+      // send at once — kinder to Gmail's per-user rate limits on a large
+      // campaign, and if any individual lead's send fails it doesn't take
+      // the rest down with it.
+      let idx = 0;
+      function next(){
+        if(idx >= sequences.length) return Promise.resolve();
+        const s = sequences[idx++];
+        return sendAndScheduleForLead(s.leadEmail, s.leadId, s.sequenceId, senderName, isScheduledStart, firstSendAtMs)
+          .catch(err=>console.error(`Campaign: send/schedule failed for lead ${s.leadId}`, err))
+          .then(next);
+      }
+      const workers = Array.from({length: Math.min(5, sequences.length)}, next);
+      return Promise.all(workers).then(()=>({sequences, skippedLeads}));
+    }).then(({sequences, skippedLeads})=>{
+      startBtn.classList.remove('launching');
+      startBtn.textContent = '✓ Campaign live';
+      startBtn.style.background = 'linear-gradient(135deg, var(--success), #164F41)';
+      const skipNote = skippedLeads.length ? ` (${skippedLeads.length} lead${skippedLeads.length===1?'':'s'} skipped — already running or missing an email)` : '';
+      showToast(`Campaign started for ${sequences.length} lead${sequences.length===1?'':'s'}${skipNote}.`);
+      setTimeout(()=>{ location.href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 1400);
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not start the campaign: ' + (err.message || 'please try again.'), true);
+      startBtn.classList.remove('launching');
+      startBtn.disabled = false;
+      startBtn.textContent = '🚀 Start sequence';
+    });
+  }
+
   function actuallyStartSequence(isScheduledStart, firstSendAtMs){
+    if(isCampaignMode) return actuallyStartCampaign(isScheduledStart, firstSendAtMs);
     const startBtn = document.getElementById('seqStartBtn');
     startBtn.disabled = true;
     startBtn.textContent = '🚀 Launching...';
     startBtn.classList.add('launching');
     const leadEmail = leadData.email;
+    const senderName = (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone';
     let sequenceId; // set once createSequenceFn resolves with the real id
 
     createSequenceFn({...buildSequencePayload('active'), stampStartedAt: true}).then(result=>{
       sequenceId = result.data.sequenceId;
       currentSequenceDocId = sequenceId;
-      if(isScheduledStart){
-        // First email is scheduled for later too — it becomes a regular
-        // scheduledEmails step, same machinery as the follow-ups, just
-        // with nothing before it to cancel against.
-        return db.collection('scheduledEmails').add({
-          workspaceId: currentWorkspaceId, boardId, leadId,
-          to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: steps[0].bodyHtml || '', attachments: steps[0].attachments || [],
-          sentBy: auth.currentUser.uid,
-          sentByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
-          status: 'pending',
-          sendAt: firebase.firestore.Timestamp.fromDate(new Date(firstSendAtMs)),
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          sequenceId, stepNumber: 1, cancelIfReplied: false
-        });
-      }
-      return sendLeadEmailFn({
-        workspaceId: currentWorkspaceId, boardId, leadId,
-        to: leadEmail, cc: [], subject: steps[0].subject, body: steps[0].body, htmlBody: steps[0].bodyHtml || '', attachments: steps[0].attachments || []
-      });
-    }).then(()=>{
-      if(steps.length === 1) return Promise.resolve();
-      let cumulativeMs = firstSendAtMs;
-      const writes = [];
-      for(let i=1; i<steps.length; i++){
-        cumulativeMs += delayMs(steps[i]);
-        const adjustedMs = adjustToSendingWindow(cumulativeMs);
-        writes.push(db.collection('scheduledEmails').add({
-          workspaceId: currentWorkspaceId, boardId, leadId,
-          to: leadEmail, cc: [], subject: steps[i].subject, body: steps[i].body, htmlBody: steps[i].bodyHtml || '', attachments: steps[i].attachments || [],
-          sentBy: auth.currentUser.uid,
-          sentByName: (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone',
-          status: 'pending',
-          sendAt: firebase.firestore.Timestamp.fromDate(new Date(adjustedMs)),
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          sequenceId, stepNumber: i+1, cancelIfReplied: true
-        }));
-        // The next step's delay counts from when this one actually lands
-        // (post-adjustment), not the theoretical un-adjusted time.
-        cumulativeMs = adjustedMs;
-      }
-      return Promise.all(writes);
+      return sendAndScheduleForLead(leadEmail, leadId, sequenceId, senderName, isScheduledStart, firstSendAtMs);
     }).then(()=>{
       startBtn.classList.remove('launching');
       startBtn.textContent = '✓ Sequence live';
@@ -1977,11 +2139,47 @@
       location.href = 'boards.html';
       return;
     }
-    if(!boardId || !leadId){
-      document.body.innerHTML = '<div style="padding:60px;text-align:center;font-family:Inter,sans-serif;">This page needs a board and lead specified in the link.</div>';
+    if(!boardId || (!leadId && !isCampaignMode)){
+      document.body.innerHTML = '<div style="padding:60px;text-align:center;font-family:Inter,sans-serif;">This page needs a board and lead (or campaign) specified in the link.</div>';
       return;
     }
     document.getElementById('appRoot').style.display = 'flex';
+    if(isCampaignMode){
+      document.getElementById('seqLeadHeaderInfo').style.display = 'none';
+      document.getElementById('seqCampaignHeaderInfo').style.display = '';
+      document.getElementById('seqDuplicateBtn').style.display = 'none'; // duplicating a campaign-in-progress isn't a supported flow yet
+      document.title = 'New campaign · PalaTrack';
+      db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
+        const workspaceId = doc.exists ? doc.data().workspaceId : null;
+        if(!workspaceId){ showToast('Could not find your workspace.', true); return; }
+        currentWorkspaceId = workspaceId;
+        return Promise.all([
+          db.collection(`workspaces/${workspaceId}/boards/${boardId}/leads`).get(),
+          db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get()
+        ]);
+      }).then(results=>{
+        if(!results) return;
+        const [leadsSnap, memberDoc] = results;
+        boardLeads = leadsSnap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
+        const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
+        document.getElementById('seqSidebarUserName').textContent = myName;
+        document.getElementById('seqSidebarAvatar').textContent = initials(myName);
+        // A synthetic "lead" purely so the existing per-lead preview/test-send
+        // code (which all assumes one real lead) has something to work with
+        // before any real leads are picked — replaced with the first real
+        // selected lead's data the moment leads are actually chosen, for a
+        // genuinely accurate preview.
+        leadData = {name: 'Sample Lead', company: 'Acme Inc', email: user.email || '', __senderName: myName};
+        pageMode = 'create';
+        setupCreateOrDraftMode();
+        updateCampaignLeadCountUI();
+        openLeadMultiPicker();
+      }).catch(err=>{
+        console.error(err);
+        showToast('Could not load this board.', true);
+      });
+      return;
+    }
     db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
       const workspaceId = doc.exists ? doc.data().workspaceId : null;
       if(!workspaceId){ showToast('Could not find your workspace.', true); return; }
