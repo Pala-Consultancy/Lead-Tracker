@@ -734,6 +734,7 @@
   const sendLeadEmailFn = firebase.functions().httpsCallable('sendLeadEmail');
   const createSequenceFn = firebase.functions().httpsCallable('createSequence');
   const createCampaignFn = firebase.functions().httpsCallable('createCampaign');
+  const updateCampaignContentFn = firebase.functions().httpsCallable('updateCampaignContent');
   const sendTestEmailFn = firebase.functions().httpsCallable('sendTestEmail');
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
@@ -933,8 +934,10 @@
   const leadId = params.get('lead');
   const sequenceIdParam = params.get('sequenceId');
   const isCampaignMode = params.get('campaign') === '1' && !leadId;
+  const campaignIdParam = isCampaignMode ? params.get('campaignId') : null; // present = editing an existing campaign, absent = creating a new one
   let selectedLeads = []; // campaign mode only: [{id, name, email}]
   let campaignName = '';
+  let currentCampaignStatus = null; // campaign edit mode only
   // 'create' = building a brand new sequence, nothing saved yet.
   // 'draft'  = editing a previously-saved-but-not-started sequence.
   // 'view'   = looking at a sequence that's already active/paused/done —
@@ -1858,28 +1861,34 @@
       return;
     }
     const saveBtn = document.getElementById('seqSaveDraftBtn');
+    const isEditingCampaign = isCampaignMode && !!campaignIdParam;
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
-    const savePromise = isCampaignMode
-      ? createCampaignFn({
-          workspaceId: currentWorkspaceId, boardId, name: campaignName || 'Untitled campaign',
-          steps, sendingWindow, status: 'draft', leadIds: selectedLeads.map(l=>l.id)
+    const savePromise = isEditingCampaign
+      ? updateCampaignContentFn({
+          workspaceId: currentWorkspaceId, campaignId: campaignIdParam,
+          name: campaignName, steps, sendingWindow
         })
-      : createSequenceFn(buildSequencePayload('draft'));
+      : isCampaignMode
+        ? createCampaignFn({
+            workspaceId: currentWorkspaceId, boardId, name: campaignName || 'Untitled campaign',
+            steps, sendingWindow, status: 'draft', leadIds: selectedLeads.map(l=>l.id)
+          })
+        : createSequenceFn(buildSequencePayload('draft'));
     savePromise.then(result=>{
       if(!isCampaignMode) currentSequenceDocId = result.data.sequenceId;
-      showToast(isCampaignMode ? 'Campaign saved as draft.' : 'Saved as draft.');
+      showToast(isEditingCampaign ? 'Campaign updated.' : (isCampaignMode ? 'Campaign saved as draft.' : 'Saved as draft.'));
       setTimeout(()=>{
         location.href = isCampaignMode
-          ? (boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'boards.html')
+          ? (boardId ? (isEditingCampaign ? `campaigns.html?board=${encodeURIComponent(boardId)}&campaignId=${encodeURIComponent(campaignIdParam)}` : `campaigns.html?board=${encodeURIComponent(boardId)}`) : 'boards.html')
           : (boardId ? `sequences.html?board=${encodeURIComponent(boardId)}` : 'boards.html');
       }, 900);
     }).catch(err=>{
       console.error(err);
-      showToast('Could not save draft: ' + (err.message || 'please try again.'), true);
+      showToast('Could not save: ' + (err.message || 'please try again.'), true);
     }).finally(()=>{
       saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Save as draft';
+      saveBtn.textContent = isEditingCampaign ? '💾 Save changes' : '💾 Save as draft';
     });
   });
 
@@ -1961,12 +1970,20 @@
     startBtn.textContent = '🚀 Launching...';
     startBtn.classList.add('launching');
     const senderName = (leadData.__senderName) || (auth.currentUser && auth.currentUser.email) || 'Someone';
+    const isActivatingExisting = !!campaignIdParam;
 
-    createCampaignFn({
-      workspaceId: currentWorkspaceId, boardId, name: campaignName || 'Untitled campaign',
-      steps, sendingWindow, status: 'active', leadIds: selectedLeads.map(l=>l.id)
-    }).then(result=>{
-      const {sequences, skippedLeads} = result.data;
+    const startPromise = isActivatingExisting
+      ? updateCampaignContentFn({
+          workspaceId: currentWorkspaceId, campaignId: campaignIdParam,
+          name: campaignName, steps, sendingWindow, activate: true
+        }).then(result=>({sequences: result.data.sequences, skippedLeads: []}))
+      : createCampaignFn({
+          workspaceId: currentWorkspaceId, boardId, name: campaignName || 'Untitled campaign',
+          steps, sendingWindow, status: 'active', leadIds: selectedLeads.map(l=>l.id)
+        });
+
+    startPromise.then(result=>{
+      const {sequences, skippedLeads} = result.data || result;
       // Bounded concurrency (5 at a time) rather than firing every lead's
       // send at once — kinder to Gmail's per-user rate limits on a large
       // campaign, and if any individual lead's send fails it doesn't take
@@ -1987,7 +2004,13 @@
       startBtn.style.background = 'linear-gradient(135deg, var(--success), #164F41)';
       const skipNote = skippedLeads.length ? ` (${skippedLeads.length} lead${skippedLeads.length===1?'':'s'} skipped — already running or missing an email)` : '';
       showToast(`Campaign started for ${sequences.length} lead${sequences.length===1?'':'s'}${skipNote}.`);
-      setTimeout(()=>{ location.href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'boards.html'; }, 1400);
+      setTimeout(()=>{
+        location.href = boardId
+          ? (isActivatingExisting
+              ? `campaigns.html?board=${encodeURIComponent(boardId)}&campaignId=${encodeURIComponent(campaignIdParam)}`
+              : `campaigns.html?board=${encodeURIComponent(boardId)}`)
+          : 'boards.html';
+      }, 1400);
     }).catch(err=>{
       console.error(err);
       showToast('Could not start the campaign: ' + (err.message || 'please try again.'), true);
@@ -2148,18 +2171,23 @@
       document.getElementById('seqLeadHeaderInfo').style.display = 'none';
       document.getElementById('seqCampaignHeaderInfo').style.display = '';
       document.getElementById('seqDuplicateBtn').style.display = 'none'; // duplicating a campaign-in-progress isn't a supported flow yet
-      document.title = 'New campaign · PalaTrack';
+      document.title = (campaignIdParam ? 'Edit campaign' : 'New campaign') + ' · PalaTrack';
       db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
         const workspaceId = doc.exists ? doc.data().workspaceId : null;
         if(!workspaceId){ showToast('Could not find your workspace.', true); return; }
         currentWorkspaceId = workspaceId;
-        return Promise.all([
+        const lookups = [
           db.collection(`workspaces/${workspaceId}/boards/${boardId}/leads`).get(),
           db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get()
-        ]);
+        ];
+        if(campaignIdParam){
+          lookups.push(db.doc(`campaigns/${campaignIdParam}`).get());
+          lookups.push(db.collection('sequences').where('workspaceId', '==', workspaceId).where('campaignId', '==', campaignIdParam).get());
+        }
+        return Promise.all(lookups);
       }).then(results=>{
         if(!results) return;
-        const [leadsSnap, memberDoc] = results;
+        const [leadsSnap, memberDoc, campaignDoc, memberSeqsSnap] = results;
         boardLeads = leadsSnap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
         const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
         document.getElementById('seqSidebarUserName').textContent = myName;
@@ -2170,6 +2198,46 @@
         // selected lead's data the moment leads are actually chosen, for a
         // genuinely accurate preview.
         leadData = {name: 'Sample Lead', company: 'Acme Inc', email: user.email || '', __senderName: myName};
+
+        if(campaignIdParam){
+          if(!campaignDoc || !campaignDoc.exists){
+            showToast('That campaign could not be found — it may have been deleted.', true);
+            document.getElementById('seqCanvas').innerHTML = '<div style="padding:40px;color:var(--slate);">This campaign no longer exists.</div>';
+            document.getElementById('seqStartBtn').style.display = 'none';
+            document.getElementById('seqSaveDraftBtn').style.display = 'none';
+            return;
+          }
+          const cData = campaignDoc.data();
+          currentCampaignStatus = cData.status;
+          campaignName = cData.name || '';
+          document.getElementById('seqCampaignNameInput').value = campaignName;
+          steps = Array.isArray(cData.steps) && cData.steps.length ? cData.steps : steps;
+          if(cData.sendingWindow) sendingWindow = cData.sendingWindow;
+          selectedLeads = memberSeqsSnap.docs
+            .filter(d => d.data().status !== 'deleted')
+            .map(d=>{
+              const lId = d.data().leadId;
+              const found = boardLeads.find(l => l.id === lId);
+              return {id: lId, name: found ? found.name : '', company: found ? found.company : '', email: found ? found.email : ''};
+            });
+          updateCampaignLeadCountUI();
+          document.getElementById('seqChangeLeadsBtn').style.display = 'none'; // leads are fixed once a campaign has been created
+
+          if(cData.status === 'draft'){
+            pageMode = 'draft';
+            setupCreateOrDraftMode();
+          } else {
+            // Already running — content-only editing (see
+            // actuallyStartSequence's campaign branch and
+            // updateCampaignContent.js for what that means in practice).
+            pageMode = 'draft';
+            setupCreateOrDraftMode();
+            document.getElementById('seqStartBtn').style.display = 'none';
+            document.getElementById('seqSaveDraftBtn').textContent = '💾 Save changes';
+          }
+          return;
+        }
+
         pageMode = 'create';
         setupCreateOrDraftMode();
         updateCampaignLeadCountUI();
