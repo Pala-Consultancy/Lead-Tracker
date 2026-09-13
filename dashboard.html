@@ -1257,49 +1257,79 @@
   .modal-close:hover{background:var(--c-red-bg);color:var(--c-red-fg);border-color:var(--c-red-fg);}
 
   .drawer-overlay{
-    position:fixed;inset:0;background:rgba(27,36,48,0.4);z-index:60;
+    position:fixed;inset:0;background:rgba(15,22,32,0.45);z-index:60;
     opacity:0;visibility:hidden;transition:opacity .2s ease;
+    backdrop-filter:blur(1px);
   }
   .drawer-overlay.open{opacity:1;visibility:visible;}
   .drawer{
-    position:fixed;top:0;right:0;height:100%;width:400px;max-width:92vw;
-    background:var(--paper);z-index:61;box-shadow:-8px 0 30px rgba(27,36,48,0.18);
-    transform:translateX(100%);transition:transform .25s ease;
+    position:fixed;top:0;right:0;height:100%;width:430px;max-width:92vw;
+    background:var(--paper);z-index:61;box-shadow:-16px 0 44px rgba(15,22,32,0.16);
+    transform:translateX(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);
     display:flex;flex-direction:column;
+    border-top-left-radius:18px;border-bottom-left-radius:18px;overflow:hidden;
   }
   .drawer.open{transform:translateX(0);}
   .drawer-header{
     display:flex;justify-content:space-between;align-items:center;
-    padding:18px 20px;border-bottom:1px solid var(--border);background:var(--panel);
+    padding:20px 22px;border-bottom:1px solid var(--border);background:var(--panel);
+    flex-shrink:0;
   }
-  .drawer-header h3{font-family:'Sora',sans-serif;font-size:17px;margin:0;color:var(--ink);}
-  .drawer-body{padding:20px;overflow-y:auto;flex:1;}
-  .drawer-section{margin-bottom:20px;}
+  .drawer-header h3{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;margin:0;color:var(--ink);letter-spacing:.01em;}
+  .drawer-body{padding:22px;overflow-y:auto;flex:1;}
+  .drawer-section{margin-bottom:26px;}
+  .drawer-section:last-child{margin-bottom:4px;}
   .scheduled-email-chip{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
-    background:var(--c-blue-tint2, #F6FAFE);border:1px solid var(--border);border-radius:8px;
-    padding:8px 12px;margin-top:8px;font-size:12px;color:var(--slate);
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:9px 12px;margin-top:10px;font-size:12px;color:var(--slate);
   }
   .cancel-scheduled-btn{
     flex-shrink:0;font-size:11.5px;font-weight:600;color:var(--red, #C0392B);
-    background:none;border:1px solid var(--red, #C0392B);border-radius:6px;padding:4px 10px;cursor:pointer;
+    background:none;border:1px solid var(--red, #C0392B);border-radius:7px;padding:4px 10px;cursor:pointer;
+    transition:background .12s;
   }
   .cancel-scheduled-btn:hover{background:var(--c-red-bg, #FBE4E2);}
   .cancel-scheduled-btn:disabled{opacity:.6;cursor:default;}
   .drawer-section-label{
-    font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;
-    color:var(--slate);margin-bottom:8px;
+    font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;
+    color:var(--slate-light);margin-bottom:10px;
   }
-  .drawer-name{font-family:'Sora',sans-serif;font-size:21px;font-weight:700;color:var(--ink);margin-bottom:2px;}
-  .drawer-company{font-size:14px;color:var(--slate);margin-bottom:14px;}
-  .drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .drawer-field{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
-  .drawer-field .k{font-size:10.5px;color:var(--slate-light);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
-  .drawer-field .v{font-size:13.5px;color:var(--ink);font-weight:600;word-break:break-word;}
-  .drawer-outreach{display:flex;flex-wrap:wrap;gap:6px;}
-  .drawer-notes textarea{min-height:90px;}
-  .drawer-actions{display:flex;gap:8px;padding:16px 20px;border-top:1px solid var(--border);background:var(--panel);}
+  .drawer-identity{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .drawer-avatar{
+    width:50px;height:50px;border-radius:14px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Sora',sans-serif;font-weight:700;font-size:18px;color:#fff;
+    background:linear-gradient(135deg,var(--teal),var(--teal-dark));
+    box-shadow:0 3px 10px rgba(27,89,165,.25);
+  }
+  .drawer-identity-text{min-width:0;}
+  .drawer-name{font-family:'Sora',sans-serif;font-size:19px;font-weight:700;color:var(--ink);line-height:1.25;word-break:break-word;}
+  .drawer-company{font-size:13.5px;color:var(--slate);margin-top:1px;}
+  .drawer-tags{display:flex;flex-wrap:wrap;gap:6px;}
+  .drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .drawer-field{
+    background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:10px 13px;
+    box-shadow:0 1px 2px rgba(27,36,48,.03);
+  }
+  .drawer-field .k{font-size:10px;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px;}
+  .drawer-field .v{font-size:14px;color:var(--ink);font-weight:600;word-break:break-word;line-height:1.3;}
+  .drawer-outreach{display:flex;flex-wrap:wrap;gap:7px;}
+  .drawer-notes textarea{
+    min-height:96px;border-radius:11px;border:1px solid var(--border);padding:11px 13px;
+    font-size:13.5px;color:var(--ink);background:var(--panel);width:100%;resize:vertical;
+    transition:border-color .15s,box-shadow .15s;font-family:'Inter',sans-serif;
+  }
+  .drawer-notes textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(27,89,165,.1);outline:none;}
+  .drawer-link{display:inline-block;font-size:12.5px;font-weight:600;color:var(--teal);text-decoration:none;margin-bottom:12px;}
+  .drawer-link:hover{text-decoration:underline;}
+  .drawer-actions-row{display:flex;gap:8px;}
+  .drawer-actions-row .btn{flex:1;justify-content:center;padding:10px 14px;font-size:13px;border-radius:11px;font-weight:600;}
+  .drawer-actions{display:flex;gap:8px;padding:16px 22px;border-top:1px solid var(--border);background:var(--panel);flex-shrink:0;}
   .drawer-actions .btn{flex:1;}
+  /* Larger, cleaner tag/chip look specifically inside the drawer */
+  .drawer .tag{padding:4px 11px;font-size:12px;border-radius:20px;}
+  .drawer .outreach-chip{padding:7px 12px;border-radius:20px;font-size:12px;}
 
   /* ---------- Toasts ---------- */
   .toast-stack{
@@ -3202,6 +3232,12 @@
   }
   function todayISO(){ return new Date().toISOString().slice(0,10); }
   function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function leadInitials(name){
+    const parts = (name||"").trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return "?";
+    if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+    return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  }
   // requestSentAt/requestAcceptedAt/contactedAt can be either a Firestore
   // Timestamp (set via serverTimestamp() from the drawer's quick-toggle) or
   // a plain ISO string (set from the main lead-save form) — this handles both.
@@ -5148,11 +5184,18 @@ ${buildLeadContext()}`;
     document.getElementById('drawerTitle').textContent = t('leadDetails');
     document.getElementById('drawerBody').innerHTML = `
       <div class="drawer-section">
-        <div class="drawer-name">${esc(l.name)||'Unnamed'}</div>
-        <div class="drawer-company">${esc(l.company)||t('noCompanyListed')}</div>
-        <span class="tag" style="background:${sc.bg};color:${sc.fg}"><span class="tag-dot" style="background:${sc.dot}"></span>${esc(l.source)}</span>
-        <span class="tag" style="background:${stc.bg};color:${stc.fg};margin-left:6px">${t(STATUS_LABEL_KEYS[l.status]||'st_new')}</span>
-        ${l.temperature && TEMP_COLORS[l.temperature] ? `<span class="tag" style="background:${TEMP_COLORS[l.temperature].bg};color:${TEMP_COLORS[l.temperature].fg};margin-left:6px">${TEMP_COLORS[l.temperature].icon} ${t(TEMP_LABEL_KEYS[l.temperature])}</span>` : ''}
+        <div class="drawer-identity">
+          <div class="drawer-avatar">${leadInitials(l.name)}</div>
+          <div class="drawer-identity-text">
+            <div class="drawer-name">${esc(l.name)||'Unnamed'}</div>
+            <div class="drawer-company">${esc(l.company)||t('noCompanyListed')}</div>
+          </div>
+        </div>
+        <div class="drawer-tags">
+          <span class="tag" style="background:${sc.bg};color:${sc.fg}"><span class="tag-dot" style="background:${sc.dot}"></span>${esc(l.source)}</span>
+          <span class="tag" style="background:${stc.bg};color:${stc.fg}">${t(STATUS_LABEL_KEYS[l.status]||'st_new')}</span>
+          ${l.temperature && TEMP_COLORS[l.temperature] ? `<span class="tag" style="background:${TEMP_COLORS[l.temperature].bg};color:${TEMP_COLORS[l.temperature].fg}">${TEMP_COLORS[l.temperature].icon} ${t(TEMP_LABEL_KEYS[l.temperature])}</span>` : ''}
+        </div>
       </div>
       <div class="drawer-section">
         <div class="drawer-section-label">${t('detailsLabel')}</div>
@@ -5196,11 +5239,11 @@ ${buildLeadContext()}`;
       <div class="drawer-section">
         <div class="drawer-section-label" style="display:flex;align-items:center;justify-content:space-between;">
           <span>Email</span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <a href="email-history.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(l.id)}" style="font-size:12px;font-weight:600;color:var(--teal);text-decoration:underline;">View full history →</a>
-            <a href="sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(l.id)}" class="btn" style="padding:6px 14px;font-size:12.5px;${l.email ? '' : 'pointer-events:none;opacity:.5;'}" ${l.email ? '' : 'title="No email address on file for this lead"'}>📧 Sequence</a>
-            <button type="button" class="btn btn-primary" id="composeEmailBtn" style="padding:6px 14px;font-size:12.5px;" ${l.email ? '' : 'disabled title="No email address on file for this lead"'}>✉️ Send email</button>
-          </div>
+          <a href="email-history.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(l.id)}" class="drawer-link" style="margin-bottom:0;">View full history →</a>
+        </div>
+        <div class="drawer-actions-row">
+          <a href="sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(l.id)}" class="btn" style="${l.email ? '' : 'pointer-events:none;opacity:.5;'}" ${l.email ? '' : 'title="No email address on file for this lead"'}>📧 Sequence</a>
+          <button type="button" class="btn btn-primary" id="composeEmailBtn" ${l.email ? '' : 'disabled title="No email address on file for this lead"'}>✉️ Send email</button>
         </div>
         <div id="scheduledEmailsList"></div>
       </div>
