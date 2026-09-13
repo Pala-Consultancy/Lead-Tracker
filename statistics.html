@@ -384,6 +384,8 @@
   }
   .scope-tab:hover{color:var(--ink);}
   .scope-tab.active{background:var(--panel);color:var(--ink);box-shadow:0 2px 8px rgba(27,36,48,0.12), 0 0 0 1px color-mix(in srgb, var(--teal) 20%, transparent);}
+  .scope-tab.disabled{opacity:.45;cursor:not-allowed;}
+  .scope-tab.disabled:hover{color:var(--slate);}
   .scope-note{font-size:12.5px;color:var(--slate-light);margin:0 0 22px;}
   .date-range-bar{display:inline-flex;align-items:center;gap:10px;margin:0 0 8px 10px;flex-wrap:wrap;vertical-align:top;}
   .date-range-bar select{
@@ -1672,7 +1674,7 @@
     applyDateFilter();
   }
   let currency = "EUR";
-  let statsScope = 'board';
+  let statsScope = boardId ? 'board' : 'all';
   let sourceSortBy = 'count';
   let industrySortBy = 'count';
   function setSourceSort(field){ sourceSortBy = field; render(); }
@@ -1682,10 +1684,12 @@
   let unsubscribeLeadsListener = null;
   const boardNameCache = {};
 
-  try{
-    const cachedScope = localStorage.getItem('stats_scope_pref');
-    if(cachedScope === 'all' || cachedScope === 'board') statsScope = cachedScope;
-  }catch(e){}
+  if(boardId){
+    try{
+      const cachedScope = localStorage.getItem('stats_scope_pref');
+      if(cachedScope === 'all' || cachedScope === 'board') statsScope = cachedScope;
+    }catch(e){}
+  }
 
   function resolveBoardNames(boardIds){
     const missing = boardIds.filter(id => !(id in boardNameCache));
@@ -1754,9 +1758,15 @@
   }
 
   document.querySelectorAll('.scope-tab').forEach(btn=>{
+    if(btn.dataset.scope === 'board' && !boardId){
+      btn.disabled = true;
+      btn.title = 'Open Statistics from a specific board to see just that board';
+      btn.classList.add('disabled');
+    }
     btn.classList.toggle('active', btn.dataset.scope === statsScope);
     btn.addEventListener('click', ()=>{
       const scope = btn.dataset.scope;
+      if(scope === 'board' && !boardId) return;
       if(scope === statsScope) return;
       statsScope = scope;
       try{ localStorage.setItem('stats_scope_pref', scope); }catch(e){}
@@ -3162,16 +3172,28 @@
       });
     }
     let isSigningOut = false;
+    (function(){
+      if(new URLSearchParams(location.search).get('from') === 'home'){
+        try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){}
+      }
+    })();
+    function cameFromHomeCheck(){
+      let v = false;
+      try{ v = sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
+      return v || new URLSearchParams(location.search).get('from') === 'home';
+    }
     auth.onAuthStateChanged(user=>{
       if(user){
         pageLoader.style.display = 'none';
-        if(!boardId){
-          location.href = new URLSearchParams(location.search).get('from') === 'home' ? 'boards.html?from=home' : 'boards.html';
-          return;
+        const backLink = document.getElementById('backLink');
+        if(boardId){
+          backLink.href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
+        } else {
+          backLink.href = cameFromHomeCheck() ? 'home.html' : 'boards.html';
+          backLink.textContent = cameFromHomeCheck() ? '← Back to home' : '← Back to boards';
+          backLink.removeAttribute('data-i18n');
         }
-        document.getElementById('backLink').href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
-        if(new URLSearchParams(location.search).get('from') === 'home'){
-          const backLink = document.getElementById('backLink');
+        if(boardId && cameFromHomeCheck()){
           backLink.href = 'home.html';
           backLink.textContent = '← Back to home';
           backLink.removeAttribute('data-i18n');

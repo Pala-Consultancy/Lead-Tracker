@@ -2391,10 +2391,17 @@
       });
     }
 
-    if(new URLSearchParams(location.search).get('from') === 'home'){
-      const backLink = document.getElementById('chatBackLink');
-      if(backLink){ backLink.href = 'home.html'; backLink.textContent = '← Back to home'; }
-    }
+    (function(){
+      if(new URLSearchParams(location.search).get('from') === 'home'){
+        try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){}
+      }
+      let cameFromHome = false;
+      try{ cameFromHome = sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
+      if(cameFromHome){
+        const backLink = document.getElementById('chatBackLink');
+        if(backLink){ backLink.href = 'home.html'; backLink.textContent = '← Back to home'; }
+      }
+    })();
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
       if(user){

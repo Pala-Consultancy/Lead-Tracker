@@ -3182,10 +3182,19 @@
       });
     }
 
-    if(new URLSearchParams(location.search).get('from') === 'home'){
-      const backLink = document.getElementById('boardsBackLink');
-      if(backLink) backLink.style.display = '';
-    }
+    (function(){
+      // "From home" persists for the whole tab session once set, so it survives
+      // hops through pages (like Board Trash) that don't carry the query param.
+      if(new URLSearchParams(location.search).get('from') === 'home'){
+        try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){}
+      }
+      let cameFromHome = false;
+      try{ cameFromHome = sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
+      if(cameFromHome){
+        const backLink = document.getElementById('boardsBackLink');
+        if(backLink) backLink.style.display = '';
+      }
+    })();
     auth.onAuthStateChanged(user=>{
       if(user){
         pageLoader.style.display = 'none';

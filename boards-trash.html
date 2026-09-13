@@ -1018,7 +1018,7 @@
       <a class="btn icon-btn-settings" href="home.html" title="Home">🏠</a>
       <a class="btn icon-btn-settings" id="chatBtn" href="chat.html" title="Team chat" style="position:relative">💬<span class="notif-badge" id="chatBadge" style="display:none">0</span></a>
       <button class="btn icon-btn-settings" id="settingsBtn" title="Settings">⚙️</button>
-      <a class="btn" href="boards.html">← Back to boards</a>
+      <a class="btn" id="trashBackLink" href="boards.html">← Back to boards</a>
     </div>
   </header>
 
@@ -2673,6 +2673,17 @@
       });
     }
 
+    (function(){
+      if(new URLSearchParams(location.search).get('from') === 'home'){
+        try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){}
+      }
+      let cameFromHome = false;
+      try{ cameFromHome = sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
+      if(cameFromHome){
+        const backLink = document.getElementById('trashBackLink');
+        if(backLink){ backLink.href = 'home.html'; backLink.textContent = '← Back to home'; }
+      }
+    })();
     auth.onAuthStateChanged(user=>{
       if(user){
         pageLoader.style.display = 'none';

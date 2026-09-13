@@ -392,7 +392,9 @@
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   const campaignIdParam = params.get('campaignId');
-  const cameFromHome = params.get('from') === 'home';
+  if(params.get('from') === 'home'){ try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){} }
+  let cameFromHome = params.get('from') === 'home';
+  try{ cameFromHome = cameFromHome || sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : (cameFromHome ? 'home.html' : 'boards.html');
   if(!boardId && cameFromHome) document.querySelector('#backBtn .back-label').textContent = 'Back to home';
   document.getElementById('detailBackLink').href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'campaigns.html';
