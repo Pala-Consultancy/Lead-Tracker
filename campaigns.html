@@ -113,6 +113,27 @@
   .seq-card-badge.needs_attention{background:var(--fail-soft);color:var(--fail);}
   .seq-card-chevron{color:var(--slate-light);flex-shrink:0;transition:transform .15s;}
   .seq-card:hover .seq-card-chevron{transform:translateX(3px);color:var(--teal);}
+  .seq-card-chevron.expand{transition:transform .15s;}
+  .seq-card-chevron.expand.open{transform:rotate(90deg);}
+
+  .campaign-members{
+    border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;margin:-12px 0 12px;
+    background:var(--panel-alt);overflow:hidden;
+  }
+  .campaign-member-row{
+    display:flex;align-items:center;gap:10px;padding:11px 20px;border-top:1px solid var(--border-soft);
+    text-decoration:none;color:var(--ink);font-size:12.5px;transition:background .12s;
+  }
+  .campaign-member-row:hover{background:var(--panel);}
+  .campaign-member-name{flex:1;font-weight:600;}
+  .campaign-member-badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+  .campaign-member-badge.draft{background:var(--border-soft);color:var(--slate);}
+  .campaign-member-badge.paused{background:var(--amber-soft);color:var(--amber);}
+  .campaign-member-badge.active{background:var(--amber-soft);color:var(--amber);}
+  .campaign-member-badge.completed{background:var(--success-soft);color:var(--success);}
+  .campaign-member-badge.stopped_replied{background:var(--success-soft);color:var(--success);}
+  .campaign-member-badge.stopped_status_change{background:var(--success-soft);color:var(--success);}
+  .campaign-member-badge.needs_attention{background:var(--fail-soft);color:var(--fail);}
   .seq-customize-btn{
     flex-shrink:0;background:none;border:1px solid transparent;border-radius:8px;font-size:15px;
     padding:6px 8px;cursor:pointer;opacity:0;transition:opacity .12s, border-color .12s, background .12s;
@@ -356,10 +377,21 @@
   let updateCampaignStatusFn = null;
   let allSequenceDocs = []; // every /sequences doc for this board, used to compute per-campaign reply stats
   let leadNames = {}; // leadId -> {name, email}
+  let expandedCampaigns = new Set(); // which campaign cards are currently expanded
+
+  function getLeadInfo(boardId, leadId){
+    const key = `${boardId}/${leadId}`;
+    if(leadNames[key]) return Promise.resolve(leadNames[key]);
+    return db.doc(`workspaces/${currentWorkspaceId}/boards/${boardId}/leads/${leadId}`).get().then(doc=>{
+      leadNames[key] = doc.exists ? {name: doc.data().name || 'Unnamed lead', email: doc.data().email || ''} : {name:'Deleted lead', email:''};
+      return leadNames[key];
+    }).catch(()=>({name:'Unknown lead', email:''}));
+  }
   let activeFilter = 'all';
 
   const STATUS_LABEL = {
-    draft:'Draft', paused:'Paused', active:'Active', completed:'Completed'
+    draft:'Draft', paused:'Paused', active:'Active', completed:'Completed',
+    stopped_replied:'They replied', stopped_status_change:'Lead won/lost', needs_attention:'Needs attention'
   };
 
   // A campaign's own `status` field is the source of truth for draft/
@@ -393,7 +425,7 @@
         repliedCount,
         status: deriveCampaignStatus(c, members),
         previousStatus: c.previousStatus,
-        memberLeadIds: members.map(s => s.leadId)
+        members: members.map(s => ({sequenceId: s.id, leadId: s.leadId, status: s.status}))
       };
     }).sort((a,b)=>{
       const at = a.updatedAt ? a.updatedAt.toMillis() : 0;
@@ -470,8 +502,9 @@
     }
     holder.innerHTML = filtered.map((c, idx)=>{
       const replyNote = (!isTrash && c.status !== 'draft') ? ` &middot; ${c.repliedCount} of ${c.leadCount} replied` : '';
+      const isOpen = !isTrash && expandedCampaigns.has(c.campaignId);
       return `
-      <div class="seq-card ${isTrash ? 'trashed' : ''}" data-idx="${idx}" style="animation-delay:${idx * 40}ms;cursor:default;">
+      <div class="seq-card ${isTrash ? 'trashed' : ''}" data-idx="${idx}" style="animation-delay:${idx * 40}ms;${isTrash ? 'cursor:default;' : ''}">
         <div class="seq-card-icon">${isTrash ? '🗑️' : '🎯'}</div>
         <div class="seq-card-body">
           <div class="seq-card-name">${esc(c.name)}</div>
@@ -490,10 +523,39 @@
             ${c.status === 'draft' ? `<button type="button" class="seq-trash-btn forever" data-action="trash" data-ref="${idx}">🗑️ Discard</button>` : ''}
           </div>
           <span class="seq-card-badge ${esc(c.status)}">${esc(STATUS_LABEL[c.status] || c.status)}</span>
+          <span class="seq-card-chevron expand ${isOpen ? 'open' : ''}" data-toggle="${idx}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </span>
         `}
       </div>
+      ${(!isTrash && isOpen) ? `
+        <div class="campaign-members" data-members="${idx}">
+          ${c.members.map(m => `
+            <a class="campaign-member-row" href="sequence-builder.html?board=${encodeURIComponent(c.boardId)}&lead=${encodeURIComponent(m.leadId)}&sequenceId=${encodeURIComponent(m.sequenceId)}">
+              <span class="campaign-member-name" data-lead-name="${esc(c.boardId)}/${esc(m.leadId)}">Loading…</span>
+              <span class="campaign-member-badge ${esc(m.status)}">${esc(STATUS_LABEL[m.status] || m.status)}</span>
+            </a>
+          `).join('')}
+        </div>
+      ` : ''}
     `;
     }).join('');
+
+    if(!isTrash){
+      holder.querySelectorAll('.seq-card:not(.trashed)').forEach(card=>{
+        card.addEventListener('click', (e)=>{
+          if(e.target.closest('.seq-trash-btn')) return;
+          const c = filtered[Number(card.dataset.idx)];
+          if(expandedCampaigns.has(c.campaignId)) expandedCampaigns.delete(c.campaignId);
+          else expandedCampaigns.add(c.campaignId);
+          renderList();
+        });
+      });
+      holder.querySelectorAll('[data-lead-name]').forEach(nameEl=>{
+        const [bId, lId] = nameEl.dataset.leadName.split('/');
+        getLeadInfo(bId, lId).then(info=>{ nameEl.textContent = info.name; });
+      });
+    }
 
     if(isTrash){
       holder.querySelectorAll('.seq-trash-btn.restore').forEach(btn=>{
