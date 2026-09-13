@@ -67,6 +67,18 @@
   .new-seq-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(28,91,158,0.4);}
   .new-seq-btn:active{transform:translateY(0) scale(.98);}
 
+  .reply-stats-strip{
+    display:flex;align-items:center;gap:22px;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:14px 20px;margin-bottom:18px;box-shadow:var(--shadow);flex-wrap:wrap;
+  }
+  .reply-stat{display:flex;flex-direction:column;gap:2px;}
+  .reply-stat-value{font-family:'Sora',sans-serif;font-size:19px;font-weight:800;color:var(--ink);}
+  .reply-stat-value.highlight{color:var(--success);}
+  .reply-stat-label{font-size:11.5px;color:var(--slate);white-space:nowrap;}
+  .reply-stat-divider{width:1px;height:30px;background:var(--border);}
+  .reply-stat-bar{flex:1;min-width:140px;height:8px;border-radius:20px;background:var(--border-soft);overflow:hidden;}
+  .reply-stat-bar-fill{height:100%;background:linear-gradient(90deg, var(--success), #164F41);border-radius:20px;transition:width .4s ease;}
+
   .status-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
   .status-chip{padding:9px 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--slate);font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;}
   .status-chip:hover{border-color:var(--teal);color:var(--teal);transform:translateY(-1px);}
@@ -270,6 +282,8 @@
     </div>
     <button type="button" class="new-seq-btn" id="newSeqBtn">+ New sequence</button>
   </div>
+
+  <div class="reply-stats-strip" id="replyStatsStrip" style="display:none;"></div>
 
   <div class="status-filters" id="statusFilters">
     <button type="button" class="status-chip active" data-filter="all">All</button>
@@ -508,9 +522,42 @@
     }).catch(()=>({name:'Unknown lead', email:''}));
   }
 
+  function renderReplyStatsStrip(allSequences){
+    const strip = document.getElementById('replyStatsStrip');
+    // "Started" means it actually ran — a draft or something sitting in
+    // trash was never live long enough to possibly get a reply, so
+    // neither should count toward the denominator here.
+    const started = allSequences.filter(s => s.status !== 'draft' && s.status !== 'deleted');
+    if(started.length === 0){
+      strip.style.display = 'none';
+      return;
+    }
+    const replied = started.filter(s => s.status === 'stopped_replied').length;
+    const pct = Math.round((replied / started.length) * 100);
+    strip.style.display = 'flex';
+    strip.innerHTML = `
+      <div class="reply-stat">
+        <div class="reply-stat-value">${started.length}</div>
+        <div class="reply-stat-label">Sequences started</div>
+      </div>
+      <div class="reply-stat-divider"></div>
+      <div class="reply-stat">
+        <div class="reply-stat-value highlight">${replied}</div>
+        <div class="reply-stat-label">Got a reply</div>
+      </div>
+      <div class="reply-stat-divider"></div>
+      <div class="reply-stat">
+        <div class="reply-stat-value highlight">${pct}%</div>
+        <div class="reply-stat-label">Reply rate</div>
+      </div>
+      <div class="reply-stat-bar"><div class="reply-stat-bar-fill" style="width:${pct}%;"></div></div>
+    `;
+  }
+
   function renderList(){
     const holder = document.getElementById('listHolder');
     const sequences = buildSequenceList();
+    renderReplyStatsStrip(sequences);
     const isTrash = activeFilter === 'trash';
     const filtered = sequences.filter(s=>{
       if(isTrash) return s.status === 'deleted';
