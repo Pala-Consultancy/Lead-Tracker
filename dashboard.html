@@ -1042,6 +1042,14 @@
   .confirm-modal-text{font-size:14.5px;line-height:1.55;color:var(--ink);margin-bottom:22px;}
   .confirm-modal-actions{display:flex;gap:10px;justify-content:center;}
   .confirm-modal-actions .btn{flex:1;max-width:160px;justify-content:center;}
+  /* #pageLoader is z-index:500 and covers the full screen until
+     revealAppRoot() fires — these two modals need to show WHILE that's
+     still up (the whole point is gating what's behind it), so they need
+     a higher z-index than the base .confirm-overlay/.confirm-modal
+     classes give every other modal in this file, or they'd render
+     completely hidden and unclickable behind the loader. */
+  #boardLockConfirmOverlay, #boardLockPasswordOverlay{z-index:600;}
+  #boardLockConfirmModal, #boardLockPasswordModal{z-index:601;}
   .location-mute-row{
     display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;
     margin:0 0 20px;font-size:13px;color:var(--slate);
@@ -6155,6 +6163,14 @@ ${buildLeadContext()}`;
         const board = boardDoc.data();
         const isCreator = board.createdBy === user.email;
         if(!board.passwordEnabled || isCreator) return; // no gate needed
+        let justUnlocked = false;
+        try{
+          if(sessionStorage.getItem('boardJustUnlocked_' + boardId) === '1'){
+            justUnlocked = true;
+            sessionStorage.removeItem('boardJustUnlocked_' + boardId); // one-time use
+          }
+        }catch(e){}
+        if(justUnlocked) return; // boards.html already verified this the moment before navigating here
         return new Promise((resolve, reject)=>{
           document.getElementById('boardLockConfirmText').textContent =
             `"${board.name || 'This board'}" belongs to someone else and is password-protected. Are you sure you want to continue?`;

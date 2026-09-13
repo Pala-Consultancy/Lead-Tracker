@@ -2078,6 +2078,12 @@
     boardPasswordError.style.display = 'none';
     const boardId = pendingPasswordBoard.id;
     verifyBoardPasswordFn({workspaceId, boardId, password}).then(()=>{
+      // Just verified — dashboard.html checks for this so it doesn't
+      // immediately ask again for the SAME entry we just completed here.
+      // It's a one-time flag: dashboard.html removes it the instant it
+      // reads it, so a later refresh or re-visit still gets challenged
+      // normally.
+      try{ sessionStorage.setItem('boardJustUnlocked_' + boardId, '1'); }catch(e){}
       location.href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
     }).catch(err=>{
       console.error(err);
