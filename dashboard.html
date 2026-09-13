@@ -1515,6 +1515,39 @@
   <div class="loader-logo"><img data-logo-src="1" alt="PalaTrack logo"></div>
   <div class="loader-spinner"></div>
 </div>
+
+<div class="confirm-overlay" id="boardLockConfirmOverlay">
+  <div class="confirm-modal" id="boardLockConfirmModal">
+    <div class="confirm-modal-bar"></div>
+    <div class="confirm-modal-body">
+      <div class="confirm-modal-icon">🔒</div>
+      <div class="confirm-modal-text" id="boardLockConfirmText">You're about to enter someone else's board. Are you sure?</div>
+      <div class="confirm-modal-actions">
+        <button type="button" class="btn" id="boardLockConfirmCancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="boardLockConfirmOk">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="boardLockPasswordOverlay">
+  <div class="confirm-modal" id="boardLockPasswordModal">
+    <div class="confirm-modal-bar"></div>
+    <div class="confirm-modal-body">
+      <div class="confirm-modal-icon">🔒</div>
+      <div class="confirm-modal-text">Enter the password for <b id="boardLockPasswordBoardName"></b></div>
+      <form id="boardLockPasswordForm">
+        <input type="password" id="boardLockPasswordInput" placeholder="Password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:11px 13px;border-radius:9px;border:1px solid var(--border);font:inherit;font-size:14px;margin-bottom:10px;">
+        <div id="boardLockPasswordError" style="color:var(--c-red-fg);font-size:12.5px;margin-bottom:10px;display:none;"></div>
+        <div class="confirm-modal-actions">
+          <button type="button" class="btn" id="boardLockPasswordCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="boardLockPasswordSubmit">Enter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div id="loginScreen">
   <div class="login-card">
     <a class="login-back-home" id="loginBackHome" href="index.html">← Home</a>
@@ -6047,6 +6080,111 @@ ${buildLeadContext()}`;
     }
     let authResolvedOnce = false;
     let isSigningOut = false;
+    // ---------- Password-protected boards: the actual gate ----------
+    // This runs BEFORE initFirebaseSync() ever starts listening for leads —
+    // if this board is locked and the user isn't its creator, nothing about
+    // its data should load until they've verified the password. The real
+    // enforcement lives in firestore.rules (this alone is just the UI);
+    // this only exists so it feels like a deliberate gate instead of a
+    // pile of permission-denied errors if someone lands here directly via
+    // a bookmarked link instead of clicking through boards.html.
+    let verifyBoardPasswordFn = null;
+    try{
+      verifyBoardPasswordFn = firebase.functions().httpsCallable('verifyBoardPassword');
+    }catch(err){
+      console.error('Could not set up board password verification:', err);
+    }
+    function openBoardLockPasswordPrompt(board, resolve, reject){
+      document.getElementById('boardLockPasswordBoardName').textContent = board.name || 'this board';
+      const input = document.getElementById('boardLockPasswordInput');
+      const errorEl = document.getElementById('boardLockPasswordError');
+      input.value = '';
+      errorEl.style.display = 'none';
+      document.getElementById('boardLockPasswordOverlay').classList.add('open');
+      document.getElementById('boardLockPasswordModal').classList.add('open');
+      setTimeout(()=> input.focus(), 50);
+
+      const form = document.getElementById('boardLockPasswordForm');
+      const cancelBtn = document.getElementById('boardLockPasswordCancel');
+      function closeThis(){
+        document.getElementById('boardLockPasswordOverlay').classList.remove('open');
+        document.getElementById('boardLockPasswordModal').classList.remove('open');
+        form.removeEventListener('submit', onSubmit);
+        cancelBtn.removeEventListener('click', onCancel);
+      }
+      function onCancel(){
+        closeThis();
+        location.href = 'boards.html';
+        reject(new Error('cancelled'));
+      }
+      function onSubmit(e){
+        e.preventDefault();
+        if(!verifyBoardPasswordFn){ return; }
+        const password = input.value;
+        if(!password){
+          errorEl.textContent = 'Please enter the password.';
+          errorEl.style.display = '';
+          return;
+        }
+        const submitBtn = document.getElementById('boardLockPasswordSubmit');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Checking...';
+        errorEl.style.display = 'none';
+        verifyBoardPasswordFn({workspaceId, boardId, password}).then(()=>{
+          closeThis();
+          resolve();
+        }).catch(err=>{
+          console.error(err);
+          errorEl.textContent = err.message || "That password isn't correct.";
+          errorEl.style.display = '';
+        }).finally(()=>{
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Enter';
+        });
+      }
+      form.addEventListener('submit', onSubmit);
+      cancelBtn.addEventListener('click', onCancel);
+    }
+    function checkBoardPasswordGate(user){
+      return db.doc(`workspaces/${workspaceId}/boards/${boardId}`).get().then(boardDoc=>{
+        if(!boardDoc.exists){
+          showToast('This board could not be found.', true);
+          location.href = 'boards.html';
+          return Promise.reject(new Error('board not found'));
+        }
+        const board = boardDoc.data();
+        const isCreator = board.createdBy === user.email;
+        if(!board.passwordEnabled || isCreator) return; // no gate needed
+        return new Promise((resolve, reject)=>{
+          document.getElementById('boardLockConfirmText').textContent =
+            `"${board.name || 'This board'}" belongs to someone else and is password-protected. Are you sure you want to continue?`;
+          const overlay = document.getElementById('boardLockConfirmOverlay');
+          const modal = document.getElementById('boardLockConfirmModal');
+          const okBtn = document.getElementById('boardLockConfirmOk');
+          const cancelBtn = document.getElementById('boardLockConfirmCancel');
+          overlay.classList.add('open');
+          modal.classList.add('open');
+          function closeThis(){
+            overlay.classList.remove('open');
+            modal.classList.remove('open');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+          }
+          function onOk(){
+            closeThis();
+            openBoardLockPasswordPrompt(board, resolve, reject);
+          }
+          function onCancel(){
+            closeThis();
+            location.href = 'boards.html';
+            reject(new Error('cancelled'));
+          }
+          okBtn.addEventListener('click', onOk);
+          cancelBtn.addEventListener('click', onCancel);
+        });
+      });
+    }
+
     function resolveWorkspace(user){
       return db.collection('userDirectory').doc(user.uid).get().then(doc=>{
         if(doc.exists && doc.data().workspaceId){
@@ -6095,6 +6233,8 @@ ${buildLeadContext()}`;
         clearLoginError();
         document.getElementById('loginForm').reset();
         resolveWorkspace(user).then(()=>{
+          return checkBoardPasswordGate(user);
+        }).then(()=>{
           loadBoardName();
           loadSettingsUserInfo(user);
           loadOrgPlan();
@@ -6103,6 +6243,7 @@ ${buildLeadContext()}`;
           loadMySignature(user.uid);
           render();
         }).catch(err=>{
+          if(err && (err.message === 'cancelled' || err.message === 'board not found')) return; // already handled — redirecting away
           console.error('Could not resolve workspace', err);
           showToast('Something went wrong loading your workspace.', true);
           revealAppRoot(); // don't strand them behind the loader if this fails

@@ -1200,6 +1200,16 @@
         <label for="editBoardCreatedBy">Created by <span class="optional-tag">(optional)</span></label>
         <input id="editBoardCreatedBy" type="text" placeholder="e.g. Tom">
       </div>
+      <div class="field" id="editBoardPasswordSection" style="display:none;border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+        <label>🔒 Password protection</label>
+        <p style="font-size:12px;color:var(--slate-light);margin:0 0 10px;">Require anyone but you to enter a password before they can open this board.</p>
+        <div id="editBoardPasswordStatus" style="font-size:12.5px;font-weight:600;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="password" id="editBoardPasswordInput" placeholder="New password (min. 4 characters)" style="flex:1;" autocomplete="new-password">
+          <button type="button" class="btn" id="editBoardSetPasswordBtn">Set</button>
+        </div>
+        <button type="button" class="btn btn-danger" id="editBoardRemovePasswordBtn" style="display:none;margin-top:8px;">Remove password</button>
+      </div>
       <div class="modal-actions">
         <button type="button" class="btn" id="editBoardCancel" data-i18n="cancel">Cancel</button>
         <button type="submit" class="btn btn-primary" data-i18n="saveChanges">Save changes</button>
@@ -1280,6 +1290,22 @@
   </div>
 </div>
 
+<div class="confirm-overlay" id="boardPasswordOverlay" style="display:none">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon warn">🔒</div>
+    <h3>Enter board password</h3>
+    <p id="boardPasswordBoardName" style="font-weight:600;margin-top:-8px;"></p>
+    <form id="boardPasswordForm" style="width:100%;">
+      <input type="password" id="boardPasswordInput" placeholder="Password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:11px 13px;border-radius:9px;border:1px solid var(--border);font:inherit;font-size:14px;margin:12px 0;">
+      <div id="boardPasswordError" style="color:var(--c-red-fg);font-size:12.5px;margin-bottom:8px;display:none;"></div>
+      <div class="confirm-modal-actions">
+        <button type="button" class="btn" id="boardPasswordCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="boardPasswordSubmitBtn">Enter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="welcome-overlay" id="welcomeOverlay">
   <div class="welcome-confetti" id="welcomeConfetti"></div>
   <div class="welcome-card" id="welcomeCard">
@@ -1354,6 +1380,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
   // ---------- i18n ----------
@@ -1954,6 +1981,18 @@
         const field = document.getElementById(id);
         if(field) field.classList.toggle('field-missing', !field.value);
       });
+
+      const isCreator = auth.currentUser && data.createdBy === auth.currentUser.email;
+      const pwSection = document.getElementById('editBoardPasswordSection');
+      pwSection.style.display = isCreator ? '' : 'none';
+      if(isCreator){
+        document.getElementById('editBoardPasswordInput').value = '';
+        document.getElementById('editBoardPasswordStatus').textContent = data.passwordEnabled
+          ? '🔒 Password protection is on — anyone but you needs it to enter this board.'
+          : 'No password set — anyone in the workspace can open this board.';
+        document.getElementById('editBoardRemovePasswordBtn').style.display = data.passwordEnabled ? '' : 'none';
+        document.getElementById('editBoardSetPasswordBtn').textContent = data.passwordEnabled ? 'Change' : 'Set';
+      }
       editBoardOverlay.classList.add('open');
     }).catch(err=>{
       showToast('Could not load board: ' + friendlyErr(err), true);
@@ -1986,6 +2025,139 @@
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape' && editBoardOverlay.classList.contains('open')) closeEditBoard();
   });
+
+  let manageBoardPasswordFn = null;
+  try{
+    manageBoardPasswordFn = firebase.functions().httpsCallable('manageBoardPassword');
+  }catch(err){
+    console.error('Could not set up board password management (this will not affect the rest of the app):', err);
+  }
+  let verifyBoardPasswordFn = null;
+  try{
+    verifyBoardPasswordFn = firebase.functions().httpsCallable('verifyBoardPassword');
+  }catch(err){
+    console.error('Could not set up board password verification (this will not affect the rest of the app):', err);
+  }
+
+  // ---------- Password-protected boards: confirm, then challenge ----------
+  const boardPasswordOverlay = document.getElementById('boardPasswordOverlay');
+  const boardPasswordForm = document.getElementById('boardPasswordForm');
+  const boardPasswordInput = document.getElementById('boardPasswordInput');
+  const boardPasswordError = document.getElementById('boardPasswordError');
+  let pendingPasswordBoard = null;
+
+  function openBoardPasswordPrompt(board){
+    pendingPasswordBoard = board;
+    document.getElementById('boardPasswordBoardName').textContent = board.name || 'this board';
+    boardPasswordInput.value = '';
+    boardPasswordError.style.display = 'none';
+    boardPasswordOverlay.style.display = 'flex';
+    setTimeout(()=> boardPasswordInput.focus(), 50);
+  }
+  function closeBoardPasswordPrompt(){
+    boardPasswordOverlay.style.display = 'none';
+    pendingPasswordBoard = null;
+  }
+  document.getElementById('boardPasswordCancelBtn').addEventListener('click', closeBoardPasswordPrompt);
+  boardPasswordOverlay.addEventListener('click', (e)=>{ if(e.target === boardPasswordOverlay) closeBoardPasswordPrompt(); });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && boardPasswordOverlay.style.display === 'flex') closeBoardPasswordPrompt();
+  });
+  boardPasswordForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    if(!pendingPasswordBoard || !verifyBoardPasswordFn) return;
+    const password = boardPasswordInput.value;
+    if(!password){
+      boardPasswordError.textContent = 'Please enter the password.';
+      boardPasswordError.style.display = '';
+      return;
+    }
+    const submitBtn = document.getElementById('boardPasswordSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Checking...';
+    boardPasswordError.style.display = 'none';
+    const boardId = pendingPasswordBoard.id;
+    verifyBoardPasswordFn({workspaceId, boardId, password}).then(()=>{
+      location.href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
+    }).catch(err=>{
+      console.error(err);
+      boardPasswordError.textContent = err.message || 'That password isn\'t correct.';
+      boardPasswordError.style.display = '';
+    }).finally(()=>{
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enter';
+    });
+  });
+
+  // Delegated on the (stable) container rather than re-wired on every
+  // render — board cards are plain <a href="dashboard.html?..."> links,
+  // so protected ones need their default navigation stopped before
+  // anything else happens.
+  document.getElementById('boardsContainer').addEventListener('click', (e)=>{
+    const card = e.target.closest('.board-card');
+    if(!card) return;
+    if(e.target.closest('.board-card-actions')) return; // pin/customize/edit/delete already handle their own preventDefault
+    let boardId;
+    try{ boardId = new URL(card.href).searchParams.get('board'); }catch(err){ return; }
+    const board = (window.__currentBoardsCache || []).find(b => b.id === boardId);
+    if(!board) return;
+    const isCreator = auth.currentUser && board.createdBy === auth.currentUser.email;
+    if(!board.passwordEnabled || isCreator) return; // no protection needed — let the link navigate normally
+    e.preventDefault();
+    showConfirmModal(
+      "You're about to enter someone else's board",
+      `"${board.name || 'This board'}" belongs to someone else and is password-protected. Are you sure you want to continue?`,
+      ()=> openBoardPasswordPrompt(board)
+    );
+  });
+
+  document.getElementById('editBoardSetPasswordBtn').addEventListener('click', ()=>{
+    if(!editingBoardId || !manageBoardPasswordFn) return;
+    const input = document.getElementById('editBoardPasswordInput');
+    const password = input.value.trim();
+    if(!password){
+      showToast('Please enter a password first.', true);
+      return;
+    }
+    if(password.length < 4){
+      showToast('Please choose a password at least 4 characters long.', true);
+      return;
+    }
+    const btn = document.getElementById('editBoardSetPasswordBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    manageBoardPasswordFn({workspaceId: workspaceId, boardId: editingBoardId, password}).then(()=>{
+      showToast('Password set — anyone but you will need it to enter this board.');
+      input.value = '';
+      document.getElementById('editBoardPasswordStatus').textContent = '🔒 Password protection is on — anyone but you needs it to enter this board.';
+      document.getElementById('editBoardRemovePasswordBtn').style.display = '';
+      btn.textContent = 'Change';
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not set that password: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      btn.disabled = false;
+    });
+  });
+  document.getElementById('editBoardRemovePasswordBtn').addEventListener('click', ()=>{
+    if(!editingBoardId || !manageBoardPasswordFn) return;
+    const btn = document.getElementById('editBoardRemovePasswordBtn');
+    btn.disabled = true;
+    btn.textContent = 'Removing...';
+    manageBoardPasswordFn({workspaceId: workspaceId, boardId: editingBoardId, password: ''}).then(()=>{
+      showToast('Password removed — anyone in the workspace can open this board now.');
+      document.getElementById('editBoardPasswordStatus').textContent = 'No password set — anyone in the workspace can open this board.';
+      document.getElementById('editBoardSetPasswordBtn').textContent = 'Set';
+      btn.style.display = 'none';
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not remove that password: ' + (err.message || 'please try again.'), true);
+    }).finally(()=>{
+      btn.disabled = false;
+      btn.textContent = 'Remove password';
+    });
+  });
+
   document.getElementById('editBoardForm').addEventListener('submit', (e)=>{
     e.preventDefault();
     const name = document.getElementById('editBoardName').value.trim();
