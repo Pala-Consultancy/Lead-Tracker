@@ -266,7 +266,7 @@
 <div class="shell">
   <a class="back-link" id="backBtn" href="boards.html">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-    Back
+    <span class="back-label">Back</span>
   </a>
 
   <div id="listView">
@@ -392,7 +392,9 @@
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
   const campaignIdParam = params.get('campaignId');
-  document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
+  const cameFromHome = params.get('from') === 'home';
+  document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : (cameFromHome ? 'home.html' : 'boards.html');
+  if(!boardId && cameFromHome) document.querySelector('#backBtn .back-label').textContent = 'Back to home';
   document.getElementById('detailBackLink').href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'campaigns.html';
   const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
   document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;
@@ -826,7 +828,18 @@
       return;
     }
     if(!boardId){
-      document.body.innerHTML = '<div style="padding:60px;text-align:center;font-family:Inter,sans-serif;">This page needs a board specified in the link.</div>';
+      document.getElementById('pageLoader').style.display = 'none';
+      const appRoot = document.getElementById('appRoot');
+      appRoot.style.display = 'flex';
+      appRoot.classList.add('reveal');
+      document.getElementById('detailView').style.display = 'none';
+      document.getElementById('listView').innerHTML = `
+        <div style="padding:70px 20px;text-align:center;max-width:380px;margin:0 auto;">
+          <div style="font-size:34px;margin-bottom:14px;">🎯</div>
+          <h2 style="font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:var(--ink);margin:0 0 8px;">Pick a board first</h2>
+          <p style="font-size:13.5px;color:var(--slate);line-height:1.5;margin:0 0 22px;">Campaigns belong to a specific board — choose one to see its campaigns.</p>
+          <a href="boards.html" style="display:inline-block;background:linear-gradient(135deg, var(--teal), var(--teal-deep));color:#fff;border-radius:10px;padding:12px 22px;font-size:13.5px;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(28,91,158,0.32);">Choose a board →</a>
+        </div>`;
       return;
     }
     updateCampaignStatusFn = firebase.functions().httpsCallable('updateCampaignStatus');

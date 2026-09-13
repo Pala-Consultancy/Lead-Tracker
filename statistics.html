@@ -3166,10 +3166,16 @@
       if(user){
         pageLoader.style.display = 'none';
         if(!boardId){
-          location.href = 'boards.html';
+          location.href = new URLSearchParams(location.search).get('from') === 'home' ? 'boards.html?from=home' : 'boards.html';
           return;
         }
         document.getElementById('backLink').href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
+        if(new URLSearchParams(location.search).get('from') === 'home'){
+          const backLink = document.getElementById('backLink');
+          backLink.href = 'home.html';
+          backLink.textContent = '← Back to home';
+          backLink.removeAttribute('data-i18n');
+        }
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
         appRoot.classList.remove('fade-in');
