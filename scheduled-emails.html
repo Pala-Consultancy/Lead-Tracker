@@ -192,7 +192,7 @@
   <div class="shell">
   <a class="back-link" id="backBtn" href="boards.html">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-    Back
+    <span class="back-label">Back</span>
   </a>
   <h1 class="page-title">Scheduled emails</h1>
   <p class="page-sub">Every "send later" email across your workspace, so nobody on the team emails the same lead twice.</p>
@@ -435,7 +435,9 @@
 
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
-  document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
+  const cameFromHome = params.get('from') === 'home';
+  document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : (cameFromHome ? 'home.html' : 'boards.html');
+  if(!boardId && cameFromHome) document.querySelector('#backBtn .back-label').textContent = 'Back to home';
   const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
   document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;
   document.getElementById('navSequences').href = `sequences.html${boardQS}`;

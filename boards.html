@@ -1089,6 +1089,7 @@
       </div>
     </div>
     <div class="header-right">
+      <a class="btn" id="boardsBackLink" href="home.html" style="display:none">← Back to home</a>
       <span class="live-badge"><span class="live-dot"></span><span data-i18n="realtimeUpdates">Real-time updates</span></span>
       <span class="count-pill" id="currentUserPill" style="display:none"></span>
       <a class="btn icon-btn-settings" href="home.html" title="Home">🏠</a>
@@ -3181,6 +3182,10 @@
       });
     }
 
+    if(new URLSearchParams(location.search).get('from') === 'home'){
+      const backLink = document.getElementById('boardsBackLink');
+      if(backLink) backLink.style.display = '';
+    }
     auth.onAuthStateChanged(user=>{
       if(user){
         pageLoader.style.display = 'none';

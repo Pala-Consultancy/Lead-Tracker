@@ -883,7 +883,7 @@
         </div>
       </div>
     </div>
-    <a class="btn" href="dashboard.html">← Back to tracker</a>
+    <a class="btn" id="chatBackLink" href="dashboard.html">← Back to tracker</a>
   </header>
 
   <div class="chat-page">
@@ -2391,6 +2391,10 @@
       });
     }
 
+    if(new URLSearchParams(location.search).get('from') === 'home'){
+      const backLink = document.getElementById('chatBackLink');
+      if(backLink){ backLink.href = 'home.html'; backLink.textContent = '← Back to home'; }
+    }
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
       if(user){
