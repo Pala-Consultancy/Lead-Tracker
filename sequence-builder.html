@@ -408,6 +408,11 @@
     display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);
     border-radius:10px;background:var(--panel-alt);font-size:12.5px;color:var(--ink);max-width:220px;
   }
+  .seq-attach-chip .chip-view{
+    display:flex;align-items:center;gap:6px;min-width:0;border:none;background:none;padding:0;
+    font:inherit;color:inherit;cursor:pointer;
+  }
+  .seq-attach-chip .chip-view:hover .chip-name{text-decoration:underline;color:var(--teal);}
   .seq-attach-chip .chip-icon{flex-shrink:0;}
   .seq-attach-chip .chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .seq-attach-chip .chip-size{color:var(--slate);flex-shrink:0;font-size:11px;}
@@ -1230,6 +1235,13 @@
       when.toLocaleString(undefined, {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
   }
 
+  function base64ToBlobUrl(base64, mimeType){
+    const byteChars = atob(base64);
+    const byteNumbers = new Array(byteChars.length);
+    for(let i=0; i<byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([new Uint8Array(byteNumbers)], {type: mimeType});
+    return URL.createObjectURL(blob);
+  }
   function renderStepAttachments(){
     const container = document.getElementById('seqPanelAttachChips');
     container.innerHTML = stepAttachments.map((att, i)=>{
@@ -1237,12 +1249,30 @@
       const sizeKb = Math.round(att.size / 1024);
       const sizeLabel = sizeKb > 1024 ? (sizeKb/1024).toFixed(1) + ' MB' : sizeKb + ' KB';
       return `<span class="seq-attach-chip">
-        <span class="chip-icon">${icon}</span>
-        <span class="chip-name">${esc(att.name)}</span>
+        <button type="button" class="chip-view" data-idx="${i}" title="View / download">
+          <span class="chip-icon">${icon}</span>
+          <span class="chip-name">${esc(att.name)}</span>
+        </button>
         <span class="chip-size">${sizeLabel}</span>
         <button type="button" class="chip-remove" data-idx="${i}" title="Remove">✕</button>
       </span>`;
     }).join('');
+    container.querySelectorAll('.chip-view').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const att = stepAttachments[Number(btn.dataset.idx)];
+        if(!att) return;
+        const url = base64ToBlobUrl(att.base64, att.mimeType);
+        const win = window.open(url, '_blank');
+        // If a popup blocker (or the file type) prevents opening a tab,
+        // fall back to a plain download instead of silently doing nothing.
+        if(!win){
+          const a = document.createElement('a');
+          a.href = url; a.download = att.name;
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+        setTimeout(()=> URL.revokeObjectURL(url), 30000);
+      });
+    });
     container.querySelectorAll('.chip-remove').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         stepAttachments.splice(Number(btn.dataset.idx), 1);

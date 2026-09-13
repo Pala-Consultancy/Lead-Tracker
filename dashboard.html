@@ -2100,6 +2100,8 @@
   .gmail-compose-toolbar-divider{width:1px;height:22px;background:var(--border);margin:0 4px;}
   .gmail-compose-attachments{display:flex;flex-wrap:wrap;gap:8px;margin:12px 28px 0;}
   .gmail-compose-attachment-chip{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:var(--c-blue-tint2, var(--paper));font-size:12.5px;color:var(--ink);max-width:220px;}
+  .gmail-compose-attachment-chip .chip-view{display:flex;align-items:center;gap:6px;min-width:0;border:none;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;}
+  .gmail-compose-attachment-chip .chip-view:hover .chip-name{text-decoration:underline;color:var(--c-blue-fg);}
   .gmail-compose-attachment-chip .chip-icon{flex-shrink:0;}
   .gmail-compose-attachment-chip .chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .gmail-compose-attachment-chip .chip-size{color:var(--slate);flex-shrink:0;font-size:11px;}
@@ -5223,6 +5225,13 @@ ${buildLeadContext()}`;
 
   let composeEmailLead = null;
   let composeAttachments = []; // {file, name, size, mimeType, base64}
+  function base64ToBlobUrl(base64, mimeType){
+    const byteChars = atob(base64);
+    const byteNumbers = new Array(byteChars.length);
+    for(let i=0; i<byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([new Uint8Array(byteNumbers)], {type: mimeType});
+    return URL.createObjectURL(blob);
+  }
   function renderComposeAttachments(){
     const container = document.getElementById('composeEmailAttachments');
     container.innerHTML = composeAttachments.map((att, i)=>{
@@ -5230,12 +5239,28 @@ ${buildLeadContext()}`;
       const sizeKb = Math.round(att.size / 1024);
       const sizeLabel = sizeKb > 1024 ? (sizeKb/1024).toFixed(1) + ' MB' : sizeKb + ' KB';
       return `<span class="gmail-compose-attachment-chip">
-        <span class="chip-icon">${icon}</span>
-        <span class="chip-name">${esc(att.name)}</span>
+        <button type="button" class="chip-view" data-idx="${i}" title="View / download">
+          <span class="chip-icon">${icon}</span>
+          <span class="chip-name">${esc(att.name)}</span>
+        </button>
         <span class="chip-size">${sizeLabel}</span>
         <button type="button" class="chip-remove" data-idx="${i}" title="Remove">✕</button>
       </span>`;
     }).join('');
+    container.querySelectorAll('.chip-view').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const att = composeAttachments[Number(btn.dataset.idx)];
+        if(!att) return;
+        const url = base64ToBlobUrl(att.base64, att.mimeType);
+        const win = window.open(url, '_blank');
+        if(!win){
+          const a = document.createElement('a');
+          a.href = url; a.download = att.name;
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+        setTimeout(()=> URL.revokeObjectURL(url), 30000);
+      });
+    });
     container.querySelectorAll('.chip-remove').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         composeAttachments.splice(Number(btn.dataset.idx), 1);
