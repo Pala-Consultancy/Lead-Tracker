@@ -1603,6 +1603,16 @@
       <button type="submit" class="btn btn-primary" data-i18n="sendResetLink">Send reset link</button>
       <button type="button" class="login-forgot-link" id="backToSignInLink" data-i18n="backToSignIn">← Back to sign in</button>
     </form>
+    <form id="mfaForm" style="display:none">
+      <div class="login-sub">Enter the 6-digit code from your authenticator app.</div>
+      <div class="field">
+        <label for="mfaCodeInput">Code</label>
+        <input id="mfaCodeInput" type="text" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" style="font-size:18px;letter-spacing:4px;text-align:center;" required>
+      </div>
+      <div id="mfaError" class="login-error" style="display:none;"></div>
+      <button type="submit" class="btn btn-primary">Verify and sign in</button>
+      <button type="button" class="login-forgot-link" id="mfaCancelLink">← Back to sign in</button>
+    </form>
     <div class="login-footer-note">
       <span data-i18n="noAccountNote">Don't have an account?</span>
       <a href="signup.html" class="login-forgot-link" style="display:inline;padding:0 0 0 4px" data-i18n="createAccountLink">Create one</a>
@@ -5918,10 +5928,63 @@ ${buildLeadContext()}`;
       auth.signInWithEmailAndPassword(email, password).then(()=>{
         location.href = 'boards.html';
       }).catch(err=>{
+        if(err.code === 'auth/multi-factor-auth-required'){
+          showMfaForm(err.resolver);
+          return;
+        }
         showLoginError(t('incorrectLogin'));
       }).finally(()=>{
         submitBtn.disabled = false;
         submitBtn.textContent = t('signIn');
+      });
+    });
+
+    // ---------- Two-step verification challenge (TOTP) ----------
+    // Firebase rejects signInWithEmailAndPassword with this specific error
+    // when the account has an enrolled second factor — err.resolver is
+    // what the actual code gets verified against below.
+    let pendingMfaResolver = null;
+    function showMfaForm(resolver){
+      pendingMfaResolver = resolver;
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('resetForm').style.display = 'none';
+      document.getElementById('mfaForm').style.display = '';
+      document.getElementById('mfaCodeInput').value = '';
+      document.getElementById('mfaError').style.display = 'none';
+      setTimeout(()=> document.getElementById('mfaCodeInput').focus(), 50);
+    }
+    document.getElementById('mfaCancelLink').addEventListener('click', ()=>{
+      pendingMfaResolver = null;
+      document.getElementById('mfaForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = '';
+    });
+    document.getElementById('mfaForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      if(!pendingMfaResolver) return;
+      const code = document.getElementById('mfaCodeInput').value.trim();
+      const errorEl = document.getElementById('mfaError');
+      if(!/^\d{6}$/.test(code)){
+        errorEl.textContent = 'Please enter the 6-digit code from your app.';
+        errorEl.style.display = '';
+        return;
+      }
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+      errorEl.style.display = 'none';
+      // A resolver can list more than one enrolled factor in principle —
+      // this app only ever enrolls one (the authenticator app), so using
+      // the first hint here is always correct in practice.
+      const hint = pendingMfaResolver.hints[0];
+      const assertion = firebase.auth.TotpMultiFactorGenerator.assertionForSignIn(hint.uid, code);
+      pendingMfaResolver.resolveSignIn(assertion).then(()=>{
+        location.href = 'boards.html';
+      }).catch(err=>{
+        errorEl.textContent = "That code didn't work — please try again.";
+        errorEl.style.display = '';
+      }).finally(()=>{
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify and sign in';
       });
     });
 
