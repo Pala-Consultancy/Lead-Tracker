@@ -606,18 +606,18 @@
   .chat-notify-name{font-size:13px;font-weight:700;color:var(--ink);}
   .chat-notify-preview{font-size:12px;color:var(--slate-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 
-  /* ---------- Persistent left sidebar ---------- */
-  .home-layout{
-    display:flex;align-items:flex-start;gap:24px;
-  }
+  /* ---------- Persistent left sidebar (full-height app shell) ---------- */
+  html, body{height:100%;}
   .home-sidebar{
-    flex:0 0 250px;width:250px;position:sticky;top:24px;
-    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg, 16px);
-    box-shadow:var(--shadow);padding:22px 18px;display:flex;flex-direction:column;
+    position:fixed;top:0;left:0;bottom:0;width:250px;z-index:10;
+    background:var(--panel);border-right:1px solid var(--border);
+    box-shadow:var(--shadow-sm, 0 1px 2px rgba(16,24,40,.05));
+    padding:24px 18px;display:flex;flex-direction:column;overflow-y:auto;
   }
+  .app{margin-left:250px;}
   @media (max-width:900px){
-    .home-layout{flex-direction:column;}
-    .home-sidebar{width:100%;position:static;}
+    .home-sidebar{display:none;}
+    .app{margin-left:0;}
   }
     .theme-toggle-row{
     display:flex;gap:8px;margin-bottom:16px;
@@ -1141,60 +1141,59 @@
 </div>
 
 <div id="appRoot">
+<aside class="home-sidebar" id="settingsPanel">
+  <div class="settings-user-block">
+    <div class="settings-avatar" id="settingsAvatar">?</div>
+    <div>
+      <div class="settings-user-name" id="settingsUserName">—</div>
+      <div class="settings-user-role" id="settingsUserRole" style="display:none"></div>
+      <div class="settings-user-email" id="settingsUserEmail">—</div>
+    </div>
+  </div>
+  <div class="theme-toggle-row">
+    <button class="theme-toggle-btn" id="themeLightBtn">☀️ <span data-i18n="lightMode">Light</span></button>
+    <button class="theme-toggle-btn" id="themeDarkBtn">🌙 <span data-i18n="darkMode">Dark</span></button>
+  </div>
+  <a class="settings-item" href="account.html">
+    <span class="settings-item-icon">👤</span>
+    <span data-i18n="manageAccount">Manage account</span>
+    <span class="settings-item-arrow">→</span>
+  </a>
+  <a class="settings-item" href="team.html">
+    <span class="settings-item-icon">👥</span>
+    <span data-i18n="manageTeam">Manage team</span>
+    <span class="settings-item-arrow">→</span>
+  </a>
+  <a class="settings-item" href="billing.html">
+    <span class="settings-item-icon">💳</span>
+    <span data-i18n="billingPlansLabel">Billing &amp; plans</span>
+    <span class="settings-item-arrow">→</span>
+  </a>
+  <button class="settings-item" id="helpMenuToggle">
+    <span class="settings-item-icon">❓</span>
+    <span data-i18n="helpMenuLabel">Help</span>
+    <span class="settings-item-arrow chevron" id="helpMenuChevron">▾</span>
+  </button>
+  <div class="help-submenu" id="helpSubmenu">
+    <a class="help-submenu-item" href="privacy-policy.html">
+      <span class="icon">🔒</span>
+      <span data-i18n="privacyPolicy">Privacy Policy</span>
+    </a>
+    <a class="help-submenu-item" href="help-center.html">
+      <span class="icon">📚</span>
+      <span data-i18n="helpCenter">Help Center</span>
+    </a>
+    <a class="help-submenu-item" href="feedback.html">
+      <span class="icon">💬</span>
+      <span data-i18n="sendFeedback">Send Feedback</span>
+    </a>
+  </div>
+  <button class="settings-item danger" id="signOutItem">
+    <span class="settings-item-icon">🚪</span>
+    <span data-i18n="signOut">Sign out</span>
+  </button>
+</aside>
 <div class="app">
-  <div class="home-layout">
-  <aside class="home-sidebar" id="settingsPanel">
-    <div class="settings-user-block">
-      <div class="settings-avatar" id="settingsAvatar">?</div>
-      <div>
-        <div class="settings-user-name" id="settingsUserName">—</div>
-        <div class="settings-user-role" id="settingsUserRole" style="display:none"></div>
-        <div class="settings-user-email" id="settingsUserEmail">—</div>
-      </div>
-    </div>
-    <div class="theme-toggle-row">
-      <button class="theme-toggle-btn" id="themeLightBtn">☀️ <span data-i18n="lightMode">Light</span></button>
-      <button class="theme-toggle-btn" id="themeDarkBtn">🌙 <span data-i18n="darkMode">Dark</span></button>
-    </div>
-    <a class="settings-item" href="account.html">
-      <span class="settings-item-icon">👤</span>
-      <span data-i18n="manageAccount">Manage account</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <a class="settings-item" href="team.html">
-      <span class="settings-item-icon">👥</span>
-      <span data-i18n="manageTeam">Manage team</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <a class="settings-item" href="billing.html">
-      <span class="settings-item-icon">💳</span>
-      <span data-i18n="billingPlansLabel">Billing &amp; plans</span>
-      <span class="settings-item-arrow">→</span>
-    </a>
-    <button class="settings-item" id="helpMenuToggle">
-      <span class="settings-item-icon">❓</span>
-      <span data-i18n="helpMenuLabel">Help</span>
-      <span class="settings-item-arrow chevron" id="helpMenuChevron">▾</span>
-    </button>
-    <div class="help-submenu" id="helpSubmenu">
-      <a class="help-submenu-item" href="privacy-policy.html">
-        <span class="icon">🔒</span>
-        <span data-i18n="privacyPolicy">Privacy Policy</span>
-      </a>
-      <a class="help-submenu-item" href="help-center.html">
-        <span class="icon">📚</span>
-        <span data-i18n="helpCenter">Help Center</span>
-      </a>
-      <a class="help-submenu-item" href="feedback.html">
-        <span class="icon">💬</span>
-        <span data-i18n="sendFeedback">Send Feedback</span>
-      </a>
-    </div>
-    <button class="settings-item danger" id="signOutItem">
-      <span class="settings-item-icon">🚪</span>
-      <span data-i18n="signOut">Sign out</span>
-    </button>
-  </aside>
   <div class="boards-main-column">
   <header>
     <div class="title-block">
@@ -1343,7 +1342,6 @@
   </div>
 
   <footer data-i18n="footerText">© 2026 by PalaTrack BV. - All Rights Reserved</footer>
-  </div>
   </div>
 </div>
 </div>
