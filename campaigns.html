@@ -113,27 +113,6 @@
   .seq-card-badge.needs_attention{background:var(--fail-soft);color:var(--fail);}
   .seq-card-chevron{color:var(--slate-light);flex-shrink:0;transition:transform .15s;}
   .seq-card:hover .seq-card-chevron{transform:translateX(3px);color:var(--teal);}
-  .seq-card-chevron.expand{transition:transform .15s;}
-  .seq-card-chevron.expand.open{transform:rotate(90deg);}
-
-  .campaign-members{
-    border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;margin:-12px 0 12px;
-    background:var(--panel-alt);overflow:hidden;
-  }
-  .campaign-member-row{
-    display:flex;align-items:center;gap:10px;padding:11px 20px;border-top:1px solid var(--border-soft);
-    text-decoration:none;color:var(--ink);font-size:12.5px;transition:background .12s;
-  }
-  .campaign-member-row:hover{background:var(--panel);}
-  .campaign-member-name{flex:1;font-weight:600;}
-  .campaign-member-badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap;}
-  .campaign-member-badge.draft{background:var(--border-soft);color:var(--slate);}
-  .campaign-member-badge.paused{background:var(--amber-soft);color:var(--amber);}
-  .campaign-member-badge.active{background:var(--amber-soft);color:var(--amber);}
-  .campaign-member-badge.completed{background:var(--success-soft);color:var(--success);}
-  .campaign-member-badge.stopped_replied{background:var(--success-soft);color:var(--success);}
-  .campaign-member-badge.stopped_status_change{background:var(--success-soft);color:var(--success);}
-  .campaign-member-badge.needs_attention{background:var(--fail-soft);color:var(--fail);}
   .seq-customize-btn{
     flex-shrink:0;background:none;border:1px solid transparent;border-radius:8px;font-size:15px;
     padding:6px 8px;cursor:pointer;opacity:0;transition:opacity .12s, border-color .12s, background .12s;
@@ -155,6 +134,22 @@
   .seq-trash-btn:disabled{opacity:.6;cursor:default;}
 
   .empty-state{text-align:center;padding:70px 20px;color:var(--slate);border:1px dashed var(--border);border-radius:16px;}
+
+  .detail-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .detail-section-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin:24px 0 12px;}
+  .detail-lead-row{
+    display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:14px 18px;margin-bottom:10px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);
+    transition:border-color .15s, transform .15s;
+  }
+  .detail-lead-row:hover{border-color:var(--teal);transform:translateY(-1px);}
+  .detail-lead-avatar{
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, var(--teal), var(--teal-deep));color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;flex-shrink:0;
+  }
+  .detail-lead-body{flex:1;min-width:0;}
+  .detail-lead-name{font-weight:700;font-size:13.5px;}
+  .detail-lead-email{font-size:12px;color:var(--slate);}
   .empty-state h3{font-family:'Sora',sans-serif;font-size:19px;font-weight:700;color:var(--ink);margin:0 0 6px;}
   .empty-state p{font-size:13.5px;margin:0 0 16px;}
 
@@ -263,26 +258,46 @@
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     Back
   </a>
-  <div class="page-head">
-    <div>
-      <h1 class="page-title">Campaigns</h1>
-      <p class="page-sub">One sequence sent to a group of leads at once, tracked and controlled together.</p>
+
+  <div id="listView">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Campaigns</h1>
+        <p class="page-sub">One sequence sent to a group of leads at once, tracked and controlled together.</p>
+      </div>
+      <button type="button" class="new-seq-btn" id="newCampaignBtn">🎯 New campaign</button>
     </div>
-    <button type="button" class="new-seq-btn" id="newCampaignBtn">🎯 New campaign</button>
+
+    <div class="reply-stats-strip" id="replyStatsStrip" style="display:none;"></div>
+
+    <div class="status-filters" id="statusFilters">
+      <button type="button" class="status-chip active" data-filter="all">All</button>
+      <button type="button" class="status-chip" data-filter="draft">Drafts</button>
+      <button type="button" class="status-chip" data-filter="active">Active</button>
+      <button type="button" class="status-chip" data-filter="paused">Paused</button>
+      <button type="button" class="status-chip" data-filter="completed">Completed</button>
+      <button type="button" class="status-chip" data-filter="trash">🗑️ Trash</button>
+    </div>
+
+    <div id="listHolder"></div>
   </div>
 
-  <div class="reply-stats-strip" id="replyStatsStrip" style="display:none;"></div>
-
-  <div class="status-filters" id="statusFilters">
-    <button type="button" class="status-chip active" data-filter="all">All</button>
-    <button type="button" class="status-chip" data-filter="draft">Drafts</button>
-    <button type="button" class="status-chip" data-filter="active">Active</button>
-    <button type="button" class="status-chip" data-filter="paused">Paused</button>
-    <button type="button" class="status-chip" data-filter="completed">Completed</button>
-    <button type="button" class="status-chip" data-filter="trash">🗑️ Trash</button>
+  <div id="detailView" style="display:none;">
+    <a class="back-link" id="detailBackLink" href="#">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      Back to campaigns
+    </a>
+    <div class="page-head">
+      <div>
+        <h1 class="page-title" id="detailCampaignName">Campaign</h1>
+        <p class="page-sub" id="detailCampaignMeta"></p>
+      </div>
+      <div class="detail-actions" id="detailActions"></div>
+    </div>
+    <div class="reply-stats-strip" id="detailStatsStrip" style="display:none;"></div>
+    <h3 class="detail-section-title">Leads in this campaign</h3>
+    <div id="detailLeadsList"></div>
   </div>
-
-  <div id="listHolder"></div>
 </div>
 </div>
 </div>
@@ -366,7 +381,9 @@
 
   const params = new URLSearchParams(location.search);
   const boardId = params.get('board');
+  const campaignIdParam = params.get('campaignId');
   document.getElementById('backBtn').href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
+  document.getElementById('detailBackLink').href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'campaigns.html';
   const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
   document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;
   document.getElementById('navSequences').href = `sequences.html${boardQS}`;
@@ -376,18 +393,17 @@
   let currentWorkspaceId = null;
   let updateCampaignStatusFn = null;
   let allSequenceDocs = []; // every /sequences doc for this board, used to compute per-campaign reply stats
-  let leadNames = {}; // leadId -> {name, email}
-  let expandedCampaigns = new Set(); // which campaign cards are currently expanded
+  let activeFilter = 'all';
+  let leadNames = {}; // leadId -> {name, email}, for the detail view's lead list
 
-  function getLeadInfo(boardId, leadId){
-    const key = `${boardId}/${leadId}`;
+  function getLeadInfo(bId, lId){
+    const key = `${bId}/${lId}`;
     if(leadNames[key]) return Promise.resolve(leadNames[key]);
-    return db.doc(`workspaces/${currentWorkspaceId}/boards/${boardId}/leads/${leadId}`).get().then(doc=>{
+    return db.doc(`workspaces/${currentWorkspaceId}/boards/${bId}/leads/${lId}`).get().then(doc=>{
       leadNames[key] = doc.exists ? {name: doc.data().name || 'Unnamed lead', email: doc.data().email || ''} : {name:'Deleted lead', email:''};
       return leadNames[key];
     }).catch(()=>({name:'Unknown lead', email:''}));
   }
-  let activeFilter = 'all';
 
   const STATUS_LABEL = {
     draft:'Draft', paused:'Paused', active:'Active', completed:'Completed',
@@ -502,7 +518,6 @@
     }
     holder.innerHTML = filtered.map((c, idx)=>{
       const replyNote = (!isTrash && c.status !== 'draft') ? ` &middot; ${c.repliedCount} of ${c.leadCount} replied` : '';
-      const isOpen = !isTrash && expandedCampaigns.has(c.campaignId);
       return `
       <div class="seq-card ${isTrash ? 'trashed' : ''}" data-idx="${idx}" style="animation-delay:${idx * 40}ms;${isTrash ? 'cursor:default;' : ''}">
         <div class="seq-card-icon">${isTrash ? '🗑️' : '🎯'}</div>
@@ -523,21 +538,11 @@
             ${c.status === 'draft' ? `<button type="button" class="seq-trash-btn forever" data-action="trash" data-ref="${idx}">🗑️ Discard</button>` : ''}
           </div>
           <span class="seq-card-badge ${esc(c.status)}">${esc(STATUS_LABEL[c.status] || c.status)}</span>
-          <span class="seq-card-chevron expand ${isOpen ? 'open' : ''}" data-toggle="${idx}">
+          <span class="seq-card-chevron">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
           </span>
         `}
       </div>
-      ${(!isTrash && isOpen) ? `
-        <div class="campaign-members" data-members="${idx}">
-          ${c.members.map(m => `
-            <a class="campaign-member-row" href="sequence-builder.html?board=${encodeURIComponent(c.boardId)}&lead=${encodeURIComponent(m.leadId)}&sequenceId=${encodeURIComponent(m.sequenceId)}">
-              <span class="campaign-member-name" data-lead-name="${esc(c.boardId)}/${esc(m.leadId)}">Loading…</span>
-              <span class="campaign-member-badge ${esc(m.status)}">${esc(STATUS_LABEL[m.status] || m.status)}</span>
-            </a>
-          `).join('')}
-        </div>
-      ` : ''}
     `;
     }).join('');
 
@@ -546,14 +551,8 @@
         card.addEventListener('click', (e)=>{
           if(e.target.closest('.seq-trash-btn')) return;
           const c = filtered[Number(card.dataset.idx)];
-          if(expandedCampaigns.has(c.campaignId)) expandedCampaigns.delete(c.campaignId);
-          else expandedCampaigns.add(c.campaignId);
-          renderList();
+          location.href = `campaigns.html?board=${encodeURIComponent(c.boardId)}&campaignId=${encodeURIComponent(c.campaignId)}`;
         });
-      });
-      holder.querySelectorAll('[data-lead-name]').forEach(nameEl=>{
-        const [bId, lId] = nameEl.dataset.leadName.split('/');
-        getLeadInfo(bId, lId).then(info=>{ nameEl.textContent = info.name; });
       });
     }
 
@@ -636,13 +635,143 @@
   let allCampaignDocs = [];
   let campaignsLoaded = false, sequencesLoaded = false;
 
+  function renderDetailView(){
+    const campaign = allCampaignDocs.find(c => c.id === campaignIdParam);
+    if(!campaign){
+      document.getElementById('detailCampaignName').textContent = 'Campaign not found';
+      document.getElementById('detailCampaignMeta').textContent = '';
+      document.getElementById('detailActions').innerHTML = '';
+      document.getElementById('detailStatsStrip').style.display = 'none';
+      document.getElementById('detailLeadsList').innerHTML = '<div class="empty-state"><h3>Not found</h3><p>This campaign may have been deleted.</p></div>';
+      return;
+    }
+    const members = allSequenceDocs.filter(s => s.campaignId === campaignIdParam);
+    const status = deriveCampaignStatus(campaign, members);
+    const repliedCount = members.filter(s => s.status === 'stopped_replied').length;
+    const leadCount = campaign.leadCount || members.length;
+    const stepCount = Array.isArray(campaign.steps) ? campaign.steps.length : 0;
+
+    document.getElementById('detailCampaignName').textContent = campaign.name || 'Untitled campaign';
+    document.getElementById('detailCampaignMeta').textContent =
+      `${stepCount} step${stepCount===1?'':'s'} · ${leadCount} lead${leadCount===1?'':'s'} · started by ${campaign.createdByName || 'Someone'}`;
+
+    const statsStrip = document.getElementById('detailStatsStrip');
+    if(status === 'draft' || status === 'deleted'){
+      statsStrip.style.display = 'none';
+    } else {
+      const pct = leadCount > 0 ? Math.round((repliedCount / leadCount) * 100) : 0;
+      statsStrip.style.display = 'flex';
+      statsStrip.innerHTML = `
+        <div class="reply-stat"><div class="reply-stat-value">${leadCount}</div><div class="reply-stat-label">Total leads</div></div>
+        <div class="reply-stat-divider"></div>
+        <div class="reply-stat"><div class="reply-stat-value highlight">${repliedCount}</div><div class="reply-stat-label">Got a reply</div></div>
+        <div class="reply-stat-divider"></div>
+        <div class="reply-stat"><div class="reply-stat-value highlight">${pct}%</div><div class="reply-stat-label">Reply rate</div></div>
+        <div class="reply-stat-bar"><div class="reply-stat-bar-fill" style="width:${pct}%;"></div></div>
+      `;
+    }
+
+    const actionsEl = document.getElementById('detailActions');
+    if(status === 'deleted'){
+      actionsEl.innerHTML = `
+        <button type="button" class="seq-trash-btn restore" id="detailRestoreBtn">Restore</button>
+        <button type="button" class="seq-trash-btn forever" id="detailForeverBtn">Delete forever</button>
+      `;
+      document.getElementById('detailRestoreBtn').addEventListener('click', (e)=>{
+        runCampaignAction(campaign.id, 'restore', e.currentTarget, 'Restoring...')
+          .then(()=> showToast('Campaign restored.')).catch(()=>{});
+      });
+      document.getElementById('detailForeverBtn').addEventListener('click', (e)=>{
+        showConfirmModal({
+          title: 'Delete this campaign forever?',
+          message: `This removes the campaign and all ${leadCount} of its sequences completely, along with anything still scheduled. This can't be undone.`,
+          confirmLabel: 'Delete forever'
+        }).then(ok=>{
+          if(!ok) return;
+          runCampaignAction(campaign.id, 'delete_forever', e.currentTarget, 'Deleting...').then(()=>{
+            showToast('Deleted for good.');
+            location.href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'campaigns.html';
+          }).catch(()=>{});
+        });
+      });
+    } else {
+      let btns = '';
+      if(status === 'active') btns += `<button type="button" class="seq-trash-btn" id="detailPauseBtn">⏸ Pause all</button>`;
+      if(status === 'paused') btns += `<button type="button" class="seq-trash-btn restore" id="detailResumeBtn">▶ Resume all</button>`;
+      btns += `<button type="button" class="seq-trash-btn forever" id="detailTrashBtn">🗑️ ${status === 'draft' ? 'Discard' : 'Move to trash'}</button>`;
+      actionsEl.innerHTML = btns;
+      const pauseBtn = document.getElementById('detailPauseBtn');
+      if(pauseBtn) pauseBtn.addEventListener('click', (e)=>{
+        runCampaignAction(campaign.id, 'pause', e.currentTarget, 'Pausing...')
+          .then(()=> showToast('Campaign paused — nothing more will send from it until resumed.')).catch(()=>{});
+      });
+      const resumeBtn = document.getElementById('detailResumeBtn');
+      if(resumeBtn) resumeBtn.addEventListener('click', (e)=>{
+        runCampaignAction(campaign.id, 'resume', e.currentTarget, 'Resuming...')
+          .then(()=> showToast('Campaign resumed.')).catch(()=>{});
+      });
+      const trashBtn = document.getElementById('detailTrashBtn');
+      if(trashBtn) trashBtn.addEventListener('click', (e)=>{
+        const isDraft = status === 'draft';
+        showConfirmModal({
+          title: isDraft ? 'Discard this campaign?' : 'Move this campaign to trash?',
+          message: isDraft
+            ? "This draft campaign hasn't been started — discarding removes it for good."
+            : `It'll stop sending anything further to all ${leadCount} leads and move to Trash, where you can restore it or delete it for good later.`,
+          confirmLabel: isDraft ? 'Discard' : 'Move to trash'
+        }).then(ok=>{
+          if(!ok) return;
+          runCampaignAction(campaign.id, isDraft ? 'delete_forever' : 'trash', e.currentTarget, 'Working...')
+            .then(()=>{
+              showToast(isDraft ? 'Discarded.' : 'Moved to trash.');
+              if(isDraft) location.href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'campaigns.html';
+            }).catch(()=>{});
+        });
+      });
+    }
+
+    const listEl = document.getElementById('detailLeadsList');
+    if(members.length === 0){
+      listEl.innerHTML = `<div class="empty-state"><h3>No leads</h3><p>This campaign has no leads — they may have been skipped when it was created (no email on file, or already had a sequence running).</p></div>`;
+      return;
+    }
+    listEl.innerHTML = members.map((m, idx)=>`
+      <a class="detail-lead-row" href="sequence-builder.html?board=${encodeURIComponent(m.boardId)}&lead=${encodeURIComponent(m.leadId)}&sequenceId=${encodeURIComponent(m.id)}">
+        <div class="detail-lead-avatar" data-avatar="${idx}">?</div>
+        <div class="detail-lead-body">
+          <div class="detail-lead-name" data-name="${idx}">Loading…</div>
+          <div class="detail-lead-email" data-email="${idx}"></div>
+        </div>
+        <span class="seq-card-badge ${esc(m.status)}">${esc(STATUS_LABEL[m.status] || m.status)}</span>
+      </a>
+    `).join('');
+    members.forEach((m, idx)=>{
+      getLeadInfo(m.boardId, m.leadId).then(info=>{
+        const nameEl = listEl.querySelector(`[data-name="${idx}"]`);
+        const emailEl = listEl.querySelector(`[data-email="${idx}"]`);
+        const avatarEl = listEl.querySelector(`[data-avatar="${idx}"]`);
+        if(nameEl) nameEl.textContent = info.name;
+        if(emailEl) emailEl.textContent = info.email;
+        if(avatarEl) avatarEl.textContent = initials(info.name);
+      });
+    });
+  }
+
   function revealAndRender(){
     if(!campaignsLoaded || !sequencesLoaded) return;
     document.getElementById('pageLoader').style.display = 'none';
     const appRoot = document.getElementById('appRoot');
     appRoot.style.display = 'flex';
     appRoot.classList.add('reveal');
-    renderList();
+    if(campaignIdParam){
+      document.getElementById('listView').style.display = 'none';
+      document.getElementById('detailView').style.display = '';
+      renderDetailView();
+    } else {
+      document.getElementById('listView').style.display = '';
+      document.getElementById('detailView').style.display = 'none';
+      renderList();
+    }
   }
 
   function startListening(workspaceId){
