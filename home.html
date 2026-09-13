@@ -609,62 +609,82 @@
   /* ---------- Persistent left sidebar (full-height app shell) ---------- */
   html, body{height:100%;}
   .home-sidebar{
-    position:fixed;top:0;left:0;bottom:0;width:250px;z-index:10;
+    position:fixed;top:0;left:0;bottom:0;width:264px;z-index:10;
     background:var(--panel);border-right:1px solid var(--border);
-    box-shadow:var(--shadow-sm, 0 1px 2px rgba(16,24,40,.05));
-    padding:24px 18px;display:flex;flex-direction:column;overflow-y:auto;
+    padding:22px 16px 18px;display:flex;flex-direction:column;overflow-y:auto;
   }
-  .app{margin-left:250px;}
+  .app{margin-left:264px;}
   @media (max-width:900px){
     .home-sidebar{display:none;}
     .app{margin-left:0;}
   }
-    .theme-toggle-row{
-    display:flex;gap:8px;margin-bottom:16px;
+  .sidebar-brand{display:flex;align-items:center;gap:10px;padding:2px 6px 20px;}
+  .sidebar-brand-logo{width:30px;height:30px;border-radius:8px;flex-shrink:0;}
+  .sidebar-brand-name{font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em;}
+  .sidebar-spacer{flex:1;min-height:12px;}
+
+  .theme-toggle-row{
+    display:flex;gap:6px;margin-bottom:18px;background:var(--c-blue-tint);border-radius:11px;padding:4px;
   }
   .theme-toggle-btn{
     flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
-    padding:10px 12px;border-radius:9px;border:1px solid var(--border);
-    background:none;color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;
-    transition:background .15s;font-family:'Inter',sans-serif;
+    padding:9px 10px;border-radius:8px;border:none;
+    background:none;color:var(--slate);font-size:12.5px;font-weight:600;cursor:pointer;
+    transition:background .15s ease, color .15s ease, box-shadow .15s ease;font-family:'Inter',sans-serif;
   }
-  .theme-toggle-btn:hover{background:var(--c-blue-tint);}
-  [data-theme="dark"] .theme-toggle-btn:hover{background:#22303F;}
-  .theme-toggle-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);}
-.settings-user-block{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .theme-toggle-btn:hover{color:var(--ink);}
+  .theme-toggle-btn.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06));}
+
+  .settings-user-block{
+    display:flex;align-items:center;gap:12px;padding:14px 12px;margin-bottom:18px;
+    background:var(--c-blue-tint);border-radius:14px;
+  }
+  .settings-user-text{min-width:0;}
   .settings-avatar{
-    width:46px;height:46px;border-radius:50%;background:var(--c-blue-bg);color:var(--teal);
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);color:#fff;
+    box-shadow:0 3px 10px rgba(27,89,165,.25);
     display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;
-    font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden;
+    font-size:15px;font-weight:700;flex-shrink:0;overflow:hidden;
   }
   .settings-avatar img{width:100%;height:100%;object-fit:cover;}
-  .settings-user-name{font-weight:700;font-size:14px;color:var(--ink);}
-  .settings-user-email{font-size:12px;color:var(--slate);word-break:break-word;}
-  .settings-user-role{font-size:11.5px;color:var(--teal);font-weight:600;margin:1px 0;}
+  .settings-user-name{font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .settings-user-email{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .settings-user-role{font-size:11px;color:var(--teal);font-weight:600;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  .sidebar-nav-label{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;
+    color:var(--slate-light);margin:2px 10px 8px;
+  }
   .settings-item{
-    display:flex;align-items:center;gap:12px;width:100%;
-    padding:13px 14px;border-radius:9px;background:none;border:1px solid var(--border);
+    display:flex;align-items:center;gap:11px;width:100%;
+    padding:10px 10px;border-radius:10px;background:none;border:none;
     font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer;
-    margin-bottom:10px;transition:background .15s;
+    margin-bottom:3px;transition:background .13s ease;
   }
   .settings-item:hover{background:var(--c-blue-tint);}
-  .settings-item.danger{color:var(--red);}
+  .settings-item.danger{color:var(--red);margin-top:6px;padding-top:14px;border-top:1px solid var(--border);border-radius:0 0 10px 10px;}
   .settings-item.danger:hover{background:var(--c-red-bg);}
-  .settings-item-icon{font-size:16px;}
-  .settings-item-arrow{margin-left:auto;color:var(--slate-light);}
+  .settings-item-icon{
+    width:28px;height:28px;border-radius:8px;flex-shrink:0;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--item-accent-soft, var(--c-blue-tint));
+  }
+  .settings-item.danger .settings-item-icon{background:var(--c-red-bg);}
+  .settings-item-arrow{margin-left:auto;color:var(--slate-light);font-size:12px;}
   .settings-item-arrow.chevron{transition:transform .2s ease;}
   .settings-item-arrow.chevron.open{transform:rotate(180deg);}
   .help-submenu{
-    display:none;flex-direction:column;gap:6px;
-    margin:-4px 0 10px 14px;padding:6px 0 6px 20px;border-left:2px solid var(--border);
+    display:none;flex-direction:column;gap:2px;
+    margin:0 0 4px 38px;padding:2px 0 2px 10px;border-left:2px solid var(--border);
   }
   .help-submenu.open{display:flex;}
   .help-submenu-item{
-    display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;
-    font-size:13px;font-weight:600;color:var(--slate);text-decoration:none;transition:background .15s, color .15s;
+    display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;
+    font-size:12.5px;font-weight:600;color:var(--slate);text-decoration:none;transition:background .15s, color .15s;
   }
   .help-submenu-item:hover{background:var(--c-blue-tint);color:var(--teal);}
-  .help-submenu-item .icon{font-size:14px;}
+  .help-submenu-item .icon{font-size:13px;}
 
   /* ---------- Edit board modal ---------- */
   .modal-overlay{
@@ -1140,11 +1160,14 @@
   </div>
 </div>
 
-<div id="appRoot">
 <aside class="home-sidebar" id="settingsPanel">
+  <div class="sidebar-brand">
+    <img data-logo-src="1" alt="PalaTrack logo" class="sidebar-brand-logo">
+    <span class="sidebar-brand-name">PalaTrack</span>
+  </div>
   <div class="settings-user-block">
     <div class="settings-avatar" id="settingsAvatar">?</div>
-    <div>
+    <div class="settings-user-text">
       <div class="settings-user-name" id="settingsUserName">—</div>
       <div class="settings-user-role" id="settingsUserRole" style="display:none"></div>
       <div class="settings-user-email" id="settingsUserEmail">—</div>
@@ -1154,23 +1177,24 @@
     <button class="theme-toggle-btn" id="themeLightBtn">☀️ <span data-i18n="lightMode">Light</span></button>
     <button class="theme-toggle-btn" id="themeDarkBtn">🌙 <span data-i18n="darkMode">Dark</span></button>
   </div>
+  <div class="sidebar-nav-label">Workspace</div>
   <a class="settings-item" href="account.html">
-    <span class="settings-item-icon">👤</span>
+    <span class="settings-item-icon" style="--item-accent:var(--teal);--item-accent-soft:var(--c-blue-bg)">👤</span>
     <span data-i18n="manageAccount">Manage account</span>
     <span class="settings-item-arrow">→</span>
   </a>
   <a class="settings-item" href="team.html">
-    <span class="settings-item-icon">👥</span>
+    <span class="settings-item-icon" style="--item-accent:var(--c-green-mid);--item-accent-soft:var(--c-green-bg)">👥</span>
     <span data-i18n="manageTeam">Manage team</span>
     <span class="settings-item-arrow">→</span>
   </a>
   <a class="settings-item" href="billing.html">
-    <span class="settings-item-icon">💳</span>
+    <span class="settings-item-icon" style="--item-accent:var(--c-amber-fg);--item-accent-soft:var(--c-amber-bg)">💳</span>
     <span data-i18n="billingPlansLabel">Billing &amp; plans</span>
     <span class="settings-item-arrow">→</span>
   </a>
   <button class="settings-item" id="helpMenuToggle">
-    <span class="settings-item-icon">❓</span>
+    <span class="settings-item-icon" style="--item-accent:var(--c-purple-fg);--item-accent-soft:var(--c-purple-bg)">❓</span>
     <span data-i18n="helpMenuLabel">Help</span>
     <span class="settings-item-arrow chevron" id="helpMenuChevron">▾</span>
   </button>
@@ -1188,11 +1212,14 @@
       <span data-i18n="sendFeedback">Send Feedback</span>
     </a>
   </div>
+  <div class="sidebar-spacer"></div>
   <button class="settings-item danger" id="signOutItem">
-    <span class="settings-item-icon">🚪</span>
+    <span class="settings-item-icon" style="--item-accent:var(--red);--item-accent-soft:var(--c-red-bg)">🚪</span>
     <span data-i18n="signOut">Sign out</span>
   </button>
 </aside>
+
+<div id="appRoot">
 <div class="app">
   <div class="boards-main-column">
   <header>
