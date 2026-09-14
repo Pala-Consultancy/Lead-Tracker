@@ -407,10 +407,14 @@
     #createBoardForm{grid-template-columns:1fr;}
   }
 
-  /* ---------- Needs attention feed ---------- */
-  .attention-card{
+  /* ---------- Needs attention + Recent activity ---------- */
+  .home-insights-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;align-items:start;}
+  @media (max-width:900px){
+    .home-insights-row{grid-template-columns:1fr;}
+  }
+  .attention-card, .activity-card{
     background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg, 16px);
-    box-shadow:var(--shadow);padding:20px 22px;margin-bottom:22px;
+    box-shadow:var(--shadow);padding:20px 22px;
   }
   .attention-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
   .attention-header h2{font-family:'Sora',sans-serif;font-size:15.5px;font-weight:700;color:var(--ink);margin:0;}
@@ -449,6 +453,27 @@
   @media (max-width:640px){
     .attention-item-board{display:none;}
   }
+
+  /* ---------- Recent activity ---------- */
+  .activity-list{display:flex;flex-direction:column;}
+  .activity-item{display:flex;align-items:flex-start;gap:12px;padding:8px 2px;position:relative;}
+  .activity-item::before{
+    content:"";position:absolute;left:14.5px;top:31px;bottom:-8px;width:1.5px;background:var(--border);
+  }
+  .activity-item:last-child::before{display:none;}
+  .activity-icon{
+    width:30px;height:30px;border-radius:9px;flex-shrink:0;font-size:13px;z-index:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .activity-icon.type-new{background:var(--c-blue-bg);}
+  .activity-icon.type-reply{background:var(--c-green-bg);}
+  .activity-icon.type-won{background:var(--c-amber-bg);}
+  .activity-icon.type-contacted{background:var(--c-purple-bg);}
+  .activity-icon.type-board{background:var(--c-blue-bg);}
+  .activity-body{flex:1;min-width:0;padding-top:3px;}
+  .activity-text{font-size:12.5px;color:var(--ink);line-height:1.45;}
+  .activity-text b{font-weight:700;}
+  .activity-time{font-size:10.5px;color:var(--slate-light);margin-top:1px;font-family:'IBM Plex Mono',monospace;}
 
   /* ---------- Home hub ---------- */
   .home-hub{
@@ -1372,13 +1397,24 @@
     </div>
   </header>
 
-  <div class="attention-card" id="attentionCard">
-    <div class="attention-header">
-      <h2>Needs attention</h2>
-      <span class="attention-count-badge" id="attentionCountBadge" style="display:none">0</span>
+  <div class="home-insights-row">
+    <div class="attention-card" id="attentionCard">
+      <div class="attention-header">
+        <h2>Needs attention</h2>
+        <span class="attention-count-badge" id="attentionCountBadge" style="display:none">0</span>
+      </div>
+      <div id="attentionBody">
+        <div class="attention-loading">Checking your boards…</div>
+      </div>
     </div>
-    <div id="attentionBody">
-      <div class="attention-loading">Checking your boards…</div>
+
+    <div class="activity-card" id="activityCard">
+      <div class="attention-header">
+        <h2>Recent activity</h2>
+      </div>
+      <div id="activityBody">
+        <div class="attention-loading">Loading recent activity…</div>
+      </div>
     </div>
   </div>
 
@@ -2770,13 +2806,32 @@
       showToast('Lost connection to the shared database.', true);
     });
   }
+  function toJsDate(val){
+    if(!val) return null;
+    if(typeof val.toDate === 'function') return val.toDate();
+    if(typeof val === 'string'){ const d = new Date(val); return isNaN(d.getTime()) ? null : d; }
+    return null;
+  }
+  function timeAgo(date){
+    if(!date) return '';
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if(seconds < 60) return 'just now';
+    const mins = Math.floor(seconds / 60);
+    if(mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if(hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if(days < 7) return `${days}d ago`;
+    return date.toLocaleDateString(undefined, {day:'numeric', month:'short'});
+  }
   function loadNeedsAttention(){
     const body = document.getElementById('attentionBody');
     const badge = document.getElementById('attentionCountBadge');
+    const activityBody = document.getElementById('activityBody');
     if(!body || !db || !workspaceId) return;
 
     boardsCollection.get().then(boardsSnap=>{
-      const boards = boardsSnap.docs.map(doc=>({id:doc.id, name: doc.data().name || 'Untitled board'}));
+      const boards = boardsSnap.docs.map(doc=>({id:doc.id, name: doc.data().name || 'Untitled board', createdAt: doc.data().createdAt}));
       // Fetch leads one board at a time rather than a single collectionGroup
       // query — if even one board is password-protected and not currently
       // unlocked, a collectionGroup query is rejected in its entirety by
@@ -2786,12 +2841,19 @@
         boardsCollection.doc(b.id).collection('leads').get()
           .then(leadsSnap=>({board:b, docs:leadsSnap.docs}))
           .catch(()=>({board:b, docs:null}))
-      ));
-    }).then(results=>{
+      )).then(results=>({boards, results}));
+    }).then(({boards, results})=>{
       const now = Date.now();
       const todayStr = new Date().toISOString().slice(0,10);
       const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
       const items = [];
+      const activity = [];
+
+      boards.forEach(b=>{
+        const created = toJsDate(b.createdAt);
+        if(created) activity.push({type:'board', className:'type-board', icon:'📋', time:created,
+          html:`New board <b>${esc(b.name)}</b> created`});
+      });
 
       results.forEach(({board, docs})=>{
         if(!docs) return; // board was inaccessible (e.g. locked) — skip it
@@ -2799,6 +2861,7 @@
           const l = { id: doc.id, boardId: board.id, ...doc.data() };
           if(l.deleted) return;
           const boardName = board.name;
+          const leadName = esc(l.name || 'A lead');
 
           if(l.status === 'Call booked' && l.callDate === todayStr){
             items.push({cat:'call', icon:'📞', className:'cat-call', priority:0,
@@ -2816,6 +2879,21 @@
                 lead:l, boardName, reason:`Contacted ${daysSince} days ago — no reply yet`});
             }
           }
+
+          const repliedTime = toJsDate(l.repliedAt);
+          if(repliedTime) activity.push({type:'reply', className:'type-reply', icon:'💬', time:repliedTime,
+            html:`<b>${leadName}</b> replied — <span style="color:var(--slate)">${esc(boardName)}</span>`});
+          const createdTime = toJsDate(l.createdAt);
+          if(createdTime) activity.push({type:'new', className:'type-new', icon:'✨', time:createdTime,
+            html:`<b>${leadName}</b> added to <span style="color:var(--slate)">${esc(boardName)}</span>`});
+          if(l.status === 'Won'){
+            const wonTime = toJsDate(l.statusChangedAt);
+            if(wonTime) activity.push({type:'won', className:'type-won', icon:'🏆', time:wonTime,
+              html:`<b>${leadName}</b> marked as <b>Won</b> 🎉`});
+          }
+          const contactedTimeD = toJsDate(l.contactedAt);
+          if(contactedTimeD) activity.push({type:'contacted', className:'type-contacted', icon:'📨', time:contactedTimeD,
+            html:`<b>${leadName}</b> was contacted — <span style="color:var(--slate)">${esc(boardName)}</span>`});
         });
       });
 
@@ -2836,27 +2914,49 @@
             <div class="attention-empty-sub">No leads need attention right now.</div>
           </div>
         </div>`;
-        return;
+      } else {
+        const rows = shown.map(item=>{
+          const l = item.lead;
+          const company = l.company ? ` <span class="attention-item-company">· ${esc(l.company)}</span>` : '';
+          return `<a class="attention-item" href="dashboard.html?board=${encodeURIComponent(l.boardId)}&lead=${encodeURIComponent(l.id)}">
+            <div class="attention-item-icon ${item.className}">${item.icon}</div>
+            <div class="attention-item-body">
+              <div class="attention-item-name">${esc(l.name||'Unnamed lead')}${company}</div>
+              <div class="attention-item-reason">${esc(item.reason)}</div>
+            </div>
+            <div class="attention-item-board">${esc(item.boardName)}</div>
+          </a>`;
+        }).join('');
+        const more = total > shown.length ? `<div class="attention-more">+${total - shown.length} more across your boards</div>` : '';
+        body.innerHTML = `<div class="attention-list">${rows}</div>${more}`;
       }
 
-      const rows = shown.map(item=>{
-        const l = item.lead;
-        const company = l.company ? ` <span class="attention-item-company">· ${esc(l.company)}</span>` : '';
-        return `<a class="attention-item" href="dashboard.html?board=${encodeURIComponent(l.boardId)}&lead=${encodeURIComponent(l.id)}">
-          <div class="attention-item-icon ${item.className}">${item.icon}</div>
-          <div class="attention-item-body">
-            <div class="attention-item-name">${esc(l.name||'Unnamed lead')}${company}</div>
-            <div class="attention-item-reason">${esc(item.reason)}</div>
-          </div>
-          <div class="attention-item-board">${esc(item.boardName)}</div>
-        </a>`;
-      }).join('');
-
-      const more = total > shown.length ? `<div class="attention-more">+${total - shown.length} more across your boards</div>` : '';
-      body.innerHTML = `<div class="attention-list">${rows}</div>${more}`;
+      if(activityBody){
+        activity.sort((a,b)=> b.time - a.time);
+        const shownActivity = activity.slice(0, 8);
+        if(shownActivity.length === 0){
+          activityBody.innerHTML = `<div class="attention-empty">
+            <span class="attention-empty-icon">🌱</span>
+            <div>
+              <div class="attention-empty-title">Nothing yet</div>
+              <div class="attention-empty-sub">Activity across your boards will show up here.</div>
+            </div>
+          </div>`;
+        } else {
+          activityBody.innerHTML = `<div class="activity-list">${shownActivity.map(a=>`
+            <div class="activity-item">
+              <div class="activity-icon ${a.className}">${a.icon}</div>
+              <div class="activity-body">
+                <div class="activity-text">${a.html}</div>
+                <div class="activity-time">${esc(timeAgo(a.time))}</div>
+              </div>
+            </div>`).join('')}</div>`;
+        }
+      }
     }).catch(err=>{
       console.error('Could not load needs-attention feed', err);
       body.innerHTML = `<div class="attention-empty"><span class="attention-empty-icon">⚠️</span><div><div class="attention-empty-title">Could not load this</div><div class="attention-empty-sub">Please try again later.</div></div></div>`;
+      if(activityBody) activityBody.innerHTML = `<div class="attention-empty"><span class="attention-empty-icon">⚠️</span><div><div class="attention-empty-title">Could not load this</div><div class="attention-empty-sub">Please try again later.</div></div></div>`;
     });
   }
   function loadCampaignsCount(){

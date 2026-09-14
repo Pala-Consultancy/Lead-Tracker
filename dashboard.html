@@ -3598,11 +3598,17 @@
     if(!wasEditing){
       data.createdByUid = auth.currentUser ? auth.currentUser.uid : null;
       data.createdByLeadName = currentUserDisplayName || (auth.currentUser ? auth.currentUser.email : '') || '';
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     }
     if(data.contacted && !(existingLeadForStamp && existingLeadForStamp.contacted)){
       data.contactedAt = new Date().toISOString();
     } else if(existingLeadForStamp && existingLeadForStamp.contactedAt){
       data.contactedAt = existingLeadForStamp.contactedAt;
+    }
+    if(data.replied && !(existingLeadForStamp && existingLeadForStamp.replied)){
+      data.repliedAt = new Date().toISOString();
+    } else if(existingLeadForStamp && existingLeadForStamp.repliedAt){
+      data.repliedAt = existingLeadForStamp.repliedAt;
     }
     if(data.requestSent && !(existingLeadForStamp && existingLeadForStamp.requestSent)){
       data.requestSentAt = new Date().toISOString();
@@ -3902,6 +3908,7 @@
   function updateStatus(id, status){
     const l = leads.find(x=>x.id===id);
     const updates = {status};
+    if(l && l.status !== status) updates.statusChangedAt = firebase.firestore.FieldValue.serverTimestamp();
     stampCallBookedIfNeeded(updates, l, status);
     if(status === 'Won' && l && !l.showedUp){
       updates.showedUp = true;
@@ -3924,7 +3931,7 @@
       if(!l.requestSentAt) updates.requestSentAt = firebase.firestore.FieldValue.serverTimestamp();
       if(!l.requestAcceptedAt) updates.requestAcceptedAt = firebase.firestore.FieldValue.serverTimestamp();
     }
-    if(field==='replied' && updates[field]) updates.contacted = true;
+    if(field==='replied' && updates[field]){ updates.contacted = true; if(!l.repliedAt) updates.repliedAt = firebase.firestore.FieldValue.serverTimestamp(); }
     if(field==='contacted' && !updates[field]){ updates.replied = false; updates.showedUp = false; updates.noShow = false; updates.contactedAt = null; }
     if(field==='contacted' && updates[field]) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp();
     if(field==='showedUp' && updates[field]){ updates.contacted = true; updates.noShow = false; if(!l.contactedAt) updates.contactedAt = firebase.firestore.FieldValue.serverTimestamp(); }
