@@ -939,6 +939,18 @@
       location.href = 'home.html';
       return;
     }
+    // The sidebar's own name/avatar has nothing to do with which board is
+    // selected, so load it right away instead of leaving the "?" / "…"
+    // placeholders stuck forever on the "pick a board first" screen.
+    db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
+      const wsId = doc.exists ? doc.data().workspaceId : null;
+      if(!wsId) return;
+      return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
+        const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
+        document.getElementById('seqSidebarUserName').textContent = myName;
+        document.getElementById('seqSidebarAvatar').textContent = initials(myName);
+      });
+    }).catch(()=>{});
     if(!boardId){
       document.getElementById('pageLoader').style.display = 'none';
       const appRoot = document.getElementById('appRoot');
@@ -962,11 +974,6 @@
         return;
       }
       startListening(workspaceId);
-      db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get().then(memberDoc=>{
-        const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
-        document.getElementById('seqSidebarUserName').textContent = myName;
-        document.getElementById('seqSidebarAvatar').textContent = initials(myName);
-      }).catch(()=>{});
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
