@@ -5532,6 +5532,8 @@ ${buildLeadContext()}`;
     const overlay = document.getElementById('linkedinPickerOverlay');
     const body = document.getElementById('linkedinPickerBody');
     overlay.style.display = 'flex';
+    overlay.classList.add('open');
+    overlay.querySelector('.confirm-modal').classList.add('open');
     body.innerHTML = `<div style="padding:20px 4px;color:var(--slate);font-size:13px;">Loading your sequences…</div>`;
     db.collection('linkedinSequenceTemplates').where('workspaceId', '==', workspaceId).orderBy('createdAt', 'desc').get().then(snap=>{
       const templates = snap.docs.map(d=>({id:d.id, ...d.data()}));
@@ -5560,6 +5562,19 @@ ${buildLeadContext()}`;
     });
   }
 
+  function closeLinkedInPicker(){
+    const overlay = document.getElementById('linkedinPickerOverlay');
+    overlay.classList.remove('open');
+    overlay.querySelector('.confirm-modal').classList.remove('open');
+    overlay.style.display = 'none';
+  }
+  function closeLinkedInCompose(){
+    const overlay = document.getElementById('linkedinComposeOverlay');
+    overlay.classList.remove('open');
+    overlay.querySelector('.confirm-modal').classList.remove('open');
+    overlay.style.display = 'none';
+  }
+
   function startLinkedInSequenceRun(tpl, l){
     if(!tpl || !(tpl.steps || []).length){ showToast('That sequence has no steps.', true); return; }
     db.collection('linkedinSequenceRuns').add({
@@ -5571,7 +5586,7 @@ ${buildLeadContext()}`;
       nextDueAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(()=>{
-      document.getElementById('linkedinPickerOverlay').style.display = 'none';
+      closeLinkedInPicker();
       showToast('LinkedIn sequence started for ' + (l.name || 'this lead') + '.');
       loadLinkedInSequenceForDrawer(l);
     }).catch(err=>{
@@ -5646,6 +5661,8 @@ ${buildLeadContext()}`;
     const filled = fillLinkedInTokens(step.message, l);
     const profileUrl = l.linkedinUrl ? normalizeLinkedInUrl(l.linkedinUrl) : linkedInSearchFallback(l);
     overlay.style.display = 'flex';
+    overlay.classList.add('open');
+    overlay.querySelector('.confirm-modal').classList.add('open');
     body.innerHTML = `
       <div style="font-size:12.5px;color:var(--slate);margin-bottom:10px;">Step ${run.currentStepIndex+1} of ${run.steps.length} — <b>${esc(run.templateName || '')}</b></div>
       <textarea id="liComposeText" class="li-compose-textarea">${esc(filled)}</textarea>
@@ -5660,7 +5677,7 @@ ${buildLeadContext()}`;
       const text = document.getElementById('liComposeText').value;
       navigator.clipboard.writeText(text).then(()=>showToast('Message copied.')).catch(()=>showToast('Could not copy — select and copy manually.', true));
     };
-    document.getElementById('liCloseComposeBtn').onclick = ()=>{ overlay.style.display = 'none'; };
+    document.getElementById('liCloseComposeBtn').onclick = closeLinkedInCompose;
     document.getElementById('liMarkSentBtn').onclick = ()=>{
       const nextIndex = run.currentStepIndex + 1;
       const isLastStep = nextIndex >= run.steps.length;
@@ -5672,7 +5689,7 @@ ${buildLeadContext()}`;
         updates.nextDueAt = firebase.firestore.Timestamp.fromMillis(Date.now() + delayDays * 24*60*60*1000);
       }
       db.collection('linkedinSequenceRuns').doc(run.id).update(updates).then(()=>{
-        overlay.style.display = 'none';
+        closeLinkedInCompose();
         showToast(isLastStep ? 'Sequence completed! 🎉' : 'Marked as sent — next step scheduled.');
         loadLinkedInSequenceForDrawer(l);
       }).catch(err=>{
@@ -5680,14 +5697,12 @@ ${buildLeadContext()}`;
       });
     };
   }
-  document.getElementById('linkedinPickerClose').addEventListener('click', ()=>{
-    document.getElementById('linkedinPickerOverlay').style.display = 'none';
-  });
+  document.getElementById('linkedinPickerClose').addEventListener('click', closeLinkedInPicker);
   document.getElementById('linkedinPickerOverlay').addEventListener('click', (e)=>{
-    if(e.target.id === 'linkedinPickerOverlay') document.getElementById('linkedinPickerOverlay').style.display = 'none';
+    if(e.target.id === 'linkedinPickerOverlay') closeLinkedInPicker();
   });
   document.getElementById('linkedinComposeOverlay').addEventListener('click', (e)=>{
-    if(e.target.id === 'linkedinComposeOverlay') document.getElementById('linkedinComposeOverlay').style.display = 'none';
+    if(e.target.id === 'linkedinComposeOverlay') closeLinkedInCompose();
   });
 
   function closeDrawer(){
