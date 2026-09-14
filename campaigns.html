@@ -223,41 +223,48 @@
   ::-webkit-scrollbar-thumb:hover{background:var(--slate-light);background-clip:padding-box;}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
   .board-picker-overlay{
-    position:fixed;inset:0;background:rgba(15,22,32,0.5);z-index:200;
+    position:fixed;inset:0;background:rgba(15,22,32,0.55);z-index:200;
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
     display:none;align-items:center;justify-content:center;padding:20px;
   }
   .board-picker-overlay.open{display:flex;}
   .board-picker-modal{
-    background:var(--panel);border-radius:16px;box-shadow:0 24px 60px -12px rgba(0,0,0,0.4);
+    background:var(--panel);border-radius:var(--radius-lg, 18px);
+    box-shadow:0 30px 70px -16px rgba(0,0,0,0.45);
     width:100%;max-width:440px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;
-    animation:board-picker-in .18s ease;
+    animation:board-picker-in .2s cubic-bezier(.2,.8,.3,1);
   }
-  @keyframes board-picker-in{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes board-picker-in{from{opacity:0;transform:translateY(10px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
   .board-picker-header{
-    display:flex;align-items:center;justify-content:space-between;padding:18px 20px;
+    display:flex;align-items:center;justify-content:space-between;padding:20px 22px;
     border-bottom:1px solid var(--border);flex-shrink:0;
   }
-  .board-picker-header h3{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin:0;}
+  .board-picker-header h3{font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.01em;}
   .board-picker-close{
-    width:28px;height:28px;border-radius:8px;border:none;background:none;color:var(--slate);
-    font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:background .12s;
+    width:30px;height:30px;border-radius:9px;border:none;background:var(--c-blue-tint);color:var(--slate);
+    font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .12s ease, color .12s ease;
   }
-  .board-picker-close:hover{background:var(--c-blue-tint);}
-  .board-picker-list{padding:10px;overflow-y:auto;}
-  .board-picker-loading, .board-picker-empty{padding:34px 20px;text-align:center;color:var(--slate);font-size:13.5px;}
+  .board-picker-close:hover{background:var(--c-red-bg);color:var(--red);}
+  .board-picker-list{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+  .board-picker-loading, .board-picker-empty{padding:40px 20px;text-align:center;color:var(--slate);font-size:13.5px;}
   .board-picker-item{
-    display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:10px;
-    border:none;background:none;text-align:left;cursor:pointer;transition:background .12s;
+    display:flex;align-items:center;gap:13px;width:100%;padding:12px 12px;border-radius:12px;
+    border:none;background:none;text-align:left;cursor:pointer;transition:background .13s ease, transform .13s ease;
     font-family:'Inter',sans-serif;
   }
   .board-picker-item:hover{background:var(--c-blue-tint);}
+  .board-picker-item:active{transform:scale(.99);}
   .board-picker-icon{
-    width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-    font-size:16px;background:var(--c-blue-bg);
+    width:40px;height:40px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    font-size:17px;background:linear-gradient(135deg, var(--c-blue-bg), var(--c-purple-bg));
+    box-shadow:0 1px 2px rgba(16,24,40,0.06);
   }
-  .board-picker-name{font-size:13.5px;font-weight:700;color:var(--ink);}
-  .board-picker-sub{font-size:11.5px;color:var(--slate);margin-top:1px;}
+  .board-picker-body{flex:1;min-width:0;}
+  .board-picker-name{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .board-picker-sub{font-size:11.5px;color:var(--slate-light);margin-top:1px;}
+  .board-picker-arrow{color:var(--slate-light);font-size:14px;flex-shrink:0;opacity:0;transform:translateX(-4px);transition:opacity .13s ease, transform .13s ease;}
+  .board-picker-item:hover .board-picker-arrow{opacity:1;transform:translateX(0);color:var(--teal);}
 </style>
 </head>
 <body>
@@ -923,10 +930,11 @@
           : null;
         return `<button type="button" class="board-picker-item" onclick="location.href='campaigns.html?board=${encodeURIComponent(b.id)}'">
           <div class="board-picker-icon">${icon}</div>
-          <div>
+          <div class="board-picker-body">
             <div class="board-picker-name">${esc(b.name || 'Untitled board')}</div>
             ${created ? `<div class="board-picker-sub">Created ${created}</div>` : ''}
           </div>
+          <div class="board-picker-arrow">→</div>
         </button>`;
       }).join('');
     }).catch(err=>{
@@ -939,7 +947,7 @@
   }
   document.getElementById('boardPickerClose').addEventListener('click', closeBoardPicker);
   document.getElementById('boardPickerOverlay').addEventListener('click', (e)=>{
-    if(e.target.id === 'boardPickerOverlay') closeBoardPicker();
+    if(!e.target.closest('.board-picker-modal')) closeBoardPicker();
   });
   document.addEventListener('keydown', e=>{
     if(e.key === 'Escape') closeBoardPicker();
