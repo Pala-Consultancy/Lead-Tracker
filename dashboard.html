@@ -1374,6 +1374,37 @@
   .drawer-actions-row .btn{flex:1;justify-content:center;padding:10px 14px;font-size:13px;border-radius:11px;font-weight:600;}
   .drawer-actions{display:flex;gap:8px;padding:16px 22px;border-top:1px solid var(--border);background:var(--panel);flex-shrink:0;}
   .drawer-actions .btn{flex:1;}
+  /* ---------- LinkedIn DM sequences ---------- */
+  .li-seq-progress{margin-bottom:10px;}
+  .li-seq-progress-text{font-size:12.5px;color:var(--ink);margin-bottom:6px;}
+  .li-seq-progress-track{height:5px;border-radius:4px;background:var(--c-blue-tint);overflow:hidden;}
+  .li-seq-progress-fill{height:100%;border-radius:4px;background:#0A66C2;transition:width .3s ease;}
+  .li-seq-due{font-size:11.5px;color:var(--slate);margin-top:6px;}
+  .li-seq-due.due{color:var(--teal);font-weight:700;}
+  .li-template-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;margin-bottom:4px;}
+  .li-template-item{
+    display:flex;align-items:center;gap:11px;padding:11px;border-radius:10px;border:1px solid var(--border);
+    background:var(--panel);cursor:pointer;text-align:left;transition:background .13s ease, border-color .13s ease;
+  }
+  .li-template-item:hover{background:var(--c-blue-tint);border-color:#0A66C2;}
+  .li-template-icon{
+    width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    background:#E8F1FB;font-size:15px;
+  }
+  .li-template-name{font-size:13px;font-weight:700;color:var(--ink);}
+  .li-template-sub{font-size:11.5px;color:var(--slate);margin-top:1px;}
+  .li-step-editor{border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:10px;}
+  .li-step-editor-head{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--slate);font-weight:600;margin-bottom:8px;}
+  .li-step-remove{background:none;border:none;color:var(--red);font-size:11.5px;font-weight:600;cursor:pointer;padding:0;}
+  .li-step-textarea, .li-compose-textarea{
+    width:100%;min-height:90px;border:1px solid var(--border);border-radius:9px;padding:10px 12px;
+    font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);background:var(--c-blue-tint2, var(--paper));
+    resize:vertical;
+  }
+  .li-step-textarea:focus, .li-compose-textarea:focus{outline:none;border-color:#0A66C2;box-shadow:0 0 0 3px rgba(10,102,194,0.14);}
+  .li-step-delay-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--slate);}
+  .li-step-delay-row input{padding:6px 8px;border-radius:7px;}
+  .li-compose-textarea{min-height:130px;}
   /* Larger, cleaner tag/chip look specifically inside the drawer */
   .drawer .tag{padding:4px 11px;font-size:12px;border-radius:20px;}
   .drawer .outreach-chip{padding:7px 12px;border-radius:20px;font-size:12px;}
@@ -1858,6 +1889,10 @@
         <input id="f-phone" type="text" placeholder="+1 555 000 0000">
       </div>
       <div class="field">
+        <label for="f-linkedinurl">LinkedIn profile (optional)</label>
+        <input id="f-linkedinurl" type="text" placeholder="linkedin.com/in/jordanlee">
+      </div>
+      <div class="field">
         <label for="f-industry" data-i18n="industry">Industry</label>
         <select id="f-industry">
           <option value="" data-i18n="selectIndustry">Select industry...</option>
@@ -2256,6 +2291,21 @@
   .gmail-compose-body i, .gmail-compose-body em{font-style:italic;}
   .gmail-compose-body u{text-decoration:underline;}
 </style>
+<div class="confirm-overlay" id="linkedinPickerOverlay" style="display:none">
+  <div class="confirm-modal" style="max-width:420px;text-align:left;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h3 style="margin:0;">🔗 LinkedIn sequence</h3>
+      <button type="button" class="board-picker-close" id="linkedinPickerClose" aria-label="Close" style="width:28px;height:28px;border-radius:8px;border:none;background:var(--c-blue-tint);color:var(--slate);cursor:pointer;">✕</button>
+    </div>
+    <div id="linkedinPickerBody"></div>
+  </div>
+</div>
+<div class="confirm-overlay" id="linkedinComposeOverlay" style="display:none">
+  <div class="confirm-modal" style="max-width:440px;text-align:left;">
+    <h3 style="margin:0 0 4px;">💬 Send LinkedIn message</h3>
+    <div id="linkedinComposeBody"></div>
+  </div>
+</div>
 <div class="confirm-overlay" id="composeEmailOverlay" style="display:none">
   <div class="confirm-modal" style="padding:0;overflow:visible;">
     <div class="gmail-compose">
@@ -3568,6 +3618,7 @@
       temperature: document.getElementById('f-temperature').value,
       email: document.getElementById('f-email').value.trim(),
       phone: document.getElementById('f-phone').value.trim(),
+      linkedinUrl: document.getElementById('f-linkedinurl').value.trim(),
       industry: industryValue,
       jobTitle: document.getElementById('f-jobtitle').value.trim(),
       revenue: parseRevenueInput(document.getElementById('f-revenue').value),
@@ -3816,6 +3867,7 @@
     syncTempPillUI(l.temperature || '');
     document.getElementById('f-email').value = l.email;
     document.getElementById('f-phone').value = l.phone;
+    document.getElementById('f-linkedinurl').value = l.linkedinUrl || '';
     if(l.industry && !FIXED_INDUSTRY_VALUES.includes(l.industry)){
       document.getElementById('f-industry').value = 'Other';
       document.getElementById('f-industry-custom').value = l.industry;
@@ -5325,6 +5377,15 @@ ${buildLeadContext()}`;
         </div>
         <div id="scheduledEmailsList"></div>
       </div>
+      <div class="drawer-section">
+        <div class="drawer-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>LinkedIn</span>
+          ${l.linkedinUrl ? `<a href="${esc(normalizeLinkedInUrl(l.linkedinUrl))}" target="_blank" rel="noopener" class="drawer-link" style="margin-bottom:0;">Open profile ↗</a>` : ''}
+        </div>
+        <div id="linkedinSequenceSection">
+          <div style="font-size:12.5px;color:var(--slate);">Loading…</div>
+        </div>
+      </div>
       <div class="drawer-section drawer-notes">
         <div class="drawer-section-label">${t('notes')}</div>
         <textarea id="drawerNotes" placeholder="${t('notesPlaceholder')}">${esc(l.notes)}</textarea>
@@ -5344,6 +5405,7 @@ ${buildLeadContext()}`;
     const composeBtn = document.getElementById('composeEmailBtn');
     if(composeBtn) composeBtn.onclick = ()=>openComposeEmailModal(l);
     loadScheduledEmailsForDrawer(l.id);
+    loadLinkedInSequenceForDrawer(l);
     drawerOverlay.classList.add('open');
     leadDrawer.classList.add('open');
   }
@@ -5391,6 +5453,240 @@ ${buildLeadContext()}`;
         console.error('Could not load scheduled emails', err);
       });
   }
+
+  // ---------- LinkedIn DM sequences ----------
+  // LinkedIn has no public API for sending messages on someone's behalf, and
+  // automating their website would violate their terms — so this never sends
+  // anything by itself. It tracks a multi-step message sequence per lead the
+  // same way email sequences do, but each step is a manual "copy the message,
+  // open the profile, paste it yourself, then mark it sent" action.
+  function normalizeLinkedInUrl(url){
+    const trimmed = (url || '').trim();
+    if(!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  }
+  function linkedInSearchFallback(l){
+    return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent((l.name || '') + ' ' + (l.company || ''))}`;
+  }
+  function fillLinkedInTokens(message, l){
+    const firstName = (l.name || '').trim().split(/\s+/)[0] || '';
+    return (message || '')
+      .replace(/\{\{\s*firstName\s*\}\}/gi, firstName)
+      .replace(/\{\{\s*fullName\s*\}\}/gi, l.name || '')
+      .replace(/\{\{\s*company\s*\}\}/gi, l.company || '')
+      .replace(/\{\{\s*jobTitle\s*\}\}/gi, l.jobTitle || '');
+  }
+  function loadLinkedInSequenceForDrawer(l){
+    const holder = document.getElementById('linkedinSequenceSection');
+    if(!holder) return;
+    db.collection('linkedinSequenceRuns')
+      .where('leadId', '==', l.id)
+      .where('status', '==', 'active')
+      .limit(1)
+      .get().then(snap=>{
+        if(drawerLeadId !== l.id) return; // drawer moved on before this resolved
+        if(snap.empty){
+          holder.innerHTML = `
+            <button type="button" class="btn" id="startLinkedInSeqBtn" style="width:100%;justify-content:center;">🔗 Start a LinkedIn sequence</button>`;
+          const btn = document.getElementById('startLinkedInSeqBtn');
+          if(btn) btn.onclick = ()=>openLinkedInSequencePicker(l);
+          return;
+        }
+        const run = {id: snap.docs[0].id, ...snap.docs[0].data()};
+        const stepNum = (run.currentStepIndex || 0) + 1;
+        const totalSteps = (run.steps || []).length;
+        const isDue = !run.nextDueAt || (typeof run.nextDueAt.toDate === 'function' && run.nextDueAt.toDate().getTime() <= Date.now());
+        const dueText = run.nextDueAt && typeof run.nextDueAt.toDate === 'function'
+          ? (isDue ? 'Ready to send' : `Next message due ${run.nextDueAt.toDate().toLocaleDateString(undefined, {day:'numeric', month:'short'})}`)
+          : 'Ready to send';
+        holder.innerHTML = `
+          <div class="li-seq-progress">
+            <div class="li-seq-progress-text"><b>${esc(run.templateName || 'LinkedIn sequence')}</b> — step ${stepNum} of ${totalSteps}</div>
+            <div class="li-seq-progress-track"><div class="li-seq-progress-fill" style="width:${Math.round((run.currentStepIndex / totalSteps) * 100)}%"></div></div>
+            <div class="li-seq-due ${isDue ? 'due' : ''}">${esc(dueText)}</div>
+          </div>
+          <div class="drawer-actions-row">
+            <button type="button" class="btn btn-primary" id="composeLinkedInBtn" style="flex:1;justify-content:center;">💬 Compose message</button>
+            <button type="button" class="btn" id="stopLinkedInSeqBtn" title="Stop this sequence">Stop</button>
+          </div>`;
+        document.getElementById('composeLinkedInBtn').onclick = ()=>openComposeLinkedInModal(run, l);
+        document.getElementById('stopLinkedInSeqBtn').onclick = ()=>{
+          if(!confirm('Stop this LinkedIn sequence for ' + (l.name || 'this lead') + '?')) return;
+          db.collection('linkedinSequenceRuns').doc(run.id).update({status: 'stopped'}).then(()=>{
+            showToast('LinkedIn sequence stopped.');
+            loadLinkedInSequenceForDrawer(l);
+          }).catch(err=>{
+            showToast('Could not stop that: ' + friendlyErr(err), true);
+          });
+        };
+      }).catch(err=>{
+        console.error('Could not load LinkedIn sequence', err);
+        holder.innerHTML = `<div style="font-size:12px;color:var(--slate);">Could not load this right now.</div>`;
+      });
+  }
+
+  function openLinkedInSequencePicker(l){
+    const overlay = document.getElementById('linkedinPickerOverlay');
+    const body = document.getElementById('linkedinPickerBody');
+    overlay.style.display = 'flex';
+    body.innerHTML = `<div style="padding:20px 4px;color:var(--slate);font-size:13px;">Loading your sequences…</div>`;
+    db.collection('linkedinSequenceTemplates').where('workspaceId', '==', workspaceId).orderBy('createdAt', 'desc').get().then(snap=>{
+      const templates = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      const list = templates.map(tpl=>`
+        <button type="button" class="li-template-item" data-id="${tpl.id}">
+          <div class="li-template-icon">🔗</div>
+          <div style="flex:1;min-width:0;">
+            <div class="li-template-name">${esc(tpl.name || 'Untitled sequence')}</div>
+            <div class="li-template-sub">${(tpl.steps || []).length} step${(tpl.steps||[]).length===1?'':'s'}</div>
+          </div>
+          <div style="color:var(--slate-light);">→</div>
+        </button>`).join('');
+      body.innerHTML = `
+        ${templates.length ? `<div class="li-template-list">${list}</div>` : `<div style="padding:14px 4px;color:var(--slate);font-size:13px;">You don't have any LinkedIn sequences yet — create one below.</div>`}
+        <button type="button" class="btn" id="newLinkedInTemplateBtn" style="width:100%;justify-content:center;margin-top:12px;">+ Create new sequence</button>`;
+      body.querySelectorAll('.li-template-item').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const tpl = templates.find(t=>t.id === btn.dataset.id);
+          startLinkedInSequenceRun(tpl, l);
+        });
+      });
+      document.getElementById('newLinkedInTemplateBtn').onclick = ()=>openLinkedInTemplateEditor(l);
+    }).catch(err=>{
+      console.error(err);
+      body.innerHTML = `<div style="padding:20px 4px;color:var(--red);font-size:13px;">Could not load your sequences: ${esc(friendlyErr(err))}</div>`;
+    });
+  }
+
+  function startLinkedInSequenceRun(tpl, l){
+    if(!tpl || !(tpl.steps || []).length){ showToast('That sequence has no steps.', true); return; }
+    db.collection('linkedinSequenceRuns').add({
+      workspaceId, boardId, leadId: l.id,
+      templateId: tpl.id, templateName: tpl.name || 'Untitled sequence',
+      steps: tpl.steps,
+      currentStepIndex: 0,
+      status: 'active',
+      nextDueAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      document.getElementById('linkedinPickerOverlay').style.display = 'none';
+      showToast('LinkedIn sequence started for ' + (l.name || 'this lead') + '.');
+      loadLinkedInSequenceForDrawer(l);
+    }).catch(err=>{
+      showToast('Could not start that sequence: ' + friendlyErr(err), true);
+    });
+  }
+
+  function openLinkedInTemplateEditor(l){
+    const body = document.getElementById('linkedinPickerBody');
+    let steps = [{message: '', delayDays: 0}];
+    function renderEditor(){
+      body.innerHTML = `
+        <div class="field" style="margin-bottom:14px;">
+          <label>Sequence name</label>
+          <input id="liTplName" type="text" placeholder="e.g. Cold outreach — founders">
+        </div>
+        <div id="liStepsList"></div>
+        <button type="button" class="btn" id="liAddStepBtn" style="width:100%;justify-content:center;margin:8px 0 14px;">+ Add step</button>
+        <div class="drawer-actions-row">
+          <button type="button" class="btn" id="liCancelTplBtn" style="flex:1;justify-content:center;">Cancel</button>
+          <button type="button" class="btn btn-primary" id="liSaveTplBtn" style="flex:1;justify-content:center;">Save sequence</button>
+        </div>`;
+      const stepsList = document.getElementById('liStepsList');
+      stepsList.innerHTML = steps.map((s,i)=>`
+        <div class="li-step-editor">
+          <div class="li-step-editor-head">
+            <span>Step ${i+1}${i>0 ? ` &middot; ${s.delayDays} day${s.delayDays===1?'':'s'} after step ${i}` : ' · sent right away'}</span>
+            ${steps.length > 1 ? `<button type="button" class="li-step-remove" data-i="${i}">Remove</button>` : ''}
+          </div>
+          <textarea class="li-step-textarea" data-i="${i}" placeholder="Hi {{firstName}}, ...">${esc(s.message)}</textarea>
+          ${i>0 ? `<div class="li-step-delay-row">
+            <label>Wait</label>
+            <input type="number" min="0" class="li-step-delay" data-i="${i}" value="${s.delayDays}" style="width:60px;">
+            <label>days, then send</label>
+          </div>` : ''}
+        </div>`).join('');
+      stepsList.querySelectorAll('.li-step-textarea').forEach(ta=>{
+        ta.addEventListener('input', ()=>{ steps[+ta.dataset.i].message = ta.value; });
+      });
+      stepsList.querySelectorAll('.li-step-delay').forEach(inp=>{
+        inp.addEventListener('input', ()=>{ steps[+inp.dataset.i].delayDays = parseInt(inp.value, 10) || 0; renderEditor(); });
+      });
+      stepsList.querySelectorAll('.li-step-remove').forEach(btn=>{
+        btn.addEventListener('click', ()=>{ steps.splice(+btn.dataset.i, 1); renderEditor(); });
+      });
+      document.getElementById('liAddStepBtn').onclick = ()=>{ steps.push({message:'', delayDays:3}); renderEditor(); };
+      document.getElementById('liCancelTplBtn').onclick = ()=>openLinkedInSequencePicker(l);
+      document.getElementById('liSaveTplBtn').onclick = ()=>{
+        const name = document.getElementById('liTplName').value.trim();
+        if(!name){ showToast('Give this sequence a name.', true); return; }
+        const cleanSteps = steps.filter(s=>s.message.trim());
+        if(!cleanSteps.length){ showToast('Add at least one message.', true); return; }
+        db.collection('linkedinSequenceTemplates').add({
+          workspaceId, name, steps: cleanSteps,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdBy: auth.currentUser ? auth.currentUser.uid : null
+        }).then(doc=>{
+          showToast('Sequence created.');
+          startLinkedInSequenceRun({id: doc.id, name, steps: cleanSteps}, l);
+        }).catch(err=>{
+          showToast('Could not save that sequence: ' + friendlyErr(err), true);
+        });
+      };
+    }
+    renderEditor();
+  }
+
+  function openComposeLinkedInModal(run, l){
+    const overlay = document.getElementById('linkedinComposeOverlay');
+    const body = document.getElementById('linkedinComposeBody');
+    const step = run.steps[run.currentStepIndex];
+    const filled = fillLinkedInTokens(step.message, l);
+    const profileUrl = l.linkedinUrl ? normalizeLinkedInUrl(l.linkedinUrl) : linkedInSearchFallback(l);
+    overlay.style.display = 'flex';
+    body.innerHTML = `
+      <div style="font-size:12.5px;color:var(--slate);margin-bottom:10px;">Step ${run.currentStepIndex+1} of ${run.steps.length} — <b>${esc(run.templateName || '')}</b></div>
+      <textarea id="liComposeText" class="li-compose-textarea">${esc(filled)}</textarea>
+      ${!l.linkedinUrl ? `<div style="font-size:11.5px;color:var(--slate-light);margin:6px 2px 0;">No LinkedIn profile saved for this lead — this opens a LinkedIn search for their name instead.</div>` : ''}
+      <div class="drawer-actions-row" style="margin-top:14px;">
+        <button type="button" class="btn" id="liCopyBtn" style="flex:1;justify-content:center;">📋 Copy message</button>
+        <a href="${esc(profileUrl)}" target="_blank" rel="noopener" class="btn" style="flex:1;justify-content:center;">↗ Open on LinkedIn</a>
+      </div>
+      <button type="button" class="btn btn-primary" id="liMarkSentBtn" style="width:100%;justify-content:center;margin-top:8px;">✓ Mark as sent</button>
+      <button type="button" class="btn" id="liCloseComposeBtn" style="width:100%;justify-content:center;margin-top:8px;background:none;border-color:transparent;color:var(--slate);">Close</button>`;
+    document.getElementById('liCopyBtn').onclick = ()=>{
+      const text = document.getElementById('liComposeText').value;
+      navigator.clipboard.writeText(text).then(()=>showToast('Message copied.')).catch(()=>showToast('Could not copy — select and copy manually.', true));
+    };
+    document.getElementById('liCloseComposeBtn').onclick = ()=>{ overlay.style.display = 'none'; };
+    document.getElementById('liMarkSentBtn').onclick = ()=>{
+      const nextIndex = run.currentStepIndex + 1;
+      const isLastStep = nextIndex >= run.steps.length;
+      const updates = { currentStepIndex: nextIndex, lastSentAt: firebase.firestore.FieldValue.serverTimestamp() };
+      if(isLastStep){
+        updates.status = 'completed';
+      } else {
+        const delayDays = run.steps[nextIndex].delayDays || 0;
+        updates.nextDueAt = firebase.firestore.Timestamp.fromMillis(Date.now() + delayDays * 24*60*60*1000);
+      }
+      db.collection('linkedinSequenceRuns').doc(run.id).update(updates).then(()=>{
+        overlay.style.display = 'none';
+        showToast(isLastStep ? 'Sequence completed! 🎉' : 'Marked as sent — next step scheduled.');
+        loadLinkedInSequenceForDrawer(l);
+      }).catch(err=>{
+        showToast('Could not update that: ' + friendlyErr(err), true);
+      });
+    };
+  }
+  document.getElementById('linkedinPickerClose').addEventListener('click', ()=>{
+    document.getElementById('linkedinPickerOverlay').style.display = 'none';
+  });
+  document.getElementById('linkedinPickerOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'linkedinPickerOverlay') document.getElementById('linkedinPickerOverlay').style.display = 'none';
+  });
+  document.getElementById('linkedinComposeOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'linkedinComposeOverlay') document.getElementById('linkedinComposeOverlay').style.display = 'none';
+  });
+
   function closeDrawer(){
     drawerOverlay.classList.remove('open');
     leadDrawer.classList.remove('open');
