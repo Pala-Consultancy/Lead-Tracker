@@ -5417,6 +5417,7 @@ ${buildLeadContext()}`;
     const holder = document.getElementById('scheduledEmailsList');
     if(!holder) return;
     db.collection('scheduledEmails')
+      .where('workspaceId', '==', workspaceId)
       .where('leadId', '==', leadId)
       .where('status', '==', 'pending')
       .orderBy('sendAt', 'asc')
@@ -5481,6 +5482,7 @@ ${buildLeadContext()}`;
     const holder = document.getElementById('linkedinSequenceSection');
     if(!holder) return;
     db.collection('linkedinSequenceRuns')
+      .where('workspaceId', '==', workspaceId)
       .where('leadId', '==', l.id)
       .where('status', '==', 'active')
       .limit(1)
