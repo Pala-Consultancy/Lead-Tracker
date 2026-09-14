@@ -2219,6 +2219,7 @@
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
       auth.signInWithEmailAndPassword(email, password).then(()=>{
+        try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
         location.href = 'home.html';
       }).catch(err=>{
         showLoginError(t('incorrectLogin'));
