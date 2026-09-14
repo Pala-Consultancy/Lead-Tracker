@@ -2678,45 +2678,48 @@
     const badge = document.getElementById('attentionCountBadge');
     if(!body || !db || !workspaceId) return;
 
-    Promise.all([
-      boardsCollection.get(),
-      db.collectionGroup('leads').get()
-    ]).then(([boardsSnap, leadsSnap])=>{
-      // Only leads whose board actually belongs to this workspace (a
-      // collectionGroup query matches the collection name everywhere the
-      // user has read access, so this keeps it scoped to boards we just fetched).
-      const boardNames = {};
-      boardsSnap.docs.forEach(doc=>{ boardNames[doc.id] = doc.data().name || 'Untitled board'; });
-
+    boardsCollection.get().then(boardsSnap=>{
+      const boards = boardsSnap.docs.map(doc=>({id:doc.id, name: doc.data().name || 'Untitled board'}));
+      // Fetch leads one board at a time rather than a single collectionGroup
+      // query — if even one board is password-protected and not currently
+      // unlocked, a collectionGroup query is rejected in its entirety by
+      // Firestore's rules evaluation. Reading board-by-board means a locked
+      // board just quietly contributes nothing, instead of breaking the feed.
+      return Promise.all(boards.map(b=>
+        boardsCollection.doc(b.id).collection('leads').get()
+          .then(leadsSnap=>({board:b, docs:leadsSnap.docs}))
+          .catch(()=>({board:b, docs:null}))
+      ));
+    }).then(results=>{
       const now = Date.now();
       const todayStr = new Date().toISOString().slice(0,10);
       const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
       const items = [];
 
-      leadsSnap.docs.forEach(doc=>{
-        const boardId = doc.ref.parent.parent ? doc.ref.parent.parent.id : null;
-        if(!boardId || !(boardId in boardNames)) return;
-        const l = { id: doc.id, boardId, ...doc.data() };
-        if(l.deleted) return;
-        const boardName = boardNames[boardId];
-        const displayName = l.name || 'Unnamed lead';
+      results.forEach(({board, docs})=>{
+        if(!docs) return; // board was inaccessible (e.g. locked) — skip it
+        docs.forEach(doc=>{
+          const l = { id: doc.id, boardId: board.id, ...doc.data() };
+          if(l.deleted) return;
+          const boardName = board.name;
 
-        if(l.status === 'Call booked' && l.callDate === todayStr){
-          items.push({cat:'call', icon:'📞', className:'cat-call', priority:0,
-            lead:l, boardName, reason:'Call booked today'});
-        }
-        if(l.replied && l.status === 'Contacted'){
-          items.push({cat:'reply', icon:'💬', className:'cat-reply', priority:1,
-            lead:l, boardName, reason:'Replied — hasn\'t been moved forward yet'});
-        }
-        if(l.contacted && !l.replied && l.contactedAt && typeof l.contactedAt.toDate === 'function'){
-          const contactedTime = l.contactedAt.toDate().getTime();
-          const daysSince = Math.floor((now - contactedTime) / (24*60*60*1000));
-          if((now - contactedTime) >= threeDaysMs){
-            items.push({cat:'quiet', icon:'🌙', className:'cat-quiet', priority:2,
-              lead:l, boardName, reason:`Contacted ${daysSince} days ago — no reply yet`});
+          if(l.status === 'Call booked' && l.callDate === todayStr){
+            items.push({cat:'call', icon:'📞', className:'cat-call', priority:0,
+              lead:l, boardName, reason:'Call booked today'});
           }
-        }
+          if(l.replied && l.status === 'Contacted'){
+            items.push({cat:'reply', icon:'💬', className:'cat-reply', priority:1,
+              lead:l, boardName, reason:'Replied — hasn\'t been moved forward yet'});
+          }
+          if(l.contacted && !l.replied && l.contactedAt && typeof l.contactedAt.toDate === 'function'){
+            const contactedTime = l.contactedAt.toDate().getTime();
+            const daysSince = Math.floor((now - contactedTime) / (24*60*60*1000));
+            if((now - contactedTime) >= threeDaysMs){
+              items.push({cat:'quiet', icon:'🌙', className:'cat-quiet', priority:2,
+                lead:l, boardName, reason:`Contacted ${daysSince} days ago — no reply yet`});
+            }
+          }
+        });
       });
 
       items.sort((a,b)=> a.priority - b.priority);
