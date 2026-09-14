@@ -407,6 +407,51 @@
     #createBoardForm{grid-template-columns:1fr;}
   }
 
+  /* ---------- Onboarding checklist (brand-new accounts) ---------- */
+  .onboarding-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg, 16px);
+    box-shadow:var(--shadow);padding:22px 24px;margin-bottom:22px;position:relative;overflow:hidden;
+  }
+  .onboarding-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg, var(--teal), var(--c-purple-fg));
+  }
+  .onboarding-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;}
+  .onboarding-header h2{font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.01em;}
+  .onboarding-header p{font-size:13px;color:var(--slate);margin:4px 0 0;}
+  .onboarding-dismiss{
+    width:28px;height:28px;border-radius:8px;border:none;background:var(--c-blue-tint);color:var(--slate);
+    font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .12s ease, color .12s ease;
+  }
+  .onboarding-dismiss:hover{background:var(--c-red-bg);color:var(--red);}
+  .onboarding-progress-track{height:6px;border-radius:4px;background:var(--c-blue-tint);overflow:hidden;margin-bottom:18px;}
+  .onboarding-progress-fill{
+    height:100%;border-radius:4px;background:linear-gradient(90deg, var(--teal), var(--c-purple-fg));
+    transition:width .4s cubic-bezier(.2,.8,.3,1);width:0%;
+  }
+  .onboarding-steps{display:flex;flex-direction:column;gap:8px;}
+  .onboarding-step{
+    display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:12px;
+    border:1px solid var(--border);text-decoration:none;color:inherit;
+    transition:background .13s ease, border-color .13s ease, transform .13s ease;
+  }
+  .onboarding-step:hover{background:var(--c-blue-tint);border-color:var(--teal);transform:translateX(2px);}
+  .onboarding-step.done{border-color:transparent;background:var(--c-green-bg);}
+  .onboarding-step.done:hover{transform:none;}
+  .onboarding-step-check{
+    width:30px;height:30px;border-radius:50%;flex-shrink:0;font-size:13px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--c-blue-tint);color:var(--slate);font-family:'IBM Plex Mono',monospace;
+  }
+  .onboarding-step.done .onboarding-step-check{background:var(--c-green-mid);color:#fff;}
+  .onboarding-step-body{flex:1;min-width:0;}
+  .onboarding-step-title{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .onboarding-step.done .onboarding-step-title{text-decoration:line-through;color:var(--slate);}
+  .onboarding-step-sub{font-size:12px;color:var(--slate);margin-top:1px;}
+  .onboarding-step-arrow{color:var(--slate-light);font-size:14px;flex-shrink:0;}
+  .onboarding-step.done .onboarding-step-arrow{display:none;}
+
   /* ---------- Needs attention + Recent activity ---------- */
   .home-insights-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;align-items:stretch;}
   @media (max-width:900px){
@@ -1448,6 +1493,18 @@
       <div class="home-quick-icon">👥</div>
       <div class="home-quick-label-text">Team</div>
     </a>
+  </div>
+
+  <div class="onboarding-card" id="onboardingCard" style="display:none">
+    <div class="onboarding-header">
+      <div>
+        <h2>Let's get you set up</h2>
+        <p>A few quick steps to get PalaTrack working for you.</p>
+      </div>
+      <button type="button" class="onboarding-dismiss" id="onboardingDismissBtn" title="Dismiss">✕</button>
+    </div>
+    <div class="onboarding-progress-track"><div class="onboarding-progress-fill" id="onboardingProgressFill"></div></div>
+    <div class="onboarding-steps" id="onboardingSteps"></div>
   </div>
 
   <div class="home-insights-row">
@@ -2832,6 +2889,61 @@
     if(days < 7) return `${days}d ago`;
     return date.toLocaleDateString(undefined, {day:'numeric', month:'short'});
   }
+  function renderOnboardingIfNeeded(boards, results){
+    const onboardingCard = document.getElementById('onboardingCard');
+    const insightsRow = document.querySelector('.home-insights-row');
+    if(!onboardingCard || !insightsRow) return;
+
+    let dismissed = false;
+    try{ dismissed = localStorage.getItem('ptOnboardingDismissed') === '1'; }catch(e){}
+
+    const allLeads = [];
+    results.forEach(({docs})=>{ if(docs) docs.forEach(d=>{ if(!d.data().deleted) allLeads.push(d.data()); }); });
+
+    const hasBoard = boards.length > 0;
+    const hasLead = allLeads.length > 0;
+    const hasContacted = allLeads.some(l=>l.contacted);
+    const allDone = hasBoard && hasLead && hasContacted;
+
+    if(dismissed || allDone){
+      onboardingCard.style.display = 'none';
+      insightsRow.style.display = '';
+      return;
+    }
+
+    insightsRow.style.display = 'none';
+    onboardingCard.style.display = 'block';
+
+    const firstBoardId = boards[0] ? boards[0].id : null;
+    const boardLink = firstBoardId ? `dashboard.html?board=${encodeURIComponent(firstBoardId)}` : 'boards.html?from=home';
+    const steps = [
+      {done: hasBoard, title:'Create your first board', sub:'Set up a pipeline to start tracking leads.', href:'boards.html?from=home'},
+      {done: hasLead, title:'Add a lead', sub:'Add someone you\'re in touch with, or import a list.', href: boardLink},
+      {done: hasContacted, title:'Send your first email', sub:'Reach out right from a lead\'s profile.', href: boardLink}
+    ];
+    const doneCount = steps.filter(s=>s.done).length;
+    document.getElementById('onboardingProgressFill').style.width = `${(doneCount / steps.length) * 100}%`;
+    document.getElementById('onboardingSteps').innerHTML = steps.map((s,i)=>`
+      <a class="onboarding-step ${s.done ? 'done' : ''}" href="${s.href}">
+        <div class="onboarding-step-check">${s.done ? '✓' : (i+1)}</div>
+        <div class="onboarding-step-body">
+          <div class="onboarding-step-title">${esc(s.title)}</div>
+          <div class="onboarding-step-sub">${esc(s.sub)}</div>
+        </div>
+        <div class="onboarding-step-arrow">→</div>
+      </a>`).join('');
+
+    const dismissBtn = document.getElementById('onboardingDismissBtn');
+    if(dismissBtn && !dismissBtn.dataset.wired){
+      dismissBtn.dataset.wired = '1';
+      dismissBtn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        try{ localStorage.setItem('ptOnboardingDismissed', '1'); }catch(err){}
+        onboardingCard.style.display = 'none';
+        insightsRow.style.display = '';
+      });
+    }
+  }
   function loadNeedsAttention(){
     const body = document.getElementById('attentionBody');
     const badge = document.getElementById('attentionCountBadge');
@@ -2851,6 +2963,7 @@
           .catch(()=>({board:b, docs:null}))
       )).then(results=>({boards, results}));
     }).then(({boards, results})=>{
+      renderOnboardingIfNeeded(boards, results);
       const now = Date.now();
       const todayStr = new Date().toISOString().slice(0,10);
       const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
