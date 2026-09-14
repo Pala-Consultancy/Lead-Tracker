@@ -406,6 +406,49 @@
     #createBoardForm{grid-template-columns:1fr;}
   }
 
+  /* ---------- Needs attention feed ---------- */
+  .attention-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg, 16px);
+    box-shadow:var(--shadow);padding:20px 22px;margin-bottom:22px;
+  }
+  .attention-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .attention-header h2{font-family:'Sora',sans-serif;font-size:15.5px;font-weight:700;color:var(--ink);margin:0;}
+  .attention-count-badge{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;color:#fff;
+    background:var(--red);padding:2px 9px;border-radius:20px;
+  }
+  .attention-loading, .attention-empty{
+    display:flex;align-items:center;gap:12px;color:var(--slate);font-size:13.5px;padding:4px 2px;
+  }
+  .attention-empty-icon{font-size:22px;flex-shrink:0;}
+  .attention-empty-title{font-weight:700;color:var(--ink);font-size:13.5px;}
+  .attention-empty-sub{font-size:12.5px;color:var(--slate);margin-top:1px;}
+  .attention-list{display:flex;flex-direction:column;gap:1px;}
+  .attention-item{
+    display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:10px;
+    text-decoration:none;color:inherit;transition:background .13s ease;
+  }
+  .attention-item:hover{background:var(--c-blue-tint);}
+  .attention-item-icon{
+    width:34px;height:34px;border-radius:10px;flex-shrink:0;font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .attention-item-icon.cat-quiet{background:var(--c-red-bg);}
+  .attention-item-icon.cat-reply{background:var(--c-green-bg);}
+  .attention-item-icon.cat-call{background:var(--c-purple-bg);}
+  .attention-item-body{flex:1;min-width:0;}
+  .attention-item-name{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .attention-item-name .attention-item-company{font-weight:500;color:var(--slate);}
+  .attention-item-reason{font-size:12px;color:var(--slate);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .attention-item-board{
+    font-size:11px;color:var(--slate-light);font-weight:600;flex-shrink:0;max-width:140px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;
+  }
+  .attention-more{font-size:12px;color:var(--slate-light);text-align:center;padding-top:8px;}
+  @media (max-width:640px){
+    .attention-item-board{display:none;}
+  }
+
   /* ---------- Home hub ---------- */
   .home-hub{
     display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px;
@@ -1241,6 +1284,16 @@
       <a class="btn icon-btn-settings" href="boards-trash.html" title="Board Trash">🗑️</a>
     </div>
   </header>
+
+  <div class="attention-card" id="attentionCard">
+    <div class="attention-header">
+      <h2>Needs attention</h2>
+      <span class="attention-count-badge" id="attentionCountBadge" style="display:none">0</span>
+    </div>
+    <div id="attentionBody">
+      <div class="attention-loading">Checking your boards…</div>
+    </div>
+  </div>
 
   <div class="home-hub">
     <a class="home-hub-card" id="homeGoBoards" href="boards.html?from=home">
@@ -2620,6 +2673,92 @@
       showToast('Lost connection to the shared database.', true);
     });
   }
+  function loadNeedsAttention(){
+    const body = document.getElementById('attentionBody');
+    const badge = document.getElementById('attentionCountBadge');
+    if(!body || !db || !workspaceId) return;
+
+    Promise.all([
+      boardsCollection.get(),
+      db.collectionGroup('leads').get()
+    ]).then(([boardsSnap, leadsSnap])=>{
+      // Only leads whose board actually belongs to this workspace (a
+      // collectionGroup query matches the collection name everywhere the
+      // user has read access, so this keeps it scoped to boards we just fetched).
+      const boardNames = {};
+      boardsSnap.docs.forEach(doc=>{ boardNames[doc.id] = doc.data().name || 'Untitled board'; });
+
+      const now = Date.now();
+      const todayStr = new Date().toISOString().slice(0,10);
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+      const items = [];
+
+      leadsSnap.docs.forEach(doc=>{
+        const boardId = doc.ref.parent.parent ? doc.ref.parent.parent.id : null;
+        if(!boardId || !(boardId in boardNames)) return;
+        const l = { id: doc.id, boardId, ...doc.data() };
+        if(l.deleted) return;
+        const boardName = boardNames[boardId];
+        const displayName = l.name || 'Unnamed lead';
+
+        if(l.status === 'Call booked' && l.callDate === todayStr){
+          items.push({cat:'call', icon:'📞', className:'cat-call', priority:0,
+            lead:l, boardName, reason:'Call booked today'});
+        }
+        if(l.replied && l.status === 'Contacted'){
+          items.push({cat:'reply', icon:'💬', className:'cat-reply', priority:1,
+            lead:l, boardName, reason:'Replied — hasn\'t been moved forward yet'});
+        }
+        if(l.contacted && !l.replied && l.contactedAt && typeof l.contactedAt.toDate === 'function'){
+          const contactedTime = l.contactedAt.toDate().getTime();
+          const daysSince = Math.floor((now - contactedTime) / (24*60*60*1000));
+          if((now - contactedTime) >= threeDaysMs){
+            items.push({cat:'quiet', icon:'🌙', className:'cat-quiet', priority:2,
+              lead:l, boardName, reason:`Contacted ${daysSince} days ago — no reply yet`});
+          }
+        }
+      });
+
+      items.sort((a,b)=> a.priority - b.priority);
+      const total = items.length;
+      const shown = items.slice(0, 6);
+
+      if(badge){
+        if(total > 0){ badge.textContent = total; badge.style.display = ''; }
+        else badge.style.display = 'none';
+      }
+
+      if(total === 0){
+        body.innerHTML = `<div class="attention-empty">
+          <span class="attention-empty-icon">🎉</span>
+          <div>
+            <div class="attention-empty-title">You're all caught up</div>
+            <div class="attention-empty-sub">No leads need attention right now.</div>
+          </div>
+        </div>`;
+        return;
+      }
+
+      const rows = shown.map(item=>{
+        const l = item.lead;
+        const company = l.company ? ` <span class="attention-item-company">· ${esc(l.company)}</span>` : '';
+        return `<a class="attention-item" href="dashboard.html?board=${encodeURIComponent(l.boardId)}&lead=${encodeURIComponent(l.id)}">
+          <div class="attention-item-icon ${item.className}">${item.icon}</div>
+          <div class="attention-item-body">
+            <div class="attention-item-name">${esc(l.name||'Unnamed lead')}${company}</div>
+            <div class="attention-item-reason">${esc(item.reason)}</div>
+          </div>
+          <div class="attention-item-board">${esc(item.boardName)}</div>
+        </a>`;
+      }).join('');
+
+      const more = total > shown.length ? `<div class="attention-more">+${total - shown.length} more across your boards</div>` : '';
+      body.innerHTML = `<div class="attention-list">${rows}</div>${more}`;
+    }).catch(err=>{
+      console.error('Could not load needs-attention feed', err);
+      body.innerHTML = `<div class="attention-empty"><span class="attention-empty-icon">⚠️</span><div><div class="attention-empty-title">Could not load this</div><div class="attention-empty-sub">Please try again later.</div></div></div>`;
+    });
+  }
   function loadCampaignsCount(){
     const countEl = document.getElementById('homeCampaignsCount');
     if(!countEl || !db || !workspaceId) return;
@@ -3362,6 +3501,7 @@
           initBoardsSync();
           loadCampaignsCount();
           loadScheduledCount();
+          loadNeedsAttention();
           requestNotificationPermissionIfNeeded();
         }).catch(err=>{
           console.error('Could not resolve workspace', err);

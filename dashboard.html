@@ -5198,6 +5198,10 @@ ${buildLeadContext()}`;
   const drawerOverlay = document.getElementById('drawerOverlay');
   const leadDrawer = document.getElementById('leadDrawer');
   let drawerLeadId = null;
+  try{
+    const urlLeadId = new URLSearchParams(location.search).get('lead');
+    if(urlLeadId) drawerLeadId = urlLeadId;
+  }catch(e){}
 
   function openDrawer(id){
     const l = leads.find(x=>x.id===id);
