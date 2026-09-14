@@ -65,10 +65,14 @@
     --c-amber-border:#FFDCA6;
     --c-amber-text2:#8A5A0F;
     --c-toast-bg:#1B2430;
-    --map-nodata-fill:#DCE7F5;
-    --map-ocean-start:#EAF2FC;
-    --map-ocean-end:#D6E6F8;
-    --map-graticule:rgba(27,89,165,0.08);
+    --map-nodata-fill:#2A3A5F;
+    --map-ocean-start:#0B1330;
+    --map-ocean-end:#1B2B52;
+    --map-graticule:rgba(255,255,255,0.07);
+    --map-mid-fill:#2DD4C8;
+    --map-hidata-fill:#FF9F5B;
+    --map-country-stroke:#0E1730;
+    --map-legend-text:rgba(255,255,255,0.75);
   }
   [data-theme="dark"]{
     --ink:#EAF0F8;
@@ -124,10 +128,14 @@
     --c-amber-border:#7A5A2E;
     --c-amber-text2:#E0A85C;
     --c-toast-bg:#1B2430;
-    --map-nodata-fill:#26374A;
-    --map-ocean-start:#0C1420;
-    --map-ocean-end:#141F30;
-    --map-graticule:rgba(111,168,232,0.08);
+    --map-nodata-fill:#2A3A5F;
+    --map-ocean-start:#0B1330;
+    --map-ocean-end:#1B2B52;
+    --map-graticule:rgba(255,255,255,0.07);
+    --map-mid-fill:#2DD4C8;
+    --map-hidata-fill:#FF9F5B;
+    --map-country-stroke:#0E1730;
+    --map-legend-text:rgba(255,255,255,0.75);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -777,20 +785,27 @@
   .world-map-wrap{
     position:relative;overflow:hidden;isolation:isolate;
     background:linear-gradient(160deg, var(--map-ocean-start) 0%, var(--map-ocean-end) 100%);
-    border:1px solid var(--border);border-radius:16px;
-    padding:18px;box-shadow:0 1px 2px rgba(27,36,48,0.05), 0 16px 36px -16px rgba(18,63,120,0.25);
+    border:1px solid rgba(255,255,255,0.06);border-radius:18px;
+    padding:20px;box-shadow:0 1px 2px rgba(0,0,0,0.2), 0 24px 50px -18px rgba(6,12,32,0.6);
+  }
+  .world-map-wrap::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+    background-image:radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size:16px 16px;opacity:.5;
   }
   .world-map-wrap::after{
     content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
     background:
-      radial-gradient(circle at 12% 12%, rgba(74,144,217,0.14) 0%, transparent 35%),
-      radial-gradient(circle at 90% 85%, rgba(122,79,181,0.12) 0%, transparent 40%);
+      radial-gradient(circle at 12% 8%, rgba(45,212,200,0.18) 0%, transparent 38%),
+      radial-gradient(circle at 92% 90%, rgba(255,159,91,0.14) 0%, transparent 42%),
+      radial-gradient(circle at 50% 50%, rgba(122,79,181,0.08) 0%, transparent 60%);
   }
   .world-map-live-badge{
-    position:absolute;top:16px;right:20px;z-index:3;display:flex;align-items:center;gap:6px;
+    position:absolute;top:18px;right:22px;z-index:3;display:flex;align-items:center;gap:6px;
     font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.06em;
-    color:#8FE8B4;background:rgba(15,30,51,0.55);padding:5px 11px;border-radius:999px;
-    border:1px solid rgba(143,232,180,0.25);backdrop-filter:blur(4px);
+    color:#8FE8B4;background:rgba(6,12,32,0.65);padding:5px 11px;border-radius:999px;
+    border:1px solid rgba(143,232,180,0.3);backdrop-filter:blur(6px);
+    box-shadow:0 2px 10px rgba(0,0,0,0.25);
   }
   .world-map-live-dot{width:6px;height:6px;border-radius:50%;background:#2BC17A;position:relative;flex-shrink:0;}
   .world-map-live-dot::after{
@@ -802,15 +817,15 @@
   #worldMapContainer svg{width:100%;height:auto;display:block;}
   .world-map-graticule{fill:none;stroke:var(--map-graticule);stroke-width:0.6;}
   .world-map-country{
-    stroke:var(--panel);stroke-width:0.75;
+    stroke:var(--map-country-stroke);stroke-width:0.75;
     transition:opacity .15s ease, stroke .15s ease, stroke-width .15s ease, filter .15s ease;
   }
   .world-map-country.has-data{cursor:pointer;}
   .world-map-country.highlighted{
-    stroke:var(--c-blue-fg);stroke-width:1.6;
-    filter:drop-shadow(0 0 6px rgba(27,89,165,0.5));
+    stroke:var(--map-mid-fill);stroke-width:1.6;
+    filter:drop-shadow(0 0 7px rgba(45,212,200,0.65));
   }
-  .world-map-country.has-data:hover{opacity:0.82;filter:brightness(1.08);}
+  .world-map-country.has-data:hover{opacity:0.86;filter:brightness(1.14);}
   .world-map-glow-dot{transform-origin:center;transform-box:fill-box;}
   .world-map-glow-pulse{
     opacity:.55;transform-origin:center;transform-box:fill-box;
@@ -822,7 +837,7 @@
   }
   .world-map-loading{
     display:flex;align-items:center;justify-content:center;height:220px;
-    color:var(--slate-light);font-size:12.5px;font-family:'IBM Plex Mono',monospace;
+    color:rgba(255,255,255,0.55);font-size:12.5px;font-family:'IBM Plex Mono',monospace;
   }
   .world-map-tooltip{
     position:fixed;background:var(--c-toast-bg);color:#fff;font-size:12px;font-weight:600;
@@ -831,12 +846,12 @@
   }
   .world-map-legend{
     position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:10px;
-    margin-top:14px;font-size:10.5px;color:var(--slate);font-family:'IBM Plex Mono',monospace;font-weight:600;
+    margin-top:16px;font-size:10.5px;color:var(--map-legend-text);font-family:'IBM Plex Mono',monospace;font-weight:600;
   }
   .world-map-legend-gradient{
-    width:130px;height:9px;border-radius:5px;
-    background:linear-gradient(90deg, var(--map-nodata-fill), var(--c-blue-fg));
-    box-shadow:inset 0 1px 2px rgba(0,0,0,0.12), 0 0 0 1px var(--border);
+    width:140px;height:8px;border-radius:5px;
+    background:linear-gradient(90deg, var(--map-nodata-fill), var(--map-mid-fill), var(--map-hidata-fill));
+    box-shadow:inset 0 1px 2px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.08);
   }
   @media (max-width:900px){
     .two-col{grid-template-columns:1fr;}
@@ -1965,10 +1980,11 @@
       revenueByNormName[key] = (revenueByNormName[key] || 0) + d.revenue;
     });
     const maxRevenue = Math.max(0, ...Object.values(revenueByNormName));
-    const fgColor = getComputedStyle(document.documentElement).getPropertyValue('--c-blue-fg').trim() || '#1B59A5';
-    const noDataColor = getComputedStyle(document.documentElement).getPropertyValue('--map-nodata-fill').trim() || '#DCE7F5';
+    const midColor = getComputedStyle(document.documentElement).getPropertyValue('--map-mid-fill').trim() || '#2DD4C8';
+    const hiColor = getComputedStyle(document.documentElement).getPropertyValue('--map-hidata-fill').trim() || '#FF9F5B';
+    const noDataColor = getComputedStyle(document.documentElement).getPropertyValue('--map-nodata-fill').trim() || '#2A3A5F';
     const scale = d3.scaleLinear().domain([0, maxRevenue || 1]).range([0, 1]);
-    const interpolator = d3.interpolateRgb(noDataColor, fgColor);
+    const interpolator = d3.interpolateRgbBasis([noDataColor, midColor, hiColor]);
 
     const width = container.clientWidth || 600;
     const height = Math.round(width * (options.aspectRatio || 0.52));
