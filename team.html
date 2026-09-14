@@ -404,6 +404,39 @@
   .confirm-modal h3{font-family:'Sora',sans-serif;font-size:17px;margin:0 0 8px;}
   .confirm-modal p{font-size:13.5px;color:var(--slate);line-height:1.55;margin:0 0 20px;white-space:pre-line;}
   .confirm-modal-actions{display:flex;gap:10px;justify-content:center;}
+  #idleWarningOverlay{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+  .idle-modal{animation:idle-modal-in .25s cubic-bezier(.2,.8,.3,1);}
+  @keyframes idle-modal-in{from{opacity:0;transform:translateY(14px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .idle-modal-icon-wrap{position:relative;width:44px;height:44px;margin:0 auto 14px;}
+  .idle-modal-icon-wrap .confirm-modal-icon{margin:0;position:relative;z-index:1;}
+  .idle-modal-icon-pulse{
+    position:absolute;inset:0;border-radius:50%;background:var(--c-red-bg);
+    animation:idle-icon-pulse 2s infinite ease-out;
+  }
+  @keyframes idle-icon-pulse{0%{transform:scale(1);opacity:.7;}100%{transform:scale(1.8);opacity:0;}}
+  .idle-ring-wrap{position:relative;width:120px;height:120px;margin:4px auto 20px;}
+  .idle-ring-svg{width:100%;height:100%;transform:rotate(-90deg);}
+  .idle-ring-track{fill:none;stroke:var(--c-blue-tint);stroke-width:7;}
+  .idle-ring-progress{
+    fill:none;stroke:var(--c-red-fg);stroke-width:7;stroke-linecap:round;
+    stroke-dasharray:276.5;stroke-dashoffset:0;
+    transition:stroke-dashoffset 1s linear, stroke .3s ease;
+  }
+  .idle-ring-number{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Sora',sans-serif;font-size:34px;font-weight:800;color:var(--ink);
+  }
+  .idle-modal.critical .idle-ring-progress{stroke:var(--red);}
+  .idle-modal.critical .idle-ring-number{color:var(--red);animation:idle-number-pulse .6s infinite alternate;}
+  @keyframes idle-number-pulse{from{transform:scale(1);}to{transform:scale(1.12);}}
+  .idle-signout-btn{
+    background:none;border:none;color:var(--slate);font-size:12.5px;font-weight:600;
+    cursor:pointer;padding:6px;transition:color .15s ease;
+  }
+  .idle-signout-btn:hover{color:var(--red);text-decoration:underline;}
+  @media (prefers-reduced-motion: reduce){
+    .idle-modal-icon-pulse, .idle-modal.critical .idle-ring-number{animation:none;}
+  }
 
   .toast-stack{
     position:fixed;bottom:20px;right:20px;z-index:80;display:flex;flex-direction:column;gap:8px;
@@ -579,13 +612,23 @@
 <div class="toast-stack" id="toastStack"></div>
 
 <div class="confirm-overlay" id="idleWarningOverlay" style="display:none">
-  <div class="confirm-modal">
-    <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+  <div class="confirm-modal idle-modal">
+    <div class="idle-modal-icon-wrap">
+      <div class="idle-modal-icon-pulse"></div>
+      <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+    </div>
     <h3 data-i18n="idleWarningTitle">Are you still there?</h3>
     <p data-i18n="idleWarningBody">You've been inactive for a while. For your security, you'll be automatically signed out soon.</p>
-    <div style="font-family:'Sora',sans-serif;font-size:32px;font-weight:800;color:var(--c-red-fg);margin-bottom:18px;" id="idleCountdownDisplay">50</div>
-    <div class="confirm-modal-actions">
+    <div class="idle-ring-wrap">
+      <svg class="idle-ring-svg" viewBox="0 0 100 100">
+        <circle class="idle-ring-track" cx="50" cy="50" r="44"/>
+        <circle class="idle-ring-progress" id="idleRingProgress" cx="50" cy="50" r="44"/>
+      </svg>
+      <div class="idle-ring-number" id="idleCountdownDisplay">50</div>
+    </div>
+    <div class="confirm-modal-actions" style="flex-direction:column;gap:8px;">
       <button type="button" class="btn btn-primary" id="stayLoggedInBtn" data-i18n="stayInPalaTrack" style="width:100%;">Stay in PalaTrack</button>
+      <button type="button" class="idle-signout-btn" id="idleSignOutBtn">Sign out now</button>
     </div>
   </div>
 </div>
@@ -1259,13 +1302,21 @@
   (function(){
     var IDLE_LIMIT_MS = 10 * 60 * 1000;
     var COUNTDOWN_SECONDS = 50;
+    var CIRCUMFERENCE = 276.5;
     var idleTimer = null;
     var countdownInterval = null;
     var countdownRemaining = COUNTDOWN_SECONDS;
     var idleOverlay = document.getElementById('idleWarningOverlay');
     var countdownDisplay = document.getElementById('idleCountdownDisplay');
+    var ringProgress = document.getElementById('idleRingProgress');
+    var idleModal = idleOverlay ? idleOverlay.querySelector('.idle-modal') : null;
     if(!idleOverlay || !countdownDisplay) return;
 
+    function updateRing(){
+      var frac = Math.max(0, countdownRemaining) / COUNTDOWN_SECONDS;
+      if(ringProgress) ringProgress.style.strokeDashoffset = CIRCUMFERENCE * (1 - frac);
+      if(idleModal) idleModal.classList.toggle('critical', countdownRemaining <= 10);
+    }
     function resetIdleTimer(){
       clearTimeout(idleTimer);
       idleTimer = setTimeout(showIdleWarning, IDLE_LIMIT_MS);
@@ -1274,11 +1325,13 @@
       if(!auth || !auth.currentUser){ resetIdleTimer(); return; }
       countdownRemaining = COUNTDOWN_SECONDS;
       countdownDisplay.textContent = countdownRemaining;
+      updateRing();
       idleOverlay.style.display = 'flex';
       clearInterval(countdownInterval);
       countdownInterval = setInterval(function(){
         countdownRemaining--;
         countdownDisplay.textContent = countdownRemaining;
+        updateRing();
         if(countdownRemaining <= 0){
           clearInterval(countdownInterval);
           idleOverlay.style.display = 'none';
@@ -1293,6 +1346,12 @@
     }
     var stayBtn = document.getElementById('stayLoggedInBtn');
     if(stayBtn) stayBtn.addEventListener('click', stayLoggedIn);
+    var signOutBtn = document.getElementById('idleSignOutBtn');
+    if(signOutBtn) signOutBtn.addEventListener('click', function(){
+      clearInterval(countdownInterval);
+      idleOverlay.style.display = 'none';
+      if(auth) auth.signOut();
+    });
     ['mousemove','keydown','click','scroll','touchstart'].forEach(function(evt){
       document.addEventListener(evt, function(){
         if(idleOverlay.style.display !== 'flex') resetIdleTimer();
