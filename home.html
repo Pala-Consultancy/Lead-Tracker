@@ -2866,7 +2866,10 @@
       currentBoardCount = boards.length;
       const homeBoardsCountEl = document.getElementById('homeBoardsCount');
       if(homeBoardsCountEl) homeBoardsCountEl.textContent = boards.length;
-      renderBoards(boards);
+      // Note: intentionally not calling renderBoards(boards) here — this page
+      // only ever needs the count. The full board grid it builds (with drag
+      // handlers, style pickers, etc.) would just be rendered into a
+      // permanently hidden container, wasting real work on every snapshot.
     }, err=>{
       console.error('Boards sync error', err);
       showToast('Lost connection to the shared database.', true);
