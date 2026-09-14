@@ -223,58 +223,95 @@
   ::-webkit-scrollbar-thumb:hover{background:var(--slate-light);background-clip:padding-box;}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
   .board-picker-overlay{
-    position:fixed;inset:0;background:rgba(15,22,32,0.55);z-index:200;
-    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-    display:none;align-items:center;justify-content:center;padding:20px;
+    position:fixed;inset:0;background:rgba(15,22,32,0.6);z-index:200;
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:32px;
   }
   .board-picker-overlay.open{display:flex;}
   .board-picker-modal{
-    background:var(--panel);border-radius:var(--radius-lg, 18px);
-    box-shadow:0 30px 70px -16px rgba(0,0,0,0.45);
-    width:100%;max-width:440px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;
-    animation:board-picker-in .2s cubic-bezier(.2,.8,.3,1);
+    background:var(--panel);border-radius:20px;
+    box-shadow:0 40px 90px -20px rgba(0,0,0,0.5);
+    width:100%;max-width:880px;max-height:min(760px, 86vh);display:flex;flex-direction:column;overflow:hidden;
+    animation:board-picker-in .22s cubic-bezier(.2,.8,.3,1);
   }
-  @keyframes board-picker-in{from{opacity:0;transform:translateY(10px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes board-picker-in{from{opacity:0;transform:translateY(14px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
   .board-picker-header{
-    display:flex;align-items:center;justify-content:space-between;padding:20px 22px;
-    border-bottom:1px solid var(--border);flex-shrink:0;
+    display:flex;align-items:center;justify-content:space-between;padding:26px 30px 20px;
+    flex-shrink:0;
   }
-  .board-picker-header h3{font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.01em;}
+  .board-picker-header-text h3{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.015em;}
+  .board-picker-header-text p{font-size:13px;color:var(--slate);margin:4px 0 0;}
+  .board-picker-close{
+    width:34px;height:34px;border-radius:10px;border:none;background:var(--c-blue-tint);color:var(--slate);
+    font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .12s ease, color .12s ease, transform .12s ease;
+  }
+  .board-picker-close:hover{background:var(--c-red-bg);color:var(--red);transform:rotate(90deg);}
   .board-picker-search-row{
-    position:relative;padding:14px 22px 4px;flex-shrink:0;
+    position:relative;padding:0 30px 18px;flex-shrink:0;
   }
-  .board-picker-search-icon{position:absolute;left:34px;top:50%;transform:translateY(-50%);color:var(--slate-light);pointer-events:none;}
+  .board-picker-search-icon{position:absolute;left:44px;top:50%;transform:translateY(-50%);color:var(--slate-light);pointer-events:none;}
   #boardPickerSearch{
-    width:100%;padding:10px 14px 10px 34px;border-radius:10px;border:1px solid var(--border);
-    background:var(--c-blue-tint2, var(--paper));color:var(--ink);font-size:13px;font-family:'Inter',sans-serif;
+    width:100%;padding:12px 16px 12px 38px;border-radius:12px;border:1px solid var(--border);
+    background:var(--c-blue-tint2, var(--paper));color:var(--ink);font-size:14px;font-family:'Inter',sans-serif;
     transition:border-color .15s ease, box-shadow .15s ease;
   }
   #boardPickerSearch:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 15%, transparent);}
-  .board-picker-close{
-    width:30px;height:30px;border-radius:9px;border:none;background:var(--c-blue-tint);color:var(--slate);
-    font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    transition:background .12s ease, color .12s ease;
+  .board-picker-kbd-hint{
+    position:absolute;right:44px;top:50%;transform:translateY(-50%);
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--slate-light);
+    background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:2px 6px;
+    pointer-events:none;
   }
-  .board-picker-close:hover{background:var(--c-red-bg);color:var(--red);}
-  .board-picker-list{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
-  .board-picker-loading, .board-picker-empty{padding:40px 20px;text-align:center;color:var(--slate);font-size:13.5px;}
-  .board-picker-item{
-    display:flex;align-items:center;gap:13px;width:100%;padding:12px 12px;border-radius:12px;
-    border:none;background:none;text-align:left;cursor:pointer;transition:background .13s ease, transform .13s ease;
-    font-family:'Inter',sans-serif;
+  .board-picker-list{
+    padding:6px 30px 30px;overflow-y:auto;
+    display:grid;grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));gap:14px;
   }
-  .board-picker-item:hover{background:var(--c-blue-tint);}
-  .board-picker-item:active{transform:scale(.99);}
+  .board-picker-loading, .board-picker-empty{
+    grid-column:1/-1;padding:60px 20px;text-align:center;color:var(--slate);font-size:13.5px;
+  }
+  .board-picker-card{
+    position:relative;display:flex;flex-direction:column;gap:10px;text-align:left;
+    padding:18px;border-radius:14px;border:1.5px solid var(--border);background:var(--paper);
+    cursor:pointer;overflow:hidden;font-family:'Inter',sans-serif;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    animation:board-card-in .25s ease both;
+  }
+  @keyframes board-card-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .board-picker-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--card-accent, var(--teal));
+  }
+  .board-picker-card:hover, .board-picker-card.kbd-focus{
+    transform:translateY(-3px);box-shadow:0 14px 28px -8px rgba(0,0,0,0.18);border-color:transparent;
+  }
+  .board-picker-card.kbd-focus{outline:2px solid var(--teal);outline-offset:2px;}
   .board-picker-icon{
-    width:40px;height:40px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-    font-size:17px;background:linear-gradient(135deg, var(--c-blue-bg), var(--c-purple-bg));
-    box-shadow:0 1px 2px rgba(16,24,40,0.06);
+    width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    font-size:19px;background:var(--card-accent, linear-gradient(135deg, var(--c-blue-bg), var(--c-purple-bg)));
+    box-shadow:0 2px 6px rgba(16,24,40,0.1);
   }
-  .board-picker-body{flex:1;min-width:0;}
-  .board-picker-name{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .board-picker-sub{font-size:11.5px;color:var(--slate-light);margin-top:1px;}
+  .board-picker-name{font-size:14.5px;font-weight:700;color:var(--ink);line-height:1.3;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .board-picker-tags{display:flex;flex-wrap:wrap;gap:5px;}
+  .board-picker-tag{
+    font-size:10.5px;font-weight:600;color:var(--slate);background:var(--c-blue-tint);
+    padding:3px 8px;border-radius:20px;white-space:nowrap;
+  }
+  .board-picker-foot{
+    margin-top:auto;padding-top:10px;border-top:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .board-picker-count{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;color:var(--slate);}
   .board-picker-arrow{color:var(--slate-light);font-size:14px;flex-shrink:0;opacity:0;transform:translateX(-4px);transition:opacity .13s ease, transform .13s ease;}
-  .board-picker-item:hover .board-picker-arrow{opacity:1;transform:translateX(0);color:var(--teal);}
+  .board-picker-card:hover .board-picker-arrow, .board-picker-card.kbd-focus .board-picker-arrow{opacity:1;transform:translateX(0);color:var(--teal);}
+  @media (max-width:640px){
+    .board-picker-list{grid-template-columns:1fr 1fr;padding:6px 16px 20px;}
+    .board-picker-header, .board-picker-search-row{padding-left:16px;padding-right:16px;}
+    .board-picker-kbd-hint{display:none;}
+  }
+  @media (max-width:440px){
+    .board-picker-list{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
@@ -379,12 +416,16 @@
 <div class="board-picker-overlay" id="boardPickerOverlay">
   <div class="board-picker-modal">
     <div class="board-picker-header">
-      <h3>Choose a board</h3>
+      <div class="board-picker-header-text">
+        <h3>Choose a board</h3>
+        <p>Pick a board to see and manage its campaigns.</p>
+      </div>
       <button class="board-picker-close" id="boardPickerClose" aria-label="Close" type="button">✕</button>
     </div>
     <div class="board-picker-search-row">
       <svg class="board-picker-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       <input type="text" id="boardPickerSearch" placeholder="Search your boards…" autocomplete="off">
+      <span class="board-picker-kbd-hint">↑↓ + ↵</span>
     </div>
     <div class="board-picker-list" id="boardPickerList">
       <div class="board-picker-loading">Loading your boards…</div>
@@ -941,32 +982,75 @@
     const user = auth.currentUser;
     if(!user){ return; }
     let allBoards = [];
+    let visibleBoards = [];
+    let focusIdx = -1;
+    let pickerWorkspaceId = null;
+    const ACCENTS = [
+      'linear-gradient(135deg, var(--c-blue-fg), var(--c-purple-fg))',
+      'linear-gradient(135deg, var(--c-purple-fg), var(--c-amber-fg))',
+      'linear-gradient(135deg, var(--c-amber-fg), var(--c-green-fg))',
+      'linear-gradient(135deg, var(--c-green-fg), var(--c-blue-fg))',
+      'linear-gradient(135deg, var(--c-red-fg), var(--c-amber-fg))'
+    ];
+    function setFocus(idx){
+      const cards = list.querySelectorAll('.board-picker-card');
+      cards.forEach(c=>c.classList.remove('kbd-focus'));
+      if(idx < 0 || idx >= cards.length){ focusIdx = -1; return; }
+      focusIdx = idx;
+      cards[idx].classList.add('kbd-focus');
+      cards[idx].scrollIntoView({block:'nearest'});
+    }
+    function goToBoard(id){ location.href = 'campaigns.html?board=' + encodeURIComponent(id); }
     function renderPickerList(filter){
       const q = (filter || '').trim().toLowerCase();
-      const filtered = q ? allBoards.filter(b=>(b.name||'').toLowerCase().includes(q)) : allBoards;
-      if(filtered.length === 0){
+      visibleBoards = q ? allBoards.filter(b=>(b.name||'').toLowerCase().includes(q)) : allBoards;
+      focusIdx = -1;
+      if(visibleBoards.length === 0){
         list.innerHTML = `<div class="board-picker-empty">${q ? 'No boards match "'+esc(filter)+'".' : "You don't have any boards yet."}</div>`;
         return;
       }
-      list.innerHTML = filtered.map(b=>{
+      list.innerHTML = visibleBoards.map((b,i)=>{
         const icon = b.customIcon ? esc(b.customIcon) : '📋';
-        const created = (b.createdAt && typeof b.createdAt.toDate === 'function')
-          ? b.createdAt.toDate().toLocaleDateString(undefined, {day:'numeric', month:'short', year:'numeric'})
-          : null;
-        return `<button type="button" class="board-picker-item" onclick="location.href='campaigns.html?board=${encodeURIComponent(b.id)}'">
+        const accent = b.customAccent ? `linear-gradient(135deg, ${b.customAccent})` : ACCENTS[i % ACCENTS.length];
+        const tags = [b.defaultCountry, b.defaultCity, b.defaultIndustry, b.defaultSource].filter(Boolean).slice(0,3);
+        const tagsHTML = tags.length ? `<div class="board-picker-tags">${tags.map(tg=>`<span class="board-picker-tag">${esc(tg)}</span>`).join('')}</div>` : '';
+        return `<div class="board-picker-card" style="--card-accent:${accent};animation-delay:${Math.min(i,10)*25}ms" onclick="window.__goToPickerBoard('${b.id}')" tabindex="0">
           <div class="board-picker-icon">${icon}</div>
-          <div class="board-picker-body">
-            <div class="board-picker-name">${esc(b.name || 'Untitled board')}</div>
-            ${created ? `<div class="board-picker-sub">Created ${created}</div>` : ''}
+          <div class="board-picker-name">${esc(b.name || 'Untitled board')}</div>
+          ${tagsHTML}
+          <div class="board-picker-foot">
+            <span class="board-picker-count" id="pickerCount-${b.id}">···</span>
+            <span class="board-picker-arrow">→</span>
           </div>
-          <div class="board-picker-arrow">→</div>
-        </button>`;
+        </div>`;
       }).join('');
+      visibleBoards.forEach(b=>{
+        if(!pickerWorkspaceId) return;
+        db.collection('workspaces').doc(pickerWorkspaceId).collection('boards').doc(b.id).collection('leads').get().then(snap=>{
+          const el = document.getElementById(`pickerCount-${b.id}`);
+          if(!el) return;
+          const n = snap.docs.filter(d=>!d.data().deleted).length;
+          el.textContent = `${n} ${n===1?'lead':'leads'}`;
+        }).catch(()=>{
+          const el = document.getElementById(`pickerCount-${b.id}`);
+          if(el) el.textContent = '';
+        });
+      });
     }
+    window.__goToPickerBoard = goToBoard;
     searchInput.oninput = ()=> renderPickerList(searchInput.value);
+    searchInput.onkeydown = (e)=>{
+      const cols = Math.max(1, Math.floor(list.clientWidth / 244));
+      if(e.key === 'ArrowDown'){ e.preventDefault(); setFocus(focusIdx < 0 ? 0 : Math.min(focusIdx + cols, visibleBoards.length - 1)); }
+      else if(e.key === 'ArrowUp'){ e.preventDefault(); setFocus(Math.max(focusIdx - cols, 0)); }
+      else if(e.key === 'ArrowRight'){ e.preventDefault(); setFocus(focusIdx < 0 ? 0 : Math.min(focusIdx + 1, visibleBoards.length - 1)); }
+      else if(e.key === 'ArrowLeft'){ e.preventDefault(); setFocus(Math.max(focusIdx - 1, 0)); }
+      else if(e.key === 'Enter'){ e.preventDefault(); if(focusIdx >= 0 && visibleBoards[focusIdx]) goToBoard(visibleBoards[focusIdx].id); }
+    };
     db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
       const wsId = doc.exists ? doc.data().workspaceId : null;
       if(!wsId){ list.innerHTML = '<div class="board-picker-empty">Could not find your workspace.</div>'; return null; }
+      pickerWorkspaceId = wsId;
       return db.collection('workspaces').doc(wsId).collection('boards').orderBy('createdAt','desc').get();
     }).then(snap=>{
       if(!snap) return;
