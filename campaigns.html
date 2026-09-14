@@ -240,6 +240,16 @@
     border-bottom:1px solid var(--border);flex-shrink:0;
   }
   .board-picker-header h3{font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.01em;}
+  .board-picker-search-row{
+    position:relative;padding:14px 22px 4px;flex-shrink:0;
+  }
+  .board-picker-search-icon{position:absolute;left:34px;top:50%;transform:translateY(-50%);color:var(--slate-light);pointer-events:none;}
+  #boardPickerSearch{
+    width:100%;padding:10px 14px 10px 34px;border-radius:10px;border:1px solid var(--border);
+    background:var(--c-blue-tint2, var(--paper));color:var(--ink);font-size:13px;font-family:'Inter',sans-serif;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  #boardPickerSearch:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 15%, transparent);}
   .board-picker-close{
     width:30px;height:30px;border-radius:9px;border:none;background:var(--c-blue-tint);color:var(--slate);
     font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
@@ -362,6 +372,22 @@
     <div class="app-confirm-actions">
       <button type="button" class="app-confirm-btn" id="appConfirmCancelBtn">Cancel</button>
       <button type="button" class="app-confirm-btn primary" id="appConfirmOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="board-picker-overlay" id="boardPickerOverlay">
+  <div class="board-picker-modal">
+    <div class="board-picker-header">
+      <h3>Choose a board</h3>
+      <button class="board-picker-close" id="boardPickerClose" aria-label="Close" type="button">✕</button>
+    </div>
+    <div class="board-picker-search-row">
+      <svg class="board-picker-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="boardPickerSearch" placeholder="Search your boards…" autocomplete="off">
+    </div>
+    <div class="board-picker-list" id="boardPickerList">
+      <div class="board-picker-loading">Loading your boards…</div>
     </div>
   </div>
 </div>
@@ -908,22 +934,21 @@
   window.__openBoardPicker = function(){
     const overlay = document.getElementById('boardPickerOverlay');
     const list = document.getElementById('boardPickerList');
+    const searchInput = document.getElementById('boardPickerSearch');
     overlay.classList.add('open');
+    searchInput.value = '';
     list.innerHTML = '<div class="board-picker-loading">Loading your boards…</div>';
     const user = auth.currentUser;
     if(!user){ return; }
-    db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
-      const wsId = doc.exists ? doc.data().workspaceId : null;
-      if(!wsId){ list.innerHTML = '<div class="board-picker-empty">Could not find your workspace.</div>'; return null; }
-      return db.collection('workspaces').doc(wsId).collection('boards').orderBy('createdAt','desc').get();
-    }).then(snap=>{
-      if(!snap) return;
-      const boardsList = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=>b.deleted !== true);
-      if(boardsList.length === 0){
-        list.innerHTML = '<div class="board-picker-empty">You don\'t have any boards yet.</div>';
+    let allBoards = [];
+    function renderPickerList(filter){
+      const q = (filter || '').trim().toLowerCase();
+      const filtered = q ? allBoards.filter(b=>(b.name||'').toLowerCase().includes(q)) : allBoards;
+      if(filtered.length === 0){
+        list.innerHTML = `<div class="board-picker-empty">${q ? 'No boards match "'+esc(filter)+'".' : "You don't have any boards yet."}</div>`;
         return;
       }
-      list.innerHTML = boardsList.map(b=>{
+      list.innerHTML = filtered.map(b=>{
         const icon = b.customIcon ? esc(b.customIcon) : '📋';
         const created = (b.createdAt && typeof b.createdAt.toDate === 'function')
           ? b.createdAt.toDate().toLocaleDateString(undefined, {day:'numeric', month:'short', year:'numeric'})
@@ -937,6 +962,17 @@
           <div class="board-picker-arrow">→</div>
         </button>`;
       }).join('');
+    }
+    searchInput.oninput = ()=> renderPickerList(searchInput.value);
+    db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
+      const wsId = doc.exists ? doc.data().workspaceId : null;
+      if(!wsId){ list.innerHTML = '<div class="board-picker-empty">Could not find your workspace.</div>'; return null; }
+      return db.collection('workspaces').doc(wsId).collection('boards').orderBy('createdAt','desc').get();
+    }).then(snap=>{
+      if(!snap) return;
+      allBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=>b.deleted !== true);
+      renderPickerList('');
+      setTimeout(()=>searchInput.focus(), 50);
     }).catch(err=>{
       console.error('Could not load boards for picker', err);
       list.innerHTML = '<div class="board-picker-empty">Could not load your boards.</div>';
@@ -954,16 +990,5 @@
   });
 })();
 </script>
-<div class="board-picker-overlay" id="boardPickerOverlay">
-  <div class="board-picker-modal">
-    <div class="board-picker-header">
-      <h3>Choose a board</h3>
-      <button class="board-picker-close" id="boardPickerClose" aria-label="Close">✕</button>
-    </div>
-    <div class="board-picker-list" id="boardPickerList">
-      <div class="board-picker-loading">Loading your boards…</div>
-    </div>
-  </div>
-</div>
 </body>
 </html>
