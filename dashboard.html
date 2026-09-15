@@ -2416,16 +2416,6 @@
   .gmail-compose-body i, .gmail-compose-body em{font-style:italic;}
   .gmail-compose-body u{text-decoration:underline;}
 </style>
-<div class="confirm-overlay" id="linkedinPickerOverlay" style="display:none">
-  <div class="confirm-modal li-modal">
-    <div class="li-modal-header">
-      <div class="li-modal-header-icon">🔗</div>
-      <h3>LinkedIn sequence</h3>
-      <button type="button" class="li-modal-close" id="linkedinPickerClose" aria-label="Close">✕</button>
-    </div>
-    <div id="linkedinPickerBody"></div>
-  </div>
-</div>
 <div class="confirm-overlay" id="linkedinModeInfoOverlay" style="display:none">
   <div class="confirm-modal li-modal li-info-modal">
     <div class="li-modal-header">
@@ -5797,7 +5787,7 @@ ${buildLeadContext()}`;
           holder.innerHTML = `
             <button type="button" class="btn" id="startLinkedInSeqBtn" style="width:100%;justify-content:center;">🔗 Start a LinkedIn sequence</button>`;
           const btn = document.getElementById('startLinkedInSeqBtn');
-          if(btn) btn.onclick = ()=>openLinkedInSequencePicker(l);
+          if(btn) btn.onclick = ()=>{ location.href = `linkedin-sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(l.id)}`; };
           return;
         }
         const run = {id: snap.docs[0].id, ...snap.docs[0].data()};
@@ -5833,130 +5823,11 @@ ${buildLeadContext()}`;
       });
   }
 
-  function openLinkedInSequencePicker(l){
-    const overlay = document.getElementById('linkedinPickerOverlay');
-    const body = document.getElementById('linkedinPickerBody');
-    overlay.style.display = 'flex';
-    overlay.classList.add('open');
-    overlay.querySelector('.confirm-modal').classList.add('open');
-    body.innerHTML = `<div class="li-empty-state"><div class="li-empty-state-icon">🔗</div><div class="li-empty-state-sub">Loading your sequences…</div></div>`;
-    db.collection('linkedinSequenceTemplates').where('workspaceId', '==', workspaceId).orderBy('createdAt', 'desc').get().then(snap=>{
-      const templates = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      const list = templates.map(tpl=>`
-        <button type="button" class="li-template-item" data-id="${tpl.id}">
-          <div class="li-template-icon">🔗</div>
-          <div style="flex:1;min-width:0;">
-            <div class="li-template-name">${esc(tpl.name || 'Untitled sequence')}</div>
-            <div class="li-template-sub">${(tpl.steps || []).length} step${(tpl.steps||[]).length===1?'':'s'}</div>
-          </div>
-          <div class="li-template-arrow">→</div>
-        </button>`).join('');
-      body.innerHTML = `
-        ${templates.length ? `<div class="li-template-list">${list}</div>` : `<div class="li-empty-state"><div class="li-empty-state-icon">🔗</div><div class="li-empty-state-title">No sequences yet</div><div class="li-empty-state-sub">Build a set of LinkedIn messages once, then reuse it across leads.</div></div>`}
-        <button type="button" class="li-new-seq-btn" id="newLinkedInTemplateBtn" style="margin-top:12px;">+ Create new sequence</button>`;
-      body.querySelectorAll('.li-template-item').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const tpl = templates.find(t=>t.id === btn.dataset.id);
-          startLinkedInSequenceRun(tpl, l);
-        });
-      });
-      document.getElementById('newLinkedInTemplateBtn').onclick = ()=>openLinkedInTemplateEditor(l);
-    }).catch(err=>{
-      console.error(err);
-      body.innerHTML = `<div style="padding:20px 4px;color:var(--red);font-size:13px;">Could not load your sequences: ${esc(friendlyErr(err))}</div>`;
-    });
-  }
-
-  function closeLinkedInPicker(){
-    const overlay = document.getElementById('linkedinPickerOverlay');
-    overlay.classList.remove('open');
-    overlay.querySelector('.confirm-modal').classList.remove('open');
-    overlay.style.display = 'none';
-  }
   function closeLinkedInCompose(){
     const overlay = document.getElementById('linkedinComposeOverlay');
     overlay.classList.remove('open');
     overlay.querySelector('.confirm-modal').classList.remove('open');
     overlay.style.display = 'none';
-  }
-
-  function startLinkedInSequenceRun(tpl, l){
-    if(!tpl || !(tpl.steps || []).length){ showToast('That sequence has no steps.', true); return; }
-    db.collection('linkedinSequenceRuns').add({
-      workspaceId, boardId, leadId: l.id,
-      templateId: tpl.id, templateName: tpl.name || 'Untitled sequence',
-      steps: tpl.steps,
-      currentStepIndex: 0,
-      status: 'active',
-      nextDueAt: firebase.firestore.FieldValue.serverTimestamp(),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
-      closeLinkedInPicker();
-      showToast('LinkedIn sequence started for ' + (l.name || 'this lead') + '.');
-      loadLinkedInSequenceForDrawer(l);
-    }).catch(err=>{
-      showToast('Could not start that sequence: ' + friendlyErr(err), true);
-    });
-  }
-
-  function openLinkedInTemplateEditor(l){
-    const body = document.getElementById('linkedinPickerBody');
-    let steps = [{message: '', delayDays: 0}];
-    function renderEditor(){
-      body.innerHTML = `
-        <div class="field" style="margin-bottom:14px;">
-          <label>Sequence name</label>
-          <input id="liTplName" type="text" placeholder="e.g. Cold outreach — founders">
-        </div>
-        <div id="liStepsList"></div>
-        <button type="button" class="btn" id="liAddStepBtn" style="width:100%;justify-content:center;margin:8px 0 14px;">+ Add step</button>
-        <div class="drawer-actions-row">
-          <button type="button" class="btn" id="liCancelTplBtn" style="flex:1;justify-content:center;">Cancel</button>
-          <button type="button" class="btn btn-primary" id="liSaveTplBtn" style="flex:1;justify-content:center;">Save sequence</button>
-        </div>`;
-      const stepsList = document.getElementById('liStepsList');
-      stepsList.innerHTML = steps.map((s,i)=>`
-        <div class="li-step-editor">
-          <div class="li-step-editor-head">
-            <span>Step ${i+1}${i>0 ? ` &middot; ${s.delayDays} day${s.delayDays===1?'':'s'} after step ${i}` : ' · sent right away'}</span>
-            ${steps.length > 1 ? `<button type="button" class="li-step-remove" data-i="${i}">Remove</button>` : ''}
-          </div>
-          <textarea class="li-step-textarea" data-i="${i}" placeholder="Hi {{firstName}}, ...">${esc(s.message)}</textarea>
-          ${i>0 ? `<div class="li-step-delay-row">
-            <label>Wait</label>
-            <input type="number" min="0" class="li-step-delay" data-i="${i}" value="${s.delayDays}" style="width:60px;">
-            <label>days, then send</label>
-          </div>` : ''}
-        </div>`).join('');
-      stepsList.querySelectorAll('.li-step-textarea').forEach(ta=>{
-        ta.addEventListener('input', ()=>{ steps[+ta.dataset.i].message = ta.value; });
-      });
-      stepsList.querySelectorAll('.li-step-delay').forEach(inp=>{
-        inp.addEventListener('input', ()=>{ steps[+inp.dataset.i].delayDays = parseInt(inp.value, 10) || 0; renderEditor(); });
-      });
-      stepsList.querySelectorAll('.li-step-remove').forEach(btn=>{
-        btn.addEventListener('click', ()=>{ steps.splice(+btn.dataset.i, 1); renderEditor(); });
-      });
-      document.getElementById('liAddStepBtn').onclick = ()=>{ steps.push({message:'', delayDays:3}); renderEditor(); };
-      document.getElementById('liCancelTplBtn').onclick = ()=>openLinkedInSequencePicker(l);
-      document.getElementById('liSaveTplBtn').onclick = ()=>{
-        const name = document.getElementById('liTplName').value.trim();
-        if(!name){ showToast('Give this sequence a name.', true); return; }
-        const cleanSteps = steps.filter(s=>s.message.trim());
-        if(!cleanSteps.length){ showToast('Add at least one message.', true); return; }
-        db.collection('linkedinSequenceTemplates').add({
-          workspaceId, name, steps: cleanSteps,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          createdBy: auth.currentUser ? auth.currentUser.uid : null
-        }).then(doc=>{
-          showToast('Sequence created.');
-          startLinkedInSequenceRun({id: doc.id, name, steps: cleanSteps}, l);
-        }).catch(err=>{
-          showToast('Could not save that sequence: ' + friendlyErr(err), true);
-        });
-      };
-    }
-    renderEditor();
   }
 
   function openComposeLinkedInModal(run, l){
@@ -6002,10 +5873,6 @@ ${buildLeadContext()}`;
       });
     };
   }
-  document.getElementById('linkedinPickerClose').addEventListener('click', closeLinkedInPicker);
-  document.getElementById('linkedinPickerOverlay').addEventListener('click', (e)=>{
-    if(e.target.id === 'linkedinPickerOverlay') closeLinkedInPicker();
-  });
   document.getElementById('linkedinComposeOverlay').addEventListener('click', (e)=>{
     if(e.target.id === 'linkedinComposeOverlay') closeLinkedInCompose();
   });
