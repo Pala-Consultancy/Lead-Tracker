@@ -1466,6 +1466,68 @@
     font-size:12.5px;color:var(--slate);cursor:pointer;user-select:none;
   }
   .li-info-dismiss-row input{width:16px;height:16px;cursor:pointer;accent-color:#0A66C2;}
+
+  /* ---------- LinkedIn mode info modal: animation ---------- */
+  .li-info-modal .li-modal-header-icon{animation:li-header-pop .5s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes li-header-pop{from{transform:scale(.4) rotate(-15deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+  .li-info-row{
+    border-radius:11px;opacity:0;
+    animation:li-row-in .45s cubic-bezier(.2,.8,.3,1) both;
+    animation-delay:calc(var(--i) * 0.1s + 0.2s);
+    transition:background .15s ease, transform .15s ease;
+  }
+  @keyframes li-row-in{
+    from{opacity:0;transform:translateX(-14px);}
+    to{opacity:1;transform:translateX(0);}
+  }
+  .li-info-row:hover{background:var(--c-blue-tint);transform:translateX(2px);}
+  .li-info-icon{transition:transform .2s ease;}
+  .li-info-row:hover .li-info-icon{transform:scale(1.08);}
+
+  /* Sent → Accepted dots: pulse in sequence, demonstrating the outreach progression */
+  .li-icon-dots .li-info-dot{animation:li-dot-pulse 2.2s ease-in-out infinite;}
+  .li-icon-dots .li-info-dot.sent{animation-delay:0s;}
+  .li-icon-dots .li-info-dot.accepted{animation-delay:.5s;}
+  @keyframes li-dot-pulse{
+    0%, 60%, 100%{transform:scale(1);box-shadow:0 0 0 0 rgba(10,102,194,0);}
+    20%{transform:scale(1.35);box-shadow:0 0 0 4px rgba(10,102,194,0.18);}
+  }
+
+  /* Link icon: gentle wiggle, like a chain link settling into place */
+  .li-icon-link{animation:li-link-wiggle 2.6s ease-in-out .8s infinite;}
+  @keyframes li-link-wiggle{
+    0%, 100%{transform:rotate(0);}
+    5%{transform:rotate(-12deg);}
+    10%{transform:rotate(8deg);}
+    15%{transform:rotate(0);}
+  }
+
+  /* Import icon: a small bounce down-and-in, evoking data arriving */
+  .li-icon-import{animation:li-import-bounce 2.4s ease-in-out 1.1s infinite;}
+  @keyframes li-import-bounce{
+    0%, 100%{transform:translateY(0);}
+    10%{transform:translateY(-3px);}
+    20%{transform:translateY(1px);}
+    30%{transform:translateY(0);}
+  }
+
+  /* Brand badge: a soft pulsing glow ring, like a live "on" indicator */
+  .li-icon-brand{position:relative;}
+  .li-icon-brand::after{
+    content:"";position:absolute;inset:0;border-radius:10px;
+    box-shadow:0 0 0 0 rgba(10,102,194,0.5);
+    animation:li-brand-glow 2s ease-out 1.4s infinite;
+  }
+  @keyframes li-brand-glow{
+    0%{box-shadow:0 0 0 0 rgba(10,102,194,0.45);}
+    70%{box-shadow:0 0 0 8px rgba(10,102,194,0);}
+    100%{box-shadow:0 0 0 0 rgba(10,102,194,0);}
+  }
+  .li-info-dismiss-row{animation:li-row-in .4s ease both;animation-delay:.65s;}
+  .li-info-modal .li-new-seq-btn{animation:li-row-in .4s ease both;animation-delay:.72s;}
+  @media (prefers-reduced-motion: reduce){
+    .li-info-modal *{animation:none !important;}
+  }
   /* Larger, cleaner tag/chip look specifically inside the drawer */
   .drawer .tag{padding:4px 11px;font-size:12px;border-radius:20px;}
   .drawer .outreach-chip{padding:7px 12px;border-radius:20px;font-size:12px;}
@@ -2373,8 +2435,8 @@
     </div>
     <p class="li-info-sub">A few things change on this board while it's switched on:</p>
     <div class="li-info-list">
-      <div class="li-info-row">
-        <div class="li-info-icon">
+      <div class="li-info-row" style="--i:0">
+        <div class="li-info-icon li-icon-dots">
           <span class="li-info-dot sent"></span><span class="li-info-dot accepted"></span>
         </div>
         <div class="li-info-text">
@@ -2382,22 +2444,22 @@
           <div class="li-info-sub-text">Two extra outreach steps appear — for tracking a connection request separately from a reply.</div>
         </div>
       </div>
-      <div class="li-info-row">
-        <div class="li-info-icon">🔗</div>
+      <div class="li-info-row" style="--i:1">
+        <div class="li-info-icon li-icon-link">🔗</div>
         <div class="li-info-text">
           <div class="li-info-title">LinkedIn sequences</div>
           <div class="li-info-sub-text">Every lead's detail panel gets a LinkedIn section for building and tracking multi-step DM sequences.</div>
         </div>
       </div>
-      <div class="li-info-row">
-        <div class="li-info-icon">📇</div>
+      <div class="li-info-row" style="--i:2">
+        <div class="li-info-icon li-icon-import">📇</div>
         <div class="li-info-text">
           <div class="li-info-title">Import LinkedIn connections</div>
           <div class="li-info-sub-text">A new button lets you turn your exported LinkedIn connections list straight into leads.</div>
         </div>
       </div>
-      <div class="li-info-row">
-        <div class="li-info-icon" style="background:#0A66C2;color:#fff;">in</div>
+      <div class="li-info-row" style="--i:3">
+        <div class="li-info-icon li-icon-brand" style="background:#0A66C2;color:#fff;">in</div>
         <div class="li-info-text">
           <div class="li-info-title">LinkedIn-blue theme</div>
           <div class="li-info-sub-text">Buttons and accents switch to LinkedIn's own color, just so it's obvious at a glance which mode you're in.</div>
