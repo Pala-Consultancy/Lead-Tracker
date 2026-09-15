@@ -1445,6 +1445,27 @@
   }
   .li-new-seq-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(10,102,194,0.38);}
   .li-new-seq-btn:active{transform:translateY(0);}
+
+  /* ---------- LinkedIn mode info modal ---------- */
+  .li-info-modal{max-width:460px;}
+  .li-info-sub{font-size:13px;color:var(--slate);margin:0 0 16px;}
+  .li-info-list{display:flex;flex-direction:column;gap:2px;margin-bottom:18px;}
+  .li-info-row{display:flex;align-items:flex-start;gap:13px;padding:10px 4px;}
+  .li-info-icon{
+    width:36px;height:36px;border-radius:10px;flex-shrink:0;font-size:15px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;background:#E8F1FB;color:#0A66C2;
+  }
+  .li-info-icon:has(.li-info-dot){gap:3px;}
+  .li-info-dot{width:9px;height:9px;border-radius:50%;}
+  .li-info-dot.sent{background:#0A66C2;}
+  .li-info-dot.accepted{background:#57A0E8;}
+  .li-info-title{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .li-info-sub-text{font-size:12px;color:var(--slate);line-height:1.5;margin-top:2px;}
+  .li-info-dismiss-row{
+    display:flex;align-items:center;gap:8px;padding:10px 4px;margin-bottom:12px;
+    font-size:12.5px;color:var(--slate);cursor:pointer;user-select:none;
+  }
+  .li-info-dismiss-row input{width:16px;height:16px;cursor:pointer;accent-color:#0A66C2;}
   /* Larger, cleaner tag/chip look specifically inside the drawer */
   .drawer .tag{padding:4px 11px;font-size:12px;border-radius:20px;}
   .drawer .outreach-chip{padding:7px 12px;border-radius:20px;font-size:12px;}
@@ -2343,6 +2364,53 @@
     <div id="linkedinPickerBody"></div>
   </div>
 </div>
+<div class="confirm-overlay" id="linkedinModeInfoOverlay" style="display:none">
+  <div class="confirm-modal li-modal li-info-modal">
+    <div class="li-modal-header">
+      <div class="li-modal-header-icon">🔗</div>
+      <h3>LinkedIn mode is on</h3>
+      <button type="button" class="li-modal-close" id="linkedinModeInfoClose" aria-label="Close">✕</button>
+    </div>
+    <p class="li-info-sub">A few things change on this board while it's switched on:</p>
+    <div class="li-info-list">
+      <div class="li-info-row">
+        <div class="li-info-icon">
+          <span class="li-info-dot sent"></span><span class="li-info-dot accepted"></span>
+        </div>
+        <div class="li-info-text">
+          <div class="li-info-title">Sent &amp; Accepted outreach steps</div>
+          <div class="li-info-sub-text">Two extra outreach steps appear — for tracking a connection request separately from a reply.</div>
+        </div>
+      </div>
+      <div class="li-info-row">
+        <div class="li-info-icon">🔗</div>
+        <div class="li-info-text">
+          <div class="li-info-title">LinkedIn sequences</div>
+          <div class="li-info-sub-text">Every lead's detail panel gets a LinkedIn section for building and tracking multi-step DM sequences.</div>
+        </div>
+      </div>
+      <div class="li-info-row">
+        <div class="li-info-icon">📇</div>
+        <div class="li-info-text">
+          <div class="li-info-title">Import LinkedIn connections</div>
+          <div class="li-info-sub-text">A new button lets you turn your exported LinkedIn connections list straight into leads.</div>
+        </div>
+      </div>
+      <div class="li-info-row">
+        <div class="li-info-icon" style="background:#0A66C2;color:#fff;">in</div>
+        <div class="li-info-text">
+          <div class="li-info-title">LinkedIn-blue theme</div>
+          <div class="li-info-sub-text">Buttons and accents switch to LinkedIn's own color, just so it's obvious at a glance which mode you're in.</div>
+        </div>
+      </div>
+    </div>
+    <label class="li-info-dismiss-row">
+      <input type="checkbox" id="linkedinModeInfoDismissCheck">
+      <span>Don't show this again</span>
+    </label>
+    <button type="button" class="li-new-seq-btn" id="linkedinModeInfoGotIt">Got it</button>
+  </div>
+</div>
 <div class="confirm-overlay" id="linkedinComposeOverlay" style="display:none">
   <div class="confirm-modal" style="max-width:440px;text-align:left;">
     <h3 style="margin:0 0 4px;">💬 Send LinkedIn message</h3>
@@ -3108,6 +3176,7 @@
       showToast(t('leadModeLockedUpgradeMessage'), true);
       return;
     }
+    const turningOn = addLeadMode !== 'linkedin';
     addLeadMode = addLeadMode === 'linkedin' ? 'other' : 'linkedin';
     try{ window.localStorage.setItem('addLeadMode_' + boardId, addLeadMode); }catch(e){}
     applyLeadModeUI();
@@ -3115,7 +3184,33 @@
     if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
       playLeadModeAnimation(addLeadMode);
     }
+    if(turningOn) maybeShowLinkedInModeInfo();
   }
+  function maybeShowLinkedInModeInfo(){
+    let dismissed = false;
+    try{ dismissed = window.localStorage.getItem('linkedinModeInfoDismissed') === '1'; }catch(e){}
+    if(dismissed) return;
+    const overlay = document.getElementById('linkedinModeInfoOverlay');
+    if(!overlay) return;
+    overlay.style.display = 'flex';
+    overlay.classList.add('open');
+    overlay.querySelector('.confirm-modal').classList.add('open');
+  }
+  function closeLinkedInModeInfo(){
+    const overlay = document.getElementById('linkedinModeInfoOverlay');
+    const check = document.getElementById('linkedinModeInfoDismissCheck');
+    if(check && check.checked){
+      try{ window.localStorage.setItem('linkedinModeInfoDismissed', '1'); }catch(e){}
+    }
+    overlay.classList.remove('open');
+    overlay.querySelector('.confirm-modal').classList.remove('open');
+    overlay.style.display = 'none';
+  }
+  document.getElementById('linkedinModeInfoClose').addEventListener('click', closeLinkedInModeInfo);
+  document.getElementById('linkedinModeInfoGotIt').addEventListener('click', closeLinkedInModeInfo);
+  document.getElementById('linkedinModeInfoOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'linkedinModeInfoOverlay') closeLinkedInModeInfo();
+  });
   try{
     if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
       firebase.initializeApp(firebaseConfig);
