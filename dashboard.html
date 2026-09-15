@@ -3245,7 +3245,11 @@
     if(typeof render === 'function' && typeof leads !== 'undefined') render();
     if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
       playLeadModeAnimation(addLeadMode);
-      if(turningOn) setTimeout(maybeShowLinkedInModeInfo, 4500); // let the activation animation finish first
+      // Starts right as the activation overlay begins its own fade-out (not
+      // after it's fully gone), so the two overlap slightly and this is
+      // already visible the instant the celebration animation clears —
+      // no gap where the screen briefly has nothing happening.
+      if(turningOn) setTimeout(maybeShowLinkedInModeInfo, 3850);
     } else if(turningOn){
       maybeShowLinkedInModeInfo();
     }
