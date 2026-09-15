@@ -1821,6 +1821,8 @@
         <button class="btn" id="exportBtn" data-i18n="exportCSV">Export CSV</button>
         <button class="btn" id="importBtn" data-i18n="importCSV">Import CSV</button>
         <input type="file" id="importFile" accept=".csv" style="display:none">
+        <button class="btn" id="importLinkedInBtn" style="display:none;background:#0A66C2;color:#fff;border-color:#0A66C2;">🔗 Import LinkedIn connections</button>
+        <input type="file" id="importLinkedInFile" accept=".csv" style="display:none">
         <a class="btn" id="statsLink" href="statistics.html" data-i18n="statisticsLink">📊 Statistics</a>
         <button class="btn btn-primary" id="newLeadBtn" data-i18n="newLeadBtn">+ New Lead</button>
       </div>
@@ -2901,6 +2903,8 @@
     const pillAccepted = document.getElementById('pill-requestAccepted');
     if(pillSent) pillSent.style.display = isLinkedIn ? '' : 'none';
     if(pillAccepted) pillAccepted.style.display = isLinkedIn ? '' : 'none';
+    const importLinkedInBtnEl = document.getElementById('importLinkedInBtn');
+    if(importLinkedInBtnEl) importLinkedInBtnEl.style.display = isLinkedIn ? '' : 'none';
     const toggleBtn = document.getElementById('leadModeToggleBtn');
     const label = document.getElementById('leadModeToggleLabel');
     const iconHolder = document.getElementById('leadModeToggleIconHolder');
@@ -5129,6 +5133,103 @@ ${buildLeadContext()}`;
         showToast(`${t('importedWord')} ${imported.length} ${imported.length===1?t('lead_singular'):t('lead_plural')}.`);
       }).catch(err=>{
         showToast(t('couldNotImportLeads') + ' ' + friendlyErr(err), true);
+      });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // ---------- LinkedIn connections import ----------
+  // LinkedIn lets anyone export their own connections list officially —
+  // Settings & Privacy → "Get a copy of your data" → Connections. That CSV
+  // is genuinely yours to use however you like; this just turns each row
+  // into a lead instead of you re-typing every name, company, and title
+  // by hand. It has nothing to do with messaging or automation — it's a
+  // one-time import of data LinkedIn itself already handed you.
+  function parseLinkedInDate(str){
+    // LinkedIn exports dates like "15 Jan 2024" (and, on some older
+    // exports, "15-Jan-24"). Falls back to today if it can't be read.
+    if(!str) return todayISO();
+    const cleaned = str.trim().replace(/-/g, ' ');
+    const parsed = new Date(cleaned);
+    if(isNaN(parsed.getTime())) return todayISO();
+    const y = parsed.getFullYear(), m = String(parsed.getMonth()+1).padStart(2,'0'), d = String(parsed.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  document.getElementById('importLinkedInBtn').addEventListener('click', ()=>{
+    document.getElementById('importLinkedInFile').click();
+  });
+  document.getElementById('importLinkedInFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rows = parseCSV(reader.result);
+      // LinkedIn's export prepends a few "Notes:" / disclaimer lines
+      // before the real header row, so find it by looking for the row
+      // that actually contains "First Name" rather than assuming row 0.
+      const headerIdx = rows.findIndex(r => r.some(cell => /first\s*name/i.test(cell)));
+      if(headerIdx === -1){
+        showToast('This doesn\'t look like a LinkedIn connections export — could not find the header row.', true);
+        e.target.value = '';
+        return;
+      }
+      const header = rows[headerIdx].map(h => h.trim().toLowerCase());
+      const col = (pattern) => header.findIndex(h => pattern.test(h));
+      const idxFirst = col(/first\s*name/);
+      const idxLast = col(/last\s*name/);
+      const idxUrl = col(/^url$/);
+      const idxEmail = col(/email/);
+      const idxCompany = col(/company/);
+      const idxPosition = col(/position/);
+      const idxConnectedOn = col(/connected\s*on/);
+
+      const dataRows = rows.slice(headerIdx + 1);
+      if(dataRows.length === 0){ showToast('No connections found in that file.', true); e.target.value = ''; return; }
+
+      const imported = dataRows.map(r => {
+        const first = (r[idxFirst] || '').trim();
+        const last = (r[idxLast] || '').trim();
+        const connectedDate = idxConnectedOn > -1 ? parseLinkedInDate(r[idxConnectedOn]) : todayISO();
+        return {
+          name: `${first} ${last}`.trim(),
+          email: idxEmail > -1 ? (r[idxEmail] || '').trim() : '',
+          linkedinUrl: idxUrl > -1 ? (r[idxUrl] || '').trim() : '',
+          company: idxCompany > -1 ? (r[idxCompany] || '').trim() : '',
+          jobTitle: idxPosition > -1 ? (r[idxPosition] || '').trim() : '',
+          source: 'LinkedIn',
+          status: 'New',
+          dateAdded: connectedDate,
+          // They're already a 1st-degree connection, so the request was
+          // clearly sent and accepted at some point — reflect that in the
+          // existing outreach tracking instead of showing them as untouched.
+          requestSent: true,
+          requestAccepted: true,
+          requestSentDate: connectedDate,
+          requestAcceptedDate: connectedDate,
+          contacted: false, replied: false, showedUp: false, noShow: false,
+          buyingSignals: [], customOutreach: [], customBuyingSignals: []
+        };
+      }).filter(obj => obj.name); // skip any blank rows
+
+      if(imported.length === 0){ showToast('No usable rows found in that file.', true); e.target.value = ''; return; }
+
+      if(!confirm(`Import ${imported.length} LinkedIn connection${imported.length===1?'':'s'} as new leads on this board?`)){
+        e.target.value = '';
+        return;
+      }
+
+      const chunkSize = 400;
+      const chunks = [];
+      for(let i=0;i<imported.length;i+=chunkSize) chunks.push(imported.slice(i,i+chunkSize));
+      Promise.all(chunks.map(chunk=>{
+        const batch = db.batch();
+        chunk.forEach(obj=>batch.set(leadsCollection.doc(), obj));
+        return batch.commit();
+      })).then(()=>{
+        showToast(`Imported ${imported.length} LinkedIn connection${imported.length===1?'':'s'}.`);
+      }).catch(err=>{
+        showToast('Could not import those: ' + friendlyErr(err), true);
       });
     };
     reader.readAsText(file);
