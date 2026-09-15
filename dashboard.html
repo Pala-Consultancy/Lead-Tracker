@@ -1409,10 +1409,23 @@
   .li-step-textarea:focus, .li-compose-textarea:focus{outline:none;border-color:#0A66C2;box-shadow:0 0 0 3px rgba(10,102,194,0.14);}
   .li-step-delay-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--slate);}
   .li-step-delay-row input{padding:6px 8px;border-radius:7px;}
-  .li-compose-textarea{min-height:130px;}
+  .li-compose-textarea{min-height:150px;font-size:14px;line-height:1.55;}
+  .li-compose-step-chip{
+    display:inline-block;font-size:11.5px;font-weight:700;color:#0A66C2;background:#E8F1FB;
+    padding:5px 11px;border-radius:20px;margin-bottom:12px;
+  }
+  .li-compose-hint{font-size:11.5px;color:var(--slate-light);line-height:1.5;margin:8px 2px 0;}
+  .li-compose-actions-row{display:flex;gap:10px;margin:16px 0 10px;}
+  .li-compose-secondary-btn{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;
+    padding:11px;border-radius:11px;border:1.5px solid var(--border);background:var(--panel);
+    color:var(--ink);font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;
+    transition:border-color .13s ease, background .13s ease, transform .13s ease;
+  }
+  .li-compose-secondary-btn:hover{border-color:#0A66C2;background:#F5F9FE;color:#0A66C2;transform:translateY(-1px);}
 
   /* ---------- LinkedIn modal chrome ---------- */
-  #linkedinPickerOverlay, #linkedinComposeOverlay{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+  #linkedinComposeOverlay, #linkedinModeInfoOverlay{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
   .li-modal{max-width:440px;text-align:left;padding:22px 24px 24px;}
   .li-modal-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
   .li-modal-header-icon{
@@ -2464,8 +2477,12 @@
   </div>
 </div>
 <div class="confirm-overlay" id="linkedinComposeOverlay" style="display:none">
-  <div class="confirm-modal" style="max-width:440px;text-align:left;">
-    <h3 style="margin:0 0 4px;">💬 Send LinkedIn message</h3>
+  <div class="confirm-modal li-modal">
+    <div class="li-modal-header">
+      <div class="li-modal-header-icon">💬</div>
+      <h3>Send LinkedIn message</h3>
+      <button type="button" class="li-modal-close" id="linkedinComposeClose" aria-label="Close">✕</button>
+    </div>
     <div id="linkedinComposeBody"></div>
   </div>
 </div>
@@ -4027,9 +4044,9 @@
   const confirmModalOk = document.getElementById('confirmModalOk');
   const confirmModalCancel = document.getElementById('confirmModalCancel');
   let confirmModalCallback = null;
-  function showConfirmModal(message, onConfirm){
+  function showConfirmModal(message, onConfirm, okLabel){
     confirmModalText.textContent = message;
-    confirmModalOk.textContent = t('yesAddIt');
+    confirmModalOk.textContent = okLabel || t('yesAddIt');
     confirmModalCancel.textContent = t('cancel');
     confirmModalCallback = onConfirm;
     confirmOverlay.classList.add('open');
@@ -5367,23 +5384,20 @@ ${buildLeadContext()}`;
 
       if(imported.length === 0){ showToast('No usable rows found in that file.', true); e.target.value = ''; return; }
 
-      if(!confirm(`Import ${imported.length} LinkedIn connection${imported.length===1?'':'s'} as new leads on this board?`)){
-        e.target.value = '';
-        return;
-      }
-
-      const chunkSize = 400;
-      const chunks = [];
-      for(let i=0;i<imported.length;i+=chunkSize) chunks.push(imported.slice(i,i+chunkSize));
-      Promise.all(chunks.map(chunk=>{
-        const batch = db.batch();
-        chunk.forEach(obj=>batch.set(leadsCollection.doc(), obj));
-        return batch.commit();
-      })).then(()=>{
-        showToast(`Imported ${imported.length} LinkedIn connection${imported.length===1?'':'s'}.`);
-      }).catch(err=>{
-        showToast('Could not import those: ' + friendlyErr(err), true);
-      });
+      showConfirmModal(`Import ${imported.length} LinkedIn connection${imported.length===1?'':'s'} as new leads on this board?`, ()=>{
+        const chunkSize = 400;
+        const chunks = [];
+        for(let i=0;i<imported.length;i+=chunkSize) chunks.push(imported.slice(i,i+chunkSize));
+        Promise.all(chunks.map(chunk=>{
+          const batch = db.batch();
+          chunk.forEach(obj=>batch.set(leadsCollection.doc(), obj));
+          return batch.commit();
+        })).then(()=>{
+          showToast(`Imported ${imported.length} LinkedIn connection${imported.length===1?'':'s'}.`);
+        }).catch(err=>{
+          showToast('Could not import those: ' + friendlyErr(err), true);
+        });
+      }, `Import ${imported.length}`);
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -5809,13 +5823,14 @@ ${buildLeadContext()}`;
           </div>`;
         document.getElementById('composeLinkedInBtn').onclick = ()=>openComposeLinkedInModal(run, l);
         document.getElementById('stopLinkedInSeqBtn').onclick = ()=>{
-          if(!confirm('Stop this LinkedIn sequence for ' + (l.name || 'this lead') + '?')) return;
-          db.collection('linkedinSequenceRuns').doc(run.id).update({status: 'stopped'}).then(()=>{
-            showToast('LinkedIn sequence stopped.');
-            loadLinkedInSequenceForDrawer(l);
-          }).catch(err=>{
-            showToast('Could not stop that: ' + friendlyErr(err), true);
-          });
+          showConfirmModal('Stop this LinkedIn sequence for ' + (l.name || 'this lead') + '?', ()=>{
+            db.collection('linkedinSequenceRuns').doc(run.id).update({status: 'stopped'}).then(()=>{
+              showToast('LinkedIn sequence stopped.');
+              loadLinkedInSequenceForDrawer(l);
+            }).catch(err=>{
+              showToast('Could not stop that: ' + friendlyErr(err), true);
+            });
+          }, 'Stop sequence');
         };
       }).catch(err=>{
         console.error('Could not load LinkedIn sequence', err);
@@ -5840,20 +5855,19 @@ ${buildLeadContext()}`;
     overlay.classList.add('open');
     overlay.querySelector('.confirm-modal').classList.add('open');
     body.innerHTML = `
-      <div style="font-size:12.5px;color:var(--slate);margin-bottom:10px;">Step ${run.currentStepIndex+1} of ${run.steps.length} — <b>${esc(run.templateName || '')}</b></div>
+      <div class="li-compose-step-chip">Step ${run.currentStepIndex+1} of ${run.steps.length} · <b>${esc(run.templateName || '')}</b></div>
       <textarea id="liComposeText" class="li-compose-textarea">${esc(filled)}</textarea>
-      ${!l.linkedinUrl ? `<div style="font-size:11.5px;color:var(--slate-light);margin:6px 2px 0;">No LinkedIn profile saved for this lead — this opens a LinkedIn search for their name instead.</div>` : ''}
-      <div class="drawer-actions-row" style="margin-top:14px;">
-        <button type="button" class="btn" id="liCopyBtn" style="flex:1;justify-content:center;">📋 Copy message</button>
-        <a href="${esc(profileUrl)}" target="_blank" rel="noopener" class="btn" style="flex:1;justify-content:center;">↗ Open on LinkedIn</a>
+      ${!l.linkedinUrl ? `<div class="li-compose-hint">No LinkedIn profile saved for this lead — this opens a LinkedIn search for their name instead.</div>` : ''}
+      <div class="li-compose-actions-row">
+        <button type="button" class="li-compose-secondary-btn" id="liCopyBtn">📋 Copy message</button>
+        <a href="${esc(profileUrl)}" target="_blank" rel="noopener" class="li-compose-secondary-btn">↗ Open on LinkedIn</a>
       </div>
-      <button type="button" class="btn btn-primary" id="liMarkSentBtn" style="width:100%;justify-content:center;margin-top:8px;">✓ Mark as sent</button>
-      <button type="button" class="btn" id="liCloseComposeBtn" style="width:100%;justify-content:center;margin-top:8px;background:none;border-color:transparent;color:var(--slate);">Close</button>`;
+      <button type="button" class="li-save-btn" id="liMarkSentBtn" style="width:100%;">✓ Mark as sent</button>`;
+    document.getElementById('linkedinComposeClose').onclick = closeLinkedInCompose;
     document.getElementById('liCopyBtn').onclick = ()=>{
       const text = document.getElementById('liComposeText').value;
       navigator.clipboard.writeText(text).then(()=>showToast('Message copied.')).catch(()=>showToast('Could not copy — select and copy manually.', true));
     };
-    document.getElementById('liCloseComposeBtn').onclick = closeLinkedInCompose;
     document.getElementById('liMarkSentBtn').onclick = ()=>{
       const nextIndex = run.currentStepIndex + 1;
       const isLastStep = nextIndex >= run.steps.length;
