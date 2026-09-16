@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PALATRACK - Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#1B2430;
@@ -235,7 +235,7 @@
   }
   .title-main-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .title-block h1{
-    font-family:'Plus Jakarta Sans',sans-serif;
+    font-family:'Sora',sans-serif;
     font-size:23px;font-weight:800;margin:0;
     letter-spacing:-0.015em;line-height:1.2;
     color:#fff;
@@ -1752,7 +1752,7 @@
     font-family:'Inter',sans-serif;font-size:11px;font-weight:700;
     letter-spacing:.12em;text-transform:uppercase;color:var(--slate-light);margin-bottom:6px;
   }
-  .login-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--ink);line-height:1.25;}
+  .login-title{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--ink);line-height:1.25;}
   .login-sub{font-size:13px;color:var(--slate);margin-top:5px;}
   #loginForm, #resetForm{padding:22px 34px 0;}
   #loginForm .field, #resetForm .field{margin-bottom:16px;}
@@ -3686,8 +3686,16 @@
     root.style.display = 'block';
     void root.offsetWidth;
     root.classList.add('fade-in');
-    loader.classList.add('hide');
-    setTimeout(()=>{ loader.style.display = 'none'; }, 370); // fade is 350ms; small buffer for the transitionend to actually land
+    // Give the browser its own frame to actually finish appRoot's first
+    // layout+paint before also asking it to animate the loader's
+    // fade-out. That first paint is heavier on a LinkedIn-mode board —
+    // extra Sent/Accepted columns, chips, the import button — and
+    // starting both at once made the fade compete with that paint for
+    // the same frame and visibly stutter, worst on the busier layout.
+    requestAnimationFrame(()=>{
+      loader.classList.add('hide');
+      setTimeout(()=>{ loader.style.display = 'none'; }, 370); // fade is 350ms; small buffer for the transitionend to actually land
+    });
   }
   function initFirebaseSync(){
     if(!firebaseConnected){
