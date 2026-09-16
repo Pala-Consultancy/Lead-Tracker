@@ -1496,6 +1496,35 @@
   }
   .li-info-dismiss-row input{width:16px;height:16px;cursor:pointer;accent-color:#0A66C2;}
 
+  /* ---------- Website leads modal ---------- */
+  .wl-intro{font-size:13px;color:var(--slate);line-height:1.55;margin:0 0 16px;}
+  .wl-tabs{display:flex;gap:4px;background:var(--panel-alt, var(--paper));border-radius:11px;padding:4px;margin-bottom:16px;}
+  .wl-tab{
+    flex:1;padding:9px 10px;border-radius:8px;border:none;background:none;cursor:pointer;
+    font-size:12.5px;font-weight:700;color:var(--slate);transition:background .13s ease, color .13s ease;
+  }
+  .wl-tab.active{background:var(--panel);color:var(--teal);box-shadow:var(--shadow-sm);}
+  .wl-panel-desc{font-size:12.5px;color:var(--slate);line-height:1.55;margin:0 0 12px;}
+  .wl-code-box{
+    width:100%;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);
+    background:var(--panel-alt, var(--paper));border:1px solid var(--border);border-radius:10px;
+    padding:12px 14px;resize:vertical;line-height:1.6;
+  }
+  .wl-url-row{display:flex;gap:8px;margin-bottom:10px;}
+  .wl-url-input{
+    flex:1;padding:10px 12px;border-radius:9px;border:1px solid var(--border);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink);background:var(--panel-alt, var(--paper));
+  }
+  .wl-regen-btn{
+    background:none;border:none;color:var(--slate);font-size:12px;font-weight:600;cursor:pointer;
+    padding:2px 0;margin-bottom:16px;
+  }
+  .wl-regen-btn:hover{color:var(--red);}
+  .wl-platform-notes{display:flex;flex-direction:column;gap:6px;}
+  .wl-detail{border:1px solid var(--border-soft, var(--border));border-radius:10px;padding:2px 14px;}
+  .wl-detail summary{padding:10px 0;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;}
+  .wl-detail p{font-size:12px;color:var(--slate);line-height:1.55;margin:0 0 12px;}
+
   /* ---------- LinkedIn mode info modal: animation ---------- */
   .li-info-modal .li-modal-header-icon{animation:li-header-pop .5s cubic-bezier(.34,1.56,.64,1) both;}
   @keyframes li-header-pop{from{transform:scale(.4) rotate(-15deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
@@ -1936,6 +1965,7 @@
         <button class="btn" id="importLinkedInBtn" style="display:none;background:#0A66C2;color:#fff;border-color:#0A66C2;">🔗 Import LinkedIn connections</button>
         <input type="file" id="importLinkedInFile" accept=".csv" style="display:none">
         <a class="btn" id="statsLink" href="statistics.html" data-i18n="statisticsLink">📊 Statistics</a>
+        <button class="btn" id="websiteLeadsBtn">🌐 Website leads</button>
         <button class="btn btn-primary" id="newLeadBtn" data-i18n="newLeadBtn">+ New Lead</button>
       </div>
       <div class="session-actions">
@@ -2445,6 +2475,57 @@
   .gmail-compose-body i, .gmail-compose-body em{font-style:italic;}
   .gmail-compose-body u{text-decoration:underline;}
 </style>
+<div class="confirm-overlay" id="websiteLeadsOverlay" style="display:none">
+  <div class="confirm-modal wl-modal" style="max-width:580px;text-align:left;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0;">🌐 Website leads</h3>
+      <button type="button" class="li-modal-close" id="websiteLeadsClose" aria-label="Close">✕</button>
+    </div>
+    <p class="wl-intro">Bring leads in from your website automatically — this works no matter what it's built on: Wix, WordPress, Squarespace, Webflow, Shopify, or a hand-coded site.</p>
+
+    <div class="wl-tabs">
+      <button type="button" class="wl-tab active" data-wltab="embed">Embed a form</button>
+      <button type="button" class="wl-tab" data-wltab="webhook">Connect an existing form</button>
+    </div>
+
+    <div id="wlTabEmbed" class="wl-tab-panel">
+      <p class="wl-panel-desc">Paste this into any "Embed HTML" / "Custom code" block on your site (every major site builder has one). It drops in a simple contact form — every submission lands here as a new lead automatically.</p>
+      <textarea id="wlEmbedCode" class="wl-code-box" readonly rows="6"></textarea>
+      <button type="button" class="li-secondary-btn" id="wlCopyEmbed" style="margin-top:10px;">📋 Copy embed code</button>
+    </div>
+
+    <div id="wlTabWebhook" class="wl-tab-panel" style="display:none">
+      <p class="wl-panel-desc">Already have a form you like? Leave it as is, and just point its submissions at this URL instead.</p>
+      <div class="wl-url-row">
+        <input type="text" id="wlWebhookUrl" class="wl-url-input" readonly>
+        <button type="button" class="li-secondary-btn" id="wlCopyUrl">Copy</button>
+      </div>
+      <button type="button" class="wl-regen-btn" id="wlRegenerate">↻ Regenerate this URL</button>
+      <div class="wl-platform-notes">
+        <details class="wl-detail">
+          <summary>Wix</summary>
+          <p>Use Wix Automations (Automations → Create New → "Contact form submitted" → "Send a request to a URL", paste this URL) or connect via Zapier if Automations isn't on your plan.</p>
+        </details>
+        <details class="wl-detail">
+          <summary>WordPress</summary>
+          <p>With Contact Form 7, install the "CF7 to Webhook" add-on. With WPForms or Gravity Forms, use their built-in Webhooks add-on and paste this URL as the request URL.</p>
+        </details>
+        <details class="wl-detail">
+          <summary>Squarespace</summary>
+          <p>Squarespace forms don't support webhooks directly — connect via Zapier: trigger "New Form Submission," action "Webhooks by Zapier → POST," paste this URL.</p>
+        </details>
+        <details class="wl-detail">
+          <summary>Webflow</summary>
+          <p>Form settings → Setup → add this URL under "Send submissions to another location" / integrate via Webflow's native webhook option.</p>
+        </details>
+        <details class="wl-detail">
+          <summary>Any other platform (Zapier / Make)</summary>
+          <p>Almost every site builder connects to Zapier or Make.com. Use their form-submission trigger, then a "Webhook / HTTP POST" action pointed at this URL — this works regardless of what your site runs on.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="confirm-overlay" id="linkedinModeInfoOverlay" style="display:none">
   <div class="confirm-modal li-modal li-info-modal">
     <div class="li-modal-header">
@@ -5417,6 +5498,114 @@ ${buildLeadContext()}`;
     };
     reader.readAsText(file);
     e.target.value = '';
+  });
+
+  // ---------- Website leads (webhook + embed form) ----------
+  // Works for any website platform — this is just a plain HTTP endpoint.
+  // A form builder posts to it via a native webhook feature, Zapier/Make,
+  // or the embeddable snippet below posts to it directly with fetch().
+  const WEBHOOK_BASE_URL = 'https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/receiveWebLead';
+  function buildWebhookUrl(token){
+    return `${WEBHOOK_BASE_URL}?workspace=${encodeURIComponent(workspaceId)}&board=${encodeURIComponent(boardId)}&token=${encodeURIComponent(token)}`;
+  }
+  function buildEmbedCode(url){
+    return `<form id="palatrack-lead-form" style="max-width:420px;font-family:sans-serif;display:flex;flex-direction:column;gap:10px;">
+  <input name="name" placeholder="Your name" required style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+  <input name="email" type="email" placeholder="Email" required style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+  <input name="phone" placeholder="Phone (optional)" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+  <textarea name="message" placeholder="Message (optional)" style="padding:10px;border:1px solid #ccc;border-radius:8px;min-height:70px;"></textarea>
+  <button type="submit" style="padding:11px;border:none;border-radius:8px;background:#3730B3;color:#fff;font-weight:700;cursor:pointer;">Send</button>
+  <div id="palatrack-lead-form-status" style="font-size:13px;"></div>
+</form>
+<script>
+document.getElementById('palatrack-lead-form').addEventListener('submit', function(e){
+  e.preventDefault();
+  var form = e.target;
+  var status = document.getElementById('palatrack-lead-form-status');
+  var data = Object.fromEntries(new FormData(form).entries());
+  status.textContent = 'Sending…';
+  fetch('${url}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(r){ return r.json(); }).then(function(res){
+    if(res.ok){ status.textContent = 'Thanks — we\\'ll be in touch!'; form.reset(); }
+    else { status.textContent = 'Something went wrong, please try again.'; }
+  }).catch(function(){ status.textContent = 'Something went wrong, please try again.'; });
+});
+<\/script>`;
+  }
+  function randomToken(){
+    return (window.crypto && crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now().toString(36))).replace(/-/g, '');
+  }
+  function renderWebhookUrl(token){
+    const url = buildWebhookUrl(token);
+    document.getElementById('wlWebhookUrl').value = url;
+    document.getElementById('wlEmbedCode').value = buildEmbedCode(url);
+  }
+  function ensureWebhookToken(){
+    document.getElementById('wlWebhookUrl').value = 'Loading…';
+    document.getElementById('wlEmbedCode').value = 'Loading…';
+    boardsCollection.doc(boardId).get().then(doc=>{
+      const existing = doc.exists ? doc.data().webhookToken : null;
+      if(existing){
+        renderWebhookUrl(existing);
+      } else {
+        const token = randomToken();
+        return boardsCollection.doc(boardId).update({webhookToken: token}).then(()=>{
+          renderWebhookUrl(token);
+        });
+      }
+    }).catch(err=>{
+      showToast('Could not load this: ' + friendlyErr(err), true);
+    });
+  }
+  function openWebsiteLeadsModal(){
+    const overlay = document.getElementById('websiteLeadsOverlay');
+    overlay.style.display = 'flex';
+    overlay.classList.add('open');
+    overlay.querySelector('.confirm-modal').classList.add('open');
+    ensureWebhookToken();
+  }
+  function closeWebsiteLeadsModal(){
+    const overlay = document.getElementById('websiteLeadsOverlay');
+    overlay.classList.remove('open');
+    overlay.querySelector('.confirm-modal').classList.remove('open');
+    overlay.style.display = 'none';
+  }
+  const websiteLeadsBtnEl = document.getElementById('websiteLeadsBtn');
+  if(websiteLeadsBtnEl) websiteLeadsBtnEl.addEventListener('click', openWebsiteLeadsModal);
+  document.getElementById('websiteLeadsClose').addEventListener('click', closeWebsiteLeadsModal);
+  document.getElementById('websiteLeadsOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'websiteLeadsOverlay') closeWebsiteLeadsModal();
+  });
+  document.querySelectorAll('.wl-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.wl-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const which = tab.dataset.wltab;
+      document.getElementById('wlTabEmbed').style.display = which === 'embed' ? 'block' : 'none';
+      document.getElementById('wlTabWebhook').style.display = which === 'webhook' ? 'block' : 'none';
+    });
+  });
+  document.getElementById('wlCopyEmbed').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(document.getElementById('wlEmbedCode').value)
+      .then(()=>showToast('Embed code copied.')).catch(()=>showToast('Could not copy.', true));
+  });
+  document.getElementById('wlCopyUrl').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(document.getElementById('wlWebhookUrl').value)
+      .then(()=>showToast('URL copied.')).catch(()=>showToast('Could not copy.', true));
+  });
+  document.getElementById('wlRegenerate').addEventListener('click', ()=>{
+    showConfirmModal('Regenerate this URL? Any form or automation still using the old one will stop working until you update it there too.', ()=>{
+      const token = randomToken();
+      boardsCollection.doc(boardId).update({webhookToken: token}).then(()=>{
+        renderWebhookUrl(token);
+        showToast('URL regenerated.');
+      }).catch(err=>{
+        showToast('Could not regenerate: ' + friendlyErr(err), true);
+      });
+    }, 'Regenerate');
   });
 
   // ---------- Monthly view ----------
