@@ -3474,6 +3474,14 @@
         // Sparkle flourish near the end
         tone(1760, now + 1.5, 0.18, 0.05);
         tone(2093, now + 1.62, 0.22, 0.045);
+
+        // Every toggle created a new AudioContext and never released it —
+        // browsers hard-limit how many can exist at once, so repeatedly
+        // switching LinkedIn mode on/off during a session would silently
+        // pile these up until the page bogged down or new ones failed to
+        // create at all. Close it once the sound has actually finished
+        // (last tone ends at ~1.84s) instead of leaving it open forever.
+        setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 2200);
       }catch(e){}
 
       setTimeout(()=>{
@@ -6017,6 +6025,11 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
       }
       tone(880, now, 0.12, 0.13);
       tone(1318.5, now + 0.09, 0.2, 0.13);
+      // Same leak as the LinkedIn mode fanfare — this fires on every single
+      // successful toast, so left unclosed it was the single biggest
+      // source of the pile-up across an entire session, not just LinkedIn
+      // mode specifically. Close it once the (short) sound has finished.
+      setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 500);
     }catch(e){}
   }
   function showToast(message, danger, undoFn){
