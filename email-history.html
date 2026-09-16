@@ -584,8 +584,9 @@
 
   document.getElementById('backBtn').addEventListener('click', (e)=>{
     e.preventDefault();
-    if(boardId) location.href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
-    else history.back();
+    if(history.length>1) history.back();
+    else if(boardId) location.href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
+    else location.href = 'boards.html';
   });
 
   // Escapes first, then wraps matches of the current search query in <mark>

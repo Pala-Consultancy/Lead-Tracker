@@ -713,8 +713,8 @@
   try{ cameFromHome = cameFromHome || sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
   document.getElementById('backBtn').href = (boardId && leadId)
     ? `dashboard.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(leadId)}`
-    : (cameFromHome ? 'home.html' : 'boards.html');
-  if(!(boardId && leadId) && cameFromHome) document.querySelector('#backBtn .back-label').textContent = 'Back to home';
+    : 'boards.html';
+  document.getElementById('backBtn').onclick = function(){ if(history.length>1){ history.back(); return false; } };
   document.getElementById('editorBackLink').addEventListener('click', (e)=>{ e.preventDefault(); showListView(); });
   const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
   document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;

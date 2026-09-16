@@ -595,7 +595,7 @@
         </div>
       </div>
     </div>
-    <a class="btn" id="teamBackLink" href="boards.html" data-i18n="backToBoards">← Back to boards</a>
+    <a class="btn" id="teamBackLink" href="boards.html" onclick="if(history.length>1){history.back();return false;}">← Back</a>
   </header>
 
   <div class="invite-card">
@@ -1261,17 +1261,6 @@
       });
     }
 
-    (function(){
-      if(new URLSearchParams(location.search).get('from') === 'home'){
-        try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){}
-      }
-      let cameFromHome = false;
-      try{ cameFromHome = sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
-      if(cameFromHome){
-        const backLink = document.getElementById('teamBackLink');
-        if(backLink){ backLink.href = 'home.html'; backLink.textContent = '← Back to home'; backLink.removeAttribute('data-i18n'); }
-      }
-    })();
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
       if(user){

@@ -437,6 +437,29 @@
   .scope-tab.disabled:hover{color:var(--slate);}
   .scope-note{font-size:12.5px;color:var(--slate-light);margin:0 0 22px;}
   .date-range-bar{display:inline-flex;align-items:center;gap:10px;margin:0 0 8px 10px;flex-wrap:wrap;vertical-align:top;}
+  #dateRangeSelect{
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;color:var(--ink);
+    padding:9px 30px 9px 14px;border-radius:20px;border:1.5px solid var(--border);
+    background-color:var(--panel);cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,0.04);
+    -webkit-appearance:none;appearance:none;transition:border-color .15s ease, box-shadow .15s ease;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23647084' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 10px center;background-size:13px;
+  }
+  #dateRangeSelect:hover{border-color:var(--slate-light);}
+  #dateRangeSelect:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 15%, transparent);}
+  .date-range-custom{display:flex;align-items:center;gap:8px;}
+  .date-range-custom span{font-size:12.5px;color:var(--slate);font-weight:600;}
+  .date-range-custom input[type="date"]{
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:var(--ink);
+    padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);
+    background:var(--panel);cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,0.04);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .date-range-custom input[type="date"]:hover{border-color:var(--slate-light);}
+  .date-range-custom input[type="date"]:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 15%, transparent);}
+  .date-range-custom input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.6;}
+  .date-range-custom input[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1;}
+  .date-range-custom .btn{padding:8px 16px;font-size:12.5px;}
   .date-range-bar select{
     padding:8px 14px;border-radius:9px;border:1px solid var(--border);background:var(--panel);
     color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;
@@ -1113,7 +1136,7 @@
     </div>
     <div class="header-right">
       <span class="live-badge"><span class="live-dot"></span>LIVE</span>
-      <a class="btn" id="backLink" href="boards.html" data-i18n="backToTracker">&larr; Back to tracker</a>
+      <a class="btn" id="backLink" href="boards.html" onclick="if(history.length>1){history.back();return false;}">&larr; Back</a>
       <button class="btn icon-btn-settings" id="settingsBtn" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
   </div>
@@ -3255,18 +3278,10 @@
       if(user){
         pageLoader.style.display = 'none';
         const backLink = document.getElementById('backLink');
-        if(boardId){
-          backLink.href = `dashboard.html?board=${encodeURIComponent(boardId)}`;
-        } else {
-          backLink.href = cameFromHomeCheck() ? 'home.html' : 'boards.html';
-          backLink.textContent = cameFromHomeCheck() ? '← Back to home' : '← Back to boards';
-          backLink.removeAttribute('data-i18n');
-        }
-        if(boardId && cameFromHomeCheck()){
-          backLink.href = 'home.html';
-          backLink.textContent = '← Back to home';
-          backLink.removeAttribute('data-i18n');
-        }
+        backLink.href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
+        backLink.onclick = function(){ if(history.length>1){ history.back(); return false; } };
+        backLink.textContent = '← Back';
+        backLink.removeAttribute('data-i18n');
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
         appRoot.classList.remove('fade-in');

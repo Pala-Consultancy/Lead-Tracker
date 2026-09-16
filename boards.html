@@ -1130,7 +1130,7 @@
       </div>
     </div>
     <div class="header-right">
-      <a class="btn" id="boardsBackLink" href="home.html" style="display:none">← Back to home</a>
+      <a class="btn" id="boardsBackLink" href="home.html" onclick="if(history.length>1){history.back();return false;}">← Back</a>
       <span class="live-badge"><span class="live-dot"></span><span data-i18n="realtimeUpdates">Real-time updates</span></span>
       <span class="count-pill" id="currentUserPill" style="display:none"></span>
       <a class="btn icon-btn-settings" href="home.html" title="Home"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></a>
@@ -3261,19 +3261,6 @@
       });
     }
 
-    (function(){
-      // "From home" persists for the whole tab session once set, so it survives
-      // hops through pages (like Board Trash) that don't carry the query param.
-      if(new URLSearchParams(location.search).get('from') === 'home'){
-        try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){}
-      }
-      let cameFromHome = false;
-      try{ cameFromHome = sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
-      if(cameFromHome){
-        const backLink = document.getElementById('boardsBackLink');
-        if(backLink) backLink.style.display = '';
-      }
-    })();
     auth.onAuthStateChanged(user=>{
       if(user){
         pageLoader.style.display = 'none';
