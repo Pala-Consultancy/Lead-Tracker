@@ -347,6 +347,9 @@
   .stat-card:nth-child(n+4){border-top:1px solid var(--border);}
   .stat-card:hover{background:var(--c-blue-tint);}
   .stat-card.clickable{cursor:pointer;}
+  .stat-card.filter-active{background:var(--stat-accent-soft, var(--c-blue-tint));}
+  .stat-card.filter-active::before{width:5px;}
+  .stat-card.filter-active .stat-label::after{content:" ✓";color:var(--stat-accent, var(--teal));font-weight:800;}
   .stat-card::before{
     content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;border-radius:0 3px 3px 0;
     background:var(--stat-accent, var(--teal));
@@ -4555,8 +4558,8 @@
       <span class="ring-value">${pct===null?'—':pct+'%'}</span>
     </div>`;
   }
-  function statCard({icon, accent, accentSoft, label, value, sub, small, onClick}){
-    return `<div class="stat-card${onClick?' clickable':''}" style="--stat-accent:${accent};--stat-accent-soft:${accentSoft}" ${onClick?`onclick="${onClick}"`:''}>
+  function statCard({icon, accent, accentSoft, label, value, sub, small, onClick, active}){
+    return `<div class="stat-card${onClick?' clickable':''}${active?' filter-active':''}" style="--stat-accent:${accent};--stat-accent-soft:${accentSoft}" ${onClick?`onclick="${onClick}"`:''}>
       <div class="stat-top">
         <div class="stat-icon">${ICONS[icon]}</div>
         <div class="stat-label">${label}</div>
@@ -4608,9 +4611,9 @@
       statCard({icon:'xCircle', accent:'var(--c-red-fg)', accentSoft:'var(--c-red-bg)', label:t('lost'), value:lostCount, sub: lostRate!==null ? `${lostRate}${t('ofAllLeads')}` : null, onClick:"window.__leadActions.filterByStatus('Lost')"}) +
       statCard({icon:'coin', accent:'var(--c-purple-fg)', accentSoft:'var(--c-purple-bg)', label:t('totalRevenue'), value:formatMoney(totalRevenue), small:true, sub: avgPerWon!==null ? `${formatMoney(avgPerWon)} ${t('avgPerWonDealFull')}` : null}) +
       (addLeadMode === 'linkedin' ? ringCard({pct:acceptRate, accent:'var(--c-blue-fg)', accentSoft:'var(--c-blue-bg)', label:t('requestAcceptRate'), sub:`${acceptedCount}/${sentCount} ${t('sent')}`}) : '') +
-      (addLeadMode === 'linkedin' ? statCard({icon:'link', accent:'var(--c-blue-fg)', accentSoft:'var(--c-blue-bg)', label:t('accepted'), value:acceptedCount, sub:'Connection requests', onClick:"window.__leadActions.filterByOutreach('requestAccepted')"}) : '') +
-      statCard({icon:'mail', accent:'var(--c-purple-fg)', accentSoft:'var(--c-purple-bg)', label:t('contacted'), value:contactedCount, onClick:"window.__leadActions.filterByOutreach('contacted')"}) +
-      statCard({icon:'messageCircle', accent:'var(--c-green-fg)', accentSoft:'var(--c-green-bg)', label:t('replied'), value:repliedCount, onClick:"window.__leadActions.filterByOutreach('replied')"}) +
+      (addLeadMode === 'linkedin' ? statCard({icon:'link', accent:'var(--c-blue-fg)', accentSoft:'var(--c-blue-bg)', label:t('accepted'), value:acceptedCount, sub:'Connection requests', onClick:"window.__leadActions.filterByOutreach('requestAccepted')", active:activeOutreachFilter==='requestAccepted'}) : '') +
+      statCard({icon:'mail', accent:'var(--c-purple-fg)', accentSoft:'var(--c-purple-bg)', label:t('contacted'), value:contactedCount, onClick:"window.__leadActions.filterByOutreach('contacted')", active:activeOutreachFilter==='contacted'}) +
+      statCard({icon:'messageCircle', accent:'var(--c-green-fg)', accentSoft:'var(--c-green-bg)', label:t('replied'), value:repliedCount, onClick:"window.__leadActions.filterByOutreach('replied')", active:activeOutreachFilter==='replied'}) +
       ringCard({pct:replyRate, accent:'var(--c-amber-fg)', accentSoft:'var(--c-amber-bg)', label:t('replyRate'), sub:`${repliedCount}/${contactedCount} ${t('contacted')}`}) +
       ringCard({pct:showUpRate, accent:'var(--c-purple-fg)', accentSoft:'var(--c-purple-bg)', label:t('showUpRate'), sub:`${showedUpCount}/${callReachedLeads.length} ${t('callsBooked').toLowerCase()}`}) +
       `<div class="stat-card${topSourceName?' clickable':''}" style="--stat-accent:${topSourceColor?topSourceColor.dot:'var(--slate-light)'};--stat-accent-soft:${topSourceColor?topSourceColor.bg:'var(--c-gray-bg)'}" ${topSourceName?`onclick="window.__leadActions.filterBySource('${topSourceName}')"`:''}>
@@ -5150,6 +5153,12 @@
     filterMonth.value = '';
     searchInput.value = '';
     render();
+    // The tally strip sits above the (often tall) add-lead form, so the
+    // results table can be far out of view when this is clicked — jump
+    // straight to it so the filter's effect is actually visible instead
+    // of looking like nothing happened.
+    const viewSwitch = document.querySelector('.view-switch');
+    if(viewSwitch) viewSwitch.scrollIntoView({behavior:'smooth', block:'start'});
   }
   function filterByMonthKey(key){
     switchView('all');
