@@ -146,7 +146,12 @@
       radial-gradient(circle at 50% 100%, rgba(255,157,0,0.06) 0%, transparent 48%),
       radial-gradient(circle at 30% 60%, rgba(31,92,79,0.05) 0%, transparent 45%),
       var(--paper);
-    background-attachment:fixed;
+    /* No background-attachment:fixed — it forces the browser to repaint
+       this whole 4-layer gradient on every single scroll frame, which is
+       one of the most well-documented causes of scroll jank, and this is
+       one of the longest, most scroll-heavy pages in the app. The
+       gradient already fades out well before typical scroll distance, so
+       dropping "fixed" costs nothing visually. */
     color:var(--ink);
     font-family:'Inter',sans-serif;
     min-height:100vh;
@@ -623,7 +628,6 @@
   .goal-card{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
     padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow);
-    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   }
   .goal-card-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
   .goal-card-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);font-weight:700;margin-bottom:4px;}
@@ -662,7 +666,7 @@
     background:linear-gradient(155deg, var(--stat-accent-soft, var(--c-stat-fallback-bg)) 0%, var(--panel) 65%);
     border:1px solid var(--border);border-radius:18px;
     padding:22px 22px 20px;box-shadow:0 1px 2px rgba(27,36,48,0.04), 0 10px 26px rgba(27,36,48,0.08);
-    position:relative;overflow:hidden;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    position:relative;overflow:hidden;
     display:flex;flex-direction:column;gap:12px;
     transition:transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s ease, border-color .25s ease, opacity .5s ease, translate .5s ease;
     opacity:0;translate:0 16px;
@@ -718,7 +722,6 @@
   .stat-card{
     background:var(--panel);border:1px solid var(--border);border-radius:12px;
     padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;
-    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
     display:flex;flex-direction:column;gap:8px;
     transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .2s ease, border-color .2s ease, opacity .5s ease, translate .5s ease;
     opacity:0;translate:0 14px;
@@ -761,7 +764,6 @@
   .ring-card{
     background:var(--panel);border:1px solid var(--border);border-radius:12px;
     padding:16px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;
-    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
     transition:transform .2s ease,box-shadow .2s ease, border-color .2s ease;
   }
   .ring-card:hover{
@@ -784,7 +786,6 @@
   .funnel{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
     box-shadow:var(--shadow);padding:26px 28px;position:relative;overflow:hidden;
-    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   }
   .funnel::before{
     content:"";position:absolute;top:0;left:0;right:0;height:3px;
@@ -811,7 +812,6 @@
   .table-wrap{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
     overflow:hidden;box-shadow:var(--shadow);position:relative;
-    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   }
   .table-wrap::before{
     content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--table-accent, var(--teal));
