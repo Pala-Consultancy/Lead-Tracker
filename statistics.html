@@ -716,6 +716,70 @@
   .stat-hero-trend.up{background:var(--c-green-bg);color:var(--c-green-fg);}
   .stat-hero-trend.down{background:var(--c-red-bg);color:var(--c-red-fg);}
   .stat-hero-trend.flat{background:var(--c-blue-tint2);color:var(--slate-light);}
+
+  /* ---------- Bento overview: one dark spotlight + 3 side cards ---------- */
+  .bento-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch;}
+  @media (max-width:760px){.bento-grid{grid-template-columns:1fr;}}
+  .bento-spotlight{
+    background:linear-gradient(155deg, #0B1330 0%, #1B2550 55%, #241F7A 100%);
+    border-radius:22px;padding:28px 30px;color:#fff;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:space-between;min-height:220px;
+    box-shadow:0 20px 46px -16px rgba(11,19,48,0.5);
+    transition:opacity .5s ease, translate .5s ease, transform .25s ease, box-shadow .25s ease;
+    opacity:0;translate:0 16px;
+  }
+  .bento-spotlight.revealed{opacity:1;translate:0 0;}
+  .bento-spotlight:hover{transform:translateY(-4px);box-shadow:0 26px 56px -16px rgba(11,19,48,0.6);}
+  .bento-spotlight::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size:16px 16px;
+  }
+  .bento-spotlight-glow{
+    content:"";position:absolute;top:-35%;right:-8%;width:280px;height:280px;border-radius:50%;
+    background:radial-gradient(circle, rgba(140,143,245,0.38) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .bento-spotlight-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
+  .bento-spotlight-icon{
+    width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,0.12);color:#fff;flex-shrink:0;
+  }
+  .bento-spotlight-icon svg{width:24px;height:24px;}
+  .bento-spotlight .stat-hero-trend{background:rgba(255,255,255,0.14);color:#fff;}
+  .bento-spotlight .stat-hero-trend.up{background:rgba(45,209,141,0.22);color:#6FE8B4;}
+  .bento-spotlight .stat-hero-trend.down{background:rgba(232,93,93,0.22);color:#FF9B9B;}
+  .bento-spotlight-label{
+    font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.55);
+    font-weight:700;position:relative;z-index:1;
+  }
+  .bento-spotlight-value{
+    font-family:'IBM Plex Mono',monospace;font-size:50px;font-weight:700;line-height:1.08;
+    margin-top:4px;position:relative;z-index:1;letter-spacing:-.01em;
+  }
+  .bento-side{display:flex;flex-direction:column;gap:12px;}
+  .bento-side-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:16px 18px;display:flex;align-items:center;gap:13px;flex:1;
+    box-shadow:0 1px 2px rgba(27,36,48,0.04);
+    transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, opacity .5s ease, translate .5s ease;
+    opacity:0;translate:12px 0;
+  }
+  .bento-side-card.revealed{opacity:1;translate:0 0;}
+  .bento-side-card:hover{transform:translateX(3px);box-shadow:0 8px 18px -6px rgba(27,36,48,0.12);border-color:var(--slate-light);}
+  .bento-side-icon{
+    width:38px;height:38px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    background:var(--c-blue-tint);color:var(--teal);
+  }
+  .bento-side-icon svg{width:19px;height:19px;}
+  .bento-side-text{flex:1;min-width:0;}
+  .bento-side-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);font-weight:700;}
+  .bento-side-value{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:700;color:var(--ink);margin-top:2px;}
+  .bento-side-sub{font-size:11px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;margin-top:1px;}
+  .bento-side-card .stat-hero-trend{flex-shrink:0;}
+  @media (prefers-reduced-motion: reduce){
+    .bento-spotlight, .bento-side-card{transition:none;}
+  }
   .stat-card{
     background:var(--panel);border:1px solid var(--border);border-radius:12px;
     padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;
@@ -1978,6 +2042,19 @@
     </div>`;
   }
 
+  function heroSideCard({icon, label, value, sub, countTarget, countType, trend}){
+    const countAttrs = countTarget !== undefined ? ` data-count-target="${countTarget}" data-count-type="${countType||'plain'}"` : '';
+    return `<div class="bento-side-card">
+      <div class="bento-side-icon">${ICONS[icon]}</div>
+      <div class="bento-side-text">
+        <div class="bento-side-label">${label}</div>
+        <div class="bento-side-value"${countAttrs}>${countTarget !== undefined ? '0' : value}</div>
+        ${sub ? `<div class="bento-side-sub">${sub}</div>` : ""}
+      </div>
+      ${trend || ""}
+    </div>`;
+  }
+
   function statCard({icon, accent, accentSoft, label, value, sub, small}){
     return `<div class="stat-card" style="--stat-accent:${accent};--stat-accent-soft:${accentSoft}">
       <div class="stat-top">
@@ -2470,13 +2547,25 @@
     // KPI row
     const kpiHTML = `<div class="section nav-anchor" id="sec-overview">
       <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.users}</div>${t('overview')}</h2>
-      <div class="stats-hero-row">
-        ${heroStatCard({icon:"users", accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('totalLeads'), value:total, countTarget:total, countType:'plain', trend:trendBadge(thisMonthLeadsCount, prevMonthLeadsCount)})}
-        ${heroStatCard({icon:"check", accent:"var(--c-green-fg)", accentSoft:"var(--c-green-bg)", label:t('won'), value:wonCount, sub: winRate!==null?`${winRate}${t('ofAllLeads')}`:null, countTarget:wonCount, countType:'plain', trend:trendBadge(thisMonthWon, prevMonthWon)})}
-        ${heroStatCard({icon:"coin", accent:"var(--c-purple-fg)", accentSoft:"var(--c-purple-bg)", label:t('totalRevenue'), value:formatMoney(totalRevenue), mid:true, countTarget:totalRevenue, countType:'money', trend:trendBadge(thisMonthRevenue, prevMonthRevenue)})}
-        ${avgClosingTime!==null
-          ? heroStatCard({icon:"clock", accent:"var(--c-tan-fg)", accentSoft:"var(--c-tan-bg)", label:t('avgClosingTime'), value: `${avgClosingTime} ${avgClosingTime===1?t('dayWord'):t('daysWordStats')}`, sub: closingTimeLeads.length>0 ? `${closingTimeLeads.length} ${closingTimeLeads.length===1?t('dealWord'):t('dealsWord')}` : null, countTarget:avgClosingTime, countType:'days'})
-          : heroStatCard({icon:"clock", accent:"var(--c-tan-fg)", accentSoft:"var(--c-tan-bg)", label:t('avgClosingTime'), value:"—"})}
+      <div class="bento-grid">
+        <div class="bento-spotlight">
+          <div class="bento-spotlight-glow"></div>
+          <div class="bento-spotlight-top">
+            <div class="bento-spotlight-icon">${ICONS.coin}</div>
+            ${trendBadge(thisMonthRevenue, prevMonthRevenue)}
+          </div>
+          <div>
+            <div class="bento-spotlight-label">${t('totalRevenue')}</div>
+            <div class="bento-spotlight-value" data-count-target="${totalRevenue}" data-count-type="money">$0</div>
+          </div>
+        </div>
+        <div class="bento-side">
+          ${heroSideCard({icon:"users", label:t('totalLeads'), value:total, countTarget:total, countType:'plain', trend:trendBadge(thisMonthLeadsCount, prevMonthLeadsCount)})}
+          ${heroSideCard({icon:"check", label:t('won'), value:wonCount, sub: winRate!==null?`${winRate}${t('ofAllLeads')}`:null, countTarget:wonCount, countType:'plain', trend:trendBadge(thisMonthWon, prevMonthWon)})}
+          ${avgClosingTime!==null
+            ? heroSideCard({icon:"clock", label:t('avgClosingTime'), value: `${avgClosingTime} ${avgClosingTime===1?t('dayWord'):t('daysWordStats')}`, sub: closingTimeLeads.length>0 ? `${closingTimeLeads.length} ${closingTimeLeads.length===1?t('dealWord'):t('dealsWord')}` : null, countTarget:avgClosingTime, countType:'days'})
+            : heroSideCard({icon:"clock", label:t('avgClosingTime'), value:"—"})}
+        </div>
       </div>
       <div class="stats-grid">
         ${statCard({icon:"funnel", accent:"var(--c-amber-fg)", accentSoft:"var(--c-amber-bg)", label:t('activePipeline'), value:activeCount, sub:t('newContactedCallBooked')})}
@@ -2961,7 +3050,7 @@
 
   // ---------- Scroll reveal ----------
   function setupScrollReveal(){
-    const revealEls = document.querySelectorAll('.stat-card-hero, .stat-card');
+    const revealEls = document.querySelectorAll('.stat-card-hero, .stat-card, .bento-spotlight, .bento-side-card');
     const observer = new IntersectionObserver((entries)=>{
       entries.forEach((entry, i)=>{
         if(entry.isIntersecting){
