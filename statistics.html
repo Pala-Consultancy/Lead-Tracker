@@ -818,6 +818,22 @@
   .ring-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);font-weight:700;}
   .ring-sub{font-size:11.5px;color:var(--slate-light);font-family:'IBM Plex Mono',monospace;}
 
+  /* ---------- Source donut chart ---------- */
+  .donut-card{
+    display:flex;align-items:center;gap:22px;background:var(--panel);border:1px solid var(--border);
+    border-radius:16px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06));
+  }
+  .donut-svg{width:132px;height:132px;flex-shrink:0;}
+  .donut-svg circle{transition:stroke-dasharray .6s cubic-bezier(.22,1,.36,1);}
+  .donut-center-value{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;fill:var(--ink);}
+  .donut-center-label{font-family:'Inter',sans-serif;font-size:10px;fill:var(--slate);text-transform:uppercase;letter-spacing:.05em;}
+  .donut-legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:0;}
+  .donut-legend-row{display:flex;align-items:center;gap:9px;font-size:12.5px;}
+  .donut-legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
+  .donut-legend-name{flex:1;min-width:0;color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .donut-legend-pct{color:var(--slate);font-family:'IBM Plex Mono',monospace;font-size:11.5px;flex-shrink:0;}
+  @media (max-width:520px){.donut-card{flex-direction:column;text-align:center;}}
+
   .funnel{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
     box-shadow:var(--shadow);padding:26px 28px;position:relative;overflow:hidden;
@@ -883,9 +899,9 @@
   .country-map-layout{display:grid;grid-template-columns:0.85fr 1.15fr;gap:20px;align-items:start;}
   .world-map-wrap{
     position:relative;overflow:hidden;isolation:isolate;
-    background:linear-gradient(160deg, var(--map-ocean-start) 0%, var(--map-ocean-end) 100%);
+    background:var(--map-ocean-start);
     border:1px solid var(--border);border-radius:18px;
-    padding:20px;box-shadow:var(--shadow);
+    padding:20px;box-shadow:0 1px 2px rgba(27,36,48,0.04);
   }
   .world-map-live-badge{
     position:absolute;top:18px;right:22px;z-index:3;display:flex;align-items:center;gap:6px;
@@ -2021,6 +2037,41 @@
     </div>`;
   }
 
+  // Shades of the brand indigo, dark to light — used instead of a
+  // different hue per segment so a donut with several sources still
+  // reads as one deliberate palette rather than a rainbow.
+  const DONUT_SHADES = ['#241F7A','#3730B3','#4F49D1','#6F6AE0','#8C8FF5','#A9ABF8','#C6C8FB','#E2E3FD'];
+  function donutChartSVG(rows, totalCount){
+    const r = 52, cx = 66, cy = 66, strokeWidth = 20;
+    const circumference = 2 * Math.PI * r;
+    let offsetAccum = 0;
+    const segments = rows.map(([name, d], i)=>{
+      const pct = totalCount > 0 ? d.count / totalCount : 0;
+      const dash = Math.max(pct * circumference - 1.5, 0); // small gap between segments
+      const gap = circumference - dash;
+      const rotation = (offsetAccum / circumference) * 360 - 90;
+      offsetAccum += pct * circumference;
+      const color = DONUT_SHADES[i % DONUT_SHADES.length];
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" transform="rotate(${rotation.toFixed(2)} ${cx} ${cy})"/>`;
+    }).join('');
+    return `<svg viewBox="0 0 132 132" class="donut-svg">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border-soft, var(--border))" stroke-width="${strokeWidth}"/>
+      ${segments}
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" class="donut-center-value">${totalCount}</text>
+      <text x="${cx}" y="${cy+14}" text-anchor="middle" class="donut-center-label">leads</text>
+    </svg>`;
+  }
+  function donutLegend(rows, totalCount){
+    return rows.map(([name, d], i)=>{
+      const pct = totalCount > 0 ? Math.round((d.count/totalCount)*100) : 0;
+      return `<div class="donut-legend-row">
+        <span class="donut-legend-dot" style="background:${DONUT_SHADES[i % DONUT_SHADES.length]}"></span>
+        <span class="donut-legend-name">${esc(name)}</span>
+        <span class="donut-legend-pct mono">${pct}%</span>
+      </div>`;
+    }).join('');
+  }
+
   let worldAtlasData = null;
   let worldAtlasLoading = false;
   const COUNTRY_ALIASES = {
@@ -2510,6 +2561,7 @@
         </div>
       </div>
       <div class="stats-grid">
+        ${ringCard({pct: winRate, accent:"var(--teal)", accentSoft:"var(--c-blue-tint)", label:"Win rate", sub: `${wonCount} of ${total} closed`})}
         ${statCard({icon:"funnel", accent:"var(--c-amber-fg)", accentSoft:"var(--c-amber-bg)", label:t('activePipeline'), value:activeCount, sub:t('newContactedCallBooked')})}
         ${statCard({icon:"xCircle", accent:"var(--c-red-fg)", accentSoft:"var(--c-red-bg)", label:t('lost'), value:lostCount, sub: lostRate!==null?`${lostRate}${t('ofAllLeads')}`:null})}
         ${statCard({icon:"coin", accent:"var(--c-blue-fg)", accentSoft:"var(--c-blue-bg)", label:t('avgWonDeal'), value: avgDealSize!==null?formatMoney(avgDealSize):"—", small:true})}
@@ -2706,6 +2758,10 @@
       <div class="section two-col nav-anchor" id="sec-sources">
         <div>
           <h2 class="section-title"><div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)">${ICONS.tag}</div>${t('bySource')}</h2>
+          <div class="donut-card">
+            ${donutChartSVG(sourceRows, total)}
+            <div class="donut-legend">${donutLegend(sourceRows, total)}</div>
+          </div>
           <div class="table-wrap" style="--table-accent:var(--c-blue-fg)">
             <table>
               <thead><tr>
