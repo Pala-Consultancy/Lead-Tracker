@@ -868,11 +868,22 @@
     content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--table-accent, var(--teal));
     background-size:200% 100%;
   }
+  .insight-callout{
+    display:flex;align-items:center;gap:12px;margin-top:14px;padding:14px 16px;
+    background:color-mix(in srgb, var(--table-accent, var(--teal)) 7%, var(--panel));
+    border:1px solid color-mix(in srgb, var(--table-accent, var(--teal)) 20%, var(--border));
+    border-radius:12px;font-size:13px;color:var(--ink);line-height:1.5;
+  }
+  .insight-callout-icon{
+    width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb, var(--table-accent, var(--teal)) 16%, var(--panel));color:var(--table-accent, var(--teal));
+  }
+  .insight-callout-icon svg{width:15px;height:15px;}
   table{width:100%;border-collapse:collapse;}
   thead th{
     text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;
     color:var(--slate);font-weight:700;padding:13px 16px 12px;border-bottom:1px solid var(--border);
-    background:var(--c-blue-tint3);
+    background:color-mix(in srgb, var(--table-accent, var(--teal)) 6%, var(--panel));
   }
   .th-sortable{cursor:pointer;user-select:none;transition:color .15s ease;}
   .th-sortable:hover{color:var(--teal);}
@@ -2679,6 +2690,15 @@
         <td class="mono">${formatMoney(d.revenue)}</td>
       </tr>`;
     }).join("");
+    const topCountryCallout = countryRows.length > 0 ? (()=>{
+      const [topName, topData] = countryRows[0];
+      const displayName = topName === "Not specified" ? t('notSpecified') : topName;
+      const pct = total > 0 ? Math.round((topData.count/total)*100) : 0;
+      return `<div class="insight-callout">
+        <div class="insight-callout-icon">${ICONS.tag}</div>
+        <div><b>${esc(displayName)}</b> is your top market — ${pct}% of all leads${topData.revenue > 0 ? `, ${formatMoney(topData.revenue)} in revenue` : ''}.</div>
+      </div>`;
+    })() : '';
 
     // Breakdown by city — which cities actually bring in the most revenue
     const byCity = {};
@@ -2798,6 +2818,7 @@
               <tbody>${countryTableHTML}</tbody>
             </table>
           </div>
+          ${topCountryCallout}
           <div class="world-map-wrap" id="worldMapWrap">
             <div class="world-map-live-badge"><span class="world-map-live-dot"></span>LIVE</div>
             <div id="worldMapContainer"><div class="world-map-loading">${t('loadingMap')}</div></div>
