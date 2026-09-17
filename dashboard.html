@@ -6292,33 +6292,44 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
       holder.innerHTML = `<div style="font-size:12px;color:var(--red);">Could not load tasks: ${esc(friendlyErr(err))}</div>`;
     });
   }
-  document.getElementById('drawerAddTaskBtn').addEventListener('click', ()=>{
-    const row = document.getElementById('drawerTaskAddRow');
-    row.style.display = row.style.display === 'none' ? 'block' : 'none';
-    if(row.style.display === 'block') document.getElementById('drawerTaskTitle').focus();
-  });
-  document.getElementById('drawerTaskSaveBtn').addEventListener('click', ()=>{
-    const title = document.getElementById('drawerTaskTitle').value.trim();
-    if(!title){ showToast('Give the task a title first.', true); return; }
-    const dueDate = document.getElementById('drawerTaskDue').value || null;
-    const l = leads.find(x=>x.id===drawerLeadId);
-    if(!l) return;
-    db.collection('tasks').add({
-      workspaceId, createdBy: auth.currentUser ? auth.currentUser.uid : null,
-      title, dueDate,
-      boardId, boardName: (document.getElementById('dashboardTitle') || {}).textContent || 'Board',
-      leadId: l.id, leadName: l.name || 'Unnamed lead',
-      completed: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
-      document.getElementById('drawerTaskTitle').value = '';
-      document.getElementById('drawerTaskDue').value = '';
-      document.getElementById('drawerTaskAddRow').style.display = 'none';
-      showToast('Task added.');
-      loadTasksForDrawer(l);
-    }).catch(err=>{
-      showToast('Could not save that: ' + friendlyErr(err), true);
-    });
+  // These two buttons live inside the drawer's dynamic per-lead content,
+  // which doesn't exist until a lead is actually opened — binding
+  // directly to them here (at script load, before any lead has been
+  // opened) threw immediately and silently killed the rest of this
+  // script from ever running, which is why the whole page got stuck on
+  // the loading screen. Delegating from #leadDrawer instead — a static
+  // container that's always present — means this works regardless of
+  // how many times the drawer's inner content gets rebuilt.
+  document.getElementById('leadDrawer').addEventListener('click', (e)=>{
+    if(e.target && e.target.id === 'drawerAddTaskBtn'){
+      const row = document.getElementById('drawerTaskAddRow');
+      row.style.display = row.style.display === 'none' ? 'block' : 'none';
+      if(row.style.display === 'block') document.getElementById('drawerTaskTitle').focus();
+      return;
+    }
+    if(e.target && e.target.id === 'drawerTaskSaveBtn'){
+      const title = document.getElementById('drawerTaskTitle').value.trim();
+      if(!title){ showToast('Give the task a title first.', true); return; }
+      const dueDate = document.getElementById('drawerTaskDue').value || null;
+      const l = leads.find(x=>x.id===drawerLeadId);
+      if(!l) return;
+      db.collection('tasks').add({
+        workspaceId, createdBy: auth.currentUser ? auth.currentUser.uid : null,
+        title, dueDate,
+        boardId, boardName: (document.getElementById('dashboardTitle') || {}).textContent || 'Board',
+        leadId: l.id, leadName: l.name || 'Unnamed lead',
+        completed: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>{
+        document.getElementById('drawerTaskTitle').value = '';
+        document.getElementById('drawerTaskDue').value = '';
+        document.getElementById('drawerTaskAddRow').style.display = 'none';
+        showToast('Task added.');
+        loadTasksForDrawer(l);
+      }).catch(err=>{
+        showToast('Could not save that: ' + friendlyErr(err), true);
+      });
+    }
   });
 
   function toggleDrawerTask(taskId, completed){
