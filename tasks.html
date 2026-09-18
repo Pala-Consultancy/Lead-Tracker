@@ -14,6 +14,7 @@
     --teal:#3730B3; --teal-deep:#191659;
     --success:#1F6F5C; --success-soft:#DCEEE8;
     --fail:#B43B32; --fail-soft:#FAE1DE;
+    --red:#C0392B; --c-red-bg:#FBE4E2;
     --amber:#C97C00; --amber-soft:#FFF1DC;
     --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 2px 6px rgba(16,24,40,0.05), 0 10px 24px -8px rgba(16,24,40,0.09);
     --shadow-sm: 0 1px 2px rgba(16,24,40,0.05);
@@ -163,16 +164,17 @@
   .timeline-day-body:hover{background:color-mix(in srgb, var(--teal) 4%, var(--panel));}
   .timeline-task-pill{
     display:flex;align-items:flex-start;gap:7px;
-    background:color-mix(in srgb, var(--teal) 9%, var(--panel));border:1px solid color-mix(in srgb, var(--teal) 24%, var(--border));
-    border-left:3px solid var(--teal);border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600;color:var(--ink);
+    background:color-mix(in srgb, var(--task-color, var(--teal)) 9%, var(--panel));
+    border:1px solid color-mix(in srgb, var(--task-color, var(--teal)) 24%, var(--border));
+    border-left:3px solid var(--task-color, var(--teal));border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600;color:var(--ink);
     cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;
   }
   .timeline-task-pill:hover{transform:translateY(-1px) scale(1.015);box-shadow:0 4px 10px -3px rgba(16,24,40,.18);}
-  .timeline-task-pill.overdue{background:color-mix(in srgb, var(--red) 8%, var(--panel));border-color:color-mix(in srgb, var(--red) 22%, var(--border));border-left-color:var(--red);}
-  .timeline-task-pill-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:4px;}
-  .timeline-task-pill.overdue .timeline-task-pill-dot{background:var(--red);}
-  .timeline-task-pill-body{min-width:0;flex:1;}
+  .timeline-task-pill.overdue{box-shadow:0 0 0 1.5px var(--red);}
+  .timeline-task-pill.overdue:hover{box-shadow:0 0 0 1.5px var(--red), 0 4px 10px -3px rgba(16,24,40,.18);}
+  .timeline-task-pill-dot{width:6px;height:6px;border-radius:50%;background:var(--task-color, var(--teal));flex-shrink:0;margin-top:4px;}
   .timeline-task-pill-lead{font-size:10.5px;color:var(--slate);margin-top:2px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .timeline-task-pill-body{min-width:0;flex:1;}
   .timeline-empty-day{font-size:11px;color:var(--slate-light);text-align:center;padding:14px 4px;}
   .timeline-noDate-strip{
     display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);
@@ -210,12 +212,12 @@
   .calendar-cell.other-month .calendar-daynum{color:var(--slate-light);}
   .calendar-cell.is-today .calendar-daynum{background:var(--teal);color:#fff;}
   .calendar-chip{
-    display:flex;align-items:center;gap:5px;background:color-mix(in srgb, var(--teal) 11%, var(--panel));
-    border-left:2.5px solid var(--teal);border-radius:5px;padding:3px 6px;font-size:10.5px;font-weight:600;
+    display:flex;align-items:center;gap:5px;background:color-mix(in srgb, var(--task-color, var(--teal)) 11%, var(--panel));
+    border-left:2.5px solid var(--task-color, var(--teal));border-radius:5px;padding:3px 6px;font-size:10.5px;font-weight:600;
     color:var(--ink);cursor:pointer;overflow:hidden;transition:transform .1s ease;
   }
   .calendar-chip:hover{transform:translateX(1px);}
-  .calendar-chip.overdue{background:color-mix(in srgb, var(--red) 10%, var(--panel));border-left-color:var(--red);}
+  .calendar-chip.overdue{box-shadow:inset 0 0 0 1.5px var(--red);}
   .calendar-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .calendar-more{font-size:10px;color:var(--slate);font-weight:700;padding:2px 6px;cursor:pointer;}
   .calendar-more:hover{color:var(--teal);}
@@ -263,6 +265,53 @@
   .quick-add-more select:focus{outline:none;border-color:var(--teal);}
   .quick-add-actions{display:flex;justify-content:flex-end;gap:8px;}
   .quick-add-actions .btn-cancel-task, .quick-add-actions .btn-save-task{padding:8px 16px;font-size:12.5px;}
+
+  /* ---------- Task detail popup ---------- */
+  .task-detail-scrim{position:fixed;inset:0;z-index:349;display:none;}
+  .task-detail-scrim.open{display:block;}
+  .task-detail-popup{
+    position:fixed;z-index:350;width:340px;background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;box-shadow:0 20px 50px -12px rgba(16,24,40,.3), 0 4px 14px rgba(16,24,40,.14);
+    display:none;overflow:hidden;
+  }
+  .task-detail-popup.open{display:block;animation:quickAddPop .15s cubic-bezier(.2,.8,.3,1) both;}
+  .task-detail-toolbar{display:flex;justify-content:flex-end;gap:2px;padding:10px 10px 0;}
+  .task-detail-icon-btn{
+    width:34px;height:34px;border-radius:50%;border:none;background:none;color:var(--slate);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:background .12s ease, color .12s ease;flex-shrink:0;
+  }
+  .task-detail-icon-btn:hover{background:var(--panel-alt);color:var(--ink);}
+  .task-detail-icon-btn.delete-btn:hover{background:var(--c-red-bg);color:var(--red);}
+  .task-detail-icon-btn.complete-btn{color:var(--success);}
+  .task-detail-icon-btn.complete-btn:hover{background:var(--success-soft);}
+  .task-detail-icon-btn.complete-btn.is-done{background:var(--success-soft);}
+  .task-detail-icon-btn.close-btn{margin-left:8px;font-size:14px;}
+  .task-detail-body{padding:4px 24px 24px;}
+  .task-detail-title-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .task-detail-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0;}
+  .task-detail-title{font-size:19px;font-weight:600;color:var(--ink);word-break:break-word;}
+  .task-detail-title.completed-title{text-decoration:line-through;color:var(--slate);}
+  .task-detail-date{font-size:13.5px;color:var(--slate);margin-left:26px;margin-bottom:16px;}
+  .task-detail-meta-row{display:flex;align-items:center;gap:14px;margin-left:26px;margin-bottom:10px;font-size:13px;color:var(--ink);}
+  .task-detail-meta-row svg{color:var(--slate-light);flex-shrink:0;}
+  .task-detail-meta-row a{color:var(--teal);text-decoration:none;font-weight:600;}
+  .task-detail-meta-row a:hover{text-decoration:underline;}
+
+  /* ---------- Right-click color picker ---------- */
+  .task-color-menu{
+    position:fixed;z-index:360;background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 14px 34px -10px rgba(16,24,40,.28);padding:10px;display:none;
+  }
+  .task-color-menu.open{display:block;animation:quickAddPop .12s cubic-bezier(.2,.8,.3,1) both;}
+  .task-color-menu-label{font-size:10.5px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;padding:0 2px;}
+  .task-color-swatches{display:flex;gap:8px;}
+  .task-color-swatch{
+    width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+    display:flex;align-items:center;justify-content:center;transition:transform .1s ease;flex-shrink:0;
+  }
+  .task-color-swatch:hover{transform:scale(1.15);}
+  .task-color-swatch.selected{border-color:var(--ink);}
+  .task-color-swatch svg{width:12px;height:12px;color:#fff;}
 
   .task-group-label:first-child{margin-top:0;}
   .task-group-label.overdue{color:var(--red);}
@@ -579,11 +628,41 @@
   <div class="quick-add-more" id="quickAddMore" style="display:none;">
     <select id="quickAddBoardSelect"><option value="">No board</option></select>
     <select id="quickAddLeadSelect" style="display:none;"><option value="">No specific lead</option></select>
+    <div class="task-color-swatches" id="quickAddColorSwatches" style="margin-top:4px;"></div>
   </div>
   <div class="quick-add-actions">
     <button type="button" class="btn-cancel-task" id="quickAddCancelBtn">Cancel</button>
     <button type="button" class="btn-save-task" id="quickAddSaveBtn">Save</button>
   </div>
+</div>
+
+<div class="task-detail-scrim" id="taskDetailScrim"></div>
+<div class="task-detail-popup" id="taskDetailPopup">
+  <div class="task-detail-toolbar">
+    <button type="button" class="task-detail-icon-btn" id="taskDetailEditBtn" title="Edit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+    </button>
+    <button type="button" class="task-detail-icon-btn delete-btn" id="taskDetailDeleteBtn" title="Delete">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+    </button>
+    <button type="button" class="task-detail-icon-btn complete-btn" id="taskDetailCompleteBtn" title="Mark complete">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </button>
+    <button type="button" class="task-detail-icon-btn close-btn" id="taskDetailCloseBtn" title="Close">✕</button>
+  </div>
+  <div class="task-detail-body">
+    <div class="task-detail-title-row">
+      <span class="task-detail-dot" id="taskDetailDot"></span>
+      <div class="task-detail-title" id="taskDetailTitleText"></div>
+    </div>
+    <div class="task-detail-date" id="taskDetailDateText"></div>
+    <div id="taskDetailMeta"></div>
+  </div>
+</div>
+
+<div class="task-color-menu" id="taskColorMenu">
+  <div class="task-color-menu-label">Task color</div>
+  <div class="task-color-swatches" id="taskColorSwatches"></div>
 </div>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -675,6 +754,24 @@
   document.getElementById('navCampaigns').href = 'campaigns.html';
   document.getElementById('navScheduled').href = 'scheduled-emails.html';
   document.getElementById('navTrash').href = 'trash.html';
+
+  // A task's color is purely organizational (like Google Calendar's event
+  // colors) — a person choosing to color-code their own tasks is a
+  // different thing from a chart auto-assigning a different hue per
+  // segment, so a real small palette (not a single-hue scale) is the
+  // right call here.
+  const TASK_COLORS = [
+    {id:'indigo', hex:'#3730B3', name:'Indigo'},
+    {id:'red', hex:'#B43B32', name:'Red'},
+    {id:'amber', hex:'#C97C00', name:'Amber'},
+    {id:'green', hex:'#1F6F5C', name:'Green'},
+    {id:'purple', hex:'#7A4FB5', name:'Purple'},
+    {id:'blue', hex:'#1B59A5', name:'Blue'}
+  ];
+  function taskColorHex(task){
+    const found = TASK_COLORS.find(c=>c.id === (task && task.color));
+    return found ? found.hex : TASK_COLORS[0].hex;
+  }
 
   let currentWorkspaceId = null;
   let myUid = null;
@@ -829,8 +926,12 @@
   }
 
   function timelineTaskPillHTML(task, isOverdue){
+    const color = taskColorHex(task);
     const leadBit = task.leadName ? `<div class="timeline-task-pill-lead">${esc(task.leadName)}</div>` : '';
-    return `<div class="timeline-task-pill${isOverdue ? ' overdue' : ''}" onclick="event.stopPropagation(); window.__toggleTask('${task.id}', false)" title="Click to mark complete">
+    return `<div class="timeline-task-pill${isOverdue ? ' overdue' : ''}" style="--task-color:${color}"
+      onclick="event.stopPropagation(); window.openTaskDetail('${task.id}', event)"
+      oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;"
+      title="${esc(task.title)}">
       <span class="timeline-task-pill-dot"></span>
       <span class="timeline-task-pill-body">${esc(task.title)}${leadBit}</span>
     </div>`;
@@ -895,11 +996,29 @@
   window.resetTimelineToToday = resetTimelineToToday;
 
   // ---------- Quick-add popup (click a day, like Google Calendar) ----------
+  // Doubles as the edit popup: quickAddEditingTaskId is null when creating
+  // a new task, or set to an existing task's id when editing one (opened
+  // from the detail popup's Edit button) — same fields, same popup, just
+  // a different Firestore call on Save.
   let quickAddDateISO = null;
+  let quickAddEditingTaskId = null;
+  let quickAddSelectedColor = TASK_COLORS[0].id;
   const quickAddPopup = document.getElementById('quickAddPopup');
   const quickAddScrim = document.getElementById('quickAddScrim');
 
+  function renderColorSwatches(containerId, selectedId, onPick){
+    const el = document.getElementById(containerId);
+    el.innerHTML = TASK_COLORS.map(c=>`<div class="task-color-swatch${c.id===selectedId?' selected':''}" style="background:${c.hex}" data-color="${c.id}" title="${c.name}">
+      ${c.id===selectedId ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : ''}
+    </div>`).join('');
+    el.querySelectorAll('.task-color-swatch').forEach(sw=>{
+      sw.addEventListener('click', ()=>onPick(sw.dataset.color));
+    });
+  }
+
   function openQuickAdd(iso, clickEvent){
+    quickAddEditingTaskId = null;
+    quickAddSelectedColor = TASK_COLORS[0].id;
     quickAddDateISO = iso;
     document.getElementById('quickAddTitle').value = '';
     document.getElementById('quickAddDateText').textContent =
@@ -909,24 +1028,71 @@
     document.getElementById('quickAddBoardSelect').value = '';
     document.getElementById('quickAddLeadSelect').innerHTML = '<option value="">No specific lead</option>';
     document.getElementById('quickAddLeadSelect').style.display = 'none';
+    document.getElementById('quickAddSaveBtn').textContent = 'Save';
+    const pickColorNew = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew); };
+    renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew);
 
-    // Board list only needs loading once — reuse it if the main panel
-    // (or an earlier popup open) already fetched it.
-    const boardSelect = document.getElementById('quickAddBoardSelect');
-    if(allBoards && allBoards.length){
+    ensureBoardsLoaded(()=>{
+      const boardSelect = document.getElementById('quickAddBoardSelect');
       boardSelect.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
         `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
-    } else {
-      db.collection('workspaces').doc(currentWorkspaceId).collection('boards').orderBy('createdAt','desc').get().then(snap=>{
-        allBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=>b.deleted !== true);
-        boardSelect.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
-          `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
-      }).catch(()=>{});
-    }
+    });
 
-    // Position near the click, clamped so it never runs off the viewport.
+    positionAndOpenQuickAdd(clickEvent);
+  }
+  window.openQuickAdd = openQuickAdd;
+
+  function openQuickAddEdit(task){
+    quickAddEditingTaskId = task.id;
+    quickAddSelectedColor = task.color || TASK_COLORS[0].id;
+    quickAddDateISO = task.dueDate || null;
+    document.getElementById('quickAddTitle').value = task.title || '';
+    document.getElementById('quickAddDateText').textContent = task.dueDate
+      ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'})
+      : 'No due date';
+    document.getElementById('quickAddMore').style.display = 'flex';
+    document.getElementById('quickAddMoreToggle').textContent = '– Link to a board or lead';
+    document.getElementById('quickAddSaveBtn').textContent = 'Save changes';
+
+    const pickColor = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColor); };
+    renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColor);
+
+    ensureBoardsLoaded(()=>{
+      const boardSelect = document.getElementById('quickAddBoardSelect');
+      boardSelect.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
+        `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
+      boardSelect.value = task.boardId || '';
+      const leadSelect = document.getElementById('quickAddLeadSelect');
+      if(task.boardId && task.leadId){
+        leadSelect.style.display = 'block';
+        leadSelect.innerHTML = `<option value="${task.leadId}">${esc(task.leadName || 'Lead')}</option>`;
+        db.collection('workspaces').doc(currentWorkspaceId).collection('boards').doc(task.boardId).collection('leads').get().then(snap=>{
+          const leads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
+          leadSelect.innerHTML = '<option value="">No specific lead</option>' + leads.map(l=>
+            `<option value="${l.id}">${esc(l.name || 'Unnamed lead')}</option>`).join('');
+          leadSelect.value = task.leadId;
+        }).catch(()=>{});
+      } else {
+        leadSelect.style.display = 'none';
+        leadSelect.innerHTML = '<option value="">No specific lead</option>';
+      }
+    });
+
+    positionAndOpenQuickAdd(null);
+  }
+  window.openQuickAddEdit = openQuickAddEdit;
+
+  function ensureBoardsLoaded(callback){
+    if(allBoards && allBoards.length){ callback(); return; }
+    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').orderBy('createdAt','desc').get().then(snap=>{
+      allBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=>b.deleted !== true);
+      callback();
+    }).catch(()=>{});
+  }
+
+  function positionAndOpenQuickAdd(clickEvent){
     const popupWidth = 320;
-    const popupEstHeight = 240;
+    const popupEstHeight = 260;
     let x = clickEvent ? clickEvent.clientX + 12 : window.innerWidth/2 - popupWidth/2;
     let y = clickEvent ? clickEvent.clientY - 20 : window.innerHeight/2 - popupEstHeight/2;
     x = Math.min(Math.max(x, 12), window.innerWidth - popupWidth - 12);
@@ -939,11 +1105,11 @@
     setTimeout(()=>document.getElementById('quickAddTitle').focus(), 30);
     if(clickEvent) clickEvent.stopPropagation();
   }
-  window.openQuickAdd = openQuickAdd;
 
   function closeQuickAdd(){
     quickAddScrim.classList.remove('open');
     quickAddPopup.classList.remove('open');
+    quickAddEditingTaskId = null;
   }
   quickAddScrim.addEventListener('click', closeQuickAdd);
   document.getElementById('quickAddClose').addEventListener('click', closeQuickAdd);
@@ -983,18 +1149,25 @@
     const leadName = leadId ? leadSelectEl.selectedOptions[0].textContent : null;
     const saveBtn = document.getElementById('quickAddSaveBtn');
     saveBtn.disabled = true;
-    db.collection('tasks').add({
-      workspaceId: currentWorkspaceId,
-      createdBy: myUid,
+    const data = {
       title, dueDate: quickAddDateISO,
       boardId, boardName,
       leadId, leadName,
-      completed: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
+      color: quickAddSelectedColor
+    };
+    const request = quickAddEditingTaskId
+      ? db.collection('tasks').doc(quickAddEditingTaskId).update(data)
+      : db.collection('tasks').add({
+          ...data,
+          workspaceId: currentWorkspaceId,
+          createdBy: myUid,
+          completed: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    request.then(()=>{
       saveBtn.disabled = false;
       closeQuickAdd();
-      showToast('Task added.');
+      showToast(quickAddEditingTaskId ? 'Task updated.' : 'Task added.');
     }).catch(err=>{
       saveBtn.disabled = false;
       showToast('Could not save that: ' + (err.message || ''), true);
@@ -1002,6 +1175,135 @@
   });
   document.getElementById('quickAddTitle').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter') document.getElementById('quickAddSaveBtn').click();
+  });
+
+  // ---------- Task detail popup (left-click a pill/chip) ----------
+  let taskDetailCurrentId = null;
+  const taskDetailPopup = document.getElementById('taskDetailPopup');
+  const taskDetailScrim = document.getElementById('taskDetailScrim');
+
+  function openTaskDetail(taskId, clickEvent){
+    const task = allTasks.find(t=>t.id === taskId);
+    if(!task) return;
+    taskDetailCurrentId = taskId;
+
+    document.getElementById('taskDetailDot').style.background = taskColorHex(task);
+    const titleEl = document.getElementById('taskDetailTitleText');
+    titleEl.textContent = task.title;
+    titleEl.classList.toggle('completed-title', !!task.completed);
+    document.getElementById('taskDetailDateText').textContent = task.dueDate
+      ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric', year:'numeric'})
+      : 'No due date';
+
+    const metaEl = document.getElementById('taskDetailMeta');
+    let metaHTML = '';
+    if(task.boardId && task.leadId){
+      metaHTML += `<div class="task-detail-meta-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <a href="dashboard.html?board=${encodeURIComponent(task.boardId)}&lead=${encodeURIComponent(task.leadId)}">${esc(task.leadName || 'Lead')}</a>
+        ${task.boardName ? `<span style="color:var(--slate);">· ${esc(task.boardName)}</span>` : ''}
+      </div>`;
+    } else if(task.boardName){
+      metaHTML += `<div class="task-detail-meta-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        <span>${esc(task.boardName)}</span>
+      </div>`;
+    }
+    metaEl.innerHTML = metaHTML;
+
+    const completeBtn = document.getElementById('taskDetailCompleteBtn');
+    completeBtn.classList.toggle('is-done', !!task.completed);
+    completeBtn.title = task.completed ? 'Mark as not done' : 'Mark complete';
+
+    // Position near the click, clamped to the viewport.
+    const popupWidth = 340;
+    const popupEstHeight = 200;
+    let x = clickEvent ? clickEvent.clientX + 12 : window.innerWidth/2 - popupWidth/2;
+    let y = clickEvent ? clickEvent.clientY - 20 : window.innerHeight/2 - popupEstHeight/2;
+    x = Math.min(Math.max(x, 12), window.innerWidth - popupWidth - 12);
+    y = Math.min(Math.max(y, 12), window.innerHeight - popupEstHeight - 12);
+    taskDetailPopup.style.left = x + 'px';
+    taskDetailPopup.style.top = y + 'px';
+
+    taskDetailScrim.classList.add('open');
+    taskDetailPopup.classList.add('open');
+    if(clickEvent) clickEvent.stopPropagation();
+  }
+  window.openTaskDetail = openTaskDetail;
+
+  function closeTaskDetail(){
+    taskDetailScrim.classList.remove('open');
+    taskDetailPopup.classList.remove('open');
+    taskDetailCurrentId = null;
+  }
+  taskDetailScrim.addEventListener('click', closeTaskDetail);
+  document.getElementById('taskDetailCloseBtn').addEventListener('click', closeTaskDetail);
+  taskDetailPopup.addEventListener('click', (e)=>e.stopPropagation());
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && taskDetailPopup.classList.contains('open')) closeTaskDetail();
+  });
+
+  document.getElementById('taskDetailEditBtn').addEventListener('click', ()=>{
+    const task = allTasks.find(t=>t.id === taskDetailCurrentId);
+    if(!task) return;
+    closeTaskDetail();
+    openQuickAddEdit(task);
+  });
+  document.getElementById('taskDetailCompleteBtn').addEventListener('click', ()=>{
+    const task = allTasks.find(t=>t.id === taskDetailCurrentId);
+    if(!task) return;
+    db.collection('tasks').doc(task.id).update({
+      completed: !task.completed,
+      completedAt: !task.completed ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete()
+    }).then(()=>{
+      showToast(task.completed ? 'Marked as not done.' : 'Task completed.');
+      closeTaskDetail();
+    }).catch(err=>showToast('Could not update that: ' + (err.message || ''), true));
+  });
+  document.getElementById('taskDetailDeleteBtn').addEventListener('click', async ()=>{
+    const task = allTasks.find(t=>t.id === taskDetailCurrentId);
+    if(!task) return;
+    const ok = await showConfirmModal({title:'Delete this task?', message:'This can\'t be undone.', confirmLabel:'Delete'});
+    if(!ok) return;
+    db.collection('tasks').doc(task.id).delete().then(()=>{
+      closeTaskDetail();
+      showToast('Task deleted.');
+    }).catch(err=>showToast('Could not delete that: ' + (err.message || ''), true));
+  });
+
+  // ---------- Right-click color picker ----------
+  let colorMenuTargetId = null;
+  const taskColorMenu = document.getElementById('taskColorMenu');
+
+  function openTaskColorMenu(taskId, clickEvent){
+    const task = allTasks.find(t=>t.id === taskId);
+    if(!task) return;
+    colorMenuTargetId = taskId;
+    renderColorSwatches('taskColorSwatches', task.color || TASK_COLORS[0].id, (colorId)=>{
+      db.collection('tasks').doc(taskId).update({color: colorId}).then(()=>{
+        closeTaskColorMenu();
+      }).catch(err=>showToast('Could not update color: ' + (err.message || ''), true));
+    });
+
+    const menuWidth = 220;
+    const menuHeight = 76;
+    let x = Math.min(Math.max(clickEvent.clientX, 12), window.innerWidth - menuWidth - 12);
+    let y = Math.min(Math.max(clickEvent.clientY, 12), window.innerHeight - menuHeight - 12);
+    taskColorMenu.style.left = x + 'px';
+    taskColorMenu.style.top = y + 'px';
+    taskColorMenu.classList.add('open');
+  }
+  window.openTaskColorMenu = openTaskColorMenu;
+
+  function closeTaskColorMenu(){
+    taskColorMenu.classList.remove('open');
+    colorMenuTargetId = null;
+  }
+  document.addEventListener('click', (e)=>{
+    if(taskColorMenu.classList.contains('open') && !taskColorMenu.contains(e.target)) closeTaskColorMenu();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && taskColorMenu.classList.contains('open')) closeTaskColorMenu();
   });
 
   // ---------- Calendar view (month grid) ----------
@@ -1019,7 +1321,11 @@
   window.resetCalendarToToday = resetCalendarToToday;
 
   function calendarChipHTML(task, isOverdue){
-    return `<div class="calendar-chip${isOverdue?' overdue':''}" onclick="event.stopPropagation(); window.__toggleTask('${task.id}', false)" title="${esc(task.title)} — click to mark complete">
+    const color = taskColorHex(task);
+    return `<div class="calendar-chip${isOverdue?' overdue':''}" style="--task-color:${color}"
+      onclick="event.stopPropagation(); window.openTaskDetail('${task.id}', event)"
+      oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;"
+      title="${esc(task.title)}">
       <span class="calendar-chip-text">${esc(task.title)}</span>
     </div>`;
   }
@@ -1105,9 +1411,9 @@
     const leadLink = (task.boardId && task.leadId)
       ? `<a class="task-row-lead" href="dashboard.html?board=${encodeURIComponent(task.boardId)}&lead=${encodeURIComponent(task.leadId)}">↗ ${esc(task.leadName || 'Lead')} · ${esc(task.boardName || '')}</a>`
       : (task.boardName ? `<span class="task-row-lead" style="color:var(--slate);">${esc(task.boardName)}</span>` : '');
-    return `<div class="task-row${task.completed ? ' completed' : ''}">
+    return `<div class="task-row${task.completed ? ' completed' : ''}" oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;" style="border-left:3px solid ${taskColorHex(task)}">
       <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="window.__toggleTask('${task.id}', ${task.completed})">
-      <div class="task-row-body">
+      <div class="task-row-body" onclick="window.openTaskDetail('${task.id}', event)" style="cursor:pointer;">
         <div class="task-row-title">${esc(task.title)}</div>
         ${leadLink}
       </div>
