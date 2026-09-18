@@ -159,7 +159,8 @@
   }
   .timeline-day-header.is-today .timeline-day-num{background:var(--teal);color:#fff;}
   .timeline-day-header.is-past .timeline-day-num{color:var(--red);}
-  .timeline-day-body{padding:9px;min-height:150px;display:flex;flex-direction:column;gap:7px;}
+  .timeline-day-body{padding:9px;min-height:150px;display:flex;flex-direction:column;gap:7px;cursor:pointer;transition:background .12s ease;}
+  .timeline-day-body:hover{background:color-mix(in srgb, var(--teal) 4%, var(--panel));}
   .timeline-task-pill{
     display:flex;align-items:flex-start;gap:7px;
     background:color-mix(in srgb, var(--teal) 9%, var(--panel));border:1px solid color-mix(in srgb, var(--teal) 24%, var(--border));
@@ -222,6 +223,46 @@
     .calendar-cell{min-height:76px;}
     .calendar-chip, .calendar-more{display:none;}
   }
+
+  /* ---------- Quick-add popup (click a day, like Google Calendar) ---------- */
+  .quick-add-scrim{position:fixed;inset:0;z-index:299;display:none;}
+  .quick-add-scrim.open{display:block;}
+  .quick-add-popup{
+    position:fixed;z-index:300;width:320px;
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    box-shadow:0 20px 50px -12px rgba(16,24,40,.3), 0 4px 14px rgba(16,24,40,.14);
+    padding:16px;display:none;
+  }
+  .quick-add-popup.open{display:block;animation:quickAddPop .15s cubic-bezier(.2,.8,.3,1) both;}
+  @keyframes quickAddPop{from{opacity:0;transform:scale(.96) translateY(-4px);}to{opacity:1;transform:scale(1) translateY(0);}}
+  .quick-add-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .quick-add-title-input{
+    flex:1;border:none;border-bottom:2px solid var(--border);padding:6px 2px;font-size:15px;font-weight:600;
+    color:var(--ink);font-family:'Inter',sans-serif;background:none;min-width:0;
+  }
+  .quick-add-title-input:focus{outline:none;border-bottom-color:var(--teal);}
+  .quick-add-close{
+    background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:14px;padding:4px;
+    border-radius:6px;flex-shrink:0;line-height:1;
+  }
+  .quick-add-close:hover{background:var(--panel-alt);color:var(--ink);}
+  .quick-add-date{
+    display:flex;align-items:center;gap:8px;color:var(--slate);font-size:13px;font-weight:600;margin-bottom:12px;
+  }
+  .quick-add-more-toggle{
+    background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;cursor:pointer;
+    padding:4px 0;font-family:'Inter',sans-serif;margin-bottom:10px;
+  }
+  .quick-add-more-toggle:hover{text-decoration:underline;}
+  .quick-add-more{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .quick-add-more select{
+    font-family:'Inter',sans-serif;font-size:13px;padding:9px 10px;border:1.5px solid var(--border);
+    border-radius:8px;background:var(--panel);color:var(--ink);width:100%;
+    transition:border-color .15s ease;
+  }
+  .quick-add-more select:focus{outline:none;border-color:var(--teal);}
+  .quick-add-actions{display:flex;justify-content:flex-end;gap:8px;}
+  .quick-add-actions .btn-cancel-task, .quick-add-actions .btn-save-task{padding:8px 16px;font-size:12.5px;}
 
   .task-group-label:first-child{margin-top:0;}
   .task-group-label.overdue{color:var(--red);}
@@ -524,6 +565,27 @@
 </div>
 </div>
 
+<div class="quick-add-scrim" id="quickAddScrim"></div>
+<div class="quick-add-popup" id="quickAddPopup">
+  <div class="quick-add-header">
+    <input type="text" id="quickAddTitle" placeholder="Add title" class="quick-add-title-input" maxlength="200">
+    <button type="button" class="quick-add-close" id="quickAddClose" aria-label="Close">✕</button>
+  </div>
+  <div class="quick-add-date" id="quickAddDateLabel">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <span id="quickAddDateText"></span>
+  </div>
+  <button type="button" class="quick-add-more-toggle" id="quickAddMoreToggle">+ Link to a board or lead</button>
+  <div class="quick-add-more" id="quickAddMore" style="display:none;">
+    <select id="quickAddBoardSelect"><option value="">No board</option></select>
+    <select id="quickAddLeadSelect" style="display:none;"><option value="">No specific lead</option></select>
+  </div>
+  <div class="quick-add-actions">
+    <button type="button" class="btn-cancel-task" id="quickAddCancelBtn">Cancel</button>
+    <button type="button" class="btn-save-task" id="quickAddSaveBtn">Save</button>
+  </div>
+</div>
+
 <div class="app-confirm-overlay" id="appConfirmOverlay">
   <div class="app-confirm-box">
     <h3 id="appConfirmTitle">Are you sure?</h3>
@@ -621,7 +683,18 @@
   let currentTaskTab = 'open';
   let unsubscribeTasks = null;
 
-  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  // .toISOString() always converts to UTC first, which can silently shift
+  // the calendar date by a day depending on the browser's local timezone
+  // (e.g. clicking "18" ends up saved or matched as "19"). This builds the
+  // date string from the LOCAL year/month/day directly instead, so it
+  // always matches what's actually shown on screen, in any timezone.
+  function toLocalISO(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function todayISO(){ return toLocalISO(new Date()); }
 
   function daysLabel(dateStr){
     if(!dateStr) return '';
@@ -757,7 +830,7 @@
 
   function timelineTaskPillHTML(task, isOverdue){
     const leadBit = task.leadName ? `<div class="timeline-task-pill-lead">${esc(task.leadName)}</div>` : '';
-    return `<div class="timeline-task-pill${isOverdue ? ' overdue' : ''}" onclick="window.__toggleTask('${task.id}', false)" title="Click to mark complete">
+    return `<div class="timeline-task-pill${isOverdue ? ' overdue' : ''}" onclick="event.stopPropagation(); window.__toggleTask('${task.id}', false)" title="Click to mark complete">
       <span class="timeline-task-pill-dot"></span>
       <span class="timeline-task-pill-body">${esc(task.title)}${leadBit}</span>
     </div>`;
@@ -778,8 +851,8 @@
     const lastLabel = days[days.length-1].toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
 
     const dayColsHTML = days.map(day=>{
-      const iso = day.toISOString().slice(0,10);
-      const isToday = iso === today.toISOString().slice(0,10);
+      const iso = toLocalISO(day);
+      const isToday = iso === toLocalISO(today);
       const isPast = day < today;
       const isWeekend = day.getDay() === 0 || day.getDay() === 6;
       const dayName = day.toLocaleDateString(undefined, {weekday:'short'});
@@ -790,7 +863,7 @@
           <div class="timeline-day-name">${dayName}</div>
           <div class="timeline-day-num">${dayNum}</div>
         </div>
-        <div class="timeline-day-body">
+        <div class="timeline-day-body" onclick="window.openQuickAdd('${iso}', event)">
           ${tasksForDay.length ? tasksForDay.map(t=>timelineTaskPillHTML(t, isPast)).join('') : '<div class="timeline-empty-day">—</div>'}
         </div>
       </div>`;
@@ -821,16 +894,117 @@
   window.shiftTimeline = shiftTimeline;
   window.resetTimelineToToday = resetTimelineToToday;
 
-  // ---------- Calendar view (month grid) ----------
-  function openAddPanelForDate(iso){
-    const panel = document.getElementById('taskAddPanel');
-    panel.style.display = 'block';
-    document.getElementById('taskDueDateInput').value = iso;
-    document.getElementById('taskTitleInput').focus();
-    panel.scrollIntoView({behavior:'smooth', block:'center'});
-  }
-  window.openAddPanelForDate = openAddPanelForDate;
+  // ---------- Quick-add popup (click a day, like Google Calendar) ----------
+  let quickAddDateISO = null;
+  const quickAddPopup = document.getElementById('quickAddPopup');
+  const quickAddScrim = document.getElementById('quickAddScrim');
 
+  function openQuickAdd(iso, clickEvent){
+    quickAddDateISO = iso;
+    document.getElementById('quickAddTitle').value = '';
+    document.getElementById('quickAddDateText').textContent =
+      new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+    document.getElementById('quickAddMore').style.display = 'none';
+    document.getElementById('quickAddMoreToggle').textContent = '+ Link to a board or lead';
+    document.getElementById('quickAddBoardSelect').value = '';
+    document.getElementById('quickAddLeadSelect').innerHTML = '<option value="">No specific lead</option>';
+    document.getElementById('quickAddLeadSelect').style.display = 'none';
+
+    // Board list only needs loading once — reuse it if the main panel
+    // (or an earlier popup open) already fetched it.
+    const boardSelect = document.getElementById('quickAddBoardSelect');
+    if(allBoards && allBoards.length){
+      boardSelect.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
+        `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
+    } else {
+      db.collection('workspaces').doc(currentWorkspaceId).collection('boards').orderBy('createdAt','desc').get().then(snap=>{
+        allBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=>b.deleted !== true);
+        boardSelect.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
+          `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
+      }).catch(()=>{});
+    }
+
+    // Position near the click, clamped so it never runs off the viewport.
+    const popupWidth = 320;
+    const popupEstHeight = 240;
+    let x = clickEvent ? clickEvent.clientX + 12 : window.innerWidth/2 - popupWidth/2;
+    let y = clickEvent ? clickEvent.clientY - 20 : window.innerHeight/2 - popupEstHeight/2;
+    x = Math.min(Math.max(x, 12), window.innerWidth - popupWidth - 12);
+    y = Math.min(Math.max(y, 12), window.innerHeight - popupEstHeight - 12);
+    quickAddPopup.style.left = x + 'px';
+    quickAddPopup.style.top = y + 'px';
+
+    quickAddScrim.classList.add('open');
+    quickAddPopup.classList.add('open');
+    setTimeout(()=>document.getElementById('quickAddTitle').focus(), 30);
+    if(clickEvent) clickEvent.stopPropagation();
+  }
+  window.openQuickAdd = openQuickAdd;
+
+  function closeQuickAdd(){
+    quickAddScrim.classList.remove('open');
+    quickAddPopup.classList.remove('open');
+  }
+  quickAddScrim.addEventListener('click', closeQuickAdd);
+  document.getElementById('quickAddClose').addEventListener('click', closeQuickAdd);
+  document.getElementById('quickAddCancelBtn').addEventListener('click', closeQuickAdd);
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && quickAddPopup.classList.contains('open')) closeQuickAdd();
+  });
+  quickAddPopup.addEventListener('click', (e)=>e.stopPropagation());
+
+  document.getElementById('quickAddMoreToggle').addEventListener('click', ()=>{
+    const more = document.getElementById('quickAddMore');
+    const opening = more.style.display === 'none';
+    more.style.display = opening ? 'flex' : 'none';
+    document.getElementById('quickAddMoreToggle').textContent = opening ? '– Link to a board or lead' : '+ Link to a board or lead';
+  });
+  document.getElementById('quickAddBoardSelect').addEventListener('change', (e)=>{
+    const bId = e.target.value;
+    const leadSelect = document.getElementById('quickAddLeadSelect');
+    if(!bId){ leadSelect.style.display = 'none'; return; }
+    leadSelect.style.display = 'block';
+    leadSelect.innerHTML = '<option value="">Loading leads…</option>';
+    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').doc(bId).collection('leads').get().then(snap=>{
+      const leads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
+      leadSelect.innerHTML = '<option value="">No specific lead</option>' + leads.map(l=>
+        `<option value="${l.id}">${esc(l.name || 'Unnamed lead')}</option>`).join('');
+    }).catch(()=>{
+      leadSelect.innerHTML = '<option value="">Could not load leads</option>';
+    });
+  });
+  document.getElementById('quickAddSaveBtn').addEventListener('click', ()=>{
+    const title = document.getElementById('quickAddTitle').value.trim();
+    if(!title){ showToast('Give the task a title first.', true); return; }
+    const boardId = document.getElementById('quickAddBoardSelect').value || null;
+    const leadId = document.getElementById('quickAddLeadSelect').value || null;
+    const boardName = boardId ? (allBoards.find(b=>b.id===boardId) || {}).name || 'Board' : null;
+    const leadSelectEl = document.getElementById('quickAddLeadSelect');
+    const leadName = leadId ? leadSelectEl.selectedOptions[0].textContent : null;
+    const saveBtn = document.getElementById('quickAddSaveBtn');
+    saveBtn.disabled = true;
+    db.collection('tasks').add({
+      workspaceId: currentWorkspaceId,
+      createdBy: myUid,
+      title, dueDate: quickAddDateISO,
+      boardId, boardName,
+      leadId, leadName,
+      completed: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      saveBtn.disabled = false;
+      closeQuickAdd();
+      showToast('Task added.');
+    }).catch(err=>{
+      saveBtn.disabled = false;
+      showToast('Could not save that: ' + (err.message || ''), true);
+    });
+  });
+  document.getElementById('quickAddTitle').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') document.getElementById('quickAddSaveBtn').click();
+  });
+
+  // ---------- Calendar view (month grid) ----------
   let calendarMonthDate = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
   function shiftCalendarMonth(delta){
     calendarMonthDate = new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() + delta, 1);
@@ -854,7 +1028,7 @@
     const holder = document.getElementById('taskCalendarHolder');
     const open = allTasks.filter(t=>!t.completed && t.dueDate);
     const today = startOfDay(new Date());
-    const todayISOStr = today.toISOString().slice(0,10);
+    const todayISOStr = toLocalISO(today);
 
     const year = calendarMonthDate.getFullYear();
     const month = calendarMonthDate.getMonth();
@@ -877,7 +1051,7 @@
     let cellsHTML = '';
     for(let i=0;i<42;i++){
       const day = new Date(gridStart.getTime() + i*DAY_MS);
-      const iso = day.toISOString().slice(0,10);
+      const iso = toLocalISO(day);
       const isOtherMonth = day.getMonth() !== month;
       const isToday = iso === todayISOStr;
       const isPast = day < today;
@@ -886,7 +1060,7 @@
       const maxShown = 3;
       const shown = tasksForDay.slice(0, maxShown);
       const overflow = tasksForDay.length - shown.length;
-      cellsHTML += `<div class="calendar-cell${isOtherMonth?' other-month':''}${isToday?' is-today':''}${isWeekend?' is-weekend':''}" onclick="window.openAddPanelForDate('${iso}')">
+      cellsHTML += `<div class="calendar-cell${isOtherMonth?' other-month':''}${isToday?' is-today':''}${isWeekend?' is-weekend':''}" onclick="window.openQuickAdd('${iso}', event)">
         <div class="calendar-daynum">${day.getDate()}</div>
         ${shown.map(t=>calendarChipHTML(t, isPast && !isOtherMonth)).join('')}
         ${overflow > 0 ? `<div class="calendar-more">+${overflow} more</div>` : ''}
