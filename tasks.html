@@ -263,6 +263,12 @@
     transition:border-color .15s ease;
   }
   .quick-add-more select:focus{outline:none;border-color:var(--teal);}
+  .quick-add-more textarea{
+    font-family:'Inter',sans-serif;font-size:13px;padding:9px 10px;border:1.5px solid var(--border);
+    border-radius:8px;background:var(--panel);color:var(--ink);width:100%;resize:vertical;min-height:44px;
+    transition:border-color .15s ease;
+  }
+  .quick-add-more textarea:focus{outline:none;border-color:var(--teal);}
   .quick-add-actions{display:flex;justify-content:flex-end;gap:8px;}
   .quick-add-actions .btn-cancel-task, .quick-add-actions .btn-save-task{padding:8px 16px;font-size:12.5px;}
 
@@ -292,6 +298,13 @@
   .task-detail-title{font-size:19px;font-weight:600;color:var(--ink);word-break:break-word;}
   .task-detail-title.completed-title{text-decoration:line-through;color:var(--slate);}
   .task-detail-date{font-size:13.5px;color:var(--slate);margin-left:26px;margin-bottom:16px;}
+  .task-detail-date.is-overdue{color:var(--red);font-weight:600;}
+  .task-detail-date.is-done{color:var(--success);font-weight:600;}
+  .task-detail-notes{
+    font-size:13px;color:var(--ink);line-height:1.6;margin-left:26px;margin-bottom:14px;
+    background:var(--panel-alt, var(--paper));border-radius:8px;padding:10px 12px;white-space:pre-wrap;
+  }
+  .task-detail-added-row{color:var(--slate);font-size:12px;margin-top:2px;}
   .task-detail-meta-row{display:flex;align-items:center;gap:14px;margin-left:26px;margin-bottom:10px;font-size:13px;color:var(--ink);}
   .task-detail-meta-row svg{color:var(--slate-light);flex-shrink:0;}
   .task-detail-meta-row a{color:var(--teal);text-decoration:none;font-weight:600;}
@@ -628,6 +641,7 @@
   <div class="quick-add-more" id="quickAddMore" style="display:none;">
     <select id="quickAddBoardSelect"><option value="">No board</option></select>
     <select id="quickAddLeadSelect" style="display:none;"><option value="">No specific lead</option></select>
+    <textarea id="quickAddNotes" placeholder="Add notes…" rows="2"></textarea>
     <div class="task-color-swatches" id="quickAddColorSwatches" style="margin-top:4px;"></div>
   </div>
   <div class="quick-add-actions">
@@ -775,6 +789,7 @@
 
   let currentWorkspaceId = null;
   let myUid = null;
+  let myName = 'You';
   let allTasks = [];
   let allBoards = [];
   let currentTaskTab = 'open';
@@ -1028,6 +1043,7 @@
     document.getElementById('quickAddBoardSelect').value = '';
     document.getElementById('quickAddLeadSelect').innerHTML = '<option value="">No specific lead</option>';
     document.getElementById('quickAddLeadSelect').style.display = 'none';
+    document.getElementById('quickAddNotes').value = '';
     document.getElementById('quickAddSaveBtn').textContent = 'Save';
     const pickColorNew = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew); };
     renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew);
@@ -1052,6 +1068,7 @@
       : 'No due date';
     document.getElementById('quickAddMore').style.display = 'flex';
     document.getElementById('quickAddMoreToggle').textContent = '– Link to a board or lead';
+    document.getElementById('quickAddNotes').value = task.notes || '';
     document.getElementById('quickAddSaveBtn').textContent = 'Save changes';
 
     const pickColor = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColor); };
@@ -1149,11 +1166,13 @@
     const leadName = leadId ? leadSelectEl.selectedOptions[0].textContent : null;
     const saveBtn = document.getElementById('quickAddSaveBtn');
     saveBtn.disabled = true;
+    const notes = document.getElementById('quickAddNotes').value.trim() || null;
     const data = {
       title, dueDate: quickAddDateISO,
       boardId, boardName,
       leadId, leadName,
-      color: quickAddSelectedColor
+      color: quickAddSelectedColor,
+      notes
     };
     const request = quickAddEditingTaskId
       ? db.collection('tasks').doc(quickAddEditingTaskId).update(data)
@@ -1161,6 +1180,7 @@
           ...data,
           workspaceId: currentWorkspaceId,
           createdBy: myUid,
+          createdByName: myName,
           completed: false,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -1191,12 +1211,33 @@
     const titleEl = document.getElementById('taskDetailTitleText');
     titleEl.textContent = task.title;
     titleEl.classList.toggle('completed-title', !!task.completed);
-    document.getElementById('taskDetailDateText').textContent = task.dueDate
-      ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric', year:'numeric'})
-      : 'No due date';
+
+    // Date line: overdue shows how many days, completed shows when it was
+    // done, otherwise just the plain due date.
+    const dateEl = document.getElementById('taskDetailDateText');
+    dateEl.className = 'task-detail-date';
+    if(task.completed && task.completedAt){
+      dateEl.textContent = `✓ Completed ${task.completedAt.toDate().toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'})}`;
+      dateEl.classList.add('is-done');
+    } else if(task.dueDate){
+      const dueDate = new Date(task.dueDate + 'T00:00:00');
+      const fullLabel = dueDate.toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+      if(!task.completed && task.dueDate < todayISO()){
+        const daysOver = Math.round((startOfDay(new Date()) - startOfDay(dueDate)) / 86400000);
+        dateEl.textContent = `${fullLabel} — ${daysOver} ${daysOver===1?'day':'days'} overdue`;
+        dateEl.classList.add('is-overdue');
+      } else {
+        dateEl.textContent = fullLabel;
+      }
+    } else {
+      dateEl.textContent = 'No due date';
+    }
 
     const metaEl = document.getElementById('taskDetailMeta');
     let metaHTML = '';
+    if(task.notes){
+      metaHTML += `<div class="task-detail-notes">${esc(task.notes).replace(/\n/g,'<br>')}</div>`;
+    }
     if(task.boardId && task.leadId){
       metaHTML += `<div class="task-detail-meta-row">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -1207,6 +1248,17 @@
       metaHTML += `<div class="task-detail-meta-row">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
         <span>${esc(task.boardName)}</span>
+      </div>`;
+    }
+    // Who added it, and when — useful the moment more than one person on
+    // the team can see a task (e.g. one linked to a shared lead).
+    if(task.createdByName){
+      const createdLabel = task.createdAt
+        ? task.createdAt.toDate().toLocaleDateString(undefined, {month:'short', day:'numeric'})
+        : '';
+      metaHTML += `<div class="task-detail-meta-row task-detail-added-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+        <span>Added by ${esc(task.createdByName)}${createdLabel ? ` · ${createdLabel}` : ''}</span>
       </div>`;
     }
     metaEl.innerHTML = metaHTML;
@@ -1482,7 +1534,7 @@
       const wsId = doc.exists ? doc.data().workspaceId : null;
       if(!wsId) return;
       return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
-        const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
+        myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
         document.getElementById('seqSidebarUserName').textContent = myName;
         document.getElementById('seqSidebarAvatar').textContent = initials(myName);
       });
