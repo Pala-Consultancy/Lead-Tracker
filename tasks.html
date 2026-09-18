@@ -138,28 +138,41 @@
     background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;
     box-shadow:0 1px 2px rgba(16,24,40,.04);
   }
-  .timeline-grid{display:grid;overflow-x:auto;}
-  .timeline-day-col{border-right:1px solid var(--border);min-width:150px;}
+  .timeline-grid{display:grid;}
+  .timeline-day-col{border-right:1px solid var(--border);}
   .timeline-day-col:last-child{border-right:none;}
+  .timeline-day-col.is-weekend .timeline-day-body{background:color-mix(in srgb, var(--slate) 3%, var(--panel));}
   .timeline-day-header{
-    padding:10px 12px;text-align:center;border-bottom:1px solid var(--border);
-    background:var(--panel-alt, var(--paper));
+    padding:12px 12px 10px;text-align:center;border-bottom:1px solid var(--border);
+    background:var(--panel-alt, var(--paper));position:relative;
   }
-  .timeline-day-header.is-today{background:color-mix(in srgb, var(--teal) 8%, var(--panel-alt, var(--paper)));}
+  .timeline-day-header.is-today{
+    background:color-mix(in srgb, var(--teal) 9%, var(--panel-alt, var(--paper)));
+  }
+  .timeline-day-header.is-today::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--teal);
+  }
   .timeline-day-name{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);font-weight:700;}
-  .timeline-day-num{font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--ink);margin-top:2px;}
-  .timeline-day-header.is-today .timeline-day-num{color:var(--teal);}
-  .timeline-day-header.is-past .timeline-day-num{color:var(--red);}
-  .timeline-day-body{padding:8px;min-height:130px;display:flex;flex-direction:column;gap:6px;}
-  .timeline-task-pill{
-    background:color-mix(in srgb, var(--teal) 9%, var(--panel));border:1px solid color-mix(in srgb, var(--teal) 24%, var(--border));
-    border-left:3px solid var(--teal);border-radius:7px;padding:7px 9px;font-size:12px;font-weight:600;color:var(--ink);
-    cursor:pointer;transition:transform .1s ease, box-shadow .1s ease;
+  .timeline-day-num{
+    font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin-top:4px;
+    width:30px;height:30px;line-height:30px;border-radius:50%;display:inline-block;
   }
-  .timeline-task-pill:hover{transform:translateY(-1px);box-shadow:0 3px 8px -3px rgba(16,24,40,.15);}
+  .timeline-day-header.is-today .timeline-day-num{background:var(--teal);color:#fff;}
+  .timeline-day-header.is-past .timeline-day-num{color:var(--red);}
+  .timeline-day-body{padding:9px;min-height:150px;display:flex;flex-direction:column;gap:7px;}
+  .timeline-task-pill{
+    display:flex;align-items:flex-start;gap:7px;
+    background:color-mix(in srgb, var(--teal) 9%, var(--panel));border:1px solid color-mix(in srgb, var(--teal) 24%, var(--border));
+    border-left:3px solid var(--teal);border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600;color:var(--ink);
+    cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .timeline-task-pill:hover{transform:translateY(-1px) scale(1.015);box-shadow:0 4px 10px -3px rgba(16,24,40,.18);}
   .timeline-task-pill.overdue{background:color-mix(in srgb, var(--red) 8%, var(--panel));border-color:color-mix(in srgb, var(--red) 22%, var(--border));border-left-color:var(--red);}
-  .timeline-task-pill-lead{font-size:10.5px;color:var(--slate);margin-top:2px;font-weight:500;}
-  .timeline-empty-day{font-size:11px;color:var(--slate-light);text-align:center;padding:10px 4px;}
+  .timeline-task-pill-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:4px;}
+  .timeline-task-pill.overdue .timeline-task-pill-dot{background:var(--red);}
+  .timeline-task-pill-body{min-width:0;flex:1;}
+  .timeline-task-pill-lead{font-size:10.5px;color:var(--slate);margin-top:2px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .timeline-empty-day{font-size:11px;color:var(--slate-light);text-align:center;padding:14px 4px;}
   .timeline-noDate-strip{
     display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);
     background:var(--panel-alt, var(--paper));flex-wrap:wrap;
@@ -167,7 +180,7 @@
   .timeline-noDate-label{font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;}
   .timeline-noDate-pill{
     background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:5px 12px;
-    font-size:11.5px;font-weight:600;color:var(--ink);cursor:pointer;
+    font-size:11.5px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .12s ease;
   }
   .timeline-noDate-pill:hover{border-color:var(--slate-light);}
   .task-group-label:first-child{margin-top:0;}
@@ -678,25 +691,32 @@
   // ---------- Timeline view ----------
   const DAY_MS = 86400000;
   function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
-  // Default window opens 3 days back (so recent overdue items are visible
-  // without having to navigate) through 10 days ahead — 14 columns total.
-  let timelineWindowStart = (()=>{ const d = startOfDay(new Date()); d.setDate(d.getDate() - 3); return d; })();
-  const TIMELINE_DAYS = 14;
+  // Monday-start of the given day's week, so each 7-day page is a clean
+  // calendar week and Prev/Next reads naturally as "last week / next week"
+  // instead of an arbitrary floating 7-day slice.
+  function startOfWeek(d){
+    const x = startOfDay(d);
+    const dow = (x.getDay() + 6) % 7; // 0=Mon .. 6=Sun
+    x.setDate(x.getDate() - dow);
+    return x;
+  }
+  let timelineWindowStart = startOfWeek(new Date());
+  const TIMELINE_DAYS = 7;
 
   function shiftTimeline(days){
     timelineWindowStart = new Date(timelineWindowStart.getTime() + days * DAY_MS);
     renderTimeline();
   }
   function resetTimelineToToday(){
-    const d = startOfDay(new Date()); d.setDate(d.getDate() - 3);
-    timelineWindowStart = d;
+    timelineWindowStart = startOfWeek(new Date());
     renderTimeline();
   }
 
   function timelineTaskPillHTML(task, isOverdue){
     const leadBit = task.leadName ? `<div class="timeline-task-pill-lead">${esc(task.leadName)}</div>` : '';
     return `<div class="timeline-task-pill${isOverdue ? ' overdue' : ''}" onclick="window.__toggleTask('${task.id}', false)" title="Click to mark complete">
-      ${esc(task.title)}${leadBit}
+      <span class="timeline-task-pill-dot"></span>
+      <span class="timeline-task-pill-body">${esc(task.title)}${leadBit}</span>
     </div>`;
   }
 
@@ -718,16 +738,17 @@
       const iso = day.toISOString().slice(0,10);
       const isToday = iso === today.toISOString().slice(0,10);
       const isPast = day < today;
+      const isWeekend = day.getDay() === 0 || day.getDay() === 6;
       const dayName = day.toLocaleDateString(undefined, {weekday:'short'});
       const dayNum = day.getDate();
       const tasksForDay = dated.filter(t=>t.dueDate === iso);
-      return `<div class="timeline-day-col">
+      return `<div class="timeline-day-col${isWeekend?' is-weekend':''}">
         <div class="timeline-day-header${isToday?' is-today':''}${isPast?' is-past':''}">
           <div class="timeline-day-name">${dayName}</div>
           <div class="timeline-day-num">${dayNum}</div>
         </div>
         <div class="timeline-day-body">
-          ${tasksForDay.length ? tasksForDay.map(t=>timelineTaskPillHTML(t, isPast)).join('') : ''}
+          ${tasksForDay.length ? tasksForDay.map(t=>timelineTaskPillHTML(t, isPast)).join('') : '<div class="timeline-empty-day">—</div>'}
         </div>
       </div>`;
     }).join('');
