@@ -119,7 +119,60 @@
   }
 
   .view-toggle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .task-search-wrap{
+    display:flex;align-items:center;gap:8px;background:var(--panel);border:1.5px solid var(--border);
+    border-radius:20px;padding:8px 14px;min-width:220px;color:var(--slate-light);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .task-search-wrap:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 15%, transparent);}
+  .task-search-wrap input{
+    border:none;outline:none;background:none;font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);flex:1;min-width:0;
+  }
+  .task-search-wrap #taskSearchClear{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:12px;padding:2px;flex-shrink:0;}
+  .task-search-wrap #taskSearchClear:hover{color:var(--ink);}
+  .task-tab-count{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;opacity:.65;margin-left:2px;
+  }
+
+  /* ---------- Priority flag ---------- */
+  .priority-flag{display:inline-flex;align-items:center;flex-shrink:0;}
+  .priority-flag svg{width:12px;height:12px;}
+  .priority-flag.high{color:var(--red);}
+  .priority-flag.medium{color:var(--amber);}
+  .priority-picker{display:flex;gap:6px;}
+  .priority-btn{
+    display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:20px;border:1.5px solid var(--border);
+    background:var(--panel);font-size:11.5px;font-weight:700;color:var(--slate);cursor:pointer;font-family:'Inter',sans-serif;
+    transition:border-color .12s ease, background .12s ease, color .12s ease;
+  }
+  .priority-btn svg{width:12px;height:12px;}
+  .priority-btn:hover{border-color:var(--slate-light);}
+  .priority-btn.active[data-priority="high"]{background:var(--c-red-bg);border-color:var(--red);color:var(--red);}
+  .priority-btn.active[data-priority="medium"]{background:var(--amber-soft);border-color:var(--amber);color:var(--amber);}
+  .priority-btn.active[data-priority="none"]{background:var(--panel-alt);border-color:var(--slate-light);color:var(--ink);}
+
+  /* ---------- Drag and drop rescheduling ---------- */
+  .timeline-task-pill[draggable="true"], .calendar-chip[draggable="true"]{cursor:grab;}
+  .timeline-task-pill.dragging, .calendar-chip.dragging{opacity:.4;}
+  .timeline-day-body.drag-over{background:color-mix(in srgb, var(--teal) 12%, var(--panel));outline:2px dashed var(--teal);outline-offset:-2px;}
+  .calendar-cell.drag-over{background:color-mix(in srgb, var(--teal) 10%, var(--panel));outline:2px dashed var(--teal);outline-offset:-2px;}
   .scope-toggle-row{margin-bottom:16px;}
+  .team-progress-bar{
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:16px 20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(16,24,40,.04);
+  }
+  .team-progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;}
+  .team-progress-label{font-size:13px;font-weight:700;color:var(--ink);}
+  .team-progress-count{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--slate);}
+  .team-progress-track{height:8px;border-radius:20px;background:var(--panel-alt, var(--paper));overflow:hidden;margin-bottom:14px;}
+  .team-progress-fill{height:100%;background:linear-gradient(90deg, var(--teal), var(--teal-deep));border-radius:20px;transition:width .4s ease;}
+  .team-progress-people{display:flex;flex-wrap:wrap;gap:16px;}
+  .team-progress-person{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink);}
+  .team-progress-person-badge{
+    width:22px;height:22px;border-radius:50%;background:var(--c-blue-tint, var(--panel-alt));color:var(--teal);
+    font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .team-progress-person-stat{color:var(--slate);font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
   .task-owner-badge{
     width:18px;height:18px;border-radius:50%;background:var(--panel-alt, var(--paper));border:1px solid var(--border);
     color:var(--slate);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
@@ -366,7 +419,7 @@
     border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
   }
   .task-row-body{flex:1;min-width:0;}
-  .task-row-title{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .task-row-title{font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:5px;}
   .task-row.completed .task-row-title{text-decoration:line-through;color:var(--slate);}
   .task-row-lead{
     display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--teal);font-weight:600;
@@ -628,15 +681,24 @@
     </div>
   </div>
 
+  <div class="team-progress-bar" id="teamProgressBar" style="display:none;"></div>
+
   <div class="view-toggle-row">
     <div class="task-tabs" id="taskViewTabs">
       <button type="button" class="task-tab active" data-view="list">List</button>
       <button type="button" class="task-tab" data-view="timeline">Timeline</button>
       <button type="button" class="task-tab" data-view="calendar">Calendar</button>
     </div>
+    <div class="task-search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="taskSearchInput" placeholder="Search tasks…" autocomplete="off">
+      <button type="button" id="taskSearchClear" style="display:none;" title="Clear search">✕</button>
+    </div>
+  </div>
+  <div class="view-toggle-row">
     <div class="task-tabs" id="taskStatusTabs">
-      <button type="button" class="task-tab active" data-tab="open">To do</button>
-      <button type="button" class="task-tab" data-tab="completed">Completed</button>
+      <button type="button" class="task-tab active" data-tab="open">To do <span class="task-tab-count" id="countOpen"></span></button>
+      <button type="button" class="task-tab" data-tab="completed">Completed <span class="task-tab-count" id="countCompleted"></span></button>
     </div>
   </div>
 
@@ -662,6 +724,7 @@
     <select id="quickAddBoardSelect"><option value="">No board</option></select>
     <select id="quickAddLeadSelect" style="display:none;"><option value="">No specific lead</option></select>
     <textarea id="quickAddNotes" placeholder="Add notes…" rows="2"></textarea>
+    <div class="priority-picker" id="quickAddPriorityPicker"></div>
     <div class="task-color-swatches" id="quickAddColorSwatches" style="margin-top:4px;"></div>
   </div>
   <div class="quick-add-actions">
@@ -807,6 +870,29 @@
     return found ? found.hex : TASK_COLORS[0].hex;
   }
 
+  // Priority is deliberately just two flagged levels plus "none" — a
+  // third-level "low" flag tends to just add visual noise without adding
+  // real information (everything unflagged already reads as "normal").
+  const FLAG_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M5 3v18h1.5v-6.5h11.8c.6 0 .9-.7.5-1.2l-2.8-3.8 2.8-3.8c.4-.5 0-1.2-.5-1.2H6.5V3H5Z"/></svg>';
+  function priorityFlagHTML(task){
+    if(!task || !task.priority || task.priority === 'none') return '';
+    return `<span class="priority-flag ${task.priority}" title="${task.priority === 'high' ? 'High priority' : 'Medium priority'}">${FLAG_SVG}</span>`;
+  }
+  function renderPriorityPicker(containerId, selected, onPick){
+    const el = document.getElementById(containerId);
+    const opts = [
+      {id:'none', label:'Normal'},
+      {id:'medium', label:'Medium'},
+      {id:'high', label:'High'}
+    ];
+    el.innerHTML = opts.map(o=>`<div class="priority-btn${o.id===(selected||'none')?' active':''}" data-priority="${o.id}">
+      ${o.id !== 'none' ? FLAG_SVG : ''}${o.label}
+    </div>`).join('');
+    el.querySelectorAll('.priority-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>onPick(btn.dataset.priority));
+    });
+  }
+
   let currentWorkspaceId = null;
   let myUid = null;
   let myName = 'You';
@@ -912,6 +998,71 @@
 
   // ---------- Scope toggle (My tasks / Everyone's tasks) ----------
   let taskScopeMode = 'mine';
+
+  // ---------- Search (filters every view at once) ----------
+  let taskSearchQuery = '';
+  function searchFilter(tasks){
+    if(!taskSearchQuery) return tasks;
+    const q = taskSearchQuery.toLowerCase();
+    return tasks.filter(t=>
+      (t.title||'').toLowerCase().includes(q) ||
+      (t.leadName||'').toLowerCase().includes(q) ||
+      (t.boardName||'').toLowerCase().includes(q) ||
+      (t.notes||'').toLowerCase().includes(q)
+    );
+  }
+  function rerenderCurrentView(){
+    renderTasks();
+    if(currentTaskView === 'timeline') renderTimeline();
+    if(currentTaskView === 'calendar') renderCalendar();
+  }
+  document.getElementById('taskSearchInput').addEventListener('input', (e)=>{
+    taskSearchQuery = e.target.value.trim();
+    document.getElementById('taskSearchClear').style.display = taskSearchQuery ? 'block' : 'none';
+    rerenderCurrentView();
+  });
+  document.getElementById('taskSearchClear').addEventListener('click', ()=>{
+    taskSearchQuery = '';
+    document.getElementById('taskSearchInput').value = '';
+    document.getElementById('taskSearchClear').style.display = 'none';
+    rerenderCurrentView();
+  });
+  function renderTeamProgress(){
+    const bar = document.getElementById('teamProgressBar');
+    if(taskScopeMode !== 'team'){ bar.style.display = 'none'; return; }
+    if(allTasks.length === 0){ bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+
+    const total = allTasks.length;
+    const done = allTasks.filter(t=>t.completed).length;
+    const pct = total > 0 ? Math.round((done/total)*100) : 0;
+
+    // Per-person breakdown, sorted by whoever's completed the most.
+    const byPerson = {};
+    allTasks.forEach(t=>{
+      const name = t.createdByName || 'Unknown';
+      if(!byPerson[name]) byPerson[name] = {done:0, total:0};
+      byPerson[name].total++;
+      if(t.completed) byPerson[name].done++;
+    });
+    const peopleHTML = Object.entries(byPerson)
+      .sort((a,b)=>b[1].done - a[1].done)
+      .map(([name, stat])=>`<div class="team-progress-person">
+        <span class="team-progress-person-badge">${esc(initials(name))}</span>
+        <span>${esc(name)}</span>
+        <span class="team-progress-person-stat">${stat.done}/${stat.total}</span>
+      </div>`).join('');
+
+    bar.innerHTML = `
+      <div class="team-progress-top">
+        <span class="team-progress-label">Team progress</span>
+        <span class="team-progress-count">${done} of ${total} completed (${pct}%)</span>
+      </div>
+      <div class="team-progress-track"><div class="team-progress-fill" style="width:${pct}%"></div></div>
+      <div class="team-progress-people">${peopleHTML}</div>
+    `;
+  }
+
   function subscribeToTasks(){
     if(unsubscribeTasks) unsubscribeTasks();
     let query = db.collection('tasks').where('workspaceId', '==', currentWorkspaceId);
@@ -919,6 +1070,7 @@
     unsubscribeTasks = query.onSnapshot(snap=>{
       allTasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
       renderTasks();
+      renderTeamProgress();
       if(currentTaskView === 'timeline') renderTimeline();
       if(currentTaskView === 'calendar') renderCalendar();
       document.getElementById('pageLoader').style.display = 'none';
@@ -997,18 +1149,21 @@
     const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
       ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
     return `<div class="timeline-task-pill${isOverdue ? ' overdue' : ''}" style="--task-color:${color}"
+      draggable="true"
+      ondragstart="window.handleTaskDragStart('${task.id}', event)"
+      ondragend="window.handleTaskDragEnd(event)"
       onclick="event.stopPropagation(); window.openTaskDetail('${task.id}', event)"
       oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;"
       title="${esc(task.title)}">
       <span class="timeline-task-pill-dot"></span>
-      <span class="timeline-task-pill-body">${esc(task.title)}${leadBit}</span>
+      <span class="timeline-task-pill-body">${priorityFlagHTML(task)} ${esc(task.title)}${leadBit}</span>
       ${ownerBadge}
     </div>`;
   }
 
   function renderTimeline(){
     const holder = document.getElementById('taskTimelineHolder');
-    const open = allTasks.filter(t=>!t.completed);
+    const open = searchFilter(allTasks).filter(t=>!t.completed);
     const dated = open.filter(t=>t.dueDate);
     const undated = open.filter(t=>!t.dueDate);
     const today = startOfDay(new Date());
@@ -1033,7 +1188,10 @@
           <div class="timeline-day-name">${dayName}</div>
           <div class="timeline-day-num">${dayNum}</div>
         </div>
-        <div class="timeline-day-body" onclick="window.openQuickAdd('${iso}', event)">
+        <div class="timeline-day-body" onclick="window.openQuickAdd('${iso}', event)"
+          ondragover="window.handleTaskDragOver(event)"
+          ondragleave="window.handleTaskDragLeave(event)"
+          ondrop="window.handleTaskDrop('${iso}', event)">
           ${tasksForDay.length ? tasksForDay.map(t=>timelineTaskPillHTML(t, isPast)).join('') : '<div class="timeline-empty-day">—</div>'}
         </div>
       </div>`;
@@ -1041,7 +1199,12 @@
 
     const noDateHTML = undated.length ? `<div class="timeline-noDate-strip">
       <span class="timeline-noDate-label">No due date</span>
-      ${undated.map(t=>`<span class="timeline-noDate-pill" onclick="window.__toggleTask('${t.id}', false)" title="Click to mark complete">${esc(t.title)}</span>`).join('')}
+      ${undated.map(t=>`<span class="timeline-noDate-pill" draggable="true"
+        ondragstart="window.handleTaskDragStart('${t.id}', event)"
+        ondragend="window.handleTaskDragEnd(event)"
+        onclick="window.openTaskDetail('${t.id}', event)"
+        oncontextmenu="window.openTaskColorMenu('${t.id}', event); return false;"
+        title="${esc(t.title)}">${priorityFlagHTML(t)} ${esc(t.title)}</span>`).join('')}
     </div>` : '';
 
     holder.innerHTML = `
@@ -1072,6 +1235,7 @@
   let quickAddDateISO = null;
   let quickAddEditingTaskId = null;
   let quickAddSelectedColor = TASK_COLORS[0].id;
+  let quickAddSelectedPriority = 'none';
   const quickAddPopup = document.getElementById('quickAddPopup');
   const quickAddScrim = document.getElementById('quickAddScrim');
 
@@ -1088,6 +1252,7 @@
   function openQuickAdd(iso, clickEvent){
     quickAddEditingTaskId = null;
     quickAddSelectedColor = TASK_COLORS[0].id;
+    quickAddSelectedPriority = 'none';
     quickAddDateISO = iso;
     document.getElementById('quickAddTitle').value = '';
     document.getElementById('quickAddDateText').textContent =
@@ -1101,6 +1266,8 @@
     document.getElementById('quickAddSaveBtn').textContent = 'Save';
     const pickColorNew = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew); };
     renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew);
+    const pickPriorityNew = (id)=>{ quickAddSelectedPriority = id; renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriorityNew); };
+    renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriorityNew);
 
     ensureBoardsLoaded(()=>{
       const boardSelect = document.getElementById('quickAddBoardSelect');
@@ -1115,6 +1282,7 @@
   function openQuickAddEdit(task){
     quickAddEditingTaskId = task.id;
     quickAddSelectedColor = task.color || TASK_COLORS[0].id;
+    quickAddSelectedPriority = task.priority || 'none';
     quickAddDateISO = task.dueDate || null;
     document.getElementById('quickAddTitle').value = task.title || '';
     document.getElementById('quickAddDateText').textContent = task.dueDate
@@ -1127,6 +1295,8 @@
 
     const pickColor = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColor); };
     renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColor);
+    const pickPriority = (id)=>{ quickAddSelectedPriority = id; renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriority); };
+    renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriority);
 
     ensureBoardsLoaded(()=>{
       const boardSelect = document.getElementById('quickAddBoardSelect');
@@ -1226,6 +1396,7 @@
       boardId, boardName,
       leadId, leadName,
       color: quickAddSelectedColor,
+      priority: quickAddSelectedPriority,
       notes
     };
     const request = quickAddEditingTaskId
@@ -1263,7 +1434,7 @@
 
     document.getElementById('taskDetailDot').style.background = taskColorHex(task);
     const titleEl = document.getElementById('taskDetailTitleText');
-    titleEl.textContent = task.title;
+    titleEl.innerHTML = `${priorityFlagHTML(task)} ${esc(task.title)}`;
     titleEl.classList.toggle('completed-title', !!task.completed);
 
     // Date line: overdue shows how many days, completed shows when it was
@@ -1412,6 +1583,50 @@
     if(e.key === 'Escape' && taskColorMenu.classList.contains('open')) closeTaskColorMenu();
   });
 
+  // ---------- Drag-and-drop rescheduling (Timeline + Calendar) ----------
+  let dragTaskId = null;
+  function handleTaskDragStart(taskId, e){
+    dragTaskId = taskId;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    // Firefox requires setData to be called for drag to work at all.
+    e.dataTransfer.setData('text/plain', taskId);
+  }
+  window.handleTaskDragStart = handleTaskDragStart;
+
+  function handleTaskDragEnd(e){
+    e.target.classList.remove('dragging');
+    dragTaskId = null;
+    document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  }
+  window.handleTaskDragEnd = handleTaskDragEnd;
+
+  function handleTaskDragOver(e){
+    if(!dragTaskId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+  }
+  window.handleTaskDragOver = handleTaskDragOver;
+
+  function handleTaskDragLeave(e){
+    e.currentTarget.classList.remove('drag-over');
+  }
+  window.handleTaskDragLeave = handleTaskDragLeave;
+
+  function handleTaskDrop(iso, e){
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const taskId = dragTaskId || e.dataTransfer.getData('text/plain');
+    if(!taskId) return;
+    const task = allTasks.find(t=>t.id === taskId);
+    if(!task || task.dueDate === iso) return;
+    db.collection('tasks').doc(taskId).update({dueDate: iso}).then(()=>{
+      showToast('Rescheduled to ' + new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {month:'short', day:'numeric'}) + '.');
+    }).catch(err=>showToast('Could not reschedule: ' + (err.message || ''), true));
+  }
+  window.handleTaskDrop = handleTaskDrop;
+
   // ---------- Calendar view (month grid) ----------
   let calendarMonthDate = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
   function shiftCalendarMonth(delta){
@@ -1431,17 +1646,20 @@
     const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
       ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
     return `<div class="calendar-chip${isOverdue?' overdue':''}" style="--task-color:${color}"
+      draggable="true"
+      ondragstart="window.handleTaskDragStart('${task.id}', event)"
+      ondragend="window.handleTaskDragEnd(event)"
       onclick="event.stopPropagation(); window.openTaskDetail('${task.id}', event)"
       oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;"
       title="${esc(task.title)}">
       ${ownerBadge}
-      <span class="calendar-chip-text">${esc(task.title)}</span>
+      <span class="calendar-chip-text">${priorityFlagHTML(task)} ${esc(task.title)}</span>
     </div>`;
   }
 
   function renderCalendar(){
     const holder = document.getElementById('taskCalendarHolder');
-    const open = allTasks.filter(t=>!t.completed && t.dueDate);
+    const open = searchFilter(allTasks).filter(t=>!t.completed && t.dueDate);
     const today = startOfDay(new Date());
     const todayISOStr = toLocalISO(today);
 
@@ -1475,7 +1693,11 @@
       const maxShown = 3;
       const shown = tasksForDay.slice(0, maxShown);
       const overflow = tasksForDay.length - shown.length;
-      cellsHTML += `<div class="calendar-cell${isOtherMonth?' other-month':''}${isToday?' is-today':''}${isWeekend?' is-weekend':''}" onclick="window.openQuickAdd('${iso}', event)">
+      cellsHTML += `<div class="calendar-cell${isOtherMonth?' other-month':''}${isToday?' is-today':''}${isWeekend?' is-weekend':''}"
+        onclick="window.openQuickAdd('${iso}', event)"
+        ondragover="window.handleTaskDragOver(event)"
+        ondragleave="window.handleTaskDragLeave(event)"
+        ondrop="window.handleTaskDrop('${iso}', event)">
         <div class="calendar-daynum">${day.getDate()}</div>
         ${shown.map(t=>calendarChipHTML(t, isPast && !isOtherMonth)).join('')}
         ${overflow > 0 ? `<div class="calendar-more">+${overflow} more</div>` : ''}
@@ -1526,7 +1748,7 @@
       <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="window.__toggleTask('${task.id}', ${task.completed})">
       ${ownerBadge}
       <div class="task-row-body" onclick="window.openTaskDetail('${task.id}', event)" style="cursor:pointer;">
-        <div class="task-row-title">${esc(task.title)}</div>
+        <div class="task-row-title">${priorityFlagHTML(task)} ${esc(task.title)}</div>
         ${leadLink}
       </div>
       ${due ? `<div class="task-row-due${isOverdue ? ' overdue' : ''}">${esc(daysLabel(due))}</div>` : ''}
@@ -1537,9 +1759,13 @@
   function renderTasks(){
     const holder = document.getElementById('taskListHolder');
     const today = todayISO();
+    const searched = searchFilter(allTasks);
+
+    document.getElementById('countOpen').textContent = `(${searched.filter(t=>!t.completed).length})`;
+    document.getElementById('countCompleted').textContent = `(${searched.filter(t=>t.completed).length})`;
 
     if(currentTaskTab === 'completed'){
-      const completed = allTasks.filter(t=>t.completed).sort((a,b)=>{
+      const completed = searched.filter(t=>t.completed).sort((a,b)=>{
         const at = a.completedAt ? a.completedAt.toMillis() : 0;
         const bt = b.completedAt ? b.completedAt.toMillis() : 0;
         return bt - at;
@@ -1552,16 +1778,24 @@
       return;
     }
 
-    const open = allTasks.filter(t=>!t.completed);
+    const open = searched.filter(t=>!t.completed);
     if(open.length === 0){
-      holder.innerHTML = `<div class="empty-state"><h3>You're all caught up</h3><p>No open tasks — click "+ New task" to add a reminder or follow-up.</p></div>`;
+      holder.innerHTML = taskSearchQuery
+        ? `<div class="empty-state"><h3>No matches</h3><p>Nothing open matches "${esc(taskSearchQuery)}".</p></div>`
+        : `<div class="empty-state"><h3>You're all caught up</h3><p>No open tasks — click "+ New task" to add a reminder or follow-up.</p></div>`;
       return;
     }
 
-    const overdue = open.filter(t=>t.dueDate && t.dueDate < today).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
-    const dueToday = open.filter(t=>t.dueDate === today);
-    const upcoming = open.filter(t=>t.dueDate && t.dueDate > today).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
-    const noDate = open.filter(t=>!t.dueDate);
+    // Priority sorts to the top within each date group — high first, then
+    // medium, then everything else in whatever order they already were.
+    const byPriority = (a,b)=>{
+      const rank = {high:0, medium:1};
+      return (rank[a.priority] ?? 2) - (rank[b.priority] ?? 2);
+    };
+    const overdue = open.filter(t=>t.dueDate && t.dueDate < today).sort((a,b)=>a.dueDate.localeCompare(b.dueDate) || byPriority(a,b));
+    const dueToday = open.filter(t=>t.dueDate === today).sort(byPriority);
+    const upcoming = open.filter(t=>t.dueDate && t.dueDate > today).sort((a,b)=>a.dueDate.localeCompare(b.dueDate) || byPriority(a,b));
+    const noDate = open.filter(t=>!t.dueDate).sort(byPriority);
 
     let html = '';
     if(overdue.length){
