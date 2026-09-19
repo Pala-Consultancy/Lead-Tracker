@@ -119,6 +119,19 @@
   }
 
   .view-toggle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .scope-toggle-row{margin-bottom:16px;}
+  .task-owner-badge{
+    width:18px;height:18px;border-radius:50%;background:var(--panel-alt, var(--paper));border:1px solid var(--border);
+    color:var(--slate);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+    flex-shrink:0;font-family:'Inter',sans-serif;
+  }
+  .task-row .task-owner-badge{margin-right:2px;}
+  .timeline-task-pill .task-owner-badge{width:15px;height:15px;font-size:8px;}
+  .calendar-chip .task-owner-badge{width:13px;height:13px;font-size:7px;}
+  .task-detail-owner-badge{
+    width:22px;height:22px;border-radius:50%;background:var(--c-blue-tint, var(--panel-alt));color:var(--teal);
+    font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
 
   .timeline-nav{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
   .timeline-nav-btn{
@@ -608,6 +621,13 @@
     </div>
   </div>
 
+  <div class="scope-toggle-row">
+    <div class="task-tabs" id="taskScopeTabs">
+      <button type="button" class="task-tab active" data-scope="mine">My tasks</button>
+      <button type="button" class="task-tab" data-scope="team">Everyone's tasks</button>
+    </div>
+  </div>
+
   <div class="view-toggle-row">
     <div class="task-tabs" id="taskViewTabs">
       <button type="button" class="task-tab active" data-view="list">List</button>
@@ -890,6 +910,37 @@
     });
   });
 
+  // ---------- Scope toggle (My tasks / Everyone's tasks) ----------
+  let taskScopeMode = 'mine';
+  function subscribeToTasks(){
+    if(unsubscribeTasks) unsubscribeTasks();
+    let query = db.collection('tasks').where('workspaceId', '==', currentWorkspaceId);
+    if(taskScopeMode === 'mine') query = query.where('createdBy', '==', myUid);
+    unsubscribeTasks = query.onSnapshot(snap=>{
+      allTasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderTasks();
+      if(currentTaskView === 'timeline') renderTimeline();
+      if(currentTaskView === 'calendar') renderCalendar();
+      document.getElementById('pageLoader').style.display = 'none';
+      const appRoot = document.getElementById('appRoot');
+      appRoot.style.display = 'flex';
+      appRoot.classList.add('reveal');
+    }, err=>{
+      console.error(err);
+      showToast('Could not load tasks: ' + (err.message || ''), true);
+      document.getElementById('pageLoader').style.display = 'none';
+      document.getElementById('appRoot').style.display = 'flex';
+    });
+  }
+  document.querySelectorAll('#taskScopeTabs .task-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('#taskScopeTabs .task-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      taskScopeMode = tab.dataset.scope;
+      subscribeToTasks();
+    });
+  });
+
   // ---------- View toggle (List / Timeline / Calendar) ----------
   let currentTaskView = 'list';
   document.querySelectorAll('#taskViewTabs .task-tab').forEach(tab=>{
@@ -943,12 +994,15 @@
   function timelineTaskPillHTML(task, isOverdue){
     const color = taskColorHex(task);
     const leadBit = task.leadName ? `<div class="timeline-task-pill-lead">${esc(task.leadName)}</div>` : '';
+    const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
+      ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
     return `<div class="timeline-task-pill${isOverdue ? ' overdue' : ''}" style="--task-color:${color}"
       onclick="event.stopPropagation(); window.openTaskDetail('${task.id}', event)"
       oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;"
       title="${esc(task.title)}">
       <span class="timeline-task-pill-dot"></span>
       <span class="timeline-task-pill-body">${esc(task.title)}${leadBit}</span>
+      ${ownerBadge}
     </div>`;
   }
 
@@ -1257,7 +1311,7 @@
         ? task.createdAt.toDate().toLocaleDateString(undefined, {month:'short', day:'numeric'})
         : '';
       metaHTML += `<div class="task-detail-meta-row task-detail-added-row">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+        <span class="task-detail-owner-badge">${esc(initials(task.createdByName))}</span>
         <span>Added by ${esc(task.createdByName)}${createdLabel ? ` · ${createdLabel}` : ''}</span>
       </div>`;
     }
@@ -1374,10 +1428,13 @@
 
   function calendarChipHTML(task, isOverdue){
     const color = taskColorHex(task);
+    const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
+      ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
     return `<div class="calendar-chip${isOverdue?' overdue':''}" style="--task-color:${color}"
       onclick="event.stopPropagation(); window.openTaskDetail('${task.id}', event)"
       oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;"
       title="${esc(task.title)}">
+      ${ownerBadge}
       <span class="calendar-chip-text">${esc(task.title)}</span>
     </div>`;
   }
@@ -1463,8 +1520,11 @@
     const leadLink = (task.boardId && task.leadId)
       ? `<a class="task-row-lead" href="dashboard.html?board=${encodeURIComponent(task.boardId)}&lead=${encodeURIComponent(task.leadId)}">↗ ${esc(task.leadName || 'Lead')} · ${esc(task.boardName || '')}</a>`
       : (task.boardName ? `<span class="task-row-lead" style="color:var(--slate);">${esc(task.boardName)}</span>` : '');
+    const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
+      ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
     return `<div class="task-row${task.completed ? ' completed' : ''}" oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;" style="border-left:3px solid ${taskColorHex(task)}">
       <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="window.__toggleTask('${task.id}', ${task.completed})">
+      ${ownerBadge}
       <div class="task-row-body" onclick="window.openTaskDetail('${task.id}', event)" style="cursor:pointer;">
         <div class="task-row-title">${esc(task.title)}</div>
         ${leadLink}
@@ -1548,25 +1608,7 @@
       }
       currentWorkspaceId = workspaceId;
       loadBoardsIntoSelect();
-
-      unsubscribeTasks = db.collection('tasks')
-        .where('workspaceId', '==', workspaceId)
-        .where('createdBy', '==', user.uid)
-        .onSnapshot(snap=>{
-          allTasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
-          renderTasks();
-          if(currentTaskView === 'timeline') renderTimeline();
-          if(currentTaskView === 'calendar') renderCalendar();
-          document.getElementById('pageLoader').style.display = 'none';
-          const appRoot = document.getElementById('appRoot');
-          appRoot.style.display = 'flex';
-          appRoot.classList.add('reveal');
-        }, err=>{
-          console.error(err);
-          showToast('Could not load your tasks: ' + (err.message || ''), true);
-          document.getElementById('pageLoader').style.display = 'none';
-          document.getElementById('appRoot').style.display = 'flex';
-        });
+      subscribeToTasks();
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
