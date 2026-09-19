@@ -58,7 +58,7 @@
   .seq-sidebar-bottom{margin-top:auto;padding-top:14px;border-top:1px solid var(--border-soft);}
 
   .seq-main{flex:1;min-width:0;height:100%;overflow-y:auto;}
-  .shell{max-width:820px;margin:0 auto;padding:36px 22px 90px;}
+  .shell{max-width:1100px;margin:0 auto;padding:36px 22px 90px;}
 
   .back-link{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--slate);text-decoration:none;margin:0 0 18px;transition:color .12s, transform .12s;}
   .back-link:hover{color:var(--teal);transform:translateX(-2px);}
@@ -255,15 +255,15 @@
 
   /* ---------- Calendar view (month grid) ---------- */
   .calendar-wrap{
-    background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;
+    background:var(--panel);border:1px solid var(--border);border-radius:18px;overflow:hidden;
     box-shadow:0 1px 2px rgba(16,24,40,.04);
   }
   .calendar-weekday-row{display:grid;grid-template-columns:repeat(7, 1fr);border-bottom:1px solid var(--border);background:var(--panel-alt, var(--paper));}
-  .calendar-weekday{padding:10px 0;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);}
+  .calendar-weekday{padding:14px 0;text-align:center;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);}
   .calendar-grid{display:grid;grid-template-columns:repeat(7, 1fr);}
   .calendar-cell{
     border-right:1px solid var(--border);border-bottom:1px solid var(--border);
-    min-height:108px;padding:6px 6px 8px;display:flex;flex-direction:column;gap:4px;
+    min-height:158px;padding:9px 9px 10px;display:flex;flex-direction:column;gap:6px;
     transition:background .12s ease;cursor:pointer;
   }
   .calendar-cell:hover{background:color-mix(in srgb, var(--teal) 4%, var(--panel));}
@@ -272,23 +272,23 @@
   .calendar-cell.other-month:hover{background:color-mix(in srgb, var(--slate) 5%, var(--panel));}
   .calendar-cell.is-weekend:not(.other-month){background:color-mix(in srgb, var(--slate) 2%, var(--panel));}
   .calendar-daynum{
-    font-family:'Sora',sans-serif;font-size:12.5px;font-weight:700;color:var(--ink);
-    width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;flex-shrink:0;
+    font-family:'Sora',sans-serif;font-size:14.5px;font-weight:700;color:var(--ink);
+    width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;flex-shrink:0;
   }
   .calendar-cell.other-month .calendar-daynum{color:var(--slate-light);}
   .calendar-cell.is-today .calendar-daynum{background:var(--teal);color:#fff;}
   .calendar-chip{
-    display:flex;align-items:center;gap:5px;background:color-mix(in srgb, var(--task-color, var(--teal)) 11%, var(--panel));
-    border-left:2.5px solid var(--task-color, var(--teal));border-radius:5px;padding:3px 6px;font-size:10.5px;font-weight:600;
+    display:flex;align-items:center;gap:6px;background:color-mix(in srgb, var(--task-color, var(--teal)) 11%, var(--panel));
+    border-left:3px solid var(--task-color, var(--teal));border-radius:6px;padding:5px 8px;font-size:11.5px;font-weight:600;
     color:var(--ink);cursor:pointer;overflow:hidden;transition:transform .1s ease;
   }
   .calendar-chip:hover{transform:translateX(1px);}
   .calendar-chip.overdue{box-shadow:inset 0 0 0 1.5px var(--red);}
   .calendar-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .calendar-more{font-size:10px;color:var(--slate);font-weight:700;padding:2px 6px;cursor:pointer;}
+  .calendar-more{font-size:11px;color:var(--slate);font-weight:700;padding:3px 7px;cursor:pointer;}
   .calendar-more:hover{color:var(--teal);}
   @media (max-width:760px){
-    .calendar-cell{min-height:76px;}
+    .calendar-cell{min-height:92px;}
     .calendar-chip, .calendar-more{display:none;}
   }
 
@@ -1690,7 +1690,7 @@
       const isPast = day < today;
       const isWeekend = day.getDay() === 0 || day.getDay() === 6;
       const tasksForDay = open.filter(t=>t.dueDate === iso).sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-      const maxShown = 3;
+      const maxShown = 4;
       const shown = tasksForDay.slice(0, maxShown);
       const overflow = tasksForDay.length - shown.length;
       cellsHTML += `<div class="calendar-cell${isOtherMonth?' other-month':''}${isToday?' is-today':''}${isWeekend?' is-weekend':''}"
