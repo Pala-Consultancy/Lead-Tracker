@@ -113,6 +113,11 @@
   }
   .task-tab.active{background:var(--panel);color:var(--teal);box-shadow:0 1px 2px rgba(16,24,40,.06);}
 
+  .today-header{
+    display:flex;align-items:baseline;gap:10px;margin-bottom:18px;flex-wrap:wrap;
+  }
+  .today-header-date{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;color:var(--ink);}
+  .today-header-count{font-size:12.5px;color:var(--slate);font-family:'IBM Plex Mono',monospace;}
   .task-group-label{
     font-family:'Sora',sans-serif;font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
     color:var(--slate);margin:22px 0 10px;display:flex;align-items:center;gap:8px;
@@ -383,6 +388,7 @@
     margin-top:3px;text-decoration:none;
   }
   .task-row-lead:hover{text-decoration:underline;}
+  .task-row-completedby{display:block;font-size:11px;color:var(--success);font-weight:600;margin-top:3px;}
   .task-row-due{
     font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--slate);white-space:nowrap;flex-shrink:0;
   }
@@ -633,6 +639,7 @@
   <div class="task-toolbar">
     <div class="task-tabs" id="taskViewTabs">
       <button type="button" class="task-tab active" data-view="calendar">Calendar</button>
+      <button type="button" class="task-tab" data-view="today">Today</button>
       <button type="button" class="task-tab" data-view="list">List</button>
     </div>
     <div class="task-tabs" id="taskScopeTabs">
@@ -657,6 +664,7 @@
   </div>
 
   <div id="taskListHolder" style="display:none;"></div>
+  <div id="taskTodayHolder" style="display:none;"></div>
   <div id="taskCalendarHolder"></div>
 </div>
 </div>
@@ -967,6 +975,7 @@
   function rerenderCurrentView(){
     renderTasks();
     if(currentTaskView === 'calendar') renderCalendar();
+    if(currentTaskView === 'today') renderTodayView();
   }
   document.getElementById('taskSearchInput').addEventListener('input', (e)=>{
     taskSearchQuery = e.target.value.trim();
@@ -1024,6 +1033,7 @@
       renderTasks();
       renderTeamProgress();
       if(currentTaskView === 'calendar') renderCalendar();
+      if(currentTaskView === 'today') renderTodayView();
       document.getElementById('pageLoader').style.display = 'none';
       const appRoot = document.getElementById('appRoot');
       appRoot.style.display = 'flex';
@@ -1052,9 +1062,11 @@
       tab.classList.add('active');
       currentTaskView = tab.dataset.view;
       document.getElementById('taskListHolder').style.display = currentTaskView === 'list' ? 'block' : 'none';
+      document.getElementById('taskTodayHolder').style.display = currentTaskView === 'today' ? 'block' : 'none';
       document.getElementById('taskCalendarHolder').style.display = currentTaskView === 'calendar' ? 'block' : 'none';
       document.getElementById('taskStatusRow').style.display = currentTaskView === 'list' ? 'block' : 'none';
       if(currentTaskView === 'calendar') renderCalendar();
+      if(currentTaskView === 'today') renderTodayView();
     });
   });
 
@@ -1286,7 +1298,10 @@
     const dateEl = document.getElementById('taskDetailDateText');
     dateEl.className = 'task-detail-date';
     if(task.completed && task.completedAt){
-      dateEl.textContent = `✓ Completed ${task.completedAt.toDate().toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'})}`;
+      const completedDateStr = task.completedAt.toDate().toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'});
+      dateEl.textContent = task.completedByName
+        ? `✓ Completed by ${task.completedByName} · ${completedDateStr}`
+        : `✓ Completed ${completedDateStr}`;
       dateEl.classList.add('is-done');
     } else if(task.dueDate){
       const dueDate = new Date(task.dueDate + 'T00:00:00');
@@ -1375,7 +1390,9 @@
     if(!task) return;
     db.collection('tasks').doc(task.id).update({
       completed: !task.completed,
-      completedAt: !task.completed ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete()
+      completedAt: !task.completed ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete(),
+      completedBy: !task.completed ? myUid : firebase.firestore.FieldValue.delete(),
+      completedByName: !task.completed ? myName : firebase.firestore.FieldValue.delete()
     }).then(()=>{
       showToast(task.completed ? 'Marked as not done.' : 'Task completed.');
       closeTaskDetail();
@@ -1570,7 +1587,9 @@
   window.__toggleTask = function(taskId, completed){
     db.collection('tasks').doc(taskId).update({
       completed: !completed,
-      completedAt: !completed ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete()
+      completedAt: !completed ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete(),
+      completedBy: !completed ? myUid : firebase.firestore.FieldValue.delete(),
+      completedByName: !completed ? myName : firebase.firestore.FieldValue.delete()
     }).catch(err=>showToast('Could not update that: ' + (err.message || ''), true));
   };
   window.__deleteTask = async function(taskId){
@@ -1588,16 +1607,56 @@
       : (task.boardName ? `<span class="task-row-lead" style="color:var(--slate);">${esc(task.boardName)}</span>` : '');
     const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
       ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
+    // Who finished it is worth showing regardless of scope mode — even in
+    // "My tasks" (all created by you), a teammate could still be the one
+    // who actually checked it off for you.
+    const completedByBit = (task.completed && task.completedByName)
+      ? `<span class="task-row-completedby">✓ ${esc(task.completedByName)}</span>` : '';
     return `<div class="task-row${task.completed ? ' completed' : ''}" oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;" style="border-left:3px solid ${taskColorHex(task)}">
       <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="window.__toggleTask('${task.id}', ${task.completed})">
       ${ownerBadge}
       <div class="task-row-body" onclick="window.openTaskDetail('${task.id}', event)" style="cursor:pointer;">
         <div class="task-row-title">${priorityFlagHTML(task)} ${esc(task.title)}</div>
         ${leadLink}
+        ${completedByBit}
       </div>
       ${due ? `<div class="task-row-due${isOverdue ? ' overdue' : ''}">${esc(daysLabel(due))}</div>` : ''}
       <button type="button" class="task-row-delete" onclick="window.__deleteTask('${task.id}')" title="Delete task">✕</button>
     </div>`;
+  }
+
+  // ---------- Today view (just today, nothing else) ----------
+  function renderTodayView(){
+    const holder = document.getElementById('taskTodayHolder');
+    const today = todayISO();
+    const todaysTasks = searchFilter(allTasks).filter(t=>t.dueDate === today);
+    const open = todaysTasks.filter(t=>!t.completed);
+    const done = todaysTasks.filter(t=>t.completed);
+    const label = new Date(today + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+
+    let html = `<div class="today-header">
+      <div class="today-header-date">${esc(label)}</div>
+      ${todaysTasks.length ? `<div class="today-header-count">${open.length} open${done.length ? `, ${done.length} done` : ''}</div>` : ''}
+    </div>`;
+
+    if(todaysTasks.length === 0){
+      html += taskSearchQuery
+        ? `<div class="empty-state"><h3>No matches</h3><p>Nothing due today matches "${esc(taskSearchQuery)}".</p></div>`
+        : `<div class="empty-state"><h3>Nothing due today</h3><p>Enjoy the quiet — or click "+ New task" to add one.</p></div>`;
+      holder.innerHTML = html;
+      return;
+    }
+
+    const byPriority = (a,b)=>{
+      const rank = {high:0, medium:1};
+      return (rank[a.priority] ?? 2) - (rank[b.priority] ?? 2);
+    };
+    html += open.sort(byPriority).map(taskRowHTML).join('');
+    if(done.length){
+      html += `<div class="task-group-label" style="margin-top:22px;">Completed today <span class="task-group-count">${done.length}</span></div>`;
+      html += done.map(taskRowHTML).join('');
+    }
+    holder.innerHTML = html;
   }
 
   function renderTasks(){
