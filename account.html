@@ -1266,7 +1266,8 @@
     document.getElementById('emailField').value = user.email || '';
     usersCollection.doc(user.uid).get().then(doc=>{
       profileData = doc.exists ? doc.data() : {};
-      document.getElementById('fullName').value = profileData.name || user.displayName || '';
+      const resolvedName = profileData.name || user.displayName || '';
+      document.getElementById('fullName').value = resolvedName;
       document.getElementById('phoneField').value = profileData.phone || '';
       document.getElementById('roleField').value = profileData.role || '';
       document.getElementById('companyField').value = profileData.company || '';
@@ -1274,8 +1275,19 @@
       document.getElementById('languageField').dataset.lastValue = profileData.language || '';
       document.getElementById('locationField').value = profileData.location || '';
       currentPhotoDataUrl = profileData.photoURL || '';
-      updateAvatarPreview(document.getElementById('fullName').value, user.email);
+      updateAvatarPreview(resolvedName, user.email);
       if(profileData.language && profileData.language !== currentLang) setLanguage(profileData.language);
+      // Self-heal: an account created before this app correctly saved a
+      // name at signup can be stuck with a genuinely blank name in
+      // Firestore forever, with nothing to ever fix it — the field just
+      // silently stays empty every time. If the Auth account itself does
+      // have a real display name (or one existed in Firestore under a
+      // slightly different field), backfill it once, quietly, so the
+      // field is actually populated instead of leaving the person to
+      // rediscover and retype something they already provided once.
+      if(!profileData.name && resolvedName){
+        usersCollection.doc(user.uid).set({name: resolvedName}, {merge:true}).catch(()=>{});
+      }
     }).catch(err=>{
       console.error('Could not load profile', err);
       updateAvatarPreview('', user.email);
