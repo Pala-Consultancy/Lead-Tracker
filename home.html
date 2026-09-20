@@ -453,9 +453,14 @@
   .onboarding-step.done .onboarding-step-arrow{display:none;}
 
   /* ---------- Needs attention + Recent activity ---------- */
-  .home-insights-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;align-items:stretch;}
-  @media (max-width:900px){
+  .home-insights-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:22px;align-items:stretch;}
+  @media (max-width:1180px){
+    .home-insights-row{grid-template-columns:1fr 1fr;}
+    #todayTasksCard{grid-column:1/-1;}
+  }
+  @media (max-width:700px){
     .home-insights-row{grid-template-columns:1fr;}
+    #todayTasksCard{grid-column:auto;}
   }
   .attention-card, .activity-card{
     background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg, 16px);
@@ -478,6 +483,25 @@
   .attention-empty-title{font-weight:700;color:var(--ink);font-size:14.5px;}
   .attention-empty-sub{font-size:12.5px;color:var(--slate);margin-top:2px;}
   .attention-list{display:flex;flex-direction:column;gap:1px;}
+  .today-task-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .today-task-row:last-child{border-bottom:none;}
+  .today-task-checkbox{
+    appearance:none;-webkit-appearance:none;width:18px;height:18px;flex-shrink:0;border-radius:50%;
+    border:2px solid var(--border);background:var(--panel);cursor:pointer;position:relative;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .today-task-checkbox:checked{background:var(--teal);border-color:var(--teal);}
+  .today-task-checkbox:checked::after{
+    content:"";position:absolute;left:5px;top:1px;width:5px;height:9px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+  }
+  .today-task-title{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .today-task-lead{font-size:11px;color:var(--slate);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+  .today-tasks-viewall{
+    display:block;text-align:center;font-size:12.5px;font-weight:700;color:var(--teal);text-decoration:none;
+    margin-top:10px;padding-top:10px;border-top:1px solid var(--border);
+  }
+  .today-tasks-viewall:hover{text-decoration:underline;}
   .attention-item{
     display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:10px;
     text-decoration:none;color:inherit;transition:background .13s ease;
@@ -1519,6 +1543,16 @@
   </div>
 
   <div class="home-insights-row">
+    <div class="attention-card" id="todayTasksCard">
+      <div class="attention-header">
+        <h2>Today's tasks</h2>
+        <span class="attention-count-badge" id="todayTasksCountBadge" style="display:none">0</span>
+      </div>
+      <div id="todayTasksBody">
+        <div class="attention-loading">Checking today…</div>
+      </div>
+    </div>
+
     <div class="attention-card" id="attentionCard">
       <div class="attention-header">
         <h2>Needs attention</h2>
@@ -2141,6 +2175,15 @@
   let chatToastInitialized = false;
   let unsubscribeTeamMembersMap = null;
   let unsubscribeChatConversationsBoards = null;
+  // .toISOString() converts to UTC first, which can silently shift the
+  // calendar date by a day depending on the browser's local timezone.
+  // Building the string from local year/month/day directly avoids that.
+  function toLocalISO(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
   let workspaceId = null;
   let workspaceRef = null;
   let auth = null;
@@ -2961,6 +3004,74 @@
       });
     }
   }
+  function loadTodayTasks(){
+    const body = document.getElementById('todayTasksBody');
+    const badge = document.getElementById('todayTasksCountBadge');
+    if(!body || !db || !workspaceId || !auth.currentUser) return;
+    const myUid = auth.currentUser.uid;
+    const today = toLocalISO(new Date());
+    db.collection('tasks')
+      .where('workspaceId', '==', workspaceId)
+      .where('createdBy', '==', myUid)
+      .where('dueDate', '==', today)
+      .where('completed', '==', false)
+      .get().then(snap=>{
+        const tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        if(tasks.length === 0){
+          badge.style.display = 'none';
+          body.innerHTML = `<div class="attention-empty">
+            <div class="attention-empty-icon">✅</div>
+            <div class="attention-empty-title">Nothing due today</div>
+            <div class="attention-empty-sub">Enjoy the quiet, or add one from Tasks.</div>
+          </div>`;
+          return;
+        }
+        badge.style.display = '';
+        badge.textContent = tasks.length;
+        body.innerHTML = `<div class="attention-list">
+          ${tasks.map(t=>{
+            const leadBit = (t.boardId && t.leadId)
+              ? `<span class="today-task-lead">${esc(t.leadName || 'Lead')}${t.boardName ? ' · ' + esc(t.boardName) : ''}</span>`
+              : '';
+            return `<div class="today-task-row">
+              <input type="checkbox" class="today-task-checkbox" onchange="window.__completeTodayTask('${t.id}', this)">
+              <div style="flex:1;min-width:0;">
+                <div class="today-task-title">${esc(t.title)}</div>
+                ${leadBit}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <a class="today-tasks-viewall" href="tasks.html?from=home">View all tasks →</a>`;
+      }).catch(err=>{
+        console.error(err);
+        body.innerHTML = `<div class="attention-empty"><div class="attention-empty-sub">Could not load today's tasks.</div></div>`;
+      });
+  }
+  window.__completeTodayTask = function(taskId, checkboxEl){
+    checkboxEl.disabled = true;
+    const myName = (document.getElementById('welcomeName') || {}).textContent || 'You';
+    db.collection('tasks').doc(taskId).update({
+      completed: true,
+      completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      completedBy: auth.currentUser ? auth.currentUser.uid : null,
+      completedByName: myName
+    }).then(()=>{
+      const row = checkboxEl.closest('.today-task-row');
+      if(row){
+        row.style.transition = 'opacity .25s ease';
+        row.style.opacity = '0';
+        setTimeout(loadTodayTasks, 250);
+      } else {
+        loadTodayTasks();
+      }
+    }).catch(err=>{
+      console.error(err);
+      checkboxEl.disabled = false;
+      checkboxEl.checked = false;
+    });
+  };
+
   function loadNeedsAttention(){
     const body = document.getElementById('attentionBody');
     const badge = document.getElementById('attentionCountBadge');
@@ -2982,7 +3093,7 @@
     }).then(({boards, results})=>{
       renderOnboardingIfNeeded(boards, results);
       const now = Date.now();
-      const todayStr = new Date().toISOString().slice(0,10);
+      const todayStr = toLocalISO(new Date());
       const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
       const items = [];
       const activity = [];
@@ -3893,6 +4004,7 @@
           loadCampaignsCount();
           loadScheduledCount();
           loadNeedsAttention();
+          loadTodayTasks();
           requestNotificationPermissionIfNeeded();
         }).catch(err=>{
           console.error('Could not resolve workspace', err);
