@@ -1178,6 +1178,16 @@
       <button type="submit" class="btn-primary" data-i18n="sendResetLink">Send reset link</button>
       <button type="button" class="login-forgot-link" id="backToSignInLink" data-i18n="backToSignIn">← Back to sign in</button>
     </form>
+    <form id="emailTwoStepChallengeForm" style="display:none">
+      <div class="login-sub">We sent a 6-digit code to your email. Enter it below to finish signing in.</div>
+      <div class="field">
+        <label for="emailTwoStepChallengeCode">Verification code</label>
+        <input id="emailTwoStepChallengeCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" style="font-size:18px;letter-spacing:4px;text-align:center;" required>
+      </div>
+      <button type="submit" class="btn-primary">Verify and sign in</button>
+      <button type="button" class="login-forgot-link" id="emailTwoStepResendChallengeLink">Didn't get it? Resend code</button>
+      <button type="button" class="login-forgot-link" id="emailTwoStepChallengeCancelLink">← Back to sign in</button>
+    </form>
     <div class="login-footer-note">
       <span data-i18n="noAccountNote">Don't have an account?</span>
       <a href="signup.html" class="login-forgot-link" style="display:inline;padding:0 0 0 4px" data-i18n="createAccountLink">Create one</a>
@@ -2643,6 +2653,35 @@
     loginScreen.style.display = 'flex';
     appRoot.style.display = 'none';
   } else {
+    // Email two-step is a custom system (Firebase's native multi-factor
+    // auth doesn't support "email a code" as a factor type) — so unlike
+    // an authenticator-app second factor, which Firebase itself blocks
+    // sign-in for automatically, this has to be enforced here explicitly:
+    // right after password auth succeeds, before ever redirecting to
+    // home.html, check the member doc and gate on it ourselves.
+    let sendEmailTwoStepCodeFn, verifyEmailTwoStepCodeFn;
+    try{
+      sendEmailTwoStepCodeFn = firebase.functions().httpsCallable('sendEmailTwoStepCode');
+      verifyEmailTwoStepCodeFn = firebase.functions().httpsCallable('verifyEmailTwoStepCode');
+    }catch(e){}
+
+    function completeLoginRedirect(){
+      try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
+      location.href = 'home.html';
+    }
+
+    function showEmailTwoStepChallenge(){
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('resetForm').style.display = 'none';
+      document.getElementById('emailTwoStepChallengeForm').style.display = '';
+      document.getElementById('emailTwoStepChallengeCode').value = '';
+      document.getElementById('emailTwoStepChallengeCode').focus();
+    }
+    function hideEmailTwoStepChallenge(){
+      document.getElementById('emailTwoStepChallengeForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = '';
+    }
+
     document.getElementById('loginForm').addEventListener('submit', (e)=>{
       e.preventDefault();
       clearLoginError();
@@ -2651,15 +2690,80 @@
       const submitBtn = e.target.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
-      auth.signInWithEmailAndPassword(email, password).then(()=>{
-        try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
-        location.href = 'home.html';
+      auth.signInWithEmailAndPassword(email, password).then(async (cred)=>{
+        const uid = cred.user.uid;
+        let emailTwoStepOn = false;
+        try{
+          const directoryDoc = await db.collection('userDirectory').doc(uid).get();
+          const wsId = directoryDoc.exists ? directoryDoc.data().workspaceId : null;
+          if(wsId){
+            const memberDoc = await db.doc(`workspaces/${wsId}/members/${uid}`).get();
+            emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
+          }
+        }catch(err){
+          // If we can't even check, fail safe by requiring the challenge
+          // rather than silently skipping a security step the user turned on.
+          emailTwoStepOn = true;
+        }
+        if(emailTwoStepOn){
+          try{
+            await sendEmailTwoStepCodeFn({purpose: 'login'});
+          }catch(err){
+            showLoginError('Could not send your verification code. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = t('signIn');
+            return;
+          }
+          showEmailTwoStepChallenge();
+          submitBtn.disabled = false;
+          submitBtn.textContent = t('signIn');
+          return;
+        }
+        completeLoginRedirect();
       }).catch(err=>{
         showLoginError(t('incorrectLogin'));
-      }).finally(()=>{
         submitBtn.disabled = false;
         submitBtn.textContent = t('signIn');
       });
+    });
+
+    document.getElementById('emailTwoStepChallengeForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      clearLoginError();
+      const code = document.getElementById('emailTwoStepChallengeCode').value.trim();
+      if(!/^\d{6}$/.test(code)){
+        showLoginError('Enter the 6-digit code from your email.');
+        return;
+      }
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+      verifyEmailTwoStepCodeFn({code, purpose: 'login'}).then(()=>{
+        completeLoginRedirect();
+      }).catch(err=>{
+        showLoginError((err && err.message) || "That code didn't work.");
+      }).finally(()=>{
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify and sign in';
+      });
+    });
+    document.getElementById('emailTwoStepResendChallengeLink').addEventListener('click', ()=>{
+      const link = document.getElementById('emailTwoStepResendChallengeLink');
+      link.disabled = true;
+      link.textContent = 'Sending...';
+      sendEmailTwoStepCodeFn({purpose: 'login'}).then(()=>{
+        showToast('Sent a new code.');
+      }).catch(()=>{
+        showLoginError('Could not resend the code.');
+      }).finally(()=>{
+        link.disabled = false;
+        link.textContent = "Didn't get it? Resend code";
+      });
+    });
+    document.getElementById('emailTwoStepChallengeCancelLink').addEventListener('click', ()=>{
+      clearLoginError();
+      auth.signOut();
+      hideEmailTwoStepChallenge();
     });
     // ---------- Forgot password ----------
     const loginFormEl = document.getElementById('loginForm');
@@ -3436,7 +3540,19 @@
       if(ringProgress) ringProgress.style.strokeDashoffset = CIRCUMFERENCE * (1 - frac);
       if(idleModal) idleModal.classList.toggle('critical', countdownRemaining <= 10);
     }
+    // setTimeout alone isn't enough here — browsers pause or heavily
+    // throttle JS timers once a tab is backgrounded or the OS suspends
+    // (closing a laptop lid, standby, etc.), so a 10-minute countdown
+    // running when the lid closes might not fire until long after the
+    // laptop is reopened, if at all. Recording a real wall-clock
+    // timestamp on every bit of activity, and checking the gap against
+    // it the moment the tab becomes visible again, catches that case.
+    var LAST_ACTIVE_KEY = 'ptLastActiveAt';
+    function markActive(){
+      try{ localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now())); }catch(e){}
+    }
     function resetIdleTimer(){
+      markActive();
       clearTimeout(idleTimer);
       idleTimer = setTimeout(showIdleWarning, IDLE_LIMIT_MS);
     }
@@ -3475,6 +3591,22 @@
       document.addEventListener(evt, function(){
         if(idleOverlay.style.display !== 'flex') resetIdleTimer();
       }, {passive:true});
+    });
+    // The actual fix: when the tab/laptop wakes up, compare real elapsed
+    // wall-clock time against the idle limit instead of trusting a timer
+    // that may have been paused the whole time it was closed or asleep.
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) return;
+      var last = 0;
+      try{ last = parseInt(localStorage.getItem(LAST_ACTIVE_KEY), 10) || 0; }catch(e){}
+      var elapsed = Date.now() - last;
+      if(elapsed >= IDLE_LIMIT_MS){
+        clearInterval(countdownInterval);
+        idleOverlay.style.display = 'none';
+        if(auth && auth.currentUser) auth.signOut();
+      } else {
+        resetIdleTimer();
+      }
     });
     resetIdleTimer();
   })();

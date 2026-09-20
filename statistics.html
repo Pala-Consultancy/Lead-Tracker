@@ -3314,7 +3314,19 @@
       if(ringProgress) ringProgress.style.strokeDashoffset = CIRCUMFERENCE * (1 - frac);
       if(idleModal) idleModal.classList.toggle('critical', countdownRemaining <= 10);
     }
+    // setTimeout alone isn't enough here — browsers pause or heavily
+    // throttle JS timers once a tab is backgrounded or the OS suspends
+    // (closing a laptop lid, standby, etc.), so a 10-minute countdown
+    // running when the lid closes might not fire until long after the
+    // laptop is reopened, if at all. Recording a real wall-clock
+    // timestamp on every bit of activity, and checking the gap against
+    // it the moment the tab becomes visible again, catches that case.
+    var LAST_ACTIVE_KEY = 'ptLastActiveAt';
+    function markActive(){
+      try{ localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now())); }catch(e){}
+    }
     function resetIdleTimer(){
+      markActive();
       clearTimeout(idleTimer);
       idleTimer = setTimeout(showIdleWarning, IDLE_LIMIT_MS);
     }
@@ -3353,6 +3365,22 @@
       document.addEventListener(evt, function(){
         if(idleOverlay.style.display !== 'flex') resetIdleTimer();
       }, {passive:true});
+    });
+    // The actual fix: when the tab/laptop wakes up, compare real elapsed
+    // wall-clock time against the idle limit instead of trusting a timer
+    // that may have been paused the whole time it was closed or asleep.
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) return;
+      var last = 0;
+      try{ last = parseInt(localStorage.getItem(LAST_ACTIVE_KEY), 10) || 0; }catch(e){}
+      var elapsed = Date.now() - last;
+      if(elapsed >= IDLE_LIMIT_MS){
+        clearInterval(countdownInterval);
+        idleOverlay.style.display = 'none';
+        if(auth && auth.currentUser) auth.signOut();
+      } else {
+        resetIdleTimer();
+      }
     });
     resetIdleTimer();
   })();
