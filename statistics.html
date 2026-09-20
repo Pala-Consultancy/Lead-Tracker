@@ -2747,13 +2747,15 @@
       <div class="section nav-anchor" id="sec-countries">
         <h2 class="section-title"><div class="section-icon" style="background:var(--c-amber-bg);color:var(--c-tan-fg)">${ICONS.tag}</div>${t('topCountries')}</h2>
         <div class="country-map-layout">
-          <div class="table-wrap" style="--table-accent:var(--c-amber-fg)">
-            <table>
-              <thead><tr><th>${t('th_country')}</th><th>${t('th_leads')}</th><th>${t('th_revenue')}</th></tr></thead>
-              <tbody>${countryTableHTML}</tbody>
-            </table>
+          <div class="country-table-col">
+            <div class="table-wrap" style="--table-accent:var(--c-amber-fg)">
+              <table>
+                <thead><tr><th>${t('th_country')}</th><th>${t('th_leads')}</th><th>${t('th_revenue')}</th></tr></thead>
+                <tbody>${countryTableHTML}</tbody>
+              </table>
+            </div>
+            ${topCountryCallout}
           </div>
-          ${topCountryCallout}
           <div class="world-map-wrap" id="worldMapWrap">
             <div class="world-map-live-badge"><span class="world-map-live-dot"></span>LIVE</div>
             <div id="worldMapContainer"><div class="world-map-loading">${t('loadingMap')}</div></div>
@@ -3258,6 +3260,9 @@
     }
     auth.onAuthStateChanged(user=>{
       if(user){
+        let justLoggedInHere = false;
+        try{ justLoggedInHere = sessionStorage.getItem('ptJustLoggedIn') === '1'; }catch(e){}
+        if(justLoggedInHere) return;
         pageLoader.style.display = 'none';
         const backLink = document.getElementById('backLink');
         backLink.href = boardId ? `dashboard.html?board=${encodeURIComponent(boardId)}` : 'boards.html';
