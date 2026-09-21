@@ -1675,7 +1675,12 @@
     unsubscribeOrgPlan = workspaceRef.onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
       orgPlan = data.plan || 'growth';
-      subscriptionActive = data.subscriptionActive === true;
+      // billingExempt is a manual override for workspaces that shouldn't
+      // be gated at all — the builder's own workspace, internal/demo
+      // accounts, etc. Set directly on the workspace doc in Firestore
+      // Console (never through any UI), and always wins regardless of
+      // what Stripe actually says.
+      subscriptionActive = data.billingExempt === true || data.subscriptionActive === true;
       if(auth && auth.currentUser && membersCollection){
         membersCollection.doc(auth.currentUser.uid).get().then(memberDoc=>{
           currentUserIsAdmin = memberDoc.exists && memberDoc.data().isAdmin === true;
