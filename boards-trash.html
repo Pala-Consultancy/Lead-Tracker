@@ -611,6 +611,27 @@
 
   /* ---------- Toasts ---------- */
   /* ---------- In-app confirm modal (never use native browser confirm()) ---------- */
+  /* Deliberately no skip/close button and no click-outside-to-dismiss —
+     unlike other modals in this file, this is meant to be a genuine,
+     unavoidable block, not something someone can brush past. z-index 900
+     keeps it above every other overlay in this file. */
+  .subscription-gate-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.75);backdrop-filter:blur(6px);z-index:900;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .subscription-gate-card{
+    background:var(--panel);border-radius:20px;max-width:440px;width:100%;
+    box-shadow:0 30px 80px rgba(15,23,32,0.4);padding:36px 32px;text-align:center;
+  }
+  .subscription-gate-icon{
+    width:56px;height:56px;border-radius:16px;margin:0 auto 18px;
+    background:var(--c-red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;
+  }
+  .subscription-gate-icon svg{width:26px;height:26px;}
+  .subscription-gate-card h2{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--ink);margin:0 0 10px;}
+  .subscription-gate-card p{font-size:13.5px;line-height:1.6;color:var(--slate);margin:0 0 20px;}
+  .subscription-gate-card .btn-primary{display:inline-block;text-decoration:none;}
+
   .confirm-overlay{
     position:fixed;inset:0;background:rgba(15,23,32,0.55);z-index:500;
     display:flex;align-items:center;justify-content:center;padding:20px;
@@ -880,13 +901,22 @@
   }
   @keyframes ob-ai-reply-text-anim{0%,78%{opacity:0;transform:translateY(4px);}88%,100%{opacity:1;transform:translateY(0);}}
 
+  /* The confetti overlay is deliberately its own full-screen layer,
+     separate from .onboarding-card — appending pieces as children of the
+     card meant they were clipped by its overflow:hidden and boxed into
+     a 480px-wide card instead of actually celebrating across the
+     screen. This sits above the onboarding overlay itself (z-index 750
+     vs 700) and is never touched by that overlay's backdrop-filter,
+     since backdrop-filter only blurs what's behind an element, not
+     something layered on top of it. */
+  .ob-confetti-overlay{position:fixed;inset:0;z-index:750;pointer-events:none;overflow:hidden;}
   .ob-confetti-piece{
-    position:absolute;top:-10px;border-radius:2px;pointer-events:none;z-index:10;
-    animation:ob-confetti-fall 1.4s ease-in forwards;
+    position:absolute;top:-20px;border-radius:2px;
+    animation:ob-confetti-fall 1.8s ease-in forwards;
   }
   @keyframes ob-confetti-fall{
     0%{transform:translateY(0) rotate(0deg);opacity:1;}
-    100%{transform:translateY(340px) rotate(540deg);opacity:0;}
+    100%{transform:translateY(80vh) rotate(540deg);opacity:0;}
   }
 
   .onboarding-slide h2{font-family:'Sora',sans-serif;font-size:19px;margin:0 0 10px;color:var(--ink);}
@@ -1328,6 +1358,27 @@
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
+
+<div class="subscription-gate-overlay" id="subscriptionGateOverlay" style="display:none">
+  <div class="subscription-gate-card">
+    <div class="subscription-gate-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div id="subscriptionGateCheckingView">
+      <h2>Checking your subscription…</h2>
+      <p>One moment.</p>
+    </div>
+    <div id="subscriptionGateAdminView" style="display:none">
+      <h2>Your workspace needs an active subscription</h2>
+      <p>This covers everyone on your team — one bill for the whole workspace, and it scales automatically as people join or leave. Subscribe to unlock PalaTrack for your whole team.</p>
+      <a class="btn btn-primary" href="billing.html">Subscribe now</a>
+    </div>
+    <div id="subscriptionGateMemberView" style="display:none">
+      <h2>Your workspace's subscription isn't active</h2>
+      <p>Only a workspace admin can manage billing. Ask them to subscribe on the Billing page to unlock PalaTrack again for the whole team.</p>
+    </div>
+  </div>
+</div>
 <div class="chat-notify-stack" id="chatNotifyStack"></div>
 
 <div class="onboarding-overlay" id="onboardingOverlay" style="display:none">
@@ -2193,6 +2244,37 @@
     });
   }
   let orgPlan = 'growth';
+  // Every workspace now needs an active seat-based subscription to use
+  // the app at all — there's no free tier to quietly fall back to.
+  let subscriptionActive = null; // null = not checked yet, don't flash the gate before we actually know
+  let currentUserIsAdmin = false;
+  // The overlay is shown in a neutral "checking" state the instant the
+  // app itself becomes visible (see showSubscriptionCheckingGate, called
+  // synchronously at the same moment as revealing appRoot) — not left
+  // hidden until this async check resolves. That's what actually closes
+  // the flash-of-unblocked-app gap: there's no longer a window where the
+  // app is visible with nothing covering it while this is still pending.
+  function updateSubscriptionGate(){
+    const overlay = document.getElementById('subscriptionGateOverlay');
+    if(!overlay) return;
+    if(subscriptionActive === null) return; // still checking — leave the checking view as shown
+    if(subscriptionActive){
+      overlay.style.display = 'none';
+    } else {
+      overlay.style.display = 'flex';
+      document.getElementById('subscriptionGateCheckingView').style.display = 'none';
+      document.getElementById('subscriptionGateAdminView').style.display = currentUserIsAdmin ? '' : 'none';
+      document.getElementById('subscriptionGateMemberView').style.display = currentUserIsAdmin ? 'none' : '';
+    }
+  }
+  function showSubscriptionCheckingGate(){
+    const overlay = document.getElementById('subscriptionGateOverlay');
+    if(!overlay) return;
+    overlay.style.display = 'flex';
+    document.getElementById('subscriptionGateCheckingView').style.display = '';
+    document.getElementById('subscriptionGateAdminView').style.display = 'none';
+    document.getElementById('subscriptionGateMemberView').style.display = 'none';
+  }
   function initBoardsSync(){
     if(!firebaseConnected) return;
     unsubscribeBoards = boardsCollection.orderBy('createdAt','desc').onSnapshot(snapshot=>{
@@ -2216,6 +2298,15 @@
     unsubscribeOrgPlan = workspaceRef.onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
       orgPlan = data.plan || 'growth';
+      subscriptionActive = data.subscriptionActive === true;
+      if(auth && auth.currentUser && membersCollection){
+        membersCollection.doc(auth.currentUser.uid).get().then(memberDoc=>{
+          currentUserIsAdmin = memberDoc.exists && memberDoc.data().isAdmin === true;
+          updateSubscriptionGate();
+        }).catch(()=>{ updateSubscriptionGate(); });
+      } else {
+        updateSubscriptionGate();
+      }
       const isCancelled = orgPlan === 'cancelled' || orgPlan === 'free';
       if(isCancelled && currentLang !== 'en'){
         setLanguage('en');
@@ -2714,19 +2805,21 @@
       nextBtn.textContent = onboardingIndex === ONBOARDING_SLIDES.length - 1 ? 'Get started' : 'Next →';
     }
     function onboardingConfettiBurst(){
-      const card = document.querySelector('.onboarding-card');
-      if(!card) return;
+      const overlay = document.createElement('div');
+      overlay.className = 'ob-confetti-overlay';
+      overlay.id = 'obConfettiOverlay';
+      document.body.appendChild(overlay);
       const colors = ['#1B59A5','#7A4FB5','#FF9D00','#1F5C4F','#C0392B'];
-      for(let i=0;i<28;i++){
+      for(let i=0;i<60;i++){
         const piece = document.createElement('div');
         piece.className = 'ob-confetti-piece';
         piece.style.left = Math.random()*100 + '%';
         piece.style.background = colors[Math.floor(Math.random()*colors.length)];
-        piece.style.animationDelay = (Math.random()*0.3) + 's';
-        piece.style.width = piece.style.height = (5 + Math.random()*5) + 'px';
-        card.appendChild(piece);
-        setTimeout(()=>piece.remove(), 1500);
+        piece.style.animationDelay = (Math.random()*0.4) + 's';
+        piece.style.width = piece.style.height = (5 + Math.random()*6) + 'px';
+        overlay.appendChild(piece);
       }
+      setTimeout(()=>overlay.remove(), 2300);
     }
     function completeOnboarding(){
       document.getElementById('onboardingOverlay').style.display = 'none';
@@ -2871,6 +2964,7 @@
         pageLoader.style.display = 'none';
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
+        showSubscriptionCheckingGate();
         appRoot.classList.remove('fade-in');
         void appRoot.offsetWidth;
         appRoot.classList.add('fade-in');

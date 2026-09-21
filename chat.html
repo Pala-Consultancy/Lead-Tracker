@@ -713,6 +713,27 @@
   .empty-state h3{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin:0 0 6px;}
   .empty-state p{font-size:13px;margin:0;}
 
+  /* Deliberately no skip/close button and no click-outside-to-dismiss —
+     unlike other modals in this file, this is meant to be a genuine,
+     unavoidable block, not something someone can brush past. z-index 900
+     keeps it above every other overlay in this file. */
+  .subscription-gate-overlay{
+    position:fixed;inset:0;background:rgba(15,23,32,0.75);backdrop-filter:blur(6px);z-index:900;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .subscription-gate-card{
+    background:var(--panel);border-radius:20px;max-width:440px;width:100%;
+    box-shadow:0 30px 80px rgba(15,23,32,0.4);padding:36px 32px;text-align:center;
+  }
+  .subscription-gate-icon{
+    width:56px;height:56px;border-radius:16px;margin:0 auto 18px;
+    background:var(--c-red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;
+  }
+  .subscription-gate-icon svg{width:26px;height:26px;}
+  .subscription-gate-card h2{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--ink);margin:0 0 10px;}
+  .subscription-gate-card p{font-size:13.5px;line-height:1.6;color:var(--slate);margin:0 0 20px;}
+  .subscription-gate-card .btn-primary{display:inline-block;text-decoration:none;}
+
   .confirm-overlay{
     position:fixed;inset:0;background:rgba(15,23,32,0.55);z-index:500;
     display:flex;align-items:center;justify-content:center;padding:20px;
@@ -997,6 +1018,27 @@
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
+
+<div class="subscription-gate-overlay" id="subscriptionGateOverlay" style="display:none">
+  <div class="subscription-gate-card">
+    <div class="subscription-gate-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div id="subscriptionGateCheckingView">
+      <h2>Checking your subscription…</h2>
+      <p>One moment.</p>
+    </div>
+    <div id="subscriptionGateAdminView" style="display:none">
+      <h2>Your workspace needs an active subscription</h2>
+      <p>This covers everyone on your team — one bill for the whole workspace, and it scales automatically as people join or leave. Subscribe to unlock PalaTrack for your whole team.</p>
+      <a class="btn btn-primary" href="billing.html">Subscribe now</a>
+    </div>
+    <div id="subscriptionGateMemberView" style="display:none">
+      <h2>Your workspace's subscription isn't active</h2>
+      <p>Only a workspace admin can manage billing. Ask them to subscribe on the Billing page to unlock PalaTrack again for the whole team.</p>
+    </div>
+  </div>
+</div>
 
 <div class="chat-limit-overlay" id="newGroupOverlay" style="display:none">
   <div class="chat-limit-card" style="text-align:left;max-width:380px;">
@@ -1353,6 +1395,36 @@
   let currentUserDisplayName = '';
   let currentUserPhotoURL = '';
   let directMessagesCollection = null;
+  // Every workspace now needs an active seat-based subscription to use
+  // the app at all — there's no free tier to quietly fall back to.
+  let subscriptionActive = null; // null = not checked yet, don't flash the gate before we actually know
+  // The overlay is shown in a neutral "checking" state the instant the
+  // app itself becomes visible (see showSubscriptionCheckingGate, called
+  // synchronously at the same moment as revealing appRoot) — not left
+  // hidden until this async check resolves. That's what actually closes
+  // the flash-of-unblocked-app gap: there's no longer a window where the
+  // app is visible with nothing covering it while this is still pending.
+  function updateSubscriptionGate(){
+    const overlay = document.getElementById('subscriptionGateOverlay');
+    if(!overlay) return;
+    if(subscriptionActive === null) return; // still checking — leave the checking view as shown
+    if(subscriptionActive){
+      overlay.style.display = 'none';
+    } else {
+      overlay.style.display = 'flex';
+      document.getElementById('subscriptionGateCheckingView').style.display = 'none';
+      document.getElementById('subscriptionGateAdminView').style.display = currentUserIsAdmin ? '' : 'none';
+      document.getElementById('subscriptionGateMemberView').style.display = currentUserIsAdmin ? 'none' : '';
+    }
+  }
+  function showSubscriptionCheckingGate(){
+    const overlay = document.getElementById('subscriptionGateOverlay');
+    if(!overlay) return;
+    overlay.style.display = 'flex';
+    document.getElementById('subscriptionGateCheckingView').style.display = '';
+    document.getElementById('subscriptionGateAdminView').style.display = 'none';
+    document.getElementById('subscriptionGateMemberView').style.display = 'none';
+  }
   let groupChatsCollection = null;
   let chatActiveGroupId = null;
   let groupChatsMap = {};
@@ -2238,6 +2310,8 @@
     unsubscribeChatOrgPlan = workspaceRef.onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
       currentOrgPlan = data.plan || 'growth';
+      subscriptionActive = data.subscriptionActive === true;
+      updateSubscriptionGate();
       document.getElementById('chatLockedState').style.display = 'none';
       document.getElementById('chatSidebar').style.display = '';
       document.getElementById('chatMain').style.display = 'flex';
@@ -2453,6 +2527,7 @@
         currentUid = user.uid;
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
+        showSubscriptionCheckingGate();
         appRoot.classList.remove('fade-in');
         void appRoot.offsetWidth;
         appRoot.classList.add('fade-in');
