@@ -1367,6 +1367,19 @@
     document.getElementById('subscriptionGateCheckingView').style.display = '';
     document.getElementById('subscriptionGateAdminView').style.display = 'none';
     document.getElementById('subscriptionGateMemberView').style.display = 'none';
+    // Safety net: if the actual check (loadOrgPlan's Firestore read) never
+    // comes back — a permissions hiccup, a dropped connection, anything —
+    // this must never leave someone stuck staring at "Checking..."
+    // forever with no way out. Fail OPEN after a few seconds rather than
+    // trap them; being wrong in the permissive direction for a few
+    // seconds is far better than a dead end they can't click past.
+    clearTimeout(window.__subscriptionCheckFailsafe);
+    window.__subscriptionCheckFailsafe = setTimeout(function(){
+      if(subscriptionActive === null){
+        subscriptionActive = true;
+        updateSubscriptionGate();
+      }
+    }, 6000);
   }
   let unsubscribeOrgPlan = null;
   function loadOrgPlan(){
@@ -2196,7 +2209,11 @@
         if(justLoggedInHere) return;
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
-        showSubscriptionCheckingGate();
+        // Settings pages (this one, and Notification Settings) are
+        // deliberately exempt from the subscription gate entirely — an
+        // unsubscribed workspace still needs a way to reach billing and
+        // manage account basics, so these never show the checking gate
+        // or go into read-only mode, unlike every other page.
         appRoot.classList.remove('fade-in');
         void appRoot.offsetWidth;
         appRoot.classList.add('fade-in');

@@ -676,6 +676,32 @@
   .subscription-gate-card h2{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--ink);margin:0 0 10px;}
   .subscription-gate-card p{font-size:13.5px;line-height:1.6;color:var(--slate);margin:0 0 20px;}
   .subscription-gate-card .btn-primary{display:inline-block;text-decoration:none;}
+  .subscription-gate-dismiss-btn{cursor:pointer;}
+
+  /* Persistent reminder once the full-screen notice has been dismissed —
+     stays up the whole time the workspace is unsubscribed, since
+     read-only mode itself is otherwise easy to forget about. */
+  .read-only-banner{
+    position:fixed;top:0;left:0;right:0;z-index:850;display:none;align-items:center;justify-content:center;
+    gap:10px;background:var(--c-red-bg);color:var(--red);padding:10px 16px;font-size:12.5px;font-weight:600;
+    text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08);
+  }
+  .read-only-banner svg{width:15px;height:15px;flex-shrink:0;}
+  .read-only-banner a{color:var(--red);font-weight:800;text-decoration:underline;flex-shrink:0;}
+  /* Best-effort visual cue on top of the real enforcement, which is in
+     Firestore's rules, not here — dims the page's obvious "create new
+     thing" entry points when in read-only mode. Anything not covered by
+     this selector list still can't actually save anything; the rules
+     don't care what the UI looks like. */
+  body.workspace-read-only .new-seq-btn,
+  body.workspace-read-only #newBoardBtn,
+  body.workspace-read-only #createBoardCard,
+  body.workspace-read-only .create-board-card,
+  body.workspace-read-only #saveTaskBtn,
+  body.workspace-read-only #newTaskBtn,
+  body.workspace-read-only #quickAddSaveBtn{
+    opacity:.5;pointer-events:none;filter:grayscale(.4);
+  }
 
   .onboarding-overlay{
     position:fixed;inset:0;background:rgba(15,23,32,0.6);backdrop-filter:blur(4px);z-index:700;
@@ -1563,14 +1589,22 @@
     </div>
     <div id="subscriptionGateAdminView" style="display:none">
       <h2>Your workspace needs an active subscription</h2>
-      <p>This covers everyone on your team — one bill for the whole workspace, and it scales automatically as people join or leave. Subscribe to unlock PalaTrack for your whole team.</p>
+      <p>This covers everyone on your team — one bill for the whole workspace, and it scales automatically as people join or leave. You can look around, but creating or changing anything is turned off until you subscribe.</p>
       <a class="btn btn-primary" href="billing.html">Subscribe now</a>
+      <button type="button" class="btn subscription-gate-dismiss-btn" style="margin-top:8px;display:block;width:100%;box-sizing:border-box;">Got it!</button>
     </div>
     <div id="subscriptionGateMemberView" style="display:none">
       <h2>Your workspace's subscription isn't active</h2>
-      <p>Only a workspace admin can manage billing. Ask them to subscribe on the Billing page to unlock PalaTrack again for the whole team.</p>
+      <p>Only a workspace admin can manage billing. You can look around, but creating or changing anything is turned off until they subscribe again on the Billing page.</p>
+      <button type="button" class="btn btn-primary subscription-gate-dismiss-btn">Got it!</button>
     </div>
   </div>
+</div>
+
+<div class="read-only-banner" id="readOnlyBanner" style="display:none">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  <span>Your workspace's subscription isn't active — you can look around, but creating or changing anything is turned off.</span>
+  <a href="billing.html">Subscribe</a>
 </div>
 
 <div class="onboarding-overlay" id="onboardingOverlay" style="display:none">
@@ -2675,19 +2709,44 @@
   // hidden until this async check resolves. That's what actually closes
   // the flash-of-unblocked-app gap: there's no longer a window where the
   // app is visible with nothing covering it while this is still pending.
+  // Unsubscribed no longer means fully locked out — someone can dismiss
+  // the notice and look around, but read-only mode (below) is what
+  // actually prevents them from creating or changing anything. That
+  // enforcement lives in Firestore's own security rules, not here — this
+  // is the visible layer on top, not the real gate.
+  let subscriptionGateDismissed = false;
+  function setReadOnlyMode(isReadOnly){
+    document.body.classList.toggle('workspace-read-only', isReadOnly);
+    const banner = document.getElementById('readOnlyBanner');
+    if(banner) banner.style.display = isReadOnly ? 'flex' : 'none';
+  }
   function updateSubscriptionGate(){
     const overlay = document.getElementById('subscriptionGateOverlay');
     if(!overlay) return;
     if(subscriptionActive === null) return; // still checking — leave the checking view as shown
     if(subscriptionActive){
       overlay.style.display = 'none';
+      subscriptionGateDismissed = false; // reset so it shows fresh if this ever lapses again later
+      setReadOnlyMode(false);
     } else {
-      overlay.style.display = 'flex';
-      document.getElementById('subscriptionGateCheckingView').style.display = 'none';
-      document.getElementById('subscriptionGateAdminView').style.display = currentUserIsAdmin ? '' : 'none';
-      document.getElementById('subscriptionGateMemberView').style.display = currentUserIsAdmin ? 'none' : '';
+      setReadOnlyMode(true);
+      if(subscriptionGateDismissed){
+        overlay.style.display = 'none';
+      } else {
+        overlay.style.display = 'flex';
+        document.getElementById('subscriptionGateCheckingView').style.display = 'none';
+        document.getElementById('subscriptionGateAdminView').style.display = currentUserIsAdmin ? '' : 'none';
+        document.getElementById('subscriptionGateMemberView').style.display = currentUserIsAdmin ? 'none' : '';
+      }
     }
   }
+  function dismissSubscriptionGate(){
+    subscriptionGateDismissed = true;
+    document.getElementById('subscriptionGateOverlay').style.display = 'none';
+  }
+  document.querySelectorAll('.subscription-gate-dismiss-btn').forEach(function(btn){
+    btn.addEventListener('click', dismissSubscriptionGate);
+  });
   function showSubscriptionCheckingGate(){
     const overlay = document.getElementById('subscriptionGateOverlay');
     if(!overlay) return;
@@ -2695,6 +2754,19 @@
     document.getElementById('subscriptionGateCheckingView').style.display = '';
     document.getElementById('subscriptionGateAdminView').style.display = 'none';
     document.getElementById('subscriptionGateMemberView').style.display = 'none';
+    // Safety net: if the actual check (loadOrgPlan's Firestore read) never
+    // comes back — a permissions hiccup, a dropped connection, anything —
+    // this must never leave someone stuck staring at "Checking..."
+    // forever with no way out. Fail OPEN after a few seconds rather than
+    // trap them; being wrong in the permissive direction for a few
+    // seconds is far better than a dead end they can't click past.
+    clearTimeout(window.__subscriptionCheckFailsafe);
+    window.__subscriptionCheckFailsafe = setTimeout(function(){
+      if(subscriptionActive === null){
+        subscriptionActive = true;
+        updateSubscriptionGate();
+      }
+    }, 6000);
   }
   function loadOrgPlan(){
     if(!db) return;
