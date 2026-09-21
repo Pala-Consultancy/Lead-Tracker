@@ -776,46 +776,9 @@
     </form>
   </div>
 
-  <div class="password-card" id="twoStepCard">
-    <h3>🔐 Two-step verification</h3>
-    <p>Add an authenticator app (like Google Authenticator or Authy) as a second step when signing in, on top of your password.</p>
-    <div id="twoStepStatus" style="font-weight:600;font-size:13.5px;margin-bottom:12px;">Checking status...</div>
-    <button type="button" class="btn btn-primary" id="twoStepEnableBtn" style="display:none;">Enable two-step verification</button>
-    <button type="button" class="btn btn-danger" id="twoStepDisableBtn" style="display:none;">Turn off two-step verification</button>
-    <div id="twoStepDisablePanel" style="display:none;margin-top:14px;">
-      <p style="margin:0 0 8px;">Confirm your password to turn this off:</p>
-      <div class="field" style="max-width:260px;">
-        <input type="password" id="twoStepDisablePasswordInput" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn" id="twoStepDisableCancelBtn">Cancel</button>
-        <button type="button" class="btn btn-danger" id="twoStepDisableConfirmBtn">Confirm and turn off</button>
-      </div>
-    </div>
-
-    <div id="twoStepSetupPanel" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
-      <p style="margin:0 0 12px;">1. Scan this QR code with your authenticator app (or enter the code manually below).</p>
-      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px;">
-        <img id="twoStepQrImg" alt="QR code for two-step verification" style="width:180px;height:180px;border-radius:10px;border:1px solid var(--border);">
-        <div style="flex:1;min-width:200px;">
-          <p style="margin:0 0 6px;font-size:12.5px;color:var(--slate-light);">Can't scan? Enter this code manually:</p>
-          <code id="twoStepManualSecret" style="display:block;padding:8px 10px;background:var(--paper, #f3f6fb);border-radius:8px;font-size:13px;word-break:break-all;"></code>
-        </div>
-      </div>
-      <p style="margin:0 0 10px;">2. Enter the 6-digit code your app is showing:</p>
-      <div class="field" style="max-width:200px;">
-        <input type="text" id="twoStepCodeInput" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" style="font-size:18px;letter-spacing:4px;text-align:center;">
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn" id="twoStepCancelBtn">Cancel</button>
-        <button type="button" class="btn btn-primary" id="twoStepConfirmBtn">Confirm and enable</button>
-      </div>
-    </div>
-  </div>
-
   <div class="password-card" id="emailTwoStepCard">
     <h3>📧 Email verification</h3>
-    <p>Get a 6-digit code by email as a second step when signing in, on top of your password. Separate from the authenticator app above — you can use either, or both.</p>
+    <p>Get a 6-digit code by email as a second step when signing in, on top of your password.</p>
     <div id="emailTwoStepStatus" style="font-weight:600;font-size:13.5px;margin-bottom:12px;">Checking status...</div>
     <button type="button" class="btn btn-primary" id="emailTwoStepEnableBtn" style="display:none;">Enable email verification</button>
     <button type="button" class="btn btn-danger" id="emailTwoStepDisableBtn" style="display:none;">Turn off email verification</button>
@@ -1748,120 +1711,6 @@
     });
   });
 
-  // ---------- Two-step verification (TOTP via authenticator app) ----------
-  // Uses Firebase Auth's built-in multi-factor support — this requires
-  // Multi-Factor Authentication (specifically TOTP) to be turned on for
-  // this project in Firebase Console under Authentication > Sign-in
-  // method, which may also require upgrading to Identity Platform
-  // depending on the project's current plan. None of this works until
-  // that's enabled there — it's a one-time console step, not something
-  // any code change here can turn on.
-  let pendingTotpSecret = null;
-  function refreshTwoStepStatus(){
-    const user = auth.currentUser;
-    if(!user || !user.multiFactor) return;
-    const enrolled = (user.multiFactor.enrolledFactors || []).length > 0;
-    document.getElementById('twoStepStatus').textContent = enrolled
-      ? '✅ Two-step verification is ON — your account needs an authenticator code to sign in.'
-      : 'Two-step verification is currently OFF.';
-    document.getElementById('twoStepEnableBtn').style.display = enrolled ? 'none' : '';
-    document.getElementById('twoStepDisableBtn').style.display = enrolled ? '' : 'none';
-    document.getElementById('twoStepSetupPanel').style.display = 'none';
-    document.getElementById('twoStepDisablePanel').style.display = 'none';
-  }
-  auth.onAuthStateChanged(user=>{ if(user) refreshTwoStepStatus(); });
-
-  document.getElementById('twoStepEnableBtn').addEventListener('click', ()=>{
-    const user = auth.currentUser;
-    if(!user) return;
-    const btn = document.getElementById('twoStepEnableBtn');
-    btn.disabled = true;
-    btn.textContent = 'Setting up...';
-    user.multiFactor.getSession().then(session=>{
-      return firebase.auth.TotpMultiFactorGenerator.generateSecret(session);
-    }).then(secret=>{
-      pendingTotpSecret = secret;
-      const otpauthUrl = secret.generateQrCodeUrl(user.email, 'PalaTrack');
-      document.getElementById('twoStepQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`;
-      document.getElementById('twoStepManualSecret').textContent = secret.secretKey;
-      document.getElementById('twoStepCodeInput').value = '';
-      document.getElementById('twoStepSetupPanel').style.display = '';
-    }).catch(err=>{
-      if(err.code === 'auth/requires-recent-login'){
-        showToast('For security, please sign out and back in, then try again.', true);
-      } else if(err.code === 'auth/operation-not-allowed' || err.code === 'auth/admin-restricted-operation'){
-        showToast('Two-step verification is not turned on for this app yet — contact support.', true);
-      } else {
-        showToast('Could not start setup: ' + friendlyErr(err), true);
-      }
-    }).finally(()=>{
-      btn.disabled = false;
-      btn.textContent = 'Enable two-step verification';
-    });
-  });
-
-  document.getElementById('twoStepCancelBtn').addEventListener('click', ()=>{
-    pendingTotpSecret = null;
-    document.getElementById('twoStepSetupPanel').style.display = 'none';
-  });
-
-  document.getElementById('twoStepConfirmBtn').addEventListener('click', ()=>{
-    const user = auth.currentUser;
-    if(!user || !pendingTotpSecret) return;
-    const code = document.getElementById('twoStepCodeInput').value.trim();
-    if(!/^\d{6}$/.test(code)){
-      showToast('Please enter the 6-digit code from your app.', true);
-      return;
-    }
-    const btn = document.getElementById('twoStepConfirmBtn');
-    btn.disabled = true;
-    btn.textContent = 'Confirming...';
-    const assertion = firebase.auth.TotpMultiFactorGenerator.assertionForEnrollment(pendingTotpSecret, code);
-    user.multiFactor.enroll(assertion, 'Authenticator app').then(()=>{
-      showToast('Two-step verification is now on for your account.');
-      pendingTotpSecret = null;
-      refreshTwoStepStatus();
-    }).catch(err=>{
-      showToast("That code didn't work: " + friendlyErr(err), true);
-    }).finally(()=>{
-      btn.disabled = false;
-      btn.textContent = 'Confirm and enable';
-    });
-  });
-
-  document.getElementById('twoStepDisableBtn').addEventListener('click', ()=>{
-    document.getElementById('twoStepDisablePasswordInput').value = '';
-    document.getElementById('twoStepDisablePanel').style.display = '';
-  });
-  document.getElementById('twoStepDisableCancelBtn').addEventListener('click', ()=>{
-    document.getElementById('twoStepDisablePanel').style.display = 'none';
-  });
-  document.getElementById('twoStepDisableConfirmBtn').addEventListener('click', ()=>{
-    const user = auth.currentUser;
-    if(!user) return;
-    const password = document.getElementById('twoStepDisablePasswordInput').value;
-    if(!password){
-      showToast('Please enter your password.', true);
-      return;
-    }
-    const btn = document.getElementById('twoStepDisableConfirmBtn');
-    btn.disabled = true;
-    btn.textContent = 'Turning off...';
-    const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
-    user.reauthenticateWithCredential(credential).then(()=>{
-      const factors = user.multiFactor.enrolledFactors || [];
-      return Promise.all(factors.map(f => user.multiFactor.unenroll(f.uid)));
-    }).then(()=>{
-      showToast('Two-step verification has been turned off.');
-      refreshTwoStepStatus();
-    }).catch(err=>{
-      showToast('Could not turn it off: ' + friendlyErr(err), true);
-    }).finally(()=>{
-      btn.disabled = false;
-      btn.textContent = 'Confirm and turn off';
-    });
-  });
-
   // ---------- Email verification (custom, code-by-email second factor) ----------
   // Firebase's native multi-factor auth only supports SMS and TOTP —
   // there's no built-in "email a code" factor type, so this is a
@@ -1893,7 +1742,6 @@
       document.getElementById('emailTwoStepDisablePanel').style.display = 'none';
     }).catch(()=>{});
   }
-  auth.onAuthStateChanged(user=>{ if(user) refreshEmailTwoStepStatus(); });
 
   function sendEmailTwoStepSetupCode(){
     return sendEmailTwoStepCodeFn({purpose: 'enroll'});
@@ -2221,6 +2069,7 @@
         resolveWorkspace(user).then(()=>{
           loadProfile(user);
           loadOrgPlan();
+          refreshEmailTwoStepStatus();
         }).catch(err=>{
           console.error('Could not resolve workspace', err);
         });

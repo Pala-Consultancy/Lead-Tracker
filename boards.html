@@ -2856,6 +2856,15 @@
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
       auth.signInWithEmailAndPassword(email, password).then(async (cred)=>{
+        // Set this immediately, before any of the async work below (the
+        // two-step check) — onAuthStateChanged fires independently, on
+        // its own, the instant sign-in succeeds, which can be BEFORE that
+        // async work finishes. If this flag isn't already set by the time
+        // it fires, its guard doesn't see it in time and boards.html's
+        // content flashes on screen for a beat before ending up on
+        // home.html (or the two-step challenge) anyway — the exact bug
+        // this flag exists to prevent in the first place.
+        try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
         const uid = cred.user.uid;
         let emailTwoStepOn = false;
         try{
