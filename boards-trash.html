@@ -2302,7 +2302,7 @@
   function updateSubscriptionGate(){
     const overlay = document.getElementById('subscriptionGateOverlay');
     if(!overlay) return;
-    if(subscriptionActive === null) return; // still checking — leave the checking view as shown
+    if(subscriptionActive === null) return; // still checking — nothing is shown yet either way
     if(subscriptionActive){
       overlay.style.display = 'none';
       subscriptionGateDismissed = false; // reset so it shows fresh if this ever lapses again later
@@ -2326,19 +2326,19 @@
   document.querySelectorAll('.subscription-gate-dismiss-btn').forEach(function(btn){
     btn.addEventListener('click', dismissSubscriptionGate);
   });
+  // No visible "checking" state — that's the whole point. The check
+  // itself still runs (loadOrgPlan's Firestore listener), but nothing is
+  // shown on screen while it's pending; the app just loads normally, the
+  // same way it would in any other product. The overlay only ever
+  // becomes visible if the check actually resolves to "not active" —
+  // never for the sake of showing that a check is happening at all.
   function showSubscriptionCheckingGate(){
-    const overlay = document.getElementById('subscriptionGateOverlay');
-    if(!overlay) return;
-    overlay.style.display = 'flex';
-    document.getElementById('subscriptionGateCheckingView').style.display = '';
-    document.getElementById('subscriptionGateAdminView').style.display = 'none';
-    document.getElementById('subscriptionGateMemberView').style.display = 'none';
     // Safety net: if the actual check (loadOrgPlan's Firestore read) never
     // comes back — a permissions hiccup, a dropped connection, anything —
-    // this must never leave someone stuck staring at "Checking..."
-    // forever with no way out. Fail OPEN after a few seconds rather than
-    // trap them; being wrong in the permissive direction for a few
-    // seconds is far better than a dead end they can't click past.
+    // read-only mode must never end up silently stuck on forever with
+    // nothing ever resolving it. Fail OPEN after a few seconds rather
+    // than leave it hanging; being briefly wrong in the permissive
+    // direction is far better than a dead end with no visible cause.
     clearTimeout(window.__subscriptionCheckFailsafe);
     window.__subscriptionCheckFailsafe = setTimeout(function(){
       if(subscriptionActive === null){
