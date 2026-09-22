@@ -2918,6 +2918,21 @@
     // one gets there first ever actually sends one — the loser just
     // backs off instead of sending a duplicate.
     let twoStepSendInProgress = false;
+    // onAuthStateChanged itself can fire more than once for the exact
+    // same sign-in (a token refresh, Firebase's own internal state
+    // updates, etc.) — the earlier lock above only ever guarded against
+    // ONE specific race (this check vs. the login form's own submit
+    // handler), not against this listener simply running its whole
+    // async check-and-send chain again a second time on its own. Each
+    // extra firing was starting its own independent Firestore reads and
+    // its own send attempt, which is exactly what surfaced as the
+    // rate-limit 429 — and, worse, however many of those overlapping
+    // chains happened to finish last is whichever one visually "won,"
+    // which could resolve to revealing the app even when an earlier
+    // firing had already put up the code challenge. This flag makes the
+    // whole revalidate check run at most once per page load, full stop,
+    // regardless of how many times the listener itself fires.
+    let twoStepRevalidateCheckStarted = false;
 
     // ---------- 6-box OTP code entry ----------
     const otpBoxes = Array.from(document.querySelectorAll('.otp-box'));
@@ -3836,6 +3851,8 @@
         let justLoggedInHere = false;
         try{ justLoggedInHere = sessionStorage.getItem('ptJustLoggedIn') === '1'; }catch(e){}
         if(justLoggedInHere) return;
+        if(twoStepRevalidateCheckStarted) return; // this whole check already ran once for this page load — a second firing of this listener doesn't get to run it again
+        twoStepRevalidateCheckStarted = true;
 
         function proceedToRevealBoardsApp(){
           pageLoader.style.display = 'none';
