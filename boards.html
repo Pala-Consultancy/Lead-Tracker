@@ -2905,6 +2905,16 @@
     // ends by revealing boards.html directly instead, since that's what
     // the person was already trying to do.
     let pendingTwoStepContext = 'login';
+    // Firebase's own internal auth-state notification and the promise
+    // returned by signInWithEmailAndPassword don't have a guaranteed
+    // firing order relative to each other — onAuthStateChanged can
+    // start running its own "does this session need a challenge" check
+    // before the submit handler's flag-setting has had a chance to run
+    // first, so both paths can end up racing each other and each
+    // sending its own separate code. This lock makes sure only whichever
+    // one gets there first ever actually sends one — the loser just
+    // backs off instead of sending a duplicate.
+    let twoStepSendInProgress = false;
 
     // ---------- 6-box OTP code entry ----------
     const otpBoxes = Array.from(document.querySelectorAll('.otp-box'));
@@ -3000,14 +3010,25 @@
           emailTwoStepOn = true;
         }
         if(emailTwoStepOn){
+          if(twoStepSendInProgress){
+            // onAuthStateChanged's own check already won this race and is
+            // sending/showing the challenge — don't send a second code.
+            submitBtn.disabled = false;
+            submitBtn.textContent = t('signIn');
+            return;
+          }
+          twoStepSendInProgress = true;
+          pendingTwoStepContext = 'login';
           try{
             await sendEmailTwoStepCodeFn({purpose: 'login'});
           }catch(err){
+            twoStepSendInProgress = false;
             showLoginError('Could not send your verification code. Please try again.');
             submitBtn.disabled = false;
             submitBtn.textContent = t('signIn');
             return;
           }
+          twoStepSendInProgress = false;
           showEmailTwoStepChallenge();
           submitBtn.disabled = false;
           submitBtn.textContent = t('signIn');
@@ -3035,6 +3056,17 @@
       verifyEmailTwoStepCodeFn({code, purpose: 'login'}).then(()=>{
         if(auth.currentUser) markEmailTwoStepVerified(auth.currentUser.uid);
         if(pendingTwoStepContext === 'revalidate'){
+          // ptJustLoggedIn only ever meant "a redirect to home.html is
+          // about to happen, so don't reveal anything in the meantime" —
+          // it's cleared by home.html itself once it gets there. This
+          // path never goes to home.html, it reloads this same page, so
+          // if that flag is somehow still set (e.g. from the earlier
+          // sign-in race this same fix addressed elsewhere), the reload
+          // would see it, assume a redirect is imminent, and refuse to
+          // ever reveal anything — stuck on the loading spinner forever
+          // with no redirect ever coming. Clearing it here first closes
+          // that off entirely.
+          try{ sessionStorage.removeItem('ptJustLoggedIn'); }catch(e){}
           location.reload(); // cleanest way back into the normal reveal flow, now that this device is marked verified
         } else {
           completeLoginRedirect();
@@ -3834,6 +3866,12 @@
               proceedToRevealBoardsApp();
               return;
             }
+            if(twoStepSendInProgress){
+              // The login form's own submit handler already won this
+              // race and is sending/showing the challenge itself —
+              // sending a second code here would just be a duplicate.
+              return;
+            }
             // Verified once before elsewhere but not on this device/uid
             // combination — challenge here instead of letting them in.
             pageLoader.style.display = 'none';
@@ -3843,9 +3881,12 @@
             void loginScreen.offsetWidth;
             loginScreen.classList.add('fade-in');
             pendingTwoStepContext = 'revalidate';
+            twoStepSendInProgress = true;
             sendEmailTwoStepCodeFn({purpose: 'login'}).then(()=>{
+              twoStepSendInProgress = false;
               showEmailTwoStepChallenge();
             }).catch(err=>{
+              twoStepSendInProgress = false;
               // If even sending a fresh code fails, fail safe by
               // reverting to the login form rather than silently
               // stranding them on a broken challenge screen with no
