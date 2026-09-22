@@ -2895,6 +2895,38 @@
     // fresh code — ends by revealing boards.html directly instead, since
     // that's what the person was already trying to do.
     let pendingTwoStepContext = 'login';
+    // Hoisted out of onAuthStateChanged (rather than defined fresh inside
+    // it) specifically so the code-challenge form can call this directly
+    // the moment verification succeeds — revealing the app right then,
+    // in place, instead of reloading the page to get back to it. With no
+    // "remembered device" exception left at all, a reload would just run
+    // the whole check over again from scratch, find this session hasn't
+    // verified *yet* (nothing records that it just did, a second ago),
+    // and immediately challenge again — an infinite loop of verify,
+    // reload, re-challenge, verify, reload, forever.
+    function proceedToRevealBoardsApp(user){
+      pageLoader.style.display = 'none';
+      loginScreen.style.display = 'none';
+      appRoot.style.display = 'block';
+      showSubscriptionCheckingGate();
+      appRoot.classList.remove('fade-in');
+      void appRoot.offsetWidth;
+      appRoot.classList.add('fade-in');
+      currentUserPill.style.display = '';
+      currentUserPill.textContent = '';
+      clearLoginError();
+      document.getElementById('loginForm').reset();
+      workspaceReadyPromise = inviteLinkCompletionPromise.then(()=>resolveWorkspace(user)).then(()=>{
+        ensureUserProfileExists(user);
+        loadSettingsUserInfo(user);
+        loadOrgPlan();
+        initBoardsSync();
+        requestNotificationPermissionIfNeeded();
+      }).catch(err=>{
+        console.error('Could not resolve workspace', err);
+        showLoginError('Something went wrong setting up your account. Please try again or contact support.');
+      });
+    }
     // Firebase's own internal auth-state notification and the promise
     // returned by signInWithEmailAndPassword don't have a guaranteed
     // firing order relative to each other — onAuthStateChanged can
@@ -3060,18 +3092,13 @@
       submitBtn.textContent = 'Verifying...';
       verifyEmailTwoStepCodeFn({code, purpose: 'login'}).then(()=>{
         if(pendingTwoStepContext === 'revalidate'){
-          // ptJustLoggedIn only ever meant "a redirect to home.html is
-          // about to happen, so don't reveal anything in the meantime" —
-          // it's cleared by home.html itself once it gets there. This
-          // path never goes to home.html, it reloads this same page, so
-          // if that flag is somehow still set (e.g. from the earlier
-          // sign-in race this same fix addressed elsewhere), the reload
-          // would see it, assume a redirect is imminent, and refuse to
-          // ever reveal anything — stuck on the loading spinner forever
-          // with no redirect ever coming. Clearing it here first closes
-          // that off entirely.
-          try{ sessionStorage.removeItem('ptJustLoggedIn'); }catch(e){}
-          location.reload(); // cleanest way back into the normal reveal flow, now that this device is marked verified
+          // Reveal directly, right here, rather than reloading the page.
+          // With no "remembered device" exception left at all, a reload
+          // would just run the whole check over again from scratch, find
+          // this session hasn't verified *yet* (nothing records that it
+          // just did, a second ago), and immediately challenge again —
+          // looping forever between verify, reload, and re-challenge.
+          if(auth.currentUser) proceedToRevealBoardsApp(auth.currentUser);
         } else {
           completeLoginRedirect();
         }
@@ -3832,30 +3859,6 @@
         if(twoStepRevalidateCheckStarted) return; // this whole check already ran once for this page load — a second firing of this listener doesn't get to run it again
         twoStepRevalidateCheckStarted = true;
 
-        function proceedToRevealBoardsApp(){
-          pageLoader.style.display = 'none';
-          loginScreen.style.display = 'none';
-          appRoot.style.display = 'block';
-          showSubscriptionCheckingGate();
-          appRoot.classList.remove('fade-in');
-          void appRoot.offsetWidth;
-          appRoot.classList.add('fade-in');
-          currentUserPill.style.display = '';
-          currentUserPill.textContent = '';
-          clearLoginError();
-          document.getElementById('loginForm').reset();
-          workspaceReadyPromise = inviteLinkCompletionPromise.then(()=>resolveWorkspace(user)).then(()=>{
-            ensureUserProfileExists(user);
-            loadSettingsUserInfo(user);
-            loadOrgPlan();
-            initBoardsSync();
-            requestNotificationPermissionIfNeeded();
-          }).catch(err=>{
-            console.error('Could not resolve workspace', err);
-            showLoginError('Something went wrong setting up your account. Please try again or contact support.');
-          });
-        }
-
         // Firebase itself already treats this user as fully signed in —
         // it has no concept of this custom email-code step. So an
         // already-authenticated session (this is exactly that case:
@@ -3865,7 +3868,7 @@
         // reload would walk straight past two-step entirely.
         db.collection('userDirectory').doc(user.uid).get().then(directoryDoc=>{
           const wsId = directoryDoc.exists ? directoryDoc.data().workspaceId : null;
-          if(!wsId) return proceedToRevealBoardsApp();
+          if(!wsId) return proceedToRevealBoardsApp(user);
           return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
             const emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
             // No "remembered device" exception — every single page load
@@ -3873,7 +3876,7 @@
             // that's a fresh sign-in, a new tab, or a reload of an
             // existing session. No grace period, no trust window.
             if(!emailTwoStepOn){
-              proceedToRevealBoardsApp();
+              proceedToRevealBoardsApp(user);
               return;
             }
             if(twoStepSendInProgress){
@@ -3907,7 +3910,7 @@
           });
         }).catch(err=>{
           console.error('Could not verify two-step status for existing session', err);
-          proceedToRevealBoardsApp(); // fail open rather than trap them behind a broken check
+          proceedToRevealBoardsApp(user); // fail open rather than trap them behind a broken check
         });
       } else {
         if(isSigningOut) return;
