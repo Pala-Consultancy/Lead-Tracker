@@ -916,6 +916,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
   // ---------- i18n ----------
@@ -1726,7 +1727,15 @@
   try{
     sendEmailTwoStepCodeFn = firebase.functions().httpsCallable('sendEmailTwoStepCode');
     verifyEmailTwoStepCodeFn = firebase.functions().httpsCallable('verifyEmailTwoStepCode');
-  }catch(e){}
+  }catch(e){
+    // Swallowing this silently is exactly what let the missing
+    // firebase-functions-compat.js script tag go unnoticed for as long
+    // as it did — clicking Enable just silently did nothing, with no
+    // visible sign anything was even wrong short of opening dev tools.
+    // Logging it here means the real cause shows up immediately in the
+    // console instead of requiring that kind of manual digging again.
+    console.error('Could not set up Cloud Functions — check that firebase-functions-compat.js is loaded on this page:', e);
+  }
 
   function refreshEmailTwoStepStatus(){
     const user = auth.currentUser;
