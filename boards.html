@@ -2835,6 +2835,33 @@
       location.href = 'home.html';
     }
 
+    // Firebase itself already considers someone fully signed in the
+    // instant their password checks out — this custom email code is
+    // layered on top of that, not something Firebase's own session
+    // system knows about. So checking for a code only at the moment
+    // someone submits the login form isn't enough: an already-signed-in
+    // session (a new tab, a later page load, coming back to this page
+    // without ever having entered a code) would sail straight past it,
+    // since nothing re-checks an existing session at all. localStorage
+    // (not sessionStorage — this needs to survive a fresh tab) marks a
+    // uid as verified on this specific device once they've actually
+    // entered a correct code, so a normal day-to-day session doesn't
+    // get re-challenged on every single page load, but a session that
+    // was never verified in the first place always will be.
+    function emailTwoStepVerifiedKey(uid){ return 'ptEmailTwoStepVerified_' + uid; }
+    function markEmailTwoStepVerified(uid){
+      try{ localStorage.setItem(emailTwoStepVerifiedKey(uid), '1'); }catch(e){}
+    }
+    function isEmailTwoStepVerifiedOnThisDevice(uid){
+      try{ return localStorage.getItem(emailTwoStepVerifiedKey(uid)) === '1'; }catch(e){ return false; }
+    }
+    // 'login' = the normal fresh sign-in flow, ends by redirecting to
+    // home.html. 'revalidate' = an already-authenticated session that
+    // was never verified on this device, caught by onAuthStateChanged —
+    // ends by revealing boards.html directly instead, since that's what
+    // the person was already trying to do.
+    let pendingTwoStepContext = 'login';
+
     function showEmailTwoStepChallenge(){
       document.getElementById('loginForm').style.display = 'none';
       document.getElementById('resetForm').style.display = 'none';
@@ -2913,7 +2940,12 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Verifying...';
       verifyEmailTwoStepCodeFn({code, purpose: 'login'}).then(()=>{
-        completeLoginRedirect();
+        if(auth.currentUser) markEmailTwoStepVerified(auth.currentUser.uid);
+        if(pendingTwoStepContext === 'revalidate'){
+          location.reload(); // cleanest way back into the normal reveal flow, now that this device is marked verified
+        } else {
+          completeLoginRedirect();
+        }
       }).catch(err=>{
         showLoginError((err && err.message) || "That code didn't work.");
       }).finally(()=>{
@@ -3665,26 +3697,70 @@
         let justLoggedInHere = false;
         try{ justLoggedInHere = sessionStorage.getItem('ptJustLoggedIn') === '1'; }catch(e){}
         if(justLoggedInHere) return;
-        pageLoader.style.display = 'none';
-        loginScreen.style.display = 'none';
-        appRoot.style.display = 'block';
-        showSubscriptionCheckingGate();
-        appRoot.classList.remove('fade-in');
-        void appRoot.offsetWidth;
-        appRoot.classList.add('fade-in');
-        currentUserPill.style.display = '';
-        currentUserPill.textContent = '';
-        clearLoginError();
-        document.getElementById('loginForm').reset();
-        workspaceReadyPromise = inviteLinkCompletionPromise.then(()=>resolveWorkspace(user)).then(()=>{
-          ensureUserProfileExists(user);
-          loadSettingsUserInfo(user);
-          loadOrgPlan();
-          initBoardsSync();
-          requestNotificationPermissionIfNeeded();
+
+        function proceedToRevealBoardsApp(){
+          pageLoader.style.display = 'none';
+          loginScreen.style.display = 'none';
+          appRoot.style.display = 'block';
+          showSubscriptionCheckingGate();
+          appRoot.classList.remove('fade-in');
+          void appRoot.offsetWidth;
+          appRoot.classList.add('fade-in');
+          currentUserPill.style.display = '';
+          currentUserPill.textContent = '';
+          clearLoginError();
+          document.getElementById('loginForm').reset();
+          workspaceReadyPromise = inviteLinkCompletionPromise.then(()=>resolveWorkspace(user)).then(()=>{
+            ensureUserProfileExists(user);
+            loadSettingsUserInfo(user);
+            loadOrgPlan();
+            initBoardsSync();
+            requestNotificationPermissionIfNeeded();
+          }).catch(err=>{
+            console.error('Could not resolve workspace', err);
+            showLoginError('Something went wrong setting up your account. Please try again or contact support.');
+          });
+        }
+
+        // Firebase itself already treats this user as fully signed in —
+        // it has no concept of this custom email-code step. So an
+        // already-authenticated session (this is exactly that case:
+        // onAuthStateChanged firing with no fresh login just having
+        // happened) needs its own check here, not just at the login
+        // form's submit moment, or a new tab / later visit / page
+        // reload would walk straight past two-step entirely.
+        db.collection('userDirectory').doc(user.uid).get().then(directoryDoc=>{
+          const wsId = directoryDoc.exists ? directoryDoc.data().workspaceId : null;
+          if(!wsId) return proceedToRevealBoardsApp();
+          return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
+            const emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
+            if(!emailTwoStepOn || isEmailTwoStepVerifiedOnThisDevice(user.uid)){
+              proceedToRevealBoardsApp();
+              return;
+            }
+            // Verified once before elsewhere but not on this device/uid
+            // combination — challenge here instead of letting them in.
+            pageLoader.style.display = 'none';
+            appRoot.style.display = 'none';
+            loginScreen.style.display = 'flex';
+            loginScreen.classList.remove('fade-in');
+            void loginScreen.offsetWidth;
+            loginScreen.classList.add('fade-in');
+            pendingTwoStepContext = 'revalidate';
+            sendEmailTwoStepCodeFn({purpose: 'login'}).then(()=>{
+              showEmailTwoStepChallenge();
+            }).catch(err=>{
+              // If even sending a fresh code fails, fail safe by
+              // reverting to the login form rather than silently
+              // stranding them on a broken challenge screen with no
+              // code ever sent and no way to request one.
+              console.error('Could not send two-step code for existing session', err);
+              hideEmailTwoStepChallenge();
+            });
+          });
         }).catch(err=>{
-          console.error('Could not resolve workspace', err);
-          showLoginError('Something went wrong setting up your account. Please try again or contact support.');
+          console.error('Could not verify two-step status for existing session', err);
+          proceedToRevealBoardsApp(); // fail open rather than trap them behind a broken check
         });
       } else {
         if(isSigningOut) return;
