@@ -2896,6 +2896,9 @@
     function markEmailTwoStepVerified(uid){
       try{ localStorage.setItem(emailTwoStepVerifiedKey(uid), '1'); }catch(e){}
     }
+    function markEmailTwoStepUnverified(uid){
+      try{ localStorage.removeItem(emailTwoStepVerifiedKey(uid)); }catch(e){}
+    }
     function isEmailTwoStepVerifiedOnThisDevice(uid){
       try{ return localStorage.getItem(emailTwoStepVerifiedKey(uid)) === '1'; }catch(e){ return false; }
     }
@@ -3096,6 +3099,7 @@
     });
     document.getElementById('emailTwoStepChallengeCancelLink').addEventListener('click', ()=>{
       clearLoginError();
+      if(auth.currentUser) markEmailTwoStepUnverified(auth.currentUser.uid);
       auth.signOut();
       hideEmailTwoStepChallenge();
     });
@@ -3190,6 +3194,13 @@
     document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeBoards){ unsubscribeBoards(); unsubscribeBoards = null; }
       if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
+      // The "verified on this device" marker exists to avoid re-challenging
+      // on every new tab or page reload within one continuous, already-
+      // verified session — it was never meant to exempt every future
+      // sign-in forever. Without clearing it on an actual sign-out, signing
+      // back in later would skip the code entirely, since the device would
+      // still look "trusted" from the previous session that already ended.
+      if(auth.currentUser) markEmailTwoStepUnverified(auth.currentUser.uid);
       isSigningOut = true;
       loginScreen.style.display = 'none';
       appRoot.style.display = 'none';
@@ -3962,6 +3973,11 @@
         if(countdownRemaining <= 0){
           clearInterval(countdownInterval);
           idleOverlay.style.display = 'none';
+          // Same reasoning as the main Sign out button — this session is
+          // genuinely ending, so the next sign-in should require the code
+          // again rather than finding this device still marked trusted
+          // from before.
+          if(auth && auth.currentUser && typeof markEmailTwoStepUnverified === 'function') markEmailTwoStepUnverified(auth.currentUser.uid);
           if(auth) auth.signOut();
         }
       }, 1000);
@@ -3977,6 +3993,7 @@
     if(signOutBtn) signOutBtn.addEventListener('click', function(){
       clearInterval(countdownInterval);
       idleOverlay.style.display = 'none';
+      if(auth && auth.currentUser && typeof markEmailTwoStepUnverified === 'function') markEmailTwoStepUnverified(auth.currentUser.uid);
       if(auth) auth.signOut();
     });
     ['mousemove','keydown','click','scroll','touchstart'].forEach(function(evt){
