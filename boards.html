@@ -231,7 +231,7 @@
   }
   .login-title{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--ink);line-height:1.25;}
   .login-sub{font-size:13px;color:var(--slate);margin-top:5px;}
-  #loginForm, #resetForm{padding:22px 34px 0;}
+  #loginForm, #resetForm, #emailTwoStepChallengeForm{padding:22px 34px 0;}
   #loginForm .field, #resetForm .field{margin-bottom:16px;display:flex;flex-direction:column;gap:6px;}
   #loginForm label, #resetForm label{
     font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;
@@ -247,11 +247,44 @@
     padding:10px 13px;border-radius:8px;display:none;
   }
   .login-error.show{display:block;}
-  #loginForm .btn-primary, #resetForm .btn-primary{
+  #loginForm .btn-primary, #resetForm .btn-primary, #emailTwoStepChallengeForm .btn-primary{
     width:100%;justify-content:center;padding:12px;margin-top:6px;
     background:var(--teal);color:#fff;border:1px solid var(--teal);border-radius:8px;
     font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;
   }
+
+  /* ---------- Two-step code challenge ---------- */
+  .otp-icon-badge{
+    width:52px;height:52px;border-radius:14px;margin:2px auto 16px;
+    background:linear-gradient(135deg, var(--c-blue-fg), var(--c-purple-fg, #7A4FB5));
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 18px rgba(55,48,179,0.28);
+  }
+  .otp-icon-badge svg{width:24px;height:24px;}
+  #emailTwoStepChallengeForm .login-title{margin-bottom:2px;}
+  #emailTwoStepChallengeForm .login-sub{margin-bottom:22px;line-height:1.5;}
+  .otp-box-row{display:flex;gap:9px;justify-content:center;margin-bottom:22px;}
+  .otp-box{
+    width:44px;height:52px;text-align:center;font-family:'Sora',sans-serif;font-size:21px;font-weight:700;
+    border:1.5px solid var(--border);border-radius:9px;background:var(--c-blue-tint2);color:var(--ink);
+    transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+  }
+  .otp-box:focus{
+    outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(55,48,179,0.16);
+    background:var(--panel);transform:translateY(-1px);
+  }
+  .otp-box.filled{border-color:var(--c-blue-fg);background:var(--panel);}
+  .otp-box.otp-error{border-color:var(--red);animation:otp-shake .35s ease;}
+  @keyframes otp-shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-5px);}
+    40%{transform:translateX(5px);}
+    60%{transform:translateX(-4px);}
+    80%{transform:translateX(4px);}
+  }
+  .otp-link-row{display:flex;align-items:center;justify-content:space-between;margin-top:16px;gap:10px;flex-wrap:wrap;}
+  .otp-link-row .login-forgot-link{text-decoration:none;font-size:12px;}
+  .otp-link-row .login-forgot-link:hover{text-decoration:underline;}
   .login-forgot-row{text-align:right;margin:-10px 0 16px;}
   .login-forgot-link{
     background:none;border:none;padding:0;font-size:12.5px;font-weight:600;color:var(--teal);
@@ -1237,14 +1270,25 @@
       <button type="button" class="login-forgot-link" id="backToSignInLink" data-i18n="backToSignIn">← Back to sign in</button>
     </form>
     <form id="emailTwoStepChallengeForm" style="display:none">
-      <div class="login-sub">We sent a 6-digit code to your email. Enter it below to finish signing in.</div>
-      <div class="field">
-        <label for="emailTwoStepChallengeCode">Verification code</label>
-        <input id="emailTwoStepChallengeCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" style="font-size:18px;letter-spacing:4px;text-align:center;" required>
+      <div class="otp-icon-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m2.5 5.5 9 6.5 9-6.5"/></svg>
+      </div>
+      <div class="login-title" style="text-align:center;">Check your email</div>
+      <div class="login-sub" style="text-align:center;">We sent a 6-digit code to your email. Enter it below to finish signing in.</div>
+      <input id="emailTwoStepChallengeCode" type="hidden">
+      <div class="otp-box-row" id="otpBoxRow" aria-label="6-digit verification code">
+        <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" data-otp-index="0">
+        <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="1">
+        <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="2">
+        <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="3">
+        <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="4">
+        <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="5">
       </div>
       <button type="submit" class="btn-primary">Verify and sign in</button>
-      <button type="button" class="login-forgot-link" id="emailTwoStepResendChallengeLink">Didn't get it? Resend code</button>
-      <button type="button" class="login-forgot-link" id="emailTwoStepChallengeCancelLink">← Back to sign in</button>
+      <div class="otp-link-row">
+        <button type="button" class="login-forgot-link" id="emailTwoStepResendChallengeLink">Didn't get it? Resend code</button>
+        <button type="button" class="login-forgot-link" id="emailTwoStepChallengeCancelLink">← Back to sign in</button>
+      </div>
     </form>
     <div class="login-footer-note">
       <span data-i18n="noAccountNote">Don't have an account?</span>
@@ -2862,12 +2906,61 @@
     // the person was already trying to do.
     let pendingTwoStepContext = 'login';
 
+    // ---------- 6-box OTP code entry ----------
+    const otpBoxes = Array.from(document.querySelectorAll('.otp-box'));
+    const otpHiddenInput = document.getElementById('emailTwoStepChallengeCode');
+    function syncOtpHiddenValue(){
+      otpHiddenInput.value = otpBoxes.map(b=>b.value).join('');
+    }
+    function clearOtpBoxes(){
+      otpBoxes.forEach(b=>{ b.value = ''; b.classList.remove('filled', 'otp-error'); });
+      syncOtpHiddenValue();
+    }
+    function shakeOtpBoxes(){
+      otpBoxes.forEach(b=>{
+        b.classList.add('otp-error');
+        b.addEventListener('animationend', ()=>b.classList.remove('otp-error'), {once:true});
+      });
+    }
+    otpBoxes.forEach((box, i)=>{
+      box.addEventListener('input', ()=>{
+        box.value = box.value.replace(/[^0-9]/g, '').slice(0,1);
+        box.classList.toggle('filled', box.value !== '');
+        syncOtpHiddenValue();
+        if(box.value && otpBoxes[i+1]) otpBoxes[i+1].focus();
+        if(otpHiddenInput.value.length === 6){
+          document.getElementById('emailTwoStepChallengeForm').requestSubmit();
+        }
+      });
+      box.addEventListener('keydown', (e)=>{
+        if(e.key === 'Backspace' && !box.value && otpBoxes[i-1]){
+          otpBoxes[i-1].focus();
+          otpBoxes[i-1].value = '';
+          otpBoxes[i-1].classList.remove('filled');
+          syncOtpHiddenValue();
+          e.preventDefault();
+        }
+      });
+      box.addEventListener('paste', (e)=>{
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0,6);
+        if(!pasted) return;
+        e.preventDefault();
+        pasted.split('').forEach((digit, idx)=>{
+          if(otpBoxes[idx]){ otpBoxes[idx].value = digit; otpBoxes[idx].classList.add('filled'); }
+        });
+        syncOtpHiddenValue();
+        const nextEmpty = otpBoxes.find(b=>!b.value);
+        (nextEmpty || otpBoxes[5]).focus();
+        if(pasted.length === 6) document.getElementById('emailTwoStepChallengeForm').requestSubmit();
+      });
+    });
+
     function showEmailTwoStepChallenge(){
       document.getElementById('loginForm').style.display = 'none';
       document.getElementById('resetForm').style.display = 'none';
       document.getElementById('emailTwoStepChallengeForm').style.display = '';
-      document.getElementById('emailTwoStepChallengeCode').value = '';
-      document.getElementById('emailTwoStepChallengeCode').focus();
+      clearOtpBoxes();
+      otpBoxes[0].focus();
     }
     function hideEmailTwoStepChallenge(){
       document.getElementById('emailTwoStepChallengeForm').style.display = 'none';
@@ -2948,6 +3041,9 @@
         }
       }).catch(err=>{
         showLoginError((err && err.message) || "That code didn't work.");
+        shakeOtpBoxes();
+        clearOtpBoxes();
+        otpBoxes[0].focus();
       }).finally(()=>{
         submitBtn.disabled = false;
         submitBtn.textContent = 'Verify and sign in';
