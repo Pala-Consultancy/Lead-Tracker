@@ -3014,21 +3014,29 @@
         // this flag exists to prevent in the first place.
         try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
         const uid = cred.user.uid;
+        console.log('[2FA DEBUG] Signed in as uid:', uid);
         let emailTwoStepOn = false;
         try{
           const directoryDoc = await db.collection('userDirectory').doc(uid).get();
+          console.log('[2FA DEBUG] userDirectory doc exists:', directoryDoc.exists, 'data:', directoryDoc.exists ? directoryDoc.data() : null);
           const wsId = directoryDoc.exists ? directoryDoc.data().workspaceId : null;
+          console.log('[2FA DEBUG] workspaceId:', wsId);
           if(wsId){
             const memberDoc = await db.doc(`workspaces/${wsId}/members/${uid}`).get();
+            console.log('[2FA DEBUG] member doc exists:', memberDoc.exists, 'emailTwoStepEnabled field:', memberDoc.exists ? memberDoc.data().emailTwoStepEnabled : 'N/A', 'full data:', memberDoc.exists ? memberDoc.data() : null);
             emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
           }
+          console.log('[2FA DEBUG] Final emailTwoStepOn decision:', emailTwoStepOn);
         }catch(err){
+          console.error('[2FA DEBUG] Error while checking two-step status — falling back to REQUIRING two-step:', err);
           // If we can't even check, fail safe by requiring the challenge
           // rather than silently skipping a security step the user turned on.
           emailTwoStepOn = true;
         }
+        console.log('[2FA DEBUG] twoStepSendInProgress lock state:', twoStepSendInProgress);
         if(emailTwoStepOn){
           if(twoStepSendInProgress){
+            console.log('[2FA DEBUG] BLOCKED by lock — this is why no code was sent from the login form.');
             // onAuthStateChanged's own check already won this race and is
             // sending/showing the challenge — don't send a second code.
             submitBtn.disabled = false;
