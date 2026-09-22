@@ -2886,27 +2886,14 @@
     // someone submits the login form isn't enough: an already-signed-in
     // session (a new tab, a later page load, coming back to this page
     // without ever having entered a code) would sail straight past it,
-    // since nothing re-checks an existing session at all. localStorage
-    // (not sessionStorage — this needs to survive a fresh tab) marks a
-    // uid as verified on this specific device once they've actually
-    // entered a correct code, so a normal day-to-day session doesn't
-    // get re-challenged on every single page load, but a session that
-    // was never verified in the first place always will be.
-    function emailTwoStepVerifiedKey(uid){ return 'ptEmailTwoStepVerified_' + uid; }
-    function markEmailTwoStepVerified(uid){
-      try{ localStorage.setItem(emailTwoStepVerifiedKey(uid), '1'); }catch(e){}
-    }
-    function markEmailTwoStepUnverified(uid){
-      try{ localStorage.removeItem(emailTwoStepVerifiedKey(uid)); }catch(e){}
-    }
-    function isEmailTwoStepVerifiedOnThisDevice(uid){
-      try{ return localStorage.getItem(emailTwoStepVerifiedKey(uid)) === '1'; }catch(e){ return false; }
-    }
+    // since nothing re-checks an existing session at all. Deliberately no
+    // "remembered device" exception here — every page load with two-step
+    // enabled requires a fresh code, every time, no grace period.
     // 'login' = the normal fresh sign-in flow, ends by redirecting to
-    // home.html. 'revalidate' = an already-authenticated session that
-    // was never verified on this device, caught by onAuthStateChanged —
-    // ends by revealing boards.html directly instead, since that's what
-    // the person was already trying to do.
+    // home.html. 'revalidate' = an already-authenticated session caught
+    // by onAuthStateChanged (a new tab, a reload) that still needs a
+    // fresh code — ends by revealing boards.html directly instead, since
+    // that's what the person was already trying to do.
     let pendingTwoStepContext = 'login';
     // Firebase's own internal auth-state notification and the promise
     // returned by signInWithEmailAndPassword don't have a guaranteed
@@ -3014,29 +3001,21 @@
         // this flag exists to prevent in the first place.
         try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
         const uid = cred.user.uid;
-        console.log('[2FA DEBUG] Signed in as uid:', uid);
         let emailTwoStepOn = false;
         try{
           const directoryDoc = await db.collection('userDirectory').doc(uid).get();
-          console.log('[2FA DEBUG] userDirectory doc exists:', directoryDoc.exists, 'data:', directoryDoc.exists ? directoryDoc.data() : null);
           const wsId = directoryDoc.exists ? directoryDoc.data().workspaceId : null;
-          console.log('[2FA DEBUG] workspaceId:', wsId);
           if(wsId){
             const memberDoc = await db.doc(`workspaces/${wsId}/members/${uid}`).get();
-            console.log('[2FA DEBUG] member doc exists:', memberDoc.exists, 'emailTwoStepEnabled field:', memberDoc.exists ? memberDoc.data().emailTwoStepEnabled : 'N/A', 'full data:', memberDoc.exists ? memberDoc.data() : null);
             emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
           }
-          console.log('[2FA DEBUG] Final emailTwoStepOn decision:', emailTwoStepOn);
         }catch(err){
-          console.error('[2FA DEBUG] Error while checking two-step status — falling back to REQUIRING two-step:', err);
           // If we can't even check, fail safe by requiring the challenge
           // rather than silently skipping a security step the user turned on.
           emailTwoStepOn = true;
         }
-        console.log('[2FA DEBUG] twoStepSendInProgress lock state:', twoStepSendInProgress);
         if(emailTwoStepOn){
           if(twoStepSendInProgress){
-            console.log('[2FA DEBUG] BLOCKED by lock — this is why no code was sent from the login form.');
             // onAuthStateChanged's own check already won this race and is
             // sending/showing the challenge — don't send a second code.
             submitBtn.disabled = false;
@@ -3080,7 +3059,6 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Verifying...';
       verifyEmailTwoStepCodeFn({code, purpose: 'login'}).then(()=>{
-        if(auth.currentUser) markEmailTwoStepVerified(auth.currentUser.uid);
         if(pendingTwoStepContext === 'revalidate'){
           // ptJustLoggedIn only ever meant "a redirect to home.html is
           // about to happen, so don't reveal anything in the meantime" —
@@ -3122,7 +3100,6 @@
     });
     document.getElementById('emailTwoStepChallengeCancelLink').addEventListener('click', ()=>{
       clearLoginError();
-      if(auth.currentUser) markEmailTwoStepUnverified(auth.currentUser.uid);
       auth.signOut();
       hideEmailTwoStepChallenge();
     });
@@ -3217,13 +3194,6 @@
     document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeBoards){ unsubscribeBoards(); unsubscribeBoards = null; }
       if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
-      // The "verified on this device" marker exists to avoid re-challenging
-      // on every new tab or page reload within one continuous, already-
-      // verified session — it was never meant to exempt every future
-      // sign-in forever. Without clearing it on an actual sign-out, signing
-      // back in later would skip the code entirely, since the device would
-      // still look "trusted" from the previous session that already ended.
-      if(auth.currentUser) markEmailTwoStepUnverified(auth.currentUser.uid);
       isSigningOut = true;
       loginScreen.style.display = 'none';
       appRoot.style.display = 'none';
@@ -3898,7 +3868,11 @@
           if(!wsId) return proceedToRevealBoardsApp();
           return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
             const emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
-            if(!emailTwoStepOn || isEmailTwoStepVerifiedOnThisDevice(user.uid)){
+            // No "remembered device" exception — every single page load
+            // with two-step enabled requires the code, full stop, whether
+            // that's a fresh sign-in, a new tab, or a reload of an
+            // existing session. No grace period, no trust window.
+            if(!emailTwoStepOn){
               proceedToRevealBoardsApp();
               return;
             }
@@ -4002,7 +3976,6 @@
           // genuinely ending, so the next sign-in should require the code
           // again rather than finding this device still marked trusted
           // from before.
-          if(auth && auth.currentUser && typeof markEmailTwoStepUnverified === 'function') markEmailTwoStepUnverified(auth.currentUser.uid);
           if(auth) auth.signOut();
         }
       }, 1000);
@@ -4018,7 +3991,6 @@
     if(signOutBtn) signOutBtn.addEventListener('click', function(){
       clearInterval(countdownInterval);
       idleOverlay.style.display = 'none';
-      if(auth && auth.currentUser && typeof markEmailTwoStepUnverified === 'function') markEmailTwoStepUnverified(auth.currentUser.uid);
       if(auth) auth.signOut();
     });
     ['mousemove','keydown','click','scroll','touchstart'].forEach(function(evt){
