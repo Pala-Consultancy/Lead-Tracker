@@ -2875,7 +2875,7 @@
     }catch(e){}
 
     function completeLoginRedirect(){
-      try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
+      try{ sessionStorage.setItem('ptJustLoggedIn', String(Date.now())); }catch(e){}
       location.href = 'home.html';
     }
 
@@ -3031,7 +3031,7 @@
         // content flashes on screen for a beat before ending up on
         // home.html (or the two-step challenge) anyway — the exact bug
         // this flag exists to prevent in the first place.
-        try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
+        try{ sessionStorage.setItem('ptJustLoggedIn', String(Date.now())); }catch(e){}
         const uid = cred.user.uid;
         let emailTwoStepOn = false;
         try{
@@ -3853,8 +3853,20 @@
         // instant, and this handler fires the moment sign-in succeeds, so
         // without this check the boards page would flash on screen for a
         // beat before the browser actually finishes navigating away.
+        // A real redirect to home.html completes within milliseconds —
+        // if this flag is somehow still set several seconds later (stale
+        // from an earlier session, a redirect that got interrupted, tab
+        // history, anything), treating it as still meaning "a redirect is
+        // about to happen" would leave this page refusing to ever reveal
+        // itself, stuck on the loading spinner forever with nothing to
+        // ever clear it. A short recency window lets it self-heal instead
+        // of relying on home.html being the only page that ever clears it.
         let justLoggedInHere = false;
-        try{ justLoggedInHere = sessionStorage.getItem('ptJustLoggedIn') === '1'; }catch(e){}
+        try{
+          const raw = sessionStorage.getItem('ptJustLoggedIn');
+          const ts = raw ? parseInt(raw, 10) : 0;
+          justLoggedInHere = ts > 0 && (Date.now() - ts) < 5000;
+        }catch(e){}
         if(justLoggedInHere) return;
         if(twoStepRevalidateCheckStarted) return; // this whole check already ran once for this page load — a second firing of this listener doesn't get to run it again
         twoStepRevalidateCheckStarted = true;
@@ -3887,17 +3899,26 @@
             }
             // Verified once before elsewhere but not on this device/uid
             // combination — challenge here instead of letting them in.
-            pageLoader.style.display = 'none';
+            // Keep the login screen itself hidden while the code is
+            // still sending (an async call, takes a moment) — revealing
+            // it early would show the plain email/password form for
+            // that whole window, since that's what's active inside it
+            // by default, then visibly swap to the code screen a beat
+            // later. Switching which form is active FIRST, while
+            // everything is still hidden, means the login screen is
+            // already showing the challenge the instant it appears —
+            // no flash of the wrong form in between.
             appRoot.style.display = 'none';
-            loginScreen.style.display = 'flex';
-            loginScreen.classList.remove('fade-in');
-            void loginScreen.offsetWidth;
-            loginScreen.classList.add('fade-in');
             pendingTwoStepContext = 'revalidate';
             twoStepSendInProgress = true;
             sendEmailTwoStepCodeFn({purpose: 'login'}).then(()=>{
               twoStepSendInProgress = false;
               showEmailTwoStepChallenge();
+              pageLoader.style.display = 'none';
+              loginScreen.style.display = 'flex';
+              loginScreen.classList.remove('fade-in');
+              void loginScreen.offsetWidth;
+              loginScreen.classList.add('fade-in');
             }).catch(err=>{
               twoStepSendInProgress = false;
               // If even sending a fresh code fails, fail safe by
@@ -3906,6 +3927,11 @@
               // code ever sent and no way to request one.
               console.error('Could not send two-step code for existing session', err);
               hideEmailTwoStepChallenge();
+              pageLoader.style.display = 'none';
+              loginScreen.style.display = 'flex';
+              loginScreen.classList.remove('fade-in');
+              void loginScreen.offsetWidth;
+              loginScreen.classList.add('fade-in');
             });
           });
         }).catch(err=>{

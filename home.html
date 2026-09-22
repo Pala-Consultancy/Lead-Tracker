@@ -4103,12 +4103,17 @@
   function consumeJustLoggedInFlag(){
     // A login submitted on a *different* page (account, chat, dashboard, etc.)
     // sets this before redirecting here, since that page's own `justLoggedIn`
-    // variable is lost the moment the browser navigates away.
+    // variable is lost the moment the browser navigates away. Stored as a
+    // timestamp (not just '1') so a stale leftover value — from a redirect
+    // that got interrupted, or a much earlier session — doesn't get treated
+    // as a genuine "just happened" login days later; a real redirect always
+    // lands here within milliseconds, so anything older than a few seconds
+    // is stale, not a real signal.
     try{
-      if(sessionStorage.getItem('ptJustLoggedIn') === '1'){
-        sessionStorage.removeItem('ptJustLoggedIn');
-        return true;
-      }
+      const raw = sessionStorage.getItem('ptJustLoggedIn');
+      const ts = raw ? parseInt(raw, 10) : 0;
+      sessionStorage.removeItem('ptJustLoggedIn');
+      return ts > 0 && (Date.now() - ts) < 5000;
     }catch(e){}
     return false;
   }

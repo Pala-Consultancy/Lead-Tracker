@@ -7668,8 +7668,20 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
 
     auth.onAuthStateChanged(user=>{
       if(user){
+        // A real redirect to home.html completes within milliseconds —
+        // if this flag is somehow still set several seconds later (stale
+        // from an earlier session, a redirect that got interrupted, tab
+        // history, anything), treating it as still meaning "a redirect is
+        // about to happen" would leave this page refusing to ever reveal
+        // itself, stuck on the loading spinner forever with nothing to
+        // ever clear it. A short recency window lets it self-heal instead
+        // of relying on home.html being the only page that ever clears it.
         let justLoggedInHere = false;
-        try{ justLoggedInHere = sessionStorage.getItem('ptJustLoggedIn') === '1'; }catch(e){}
+        try{
+          const raw = sessionStorage.getItem('ptJustLoggedIn');
+          const ts = raw ? parseInt(raw, 10) : 0;
+          justLoggedInHere = ts > 0 && (Date.now() - ts) < 5000;
+        }catch(e){}
         if(justLoggedInHere) return;
         if(!boardId){
           pageLoader.style.display = 'none';
