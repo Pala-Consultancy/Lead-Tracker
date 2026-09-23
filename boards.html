@@ -3962,7 +3962,16 @@
             // already showing the challenge the instant it appears —
             // no flash of the wrong form in between.
             appRoot.style.display = 'none';
-            pendingTwoStepContext = 'revalidate';
+            // Only mark this as a "just revealing this page again" context
+            // if it genuinely is one — a fresh login already correctly set
+            // this to 'login' above (via isFreshLoginByTimestamp), and this
+            // must not stomp back over that. Overwriting it unconditionally
+            // here was exactly why a real fresh login that happened to be
+            // caught by this check (rather than the login form's own) ended
+            // up landing back on boards.html instead of home.html once the
+            // code was verified — the destination it computes from wrongly
+            // thought it was just a revisit, not an actual login.
+            if(!isFreshLoginByTimestamp) pendingTwoStepContext = 'revalidate';
             twoStepSendInProgress = true;
             // Show the code screen immediately rather than waiting for
             // the send to fully complete — that round trip includes the
