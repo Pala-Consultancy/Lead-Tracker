@@ -3887,29 +3887,41 @@
           justLoggedInHere = ts > 0 && (Date.now() - ts) < 5000;
         }catch(e){}
         if(justLoggedInHere) return;
+        if(twoStepRevalidateCheckStarted) return; // this whole check already ran once for this page load — a second firing of this listener doesn't get to run it again
+        twoStepRevalidateCheckStarted = true;
+
         // The flag above is a client-side timing signal, set inside the
         // login form's own submit handler — and it can lose a genuine
         // race against this very listener, which fires the moment
         // Firebase's internal auth state updates, sometimes before that
         // flag has even been set yet. When that race goes the wrong way,
-        // an actual, real, just-typed-their-password sign-in gets
-        // wrongly treated as "just an already-signed-in session landing
-        // on this page" below, and skips the redirect to home.html
-        // entirely — staying on boards.html instead. lastSignInTime is
-        // reported directly by Firebase itself, not managed by any
-        // client-side code, so it can't lose that same race: if this
-        // account genuinely signed in within the last few seconds, this
-        // is a fresh login no matter which code path noticed it first,
-        // and it always belongs on home.html.
+        // an actual, real, just-typed-their-password sign-in ends up
+        // running through the checks below instead of the submit
+        // handler's own — but it must still go through those checks
+        // properly (two-step included, if it's enabled), never skip
+        // past them. lastSignInTime is reported directly by Firebase
+        // itself, not managed by any client-side code, so it can't lose
+        // that race the way the flag above can: if this account
+        // genuinely signed in within the last few seconds, this is a
+        // fresh login no matter which code path noticed it first, and
+        // it belongs on home.html once everything (two-step included)
+        // is satisfied — this only decides the eventual destination
+        // below, it does not skip the two-step check itself.
+        let isFreshLoginByTimestamp = false;
         try{
           const lastSignInMs = user.metadata && user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : 0;
-          if(lastSignInMs && (Date.now() - lastSignInMs) < 8000){
-            completeLoginRedirect();
-            return;
-          }
+          isFreshLoginByTimestamp = !!lastSignInMs && (Date.now() - lastSignInMs) < 8000;
         }catch(e){}
-        if(twoStepRevalidateCheckStarted) return; // this whole check already ran once for this page load — a second firing of this listener doesn't get to run it again
-        twoStepRevalidateCheckStarted = true;
+        if(isFreshLoginByTimestamp) pendingTwoStepContext = 'login';
+        // Every point below that would otherwise just reveal boards.html
+        // directly goes through this instead — a fresh login always ends
+        // up on home.html once whatever checks it needed to pass (two-step
+        // included) are satisfied; a genuine revisit reveals this page,
+        // since that's what the person was actually trying to do.
+        function finishAuthFlow(user){
+          if(isFreshLoginByTimestamp){ completeLoginRedirect(); }
+          else{ proceedToRevealBoardsApp(user); }
+        }
 
         // Firebase itself already treats this user as fully signed in —
         // it has no concept of this custom email-code step. So an
@@ -3920,7 +3932,7 @@
         // reload would walk straight past two-step entirely.
         db.collection('userDirectory').doc(user.uid).get().then(directoryDoc=>{
           const wsId = directoryDoc.exists ? directoryDoc.data().workspaceId : null;
-          if(!wsId) return proceedToRevealBoardsApp(user);
+          if(!wsId) return finishAuthFlow(user);
           return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
             const emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
             // A plain refresh of a tab that already verified this session
@@ -3929,7 +3941,7 @@
             // for exactly why sessionStorage is the right tool for that
             // distinction.
             if(!emailTwoStepOn || isEmailTwoStepVerifiedThisTab(user.uid)){
-              proceedToRevealBoardsApp(user);
+              finishAuthFlow(user);
               return;
             }
             if(twoStepSendInProgress){
@@ -3975,7 +3987,7 @@
           });
         }).catch(err=>{
           console.error('Could not verify two-step status for existing session', err);
-          proceedToRevealBoardsApp(user); // fail open rather than trap them behind a broken check
+          finishAuthFlow(user); // fail open rather than trap them behind a broken check
         });
       } else {
         if(isSigningOut) return;
