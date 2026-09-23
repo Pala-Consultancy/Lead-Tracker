@@ -2895,6 +2895,22 @@
     // fresh code — ends by revealing boards.html directly instead, since
     // that's what the person was already trying to do.
     let pendingTwoStepContext = 'login';
+    // Deliberately sessionStorage, not localStorage — this needs to
+    // survive a plain refresh of a tab someone's already sitting in
+    // (sessionStorage does), but NOT carry over to a genuinely new tab
+    // (sessionStorage doesn't, unlike localStorage) or survive the tab
+    // actually closing. That's the real distinction: a refresh isn't a
+    // new access attempt, a new tab is.
+    function emailTwoStepVerifiedKey(uid){ return 'ptEmailTwoStepVerified_' + uid; }
+    function markEmailTwoStepVerified(uid){
+      try{ sessionStorage.setItem(emailTwoStepVerifiedKey(uid), '1'); }catch(e){}
+    }
+    function markEmailTwoStepUnverified(uid){
+      try{ sessionStorage.removeItem(emailTwoStepVerifiedKey(uid)); }catch(e){}
+    }
+    function isEmailTwoStepVerifiedThisTab(uid){
+      try{ return sessionStorage.getItem(emailTwoStepVerifiedKey(uid)) === '1'; }catch(e){ return false; }
+    }
     // Hoisted out of onAuthStateChanged (rather than defined fresh inside
     // it) specifically so the code-challenge form can call this directly
     // the moment verification succeeds — revealing the app right then,
@@ -3095,13 +3111,10 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Verifying...';
       verifyEmailTwoStepCodeFn({code, purpose: 'login'}).then(()=>{
+        if(auth.currentUser) markEmailTwoStepVerified(auth.currentUser.uid);
         if(pendingTwoStepContext === 'revalidate'){
-          // Reveal directly, right here, rather than reloading the page.
-          // With no "remembered device" exception left at all, a reload
-          // would just run the whole check over again from scratch, find
-          // this session hasn't verified *yet* (nothing records that it
-          // just did, a second ago), and immediately challenge again —
-          // looping forever between verify, reload, and re-challenge.
+          // Reveal directly, right here, rather than reloading the page —
+          // a reload would just re-run the whole check from scratch again.
           if(auth.currentUser) proceedToRevealBoardsApp(auth.currentUser);
         } else {
           completeLoginRedirect();
@@ -3131,6 +3144,7 @@
     });
     document.getElementById('emailTwoStepChallengeCancelLink').addEventListener('click', ()=>{
       clearLoginError();
+      if(auth.currentUser) markEmailTwoStepUnverified(auth.currentUser.uid);
       auth.signOut();
       hideEmailTwoStepChallenge();
     });
@@ -3225,6 +3239,7 @@
     document.getElementById('signOutItem').addEventListener('click', ()=>{
       if(unsubscribeBoards){ unsubscribeBoards(); unsubscribeBoards = null; }
       if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
+      if(auth.currentUser) markEmailTwoStepUnverified(auth.currentUser.uid);
       isSigningOut = true;
       loginScreen.style.display = 'none';
       appRoot.style.display = 'none';
@@ -3908,11 +3923,12 @@
           if(!wsId) return proceedToRevealBoardsApp(user);
           return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
             const emailTwoStepOn = memberDoc.exists && memberDoc.data().emailTwoStepEnabled === true;
-            // No "remembered device" exception — every single page load
-            // with two-step enabled requires the code, full stop, whether
-            // that's a fresh sign-in, a new tab, or a reload of an
-            // existing session. No grace period, no trust window.
-            if(!emailTwoStepOn){
+            // A plain refresh of a tab that already verified this session
+            // doesn't need to ask again — only a genuinely new tab, or a
+            // new sign-in, does. See isEmailTwoStepVerifiedThisTab above
+            // for exactly why sessionStorage is the right tool for that
+            // distinction.
+            if(!emailTwoStepOn || isEmailTwoStepVerifiedThisTab(user.uid)){
               proceedToRevealBoardsApp(user);
               return;
             }
@@ -4026,8 +4042,9 @@
           idleOverlay.style.display = 'none';
           // Same reasoning as the main Sign out button — this session is
           // genuinely ending, so the next sign-in should require the code
-          // again rather than finding this device still marked trusted
+          // again rather than finding this tab still marked verified
           // from before.
+          if(auth && auth.currentUser && typeof markEmailTwoStepUnverified === 'function') markEmailTwoStepUnverified(auth.currentUser.uid);
           if(auth) auth.signOut();
         }
       }, 1000);
@@ -4043,6 +4060,7 @@
     if(signOutBtn) signOutBtn.addEventListener('click', function(){
       clearInterval(countdownInterval);
       idleOverlay.style.display = 'none';
+      if(auth && auth.currentUser && typeof markEmailTwoStepUnverified === 'function') markEmailTwoStepUnverified(auth.currentUser.uid);
       if(auth) auth.signOut();
     });
     ['mousemove','keydown','click','scroll','touchstart'].forEach(function(evt){
@@ -4061,6 +4079,7 @@
       if(elapsed >= IDLE_LIMIT_MS){
         clearInterval(countdownInterval);
         idleOverlay.style.display = 'none';
+        if(auth && auth.currentUser && typeof markEmailTwoStepUnverified === 'function') markEmailTwoStepUnverified(auth.currentUser.uid);
         if(auth && auth.currentUser) auth.signOut();
       } else {
         resetIdleTimer();
