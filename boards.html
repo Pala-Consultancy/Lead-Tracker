@@ -3056,19 +3056,23 @@
           }
           twoStepSendInProgress = true;
           pendingTwoStepContext = 'login';
-          try{
-            await sendEmailTwoStepCodeFn({purpose: 'login'});
-          }catch(err){
-            twoStepSendInProgress = false;
-            showLoginError('Could not send your verification code. Please try again.');
-            submitBtn.disabled = false;
-            submitBtn.textContent = t('signIn');
-            return;
-          }
-          twoStepSendInProgress = false;
+          // Show the code screen immediately rather than waiting for the
+          // send to fully complete — that round trip includes the actual
+          // email provider API call, not just a quick Firestore write, so
+          // waiting for it before showing anything made the whole login
+          // feel sluggish. The person needs a moment to go check their
+          // inbox anyway; there's no real reason the screen itself has to
+          // wait for that send to finish first. A failure still surfaces
+          // right there on the code screen instead of silently vanishing.
           showEmailTwoStepChallenge();
           submitBtn.disabled = false;
           submitBtn.textContent = t('signIn');
+          sendEmailTwoStepCodeFn({purpose: 'login'}).then(()=>{
+            twoStepSendInProgress = false;
+          }).catch(err=>{
+            twoStepSendInProgress = false;
+            showLoginError('Could not send your verification code — try "Resend code" below.');
+          });
           return;
         }
         completeLoginRedirect();
@@ -3911,27 +3915,25 @@
             appRoot.style.display = 'none';
             pendingTwoStepContext = 'revalidate';
             twoStepSendInProgress = true;
+            // Show the code screen immediately rather than waiting for
+            // the send to fully complete — that round trip includes the
+            // actual email provider API call, not a quick write, so
+            // waiting on it before showing anything made this feel
+            // sluggish. showEmailTwoStepChallenge() runs before the
+            // screen is revealed, so it's already showing the challenge
+            // (not the plain login form) the instant it appears.
+            showEmailTwoStepChallenge();
+            pageLoader.style.display = 'none';
+            loginScreen.style.display = 'flex';
+            loginScreen.classList.remove('fade-in');
+            void loginScreen.offsetWidth;
+            loginScreen.classList.add('fade-in');
             sendEmailTwoStepCodeFn({purpose: 'login'}).then(()=>{
               twoStepSendInProgress = false;
-              showEmailTwoStepChallenge();
-              pageLoader.style.display = 'none';
-              loginScreen.style.display = 'flex';
-              loginScreen.classList.remove('fade-in');
-              void loginScreen.offsetWidth;
-              loginScreen.classList.add('fade-in');
             }).catch(err=>{
               twoStepSendInProgress = false;
-              // If even sending a fresh code fails, fail safe by
-              // reverting to the login form rather than silently
-              // stranding them on a broken challenge screen with no
-              // code ever sent and no way to request one.
               console.error('Could not send two-step code for existing session', err);
-              hideEmailTwoStepChallenge();
-              pageLoader.style.display = 'none';
-              loginScreen.style.display = 'flex';
-              loginScreen.classList.remove('fade-in');
-              void loginScreen.offsetWidth;
-              loginScreen.classList.add('fade-in');
+              showLoginError('Could not send your verification code — try "Resend code" below.');
             });
           });
         }).catch(err=>{
