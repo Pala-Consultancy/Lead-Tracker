@@ -1975,7 +1975,7 @@
     loginScreen.style.display = 'flex';
     appRoot.style.display = 'none';
   } else {
-    document.getElementById('loginForm').addEventListener('submit', (e)=>{
+        document.getElementById('loginForm').addEventListener('submit', (e)=>{
       e.preventDefault();
       clearLoginError();
       const email = document.getElementById('loginEmail').value.trim();
@@ -1984,7 +1984,7 @@
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
       auth.signInWithEmailAndPassword(email, password).then(()=>{
-        try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
+        try{ sessionStorage.setItem('ptJustLoggedIn', String(Date.now())); }catch(e){}
         location.href = 'home.html';
       }).catch(err=>{
         showLoginError(t('incorrectLogin'));
@@ -2187,7 +2187,7 @@
       if(elapsed >= IDLE_LIMIT_MS){
         clearInterval(countdownInterval);
         idleOverlay.style.display = 'none';
-        if(auth && auth.currentUser) auth.signOut();
+          if(auth && auth.currentUser) auth.signOut();
       } else {
         resetIdleTimer();
       }

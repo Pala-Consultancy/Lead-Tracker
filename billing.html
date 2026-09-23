@@ -1878,7 +1878,7 @@
     loginScreen.style.display = 'flex';
     appRoot.style.display = 'none';
   } else {
-    document.getElementById('loginForm').addEventListener('submit', (e)=>{
+        document.getElementById('loginForm').addEventListener('submit', (e)=>{
       e.preventDefault();
       clearLoginError();
       const email = document.getElementById('loginEmail').value.trim();
@@ -1887,7 +1887,7 @@
       submitBtn.disabled = true;
       submitBtn.textContent = t('signingIn');
       auth.signInWithEmailAndPassword(email, password).then(()=>{
-        try{ sessionStorage.setItem('ptJustLoggedIn', '1'); }catch(e){}
+        try{ sessionStorage.setItem('ptJustLoggedIn', String(Date.now())); }catch(e){}
         location.href = 'home.html';
       }).catch(err=>{
         showLoginError(t('incorrectLogin'));
@@ -1965,8 +1965,16 @@
     auth.onAuthStateChanged(user=>{
       pageLoader.style.display = 'none';
       if(user){
+        // Same recency-based check as every other gated page — a real
+        // redirect to home.html completes within milliseconds, so a flag
+        // that's somehow still set several seconds later is stale, not a
+        // genuine "a redirect is about to happen" signal.
         let justLoggedInHere = false;
-        try{ justLoggedInHere = sessionStorage.getItem('ptJustLoggedIn') === '1'; }catch(e){}
+        try{
+          const raw = sessionStorage.getItem('ptJustLoggedIn');
+          const ts = raw ? parseInt(raw, 10) : 0;
+          justLoggedInHere = ts > 0 && (Date.now() - ts) < 5000;
+        }catch(e){}
         if(justLoggedInHere) return;
         loginScreen.style.display = 'none';
         appRoot.style.display = 'block';
@@ -2079,7 +2087,7 @@
       if(elapsed >= IDLE_LIMIT_MS){
         clearInterval(countdownInterval);
         idleOverlay.style.display = 'none';
-        if(auth && auth.currentUser) auth.signOut();
+          if(auth && auth.currentUser) auth.signOut();
       } else {
         resetIdleTimer();
       }
