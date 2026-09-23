@@ -3872,6 +3872,27 @@
           justLoggedInHere = ts > 0 && (Date.now() - ts) < 5000;
         }catch(e){}
         if(justLoggedInHere) return;
+        // The flag above is a client-side timing signal, set inside the
+        // login form's own submit handler — and it can lose a genuine
+        // race against this very listener, which fires the moment
+        // Firebase's internal auth state updates, sometimes before that
+        // flag has even been set yet. When that race goes the wrong way,
+        // an actual, real, just-typed-their-password sign-in gets
+        // wrongly treated as "just an already-signed-in session landing
+        // on this page" below, and skips the redirect to home.html
+        // entirely — staying on boards.html instead. lastSignInTime is
+        // reported directly by Firebase itself, not managed by any
+        // client-side code, so it can't lose that same race: if this
+        // account genuinely signed in within the last few seconds, this
+        // is a fresh login no matter which code path noticed it first,
+        // and it always belongs on home.html.
+        try{
+          const lastSignInMs = user.metadata && user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : 0;
+          if(lastSignInMs && (Date.now() - lastSignInMs) < 8000){
+            completeLoginRedirect();
+            return;
+          }
+        }catch(e){}
         if(twoStepRevalidateCheckStarted) return; // this whole check already ran once for this page load — a second firing of this listener doesn't get to run it again
         twoStepRevalidateCheckStarted = true;
 
