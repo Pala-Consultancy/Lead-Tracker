@@ -252,13 +252,24 @@
   .li-more-inline{position:absolute;right:0;bottom:0;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 26px);padding-left:34px;line-height:1.43;}
 
   .li-post-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 12px;margin-top:6px;border-top:1px solid rgba(0,0,0,.06);}
-  .li-post-stats{display:flex;align-items:center;gap:18px;color:var(--li-muted);font-size:13.5px;font-weight:500;}
-  .li-post-stat{display:inline-flex;align-items:center;gap:5px;}
-  .li-post-reactions-icons{display:flex;align-items:center;}
-  .li-post-reactions-icons span{
-    width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;
-    margin-left:-5px;box-shadow:0 0 0 1.5px #fff;
-  }
+  .li-post-stats{display:flex;align-items:center;gap:10px;color:var(--li-muted);font-size:14px;font-weight:500;}
+  .li-post-stat{display:inline-flex;align-items:center;gap:5px;padding:5px 6px;}
+  .li-stat-btn{border:0;background:none;font:inherit;color:inherit;cursor:pointer;border-radius:6px;transition:background .12s,color .12s;}
+  .li-stat-btn:hover{background:rgba(0,0,0,.06);color:var(--li-text);}
+  .li-stat-btn:active{transform:scale(.94);}
+  .li-stat-btn:focus-visible{outline:2px solid var(--li-blue);outline-offset:1px;}
+  .li-stat-btn.hit{color:var(--li-blue);}
+  .li-count{font-variant-numeric:tabular-nums;display:inline-block;}
+  .li-count:empty{display:none;}
+  .li-count.bump{animation:liBump .35s ease;}
+  @keyframes liBump{0%{transform:translateY(0);}35%{transform:translateY(-4px) scale(1.12);}100%{transform:none;}}
+  .li-react{display:inline-flex;width:18px;height:18px;flex-shrink:0;}
+  .li-react svg{width:100%;height:100%;display:block;}
+  .li-react.pop{animation:liPop .4s ease;}
+  @keyframes liPop{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
+  @media (prefers-reduced-motion: reduce){ .li-count.bump,.li-react.pop{animation:none;} }
+  .li-post-reactions-icons{display:flex;align-items:center;padding-left:4px;}
+  .li-react-stack .li-react{width:18px;height:18px;margin-left:-4px;border-radius:50%;box-shadow:0 0 0 1.5px #fff;}
 
   /* Profile photo from the user's PalaTrack account, when they have one */
   .li-post-avatar,.li-appbar-avatar,.seq-sidebar-avatar{overflow:hidden;}
@@ -278,6 +289,61 @@
   .li-post-media svg{width:100%;height:auto;display:block;}
 
   .li-preview-note{font-size:11.5px;color:var(--slate-light);margin-top:10px;line-height:1.5;}
+
+  /* ---------- Post text label row + clear ---------- */
+  .composer-label-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+  .composer-label-row .composer-label{margin-bottom:0;}
+  .clear-btn{
+    display:inline-flex;align-items:center;gap:5px;border:0;background:none;padding:4px 8px;border-radius:6px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--slate);
+  }
+  .clear-btn:hover{background:var(--fail-soft);color:var(--fail);}
+  .clear-btn:disabled{opacity:.4;cursor:default;background:none;color:var(--slate);}
+  .clear-btn:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+
+  /* ---------- Media bar in the composer ---------- */
+  .media-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .media-add-btn{
+    display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--panel);border-radius:8px;
+    padding:7px 12px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .12s,background .12s;
+  }
+  .media-add-btn:hover{border-color:var(--teal);background:var(--panel-alt);}
+  .media-add-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .media-add-btn svg{flex-shrink:0;}
+  .media-hint{font-size:11.5px;color:var(--slate-light);margin-left:auto;}
+  .media-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .media-thumbs:empty{display:none;}
+  .media-thumb{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;background:#E6EBF2;border:1px solid var(--border);}
+  .media-thumb img,.media-thumb video{width:100%;height:100%;object-fit:cover;display:block;}
+  .media-thumb .media-kind{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 5px;font-family:'Inter',sans-serif;}
+  .media-thumb-remove{
+    position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+  }
+  .media-thumb-remove:hover{background:var(--fail);}
+  .media-thumb-remove:focus-visible{outline:2px solid #fff;outline-offset:-2px;}
+  .composer-panel.drag-over .composer-textarea{border-color:var(--teal);box-shadow:0 0 0 3px rgba(55,48,179,0.12);}
+
+  /* ---------- Media in the LinkedIn preview ---------- */
+  .li-media{display:grid;gap:2px;margin-top:8px;background:#fff;}
+  .li-media:empty{display:none;}
+  .li-media-item{position:relative;overflow:hidden;background:#E9EDF2;}
+  .li-media-item img{width:100%;height:100%;object-fit:cover;display:block;}
+  .li-media-item video{width:100%;height:100%;display:block;background:#000;object-fit:contain;}
+  .li-media-more{position:absolute;inset:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font:600 26px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  .li-media[data-count="2"]{grid-template-columns:1fr 1fr;}
+  .li-media[data-count="2"] .li-media-item{aspect-ratio:1/1;}
+  .li-media[data-count="3"]{grid-template-columns:1fr 1fr;}
+  .li-media[data-count="3"] .li-media-item:first-child{grid-column:1 / -1;aspect-ratio:2/1;}
+  .li-media[data-count="3"] .li-media-item:not(:first-child){aspect-ratio:1/1;}
+  .li-media[data-count="4"]{grid-template-columns:repeat(3,1fr);}
+  .li-media[data-count="4"] .li-media-item:first-child{grid-column:1 / -1;aspect-ratio:16/9;}
+  .li-media[data-count="4"] .li-media-item:not(:first-child){aspect-ratio:1/1;}
+  .li-media[data-count="5"]{grid-template-columns:repeat(6,1fr);}
+  .li-media[data-count="5"] .li-media-item:nth-child(-n+2){grid-column:span 3;aspect-ratio:1/1;}
+  .li-media[data-count="5"] .li-media-item:nth-child(n+3){grid-column:span 2;aspect-ratio:1/1;}
+  .toast{display:flex;align-items:center;gap:14px;}
+  .toast-action{border:0;background:none;color:#fff;font:700 13px 'Inter',sans-serif;text-decoration:underline;cursor:pointer;padding:0;}
 
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
@@ -474,10 +540,30 @@
         <div class="headline-hint" id="headlineHint">Save it once and it's filled in for every post.</div>
       </div>
       <div class="composer-field" style="margin-bottom:0;">
-        <label class="composer-label">Post text</label>
+        <div class="composer-label-row">
+          <label class="composer-label" for="postTextInput">Post text</label>
+          <button type="button" class="clear-btn" id="clearPostBtn" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+            Clear
+          </button>
+        </div>
         <textarea class="composer-textarea" id="postTextInput" placeholder="Write your LinkedIn post here…
 
 Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; — the preview on the right shows you exactly where that cutoff lands." maxlength="3000"></textarea>
+        <div class="media-bar">
+          <button type="button" class="media-add-btn" id="addPhotoBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#378FE9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+            Add photos
+          </button>
+          <button type="button" class="media-add-btn" id="addVideoBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F9B41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="m17 10 5-3v10l-5-3z"/></svg>
+            Add video
+          </button>
+          <span class="media-hint" id="mediaHint">Up to 20 photos or 1 video</span>
+          <input type="file" id="photoInput" accept="image/*" multiple hidden>
+          <input type="file" id="videoInput" accept="video/*" hidden>
+        </div>
+        <div class="media-thumbs" id="mediaThumbs"></div>
       </div>
       <div class="composer-footer">
         <span class="char-count" id="charCount">0 / 3,000</span>
@@ -576,16 +662,15 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
                   <div class="li-post-body empty" id="previewBody">Your post will appear here as you type…</div>
                   <div class="li-more-row" id="previewLessRow" style="display:none;"><button type="button" class="li-see-more" id="previewLessBtn">…less</button></div>
                 </div>
+                <div class="li-media" id="previewMedia"></div>
                 <div class="li-post-footer" id="socialProof" style="display:none;">
                   <div class="li-post-stats">
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0 4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.8 21H7"/></svg>38</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z"/><line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="13.5" x2="13" y2="13.5"/></svg>177</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg></span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="likes" title="Like"><span class="li-react" data-r="love"></span><span class="li-count" data-n="38">38</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="comments" title="Comment"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5c0 3.9-3.6 7-8 7-1.2 0-2.3-.2-3.3-.6L4 20l1.2-3.6C4.4 15.3 4 14 4 12.5c0-3.9 3.6-7 8-7s8 3.1 8 7z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg><span class="li-count" data-n="177">177</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="reposts" title="Repost"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg><span class="li-count" data-n="0"></span></button>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 2.3a1 1 0 0 0-1-.2l-18 6.5a1 1 0 0 0-.1 1.8l7.4 3.6 3.6 7.4a1 1 0 0 0 1.8-.1l6.5-18a1 1 0 0 0-.2-1zM10.5 12.1 6 9.9l11.3-4.1zm2 1.4 5.3-5.3-4.1 11.3z"/></svg></span>
                   </div>
-                  <div class="li-post-reactions-icons" aria-hidden="true">
-                    <span style="background:#F5E6B8;">💡</span><span style="background:#F7D9D2;">❤️</span>
-                  </div>
+                  <div class="li-post-reactions-icons li-react-stack" aria-hidden="true"><span class="li-react" data-r="like"></span><span class="li-react" data-r="celebrate"></span><span class="li-react" data-r="love"></span></div>
                 </div>
               </div>
               <!-- Made-up posts so the preview reads like a real feed -->
@@ -604,12 +689,12 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
 No new tools. No new hires. We just stopped sending proposals before the second call.<span class="li-more-static">…more</span></div></div>
                 <div class="li-post-footer">
                   <div class="li-post-stats">
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0 4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.8 21H7"/></svg>1,284</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z"/><line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="13.5" x2="13" y2="13.5"/></svg>96</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>41</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="likes" title="Like"><span class="li-react" data-r="like"></span><span class="li-count" data-n="1284">1,284</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="comments" title="Comment"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5c0 3.9-3.6 7-8 7-1.2 0-2.3-.2-3.3-.6L4 20l1.2-3.6C4.4 15.3 4 14 4 12.5c0-3.9 3.6-7 8-7s8 3.1 8 7z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg><span class="li-count" data-n="96">96</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="reposts" title="Repost"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg><span class="li-count" data-n="41">41</span></button>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 2.3a1 1 0 0 0-1-.2l-18 6.5a1 1 0 0 0-.1 1.8l7.4 3.6 3.6 7.4a1 1 0 0 0 1.8-.1l6.5-18a1 1 0 0 0-.2-1zM10.5 12.1 6 9.9l11.3-4.1zm2 1.4 5.3-5.3-4.1 11.3z"/></svg></span>
                   </div>
-                  <div class="li-post-reactions-icons"><span style="background:#DCE8F7;">👍</span><span style="background:#F5E6B8;">💡</span><span style="background:#F7D9D2;">❤️</span></div>
+                  <div class="li-post-reactions-icons li-react-stack" aria-hidden="true"><span class="li-react" data-r="like"></span><span class="li-react" data-r="insightful"></span><span class="li-react" data-r="love"></span></div>
                 </div>
               </div>
 
@@ -648,12 +733,12 @@ No new tools. No new hires. We just stopped sending proposals before the second 
                 </div>
                 <div class="li-post-footer">
                   <div class="li-post-stats">
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0 4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.8 21H7"/></svg>412</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z"/><line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="13.5" x2="13" y2="13.5"/></svg>38</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>7</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="likes" title="Like"><span class="li-react" data-r="celebrate"></span><span class="li-count" data-n="412">412</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="comments" title="Comment"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5c0 3.9-3.6 7-8 7-1.2 0-2.3-.2-3.3-.6L4 20l1.2-3.6C4.4 15.3 4 14 4 12.5c0-3.9 3.6-7 8-7s8 3.1 8 7z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg><span class="li-count" data-n="38">38</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="reposts" title="Repost"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg><span class="li-count" data-n="7">7</span></button>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 2.3a1 1 0 0 0-1-.2l-18 6.5a1 1 0 0 0-.1 1.8l7.4 3.6 3.6 7.4a1 1 0 0 0 1.8-.1l6.5-18a1 1 0 0 0-.2-1zM10.5 12.1 6 9.9l11.3-4.1zm2 1.4 5.3-5.3-4.1 11.3z"/></svg></span>
                   </div>
-                  <div class="li-post-reactions-icons"><span style="background:#E1F0DC;">👏</span><span style="background:#DCE8F7;">👍</span><span style="background:#F7D9D2;">❤️</span></div>
+                  <div class="li-post-reactions-icons li-react-stack" aria-hidden="true"><span class="li-react" data-r="celebrate"></span><span class="li-react" data-r="like"></span><span class="li-react" data-r="love"></span></div>
                 </div>
               </div>
 
@@ -672,12 +757,12 @@ No new tools. No new hires. We just stopped sending proposals before the second 
 It named my last post, asked one question, and didn't pitch anything. I booked the call myself.<span class="li-more-static">…more</span></div></div>
                 <div class="li-post-footer">
                   <div class="li-post-stats">
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0 4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.8 21H7"/></svg>867</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z"/><line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="13.5" x2="13" y2="13.5"/></svg>213</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>18</span>
-                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="likes" title="Like"><span class="li-react" data-r="insightful"></span><span class="li-count" data-n="867">867</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="comments" title="Comment"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5c0 3.9-3.6 7-8 7-1.2 0-2.3-.2-3.3-.6L4 20l1.2-3.6C4.4 15.3 4 14 4 12.5c0-3.9 3.6-7 8-7s8 3.1 8 7z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg><span class="li-count" data-n="213">213</span></button>
+                    <button type="button" class="li-post-stat li-stat-btn" data-stat="reposts" title="Repost"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg><span class="li-count" data-n="18">18</span></button>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 2.3a1 1 0 0 0-1-.2l-18 6.5a1 1 0 0 0-.1 1.8l7.4 3.6 3.6 7.4a1 1 0 0 0 1.8-.1l6.5-18a1 1 0 0 0-.2-1zM10.5 12.1 6 9.9l11.3-4.1zm2 1.4 5.3-5.3-4.1 11.3z"/></svg></span>
                   </div>
-                  <div class="li-post-reactions-icons"><span style="background:#F5E6B8;">💡</span><span style="background:#DCE8F7;">👍</span></div>
+                  <div class="li-post-reactions-icons li-react-stack" aria-hidden="true"><span class="li-react" data-r="insightful"></span><span class="li-react" data-r="like"></span><span class="li-react" data-r="support"></span></div>
                 </div>
               </div>
             </div>
@@ -782,17 +867,25 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(!parts.length) return '?';
     return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
   }
-  function showToast(message, danger){
+  function showToast(message, danger, action){
     const stack = document.getElementById('toastStack');
     const el = document.createElement('div');
     el.className = 'toast' + (danger ? ' danger' : '');
-    el.textContent = message;
+    const msg = document.createElement('span');
+    msg.textContent = message;
+    el.appendChild(msg);
+    if(action){
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'toast-action'; b.textContent = action.label;
+      b.addEventListener('click', ()=>{ action.fn(); el.remove(); });
+      el.appendChild(b);
+    }
     stack.appendChild(el);
     setTimeout(()=>{
       el.style.transition = 'opacity .2s ease';
       el.style.opacity = '0';
       setTimeout(()=>el.remove(), 200);
-    }, 3200);
+    }, action ? 6000 : 3200);
   }
   function timeAgo(ts){
     if(!ts) return '';
@@ -811,6 +904,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   let allDrafts = [];
   let activeDraftId = null; // null = unsaved new post
   let saveDebounceTimer = null;
+  let currentMedia = []; // photos/video attached to the post in the editor: [{type:'image'|'video', name, blob}]
   let myPhotoURL = ''; // the photo set on the user's PalaTrack account (members/{uid}.photoURL)
 
   // Shows the account photo in an avatar spot, or initials when there's none
@@ -872,11 +966,14 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const lessRow = document.getElementById('previewLessRow');
     lessRow.style.display = 'none';
 
+    const hasMedia = currentMedia.length > 0;
     if(!text.trim()){
       bodyEl.className = 'li-post-body empty';
-      bodyEl.textContent = 'Your post will appear here as you type…';
-      socialProof.style.display = 'none';
+      bodyEl.textContent = hasMedia ? '' : 'Your post will appear here as you type…';
+      bodyEl.style.display = hasMedia ? 'none' : '';
+      socialProof.style.display = hasMedia ? 'flex' : 'none';
     } else {
+      bodyEl.style.display = '';
       socialProof.style.display = 'flex';
       bodyEl.textContent = text;
       // Measure whether the text runs past 3 lines at the current device width.
@@ -914,6 +1011,259 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     statusEl.textContent = '';
     statusEl.className = 'save-status';
   }
+
+  // ---------- Photos & videos ----------
+  // Media is kept in this browser (IndexedDB), keyed by the saved post, so it
+  // survives reloads without going through Firestore's 1 MB document limit.
+  const MAX_PHOTOS = 20;
+  const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+  let mediaUrls = [];
+
+  const mediaDB = (()=>{
+    let dbPromise = null;
+    function open(){
+      if(!dbPromise){
+        dbPromise = new Promise((resolve, reject)=>{
+          if(!window.indexedDB){ reject(new Error('IndexedDB unavailable')); return; }
+          const req = indexedDB.open('palatrack-linkedin-media', 1);
+          req.onupgradeneeded = ()=> req.result.createObjectStore('media');
+          req.onsuccess = ()=> resolve(req.result);
+          req.onerror = ()=> reject(req.error);
+        });
+      }
+      return dbPromise;
+    }
+    function run(mode, fn){
+      return open().then(db=> new Promise((resolve, reject)=>{
+        const tx = db.transaction('media', mode);
+        const req = fn(tx.objectStore('media'));
+        tx.oncomplete = ()=> resolve(req ? req.result : undefined);
+        tx.onerror = ()=> reject(tx.error);
+      }));
+    }
+    const key = id => `${currentUid}:${id}`;
+    return {
+      get: id => run('readonly', s=> s.get(key(id))).catch(()=> undefined),
+      set: (id, items) => run('readwrite', s=> items.length ? s.put(items, key(id)) : s.delete(key(id))).catch(err=>{
+        console.error('Could not store media', err);
+        showToast('Could not keep the photos/video on this device (browser storage may be full).', true);
+      }),
+      del: id => run('readwrite', s=> s.delete(key(id))).catch(()=>{}),
+    };
+  })();
+
+  function persistMedia(){
+    if(activeDraftId) mediaDB.set(activeDraftId, currentMedia);
+  }
+  function setMedia(items, {persist = true} = {}){
+    currentMedia = items;
+    renderMedia();
+    updateClearBtn();
+    if(persist) persistMedia();
+  }
+
+  function renderMedia(){
+    mediaUrls.forEach(u=> URL.revokeObjectURL(u));
+    mediaUrls = [];
+    const urlFor = blob => { const u = URL.createObjectURL(blob); mediaUrls.push(u); return u; };
+
+    // Thumbnails in the composer
+    const thumbs = document.getElementById('mediaThumbs');
+    thumbs.innerHTML = '';
+    currentMedia.forEach((m, i)=>{
+      const t = document.createElement('div');
+      t.className = 'media-thumb';
+      const el = document.createElement(m.type === 'video' ? 'video' : 'img');
+      el.src = urlFor(m.blob);
+      if(m.type === 'video'){ el.muted = true; el.preload = 'metadata'; } else { el.alt = ''; }
+      t.appendChild(el);
+      if(m.type === 'video'){ const k = document.createElement('span'); k.className = 'media-kind'; k.textContent = 'Video'; t.appendChild(k); }
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'media-thumb-remove';
+      rm.setAttribute('aria-label', `Remove ${m.type === 'video' ? 'video' : 'photo ' + (i+1)}`);
+      rm.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+      rm.addEventListener('click', ()=> setMedia(currentMedia.filter((_, j)=> j !== i)));
+      t.appendChild(rm);
+      thumbs.appendChild(t);
+    });
+    const hasVideo = currentMedia.some(m=> m.type === 'video');
+    const photos = currentMedia.filter(m=> m.type === 'image').length;
+    document.getElementById('mediaHint').textContent = hasVideo ? '1 video added'
+      : photos ? `${photos} of ${MAX_PHOTOS} photos` : 'Up to 20 photos or 1 video';
+
+    // The LinkedIn-style layout in the preview
+    const grid = document.getElementById('previewMedia');
+    grid.innerHTML = '';
+    grid.removeAttribute('data-count');
+    grid.style.removeProperty('--single-ratio');
+    if(!currentMedia.length){ renderPreview(); return; }
+
+    if(hasVideo){
+      const item = document.createElement('div');
+      item.className = 'li-media-item';
+      const v = document.createElement('video');
+      v.src = urlFor(currentMedia[0].blob);
+      v.controls = true; v.muted = true; v.playsInline = true; v.preload = 'metadata';
+      v.addEventListener('loadedmetadata', ()=>{
+        const r = v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16/9;
+        item.style.aspectRatio = String(Math.min(Math.max(r, 4/5), 16/9)); // LinkedIn's feed crops to between 4:5 and 16:9
+      });
+      item.style.aspectRatio = '16/9';
+      item.appendChild(v);
+      grid.appendChild(item);
+    } else {
+      const shown = currentMedia.slice(0, 5);
+      grid.dataset.count = String(shown.length);
+      shown.forEach((m, i)=>{
+        const item = document.createElement('div');
+        item.className = 'li-media-item';
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = urlFor(m.blob);
+        if(shown.length === 1){
+          item.style.aspectRatio = '1.91/1';
+          img.addEventListener('load', ()=>{
+            const r = img.naturalWidth / img.naturalHeight;
+            item.style.aspectRatio = String(Math.min(Math.max(r, 4/5), 1.91)); // same crop limits as LinkedIn
+          });
+        }
+        item.appendChild(img);
+        if(i === 4 && currentMedia.length > 5){
+          const more = document.createElement('div');
+          more.className = 'li-media-more';
+          more.textContent = `+${currentMedia.length - 5}`;
+          item.appendChild(more);
+        }
+        grid.appendChild(item);
+      });
+    }
+    renderPreview();
+  }
+
+  function addFiles(fileList){
+    const files = Array.from(fileList || []);
+    if(!files.length) return;
+    const videos = files.filter(f=> f.type.startsWith('video/'));
+    const images = files.filter(f=> f.type.startsWith('image/'));
+    if(!videos.length && !images.length){ showToast('Only photos and videos can be added.', true); return; }
+    const hasVideo = currentMedia.some(m=> m.type === 'video');
+    const hasPhotos = currentMedia.some(m=> m.type === 'image');
+
+    if(videos.length){
+      if(images.length || hasPhotos){ showToast('A LinkedIn post can have photos or one video, not both. Remove the photos first.', true); return; }
+      if(videos.length > 1 || hasVideo){ showToast('A LinkedIn post can only have one video.', true); return; }
+      if(videos[0].size > MAX_VIDEO_BYTES){ showToast('That video is over 500 MB. Try a shorter or compressed version.', true); return; }
+      setMedia([{type:'video', name: videos[0].name, blob: videos[0]}]);
+      return;
+    }
+    if(hasVideo){ showToast('A LinkedIn post can have photos or one video, not both. Remove the video first.', true); return; }
+    const room = MAX_PHOTOS - currentMedia.length;
+    if(room <= 0){ showToast(`LinkedIn allows up to ${MAX_PHOTOS} photos per post.`, true); return; }
+    const added = images.slice(0, room).map(f=> ({type:'image', name: f.name, blob: f}));
+    if(images.length > room) showToast(`Only the first ${room} were added. LinkedIn allows up to ${MAX_PHOTOS} photos.`, true);
+    setMedia(currentMedia.concat(added));
+  }
+
+  document.getElementById('addPhotoBtn').addEventListener('click', ()=> document.getElementById('photoInput').click());
+  document.getElementById('addVideoBtn').addEventListener('click', ()=> document.getElementById('videoInput').click());
+  ['photoInput','videoInput'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', e=>{ addFiles(e.target.files); e.target.value = ''; });
+  });
+  // Drag files straight onto the composer
+  const composerPanel = document.querySelector('.composer-panel');
+  composerPanel.addEventListener('dragover', e=>{
+    if(Array.from(e.dataTransfer.types || []).includes('Files')){ e.preventDefault(); composerPanel.classList.add('drag-over'); }
+  });
+  composerPanel.addEventListener('dragleave', e=>{ if(!composerPanel.contains(e.relatedTarget)) composerPanel.classList.remove('drag-over'); });
+  composerPanel.addEventListener('drop', e=>{
+    if(!e.dataTransfer.files || !e.dataTransfer.files.length) return;
+    e.preventDefault(); composerPanel.classList.remove('drag-over');
+    addFiles(e.dataTransfer.files);
+  });
+  // Paste an image from the clipboard into the text box
+  document.getElementById('postTextInput').addEventListener('paste', e=>{
+    const files = Array.from(e.clipboardData ? e.clipboardData.files : []);
+    if(files.length){ e.preventDefault(); addFiles(files); }
+  });
+
+  function loadMediaForDraft(draftId){
+    setMedia([], {persist:false});
+    mediaDB.get(draftId).then(items=>{
+      if(activeDraftId === draftId && Array.isArray(items)) setMedia(items, {persist:false});
+    });
+  }
+
+  // ---------- Clear ----------
+  function updateClearBtn(){
+    const hasText = document.getElementById('postTextInput').value.trim().length > 0;
+    document.getElementById('clearPostBtn').disabled = !hasText && !currentMedia.length;
+  }
+  document.getElementById('postTextInput').addEventListener('input', updateClearBtn);
+  document.getElementById('clearPostBtn').addEventListener('click', ()=>{
+    const snapshot = {
+      text: document.getElementById('postTextInput').value,
+      media: currentMedia.slice(),
+      draftId: activeDraftId,
+    };
+    startNewPost();
+    showToast(
+      snapshot.draftId ? 'Cleared. Your saved version is still under your saved posts.' : 'Post cleared.',
+      false,
+      {label: 'Undo', fn: ()=>{
+        activeDraftId = snapshot.draftId;
+        document.getElementById('postTextInput').value = snapshot.text;
+        setMedia(snapshot.media, {persist:false});
+        previewExpanded = false;
+        renderPreview();
+        renderDraftsStrip();
+        renderScheduleChip();
+        renderCalendar();
+      }}
+    );
+  });
+
+  // ---------- Reactions (LinkedIn-style badges + playful counters) ----------
+  const REACTIONS = {
+    like:       {bg:'#378FE9', path:'<path fill="#fff" d="M8 11.2h-1.8a.7.7 0 0 0-.7.7v5.6c0 .4.3.7.7.7H8zm1.3 7h5.8c.8 0 1.5-.6 1.6-1.4l.7-4.3c.1-.8-.5-1.5-1.3-1.5h-3l.5-2.4c.1-.6-.1-1.2-.6-1.5a.6.6 0 0 0-.9.2L9.3 11z"/>'},
+    celebrate:  {bg:'#6DAE4F', path:'<path fill="#fff" d="M10.3 18.4 7.2 13c-.3-.5-.1-1 .3-1.3.4-.2 1-.1 1.2.3l1.3 2.2V8.8c0-.5.4-.9.9-.9s.9.4.9.9v3.5l.1-4.3c0-.5.4-.9.9-.9s.9.4.9.9v4.3l.4-3.3c.1-.5.5-.8 1-.8.5.1.8.5.7 1l-.6 5.8c-.2 1.9-1.8 3.4-3.7 3.4z"/><path stroke="#fff" stroke-width="1.2" stroke-linecap="round" d="M6.5 7.5 5.4 6.4M8.5 6.2l-.3-1.5M5.3 9.4l-1.5-.2"/>'},
+    love:       {bg:'#DF704D', path:'<path fill="#fff" d="M12 17.8 11 17c-3.2-2.8-5.3-4.7-5.3-7a3.2 3.2 0 0 1 3.3-3.2c1.1 0 2.2.5 3 1.3a4.1 4.1 0 0 1 3-1.3 3.2 3.2 0 0 1 3.3 3.2c0 2.3-2.1 4.2-5.3 7z"/>'},
+    insightful: {bg:'#F5BB5C', path:'<path fill="#fff" d="M12 5.3a4.6 4.6 0 0 0-2.8 8.3c.5.4.8.9.8 1.4v.6h4V15c0-.5.3-1 .8-1.4A4.6 4.6 0 0 0 12 5.3zm-2 11.5h4v.9a1.1 1.1 0 0 1-1.1 1.1h-1.8a1.1 1.1 0 0 1-1.1-1.1z"/>'},
+    support:    {bg:'#A872E8', path:'<path fill="#fff" d="M12 13.6 11.3 13c-2-1.8-3.3-3-3.3-4.4a2 2 0 0 1 2-2c.7 0 1.4.3 2 .8.6-.5 1.3-.8 2-.8a2 2 0 0 1 2 2c0 1.4-1.3 2.6-3.3 4.4z"/><path fill="#fff" d="M5.5 14.5h2.2l3 1.2h2.6a1 1 0 0 1 0 2h-2.5l3.2.3 3.4-1.7a.9.9 0 0 1 .9 1.5l-3.6 2.4a2 2 0 0 1-1.2.3l-5.5-.4H5.5z"/>'},
+    funny:      {bg:'#44B7D6', path:'<circle cx="12" cy="12" r="6.2" fill="#fff"/><circle cx="9.9" cy="10.6" r=".9" fill="#44B7D6"/><circle cx="14.1" cy="10.6" r=".9" fill="#44B7D6"/><path fill="#44B7D6" d="M8.8 12.9h6.4a3.2 3.2 0 0 1-6.4 0z"/>'},
+  };
+  function paintReaction(el, type){
+    const r = REACTIONS[type] || REACTIONS.like;
+    el.dataset.r = type;
+    el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="${r.bg}"/>${r.path}</svg>`;
+  }
+  document.querySelectorAll('.li-react').forEach(el=> paintReaction(el, el.dataset.r));
+
+  // Fun add: clicking like/comment/repost in the preview bumps the number by a random amount.
+  const BUMPS = {likes:[3, 180], comments:[1, 40], reposts:[1, 15]};
+  const randInt = (lo, hi)=> lo + Math.floor(Math.random() * (hi - lo + 1));
+  document.addEventListener('click', e=>{
+    const btn = e.target.closest('.li-stat-btn');
+    if(!btn) return;
+    const countEl = btn.querySelector('.li-count');
+    const [lo, hi] = BUMPS[btn.dataset.stat] || [1, 10];
+    const n = (parseInt(countEl.dataset.n, 10) || 0) + randInt(lo, hi);
+    countEl.dataset.n = n;
+    countEl.textContent = n.toLocaleString('en-US');
+    countEl.classList.remove('bump'); void countEl.offsetWidth; countEl.classList.add('bump');
+    btn.classList.add('hit');
+    if(btn.dataset.stat === 'likes'){
+      // Shake up which reactions are "winning" on this post.
+      const types = Object.keys(REACTIONS).sort(()=> Math.random() - .5);
+      const badge = btn.querySelector('.li-react');
+      paintReaction(badge, types[0]);
+      badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
+      const stack = btn.closest('.li-post-footer').querySelector('.li-react-stack');
+      if(stack){
+        stack.querySelectorAll('.li-react').forEach((el, i)=> paintReaction(el, types[i]));
+      }
+    }
+  });
 
   // Feed photos come from a placeholder service; if one can't load, show initials instead.
   document.querySelectorAll('img[data-initials]').forEach(img=>{
@@ -1325,6 +1675,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     document.getElementById('authorNameInput').value = draft.authorName || document.getElementById('authorNameInput').value;
     document.getElementById('authorHeadlineInput').value = draft.authorHeadline || document.getElementById('authorHeadlineInput').value;
     document.getElementById('postTextInput').value = draft.content || '';
+    loadMediaForDraft(draft.id);
+    updateClearBtn();
     previewExpanded = false;
     renderPreview();
     renderDraftsStrip();
@@ -1337,6 +1689,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function startNewPost(){
     activeDraftId = null;
     document.getElementById('postTextInput').value = '';
+    setMedia([], {persist:false});
     previewExpanded = false;
     renderPreview();
     renderDraftsStrip();
@@ -1348,6 +1701,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 
   function deleteDraft(draftId){
     collectionRef().doc(draftId).delete().then(()=>{
+      mediaDB.del(draftId);
       allDrafts = allDrafts.filter(d=>d.id !== draftId);
       if(activeDraftId === draftId) startNewPost();
       else renderDraftsStrip();
@@ -1377,6 +1731,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       ? collectionRef().doc(activeDraftId).update(payload)
       : collectionRef().add({status: 'draft', ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp()}).then(ref=>{ activeDraftId = ref.id; });
     return savePromise.then(()=>{
+      persistMedia();
       const statusEl = document.getElementById('saveStatus');
       statusEl.textContent = 'Saved ✓';
       statusEl.className = 'save-status saved';
