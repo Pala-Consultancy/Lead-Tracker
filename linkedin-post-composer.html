@@ -846,6 +846,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 <script>
 (function(){
   const firebaseConfig = {
@@ -858,6 +859,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+  let storage = null;
+  try{ storage = firebase.storage(); }catch(e){ console.error('Firebase Storage unavailable', e); }
   const auth = firebase.auth();
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
@@ -1013,25 +1016,27 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   }
 
   // ---------- Photos & videos ----------
-  // Media is kept in this browser (IndexedDB), keyed by the saved post, so it
-  // survives reloads without going through Firestore's 1 MB document limit.
+  // New files live in memory (as Blobs) until the post is saved; savePost()
+  // then uploads them to Firebase Storage and stores just their links on the
+  // post document, so the media follows the user to any device.
+  //   Storage path: workspaces/{workspaceId}/linkedinPostMedia/{uid}/{postId}/{file}
   const MAX_PHOTOS = 20;
-  const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+  const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+  const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
   let mediaUrls = [];
+  // Each item: {type:'image'|'video', name, blob} before upload, {type, name, url, path} after.
 
-  const mediaDB = (()=>{
-    let dbPromise = null;
+  // Older versions kept media only in this browser. Still read it, so it can be
+  // uploaded to Storage the next time that post is saved.
+  const legacyMediaDB = (()=>{
     function open(){
-      if(!dbPromise){
-        dbPromise = new Promise((resolve, reject)=>{
-          if(!window.indexedDB){ reject(new Error('IndexedDB unavailable')); return; }
-          const req = indexedDB.open('palatrack-linkedin-media', 1);
-          req.onupgradeneeded = ()=> req.result.createObjectStore('media');
-          req.onsuccess = ()=> resolve(req.result);
-          req.onerror = ()=> reject(req.error);
-        });
-      }
-      return dbPromise;
+      return new Promise((resolve, reject)=>{
+        if(!window.indexedDB){ reject(new Error('IndexedDB unavailable')); return; }
+        const req = indexedDB.open('palatrack-linkedin-media', 1);
+        req.onupgradeneeded = ()=> req.result.createObjectStore('media');
+        req.onsuccess = ()=> resolve(req.result);
+        req.onerror = ()=> reject(req.error);
+      });
     }
     function run(mode, fn){
       return open().then(db=> new Promise((resolve, reject)=>{
@@ -1044,28 +1049,30 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const key = id => `${currentUid}:${id}`;
     return {
       get: id => run('readonly', s=> s.get(key(id))).catch(()=> undefined),
-      set: (id, items) => run('readwrite', s=> items.length ? s.put(items, key(id)) : s.delete(key(id))).catch(err=>{
-        console.error('Could not store media', err);
-        showToast('Could not keep the photos/video on this device (browser storage may be full).', true);
-      }),
       del: id => run('readwrite', s=> s.delete(key(id))).catch(()=>{}),
     };
   })();
 
-  function persistMedia(){
-    if(activeDraftId) mediaDB.set(activeDraftId, currentMedia);
+  function markUnsaved(){
+    if(!activeDraftId) return;
+    const statusEl = document.getElementById('saveStatus');
+    statusEl.textContent = 'Unsaved changes';
+    statusEl.className = 'save-status';
   }
-  function setMedia(items, {persist = true} = {}){
+  function setMedia(items, {dirty = true} = {}){
     currentMedia = items;
     renderMedia();
     updateClearBtn();
-    if(persist) persistMedia();
+    if(dirty) markUnsaved();
   }
 
   function renderMedia(){
     mediaUrls.forEach(u=> URL.revokeObjectURL(u));
     mediaUrls = [];
-    const urlFor = blob => { const u = URL.createObjectURL(blob); mediaUrls.push(u); return u; };
+    const srcFor = m => {
+      if(m.url) return m.url;
+      const u = URL.createObjectURL(m.blob); mediaUrls.push(u); return u;
+    };
 
     // Thumbnails in the composer
     const thumbs = document.getElementById('mediaThumbs');
@@ -1074,10 +1081,14 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       const t = document.createElement('div');
       t.className = 'media-thumb';
       const el = document.createElement(m.type === 'video' ? 'video' : 'img');
-      el.src = urlFor(m.blob);
+      el.src = srcFor(m);
       if(m.type === 'video'){ el.muted = true; el.preload = 'metadata'; } else { el.alt = ''; }
       t.appendChild(el);
-      if(m.type === 'video'){ const k = document.createElement('span'); k.className = 'media-kind'; k.textContent = 'Video'; t.appendChild(k); }
+      if(m.type === 'video' || !m.url){
+        const k = document.createElement('span'); k.className = 'media-kind';
+        k.textContent = m.type === 'video' ? (m.url ? 'Video' : 'Video · not saved') : 'Not saved';
+        t.appendChild(k);
+      }
       const rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'media-thumb-remove';
@@ -1096,14 +1107,13 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const grid = document.getElementById('previewMedia');
     grid.innerHTML = '';
     grid.removeAttribute('data-count');
-    grid.style.removeProperty('--single-ratio');
     if(!currentMedia.length){ renderPreview(); return; }
 
     if(hasVideo){
       const item = document.createElement('div');
       item.className = 'li-media-item';
       const v = document.createElement('video');
-      v.src = urlFor(currentMedia[0].blob);
+      v.src = srcFor(currentMedia[0]);
       v.controls = true; v.muted = true; v.playsInline = true; v.preload = 'metadata';
       v.addEventListener('loadedmetadata', ()=>{
         const r = v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16/9;
@@ -1120,7 +1130,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         item.className = 'li-media-item';
         const img = document.createElement('img');
         img.alt = '';
-        img.src = urlFor(m.blob);
+        img.src = srcFor(m);
         if(shown.length === 1){
           item.style.aspectRatio = '1.91/1';
           img.addEventListener('load', ()=>{
@@ -1145,7 +1155,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const files = Array.from(fileList || []);
     if(!files.length) return;
     const videos = files.filter(f=> f.type.startsWith('video/'));
-    const images = files.filter(f=> f.type.startsWith('image/'));
+    let images = files.filter(f=> f.type.startsWith('image/'));
     if(!videos.length && !images.length){ showToast('Only photos and videos can be added.', true); return; }
     const hasVideo = currentMedia.some(m=> m.type === 'video');
     const hasPhotos = currentMedia.some(m=> m.type === 'image');
@@ -1153,11 +1163,17 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(videos.length){
       if(images.length || hasPhotos){ showToast('A LinkedIn post can have photos or one video, not both. Remove the photos first.', true); return; }
       if(videos.length > 1 || hasVideo){ showToast('A LinkedIn post can only have one video.', true); return; }
-      if(videos[0].size > MAX_VIDEO_BYTES){ showToast('That video is over 500 MB. Try a shorter or compressed version.', true); return; }
+      if(videos[0].size > MAX_VIDEO_BYTES){ showToast('That video is over 200 MB. Try a shorter or compressed version.', true); return; }
       setMedia([{type:'video', name: videos[0].name, blob: videos[0]}]);
       return;
     }
     if(hasVideo){ showToast('A LinkedIn post can have photos or one video, not both. Remove the video first.', true); return; }
+    const tooBig = images.filter(f=> f.size > MAX_PHOTO_BYTES);
+    if(tooBig.length){
+      showToast(`${tooBig.length === 1 ? 'One photo is' : tooBig.length + ' photos are'} over 20 MB and ${tooBig.length === 1 ? 'was' : 'were'} skipped.`, true);
+      images = images.filter(f=> f.size <= MAX_PHOTO_BYTES);
+      if(!images.length) return;
+    }
     const room = MAX_PHOTOS - currentMedia.length;
     if(room <= 0){ showToast(`LinkedIn allows up to ${MAX_PHOTOS} photos per post.`, true); return; }
     const added = images.slice(0, room).map(f=> ({type:'image', name: f.name, blob: f}));
@@ -1187,11 +1203,59 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(files.length){ e.preventDefault(); addFiles(files); }
   });
 
-  function loadMediaForDraft(draftId){
-    setMedia([], {persist:false});
-    mediaDB.get(draftId).then(items=>{
-      if(activeDraftId === draftId && Array.isArray(items)) setMedia(items, {persist:false});
+  function loadMediaForDraft(draft){
+    if(Array.isArray(draft.media) && draft.media.length){
+      setMedia(draft.media.map(m=> ({type: m.type, name: m.name, url: m.url, path: m.path})), {dirty:false});
+      return;
+    }
+    setMedia([], {dirty:false});
+    // Media saved by the old browser-only version: show it, upload on next save.
+    legacyMediaDB.get(draft.id).then(items=>{
+      if(activeDraftId === draft.id && Array.isArray(items) && items.length){
+        setMedia(items.map(m=> ({type: m.type, name: m.name, blob: m.blob})), {dirty:false});
+        const statusEl = document.getElementById('saveStatus');
+        statusEl.textContent = 'Save to upload media';
+        statusEl.className = 'save-status';
+      }
     });
+  }
+
+  // Uploads every not-yet-uploaded item for this post to Storage, showing
+  // progress in the save status. Items are updated in place with their url/path,
+  // so a retry after a failure doesn't upload the same file twice.
+  function uploadPendingMedia(postId, items){
+    const pending = items.filter(m=> m.blob && !m.url);
+    if(!pending.length) return Promise.resolve();
+    if(!storage) return Promise.reject(new Error('File storage is not available.'));
+    const statusEl = document.getElementById('saveStatus');
+    const totalBytes = pending.reduce((sum, m)=> sum + (m.blob.size || 0), 0) || 1;
+    let doneBytes = 0;
+    const showPct = extra => {
+      const pct = Math.min(100, Math.round(((doneBytes + extra) / totalBytes) * 100));
+      statusEl.textContent = `Uploading media… ${pct}%`;
+      statusEl.className = 'save-status';
+    };
+    showPct(0);
+    return pending.reduce((chain, m, idx)=> chain.then(()=> new Promise((resolve, reject)=>{
+      const safeName = (m.name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
+      const path = `workspaces/${currentWorkspaceId}/linkedinPostMedia/${currentUid}/${postId}/${Date.now()}_${idx}_${safeName}`;
+      const task = storage.ref(path).put(m.blob, {contentType: m.blob.type || (m.type === 'video' ? 'video/mp4' : 'image/jpeg')});
+      task.on('state_changed',
+        snap=> showPct(snap.bytesTransferred),
+        err=> reject(err),
+        ()=> task.snapshot.ref.getDownloadURL().then(url=>{
+          doneBytes += m.blob.size || 0;
+          m.url = url; m.path = path; delete m.blob;
+          resolve();
+        }, reject)
+      );
+    })), Promise.resolve());
+  }
+  function deleteStorageFiles(paths){
+    if(!storage) return;
+    paths.filter(Boolean).forEach(p=> storage.ref(p).delete().catch(err=>{
+      if(err && err.code !== 'storage/object-not-found') console.warn('Could not delete', p, err);
+    }));
   }
 
   // ---------- Clear ----------
@@ -1213,7 +1277,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       {label: 'Undo', fn: ()=>{
         activeDraftId = snapshot.draftId;
         document.getElementById('postTextInput').value = snapshot.text;
-        setMedia(snapshot.media, {persist:false});
+        setMedia(snapshot.media, {dirty:false});
         previewExpanded = false;
         renderPreview();
         renderDraftsStrip();
@@ -1675,7 +1739,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     document.getElementById('authorNameInput').value = draft.authorName || document.getElementById('authorNameInput').value;
     document.getElementById('authorHeadlineInput').value = draft.authorHeadline || document.getElementById('authorHeadlineInput').value;
     document.getElementById('postTextInput').value = draft.content || '';
-    loadMediaForDraft(draft.id);
+    loadMediaForDraft(draft);
     updateClearBtn();
     previewExpanded = false;
     renderPreview();
@@ -1689,7 +1753,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function startNewPost(){
     activeDraftId = null;
     document.getElementById('postTextInput').value = '';
-    setMedia([], {persist:false});
+    setMedia([], {dirty:false});
     previewExpanded = false;
     renderPreview();
     renderDraftsStrip();
@@ -1700,8 +1764,10 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   }
 
   function deleteDraft(draftId){
+    const draft = allDrafts.find(d=> d.id === draftId) || {};
     collectionRef().doc(draftId).delete().then(()=>{
-      mediaDB.del(draftId);
+      deleteStorageFiles((draft.media || []).map(m=> m.path));
+      legacyMediaDB.del(draftId);
       allDrafts = allDrafts.filter(d=>d.id !== draftId);
       if(activeDraftId === draftId) startNewPost();
       else renderDraftsStrip();
@@ -1712,12 +1778,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   }
 
   // Saves the post in the editor. `extra` adds fields (e.g. a schedule).
-  // Resolves true on success so callers can chain UI updates.
+  // New photos/videos are uploaded to Storage first; the post then stores
+  // their links. Resolves true on success so callers can chain UI updates.
   function savePost(extra, successMessage){
     const text = document.getElementById('postTextInput').value;
     if(!text.trim()){ showToast('Write something first.', true); return Promise.resolve(false); }
     const btn = document.getElementById('saveBtn');
-    btn.disabled = true;
+    const scheduleBtn = document.getElementById('scheduleBtn');
+    btn.disabled = true; scheduleBtn.disabled = true;
+    const items = currentMedia; // same array objects get their url/path filled in as they upload
     const payload = {
       workspaceId: currentWorkspaceId,
       createdBy: currentUid,
@@ -1727,11 +1796,24 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       ...(extra || {})
     };
-    const savePromise = activeDraftId
-      ? collectionRef().doc(activeDraftId).update(payload)
-      : collectionRef().add({status: 'draft', ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp()}).then(ref=>{ activeDraftId = ref.id; });
-    return savePromise.then(()=>{
-      persistMedia();
+    const previous = activeDraftId ? (allDrafts.find(d=> d.id === activeDraftId) || {}) : {};
+    const ensureDoc = activeDraftId
+      ? Promise.resolve(activeDraftId)
+      : collectionRef().add({status: 'draft', ...payload, media: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()})
+          .then(ref=>{ activeDraftId = ref.id; return ref.id; });
+
+    return ensureDoc.then(postId=>
+      uploadPendingMedia(postId, items).then(()=>{
+        const media = items.filter(m=> m.url).map(m=> ({type: m.type, name: m.name || '', url: m.url, path: m.path}));
+        return collectionRef().doc(postId).update({...payload, media}).then(()=>{
+          // Files that were on the saved post but got removed in the editor.
+          const keep = new Set(media.map(m=> m.path));
+          deleteStorageFiles((previous.media || []).map(m=> m.path).filter(p=> !keep.has(p)));
+          legacyMediaDB.del(postId);
+        });
+      })
+    ).then(()=>{
+      if(currentMedia === items) renderMedia(); // swap "Not saved" thumbnails for uploaded ones
       const statusEl = document.getElementById('saveStatus');
       statusEl.textContent = 'Saved ✓';
       statusEl.className = 'save-status saved';
@@ -1739,10 +1821,17 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       return loadDrafts().then(()=>true);
     }).catch(err=>{
       console.error(err);
-      showToast('Could not save: ' + (err.message || ''), true);
+      const statusEl = document.getElementById('saveStatus');
+      statusEl.textContent = '';
+      const code = err && err.code || '';
+      const msg = code.startsWith('storage/unauthorized') ? 'Media upload was blocked by your Storage rules.'
+        : code === 'storage/quota-exceeded' ? 'Your Firebase Storage quota is full.'
+        : (err.message || '');
+      showToast('Could not save: ' + msg, true);
+      if(activeDraftId) loadDrafts(); // the post itself may exist now, even if an upload failed
       return false;
     }).finally(()=>{
-      btn.disabled = false;
+      btn.disabled = false; scheduleBtn.disabled = false;
     });
   }
   document.getElementById('saveBtn').addEventListener('click', ()=> savePost());
