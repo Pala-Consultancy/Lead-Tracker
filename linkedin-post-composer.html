@@ -443,6 +443,44 @@
   .cal-more{cursor:pointer;border:0;background:none;text-align:left;font-family:inherit;}
   .cal-more:hover{color:#0A66C2;text-decoration:underline;}
 
+  /* ---------- Versions (A/B drafts of one post) ---------- */
+  .versions-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .ver-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .ver-tab{display:inline-flex;align-items:center;border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:2px;transition:border-color .12s,background .12s;}
+  .ver-tab.active{border-color:var(--teal);background:rgba(55,48,179,.07);}
+  .ver-tab-main{border:0;background:none;padding:5px 10px;font:600 12.5px 'Inter',sans-serif;color:var(--ink);cursor:pointer;border-radius:999px;white-space:nowrap;}
+  .ver-tab.active .ver-tab-main{color:var(--teal);cursor:default;}
+  .ver-tab-main small{font-weight:500;color:var(--slate-light);margin-left:4px;}
+  .ver-tab-icon{border:0;background:none;width:24px;height:24px;border-radius:50%;cursor:pointer;color:var(--slate);display:inline-flex;align-items:center;justify-content:center;padding:0;}
+  .ver-tab-icon:hover{background:var(--panel-alt);color:var(--teal);}
+  .ver-tab-icon.danger:hover{color:var(--fail);}
+  .ver-tab-main:focus-visible,.ver-tab-icon:focus-visible,.ver-add-btn:focus-visible,.ver-compare-btn:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+  .ver-rename{border:1px solid var(--teal);border-radius:999px;padding:5px 10px;font:600 12.5px 'Inter',sans-serif;color:var(--ink);width:170px;outline:none;}
+  .ver-add-btn{border:1px dashed var(--border);background:none;border-radius:999px;padding:6px 12px;font:600 12.5px 'Inter',sans-serif;color:var(--slate);cursor:pointer;}
+  .ver-add-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .ver-compare-btn{margin-left:auto;border:0;background:#0A66C2;color:#fff;border-radius:999px;padding:7px 14px;font:600 12.5px 'Inter',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .ver-compare-btn:hover{background:#004182;}
+  .ver-hint{font-size:11.5px;color:var(--slate-light);}
+
+  .cmp-dialog{max-width:1180px !important;}
+  .cmp-body{padding:18px 20px 22px;max-height:calc(100vh - 22vh - 90px);overflow:auto;background:#F4F2EE;}
+  .cmp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start;}
+  .cmp-col{display:flex;flex-direction:column;gap:10px;}
+  .cmp-col-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+  .cmp-col-head h3{font-size:16px;font-weight:600;margin:0;}
+  .cmp-open{font-size:11.5px;font-weight:600;color:#0A66C2;background:#EAF3FC;border-radius:999px;padding:2px 8px;white-space:nowrap;}
+  .cmp-stats{font-size:12px;color:rgba(0,0,0,.6);line-height:1.5;}
+  .cmp-stats b{color:rgba(0,0,0,.85);font-weight:600;}
+  .cmp-wrap{--li-text:rgba(0,0,0,.9);--li-muted:rgba(0,0,0,.6);--li-faint:rgba(0,0,0,.45);}
+  .cmp-wrap .li-post-card{border-radius:10px;border:1px solid rgba(0,0,0,.08);overflow:hidden;}
+  .cmp-wrap .li-post-body{cursor:pointer;}
+  .cmp-wrap .li-post-body-wrap{padding-bottom:14px;}
+  .cmp-media{position:relative;margin-top:8px;line-height:0;background:#E9EDF2;}
+  .cmp-media img,.cmp-media video{width:100%;max-height:260px;object-fit:cover;display:block;}
+  .cmp-media span{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;font:600 11px 'Inter',sans-serif;line-height:1;padding:5px 8px;border-radius:999px;}
+  .cmp-actions{display:flex;gap:8px;}
+  .cmp-actions .lk-btn{flex:1;}
+
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
   .headline-row .composer-input{flex:1;min-width:0;}
@@ -652,6 +690,7 @@
             Clear
           </button>
         </div>
+        <div class="versions-bar" id="versionsBar" aria-label="Versions of this post"></div>
         <div class="editor-box">
           <div class="fmt-toolbar" role="toolbar" aria-label="Text formatting">
             <button type="button" class="fmt-btn" data-fmt="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b style="font-weight:800;">B</b></button>
@@ -759,7 +798,7 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
             <div class="li-chrome-browser">
               <div class="li-browserbar">
                 <div class="li-dots"><span></span><span></span><span></span></div>
-                <div class="li-url"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>linkedin.com/feed</div>
+                <div class="li-url">Desktop preview</div>
               </div>
               <div class="li-desk-nav">
                 <div class="li-logo"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></div>
@@ -808,7 +847,7 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
               <!-- Made-up posts so the preview reads like a real feed -->
               <div class="li-post-card li-feed-post" aria-hidden="true">
                 <div class="li-post-header">
-                  <img class="li-post-avatar" src="https://randomuser.me/api/portraits/women/68.jpg" alt="" loading="lazy" data-initials="SM" data-color="#C0567A">
+                  <svg class="li-post-avatar" width="48" height="48" viewBox="0 0 64 64" aria-hidden="true" style="border-radius:50%;flex-shrink:0;display:block;"><rect width="64" height="64" fill="#E9C9D6"/><path d="M10 64c2-13 11-20 22-20s20 7 22 20z" fill="#fff" opacity=".9"/><rect x="27" y="36" width="10" height="10" rx="4" fill="#F1C7A5"/><ellipse cx="32" cy="28" rx="12" ry="13" fill="#F1C7A5"/><path d="M14 26c0-11 7-18 18-18s18 7 18 18v16c-3 3-7 4-10 4V30H24v16c-3 0-7-1-10-4z" fill="#5B3A29"/></svg>
                   <div class="li-post-who">
                     <div class="li-post-name-row"><span class="li-post-name">Sofia Marchetti</span><span class="li-post-degree">· 2nd</span></div>
                     <div class="li-post-headline">Head of Growth at Brightline · B2B SaaS · Ex-Salesforce</div>
@@ -832,11 +871,11 @@ No new tools. No new hires. We just stopped sending proposals before the second 
 
               <div class="li-post-card li-feed-post" aria-hidden="true">
                 <div class="li-social-context">
-                  <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="" loading="lazy" data-initials="TB" data-color="#3E7CB1">
+                  <svg class="" width="20" height="20" viewBox="0 0 64 64" aria-hidden="true" style="border-radius:50%;flex-shrink:0;display:block;"><rect width="64" height="64" fill="#CFE0F2"/><path d="M10 64c2-13 11-20 22-20s20 7 22 20z" fill="#fff" opacity=".9"/><rect x="27" y="36" width="10" height="10" rx="4" fill="#E8B894"/><ellipse cx="32" cy="28" rx="12" ry="13" fill="#E8B894"/><path d="M17 27c0-10 6-16 15-16s15 6 15 16c-3-4-8-6-15-6s-12 2-15 6z" fill="#2F2A26"/></svg>
                   <span><b>Tom Becker</b> celebrates this</span>
                 </div>
                 <div class="li-post-header">
-                  <img class="li-post-avatar" src="https://randomuser.me/api/portraits/men/75.jpg" alt="" loading="lazy" data-initials="DO" data-color="#2E8B6F">
+                  <svg class="li-post-avatar" width="48" height="48" viewBox="0 0 64 64" aria-hidden="true" style="border-radius:50%;flex-shrink:0;display:block;"><rect width="64" height="64" fill="#CDEBDF"/><path d="M10 64c2-13 11-20 22-20s20 7 22 20z" fill="#fff" opacity=".9"/><rect x="27" y="36" width="10" height="10" rx="4" fill="#8D5A3B"/><ellipse cx="32" cy="28" rx="12" ry="13" fill="#8D5A3B"/><circle cx="21" cy="21" r="7" fill="#1E1B18"/><circle cx="32" cy="16" r="8" fill="#1E1B18"/><circle cx="43" cy="21" r="7" fill="#1E1B18"/></svg>
                   <div class="li-post-who">
                     <div class="li-post-name-row"><span class="li-post-name">Daniel Okafor</span><span class="li-post-degree">· 3rd+</span></div>
                     <div class="li-post-headline">Founder @ Northpeak Studio · Brand &amp; web for service businesses</div>
@@ -876,7 +915,7 @@ No new tools. No new hires. We just stopped sending proposals before the second 
 
               <div class="li-post-card li-feed-post" aria-hidden="true">
                 <div class="li-post-header">
-                  <img class="li-post-avatar" src="https://randomuser.me/api/portraits/women/12.jpg" alt="" loading="lazy" data-initials="PR" data-color="#8A5CC2">
+                  <svg class="li-post-avatar" width="48" height="48" viewBox="0 0 64 64" aria-hidden="true" style="border-radius:50%;flex-shrink:0;display:block;"><rect width="64" height="64" fill="#E4DAF5"/><path d="M10 64c2-13 11-20 22-20s20 7 22 20z" fill="#fff" opacity=".9"/><rect x="27" y="36" width="10" height="10" rx="4" fill="#C98E68"/><ellipse cx="32" cy="28" rx="12" ry="13" fill="#C98E68"/><circle cx="32" cy="10" r="6" fill="#231815"/><path d="M17 28c0-10 6-17 15-17s15 7 15 17c-4-5-9-7-15-7s-11 2-15 7z" fill="#231815"/></svg>
                   <div class="li-post-who">
                     <div class="li-post-name-row"><span class="li-post-name">Priya Raman</span><span class="li-post-degree">· 1st</span></div>
                     <div class="li-post-headline">Sales coach · Helped 300+ SDRs hit quota · Speaker</div>
@@ -950,6 +989,18 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 </div>
 </div>
 
+<div class="lk-overlay lk" id="compareOverlay" aria-hidden="true">
+  <div class="lk-dialog cmp-dialog" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
+    <div class="lk-dialog-head">
+      <div>
+        <h2 id="compareTitle">Compare versions</h2>
+        <p class="cal-sub" style="margin:2px 0 0;">See every version the way it shows in the feed, then choose the one to use as your post. Click a post's text to expand it.</p>
+      </div>
+      <button type="button" class="lk-icon-btn" id="compareCloseBtn" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="cmp-body"><div class="cmp-grid" id="compareGrid"></div></div>
+  </div>
+</div>
 <div class="lk-overlay lk" id="scheduleOverlay" aria-hidden="true">
   <div class="lk-dialog" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle">
     <div class="lk-dialog-head">
@@ -1413,12 +1464,13 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   const UNDERLINE = '\u0332', STRIKE = '\u0336';
   // Reverse lookup: styled code point → [plain char, style]
   const STYLED_TO_PLAIN = new Map();
+  const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', LOWER = 'abcdefghijklmnopqrstuvwxyz', DIGITS = '0123456789';
   Object.entries(STYLE_BASES).forEach(([style, [up, low, dig]])=>{
     for(let i=0;i<26;i++){
-      STYLED_TO_PLAIN.set(up + i, [String.fromCharCode(65 + i), style]);
-      STYLED_TO_PLAIN.set(low + i, [String.fromCharCode(97 + i), style]);
+      STYLED_TO_PLAIN.set(up + i, [UPPER[i], style]);
+      STYLED_TO_PLAIN.set(low + i, [LOWER[i], style]);
     }
-    if(dig && !STYLED_TO_PLAIN.has(dig)) for(let i=0;i<10;i++) STYLED_TO_PLAIN.set(dig + i, [String.fromCharCode(48 + i), style === 'bolditalic' ? 'bold' : style]);
+    if(dig && !STYLED_TO_PLAIN.has(dig)) for(let i=0;i<10;i++) STYLED_TO_PLAIN.set(dig + i, [DIGITS[i], style === 'bolditalic' ? 'bold' : style]);
   });
 
   function toPlain(str){
@@ -1684,6 +1736,282 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   });
   emojiPop.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ e.stopPropagation(); closeEmoji(true); } });
 
+  // ---------- Versions (A/B drafts of one post) ----------
+  // One post can hold several versions (e.g. yours and your agency's). The
+  // editor and the live preview always show the version that's open; the
+  // post's `content`/`media` (what's scheduled, published and shown on the
+  // calendar) is always the open version. "Compare & choose" shows them side
+  // by side and turns the chosen one into the final post.
+  //   Stored on the post as versions: [{id, label, content, media}] + activeVersionId.
+  const MAX_VERSIONS = 6;
+  let versions = [];
+  let activeVersionId = null;
+  let renamingVersionId = null;
+  const newVersionId = ()=> 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  function nextVersionLabel(){
+    const used = new Set(versions.map(v=> v.label));
+    for(const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'){ if(!used.has(`Version ${ch}`)) return `Version ${ch}`; }
+    return `Version ${versions.length + 1}`;
+  }
+  function activeVersion(){ return versions.find(v=> v.id === activeVersionId) || versions[0]; }
+  // Copies what's in the editor into the open version (call before switching or saving).
+  function syncActiveVersion(){
+    const v = activeVersion();
+    if(!v) return;
+    v.content = postInput.value;
+    v.media = currentMedia;
+  }
+  function resetVersions(){
+    versions = [{id: newVersionId(), label: 'Version A', content: '', media: []}];
+    activeVersionId = versions[0].id;
+    renamingVersionId = null;
+    renderVersionsBar();
+  }
+  function loadVersionsFromDraft(draft){
+    renamingVersionId = null;
+    if(Array.isArray(draft.versions) && draft.versions.length){
+      versions = draft.versions.map(v=> ({
+        id: v.id || newVersionId(), label: v.label || 'Version', content: v.content || '',
+        media: (v.media || []).map(m=> ({type: m.type, name: m.name, url: m.url, path: m.path})),
+      }));
+      activeVersionId = versions.some(v=> v.id === draft.activeVersionId) ? draft.activeVersionId : versions[0].id;
+      return true;
+    }
+    versions = [{id: newVersionId(), label: 'Version A', content: draft.content || '', media: null}]; // media filled from the editor on sync
+    activeVersionId = versions[0].id;
+    return false;
+  }
+  function showVersion(v){
+    postInput.value = v.content || '';
+    setMedia(v.media || [], {dirty:false});
+    previewExpanded = false;
+    renderPreview();
+    updateClearBtn();
+  }
+  function switchVersion(id){
+    if(id === activeVersionId) return;
+    syncActiveVersion();
+    activeVersionId = id;
+    showVersion(activeVersion());
+    renderVersionsBar();
+    markUnsaved();
+  }
+  function addVersion(){
+    if(versions.length >= MAX_VERSIONS){ showToast(`A post can have up to ${MAX_VERSIONS} versions.`, true); return; }
+    syncActiveVersion();
+    const src = activeVersion();
+    const v = {id: newVersionId(), label: nextVersionLabel(), content: src.content, media: (src.media || []).slice()};
+    versions.push(v);
+    activeVersionId = v.id;
+    showVersion(v);
+    renderVersionsBar();
+    markUnsaved();
+    postInput.focus();
+    showToast(`${v.label} starts as a copy of ${src.label}. Edit it however you like.`);
+  }
+  function deleteVersion(id){
+    if(versions.length <= 1) return;
+    syncActiveVersion();
+    const snapshot = {versions: versions.slice(), activeVersionId};
+    const idx = versions.findIndex(v=> v.id === id);
+    const removed = versions[idx];
+    versions = versions.filter(v=> v.id !== id);
+    if(activeVersionId === id){
+      activeVersionId = versions[Math.max(0, idx - 1)].id;
+      showVersion(activeVersion());
+    }
+    renderVersionsBar();
+    markUnsaved();
+    showToast(`${removed.label} removed.`, false, {label: 'Undo', fn: ()=>{
+      syncActiveVersion();
+      versions = snapshot.versions; activeVersionId = snapshot.activeVersionId;
+      showVersion(activeVersion()); renderVersionsBar();
+    }});
+  }
+  function finishRename(id, value){
+    const v = versions.find(x=> x.id === id);
+    renamingVersionId = null;
+    if(v && value.trim() && value.trim() !== v.label){ v.label = value.trim().slice(0, 40); markUnsaved(); }
+    renderVersionsBar();
+  }
+
+  function renderVersionsBar(){
+    const bar = document.getElementById('versionsBar');
+    bar.innerHTML = '';
+    const tabs = document.createElement('div');
+    tabs.className = 'ver-tabs';
+    tabs.setAttribute('role', 'tablist');
+    versions.forEach(v=>{
+      const isActive = v.id === activeVersionId;
+      if(v.id === renamingVersionId){
+        const input = document.createElement('input');
+        input.className = 'ver-rename'; input.value = v.label; input.maxLength = 40;
+        input.setAttribute('aria-label', 'Version name');
+        input.addEventListener('keydown', e=>{
+          if(e.key === 'Enter'){ e.preventDefault(); finishRename(v.id, input.value); }
+          if(e.key === 'Escape'){ e.preventDefault(); renamingVersionId = null; renderVersionsBar(); }
+        });
+        input.addEventListener('blur', ()=>{ if(renamingVersionId === v.id) finishRename(v.id, input.value); });
+        tabs.appendChild(input);
+        setTimeout(()=>{ input.focus(); input.select(); }, 0);
+        return;
+      }
+      const tab = document.createElement('div');
+      tab.className = 'ver-tab' + (isActive ? ' active' : '');
+      const main = document.createElement('button');
+      main.type = 'button'; main.className = 'ver-tab-main';
+      main.setAttribute('role', 'tab'); main.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      const len = (isActive ? postInput.value : v.content || '').length;
+      main.innerHTML = `${esc(v.label)}${versions.length > 1 ? `<small>${len.toLocaleString()} chars</small>` : ''}`;
+      main.title = isActive ? 'This version is open in the editor' : `Open ${v.label}`;
+      main.addEventListener('click', ()=> switchVersion(v.id));
+      main.addEventListener('dblclick', ()=>{ renamingVersionId = v.id; renderVersionsBar(); });
+      tab.appendChild(main);
+      if(isActive){
+        const ren = document.createElement('button');
+        ren.type = 'button'; ren.className = 'ver-tab-icon'; ren.title = 'Rename'; ren.setAttribute('aria-label', `Rename ${v.label}`);
+        ren.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+        ren.addEventListener('click', ()=>{ renamingVersionId = v.id; renderVersionsBar(); });
+        tab.appendChild(ren);
+        if(versions.length > 1){
+          const del = document.createElement('button');
+          del.type = 'button'; del.className = 'ver-tab-icon danger'; del.title = 'Remove this version'; del.setAttribute('aria-label', `Remove ${v.label}`);
+          del.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+          del.addEventListener('click', ()=> deleteVersion(v.id));
+          tab.appendChild(del);
+        }
+      }
+      tabs.appendChild(tab);
+    });
+    bar.appendChild(tabs);
+    if(versions.length < MAX_VERSIONS){
+      const add = document.createElement('button');
+      add.type = 'button'; add.className = 'ver-add-btn';
+      add.textContent = versions.length === 1 ? '+ Add another version' : '+ Version';
+      add.title = 'Starts as a copy of the version that is open, so you (or your agency) can try a different take.';
+      add.addEventListener('click', addVersion);
+      bar.appendChild(add);
+    }
+    if(versions.length > 1){
+      const cmp = document.createElement('button');
+      cmp.type = 'button'; cmp.className = 'ver-compare-btn';
+      cmp.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>Compare &amp; choose';
+      cmp.addEventListener('click', openCompare);
+      bar.appendChild(cmp);
+    } else {
+      const hint = document.createElement('span');
+      hint.className = 'ver-hint';
+      hint.textContent = 'Working with an agency? Draft several versions and pick the best one.';
+      bar.appendChild(hint);
+    }
+  }
+  // Keep the character counts on the tabs current while typing.
+  postInput.addEventListener('input', ()=>{
+    if(versions.length < 2) return;
+    const small = document.querySelector('.ver-tab.active .ver-tab-main small');
+    if(small) small.textContent = `${postInput.value.length.toLocaleString()} chars`;
+  });
+
+  // Compare & choose
+  function openCompare(){
+    syncActiveVersion();
+    const grid = document.getElementById('compareGrid');
+    grid.innerHTML = '';
+    const name = document.getElementById('authorNameInput').value.trim() || 'Your name';
+    const headline = document.getElementById('authorHeadlineInput').value.trim();
+    versions.forEach(v=>{
+      const text = (v.content || '').replace(/\s+$/, '');
+      const hook = text.split('\n').find(l=> l.trim()) || '';
+      const media = v.media || [];
+      const col = document.createElement('div');
+      col.className = 'cmp-col';
+      col.innerHTML = `
+        <div class="cmp-col-head"><h3>${esc(v.label)}</h3>${v.id === activeVersionId ? '<span class="cmp-open">Open in editor</span>' : ''}</div>
+        <div class="cmp-stats"><b>${text.length.toLocaleString()}</b> characters · first line <b>${hook.length}</b> characters${media.length ? ` · ${media.some(m=> m.type === 'video') ? '1 video' : media.length + ' photo' + (media.length === 1 ? '' : 's')}` : ''}</div>
+        <div class="cmp-wrap"><div class="li-post-card">
+          <div class="li-post-header">
+            <div class="li-post-avatar cmp-avatar"></div>
+            <div class="li-post-who">
+              <div class="li-post-name-row"><span class="li-post-name">${esc(name)}</span><span class="li-post-degree">· You</span></div>
+              ${headline ? `<div class="li-post-headline">${esc(headline)}</div>` : ''}
+              <div class="li-post-time"><span>Now ·</span> 🌐</div>
+            </div>
+          </div>
+          <div class="li-post-body-wrap"><div class="li-post-body">${text ? esc(text) : '<span style="color:rgba(0,0,0,.4);font-style:italic;">This version is empty</span>'}</div></div>
+          <div class="cmp-media-slot"></div>
+        </div></div>
+        <div class="cmp-actions">
+          <button type="button" class="lk-btn cmp-edit">Edit this one</button>
+          <button type="button" class="lk-btn primary cmp-choose"${text.trim() ? '' : ' disabled'}>Choose this one</button>
+        </div>`;
+      setAvatar(col.querySelector('.cmp-avatar'), name, previewPhotoURL);
+      // Show it cut off at the same 3 lines as LinkedIn; click to expand.
+      const body = col.querySelector('.li-post-body');
+      requestAnimationFrame(()=>{
+        body.classList.add('clamped');
+        if(body.scrollHeight > body.clientHeight + 1){
+          const more = document.createElement('span');
+          more.className = 'li-more-static'; more.textContent = '…more';
+          body.appendChild(more);
+          body.addEventListener('click', ()=>{ body.classList.toggle('clamped'); more.style.display = body.classList.contains('clamped') ? '' : 'none'; });
+        } else body.classList.remove('clamped');
+      });
+      if(media.length){
+        const first = media[0];
+        const slot = col.querySelector('.cmp-media-slot');
+        slot.className = 'cmp-media';
+        const el = document.createElement(first.type === 'video' ? 'video' : 'img');
+        el.src = first.url || URL.createObjectURL(first.blob);
+        if(first.type === 'video'){ el.muted = true; el.preload = 'metadata'; } else el.alt = '';
+        slot.appendChild(el);
+        if(media.length > 1){ const c = document.createElement('span'); c.textContent = `+${media.length - 1}`; slot.appendChild(c); }
+      }
+      col.querySelector('.cmp-edit').addEventListener('click', ()=>{ closeCompare(); switchVersion(v.id); postInput.focus(); });
+      col.querySelector('.cmp-choose').addEventListener('click', ()=> chooseVersion(v.id));
+      grid.appendChild(col);
+    });
+    const overlay = document.getElementById('compareOverlay');
+    overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
+    setTimeout(()=> document.getElementById('compareCloseBtn').focus(), 30);
+  }
+  function closeCompare(){
+    const overlay = document.getElementById('compareOverlay');
+    overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true');
+  }
+  document.getElementById('compareCloseBtn').addEventListener('click', closeCompare);
+  document.getElementById('compareOverlay').addEventListener('click', e=>{ if(e.target.id === 'compareOverlay') closeCompare(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && document.getElementById('compareOverlay').classList.contains('open')) closeCompare(); });
+
+  function chooseVersion(id){
+    syncActiveVersion();
+    const chosen = versions.find(v=> v.id === id);
+    if(!chosen || !(chosen.content || '').trim()) return;
+    const snapshot = {versions: versions.slice(), activeVersionId};
+    const others = versions.filter(v=> v.id !== id);
+    // Files only the removed versions used get deleted once the Undo window is over.
+    const keptPaths = new Set((chosen.media || []).map(m=> m.path).filter(Boolean));
+    const orphanPaths = [...new Set(others.flatMap(v=> (v.media || []).map(m=> m.path)).filter(p=> p && !keptPaths.has(p)))];
+    versions = [chosen];
+    activeVersionId = chosen.id;
+    showVersion(chosen);
+    renderVersionsBar();
+    closeCompare();
+    let undone = false;
+    savePost(undefined, `${chosen.label} is now your post. The other ${others.length === 1 ? 'version was' : others.length + ' versions were'} removed.`, {
+      skipCleanup: true,
+      toastAction: {label: 'Undo', fn: ()=>{
+        undone = true;
+        versions = snapshot.versions; activeVersionId = snapshot.activeVersionId;
+        showVersion(activeVersion()); renderVersionsBar();
+        savePost(undefined, 'All versions are back.', {skipCleanup: true});
+      }},
+    }).then(ok=>{
+      if(ok) setTimeout(()=>{ if(!undone) deleteStorageFiles(orphanPaths); }, 8000);
+    });
+  }
+
+  resetVersions();
+
   // ---------- Clear ----------
   function updateClearBtn(){
     const hasText = document.getElementById('postTextInput').value.trim().length > 0;
@@ -1691,10 +2019,13 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   }
   document.getElementById('postTextInput').addEventListener('input', updateClearBtn);
   document.getElementById('clearPostBtn').addEventListener('click', ()=>{
+    syncActiveVersion();
     const snapshot = {
       text: document.getElementById('postTextInput').value,
       media: currentMedia.slice(),
       draftId: activeDraftId,
+      versions: versions.slice(),
+      activeVersionId,
     };
     startNewPost();
     showToast(
@@ -1702,6 +2033,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       false,
       {label: 'Undo', fn: ()=>{
         activeDraftId = snapshot.draftId;
+        versions = snapshot.versions; activeVersionId = snapshot.activeVersionId;
+        renderVersionsBar();
         document.getElementById('postTextInput').value = snapshot.text;
         setMedia(snapshot.media, {dirty:false});
         previewExpanded = false;
@@ -2108,6 +2441,9 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     note.textContent = toggle.checked
       ? "You'll see it on your calendar as \"Auto\". If publishing fails for any reason, the post turns red here with the reason, and nothing is posted."
       : "At this time the post turns amber on your calendar, ready for you to copy and publish on LinkedIn yourself.";
+    if(versions.length > 1){
+      note.textContent = `This post has ${versions.length} versions. "${activeVersion().label}" (the one open now) is the one that will be ${toggle.checked ? 'published' : 'used'}. Tip: use Compare & choose first. ` + note.textContent;
+    }
     document.getElementById('scheduleConfirmBtn').textContent = toggle.checked ? 'Schedule to publish' : 'Schedule';
   }
   document.getElementById('autoPublishToggle').addEventListener('change', updateAutoPublishUI);
@@ -2507,7 +2843,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       card.innerHTML = `
         <div class="draft-card-snippet${snippet ? '' : ' empty'}">${esc(snippet ? snippet.slice(0,90) : 'Empty draft')}</div>
         <div class="draft-card-meta">
-          <span>${esc(draftMetaLabel(draft))}</span>
+          <span>${esc(draftMetaLabel(draft))}${(draft.versions || []).length > 1 ? ` · ${draft.versions.length} versions` : ''}</span>
           <button type="button" class="draft-card-delete" title="Delete">🗑</button>
         </div>`;
       card.addEventListener('click', (e)=>{
@@ -2528,8 +2864,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     activeDraftId = draft.id;
     document.getElementById('authorNameInput').value = draft.authorName || document.getElementById('authorNameInput').value;
     document.getElementById('authorHeadlineInput').value = draft.authorHeadline || document.getElementById('authorHeadlineInput').value;
-    document.getElementById('postTextInput').value = draft.content || '';
-    loadMediaForDraft(draft);
+    const hasVersions = loadVersionsFromDraft(draft);
+    const openVersion = activeVersion();
+    document.getElementById('postTextInput').value = hasVersions ? openVersion.content : (draft.content || '');
+    if(hasVersions) setMedia(openVersion.media || [], {dirty:false});
+    else loadMediaForDraft(draft);
+    renderVersionsBar();
     updateClearBtn();
     previewExpanded = false;
     renderPreview();
@@ -2544,6 +2884,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     activeDraftId = null;
     document.getElementById('postTextInput').value = '';
     setMedia([], {dirty:false});
+    resetVersions();
     previewExpanded = false;
     renderPreview();
     renderDraftsStrip();
@@ -2556,7 +2897,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function deleteDraft(draftId){
     const draft = allDrafts.find(d=> d.id === draftId) || {};
     collectionRef().doc(draftId).delete().then(()=>{
-      deleteStorageFiles((draft.media || []).map(m=> m.path));
+      deleteStorageFiles([...(draft.media || []), ...(draft.versions || []).flatMap(v=> v.media || [])].map(m=> m.path));
       legacyMediaDB.del(draftId);
       allDrafts = allDrafts.filter(d=>d.id !== draftId);
       if(activeDraftId === draftId) startNewPost();
@@ -2575,13 +2916,18 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   // Saves the post in the editor. `extra` adds fields (e.g. a schedule).
   // New photos/videos are uploaded to Storage first; the post then stores
   // their links. Resolves true on success so callers can chain UI updates.
-  function savePost(extra, successMessage){
+  function savePost(extra, successMessage, {toastAction, skipCleanup} = {}){
     const text = document.getElementById('postTextInput').value;
     if(!text.trim()){ showToast('Write something first.', true); return Promise.resolve(false); }
     const btn = document.getElementById('saveBtn');
     const scheduleBtn = document.getElementById('scheduleBtn');
     btn.disabled = true; scheduleBtn.disabled = true;
+    syncActiveVersion();
+    const savingVersions = versions.slice();
+    const openId = activeVersionId;
     const items = currentMedia; // same array objects get their url/path filled in as they upload
+    // Every version's files (not just the open one) get uploaded.
+    const allItems = [...new Set(savingVersions.flatMap(v=> v.media || []))];
     const payload = {
       workspaceId: currentWorkspaceId,
       createdBy: currentUid,
@@ -2597,22 +2943,27 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       : collectionRef().add({status: 'draft', ...withoutDeletes(payload), media: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()})
           .then(ref=>{ activeDraftId = ref.id; return ref.id; });
 
+    const meta = list=> (list || []).filter(m=> m.url).map(m=> ({type: m.type, name: m.name || '', url: m.url, path: m.path}));
     return ensureDoc.then(postId=>
-      uploadPendingMedia(postId, items).then(()=>{
-        const media = items.filter(m=> m.url).map(m=> ({type: m.type, name: m.name || '', url: m.url, path: m.path}));
-        return collectionRef().doc(postId).update({...payload, media}).then(()=>{
-          // Files that were on the saved post but got removed in the editor.
-          const keep = new Set(media.map(m=> m.path));
-          deleteStorageFiles((previous.media || []).map(m=> m.path).filter(p=> !keep.has(p)));
+      uploadPendingMedia(postId, allItems).then(()=>{
+        const media = meta(items);
+        const versionsMeta = savingVersions.map(v=> ({id: v.id, label: v.label, content: v.content || '', media: meta(v.media)}));
+        return collectionRef().doc(postId).update({...payload, media, versions: versionsMeta, activeVersionId: openId}).then(()=>{
+          if(skipCleanup) return;
+          // Files that were on the saved post (in any version) but got removed.
+          const keep = new Set(versionsMeta.flatMap(v=> v.media.map(m=> m.path)));
+          const before = [...(previous.media || []), ...(previous.versions || []).flatMap(v=> v.media || [])].map(m=> m.path);
+          deleteStorageFiles([...new Set(before)].filter(p=> p && !keep.has(p)));
           legacyMediaDB.del(postId);
         });
       })
     ).then(()=>{
       if(currentMedia === items) renderMedia(); // swap "Not saved" thumbnails for uploaded ones
+      renderVersionsBar();
       const statusEl = document.getElementById('saveStatus');
       statusEl.textContent = 'Saved ✓';
       statusEl.className = 'save-status saved';
-      showToast(successMessage || 'Post saved.');
+      showToast(successMessage || 'Post saved.', false, toastAction);
       return loadDrafts().then(()=>true);
     }).catch(err=>{
       console.error(err);
