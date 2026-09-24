@@ -290,6 +290,44 @@
 
   .li-preview-note{font-size:11.5px;color:var(--slate-light);margin-top:10px;line-height:1.5;}
 
+  /* ---------- Formatting toolbar + emoji picker ---------- */
+  .editor-box{position:relative;}
+  .fmt-toolbar{
+    display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:6px;border:1px solid var(--border);border-bottom:0;
+    border-radius:10px 10px 0 0;background:var(--panel);
+  }
+  .editor-box .composer-textarea{border-radius:0 0 10px 10px;}
+  .fmt-btn{
+    min-width:32px;height:32px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--ink);cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:4px;font-family:'Inter',sans-serif;font-size:14px;
+    transition:background .1s,color .1s;
+  }
+  .fmt-btn:hover{background:var(--panel-alt);color:var(--teal);}
+  .fmt-btn.on{background:rgba(55,48,179,.1);color:var(--teal);}
+  .fmt-btn:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+  .fmt-sep{width:1px;height:20px;background:var(--border);margin:0 4px;}
+  .fmt-hint{margin-left:auto;font-size:11px;color:var(--slate-light);padding-right:6px;}
+  @media (max-width: 560px){ .fmt-hint{display:none;} }
+
+  .emoji-pop{
+    position:absolute;top:46px;left:6px;z-index:50;width:340px;max-width:calc(100% - 12px);background:var(--panel);
+    border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 34px rgba(20,24,40,.18);display:none;overflow:hidden;
+  }
+  .emoji-pop.open{display:block;}
+  .emoji-search{width:100%;border:0;border-bottom:1px solid var(--border);padding:10px 12px;font:13px 'Inter',sans-serif;background:var(--panel);color:var(--ink);}
+  .emoji-search:focus{outline:none;background:var(--panel-alt);}
+  .emoji-tabs{display:flex;gap:2px;padding:6px 6px 0;border-bottom:1px solid var(--border);}
+  .emoji-tab{flex:1;border:0;background:none;font-size:17px;padding:6px 0 7px;cursor:pointer;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;}
+  .emoji-tab:hover{background:var(--panel-alt);}
+  .emoji-tab.active{border-bottom-color:var(--teal);}
+  .emoji-tab:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;}
+  .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:8px;max-height:220px;overflow-y:auto;}
+  .emoji-cell{border:0;background:none;font-size:21px;line-height:1;padding:6px 0;border-radius:6px;cursor:pointer;}
+  .emoji-cell:hover{background:var(--panel-alt);transform:scale(1.15);}
+  .emoji-cell:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;}
+  .emoji-label{grid-column:1 / -1;font:600 11px 'Inter',sans-serif;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;padding:4px 2px 2px;}
+  .emoji-empty{grid-column:1 / -1;font-size:12.5px;color:var(--slate-light);padding:14px 4px;text-align:center;}
+
   /* ---------- Post text label row + clear ---------- */
   .composer-label-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
   .composer-label-row .composer-label{margin-bottom:0;}
@@ -547,9 +585,36 @@
             Clear
           </button>
         </div>
-        <textarea class="composer-textarea" id="postTextInput" placeholder="Write your LinkedIn post here…
+        <div class="editor-box">
+          <div class="fmt-toolbar" role="toolbar" aria-label="Text formatting">
+            <button type="button" class="fmt-btn" data-fmt="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b style="font-weight:800;">B</b></button>
+            <button type="button" class="fmt-btn" data-fmt="italic" title="Italic (Ctrl+I)" aria-label="Italic"><i style="font-family:Georgia,serif;font-size:15px;">I</i></button>
+            <button type="button" class="fmt-btn" data-fmt="underline" title="Underline (Ctrl+U)" aria-label="Underline"><span style="text-decoration:underline;text-underline-offset:2px;">U</span></button>
+            <button type="button" class="fmt-btn" data-fmt="strike" title="Strikethrough" aria-label="Strikethrough"><span style="text-decoration:line-through;">S</span></button>
+            <button type="button" class="fmt-btn" data-fmt="mono" title="Monospace" aria-label="Monospace"><span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;">&lt;/&gt;</span></button>
+            <span class="fmt-sep" aria-hidden="true"></span>
+            <button type="button" class="fmt-btn" data-fmt="bullets" title="Bullet list" aria-label="Bullet list">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg>
+            </button>
+            <button type="button" class="fmt-btn" data-fmt="numbers" title="Numbered list" aria-label="Numbered list">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 5h1.5v4M3.5 9h3M3.5 14.5a1.5 1.5 0 0 1 3 .2c0 1-3 1.6-3 3.3h3" stroke-width="1.6"/></svg>
+            </button>
+            <span class="fmt-sep" aria-hidden="true"></span>
+            <button type="button" class="fmt-btn" id="emojiBtn" title="Emoji" aria-label="Insert emoji" aria-haspopup="true" aria-expanded="false"><span style="font-size:17px;">🙂</span></button>
+            <button type="button" class="fmt-btn" data-fmt="clear" title="Remove formatting" aria-label="Remove formatting">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12M12 4l-3 16M4 20l16-16" /></svg>
+            </button>
+            <span class="fmt-hint">Select text, then pick a style</span>
+          </div>
+          <div class="emoji-pop" id="emojiPop" role="dialog" aria-label="Emoji picker">
+            <input type="text" class="emoji-search" id="emojiSearch" placeholder="Search emoji (e.g. rocket, check, fire)" autocomplete="off">
+            <div class="emoji-tabs" id="emojiTabs"></div>
+            <div class="emoji-grid" id="emojiGrid"></div>
+          </div>
+          <textarea class="composer-textarea" id="postTextInput" placeholder="Write your LinkedIn post here…
 
 Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; — the preview on the right shows you exactly where that cutoff lands." maxlength="3000"></textarea>
+        </div>
         <div class="media-bar">
           <button type="button" class="media-add-btn" id="addPhotoBtn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#378FE9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
@@ -1257,6 +1322,291 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       if(err && err.code !== 'storage/object-not-found') console.warn('Could not delete', p, err);
     }));
   }
+
+  // ---------- Formatting (bold, italic, underline, …) + emoji ----------
+  // LinkedIn posts are plain text, so "bold" and "italic" use Unicode
+  // look-alike letters (𝗕𝗼𝗹𝗱, 𝘐𝘵𝘢𝘭𝘪𝘤) and underline/strikethrough use
+  // combining marks. They survive copy & paste into LinkedIn exactly as shown.
+  const STYLE_BASES = {
+    //            A–Z      a–z      0–9
+    bold:       [0x1D5D4, 0x1D5EE, 0x1D7EC],
+    italic:     [0x1D608, 0x1D622, null],
+    bolditalic: [0x1D63C, 0x1D656, 0x1D7EC],
+    mono:       [0x1D670, 0x1D68A, 0x1D7F6],
+  };
+  const UNDERLINE = '\u0332', STRIKE = '\u0336';
+  // Reverse lookup: styled code point → [plain char, style]
+  const STYLED_TO_PLAIN = new Map();
+  Object.entries(STYLE_BASES).forEach(([style, [up, low, dig]])=>{
+    for(let i=0;i<26;i++){
+      STYLED_TO_PLAIN.set(up + i, [String.fromCharCode(65 + i), style]);
+      STYLED_TO_PLAIN.set(low + i, [String.fromCharCode(97 + i), style]);
+    }
+    if(dig && !STYLED_TO_PLAIN.has(dig)) for(let i=0;i<10;i++) STYLED_TO_PLAIN.set(dig + i, [String.fromCharCode(48 + i), style === 'bolditalic' ? 'bold' : style]);
+  });
+
+  function toPlain(str){
+    let out = '';
+    for(const ch of str){
+      const hit = STYLED_TO_PLAIN.get(ch.codePointAt(0));
+      out += hit ? hit[0] : ch;
+    }
+    return out;
+  }
+  function applyStyle(str, style){
+    const plain = toPlain(str);
+    if(!style) return plain;
+    const [up, low, dig] = STYLE_BASES[style];
+    let out = '';
+    for(const ch of plain){
+      const c = ch.charCodeAt(0);
+      if(ch.length === 1 && c >= 65 && c <= 90) out += String.fromCodePoint(up + c - 65);
+      else if(ch.length === 1 && c >= 97 && c <= 122) out += String.fromCodePoint(low + c - 97);
+      else if(dig && ch.length === 1 && c >= 48 && c <= 57) out += String.fromCodePoint(dig + c - 48);
+      else out += ch;
+    }
+    return out;
+  }
+  // Which letter style the selection is in (only counts letters/digits).
+  function detectStyle(str){
+    const found = new Set();
+    for(const ch of str.replace(/[\u0332\u0336]/g, '')){
+      const hit = STYLED_TO_PLAIN.get(ch.codePointAt(0));
+      if(hit){ if(!/[0-9]/.test(hit[0])) found.add(hit[1]); } // digits are shared by bold & bold-italic
+      else if(/[A-Za-z]/.test(ch)) found.add('plain');
+    }
+    if(found.size === 1) return [...found][0];
+    return found.size ? 'mixed' : 'plain';
+  }
+  function hasMark(str, mark){ return str.includes(mark); }
+  function stripMarks(str){ return str.replace(/[\u0332\u0336]/g, ''); }
+  function addMark(str, mark){
+    let out = '';
+    for(const ch of str){ out += ch; if(ch !== '\n' && ch !== '\r' && ch !== mark) out += mark; }
+    return out;
+  }
+  function removeMark(str, mark){ return str.split(mark).join(''); }
+
+  const postInput = document.getElementById('postTextInput');
+  // Replace the selection, keeping it selected and (where supported) undoable with Ctrl+Z.
+  function replaceSelection(newText, selectInserted = true){
+    const start = postInput.selectionStart;
+    postInput.focus();
+    let ok = false;
+    try{ ok = document.execCommand('insertText', false, newText); }catch(e){ ok = false; }
+    if(!ok || postInput.value.substr(start, newText.length) !== newText){
+      postInput.setRangeText(newText, start, postInput.selectionEnd, 'end');
+      postInput.dispatchEvent(new Event('input', {bubbles:true}));
+    }
+    if(selectInserted) postInput.setSelectionRange(start, start + newText.length);
+    else postInput.setSelectionRange(start + newText.length, start + newText.length);
+    updateFmtState();
+  }
+  // Grow a caret/partial selection to whole words, so Ctrl+B on a word just works.
+  function ensureSelection(){
+    let s = postInput.selectionStart, e = postInput.selectionEnd;
+    if(s !== e) return true;
+    const v = postInput.value;
+    const isWord = ch => ch && !/\s/.test(ch);
+    while(s > 0 && isWord(v[s-1])) s--;
+    while(e < v.length && isWord(v[e])) e++;
+    if(s === e) return false;
+    postInput.setSelectionRange(s, e);
+    return true;
+  }
+  // Expand the selection to cover full lines (for lists).
+  function selectWholeLines(){
+    const v = postInput.value;
+    let s = postInput.selectionStart, e = postInput.selectionEnd;
+    s = v.lastIndexOf('\n', s - 1) + 1;
+    const nl = v.indexOf('\n', e > s && v[e-1] === '\n' ? e - 1 : e);
+    e = nl === -1 ? v.length : nl;
+    postInput.setSelectionRange(s, e);
+  }
+
+  const BULLET_RE = /^(\s*)•\s/;
+  const NUMBER_RE = /^(\s*)\d+\.\s/;
+  function toggleList(kind){
+    selectWholeLines();
+    const sel = postInput.value.slice(postInput.selectionStart, postInput.selectionEnd);
+    const lines = sel.split('\n');
+    const re = kind === 'bullets' ? BULLET_RE : NUMBER_RE;
+    const filled = lines.filter(l=> l.trim());
+    const allListed = filled.length && filled.every(l=> re.test(l));
+    let n = 0;
+    const out = lines.map(l=>{
+      if(!l.trim()) return l;
+      const bare = l.replace(BULLET_RE, '$1').replace(NUMBER_RE, '$1');
+      if(allListed) return bare;
+      n++;
+      return (kind === 'bullets' ? '• ' : `${n}. `) + bare.trimStart();
+    });
+    replaceSelection(out.join('\n'));
+  }
+
+  function formatSelection(fmt){
+    if(fmt === 'bullets' || fmt === 'numbers'){ toggleList(fmt); return; }
+    if(!ensureSelection()){ showToast('Select some text first, then pick a style.', true); postInput.focus(); return; }
+    const sel = postInput.value.slice(postInput.selectionStart, postInput.selectionEnd);
+    let out;
+    if(fmt === 'clear'){
+      out = toPlain(stripMarks(sel));
+    } else if(fmt === 'underline' || fmt === 'strike'){
+      const mark = fmt === 'underline' ? UNDERLINE : STRIKE;
+      out = hasMark(sel, mark) ? removeMark(sel, mark) : addMark(sel, mark);
+    } else {
+      // bold / italic combine into bold-italic; clicking again removes that part.
+      const marks = {u: hasMark(sel, UNDERLINE), s: hasMark(sel, STRIKE)};
+      const cur = detectStyle(sel);
+      const isBold = cur === 'bold' || cur === 'bolditalic';
+      const isItalic = cur === 'italic' || cur === 'bolditalic';
+      let next;
+      if(fmt === 'bold') next = isBold ? (isItalic ? 'italic' : null) : (isItalic ? 'bolditalic' : 'bold');
+      else if(fmt === 'italic') next = isItalic ? (isBold ? 'bold' : null) : (isBold ? 'bolditalic' : 'italic');
+      else if(fmt === 'mono') next = cur === 'mono' ? null : 'mono';
+      out = applyStyle(stripMarks(sel), next);
+      if(marks.u) out = addMark(out, UNDERLINE);
+      if(marks.s) out = addMark(out, STRIKE);
+    }
+    replaceSelection(out);
+  }
+
+  // Highlight toolbar buttons that match the current selection.
+  function updateFmtState(){
+    const sel = postInput.value.slice(postInput.selectionStart, postInput.selectionEnd);
+    const style = sel ? detectStyle(sel) : 'plain';
+    const on = {
+      bold: style === 'bold' || style === 'bolditalic',
+      italic: style === 'italic' || style === 'bolditalic',
+      mono: style === 'mono',
+      underline: !!sel && hasMark(sel, UNDERLINE),
+      strike: !!sel && hasMark(sel, STRIKE),
+    };
+    document.querySelectorAll('.fmt-btn[data-fmt]').forEach(b=>{
+      const active = !!on[b.dataset.fmt];
+      b.classList.toggle('on', active);
+      if(b.dataset.fmt in on) b.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('selectionchange', ()=>{ if(document.activeElement === postInput) updateFmtState(); });
+
+  document.querySelectorAll('.fmt-btn[data-fmt]').forEach(b=>{
+    b.addEventListener('mousedown', e=> e.preventDefault()); // keep the textarea selection
+    b.addEventListener('click', ()=> formatSelection(b.dataset.fmt));
+  });
+  postInput.addEventListener('keydown', e=>{
+    if(!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const map = {b:'bold', i:'italic', u:'underline'};
+    if(map[k]){ e.preventDefault(); formatSelection(map[k]); }
+  });
+
+  // Emoji picker
+  const EMOJI_SETS = [
+    {icon:'🕘', label:'Recent', list:[]},
+    {icon:'😀', label:'Smileys', list:'😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 😘 😋 😜 🤪 🤓 😎 🥳 😏 🤔 🤨 😐 😶 🙄 😬 😌 😴 🤯 😮 😲 🥹 😢 😭 😤 😡 🤬 😱 😳 🥺 🫠 🤗 🤭 🫡 🤫 😷 🤒 🤑 🤠 👀'},
+    {icon:'👍', label:'People & gestures', list:'👍 👎 👏 🙌 👐 🤝 🙏 ✌️ 🤞 🤟 🤘 👌 🤌 👈 👉 👆 👇 ☝️ ✋ 🤚 🖐️ 👋 💪 🦾 ✍️ 🫶 🧠 👨‍💻 👩‍💻 🧑‍💼 👨‍💼 👩‍💼 🧑‍🏫 🧑‍🚀 🏃 🧘 🤷 🙋 💁 🙆 🙅 🤦'},
+    {icon:'🚀', label:'Work & business', list:'🚀 💼 📈 📉 📊 💰 💵 💸 🤑 🏆 🥇 🎯 📌 📍 📎 🗂️ 📁 📝 ✏️ 🖊️ 📅 🗓️ ⏰ ⏳ ⌛ 💡 🔑 🔒 🔓 🛠️ ⚙️ 🧰 📣 📢 🔔 📬 📧 📱 💻 🖥️ ⌨️ 🖱️ 🧾 🏢 🏗️ 🌍 🤖 🧪 📚 🎓 🎤 🎙️'},
+    {icon:'🎉', label:'Celebrate', list:'🎉 🎊 🥳 🎁 🎈 🍾 🥂 🍻 🎂 🌟 ⭐ ✨ 💫 🔥 💥 ⚡ 🌈 ☀️ 🌙 🌊 🌱 🌿 🍀 🌸 🌻 🏝️ ⛰️ 🏔️ ☕ 🍕 🍔 🍎 🏖️ ✈️ 🚗 🏁'},
+    {icon:'❤️', label:'Hearts & symbols', list:'❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❤️‍🔥 💯 ✅ ☑️ ✔️ ❌ ❎ ⚠️ 🚫 ⛔ ❗ ❓ ‼️ ⁉️ 💬 💭 🗨️ 🔴 🟠 🟡 🟢 🔵 🟣 ⚫ ⚪ 🟥 🟩 🟦 ◼️ ▪️ 🔹 🔸 🔺 🔻 ➕ ➖ ✖️ 🆕 🆓 🔝 🔜'},
+    {icon:'👉', label:'Arrows & pointers', list:'👉 👈 👆 👇 ➡️ ⬅️ ⬆️ ⬇️ ↗️ ↘️ ↙️ ↖️ ↔️ ↕️ 🔁 🔄 ⤴️ ⤵️ ▶️ ⏩ ⏭️ 🔽 🔼 → ← ↑ ↓ ⇒ ➜ ✦ • ◦ ▸ ▹ ○ ●'},
+  ].map(s=> ({...s, list: Array.isArray(s.list) ? s.list : s.list.split(' ').filter(Boolean)}));
+  // A few search words per emoji, so the search box is useful.
+  const EMOJI_WORDS = {
+    '🚀':'rocket launch growth startup','🔥':'fire hot lit','✅':'check done yes tick','❌':'x no cross wrong','💡':'idea bulb insight tip',
+    '📈':'chart up growth increase','📉':'chart down decrease','📊':'chart stats data','💰':'money bag cash','💸':'money spend',
+    '🎯':'target goal aim','🏆':'trophy win award','🎉':'party celebrate tada','👏':'clap applause','🙏':'thanks pray please',
+    '💪':'strong muscle power','👀':'eyes look watch','🤝':'handshake deal partner','👉':'point right arrow','👇':'point down arrow',
+    '❤️':'heart love red','💯':'hundred 100 perfect','⚡':'lightning fast energy','⭐':'star','✨':'sparkles magic',
+    '📌':'pin','📅':'calendar date','⏰':'alarm clock time','💼':'briefcase work job','🧠':'brain smart think',
+    '😂':'laugh lol joy','🤔':'think hmm','😎':'cool sunglasses','🥳':'party celebrate','😅':'sweat relief',
+    '➡️':'arrow right','→':'arrow right','•':'bullet dot','📣':'megaphone announce','📢':'loudspeaker announce',
+    '🤖':'robot ai bot','💻':'laptop computer','📱':'phone mobile','📧':'email mail','🔑':'key secret',
+    '👍':'thumbs up like yes good','👎':'thumbs down no bad','⚠️':'warning caution','❗':'exclamation important','❓':'question',
+    '🌍':'world globe earth','☕':'coffee','🍾':'champagne','🥂':'cheers toast','🎁':'gift present',
+  };
+  const RECENT_KEY = 'ptLinkedInRecentEmoji';
+  function recentEmojis(){ try{ return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }catch(e){ return []; } }
+  function rememberEmoji(em){
+    const list = [em, ...recentEmojis().filter(x=> x !== em)].slice(0, 24);
+    try{ localStorage.setItem(RECENT_KEY, JSON.stringify(list)); }catch(e){}
+  }
+  let emojiTab = 1;
+  let savedSel = [0, 0];
+  const emojiPop = document.getElementById('emojiPop');
+  const emojiBtn = document.getElementById('emojiBtn');
+
+  function renderEmojiTabs(){
+    const tabs = document.getElementById('emojiTabs');
+    tabs.innerHTML = '';
+    EMOJI_SETS.forEach((set, i)=>{
+      const t = document.createElement('button');
+      t.type = 'button';
+      t.className = 'emoji-tab' + (i === emojiTab ? ' active' : '');
+      t.textContent = set.icon; t.title = set.label; t.setAttribute('aria-label', set.label);
+      t.addEventListener('click', ()=>{ emojiTab = i; document.getElementById('emojiSearch').value = ''; renderEmojiTabs(); renderEmojiGrid(); });
+      tabs.appendChild(t);
+    });
+  }
+  function renderEmojiGrid(){
+    const grid = document.getElementById('emojiGrid');
+    const q = document.getElementById('emojiSearch').value.trim().toLowerCase();
+    grid.innerHTML = '';
+    let list, label;
+    if(q){
+      const all = [...new Set(EMOJI_SETS.slice(1).flatMap(s=> s.list))];
+      list = all.filter(em=> (EMOJI_WORDS[em] || '').includes(q) || em === q);
+      label = 'Results';
+    } else {
+      const set = EMOJI_SETS[emojiTab];
+      list = emojiTab === 0 ? recentEmojis() : set.list;
+      label = set.label;
+    }
+    const lab = document.createElement('div');
+    lab.className = 'emoji-label'; lab.textContent = label;
+    grid.appendChild(lab);
+    if(!list.length){
+      const e = document.createElement('div');
+      e.className = 'emoji-empty';
+      e.textContent = q ? 'No matches, try another word or browse the tabs.' : 'Emojis you use will show up here.';
+      grid.appendChild(e);
+    }
+    list.forEach(em=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'emoji-cell'; b.textContent = em; b.setAttribute('aria-label', em);
+      b.addEventListener('click', ()=> insertEmoji(em));
+      grid.appendChild(b);
+    });
+  }
+  function openEmoji(){
+    savedSel = [postInput.selectionStart, postInput.selectionEnd];
+    emojiTab = recentEmojis().length ? 0 : 1;
+    document.getElementById('emojiSearch').value = '';
+    renderEmojiTabs(); renderEmojiGrid();
+    emojiPop.classList.add('open'); emojiBtn.setAttribute('aria-expanded', 'true');
+    setTimeout(()=> document.getElementById('emojiSearch').focus(), 20);
+  }
+  function closeEmoji(returnFocus){
+    emojiPop.classList.remove('open'); emojiBtn.setAttribute('aria-expanded', 'false');
+    if(returnFocus){ postInput.focus(); postInput.setSelectionRange(savedSel[0], savedSel[1]); }
+  }
+  function insertEmoji(em){
+    postInput.focus();
+    postInput.setSelectionRange(savedSel[0], savedSel[1]);
+    replaceSelection(em, false);
+    savedSel = [postInput.selectionStart, postInput.selectionEnd];
+    rememberEmoji(em);
+    // Stay open so several can be added in a row; the search keeps focus.
+    if(emojiTab === 0) renderEmojiGrid();
+    document.getElementById('emojiSearch').focus();
+  }
+  emojiBtn.addEventListener('mousedown', e=> e.preventDefault());
+  emojiBtn.addEventListener('click', ()=> emojiPop.classList.contains('open') ? closeEmoji(true) : openEmoji());
+  document.getElementById('emojiSearch').addEventListener('input', renderEmojiGrid);
+  document.addEventListener('mousedown', e=>{
+    if(emojiPop.classList.contains('open') && !emojiPop.contains(e.target) && e.target !== emojiBtn && !emojiBtn.contains(e.target)) closeEmoji(false);
+  });
+  emojiPop.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ e.stopPropagation(); closeEmoji(true); } });
 
   // ---------- Clear ----------
   function updateClearBtn(){
