@@ -401,6 +401,24 @@
   .li-connect-link.danger{color:var(--slate);}
   .li-connect-link.danger:hover{color:var(--fail);}
 
+  /* ---------- Auto-publishing ---------- */
+  .auto-toggle{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:12px 14px;border:1px solid var(--lk-line);border-radius:8px;cursor:pointer;}
+  .auto-toggle:hover{border-color:rgba(10,102,194,.5);}
+  .auto-toggle.disabled{cursor:default;background:#FAFAF9;}
+  .auto-toggle.disabled:hover{border-color:var(--lk-line);}
+  .auto-toggle input{width:18px;height:18px;margin-top:1px;accent-color:#0A66C2;flex-shrink:0;cursor:inherit;}
+  .auto-toggle b{display:block;font-size:14px;font-weight:600;}
+  .auto-toggle small{display:block;font-size:12.5px;color:var(--lk-muted);line-height:1.4;margin-top:2px;}
+  .auto-toggle small.warn{color:#8A5600;}
+  .auto-toggle a,.auto-toggle .linklike{color:#0A66C2;font-weight:600;background:none;border:0;padding:0;font:inherit;cursor:pointer;text-decoration:underline;}
+  .schedule-chip.failed{background:#FDECEA;border-color:#F5C2BC;color:#9B2C1F;}
+  .schedule-chip.publishing{background:#EAF3FC;border-color:#CFE2F6;color:#0B4F94;}
+  .schedule-chip a{color:inherit;font-weight:700;}
+  .cal-pill.failed{background:#FDECEA;border-left-color:#C0392B;color:#7A2016;}
+  .cal-pill.publishing{background:#EAF3FC;border-left-color:#0A66C2;color:#0B3D70;}
+  .cal-pill .auto-tag{font-weight:600;opacity:.8;}
+  .li-connect-text .warn{color:#8A5600;font-weight:600;}
+
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
   .headline-row .composer-input{flex:1;min-width:0;}
@@ -880,7 +898,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     <div class="cal-head">
       <div>
         <h2 class="cal-title" id="calTitle">Content calendar</h2>
-        <p class="cal-sub">Click a day to schedule the post you're writing, or drag posts between days to move them.</p>
+        <p class="cal-sub">Click a day to schedule the post you're writing, or drag posts between days to move them. "Auto" posts publish to LinkedIn by themselves.</p>
       </div>
       <div class="cal-nav">
         <button type="button" class="lk-btn" id="calTodayBtn">Today</button>
@@ -898,6 +916,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         <div class="cal-legend">
           <span><i style="background:#0A66C2;"></i>Scheduled</span>
           <span><i style="background:#C97C00;"></i>Time to post it</span>
+          <span><i style="background:#C0392B;"></i>Couldn't publish</span>
           <span><i style="background:#1F6F5C;"></i>Posted</span>
         </div>
       </aside>
@@ -920,10 +939,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         <div class="lk-field"><label for="scheduleTime">Time</label><input type="time" id="scheduleTime" step="900"></div>
       </div>
       <p class="lk-dialog-error" id="scheduleError" role="alert"></p>
-      <p class="lk-dialog-note">PalaTrack doesn't post to LinkedIn for you. At this time the post turns amber on your calendar, ready for you to copy and publish.</p>
+      <label class="auto-toggle" id="autoPublishRow">
+        <input type="checkbox" id="autoPublishToggle">
+        <span><b>Publish automatically on LinkedIn</b><small id="autoPublishHint"></small></span>
+      </label>
+      <p class="lk-dialog-note" id="scheduleNote"></p>
     </div>
     <div class="lk-dialog-foot">
       <button type="button" class="lk-btn ghost" id="unscheduleBtn" style="display:none;">Remove schedule</button>
+      <button type="button" class="lk-btn ghost" id="publishNowBtn" style="display:none;">Publish now instead</button>
       <span class="spacer"></span>
       <button type="button" class="lk-btn" id="scheduleCancelBtn">Cancel</button>
       <button type="button" class="lk-btn primary" id="scheduleConfirmBtn">Schedule</button>
@@ -1733,7 +1757,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const btn = document.getElementById('linkedinConnectBtn');
     box.querySelectorAll('.li-connect-avatar,.li-connect-links').forEach(el=> el.remove());
     if(!linkedinInfo.connected){
-      text.textContent = 'Connect your LinkedIn to show your real profile picture and name in the preview.';
+      text.textContent = 'Connect your LinkedIn to show your real profile picture in the preview and publish scheduled posts automatically.';
       btn.style.display = '';
       return;
     }
@@ -1747,11 +1771,22 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     text.append('Connected to LinkedIn as ');
     const b = document.createElement('b'); b.textContent = linkedinInfo.name || 'your account'; text.appendChild(b);
     if(!linkedinInfo.photoURL) text.append(' (no profile picture on LinkedIn)');
+    text.append('. ');
+    const warn = document.createElement('span');
+    if(linkedinCanAutoPost()){
+      const days = Math.ceil((linkedinInfo.postingExpiresAt - Date.now()) / 86400000);
+      if(days <= 7){ warn.className = 'warn'; warn.textContent = `Auto-publishing stops in ${days} day${days === 1 ? '' : 's'}. Reconnect to keep it on.`; }
+      else warn.textContent = `Auto-publishing is on until ${fmtDay(linkedinInfo.postingExpiresAt)}.`;
+    } else {
+      warn.className = 'warn';
+      warn.textContent = linkedinInfo.canPost ? 'Auto-publishing has expired. Reconnect to turn it back on.' : 'Reconnect to turn on auto-publishing.';
+    }
+    text.appendChild(warn);
     const links = document.createElement('span');
     links.className = 'li-connect-links';
     const refresh = document.createElement('button');
-    refresh.type = 'button'; refresh.className = 'li-connect-link'; refresh.textContent = 'Refresh photo';
-    refresh.title = 'Changed your LinkedIn picture? Pull in the new one.';
+    refresh.type = 'button'; refresh.className = 'li-connect-link'; refresh.textContent = 'Reconnect';
+    refresh.title = 'Refreshes your LinkedIn photo and renews auto-publishing for another ~60 days.';
     refresh.addEventListener('click', startLinkedinConnect);
     const disc = document.createElement('button');
     disc.type = 'button'; disc.className = 'li-connect-link danger'; disc.textContent = 'Disconnect';
@@ -1760,11 +1795,20 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     box.appendChild(links);
   }
 
+  // Posting permission is granted by "Share on LinkedIn" and lasts ~60 days
+  // (LinkedIn gives self-serve apps no refresh token), then needs a reconnect.
+  function linkedinCanAutoPost(){
+    return linkedinInfo.connected && linkedinInfo.canPost &&
+      !!linkedinInfo.postingExpiresAt && linkedinInfo.postingExpiresAt.getTime() > Date.now();
+  }
   function applyLinkedinProfile(data){
+    const exp = data.linkedinPostingExpiresAt;
     linkedinInfo = {
       connected: !!data.linkedinConnected,
       name: data.linkedinName || '',
       photoURL: data.linkedinPhotoURL || '',
+      canPost: !!data.linkedinCanPost,
+      postingExpiresAt: exp ? (exp.toDate ? exp.toDate() : new Date(exp)) : null,
     };
     previewPhotoURL = linkedinInfo.photoURL || myPhotoURL;
     renderLinkedinConnect();
@@ -1804,7 +1848,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const status = params.get('linkedinConnect');
     if(!status) return;
     const messages = {
-      success: ['LinkedIn connected. Your profile picture is now in the preview.', false],
+      success: ['LinkedIn connected. Your profile picture is in the preview and scheduled posts can publish automatically.', false],
       nophoto: ["LinkedIn connected, but your LinkedIn profile doesn't have a picture yet.", false],
       denied: ['LinkedIn connection cancelled.', false],
       expired: ['That LinkedIn login link expired. Please try connecting again.', true],
@@ -1862,13 +1906,32 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   // ---------- Scheduling ----------
   function toDate(ts){ return ts ? (ts.toDate ? ts.toDate() : new Date(ts)) : null; }
   function activeDraft(){ return allDrafts.find(d=>d.id === activeDraftId) || null; }
+  // States: none | draft | scheduled | due (time passed, post it yourself) |
+  // publishing (auto, being published) | failed (auto publish failed) | posted
   function postState(draft){
     if(!draft) return 'none';
     if(draft.status === 'posted') return 'posted';
+    if(draft.publishState === 'failed') return 'failed';
+    if(draft.publishState === 'publishing') return 'publishing';
     const when = toDate(draft.scheduledAt);
     if(!when) return 'draft';
-    return when.getTime() <= Date.now() ? 'due' : 'scheduled';
+    if(when.getTime() > Date.now()) return 'scheduled';
+    return draft.autoPost && draft.publishState === 'queued' ? 'publishing' : 'due';
   }
+  const AUTO_FIELDS_OFF = ()=> ({
+    autoPost: false,
+    autoPublishAt: firebase.firestore.FieldValue.delete(),
+    publishState: firebase.firestore.FieldValue.delete(),
+    publishError: firebase.firestore.FieldValue.delete(),
+    publishAttempts: firebase.firestore.FieldValue.delete(),
+  });
+  const AUTO_FIELDS_ON = when => ({
+    autoPost: true,
+    autoPublishAt: firebase.firestore.Timestamp.fromDate(when),
+    publishState: 'queued',
+    publishError: firebase.firestore.FieldValue.delete(),
+    publishAttempts: firebase.firestore.FieldValue.delete(),
+  });
   const fmtDay = d => d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
   const fmtTime = d => d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
   const pad = n => String(n).padStart(2,'0');
@@ -1892,10 +1955,30 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       b.type = 'button'; b.className = 'chip-link'; b.textContent = label;
       b.addEventListener('click', fn); actions.appendChild(b);
     };
-    if(state === 'posted'){
+    if(state === 'posted' && draft.publishState === 'published'){
+      chip.classList.add('posted');
+      textEl.textContent = '✓ Published on LinkedIn' + (draft.postedAt ? ` on ${fmtDay(toDate(draft.postedAt))} at ${fmtTime(toDate(draft.postedAt))}` : '');
+      if(draft.linkedinPostUrl){
+        const a = document.createElement('a');
+        a.href = draft.linkedinPostUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'View on LinkedIn ↗';
+        actions.appendChild(a);
+      }
+    } else if(state === 'posted'){
       chip.classList.add('posted');
       textEl.textContent = '✓ Marked as posted' + (when ? ` (was scheduled for ${fmtDay(when)})` : '');
       addLink('Undo', ()=> setPosted(draft, false));
+    } else if(state === 'publishing'){
+      chip.classList.add('publishing');
+      textEl.textContent = '⏳ Publishing to LinkedIn… this takes a few minutes, longer with a video.';
+    } else if(state === 'failed'){
+      chip.classList.add('failed');
+      textEl.textContent = `⚠ Couldn't publish to LinkedIn: ${draft.publishError || 'unknown error.'}`;
+      addLink('Try again', ()=> publishNow({confirmed: true}));
+      addLink('Reschedule', ()=> openScheduleModal());
+      addLink('Post it myself', ()=> setPosted(draft, true));
+    } else if(state === 'scheduled' && draft.autoPost){
+      textEl.textContent = `📅 Publishes automatically on LinkedIn: ${fmtDay(when)} at ${fmtTime(when)}`;
+      addLink('Change', ()=> openScheduleModal());
     } else if(state === 'due'){
       chip.classList.add('due');
       textEl.textContent = `⏰ Time to post this: it was scheduled for ${fmtDay(when)} at ${fmtTime(when)}.`;
@@ -1918,7 +2001,14 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       return;
     }
     const draft = activeDraft();
+    if(draft && draft.publishState === 'published'){
+      showToast('This post is already published on LinkedIn. Start a new post to schedule another one.', true);
+      return;
+    }
     const existing = draft && draft.status !== 'posted' ? toDate(draft.scheduledAt) : null;
+    // Auto-publish is on by default whenever it's available, unless this post was scheduled without it.
+    document.getElementById('autoPublishToggle').checked = linkedinCanAutoPost() && !(draft && draft.scheduledAt && draft.autoPost === false);
+    disarmPublishNow();
     let base;
     if(presetDay || pendingScheduleDate){
       base = new Date(presetDay || pendingScheduleDate);
@@ -1934,6 +2024,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     document.getElementById('scheduleDate').min = dateInputValue(new Date());
     document.getElementById('scheduleTime').value = `${pad(base.getHours())}:${pad(base.getMinutes())}`;
     document.getElementById('unscheduleBtn').style.display = existing ? '' : 'none';
+    document.getElementById('publishNowBtn').style.display = linkedinCanAutoPost() ? '' : 'none';
     document.getElementById('scheduleError').textContent = '';
     updateScheduleWhen();
     const overlay = document.getElementById('scheduleOverlay');
@@ -1959,7 +2050,43 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     document.getElementById('scheduleWhen').textContent = when
       ? `${when.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'})} at ${fmtTime(when)}, based on your location (${tz})`
       : 'Pick a date and time.';
+    updateAutoPublishUI();
   }
+  function updateAutoPublishUI(){
+    const row = document.getElementById('autoPublishRow');
+    const toggle = document.getElementById('autoPublishToggle');
+    const hint = document.getElementById('autoPublishHint');
+    const note = document.getElementById('scheduleNote');
+    const available = linkedinCanAutoPost();
+    toggle.disabled = !available;
+    row.classList.toggle('disabled', !available);
+    hint.className = '';
+    hint.innerHTML = '';
+    if(!available){
+      toggle.checked = false;
+      hint.append(linkedinInfo.connected
+        ? (linkedinInfo.canPost ? 'Your LinkedIn connection has expired. ' : 'Your LinkedIn connection needs posting permission. ')
+        : 'Connect your LinkedIn account to turn this on. ');
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'linklike';
+      b.textContent = linkedinInfo.connected ? 'Reconnect LinkedIn' : 'Connect LinkedIn';
+      b.addEventListener('click', e=>{ e.preventDefault(); startLinkedinConnect(); });
+      hint.appendChild(b);
+    } else {
+      const when = readScheduleInputs();
+      if(toggle.checked && when && linkedinInfo.postingExpiresAt && when > linkedinInfo.postingExpiresAt){
+        hint.className = 'warn';
+        hint.textContent = `Your LinkedIn connection ends on ${fmtDay(linkedinInfo.postingExpiresAt)}, before this post goes out. Reconnect before then, or it won't publish.`;
+      } else {
+        hint.textContent = 'PalaTrack posts it on your LinkedIn profile at this time, with its photos or video.';
+      }
+    }
+    note.textContent = toggle.checked
+      ? "You'll see it on your calendar as \"Auto\". If publishing fails for any reason, the post turns red here with the reason, and nothing is posted."
+      : "At this time the post turns amber on your calendar, ready for you to copy and publish on LinkedIn yourself.";
+    document.getElementById('scheduleConfirmBtn').textContent = toggle.checked ? 'Schedule to publish' : 'Schedule';
+  }
+  document.getElementById('autoPublishToggle').addEventListener('change', updateAutoPublishUI);
   document.getElementById('scheduleDate').addEventListener('input', updateScheduleWhen);
   document.getElementById('scheduleTime').addEventListener('input', updateScheduleWhen);
   document.getElementById('scheduleBtn').addEventListener('click', ()=> openScheduleModal());
@@ -1976,10 +2103,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(when.getTime() <= Date.now()){ errEl.textContent = 'That time has already passed. Pick a time in the future.'; return; }
     const btn = document.getElementById('scheduleConfirmBtn');
     btn.disabled = true;
+    const auto = document.getElementById('autoPublishToggle').checked && linkedinCanAutoPost();
     savePost({
       scheduledAt: firebase.firestore.Timestamp.fromDate(when),
       status: 'scheduled',
-    }, `Scheduled for ${fmtDay(when)} at ${fmtTime(when)}.`).then(ok=>{
+      ...(auto ? AUTO_FIELDS_ON(when) : AUTO_FIELDS_OFF()),
+    }, auto ? `Scheduled to publish on LinkedIn ${fmtDay(when)} at ${fmtTime(when)}.` : `Scheduled for ${fmtDay(when)} at ${fmtTime(when)}.`).then(ok=>{
       if(ok){ closeScheduleModal(); calMonth = new Date(when.getFullYear(), when.getMonth(), 1); renderCalendar(); }
     }).finally(()=>{ btn.disabled = false; });
   });
@@ -1988,6 +2117,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     collectionRef().doc(activeDraftId).update({
       scheduledAt: firebase.firestore.FieldValue.delete(),
       status: 'draft',
+      ...AUTO_FIELDS_OFF(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }).then(()=>{
       showToast('Schedule removed. The post is still saved.');
@@ -1996,10 +2126,50 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     }).catch(err=>{ console.error(err); showToast('Could not remove the schedule.', true); });
   });
 
+  // "Publish now instead" in the schedule dialog (needs a second click to
+  // confirm), and "Try again" after a failed auto-publish.
+  let publishNowArmed = false, publishNowTimer = null;
+  function disarmPublishNow(){
+    publishNowArmed = false; clearTimeout(publishNowTimer);
+    const b = document.getElementById('publishNowBtn');
+    b.textContent = 'Publish now instead'; b.classList.remove('primary'); b.classList.add('ghost');
+  }
+  document.getElementById('publishNowBtn').addEventListener('click', ()=>{
+    if(!publishNowArmed){
+      publishNowArmed = true;
+      const b = document.getElementById('publishNowBtn');
+      b.textContent = 'Click again to publish now'; b.classList.remove('ghost'); b.classList.add('primary');
+      publishNowTimer = setTimeout(disarmPublishNow, 5000);
+      return;
+    }
+    disarmPublishNow();
+    closeScheduleModal();
+    publishNow({confirmed: true});
+  });
+  function publishNow({confirmed} = {}){
+    if(!confirmed) return;
+    if(!linkedinCanAutoPost()){ showToast('Connect (or reconnect) LinkedIn above the post text first.', true); return; }
+    if(!functionsApi){ showToast('Could not reach the server. Reload the page and try again.', true); return; }
+    // Save first so LinkedIn gets exactly what's in the editor (and its photos/video are uploaded).
+    savePost({}, 'Saved. Publishing to LinkedIn…').then(ok=>{
+      if(!ok) return;
+      const d = activeDraft();
+      if(d){ d.publishState = 'publishing'; renderScheduleChip(); renderCalendar(); renderDraftsStrip(); }
+      return functionsApi.httpsCallable('publishLinkedInPostNow')({postId: activeDraftId}).then(res=>{
+        const url = res.data && res.data.url;
+        showToast('Published on LinkedIn 🎉', false, url ? {label: 'View post', fn: ()=> window.open(url, '_blank', 'noopener')} : null);
+      }).catch(err=>{
+        console.error(err);
+        showToast(err.message || 'Could not publish to LinkedIn.', true);
+      }).finally(()=> loadDrafts());
+    });
+  }
+
   function setPosted(draft, posted){
     collectionRef().doc(draft.id).update({
       status: posted ? 'posted' : (draft.scheduledAt ? 'scheduled' : 'draft'),
       postedAt: posted ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete(),
+      ...AUTO_FIELDS_OFF(), // posting it yourself (or undoing that) never auto-publishes it
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }).then(()=>{
       showToast(posted ? 'Marked as posted.' : 'Moved back to scheduled.');
@@ -2014,9 +2184,11 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const when = new Date(day);
     when.setHours(old ? old.getHours() : 9, old ? old.getMinutes() : 0, 0, 0);
     if(when.getTime() <= Date.now()){ showToast('That time has already passed. Pick a later day.', true); return; }
+    const keepAuto = draft.autoPost && linkedinCanAutoPost();
     collectionRef().doc(draftId).update({
       scheduledAt: firebase.firestore.Timestamp.fromDate(when),
       status: 'scheduled',
+      ...(keepAuto ? AUTO_FIELDS_ON(when) : AUTO_FIELDS_OFF()),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }).then(()=>{
       showToast(`Moved to ${fmtDay(when)} at ${fmtTime(when)}.`);
@@ -2076,11 +2248,13 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         const state = postState(draft);
         const pill = document.createElement('button');
         pill.type = 'button';
-        pill.className = 'cal-pill' + (state === 'due' ? ' due' : state === 'posted' ? ' posted' : '') + (draft.id === activeDraftId ? ' active' : '');
+        pill.className = 'cal-pill' + ({due:' due', posted:' posted', failed:' failed', publishing:' publishing'}[state] || '') + (draft.id === activeDraftId ? ' active' : '');
         const when = toDate(draft.scheduledAt);
-        pill.innerHTML = `<b>${esc(fmtTime(when))}</b><span>${esc(snippetOf(draft))}</span>`;
-        pill.title = `${fmtTime(when)} · ${snippetOf(draft)}`;
-        if(state !== 'posted'){
+        const tag = state === 'failed' ? ' · Failed' : state === 'publishing' ? ' · Publishing' :
+          (state === 'posted' && draft.publishState === 'published') ? ' · Published' : (draft.autoPost && state === 'scheduled') ? ' · Auto' : '';
+        pill.innerHTML = `<b>${esc(fmtTime(when))}<span class="auto-tag">${esc(tag)}</span></b><span>${esc(snippetOf(draft))}</span>`;
+        pill.title = `${fmtTime(when)}${tag} · ${snippetOf(draft)}`;
+        if(state !== 'posted' && state !== 'publishing'){
           pill.draggable = true;
           pill.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', draft.id); e.dataTransfer.effectAllowed = 'move'; });
         }
@@ -2129,7 +2303,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   document.getElementById('calNextBtn').addEventListener('click', ()=>{ calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 1); renderCalendar(); });
   document.getElementById('calTodayBtn').addEventListener('click', ()=>{ const d = new Date(); calMonth = new Date(d.getFullYear(), d.getMonth(), 1); renderCalendar(); });
   // Keep "time to post it" states current without a reload.
-  setInterval(()=>{ renderCalendar(); renderScheduleChip(); }, 60000);
+  setInterval(()=>{
+    renderCalendar(); renderScheduleChip();
+    // The server publishes due "Auto" posts every 5 minutes; pick up the result.
+    const soon = Date.now() + 60000;
+    if(currentWorkspaceId && allDrafts.some(d=> d.autoPost && ['queued','publishing'].includes(d.publishState) && toDate(d.scheduledAt) && toDate(d.scheduledAt).getTime() <= soon)) loadDrafts();
+  }, 60000);
   renderCalendar();
 
   // ---------- Copy to clipboard ----------
@@ -2171,9 +2350,11 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function draftMetaLabel(draft){
     const state = postState(draft);
     const when = toDate(draft.scheduledAt);
-    if(state === 'posted') return '✓ Posted';
+    if(state === 'posted') return draft.publishState === 'published' ? '✓ Published' : '✓ Posted';
+    if(state === 'failed') return "⚠ Couldn't publish";
+    if(state === 'publishing') return '⏳ Publishing…';
     if(state === 'due') return '⏰ Time to post';
-    if(state === 'scheduled') return `📅 ${fmtDay(when)}, ${fmtTime(when)}`;
+    if(state === 'scheduled') return `${draft.autoPost ? '⚡' : '📅'} ${fmtDay(when)}, ${fmtTime(when)}`;
     return timeAgo(draft.updatedAt);
   }
   function renderDraftsStrip(){
@@ -2254,6 +2435,11 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     });
   }
 
+  // FieldValue.delete() is only allowed in updates, not when creating a doc.
+  function withoutDeletes(obj){
+    const del = firebase.firestore.FieldValue.delete();
+    return Object.fromEntries(Object.entries(obj).filter(([, v])=> !(v && typeof v.isEqual === 'function' && v.isEqual(del))));
+  }
   // Saves the post in the editor. `extra` adds fields (e.g. a schedule).
   // New photos/videos are uploaded to Storage first; the post then stores
   // their links. Resolves true on success so callers can chain UI updates.
@@ -2276,7 +2462,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const previous = activeDraftId ? (allDrafts.find(d=> d.id === activeDraftId) || {}) : {};
     const ensureDoc = activeDraftId
       ? Promise.resolve(activeDraftId)
-      : collectionRef().add({status: 'draft', ...payload, media: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()})
+      : collectionRef().add({status: 'draft', ...withoutDeletes(payload), media: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()})
           .then(ref=>{ activeDraftId = ref.id; return ref.id; });
 
     return ensureDoc.then(postId=>
