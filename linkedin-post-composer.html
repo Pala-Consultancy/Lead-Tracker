@@ -160,6 +160,15 @@
     border:1px solid var(--border);
   }
 
+  /* Devices are laid out at their real size (so line breaks match LinkedIn),
+     then shrunk to fit the column with a transform. */
+  .li-scale{position:relative;flex-shrink:0;}
+  .li-scale > .li-device{position:absolute;top:0;left:0;transform-origin:top left;max-width:none !important;}
+  .li-cutoff{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--border);font-size:12.5px;color:var(--slate);line-height:1.45;}
+  .li-cutoff b{color:var(--ink);}
+  .li-cutoff.ok{border-color:#C3E2D7;background:var(--success-soft);color:var(--success);}
+  .li-cutoff:empty{display:none;}
+
   /* Shared app surfaces */
   .li-device{--feed:#F4F2EE;--li-text:rgba(0,0,0,.9);--li-muted:rgba(0,0,0,.6);--li-faint:rgba(0,0,0,.45);max-width:100%;}
   .li-screen{background:var(--feed);display:flex;flex-direction:column;overflow:hidden;position:relative;}
@@ -169,7 +178,7 @@
 
   /* Phone */
   .li-device[data-device="phone"]{
-    width:344px;padding:11px;border-radius:52px;background:#1B1D22;position:relative;
+    width:412px;padding:11px;border-radius:56px;background:#1B1D22;position:relative; /* 390pt iPhone screen + bezel */
     box-shadow:inset 0 0 0 1.5px #3A3D45, 0 1px 0 1px #0E0F12, 0 30px 60px -20px rgba(22,32,44,.45), 0 12px 24px -12px rgba(22,32,44,.3);
   }
   .li-device[data-device="phone"]::before,.li-device[data-device="phone"]::after{
@@ -177,7 +186,7 @@
   }
   .li-device[data-device="phone"]::before{left:-3px;top:130px;height:56px;box-shadow:0 70px 0 #2A2D34;}
   .li-device[data-device="phone"]::after{right:-3px;top:160px;height:84px;}
-  .li-device[data-device="phone"] .li-screen{height:690px;border-radius:42px;}
+  .li-device[data-device="phone"] .li-screen{height:760px;border-radius:46px;}
   .li-device[data-device="phone"] .li-chrome-phone{display:block;}
 
   .li-statusbar{height:46px;display:flex;align-items:center;justify-content:space-between;padding:6px 28px 0 30px;background:#fff;
@@ -195,24 +204,24 @@
 
   /* Tablet */
   .li-device[data-device="tablet"]{
-    width:500px;padding:14px;border-radius:34px;background:#1B1D22;
+    width:668px;padding:14px;border-radius:34px;background:#1B1D22; /* 640 screen: 20 + 600pt feed card + 20 */
     box-shadow:inset 0 0 0 1.5px #3A3D45, 0 30px 60px -20px rgba(22,32,44,.45), 0 12px 24px -12px rgba(22,32,44,.3);
   }
-  .li-device[data-device="tablet"] .li-screen{height:640px;border-radius:20px;}
+  .li-device[data-device="tablet"] .li-screen{height:840px;border-radius:20px;}
   .li-device[data-device="tablet"] .li-chrome-phone{display:block;}
   .li-device[data-device="tablet"] .li-island{display:none;}
   .li-device[data-device="tablet"] .li-statusbar{height:30px;padding:2px 22px 0;font-size:12.5px;}
   .li-device[data-device="tablet"] .li-tabbar{height:58px;}
   .li-device[data-device="tablet"] .li-home-indicator{bottom:6px;width:140px;}
-  .li-device[data-device="tablet"] .li-feed{padding:14px 18px;}
+  .li-device[data-device="tablet"] .li-feed{padding:16px 20px;}
   .li-device[data-device="tablet"] .li-post-card{border-radius:10px;border:1px solid rgba(0,0,0,.08);}
 
   /* Desktop browser window */
   .li-device[data-device="desktop"]{
-    width:520px;border-radius:12px;background:#fff;overflow:hidden;
+    width:587px;border-radius:12px;background:#fff;overflow:hidden; /* 16 + 555px LinkedIn feed card + 16 */
     box-shadow:0 0 0 1px rgba(22,32,44,.1), 0 30px 60px -20px rgba(22,32,44,.35), 0 12px 24px -12px rgba(22,32,44,.2);
   }
-  .li-device[data-device="desktop"] .li-screen{height:620px;}
+  .li-device[data-device="desktop"] .li-screen{height:700px;}
   .li-device[data-device="desktop"] .li-chrome-browser{display:block;}
   .li-browserbar{display:flex;align-items:center;gap:12px;padding:10px 12px;background:#F1F3F6;border-bottom:1px solid #E1E5EB;}
   .li-dots{display:flex;gap:6px;}
@@ -222,34 +231,34 @@
   .li-logo{width:28px;height:28px;border-radius:4px;background:var(--li-blue);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .li-desk-nav .li-search{height:30px;max-width:190px;font-size:12.5px;}
   .li-desk-icons{margin-left:auto;display:flex;gap:16px;color:rgba(0,0,0,.6);}
-  .li-device[data-device="desktop"] .li-feed{padding:16px 20px;}
+  .li-device[data-device="desktop"] .li-feed{padding:16px;}
   .li-device[data-device="desktop"] .li-post-card{border-radius:10px;border:1px solid rgba(0,0,0,.08);}
 
   /* The post card */
   .li-post-card{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--li-text);}
   .li-device[data-device="phone"] .li-feed .li-post-card{margin-top:8px;}
-  .li-post-header{display:flex;align-items:flex-start;gap:10px;padding:14px 14px 0;}
+  .li-post-header{display:flex;align-items:flex-start;gap:10px;padding:12px 16px 0;}
   .li-post-avatar{
     width:48px;height:48px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#5B6FD8,#3730B3);
     display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;font-family:'Inter',sans-serif;
   }
   .li-post-who{flex:1;min-width:0;padding-top:1px;}
   .li-post-name-row{display:flex;align-items:baseline;gap:5px;min-width:0;}
-  .li-post-name{font-size:14.5px;font-weight:600;color:var(--li-text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .li-post-name{font-size:14px;font-weight:600;color:var(--li-text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .li-post-degree{font-size:13px;color:var(--li-faint);flex-shrink:0;}
-  .li-post-headline{font-size:12.5px;color:var(--li-muted);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .li-post-headline{font-size:12px;color:var(--li-muted);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .li-post-time{font-size:12.5px;color:var(--li-muted);display:flex;align-items:center;gap:4px;margin-top:1px;}
   .li-follow{color:var(--li-blue);font-size:14px;font-weight:600;display:flex;align-items:center;gap:3px;flex-shrink:0;padding-top:1px;}
 
-  .li-post-body-wrap{padding:10px 14px 2px;}
-  .li-post-body{font-size:14.5px;line-height:1.43;color:var(--li-text);white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere;position:relative;}
-  .li-post-body.clamped{overflow:hidden;max-height:4.29em;} /* 3 lines */
+  .li-post-body-wrap{padding:8px 16px 2px;position:relative;}
+  .li-post-body{font-size:14px;line-height:20px;color:var(--li-text);white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere;position:relative;}
+  .li-post-body.clamped{overflow:hidden;max-height:60px;} /* LinkedIn shows 3 lines (3 x 20px) before "…more" */
   .li-post-body.empty{color:var(--li-faint);font-style:italic;}
   .li-see-more{border:0;background:none;padding:0;font:inherit;color:var(--li-muted);cursor:pointer;}
   .li-see-more:hover{color:var(--li-blue);text-decoration:underline;}
   .li-see-more:focus-visible{outline:2px solid var(--li-blue);outline-offset:2px;border-radius:3px;}
-  .li-more-row{display:flex;justify-content:flex-end;margin-top:2px;font-size:14.5px;}
-  .li-more-inline{position:absolute;right:0;bottom:0;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 26px);padding-left:34px;line-height:1.43;}
+  .li-more-row{display:flex;justify-content:flex-end;margin-top:2px;font-size:14px;}
+  .li-more-inline{position:absolute;right:0;bottom:0;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 26px);padding-left:34px;line-height:20px;}
 
   .li-post-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 12px;margin-top:6px;border-top:1px solid rgba(0,0,0,.06);}
   .li-post-stats{display:flex;align-items:center;gap:10px;color:var(--li-muted);font-size:14px;font-weight:500;}
@@ -664,9 +673,10 @@
   <div class="composer-grid">
     <div class="composer-panel">
       <div class="composer-field">
-        <label class="composer-label">Your name (shown in the preview)</label>
-        <input type="text" class="composer-input" id="authorNameInput" placeholder="Your name">
-        <div class="li-connect" id="linkedinConnect">
+        <label class="composer-label">LinkedIn account</label>
+        <!-- The name in the preview comes from the connected LinkedIn profile (or the PalaTrack account). -->
+        <input type="hidden" id="authorNameInput">
+        <div class="li-connect" id="linkedinConnect" style="margin-top:0;">
           <span class="li-connect-text" id="linkedinConnectText">Connect your LinkedIn to show your real profile picture and name in the preview.</span>
           <button type="button" class="li-connect-btn" id="linkedinConnectBtn">
             <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
@@ -773,6 +783,7 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
         </div>
       </div>
       <div class="li-stage">
+        <div class="li-scale" id="previewScale">
         <div class="li-device" id="previewDevice" data-device="desktop">
           <div class="li-screen">
 
@@ -952,8 +963,10 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 
           </div>
         </div>
+        </div>
       </div>
-      <p class="li-preview-note">Simulated preview to help you judge length and where the "…more" cutoff lands on each device. Real appearance can vary slightly.</p>
+      <div class="li-cutoff" id="previewCutoff" aria-live="polite"></div>
+      <p class="li-preview-note">Shown at LinkedIn's real sizes (desktop feed card 555px, iPhone 390pt, iPad feed card ~600pt; 14px text, 3 lines before "…more"), scaled down to fit. Your device's font is used, so a word can occasionally wrap differently on another phone or computer.</p>
     </div>
   </div>
 
@@ -1127,6 +1140,58 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   const PREVIEW_LINES = 3;
   let previewExpanded = false;
 
+  // The device is laid out at its real LinkedIn size, then scaled to fit the column.
+  function fitPreviewDevice(){
+    const stage = document.querySelector('.li-stage');
+    const wrap = document.getElementById('previewScale');
+    const device = document.getElementById('previewDevice');
+    if(!stage || !wrap || !stage.clientWidth) return;
+    const cs = getComputedStyle(stage);
+    const avail = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const w = device.offsetWidth, h = device.offsetHeight;
+    const scale = Math.min(1, avail / w);
+    device.style.transform = scale < 1 ? `scale(${scale})` : '';
+    wrap.style.width = (w * scale) + 'px';
+    wrap.style.height = (h * scale) + 'px';
+  }
+  window.addEventListener('resize', fitPreviewDevice);
+
+  // How many characters show before "…more" on the device being previewed.
+  function charsBeforeMore(bodyEl, text){
+    const probe = document.createElement('div');
+    probe.className = 'li-post-body clamped';
+    probe.style.cssText = `position:absolute;visibility:hidden;left:0;top:0;width:${bodyEl.clientWidth}px;`;
+    bodyEl.parentNode.appendChild(probe);
+    let lo = 0, hi = text.length;
+    while(lo < hi){
+      const mid = Math.ceil((lo + hi) / 2);
+      probe.textContent = text.slice(0, mid) + '\u00a0…more';
+      if(probe.scrollHeight <= probe.clientHeight + 1) lo = mid; else hi = mid - 1;
+    }
+    probe.remove();
+    return lo;
+  }
+  const DEVICE_NAMES = {phone: 'phone', tablet: 'tablet', desktop: 'desktop'};
+  function renderCutoff(text, overflows){
+    const el = document.getElementById('previewCutoff');
+    if(!el) return;
+    const device = document.getElementById('previewDevice').dataset.device;
+    const name = DEVICE_NAMES[device] || device;
+    if(!text.trim()){ el.textContent = ''; el.className = 'li-cutoff'; return; }
+    if(!overflows){
+      el.className = 'li-cutoff ok';
+      el.innerHTML = `On <b>${name}</b>, your whole post shows without "…more".`;
+      return;
+    }
+    const shown = charsBeforeMore(document.getElementById('previewBody'), text);
+    const visible = text.slice(0, shown).replace(/\s+$/, '');
+    const cutWord = visible.split(/\s+/).pop();
+    el.className = 'li-cutoff';
+    el.innerHTML = `On <b>${name}</b>, the first <b>${visible.length}</b> of ${text.length} characters show before "…more"` +
+      (cutWord ? `: the cut-off comes right after "<b>${esc(cutWord.slice(-24))}</b>".` : '.') +
+      ` Put your hook before that point.`;
+  }
+
   const DEVICE_KEY = 'ptLinkedInPreviewDevice';
   function setPreviewDevice(device){
     if(!['phone','tablet','desktop'].includes(device)) device = 'desktop';
@@ -1137,6 +1202,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     try{ localStorage.setItem(DEVICE_KEY, device); }catch(e){}
     previewExpanded = false;
     renderPreview();
+    fitPreviewDevice();
   }
   document.querySelectorAll('.device-btn').forEach(b=>{
     b.addEventListener('click', ()=> setPreviewDevice(b.dataset.device));
@@ -1164,6 +1230,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const hasMedia = currentMedia.length > 0;
     if(!text.trim()){
       bodyEl.className = 'li-post-body empty';
+      renderCutoff('', false);
       bodyEl.textContent = hasMedia ? '' : 'Your post will appear here as you type…';
       bodyEl.style.display = hasMedia ? 'none' : '';
       socialProof.style.display = hasMedia ? 'flex' : 'none';
@@ -1175,6 +1242,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       bodyEl.className = 'li-post-body clamped';
       const overflows = bodyEl.scrollHeight > bodyEl.clientHeight + 1;
 
+      renderCutoff(text, overflows);
       if(overflows && !previewExpanded){
         const more = document.createElement('button');
         more.type = 'button';
@@ -2114,7 +2182,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const btn = document.getElementById('linkedinConnectBtn');
     box.querySelectorAll('.li-connect-avatar,.li-connect-links').forEach(el=> el.remove());
     if(!linkedinInfo.connected){
-      text.textContent = 'Connect your LinkedIn to show your real profile picture in the preview and publish scheduled posts automatically.';
+      text.textContent = 'Connect your LinkedIn so the preview shows your real name and profile picture, and scheduled posts can publish automatically.';
       btn.style.display = '';
       return;
     }
@@ -2168,6 +2236,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       postingExpiresAt: exp ? (exp.toDate ? exp.toDate() : new Date(exp)) : null,
     };
     previewPhotoURL = linkedinInfo.photoURL || myPhotoURL;
+    document.getElementById('authorNameInput').value = linkedinInfo.name || myAccountName || '';
     renderLinkedinConnect();
     renderPreview();
   }
@@ -2862,7 +2931,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 
   function loadDraftIntoEditor(draft){
     activeDraftId = draft.id;
-    document.getElementById('authorNameInput').value = draft.authorName || document.getElementById('authorNameInput').value;
+    // The name always comes from the profile, not from what was saved with the draft.
     document.getElementById('authorHeadlineInput').value = draft.authorHeadline || document.getElementById('authorHeadlineInput').value;
     const hasVersions = loadVersionsFromDraft(draft);
     const openVersion = activeVersion();
@@ -3000,9 +3069,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         setAvatar(document.getElementById('seqSidebarAvatar'), myName);
         const memberData = memberDoc.exists ? memberDoc.data() : {};
         applyLinkedinProfile(memberData);
-        if(!document.getElementById('authorNameInput').value){
-          document.getElementById('authorNameInput').value = memberData.linkedinName || myName;
-        }
+        document.getElementById('authorNameInput').value = memberData.linkedinName || myName;
         const profileHeadline = memberDoc.exists ? memberDoc.data().linkedinHeadline : undefined;
         if(typeof profileHeadline === 'string'){
           try{ localStorage.setItem(HEADLINE_KEY, profileHeadline); }catch(e){}
@@ -3025,6 +3092,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       appRoot.style.display = 'flex';
       appRoot.classList.add('reveal');
       renderPreview(); // after reveal, so the 3-line cutoff can be measured
+      fitPreviewDevice();
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
