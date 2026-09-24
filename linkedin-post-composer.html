@@ -270,6 +270,128 @@
 
   .li-preview-note{font-size:11.5px;color:var(--slate-light);margin-top:10px;line-height:1.5;}
 
+  /* ---------- Saved headline ---------- */
+  .headline-row{display:flex;gap:8px;align-items:stretch;}
+  .headline-row .composer-input{flex:1;min-width:0;}
+  .headline-save-btn{
+    flex-shrink:0;border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:8px;padding:0 14px;
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .12s,color .12s,border-color .12s;
+  }
+  .headline-save-btn:hover{background:var(--teal-deep);border-color:var(--teal-deep);}
+  .headline-save-btn.saved{background:var(--success-soft);border-color:var(--success-soft);color:var(--success);cursor:default;}
+  .headline-save-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .headline-hint{font-size:11.5px;color:var(--slate-light);margin-top:5px;}
+
+  /* ---------- Schedule chip in the composer ---------- */
+  .schedule-chip{
+    display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:10px;
+    background:#EAF3FC;border:1px solid #CFE2F6;color:#0B4F94;font-size:12.5px;font-weight:600;
+  }
+  .schedule-chip.due{background:var(--amber-soft);border-color:#F4D9A8;color:#8A5600;}
+  .schedule-chip.posted{background:var(--success-soft);border-color:#C3E2D7;color:var(--success);}
+  .schedule-chip-text{flex:1;min-width:180px;display:flex;align-items:center;gap:7px;}
+  .chip-link{border:0;background:none;padding:2px 4px;font:inherit;font-weight:700;color:inherit;text-decoration:underline;cursor:pointer;border-radius:4px;}
+  .chip-link:focus-visible{outline:2px solid currentColor;}
+
+  /* ---------- LinkedIn-style surfaces (calendar + schedule dialog) ---------- */
+  .lk{--lk-blue:#0A66C2;--lk-blue-dark:#004182;--lk-text:rgba(0,0,0,.9);--lk-muted:rgba(0,0,0,.6);--lk-line:rgba(0,0,0,.08);--lk-feed:#F4F2EE;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:var(--lk-text);}
+  .lk-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 16px;border-radius:16px;
+    font:600 14px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;cursor:pointer;border:1px solid var(--lk-blue);
+    background:#fff;color:var(--lk-blue);transition:background .12s,box-shadow .12s,color .12s;
+  }
+  .lk-btn:hover{background:rgba(10,102,194,.08);box-shadow:inset 0 0 0 1px var(--lk-blue);}
+  .lk-btn.primary{background:var(--lk-blue);color:#fff;}
+  .lk-btn.primary:hover{background:var(--lk-blue-dark);border-color:var(--lk-blue-dark);box-shadow:none;}
+  .lk-btn.ghost{border-color:transparent;color:var(--lk-muted);}
+  .lk-btn.ghost:hover{background:rgba(0,0,0,.08);box-shadow:none;color:var(--lk-text);}
+  .lk-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .lk-btn:focus-visible,.lk-icon-btn:focus-visible{outline:2px solid var(--lk-blue);outline-offset:2px;}
+  .lk-icon-btn{width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:var(--lk-muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+  .lk-icon-btn:hover{background:rgba(0,0,0,.08);color:var(--lk-text);}
+
+  /* Calendar */
+  .cal-section{margin-top:34px;background:#fff;border:1px solid var(--lk-line);border-radius:10px;box-shadow:0 0 0 1px rgba(0,0,0,.02), 0 2px 6px rgba(0,0,0,.04);overflow:hidden;}
+  .cal-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--lk-line);}
+  .cal-title{font-size:20px;font-weight:600;margin:0;}
+  .cal-sub{font-size:13px;color:var(--lk-muted);margin:2px 0 0;}
+  .cal-nav{display:flex;align-items:center;gap:4px;margin-left:auto;}
+  .cal-month{font-size:16px;font-weight:600;min-width:150px;text-align:center;}
+  .cal-body{display:grid;grid-template-columns:1fr 250px;}
+  @media (max-width: 980px){ .cal-body{grid-template-columns:1fr;} }
+  .cal-grid-wrap{overflow-x:auto;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));min-width:700px;}
+  .cal-dow{padding:10px 10px 8px;font-size:12px;font-weight:600;color:var(--lk-muted);border-bottom:1px solid var(--lk-line);}
+  .cal-day{
+    min-height:112px;padding:6px 6px 8px;border-right:1px solid var(--lk-line);border-bottom:1px solid var(--lk-line);
+    display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:background .1s;position:relative;
+  }
+  .cal-day:nth-child(7n+7){border-right:0;} /* last column (7 headers come first, so offsets line up) */
+  .cal-day:hover{background:#F8F9FA;}
+  .cal-day.outside{background:#FAFAF9;}
+  .cal-day.outside .cal-num{color:rgba(0,0,0,.3);}
+  .cal-day.past{cursor:default;}
+  .cal-day.past:hover{background:inherit;}
+  .cal-day.drop-target{background:rgba(10,102,194,.08);box-shadow:inset 0 0 0 2px var(--lk-blue);}
+  .cal-num{font-size:12.5px;font-weight:600;color:var(--lk-text);width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-left:2px;}
+  .cal-day.today .cal-num{background:var(--lk-blue);color:#fff;}
+  .cal-add{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--lk-blue);font-size:16px;font-weight:600;opacity:0;transition:opacity .1s;}
+  .cal-day:not(.past):hover .cal-add{opacity:1;}
+  .cal-pill{
+    display:block;width:100%;text-align:left;border:0;border-left:3px solid var(--lk-blue);background:#EAF3FC;color:#0B3D70;
+    border-radius:4px;padding:4px 6px;font:500 11.5px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;cursor:pointer;
+  }
+  .cal-pill b{display:block;font-weight:700;font-size:11px;}
+  .cal-pill span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+  .cal-pill:hover{filter:brightness(.96);}
+  .cal-pill:focus-visible{outline:2px solid var(--lk-blue);outline-offset:1px;}
+  .cal-pill.due{background:#FFF1DC;border-left-color:#C97C00;color:#6B4200;}
+  .cal-pill.posted{background:#E3F1EB;border-left-color:#1F6F5C;color:#17503F;cursor:pointer;}
+  .cal-pill.active{box-shadow:0 0 0 2px var(--lk-blue);}
+  .cal-pill[draggable="true"]{cursor:grab;}
+  .cal-more{font-size:11.5px;color:var(--lk-muted);font-weight:600;padding-left:4px;}
+
+  .cal-side{border-left:1px solid var(--lk-line);padding:14px 14px 18px;background:#FCFCFB;}
+  @media (max-width: 980px){ .cal-side{border-left:0;border-top:1px solid var(--lk-line);} }
+  .cal-side h3{font-size:14px;font-weight:600;margin:0 0 2px;}
+  .cal-side p{font-size:12px;color:var(--lk-muted);margin:0 0 10px;line-height:1.4;}
+  .cal-unsched{display:flex;flex-direction:column;gap:6px;}
+  .cal-draft{
+    text-align:left;border:1px solid var(--lk-line);background:#fff;border-radius:8px;padding:8px 10px;cursor:grab;
+    font:400 12.5px/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--lk-text);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .cal-draft:hover{border-color:var(--lk-blue);}
+  .cal-draft:focus-visible{outline:2px solid var(--lk-blue);outline-offset:1px;}
+  .cal-side-empty{font-size:12px;color:rgba(0,0,0,.4);font-style:italic;}
+  .cal-legend{display:flex;flex-direction:column;gap:6px;margin-top:18px;padding-top:14px;border-top:1px solid var(--lk-line);font-size:12px;color:var(--lk-muted);}
+  .cal-legend span{display:flex;align-items:center;gap:8px;}
+  .cal-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+
+  /* Schedule dialog */
+  .lk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding:10vh 16px 16px;z-index:9000;}
+  .lk-overlay.open{display:flex;}
+  .lk-dialog{width:100%;max-width:520px;background:#fff;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.3);animation:lkIn .16s ease both;}
+  @keyframes lkIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion: reduce){ .lk-dialog{animation:none;} }
+  .lk-dialog-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 14px 24px;border-bottom:1px solid var(--lk-line);}
+  .lk-dialog-head h2{font-size:20px;font-weight:600;margin:0;}
+  .lk-dialog-body{padding:18px 24px 8px;}
+  .lk-dialog-when{font-size:14px;color:var(--lk-muted);margin:0 0 16px;}
+  .lk-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width: 480px){ .lk-fields{grid-template-columns:1fr;} }
+  .lk-field label{display:block;font-size:14px;color:var(--lk-muted);margin-bottom:4px;}
+  .lk-field input{
+    width:100%;height:40px;border:1px solid rgba(0,0,0,.6);border-radius:4px;padding:0 10px;
+    font:400 14px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--lk-text);background:#fff;
+  }
+  .lk-field input:focus{outline:none;box-shadow:0 0 0 1px var(--lk-text);}
+  .lk-dialog-note{font-size:12.5px;color:var(--lk-muted);line-height:1.45;margin:16px 0 0;padding:10px 12px;background:var(--lk-feed);border-radius:6px;}
+  .lk-dialog-error{font-size:13px;color:#B24020;margin:10px 0 0;min-height:1px;}
+  .lk-dialog-foot{display:flex;align-items:center;gap:8px;padding:14px 24px 18px;}
+  .lk-dialog-foot .spacer{flex:1;}
+
   .toast-stack{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
   .toast{background:var(--ink);color:#fff;padding:11px 16px;border-radius:9px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);animation:toastIn .2s ease both;}
   .toast.danger{background:var(--fail);}
@@ -336,7 +458,11 @@
       </div>
       <div class="composer-field">
         <label class="composer-label">Your headline (optional)</label>
-        <input type="text" class="composer-input" id="authorHeadlineInput" placeholder="e.g. Founder at PalaTrack · Helping teams close more deals">
+        <div class="headline-row">
+          <input type="text" class="composer-input" id="authorHeadlineInput" placeholder="e.g. Founder at PalaTrack · Helping teams close more deals" maxlength="220">
+          <button type="button" class="headline-save-btn saved" id="saveHeadlineBtn" disabled>Saved</button>
+        </div>
+        <div class="headline-hint" id="headlineHint">Save it once and it's filled in for every post.</div>
       </div>
       <div class="composer-field" style="margin-bottom:0;">
         <label class="composer-label">Post text</label>
@@ -349,8 +475,16 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
         <div class="composer-actions">
           <span class="save-status" id="saveStatus"></span>
           <button type="button" class="li-secondary-btn" id="copyBtn">📋 Copy text</button>
+          <button type="button" class="li-secondary-btn" id="scheduleBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Schedule
+          </button>
           <button type="button" class="li-new-seq-btn" id="saveBtn">Save post</button>
         </div>
+      </div>
+      <div class="schedule-chip" id="scheduleChip" role="status">
+        <span class="schedule-chip-text" id="scheduleChipText"></span>
+        <span id="scheduleChipActions"></span>
       </div>
     </div>
 
@@ -473,8 +607,60 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
       <p class="li-preview-note">Simulated preview to help you judge length and where the "…more" cutoff lands on each device. Real appearance can vary slightly.</p>
     </div>
   </div>
+
+  <section class="cal-section lk" aria-labelledby="calTitle">
+    <div class="cal-head">
+      <div>
+        <h2 class="cal-title" id="calTitle">Content calendar</h2>
+        <p class="cal-sub">Click a day to schedule the post you're writing, or drag posts between days to move them.</p>
+      </div>
+      <div class="cal-nav">
+        <button type="button" class="lk-btn" id="calTodayBtn">Today</button>
+        <button type="button" class="lk-icon-btn" id="calPrevBtn" aria-label="Previous month"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="cal-month" id="calMonthLabel" aria-live="polite"></div>
+        <button type="button" class="lk-icon-btn" id="calNextBtn" aria-label="Next month"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>
+    </div>
+    <div class="cal-body">
+      <div class="cal-grid-wrap"><div class="cal-grid" id="calGrid"></div></div>
+      <aside class="cal-side">
+        <h3>Not scheduled yet</h3>
+        <p>Drag a saved post onto a day to schedule it.</p>
+        <div class="cal-unsched" id="calUnscheduled"></div>
+        <div class="cal-legend">
+          <span><i style="background:#0A66C2;"></i>Scheduled</span>
+          <span><i style="background:#C97C00;"></i>Time to post it</span>
+          <span><i style="background:#1F6F5C;"></i>Posted</span>
+        </div>
+      </aside>
+    </div>
+  </section>
 </div>
 </div>
+</div>
+
+<div class="lk-overlay lk" id="scheduleOverlay" aria-hidden="true">
+  <div class="lk-dialog" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle">
+    <div class="lk-dialog-head">
+      <h2 id="scheduleTitle">Schedule post</h2>
+      <button type="button" class="lk-icon-btn" id="scheduleCloseBtn" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="lk-dialog-body">
+      <p class="lk-dialog-when" id="scheduleWhen"></p>
+      <div class="lk-fields">
+        <div class="lk-field"><label for="scheduleDate">Date</label><input type="date" id="scheduleDate"></div>
+        <div class="lk-field"><label for="scheduleTime">Time</label><input type="time" id="scheduleTime" step="900"></div>
+      </div>
+      <p class="lk-dialog-error" id="scheduleError" role="alert"></p>
+      <p class="lk-dialog-note">PalaTrack doesn't post to LinkedIn for you. At this time the post turns amber on your calendar, ready for you to copy and publish.</p>
+    </div>
+    <div class="lk-dialog-foot">
+      <button type="button" class="lk-btn ghost" id="unscheduleBtn" style="display:none;">Remove schedule</button>
+      <span class="spacer"></span>
+      <button type="button" class="lk-btn" id="scheduleCancelBtn">Cancel</button>
+      <button type="button" class="lk-btn primary" id="scheduleConfirmBtn">Schedule</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
@@ -617,6 +803,321 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
     statusEl.className = 'save-status';
   }
 
+  // ---------- Saved headline ----------
+  // Saved to the user's member doc so it follows them to any device, with a
+  // local copy as a fallback (and for an instant fill-in before Firestore loads).
+  const HEADLINE_KEY = 'ptLinkedInPostHeadline';
+  let savedHeadline = '';
+  function updateHeadlineSaveBtn(){
+    const btn = document.getElementById('saveHeadlineBtn');
+    const val = document.getElementById('authorHeadlineInput').value.trim();
+    const isSaved = val === savedHeadline;
+    btn.disabled = isSaved;
+    btn.classList.toggle('saved', isSaved);
+    btn.textContent = isSaved ? (val ? 'Saved' : 'Save') : 'Save';
+    if(isSaved && !val){ btn.classList.remove('saved'); }
+  }
+  function applySavedHeadline(value){
+    savedHeadline = (value || '').trim();
+    const input = document.getElementById('authorHeadlineInput');
+    if(!input.value.trim()) input.value = savedHeadline;
+    updateHeadlineSaveBtn();
+    renderPreview();
+  }
+  function saveHeadline(){
+    const val = document.getElementById('authorHeadlineInput').value.trim();
+    savedHeadline = val;
+    try{ localStorage.setItem(HEADLINE_KEY, val); }catch(e){}
+    updateHeadlineSaveBtn();
+    if(!currentWorkspaceId || !currentUid){ showToast('Headline saved.'); return; }
+    db.doc(`workspaces/${currentWorkspaceId}/members/${currentUid}`)
+      .set({linkedinHeadline: val}, {merge: true})
+      .then(()=> showToast(val ? 'Headline saved. It will be filled in for every post.' : 'Headline cleared.'))
+      .catch(err=>{
+        console.error('Could not save headline to your profile', err);
+        showToast('Headline saved on this device only.', true);
+      });
+  }
+  document.getElementById('saveHeadlineBtn').addEventListener('click', saveHeadline);
+  document.getElementById('authorHeadlineInput').addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); if(!document.getElementById('saveHeadlineBtn').disabled) saveHeadline(); }
+  });
+  document.getElementById('authorHeadlineInput').addEventListener('input', updateHeadlineSaveBtn);
+  try{ applySavedHeadline(localStorage.getItem(HEADLINE_KEY) || ''); }catch(e){}
+
+  // ---------- Scheduling ----------
+  function toDate(ts){ return ts ? (ts.toDate ? ts.toDate() : new Date(ts)) : null; }
+  function activeDraft(){ return allDrafts.find(d=>d.id === activeDraftId) || null; }
+  function postState(draft){
+    if(!draft) return 'none';
+    if(draft.status === 'posted') return 'posted';
+    const when = toDate(draft.scheduledAt);
+    if(!when) return 'draft';
+    return when.getTime() <= Date.now() ? 'due' : 'scheduled';
+  }
+  const fmtDay = d => d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
+  const fmtTime = d => d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+  const pad = n => String(n).padStart(2,'0');
+  const dateInputValue = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const sameDay = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  function startOfToday(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+
+  function renderScheduleChip(){
+    const chip = document.getElementById('scheduleChip');
+    const textEl = document.getElementById('scheduleChipText');
+    const actions = document.getElementById('scheduleChipActions');
+    const draft = activeDraft();
+    const state = postState(draft);
+    chip.className = 'schedule-chip';
+    actions.innerHTML = '';
+    if(state === 'none' || state === 'draft'){ chip.style.display = 'none'; return; }
+    chip.style.display = 'flex';
+    const when = toDate(draft.scheduledAt);
+    const addLink = (label, fn)=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip-link'; b.textContent = label;
+      b.addEventListener('click', fn); actions.appendChild(b);
+    };
+    if(state === 'posted'){
+      chip.classList.add('posted');
+      textEl.textContent = '✓ Marked as posted' + (when ? ` (was scheduled for ${fmtDay(when)})` : '');
+      addLink('Undo', ()=> setPosted(draft, false));
+    } else if(state === 'due'){
+      chip.classList.add('due');
+      textEl.textContent = `⏰ Time to post this: it was scheduled for ${fmtDay(when)} at ${fmtTime(when)}.`;
+      addLink('Mark as posted', ()=> setPosted(draft, true));
+      addLink('Reschedule', ()=> openScheduleModal());
+    } else {
+      textEl.textContent = `📅 Scheduled for ${fmtDay(when)} at ${fmtTime(when)}`;
+      addLink('Change', ()=> openScheduleModal());
+    }
+  }
+
+  let pendingScheduleDate = null; // day picked on the calendar before the post was written
+  function openScheduleModal(presetDay){
+    const text = document.getElementById('postTextInput').value;
+    if(!text.trim()){
+      if(presetDay){ pendingScheduleDate = presetDay; }
+      showToast(presetDay ? `Write your post, then hit Schedule. ${fmtDay(presetDay)} is ready for it.` : 'Write your post first.', !presetDay);
+      document.getElementById('postTextInput').focus();
+      document.getElementById('postTextInput').scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    const draft = activeDraft();
+    const existing = draft && draft.status !== 'posted' ? toDate(draft.scheduledAt) : null;
+    let base;
+    if(presetDay || pendingScheduleDate){
+      base = new Date(presetDay || pendingScheduleDate);
+      const t = existing || null;
+      base.setHours(t ? t.getHours() : 9, t ? t.getMinutes() : 0, 0, 0);
+    } else if(existing){
+      base = existing;
+    } else {
+      base = new Date(); base.setDate(base.getDate()+1); base.setHours(9,0,0,0);
+    }
+    pendingScheduleDate = null;
+    document.getElementById('scheduleDate').value = dateInputValue(base);
+    document.getElementById('scheduleDate').min = dateInputValue(new Date());
+    document.getElementById('scheduleTime').value = `${pad(base.getHours())}:${pad(base.getMinutes())}`;
+    document.getElementById('unscheduleBtn').style.display = existing ? '' : 'none';
+    document.getElementById('scheduleError').textContent = '';
+    updateScheduleWhen();
+    const overlay = document.getElementById('scheduleOverlay');
+    overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+    setTimeout(()=> document.getElementById('scheduleDate').focus(), 30);
+  }
+  function closeScheduleModal(){
+    const overlay = document.getElementById('scheduleOverlay');
+    overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true');
+    document.getElementById('scheduleBtn').focus();
+  }
+  function readScheduleInputs(){
+    const d = document.getElementById('scheduleDate').value;
+    const t = document.getElementById('scheduleTime').value;
+    if(!d || !t) return null;
+    const [y,m,day] = d.split('-').map(Number);
+    const [h,min] = t.split(':').map(Number);
+    return new Date(y, m-1, day, h, min, 0, 0);
+  }
+  function updateScheduleWhen(){
+    const when = readScheduleInputs();
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'your time zone';
+    document.getElementById('scheduleWhen').textContent = when
+      ? `${when.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'})} at ${fmtTime(when)}, based on your location (${tz})`
+      : 'Pick a date and time.';
+  }
+  document.getElementById('scheduleDate').addEventListener('input', updateScheduleWhen);
+  document.getElementById('scheduleTime').addEventListener('input', updateScheduleWhen);
+  document.getElementById('scheduleBtn').addEventListener('click', ()=> openScheduleModal());
+  document.getElementById('scheduleCloseBtn').addEventListener('click', closeScheduleModal);
+  document.getElementById('scheduleCancelBtn').addEventListener('click', closeScheduleModal);
+  document.getElementById('scheduleOverlay').addEventListener('click', e=>{ if(e.target.id === 'scheduleOverlay') closeScheduleModal(); });
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape' && document.getElementById('scheduleOverlay').classList.contains('open')) closeScheduleModal();
+  });
+  document.getElementById('scheduleConfirmBtn').addEventListener('click', ()=>{
+    const when = readScheduleInputs();
+    const errEl = document.getElementById('scheduleError');
+    if(!when){ errEl.textContent = 'Pick both a date and a time.'; return; }
+    if(when.getTime() <= Date.now()){ errEl.textContent = 'That time has already passed. Pick a time in the future.'; return; }
+    const btn = document.getElementById('scheduleConfirmBtn');
+    btn.disabled = true;
+    savePost({
+      scheduledAt: firebase.firestore.Timestamp.fromDate(when),
+      status: 'scheduled',
+    }, `Scheduled for ${fmtDay(when)} at ${fmtTime(when)}.`).then(ok=>{
+      if(ok){ closeScheduleModal(); calMonth = new Date(when.getFullYear(), when.getMonth(), 1); renderCalendar(); }
+    }).finally(()=>{ btn.disabled = false; });
+  });
+  document.getElementById('unscheduleBtn').addEventListener('click', ()=>{
+    if(!activeDraftId){ closeScheduleModal(); return; }
+    collectionRef().doc(activeDraftId).update({
+      scheduledAt: firebase.firestore.FieldValue.delete(),
+      status: 'draft',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(()=>{
+      showToast('Schedule removed. The post is still saved.');
+      closeScheduleModal();
+      return loadDrafts();
+    }).catch(err=>{ console.error(err); showToast('Could not remove the schedule.', true); });
+  });
+
+  function setPosted(draft, posted){
+    collectionRef().doc(draft.id).update({
+      status: posted ? 'posted' : (draft.scheduledAt ? 'scheduled' : 'draft'),
+      postedAt: posted ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(()=>{
+      showToast(posted ? 'Marked as posted.' : 'Moved back to scheduled.');
+      return loadDrafts();
+    }).catch(err=>{ console.error(err); showToast('Could not update that post.', true); });
+  }
+
+  function reschedule(draftId, day){
+    const draft = allDrafts.find(d=>d.id === draftId);
+    if(!draft || draft.status === 'posted') return;
+    const old = toDate(draft.scheduledAt);
+    const when = new Date(day);
+    when.setHours(old ? old.getHours() : 9, old ? old.getMinutes() : 0, 0, 0);
+    if(when.getTime() <= Date.now()){ showToast('That time has already passed. Pick a later day.', true); return; }
+    collectionRef().doc(draftId).update({
+      scheduledAt: firebase.firestore.Timestamp.fromDate(when),
+      status: 'scheduled',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(()=>{
+      showToast(`Moved to ${fmtDay(when)} at ${fmtTime(when)}.`);
+      return loadDrafts();
+    }).catch(err=>{ console.error(err); showToast('Could not move that post.', true); });
+  }
+
+  // ---------- Content calendar ----------
+  let calMonth = (()=>{ const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
+  const MAX_PILLS = 3;
+  function snippetOf(draft){ return (draft.content || '').trim().split('\n').find(l=>l.trim()) || 'Untitled post'; }
+
+  function openDraftFromCalendar(draft){
+    loadDraftIntoEditor(draft);
+    document.querySelector('.composer-grid').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function renderCalendar(){
+    const grid = document.getElementById('calGrid');
+    if(!grid) return;
+    document.getElementById('calMonthLabel').textContent =
+      calMonth.toLocaleDateString(undefined, {month:'long', year:'numeric'});
+    grid.innerHTML = '';
+
+    // Weekday headers, Monday first
+    const monday = new Date(2024, 0, 1); // a Monday
+    for(let i=0;i<7;i++){
+      const h = document.createElement('div');
+      h.className = 'cal-dow';
+      h.textContent = new Date(monday.getFullYear(), 0, 1+i).toLocaleDateString(undefined, {weekday:'short'});
+      grid.appendChild(h);
+    }
+
+    const firstOffset = (calMonth.getDay() + 6) % 7; // days before the 1st, Monday-based
+    const start = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1 - firstOffset);
+    const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
+    const totalCells = Math.ceil((firstOffset + daysInMonth) / 7) * 7;
+    const today = startOfToday();
+
+    const scheduled = allDrafts
+      .filter(d=>toDate(d.scheduledAt))
+      .sort((a,b)=> toDate(a.scheduledAt) - toDate(b.scheduledAt));
+
+    for(let i=0;i<totalCells;i++){
+      const day = new Date(start.getFullYear(), start.getMonth(), start.getDate()+i);
+      const cell = document.createElement('div');
+      const isPast = day < today;
+      cell.className = 'cal-day'
+        + (day.getMonth() !== calMonth.getMonth() ? ' outside' : '')
+        + (sameDay(day, today) ? ' today' : '')
+        + (isPast ? ' past' : '');
+      cell.innerHTML = `<span class="cal-num">${day.getDate()}</span>${isPast ? '' : '<span class="cal-add" aria-hidden="true">+</span>'}`;
+      cell.setAttribute('aria-label', day.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'}));
+
+      const posts = scheduled.filter(d=>sameDay(toDate(d.scheduledAt), day));
+      posts.slice(0, MAX_PILLS).forEach(draft=>{
+        const state = postState(draft);
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = 'cal-pill' + (state === 'due' ? ' due' : state === 'posted' ? ' posted' : '') + (draft.id === activeDraftId ? ' active' : '');
+        const when = toDate(draft.scheduledAt);
+        pill.innerHTML = `<b>${esc(fmtTime(when))}</b><span>${esc(snippetOf(draft))}</span>`;
+        pill.title = `${fmtTime(when)} · ${snippetOf(draft)}`;
+        if(state !== 'posted'){
+          pill.draggable = true;
+          pill.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', draft.id); e.dataTransfer.effectAllowed = 'move'; });
+        }
+        pill.addEventListener('click', e=>{ e.stopPropagation(); openDraftFromCalendar(draft); });
+        cell.appendChild(pill);
+      });
+      if(posts.length > MAX_PILLS){
+        const more = document.createElement('div');
+        more.className = 'cal-more';
+        more.textContent = `+${posts.length - MAX_PILLS} more`;
+        cell.appendChild(more);
+      }
+
+      if(!isPast){
+        cell.addEventListener('click', ()=> openScheduleModal(day));
+        cell.addEventListener('dragover', e=>{ e.preventDefault(); cell.classList.add('drop-target'); });
+        cell.addEventListener('dragleave', ()=> cell.classList.remove('drop-target'));
+        cell.addEventListener('drop', e=>{
+          e.preventDefault(); cell.classList.remove('drop-target');
+          const id = e.dataTransfer.getData('text/plain');
+          if(id) reschedule(id, day);
+        });
+      }
+      grid.appendChild(cell);
+    }
+
+    // Saved posts without a date
+    const list = document.getElementById('calUnscheduled');
+    list.innerHTML = '';
+    const unscheduled = allDrafts.filter(d=>!toDate(d.scheduledAt) && d.status !== 'posted');
+    if(!unscheduled.length){
+      list.innerHTML = '<div class="cal-side-empty">Every saved post has a date.</div>';
+    }
+    unscheduled.forEach(draft=>{
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'cal-draft';
+      item.draggable = true;
+      item.textContent = snippetOf(draft);
+      item.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', draft.id); e.dataTransfer.effectAllowed = 'move'; });
+      item.addEventListener('click', ()=> openDraftFromCalendar(draft));
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('calPrevBtn').addEventListener('click', ()=>{ calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()-1, 1); renderCalendar(); });
+  document.getElementById('calNextBtn').addEventListener('click', ()=>{ calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 1); renderCalendar(); });
+  document.getElementById('calTodayBtn').addEventListener('click', ()=>{ const d = new Date(); calMonth = new Date(d.getFullYear(), d.getMonth(), 1); renderCalendar(); });
+  // Keep "time to post it" states current without a reload.
+  setInterval(()=>{ renderCalendar(); renderScheduleChip(); }, 60000);
+  renderCalendar();
+
   // ---------- Copy to clipboard ----------
   document.getElementById('copyBtn').addEventListener('click', ()=>{
     const text = document.getElementById('postTextInput').value;
@@ -634,18 +1135,28 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
   }
 
   function loadDrafts(){
-    collectionRef()
+    return collectionRef()
       .where('workspaceId', '==', currentWorkspaceId)
       .where('createdBy', '==', currentUid)
       .orderBy('updatedAt', 'desc')
       .get().then(snap=>{
         allDrafts = snap.docs.map(d=>({id:d.id, ...d.data()}));
         renderDraftsStrip();
+        renderScheduleChip();
+        renderCalendar();
       }).catch(err=>{
         console.error(err);
       });
   }
 
+  function draftMetaLabel(draft){
+    const state = postState(draft);
+    const when = toDate(draft.scheduledAt);
+    if(state === 'posted') return '✓ Posted';
+    if(state === 'due') return '⏰ Time to post';
+    if(state === 'scheduled') return `📅 ${fmtDay(when)}, ${fmtTime(when)}`;
+    return timeAgo(draft.updatedAt);
+  }
   function renderDraftsStrip(){
     const strip = document.getElementById('draftsStrip');
     const emptyNote = document.getElementById('draftsEmptyNote');
@@ -664,7 +1175,7 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
       card.innerHTML = `
         <div class="draft-card-snippet${snippet ? '' : ' empty'}">${esc(snippet ? snippet.slice(0,90) : 'Empty draft')}</div>
         <div class="draft-card-meta">
-          <span>${esc(timeAgo(draft.updatedAt))}</span>
+          <span>${esc(draftMetaLabel(draft))}</span>
           <button type="button" class="draft-card-delete" title="Delete">🗑</button>
         </div>`;
       card.addEventListener('click', (e)=>{
@@ -689,6 +1200,9 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
     previewExpanded = false;
     renderPreview();
     renderDraftsStrip();
+    renderScheduleChip();
+    renderCalendar();
+    updateHeadlineSaveBtn();
     scheduleAutosaveIndicatorReset();
   }
 
@@ -698,6 +1212,8 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
     previewExpanded = false;
     renderPreview();
     renderDraftsStrip();
+    renderScheduleChip();
+    renderCalendar();
     scheduleAutosaveIndicatorReset();
     document.getElementById('postTextInput').focus();
   }
@@ -713,9 +1229,11 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
     });
   }
 
-  document.getElementById('saveBtn').addEventListener('click', ()=>{
+  // Saves the post in the editor. `extra` adds fields (e.g. a schedule).
+  // Resolves true on success so callers can chain UI updates.
+  function savePost(extra, successMessage){
     const text = document.getElementById('postTextInput').value;
-    if(!text.trim()){ showToast('Write something first.', true); return; }
+    if(!text.trim()){ showToast('Write something first.', true); return Promise.resolve(false); }
     const btn = document.getElementById('saveBtn');
     btn.disabled = true;
     const payload = {
@@ -724,25 +1242,27 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
       authorName: document.getElementById('authorNameInput').value.trim(),
       authorHeadline: document.getElementById('authorHeadlineInput').value.trim(),
       content: text,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      ...(extra || {})
     };
-    try{ localStorage.setItem('ptLinkedInPostHeadline', payload.authorHeadline); }catch(e){}
     const savePromise = activeDraftId
       ? collectionRef().doc(activeDraftId).update(payload)
-      : collectionRef().add({...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp()}).then(ref=>{ activeDraftId = ref.id; });
-    savePromise.then(()=>{
+      : collectionRef().add({status: 'draft', ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp()}).then(ref=>{ activeDraftId = ref.id; });
+    return savePromise.then(()=>{
       const statusEl = document.getElementById('saveStatus');
       statusEl.textContent = 'Saved ✓';
       statusEl.className = 'save-status saved';
-      loadDrafts();
-      showToast('Post saved.');
+      showToast(successMessage || 'Post saved.');
+      return loadDrafts().then(()=>true);
     }).catch(err=>{
       console.error(err);
       showToast('Could not save: ' + (err.message || ''), true);
+      return false;
     }).finally(()=>{
       btn.disabled = false;
     });
-  });
+  }
+  document.getElementById('saveBtn').addEventListener('click', ()=> savePost());
 
   // ---------- Auth ----------
   auth.onAuthStateChanged(user=>{
@@ -761,12 +1281,11 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
         if(!document.getElementById('authorNameInput').value){
           document.getElementById('authorNameInput').value = myName;
         }
-        try{
-          const savedHeadline = localStorage.getItem('ptLinkedInPostHeadline');
-          if(savedHeadline && !document.getElementById('authorHeadlineInput').value){
-            document.getElementById('authorHeadlineInput').value = savedHeadline;
-          }
-        }catch(e){}
+        const profileHeadline = memberDoc.exists ? memberDoc.data().linkedinHeadline : undefined;
+        if(typeof profileHeadline === 'string'){
+          try{ localStorage.setItem(HEADLINE_KEY, profileHeadline); }catch(e){}
+          applySavedHeadline(profileHeadline);
+        }
         renderPreview();
       });
     }).catch(()=>{});
