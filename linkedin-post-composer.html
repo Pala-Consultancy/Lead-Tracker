@@ -260,13 +260,22 @@
     margin-left:-5px;box-shadow:0 0 0 1.5px #fff;
   }
 
-  /* Faded next post, so the card reads as part of a feed */
-  .li-ghost{background:#fff;margin-top:8px;padding:14px;display:flex;gap:10px;opacity:.7;}
-  .li-device[data-device="tablet"] .li-ghost,.li-device[data-device="desktop"] .li-ghost{border-radius:10px;border:1px solid rgba(0,0,0,.08);}
-  .li-ghost-avatar{width:48px;height:48px;border-radius:50%;background:#E6E9EE;flex-shrink:0;}
-  .li-ghost-lines{flex:1;display:flex;flex-direction:column;gap:8px;padding-top:6px;}
-  .li-ghost-lines i{display:block;height:9px;border-radius:5px;background:#E6E9EE;}
-  .li-ghost-lines b{display:block;height:140px;border-radius:8px;background:#EEF0F3;margin-top:4px;}
+  /* Profile photo from the user's PalaTrack account, when they have one */
+  .li-post-avatar,.li-appbar-avatar,.seq-sidebar-avatar{overflow:hidden;}
+  .li-post-avatar img,.li-appbar-avatar img,.seq-sidebar-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+
+  /* Other people's posts in the simulated feed */
+  .li-feed-post{margin-top:8px;}
+  .li-device[data-device="tablet"] .li-feed-post,.li-device[data-device="desktop"] .li-feed-post{border-radius:10px;border:1px solid rgba(0,0,0,.08);}
+  .li-social-context{display:flex;align-items:center;gap:8px;padding:10px 14px 8px;margin-bottom:-4px;border-bottom:1px solid rgba(0,0,0,.06);font-size:12.5px;color:var(--li-muted);}
+  .li-social-context img,.li-social-context .li-av-fallback{width:20px;height:20px;border-radius:50%;font-size:8px;}
+  .li-social-context b{color:var(--li-text);font-weight:600;}
+  img.li-post-avatar{object-fit:cover;background:#DCE3EC;}
+  .li-av-fallback{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-family:'Inter',sans-serif;flex-shrink:0;}
+  .li-follow-btn{color:var(--li-blue);font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:2px;flex-shrink:0;padding-top:1px;white-space:nowrap;}
+  .li-post-body .li-more-static{position:absolute;right:0;bottom:0;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 26px);padding-left:34px;color:var(--li-muted);}
+  .li-post-media{margin-top:8px;line-height:0;}
+  .li-post-media svg{width:100%;height:auto;display:block;}
 
   .li-preview-note{font-size:11.5px;color:var(--slate-light);margin-top:10px;line-height:1.5;}
 
@@ -579,13 +588,97 @@ Tip: LinkedIn only shows the first few lines before a &quot;鈥ee more&quot; 鈥
                   </div>
                 </div>
               </div>
-              <div class="li-ghost" aria-hidden="true">
-                <div class="li-ghost-avatar"></div>
-                <div class="li-ghost-lines"><i style="width:45%"></i><i style="width:70%"></i><i style="width:92%"></i><i style="width:80%"></i></div>
+              <!-- Made-up posts so the preview reads like a real feed -->
+              <div class="li-post-card li-feed-post" aria-hidden="true">
+                <div class="li-post-header">
+                  <img class="li-post-avatar" src="https://randomuser.me/api/portraits/women/68.jpg" alt="" loading="lazy" data-initials="SM" data-color="#C0567A">
+                  <div class="li-post-who">
+                    <div class="li-post-name-row"><span class="li-post-name">Sofia Marchetti</span><span class="li-post-degree">路 2nd</span></div>
+                    <div class="li-post-headline">Head of Growth at Brightline 路 B2B SaaS 路 Ex-Salesforce</div>
+                    <div class="li-post-time"><span>5h 路</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+                  </div>
+                  <div class="li-follow"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(0,0,0,.6)"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></div>
+                </div>
+                <div class="li-post-body-wrap"><div class="li-post-body clamped">We cut our sales cycle from 62 days to 34.
+
+No new tools. No new hires. We just stopped sending proposals before the second call.<span class="li-more-static">鈥ore</span></div></div>
+                <div class="li-post-footer">
+                  <div class="li-post-stats">
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0 4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.8 21H7"/></svg>1,284</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z"/><line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="13.5" x2="13" y2="13.5"/></svg>96</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>41</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+                  </div>
+                  <div class="li-post-reactions-icons"><span style="background:#DCE8F7;">馃憤</span><span style="background:#F5E6B8;">馃挕</span><span style="background:#F7D9D2;">鉂わ笍</span></div>
+                </div>
               </div>
-              <div class="li-ghost li-ghost-media" aria-hidden="true">
-                <div class="li-ghost-avatar"></div>
-                <div class="li-ghost-lines"><i style="width:38%"></i><i style="width:60%"></i><i style="width:88%"></i><b></b></div>
+
+              <div class="li-post-card li-feed-post" aria-hidden="true">
+                <div class="li-social-context">
+                  <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="" loading="lazy" data-initials="TB" data-color="#3E7CB1">
+                  <span><b>Tom Becker</b> celebrates this</span>
+                </div>
+                <div class="li-post-header">
+                  <img class="li-post-avatar" src="https://randomuser.me/api/portraits/men/75.jpg" alt="" loading="lazy" data-initials="DO" data-color="#2E8B6F">
+                  <div class="li-post-who">
+                    <div class="li-post-name-row"><span class="li-post-name">Daniel Okafor</span><span class="li-post-degree">路 3rd+</span></div>
+                    <div class="li-post-headline">Founder @ Northpeak Studio 路 Brand &amp; web for service businesses</div>
+                    <div class="li-post-time"><span>1d 路</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+                  </div>
+                  <div class="li-follow-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Follow</div>
+                </div>
+                <div class="li-post-body-wrap"><div class="li-post-body">Year one of Northpeak, in one picture. Thank you to every client who took a chance on a two-person studio 馃檹</div></div>
+                <div class="li-post-media">
+                  <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart of monthly revenue growing over the year">
+                    <defs><linearGradient id="npBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0F2A3F"/><stop offset="1" stop-color="#153E57"/></linearGradient>
+                    <linearGradient id="npBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5FE0B7"/><stop offset="1" stop-color="#2E8B6F"/></linearGradient></defs>
+                    <rect width="600" height="340" fill="url(#npBg)"/>
+                    <text x="36" y="52" fill="#9FC3D6" font-family="Segoe UI,Arial,sans-serif" font-size="15" letter-spacing="1">NORTHPEAK STUDIO 路 YEAR ONE</text>
+                    <text x="36" y="92" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">From $0 to $38K / month</text>
+                    <g fill="url(#npBar)">
+                      <rect x="40" y="276" width="30" height="14" rx="4"/><rect x="85" y="268" width="30" height="22" rx="4"/><rect x="130" y="258" width="30" height="32" rx="4"/>
+                      <rect x="175" y="246" width="30" height="44" rx="4"/><rect x="220" y="238" width="30" height="52" rx="4"/><rect x="265" y="222" width="30" height="68" rx="4"/>
+                      <rect x="310" y="208" width="30" height="82" rx="4"/><rect x="355" y="196" width="30" height="94" rx="4"/><rect x="400" y="178" width="30" height="112" rx="4"/>
+                      <rect x="445" y="162" width="30" height="128" rx="4"/><rect x="490" y="146" width="30" height="144" rx="4"/><rect x="535" y="126" width="30" height="164" rx="4"/>
+                    </g>
+                    <line x1="36" y1="292" x2="570" y2="292" stroke="#2F5870"/>
+                    <text x="40" y="316" fill="#7FA5BA" font-family="Segoe UI,Arial,sans-serif" font-size="12">Jan</text>
+                    <text x="538" y="316" fill="#7FA5BA" font-family="Segoe UI,Arial,sans-serif" font-size="12">Dec</text>
+                  </svg>
+                </div>
+                <div class="li-post-footer">
+                  <div class="li-post-stats">
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0 4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.8 21H7"/></svg>412</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z"/><line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="13.5" x2="13" y2="13.5"/></svg>38</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>7</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+                  </div>
+                  <div class="li-post-reactions-icons"><span style="background:#E1F0DC;">馃憦</span><span style="background:#DCE8F7;">馃憤</span><span style="background:#F7D9D2;">鉂わ笍</span></div>
+                </div>
+              </div>
+
+              <div class="li-post-card li-feed-post" aria-hidden="true">
+                <div class="li-post-header">
+                  <img class="li-post-avatar" src="https://randomuser.me/api/portraits/women/12.jpg" alt="" loading="lazy" data-initials="PR" data-color="#8A5CC2">
+                  <div class="li-post-who">
+                    <div class="li-post-name-row"><span class="li-post-name">Priya Raman</span><span class="li-post-degree">路 1st</span></div>
+                    <div class="li-post-headline">Sales coach 路 Helped 300+ SDRs hit quota 路 Speaker</div>
+                    <div class="li-post-time"><span>3d 路</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+                  </div>
+                  <div class="li-follow"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(0,0,0,.6)"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></div>
+                </div>
+                <div class="li-post-body-wrap"><div class="li-post-body clamped">The best cold DM I got this year was 19 words long.
+
+It named my last post, asked one question, and didn't pitch anything. I booked the call myself.<span class="li-more-static">鈥ore</span></div></div>
+                <div class="li-post-footer">
+                  <div class="li-post-stats">
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3zm0 0 4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.8 21H7"/></svg>867</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z"/><line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="13.5" x2="13" y2="13.5"/></svg>213</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>18</span>
+                    <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+                  </div>
+                  <div class="li-post-reactions-icons"><span style="background:#F5E6B8;">馃挕</span><span style="background:#DCE8F7;">馃憤</span></div>
+                </div>
               </div>
             </div>
 
@@ -718,6 +811,25 @@ Tip: LinkedIn only shows the first few lines before a &quot;鈥ee more&quot; 鈥
   let allDrafts = [];
   let activeDraftId = null; // null = unsaved new post
   let saveDebounceTimer = null;
+  let myPhotoURL = ''; // the photo set on the user's PalaTrack account (members/{uid}.photoURL)
+
+  // Shows the account photo in an avatar spot, or initials when there's none
+  // (or the photo fails to load). Only touches the DOM when something changed,
+  // since this runs on every keystroke.
+  function setAvatar(el, name){
+    const key = myPhotoURL ? 'img:' + myPhotoURL : 'txt:' + initials(name);
+    if(el.dataset.avatarKey === key) return;
+    el.dataset.avatarKey = key;
+    if(myPhotoURL){
+      const img = document.createElement('img');
+      img.src = myPhotoURL;
+      img.alt = '';
+      img.addEventListener('error', ()=>{ el.dataset.avatarKey = 'txt:' + initials(name); el.textContent = initials(name); }, {once:true});
+      el.replaceChildren(img);
+    } else {
+      el.textContent = initials(name);
+    }
+  }
 
   // ---------- Live preview ----------
   // LinkedIn collapses a post to its first 3 lines (blank lines count too),
@@ -749,8 +861,8 @@ Tip: LinkedIn only shows the first few lines before a &quot;鈥ee more&quot; 鈥
     const text = rawText.replace(/\s+$/,''); // LinkedIn drops trailing blank lines
 
     document.getElementById('previewName').textContent = name;
-    document.getElementById('previewAvatar').textContent = initials(name);
-    document.getElementById('previewAppAvatar').textContent = initials(name);
+    setAvatar(document.getElementById('previewAvatar'), name);
+    setAvatar(document.getElementById('previewAppAvatar'), name);
     const headlineEl = document.getElementById('previewHeadline');
     if(headline){ headlineEl.style.display = ''; headlineEl.textContent = headline; }
     else { headlineEl.style.display = 'none'; }
@@ -802,6 +914,17 @@ Tip: LinkedIn only shows the first few lines before a &quot;鈥ee more&quot; 鈥
     statusEl.textContent = '';
     statusEl.className = 'save-status';
   }
+
+  // Feed photos come from a placeholder service; if one can't load, show initials instead.
+  document.querySelectorAll('img[data-initials]').forEach(img=>{
+    img.addEventListener('error', ()=>{
+      const fb = document.createElement('div');
+      fb.className = img.className + ' li-av-fallback';
+      fb.style.background = img.dataset.color || '#8CA0B3';
+      fb.textContent = img.dataset.initials;
+      img.replaceWith(fb);
+    }, {once:true});
+  });
 
   // ---------- Saved headline ----------
   // Saved to the user's member doc so it follows them to any device, with a
@@ -1138,14 +1261,19 @@ Tip: LinkedIn only shows the first few lines before a &quot;鈥ee more&quot; 鈥
     return collectionRef()
       .where('workspaceId', '==', currentWorkspaceId)
       .where('createdBy', '==', currentUid)
-      .orderBy('updatedAt', 'desc')
       .get().then(snap=>{
-        allDrafts = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        // Sorted here rather than with orderBy() in the query: two equality
+        // filters + orderBy on a third field needs a Firestore composite index,
+        // and without one the whole query fails and nothing loads.
+        const ms = ts => (ts && ts.toMillis) ? ts.toMillis() : Date.now();
+        allDrafts = snap.docs.map(d=>({id:d.id, ...d.data()}))
+          .sort((a,b)=> ms(b.updatedAt) - ms(a.updatedAt));
         renderDraftsStrip();
         renderScheduleChip();
         renderCalendar();
       }).catch(err=>{
-        console.error(err);
+        console.error('Could not load LinkedIn posts', err);
+        showToast('Could not load your saved posts: ' + (err.message || 'unknown error'), true);
       });
   }
 
@@ -1277,7 +1405,8 @@ Tip: LinkedIn only shows the first few lines before a &quot;鈥ee more&quot; 鈥
       return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
         const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
         document.getElementById('seqSidebarUserName').textContent = myName;
-        document.getElementById('seqSidebarAvatar').textContent = initials(myName);
+        myPhotoURL = (memberDoc.exists && memberDoc.data().photoURL) || '';
+        setAvatar(document.getElementById('seqSidebarAvatar'), myName);
         if(!document.getElementById('authorNameInput').value){
           document.getElementById('authorNameInput').value = myName;
         }
