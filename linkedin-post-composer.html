@@ -2430,6 +2430,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       photoURL: data.linkedinPhotoURL || '',
       canPost: !!data.linkedinCanPost,
       canReadAnalytics: !!data.linkedinCanReadAnalytics,
+      scopes: Array.isArray(data.linkedinScopes) ? data.linkedinScopes : null,
       postingExpiresAt: exp ? (exp.toDate ? exp.toDate() : new Date(exp)) : null,
     };
     previewPhotoURL = linkedinInfo.photoURL || myPhotoURL;
@@ -2476,7 +2477,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       nophoto: ["LinkedIn connected, but your LinkedIn profile doesn't have a picture yet.", false],
       denied: ['LinkedIn connection cancelled.', false],
       expired: ['That LinkedIn login link expired. Please try connecting again.', true],
-      scope: ["LinkedIn refused one of the permissions PalaTrack asked for. The scope names in linkedinAuth.js must match the LinkedIn app's Auth tab exactly.", true],
+      scope: ["LinkedIn refused the permissions PalaTrack asked for. Please try connecting again in a minute.", true],
+      scope_retry: ['LinkedIn needed one more try. Click Connect (or Reconnect) once more, it will work now.', true],
       error: ['Could not connect LinkedIn. Please try again.', true],
     };
     const [msg, bad] = messages[status] || messages.error;
@@ -2557,6 +2559,10 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const err = statsRefreshError || (linkedinStats && linkedinStats.error);
     if(!linkedinInfo.connected){
       notice.innerHTML = '<b>Connect your LinkedIn account</b> (at the top of this page) to see your followers, impressions and post stats here.';
+    } else if(!linkedinInfo.canReadAnalytics && linkedinInfo.scopes){
+      // Connected with the new login, but LinkedIn didn't include analytics access.
+      notice.className = 'stats-notice error';
+      notice.innerHTML = "LinkedIn didn't give PalaTrack access to your analytics when you connected. In your LinkedIn developer app, check that the analytics product is listed under <b>Added products</b>, then click <b>Reconnect</b> here.";
     } else if(!linkedinInfo.canReadAnalytics){
       notice.innerHTML = '<b>Click Reconnect</b> in the LinkedIn bar at the top of this page and approve the new permission to turn on your LinkedIn stats.';
     } else if(err === 'not_connected'){
@@ -2574,10 +2580,11 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const upd = linkedinStats && linkedinStats.updatedAt;
     updated.textContent = upd && toDate(upd) ? `Updated ${timeAgoShort(toDate(upd))}` : '';
     const details = document.getElementById('statsDetails');
-    if(linkedinStats && Array.isArray(linkedinStats.diag)){
-      details.hidden = false;
-      document.getElementById('statsDiag').textContent = linkedinStats.diag.map(d=> `${d.step}: ${d.status}${d.message ? ' (' + d.message + ')' : ''}`).join('\n');
-    } else details.hidden = true;
+    const lines = [];
+    if(linkedinInfo.scopes) lines.push('Permissions LinkedIn granted: ' + (linkedinInfo.scopes.join(', ') || '(none listed)'));
+    if(linkedinStats && Array.isArray(linkedinStats.diag)) linkedinStats.diag.forEach(d=> lines.push(`${d.step}: ${d.status}${d.message ? ' (' + d.message + ')' : ''}`));
+    details.hidden = !lines.length;
+    document.getElementById('statsDiag').textContent = lines.join('\n');
 
     if(!canRead || !linkedinStats || !linkedinStats.updatedAt){ content.innerHTML = ''; return; }
     const t = linkedinStats.totals30 || {};
