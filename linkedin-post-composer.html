@@ -146,14 +146,20 @@
   .li-preview-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
   .li-preview-label{font-size:11.5px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;}
 
-  .device-switch{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;box-shadow:var(--shadow-sm);}
+  .device-switch{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;box-shadow:var(--shadow-sm);position:relative;isolation:isolate;}
+  /* Sliding highlight behind the selected device button */
+  .device-pill{position:absolute;top:3px;bottom:3px;left:3px;width:0;border-radius:7px;background:var(--teal);z-index:-1;
+    box-shadow:0 4px 12px rgba(55,48,179,.28);transition:left .38s cubic-bezier(.3,1.35,.5,1), width .38s cubic-bezier(.3,1.35,.5,1);}
+  .device-switch.no-anim .device-pill{transition:none;}
   .device-btn{
     display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;cursor:pointer;
     font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:var(--slate);padding:6px 11px;border-radius:7px;
     transition:background .12s,color .12s;
   }
   .device-btn:hover{color:var(--ink);}
-  .device-btn[aria-pressed="true"]{background:var(--teal);color:#fff;}
+  .device-btn[aria-pressed="true"]{color:#fff;}
+  .device-btn svg{transition:transform .35s cubic-bezier(.3,1.5,.5,1);}
+  .device-btn[aria-pressed="true"] svg{transform:scale(1.15);}
   .device-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
 
   /* Stage */
@@ -165,7 +171,20 @@
 
   /* Devices are laid out at their real size (so line breaks match LinkedIn),
      then shrunk to fit the column with a transform. */
-  .li-scale{position:relative;flex-shrink:0;}
+  .li-scale{position:relative;flex-shrink:0;transition:width .42s cubic-bezier(.22,1,.36,1), height .42s cubic-bezier(.22,1,.36,1);}
+  .li-scale.tilting{transform:perspective(1400px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg));
+    transition:width .42s cubic-bezier(.22,1,.36,1), height .42s cubic-bezier(.22,1,.36,1), transform .3s ease-out;}
+  .li-stage{position:relative;}
+  /* Size tag that pops up after switching devices */
+  .device-tag{position:absolute;left:50%;bottom:12px;transform:translate(-50%,8px);opacity:0;pointer-events:none;z-index:3;
+    background:rgba(22,32,44,.86);color:#fff;font:600 12px 'Inter',sans-serif;padding:6px 12px;border-radius:999px;white-space:nowrap;
+    transition:opacity .25s ease, transform .35s cubic-bezier(.3,1.4,.5,1);}
+  .device-tag.show{opacity:1;transform:translate(-50%,0);}
+  .device-tag b{font-weight:700;}
+  @media (prefers-reduced-motion: reduce){
+    .device-pill,.li-scale,.li-scale.tilting,.device-tag,.device-btn svg{transition:none !important;}
+    .li-scale{transform:none !important;}
+  }
   .li-scale > .li-device{position:absolute;top:0;left:0;transform-origin:top left;max-width:none !important;}
   .li-cutoff{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--border);font-size:12.5px;color:var(--slate);line-height:1.45;}
   .li-cutoff b{color:var(--ink);}
@@ -791,7 +810,8 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
     <div class="li-preview-wrap">
       <div class="li-preview-top">
         <div class="li-preview-label">Live preview</div>
-        <div class="device-switch" role="group" aria-label="Preview device">
+        <div class="device-switch no-anim" role="group" aria-label="Preview device">
+          <span class="device-pill" id="devicePill" aria-hidden="true"></span>
           <button type="button" class="device-btn" data-device="phone" aria-pressed="false">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
             Phone
@@ -806,7 +826,8 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
           </button>
         </div>
       </div>
-      <div class="li-stage">
+      <div class="li-stage" id="previewStage">
+        <div class="device-tag" id="deviceTag" aria-hidden="true"></div>
         <div class="li-scale" id="previewScale">
         <div class="li-device" id="previewDevice" data-device="desktop">
           <div class="li-screen">
@@ -1217,8 +1238,30 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   }
 
   const DEVICE_KEY = 'ptLinkedInPreviewDevice';
-  function setPreviewDevice(device){
-    if(!['phone','tablet','desktop'].includes(device)) device = 'desktop';
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const DEVICE_TAGS = {
+    phone: '<b>Phone</b> · iPhone, 390pt wide',
+    tablet: '<b>Tablet</b> · iPad feed, ~600pt wide',
+    desktop: '<b>Desktop</b> · LinkedIn feed, 555px wide',
+  };
+  // Slides the highlight behind the selected button.
+  function moveDevicePill(){
+    const pill = document.getElementById('devicePill');
+    const btn = document.querySelector('.device-btn[aria-pressed="true"]');
+    if(!pill || !btn) return;
+    pill.style.left = btn.offsetLeft + 'px';
+    pill.style.width = btn.offsetWidth + 'px';
+  }
+  let deviceTagTimer = null;
+  function flashDeviceTag(device){
+    const tag = document.getElementById('deviceTag');
+    tag.innerHTML = DEVICE_TAGS[device] || '';
+    tag.classList.add('show');
+    clearTimeout(deviceTagTimer);
+    deviceTagTimer = setTimeout(()=> tag.classList.remove('show'), 1600);
+  }
+  let deviceAnimating = false;
+  function applyDevice(device){
     document.getElementById('previewDevice').dataset.device = device;
     document.querySelectorAll('.device-btn').forEach(b=>{
       b.setAttribute('aria-pressed', b.dataset.device === device ? 'true' : 'false');
@@ -1227,10 +1270,82 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     previewExpanded = false;
     renderPreview();
     fitPreviewDevice();
+    moveDevicePill();
+  }
+  // Switching devices: the old device shrinks and fades out, the frame resizes,
+  // and the new device springs in, with a tag showing the size it simulates.
+  function setPreviewDevice(device, {animate = false} = {}){
+    if(!['phone','tablet','desktop'].includes(device)) device = 'desktop';
+    const el = document.getElementById('previewDevice');
+    if(!animate || reduceMotion || !el.animate || el.dataset.device === device || deviceAnimating){
+      applyDevice(device);
+      if(animate) flashDeviceTag(device);
+      return;
+    }
+    deviceAnimating = true;
+    const scaleOf = ()=> { const m = /scale\(([\d.]+)\)/.exec(el.style.transform || ''); return m ? parseFloat(m[1]) : 1; };
+    const s0 = scaleOf();
+    const out = el.animate([
+      {transform: `scale(${s0})`, opacity: 1, filter: 'blur(0px)'},
+      {transform: `translate(${el.offsetWidth * s0 * 0.04}px, 10px) scale(${s0 * 0.92})`, opacity: 0, filter: 'blur(6px)'},
+    ], {duration: 170, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards'});
+    document.querySelectorAll('.device-btn').forEach(b=> b.setAttribute('aria-pressed', b.dataset.device === device ? 'true' : 'false'));
+    moveDevicePill();
+    out.onfinish = ()=>{
+      out.cancel();
+      applyDevice(device);
+      const s1 = scaleOf();
+      const w1 = el.offsetWidth * s1;
+      const inAnim = el.animate([
+        {transform: `translate(${w1 * 0.05}px, 18px) scale(${s1 * 0.9})`, opacity: 0, filter: 'blur(8px)'},
+        {offset: .7, transform: `translate(${-w1 * 0.004}px, -3px) scale(${s1 * 1.008})`, opacity: 1, filter: 'blur(0px)'},
+        {transform: `scale(${s1})`, opacity: 1, filter: 'blur(0px)'},
+      ], {duration: 520, easing: 'cubic-bezier(.2,.8,.25,1)'});
+      inAnim.onfinish = inAnim.oncancel = ()=>{ deviceAnimating = false; };
+      flashDeviceTag(device);
+    };
   }
   document.querySelectorAll('.device-btn').forEach(b=>{
-    b.addEventListener('click', ()=> setPreviewDevice(b.dataset.device));
+    b.addEventListener('click', ()=> setPreviewDevice(b.dataset.device, {animate: true}));
   });
+  // Arrow keys move between Phone / Tablet / Desktop.
+  document.querySelector('.device-switch').addEventListener('keydown', e=>{
+    if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const btns = [...document.querySelectorAll('.device-btn')];
+    const i = btns.indexOf(document.activeElement);
+    if(i < 0) return;
+    e.preventDefault();
+    const next = btns[(i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length];
+    next.focus();
+    setPreviewDevice(next.dataset.device, {animate: true});
+  });
+  window.addEventListener('resize', moveDevicePill);
+  // Place the pill once fonts/layout are ready, then let it animate from then on.
+  requestAnimationFrame(()=>{ moveDevicePill(); requestAnimationFrame(()=> document.querySelector('.device-switch').classList.remove('no-anim')); });
+
+  // Gentle 3D tilt that follows the mouse over the preview.
+  (function(){
+    if(reduceMotion) return;
+    const stage = document.getElementById('previewStage');
+    const wrap = document.getElementById('previewScale');
+    stage.addEventListener('mousemove', e=>{
+      if(deviceAnimating) return;
+      const r = stage.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      wrap.classList.add('tilting');
+      wrap.style.setProperty('--tilt-y', (x * 5).toFixed(2) + 'deg');
+      wrap.style.setProperty('--tilt-x', (-y * 4).toFixed(2) + 'deg');
+    });
+    let settle = null;
+    stage.addEventListener('mouseenter', ()=> clearTimeout(settle));
+    stage.addEventListener('mouseleave', ()=>{
+      wrap.style.setProperty('--tilt-y', '0deg');
+      wrap.style.setProperty('--tilt-x', '0deg');
+      clearTimeout(settle);
+      settle = setTimeout(()=> wrap.classList.remove('tilting'), 320); // back to flat, crisp rendering
+    });
+  })();
   document.getElementById('previewLessBtn').addEventListener('click', ()=>{ previewExpanded = false; renderPreview(); });
 
   function renderPreview(){
@@ -3117,6 +3232,9 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       appRoot.classList.add('reveal');
       renderPreview(); // after reveal, so the 3-line cutoff can be measured
       fitPreviewDevice();
+      const sw = document.querySelector('.device-switch');
+      sw.classList.add('no-anim'); moveDevicePill();
+      requestAnimationFrame(()=> requestAnimationFrame(()=> sw.classList.remove('no-anim')));
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
