@@ -383,6 +383,24 @@
   .toast{display:flex;align-items:center;gap:14px;}
   .toast-action{border:0;background:none;color:#fff;font:700 13px 'Inter',sans-serif;text-decoration:underline;cursor:pointer;padding:0;}
 
+  /* ---------- Connect LinkedIn ---------- */
+  .li-connect{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--panel-alt);}
+  .li-connect-text{flex:1;min-width:180px;font-size:12px;color:var(--slate);line-height:1.4;}
+  .li-connect-text b{color:var(--ink);font-weight:600;}
+  .li-connect-btn{
+    display:inline-flex;align-items:center;gap:7px;border:0;background:#0A66C2;color:#fff;border-radius:16px;padding:7px 14px;
+    font:600 12.5px 'Inter',sans-serif;cursor:pointer;transition:background .12s;white-space:nowrap;
+  }
+  .li-connect-btn:hover{background:#004182;}
+  .li-connect-btn:disabled{opacity:.6;cursor:wait;}
+  .li-connect-btn:focus-visible,.li-connect-link:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
+  .li-connect-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 2px #fff, 0 0 0 3px #0A66C2;}
+  .li-connect-links{display:flex;gap:12px;}
+  .li-connect-link{border:0;background:none;padding:0;font:600 12px 'Inter',sans-serif;color:#0A66C2;cursor:pointer;}
+  .li-connect-link:hover{text-decoration:underline;}
+  .li-connect-link.danger{color:var(--slate);}
+  .li-connect-link.danger:hover{color:var(--fail);}
+
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
   .headline-row .composer-input{flex:1;min-width:0;}
@@ -568,6 +586,13 @@
       <div class="composer-field">
         <label class="composer-label">Your name (shown in the preview)</label>
         <input type="text" class="composer-input" id="authorNameInput" placeholder="Your name">
+        <div class="li-connect" id="linkedinConnect">
+          <span class="li-connect-text" id="linkedinConnectText">Connect your LinkedIn to show your real profile picture and name in the preview.</span>
+          <button type="button" class="li-connect-btn" id="linkedinConnectBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+            Connect LinkedIn
+          </button>
+        </div>
       </div>
       <div class="composer-field">
         <label class="composer-label">Your headline (optional)</label>
@@ -912,6 +937,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
   const firebaseConfig = {
@@ -978,13 +1004,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   // Shows the account photo in an avatar spot, or initials when there's none
   // (or the photo fails to load). Only touches the DOM when something changed,
   // since this runs on every keystroke.
-  function setAvatar(el, name){
-    const key = myPhotoURL ? 'img:' + myPhotoURL : 'txt:' + initials(name);
+  let previewPhotoURL = ''; // LinkedIn photo when connected, otherwise the PalaTrack photo
+  let myAccountName = '';
+  function setAvatar(el, name, photo = myPhotoURL){
+    const key = photo ? 'img:' + photo : 'txt:' + initials(name);
     if(el.dataset.avatarKey === key) return;
     el.dataset.avatarKey = key;
-    if(myPhotoURL){
+    if(photo){
       const img = document.createElement('img');
-      img.src = myPhotoURL;
+      img.src = photo;
       img.alt = '';
       img.addEventListener('error', ()=>{ el.dataset.avatarKey = 'txt:' + initials(name); el.textContent = initials(name); }, {once:true});
       el.replaceChildren(img);
@@ -1023,8 +1051,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const text = rawText.replace(/\s+$/,''); // LinkedIn drops trailing blank lines
 
     document.getElementById('previewName').textContent = name;
-    setAvatar(document.getElementById('previewAvatar'), name);
-    setAvatar(document.getElementById('previewAppAvatar'), name);
+    setAvatar(document.getElementById('previewAvatar'), name, previewPhotoURL);
+    setAvatar(document.getElementById('previewAppAvatar'), name, previewPhotoURL);
     const headlineEl = document.getElementById('previewHeadline');
     if(headline){ headlineEl.style.display = ''; headlineEl.textContent = headline; }
     else { headlineEl.style.display = 'none'; }
@@ -1690,6 +1718,105 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     }, {once:true});
   });
 
+  // ---------- Connect LinkedIn (real profile photo + name in the preview) ----------
+  // The actual LinkedIn sign-in happens in Cloud Functions (linkedinAuth.js):
+  // startLinkedInConnect gives us a login URL, LinkedIn sends the browser back
+  // to linkedinOAuthCallback, which saves linkedinPhotoURL/linkedinName on
+  // this user's member doc and redirects here with ?linkedinConnect=<status>.
+  let linkedinInfo = {connected: false, name: '', photoURL: ''};
+  let functionsApi = null;
+  try{ functionsApi = firebase.functions(); }catch(e){ console.error('Cloud Functions unavailable', e); }
+
+  function renderLinkedinConnect(){
+    const box = document.getElementById('linkedinConnect');
+    const text = document.getElementById('linkedinConnectText');
+    const btn = document.getElementById('linkedinConnectBtn');
+    box.querySelectorAll('.li-connect-avatar,.li-connect-links').forEach(el=> el.remove());
+    if(!linkedinInfo.connected){
+      text.textContent = 'Connect your LinkedIn to show your real profile picture and name in the preview.';
+      btn.style.display = '';
+      return;
+    }
+    btn.style.display = 'none';
+    if(linkedinInfo.photoURL){
+      const img = document.createElement('img');
+      img.className = 'li-connect-avatar'; img.alt = ''; img.src = linkedinInfo.photoURL;
+      box.insertBefore(img, text);
+    }
+    text.innerHTML = '';
+    text.append('Connected to LinkedIn as ');
+    const b = document.createElement('b'); b.textContent = linkedinInfo.name || 'your account'; text.appendChild(b);
+    if(!linkedinInfo.photoURL) text.append(' (no profile picture on LinkedIn)');
+    const links = document.createElement('span');
+    links.className = 'li-connect-links';
+    const refresh = document.createElement('button');
+    refresh.type = 'button'; refresh.className = 'li-connect-link'; refresh.textContent = 'Refresh photo';
+    refresh.title = 'Changed your LinkedIn picture? Pull in the new one.';
+    refresh.addEventListener('click', startLinkedinConnect);
+    const disc = document.createElement('button');
+    disc.type = 'button'; disc.className = 'li-connect-link danger'; disc.textContent = 'Disconnect';
+    disc.addEventListener('click', disconnectLinkedin);
+    links.append(refresh, disc);
+    box.appendChild(links);
+  }
+
+  function applyLinkedinProfile(data){
+    linkedinInfo = {
+      connected: !!data.linkedinConnected,
+      name: data.linkedinName || '',
+      photoURL: data.linkedinPhotoURL || '',
+    };
+    previewPhotoURL = linkedinInfo.photoURL || myPhotoURL;
+    renderLinkedinConnect();
+    renderPreview();
+  }
+
+  function startLinkedinConnect(){
+    if(!functionsApi){ showToast('Could not reach the server. Reload the page and try again.', true); return; }
+    const btn = document.getElementById('linkedinConnectBtn');
+    btn.disabled = true;
+    functionsApi.httpsCallable('startLinkedInConnect')({}).then(res=>{
+      window.location.href = res.data.url; // off to LinkedIn; we come back with ?linkedinConnect=...
+    }).catch(err=>{
+      console.error(err);
+      btn.disabled = false;
+      showToast('Could not start the LinkedIn connection. Please try again.', true);
+    });
+  }
+  function disconnectLinkedin(){
+    if(!functionsApi) return;
+    functionsApi.httpsCallable('disconnectLinkedIn')({}).then(()=>{
+      const usedLinkedinName = linkedinInfo.name && document.getElementById('authorNameInput').value.trim() === linkedinInfo.name;
+      applyLinkedinProfile({});
+      if(usedLinkedinName) document.getElementById('authorNameInput').value = myAccountName;
+      renderPreview();
+      showToast('LinkedIn disconnected. The preview uses your PalaTrack photo again.');
+    }).catch(err=>{
+      console.error(err);
+      showToast('Could not disconnect LinkedIn. Please try again.', true);
+    });
+  }
+  document.getElementById('linkedinConnectBtn').addEventListener('click', startLinkedinConnect);
+
+  // Coming back from LinkedIn
+  (function(){
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('linkedinConnect');
+    if(!status) return;
+    const messages = {
+      success: ['LinkedIn connected. Your profile picture is now in the preview.', false],
+      nophoto: ["LinkedIn connected, but your LinkedIn profile doesn't have a picture yet.", false],
+      denied: ['LinkedIn connection cancelled.', false],
+      expired: ['That LinkedIn login link expired. Please try connecting again.', true],
+      error: ['Could not connect LinkedIn. Please try again.', true],
+    };
+    const [msg, bad] = messages[status] || messages.error;
+    setTimeout(()=> showToast(msg, bad), 400);
+    params.delete('linkedinConnect');
+    const qs = params.toString();
+    history.replaceState({}, document.title, window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+  })();
+
   // ---------- Saved headline ----------
   // Saved to the user's member doc so it follows them to any device, with a
   // local copy as a fallback (and for an instant fill-in before Firestore loads).
@@ -2200,9 +2327,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
         document.getElementById('seqSidebarUserName').textContent = myName;
         myPhotoURL = (memberDoc.exists && memberDoc.data().photoURL) || '';
+        myAccountName = myName;
         setAvatar(document.getElementById('seqSidebarAvatar'), myName);
+        const memberData = memberDoc.exists ? memberDoc.data() : {};
+        applyLinkedinProfile(memberData);
         if(!document.getElementById('authorNameInput').value){
-          document.getElementById('authorNameInput').value = myName;
+          document.getElementById('authorNameInput').value = memberData.linkedinName || myName;
         }
         const profileHeadline = memberDoc.exists ? memberDoc.data().linkedinHeadline : undefined;
         if(typeof profileHeadline === 'string'){
