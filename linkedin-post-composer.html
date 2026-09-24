@@ -419,6 +419,30 @@
   .cal-pill .auto-tag{font-weight:600;opacity:.8;}
   .li-connect-text .warn{color:#8A5600;font-weight:600;}
 
+  /* ---------- Calendar hover card ---------- */
+  .cal-tip{
+    position:fixed;z-index:9500;width:280px;max-width:calc(100vw - 16px);background:#fff;border:1px solid rgba(0,0,0,.1);
+    border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:12px 14px;pointer-events:none;opacity:0;transform:translateY(4px);
+    transition:opacity .12s ease, transform .12s ease;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:rgba(0,0,0,.9);
+  }
+  .cal-tip.show{opacity:1;transform:none;}
+  @media (prefers-reduced-motion: reduce){ .cal-tip{transition:none;} }
+  .cal-tip-status{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;margin-bottom:8px;}
+  .cal-tip-status i{width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .cal-tip-status.scheduled{background:#EAF3FC;color:#0A66C2;}
+  .cal-tip-status.due{background:#FFF1DC;color:#8A5600;}
+  .cal-tip-status.publishing{background:#EAF3FC;color:#0B4F94;}
+  .cal-tip-status.posted{background:#E3F1EB;color:#1F6F5C;}
+  .cal-tip-status.failed{background:#FDECEA;color:#9B2C1F;}
+  .cal-tip-when{font-size:13px;font-weight:600;margin-bottom:6px;}
+  .cal-tip-text{font-size:13px;line-height:1.45;color:rgba(0,0,0,.75);white-space:pre-wrap;word-break:break-word;
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+  .cal-tip-meta{font-size:12px;color:rgba(0,0,0,.55);margin-top:8px;line-height:1.4;}
+  .cal-tip-meta.err{color:#9B2C1F;}
+  .cal-tip-hint{font-size:11.5px;color:rgba(0,0,0,.45);margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.07);}
+  .cal-more{cursor:pointer;border:0;background:none;text-align:left;font-family:inherit;}
+  .cal-more:hover{color:#0A66C2;text-decoration:underline;}
+
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
   .headline-row .composer-input{flex:1;min-width:0;}
@@ -2201,6 +2225,103 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   const MAX_PILLS = 3;
   function snippetOf(draft){ return (draft.content || '').trim().split('\n').find(l=>l.trim()) || 'Untitled post'; }
 
+  // Where a post sits on the calendar: published posts on the day they
+  // actually went live (so "Publish now" posts show up too), everything else
+  // on its scheduled day. Unscheduled drafts aren't on the calendar.
+  function calendarDate(d){
+    if(d.status === 'posted' && d.publishState === 'published' && d.postedAt) return toDate(d.postedAt);
+    return toDate(d.scheduledAt) || (d.status === 'posted' ? toDate(d.postedAt) : null);
+  }
+  const expandedCalDays = new Set();
+
+  // Hover/focus card with the post's details.
+  let calTipEl = null, calTipTimer = null;
+  function firstLines(text, n){
+    return String(text || '').split('\n').map(l=> l.trim()).filter(Boolean).slice(0, n).join('\n');
+  }
+  function calTipInfo(d){
+    const state = postState(d);
+    const sched = toDate(d.scheduledAt);
+    const posted = toDate(d.postedAt);
+    const fullDate = dt => dt.toLocaleDateString(undefined, {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    const at = dt => `${fullDate(dt)} at ${fmtTime(dt)}`;
+    const info = {cls: state, label: '', when: '', meta: '', err: false};
+    if(state === 'posted' && d.publishState === 'published'){
+      info.cls = 'posted'; info.label = 'Published on LinkedIn';
+      info.when = posted ? at(posted) : (sched ? at(sched) : '');
+      info.meta = sched && posted && !sameDay(sched, posted) ? `Was scheduled for ${at(sched)}` : (d.autoPost ? 'Published automatically by PalaTrack' : 'Published with "Publish now"');
+    } else if(state === 'posted'){
+      info.label = 'Posted (marked by you)';
+      info.when = sched ? at(sched) : (posted ? at(posted) : '');
+      info.meta = posted ? `Marked as posted ${at(posted)}` : '';
+    } else if(state === 'failed'){
+      info.label = "Couldn't publish";
+      info.when = sched ? at(sched) : '';
+      info.meta = d.publishError || 'Something went wrong while publishing.'; info.err = true;
+    } else if(state === 'publishing'){
+      info.label = 'Publishing to LinkedIn…';
+      info.when = sched ? at(sched) : '';
+    } else if(state === 'due'){
+      info.label = 'Time to post it';
+      info.when = sched ? at(sched) : '';
+      info.meta = 'Scheduled as a reminder. Copy it and post it on LinkedIn yourself.';
+    } else {
+      info.cls = 'scheduled';
+      info.label = d.autoPost ? 'Scheduled · publishes automatically' : 'Scheduled · reminder';
+      info.when = sched ? at(sched) : '';
+      info.meta = d.autoPost ? 'PalaTrack will post this on LinkedIn at this time.' : "You'll get a reminder to post it yourself.";
+    }
+    const media = Array.isArray(d.media) ? d.media : [];
+    const video = media.some(m=> m.type === 'video');
+    if(media.length) info.media = video ? '🎥 1 video' : `📷 ${media.length} photo${media.length === 1 ? '' : 's'}`;
+    return info;
+  }
+  function showCalTip(anchor, d){
+    if(!calTipEl){
+      calTipEl = document.createElement('div');
+      calTipEl.className = 'cal-tip';
+      calTipEl.setAttribute('role', 'tooltip');
+      calTipEl.id = 'calTip';
+      document.body.appendChild(calTipEl);
+    }
+    const info = calTipInfo(d);
+    const lines = firstLines(d.content, 2) || 'Empty post';
+    const state = postState(d);
+    const hint = state === 'posted' || state === 'publishing' ? 'Click to open in the editor' : 'Click to open in the editor · drag to move it';
+    calTipEl.innerHTML = `
+      <span class="cal-tip-status ${info.cls}"><i></i>${esc(info.label)}</span>
+      ${info.when ? `<div class="cal-tip-when">${esc(info.when)}</div>` : ''}
+      <div class="cal-tip-text">${esc(lines)}</div>
+      ${info.media ? `<div class="cal-tip-meta">${esc(info.media)}</div>` : ''}
+      ${info.meta ? `<div class="cal-tip-meta${info.err ? ' err' : ''}">${esc(info.meta)}</div>` : ''}
+      <div class="cal-tip-hint">${esc(hint)}</div>`;
+    anchor.setAttribute('aria-describedby', 'calTip');
+    // Position: to the right of the pill, flipping left/up to stay on screen.
+    const r = anchor.getBoundingClientRect();
+    calTipEl.style.left = '0px'; calTipEl.style.top = '0px';
+    const w = calTipEl.offsetWidth, h = calTipEl.offsetHeight;
+    let left = r.right + 8;
+    if(left + w > window.innerWidth - 8) left = r.left - w - 8;
+    if(left < 8) left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+    let top = r.top;
+    if(top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
+    calTipEl.style.left = left + 'px';
+    calTipEl.style.top = top + 'px';
+    calTipEl.classList.add('show');
+  }
+  function hideCalTip(){
+    clearTimeout(calTipTimer);
+    if(calTipEl) calTipEl.classList.remove('show');
+  }
+  function attachCalTip(pill, d){
+    pill.addEventListener('mouseenter', ()=>{ clearTimeout(calTipTimer); calTipTimer = setTimeout(()=> showCalTip(pill, d), 150); });
+    pill.addEventListener('mouseleave', hideCalTip);
+    pill.addEventListener('focus', ()=> showCalTip(pill, d));
+    pill.addEventListener('blur', hideCalTip);
+  }
+  window.addEventListener('scroll', hideCalTip, true);
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') hideCalTip(); });
+
   function openDraftFromCalendar(draft){
     loadDraftIntoEditor(draft);
     document.querySelector('.composer-grid').scrollIntoView({behavior:'smooth', block:'start'});
@@ -2209,6 +2330,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function renderCalendar(){
     const grid = document.getElementById('calGrid');
     if(!grid) return;
+    hideCalTip(); // the pill it points at is about to be rebuilt
     document.getElementById('calMonthLabel').textContent =
       calMonth.toLocaleDateString(undefined, {month:'long', year:'numeric'});
     grid.innerHTML = '';
@@ -2229,8 +2351,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const today = startOfToday();
 
     const scheduled = allDrafts
-      .filter(d=>toDate(d.scheduledAt))
-      .sort((a,b)=> toDate(a.scheduledAt) - toDate(b.scheduledAt));
+      .filter(d=> calendarDate(d))
+      .sort((a,b)=> calendarDate(a) - calendarDate(b));
 
     for(let i=0;i<totalCells;i++){
       const day = new Date(start.getFullYear(), start.getMonth(), start.getDate()+i);
@@ -2243,28 +2365,38 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       cell.innerHTML = `<span class="cal-num">${day.getDate()}</span>${isPast ? '' : '<span class="cal-add" aria-hidden="true">+</span>'}`;
       cell.setAttribute('aria-label', day.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'}));
 
-      const posts = scheduled.filter(d=>sameDay(toDate(d.scheduledAt), day));
-      posts.slice(0, MAX_PILLS).forEach(draft=>{
+      const posts = scheduled.filter(d=>sameDay(calendarDate(d), day));
+      const dayKey = dateInputValue(day);
+      const shown = expandedCalDays.has(dayKey) ? posts : posts.slice(0, MAX_PILLS);
+      shown.forEach(draft=>{
         const state = postState(draft);
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = 'cal-pill' + ({due:' due', posted:' posted', failed:' failed', publishing:' publishing'}[state] || '') + (draft.id === activeDraftId ? ' active' : '');
-        const when = toDate(draft.scheduledAt);
+        const when = calendarDate(draft);
         const tag = state === 'failed' ? ' · Failed' : state === 'publishing' ? ' · Publishing' :
           (state === 'posted' && draft.publishState === 'published') ? ' · Published' : (draft.autoPost && state === 'scheduled') ? ' · Auto' : '';
         pill.innerHTML = `<b>${esc(fmtTime(when))}<span class="auto-tag">${esc(tag)}</span></b><span>${esc(snippetOf(draft))}</span>`;
-        pill.title = `${fmtTime(when)}${tag} · ${snippetOf(draft)}`;
+        pill.setAttribute('aria-label', `${fmtTime(when)}${tag}: ${snippetOf(draft)}`);
+        attachCalTip(pill, draft);
         if(state !== 'posted' && state !== 'publishing'){
           pill.draggable = true;
-          pill.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', draft.id); e.dataTransfer.effectAllowed = 'move'; });
+          pill.addEventListener('dragstart', e=>{ hideCalTip(); e.dataTransfer.setData('text/plain', draft.id); e.dataTransfer.effectAllowed = 'move'; });
         }
-        pill.addEventListener('click', e=>{ e.stopPropagation(); openDraftFromCalendar(draft); });
+        pill.addEventListener('click', e=>{ e.stopPropagation(); hideCalTip(); openDraftFromCalendar(draft); });
         cell.appendChild(pill);
       });
       if(posts.length > MAX_PILLS){
-        const more = document.createElement('div');
+        const more = document.createElement('button');
+        more.type = 'button';
         more.className = 'cal-more';
-        more.textContent = `+${posts.length - MAX_PILLS} more`;
+        const open = expandedCalDays.has(dayKey);
+        more.textContent = open ? 'Show less' : `+${posts.length - MAX_PILLS} more`;
+        more.addEventListener('click', e=>{
+          e.stopPropagation();
+          if(open) expandedCalDays.delete(dayKey); else expandedCalDays.add(dayKey);
+          renderCalendar();
+        });
         cell.appendChild(more);
       }
 
