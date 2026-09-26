@@ -723,6 +723,20 @@
   .pc-tip::before{content:"→";color:var(--teal);font-weight:700;}
   .pc-show{border:0;background:none;padding:0;font:700 11.5px 'Inter',sans-serif;color:var(--teal);cursor:pointer;white-space:nowrap;text-decoration:underline;}
   .pc-show:focus-visible{outline:2px solid var(--teal);outline-offset:1px;border-radius:3px;}
+  .pc-ai-badge{display:inline-block;font:800 9.5px 'Inter',sans-serif;letter-spacing:.05em;color:#fff;background:linear-gradient(135deg,#0A66C2,#7B3FE4);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:1px;}
+  .pc-ai-sub{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--slate);margin:6px 0 0 26px;}
+  .pc-ai-sub b{color:var(--ink);}
+  .pc-ai-wait{display:flex;align-items:center;gap:8px;}
+  .pc-spin{width:12px;height:12px;border:2px solid rgba(55,48,179,.2);border-top-color:var(--teal);border-radius:50%;animation:aiSpin .8s linear infinite;flex-shrink:0;}
+  .pc-issue{margin:8px 0 0 26px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--panel-alt);}
+  .pc-issue-top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+  .pc-issue-type{font:800 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;border-radius:4px;padding:1px 6px;}
+  .pc-issue-type.grammar{background:var(--fail-soft);color:var(--fail);}
+  .pc-issue-type.clarity{background:var(--amber-soft);color:#8A5600;}
+  .pc-issue-why{font-size:12px;color:var(--slate);}
+  .pc-issue-quote{font-size:12.5px;color:var(--ink);margin-top:5px;text-decoration:line-through;text-decoration-color:rgba(192,57,43,.5);}
+  .pc-issue-fix{font-size:12.5px;color:var(--success);font-weight:600;margin-top:3px;}
+  .pc-issue-actions{display:flex;gap:12px;margin-top:5px;}
   .pc-note{font-size:11.5px;color:var(--slate-light);line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
 
   /* ---------- Saved headline ---------- */
@@ -3495,38 +3509,154 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     return {score, label, tone, criteria, placeholders, notes};
   }
 
+  // ---------- AI review (the Post check's "Makes sense & grammar" part) ----------
+  // Runs by itself a few seconds after you stop typing (at most once a minute,
+  // and never twice for the same text), or when you click "Check now". The
+  // result is saved on the post, so reopening it doesn't cost a new review.
+  const AI_REVIEW_MIN_CHARS = 80;
+  let aiReview = null;          // {hash, clarity, grammar, summary, issues[], at}
+  let aiReviewBusy = false, aiReviewTimer = null, aiReviewLastRun = 0, aiReviewError = '';
+  function textHash(t){ let h = 5381; for(let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return String(h >>> 0); }
+  function reviewText(){ return postInput.value.replace(/\s+$/, ''); }
+  function aiReviewIsCurrent(){ return !!aiReview && aiReview.hash === textHash(reviewText()); }
+  function scheduleAiReview(){
+    clearTimeout(aiReviewTimer);
+    if(!functionsApi || !currentWorkspaceId || reviewText().length < AI_REVIEW_MIN_CHARS || aiReviewIsCurrent()) return;
+    const wait = Math.max(6000, 60000 - (Date.now() - aiReviewLastRun));
+    aiReviewTimer = setTimeout(()=> runAiReview(false), wait);
+  }
+  function runAiReview(manual){
+    const text = reviewText();
+    if(aiReviewBusy || text.length < AI_REVIEW_MIN_CHARS || (!manual && aiReviewIsCurrent())) return;
+    if(!functionsApi){ aiReviewError = 'Could not reach the server.'; updatePostCheck(); return; }
+    clearTimeout(aiReviewTimer);
+    aiReviewBusy = true; aiReviewError = ''; aiReviewLastRun = Date.now();
+    updatePostCheck();
+    const hash = textHash(text);
+    const forDraft = activeDraftId;
+    functionsApi.httpsCallable('generatePostIdeas')({mode: 'review', text}).then(res=>{
+      const r = res.data || {};
+      aiReview = {hash, clarity: r.clarity || 0, grammar: r.grammar || 0, summary: r.summary || '', issues: r.issues || [], at: Date.now()};
+      // Keep it with the post (only if you're still on the same post).
+      if(forDraft && forDraft === activeDraftId) collectionRef().doc(forDraft).update({aiReview}).catch(()=>{});
+    }).catch(err=>{
+      console.error(err);
+      const code = (err && err.code) || '';
+      aiReviewError = code.includes('not-found') ? "The AI review isn't set up on the server yet." : ((err && err.message) || "The AI review didn't work this time.");
+    }).finally(()=>{
+      aiReviewBusy = false;
+      updatePostCheck();
+      if(!aiReviewIsCurrent() && !aiReviewError) scheduleAiReview(); // text changed while it ran
+    });
+  }
+  // Apply one of the AI's suggested fixes (undoable with Ctrl+Z).
+  function applyAiFix(i){
+    const issue = aiReview && aiReview.issues[i];
+    if(!issue) return;
+    const at = postInput.value.indexOf(issue.quote);
+    if(at < 0){ showToast("That text isn't in the post anymore.", true); return; }
+    postInput.focus();
+    postInput.setSelectionRange(at, at + issue.quote.length);
+    replaceSelection(issue.fix, false);
+    aiReview.issues = aiReview.issues.filter((_, j)=> j !== i);
+    showToast('Fix applied. Press Ctrl+Z to undo. The AI will recheck in a moment.');
+    updatePostCheck(); scheduleAiReview();
+  }
+
   function updatePostCheck(){
     const text = postInput.value;
     const wrap = document.getElementById('postCheck');
     if(!text.trim()){ wrap.style.display = 'none'; return; }
     wrap.style.display = '';
     const r = analyzePost(text, fcInput.value);
+    // 30 points from the AI review (makes sense 15 + grammar 15), 70 from the
+    // writing checks (same balance as before, scaled to 70).
+    const RULE_MAX = {hook: 18, space: 21, ending: 10, sentences: 7, links: 7, hashtags: 4, length: 3};
+    const rows = r.criteria.map(c=> ({...c, points: Math.round(c.points / c.max * RULE_MAX[c.key]), max: RULE_MAX[c.key]}));
+    const penalty = r.placeholders.length ? 10 : 0;
+    const rulePoints = rows.reduce((t, c)=> t + c.points, 0);
+    const current = aiReviewIsCurrent();
+    const clarityPts = aiReview ? Math.round(aiReview.clarity * 1.5) : 0;
+    const grammarPts = aiReview ? Math.round(aiReview.grammar * 1.5) : 0;
+    const aiPts = aiReview ? clarityPts + grammarPts : null;
+    const hasAi = aiPts !== null;
+    let score = hasAi ? Math.max(0, rulePoints + aiPts - penalty) : Math.max(0, Math.round((rulePoints - penalty) / 70 * 100));
+    // Safeguards so the verdict never looks better than the post is:
+    // open grammar mistakes can't be "Excellent", and a confusing post can't be "Strong".
+    let capNote = '';
+    if(hasAi){
+      const open = aiReview.issues.filter(i=> postInput.value.includes(i.quote));
+      const openGrammar = open.filter(i=> i.type === 'grammar').length, openClarity = open.length - openGrammar;
+      const what = [openGrammar ? `the grammar ${openGrammar === 1 ? 'mistake' : 'mistakes'}` : '', openClarity ? `the unclear ${openClarity === 1 ? 'part' : 'parts'}` : ''].filter(Boolean).join(' and ');
+      if(aiReview.clarity <= 5 && score > 74){ score = 74; capNote = "Capped at 74 because the AI found the post hard to follow."; }
+      else if(open.length && score > 89){ score = 89; capNote = `Capped at 89 until ${what} ${open.length === 1 ? 'is' : 'are'} fixed.`; }
+    }
+    const tone = r.placeholders.length ? 'low' : score >= 75 ? 'good' : score >= 55 ? 'ok' : 'low';
+    let label = r.placeholders.length ? 'Fill in the placeholders first'
+      : score >= 90 ? 'Excellent, ready to post' : score >= 75 ? 'Strong, a few small tweaks' : score >= 55 ? 'Good start, some fixes will help' : 'Needs work, see the tips';
+    if(!hasAi) label = (aiReviewBusy ? 'Estimate · AI is reading your post…' : text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'Estimate · AI review starts at 80 characters' : 'Estimate · AI review coming up') ;
+    else if(!current) label += aiReviewBusy ? ' · AI is rechecking…' : ' · AI rechecks soon';
+
     const colors = {good: 'var(--success)', ok: '#D69E2E', low: 'var(--fail)'};
     const C = 2 * Math.PI * 20;
     const val = document.getElementById('pcGaugeVal');
     val.style.strokeDasharray = C;
-    val.style.strokeDashoffset = C * (1 - r.score / 100);
-    val.style.stroke = colors[r.tone];
-    document.getElementById('pcScoreNum').textContent = r.score;
+    val.style.strokeDashoffset = C * (1 - score / 100);
+    val.style.stroke = hasAi ? colors[tone] : '#A0AEC0';
+    document.getElementById('pcScoreNum').textContent = score;
     const lab = document.getElementById('pcLabel');
-    lab.textContent = r.label; lab.className = r.tone;
-    document.getElementById('pcHead').setAttribute('aria-label', `Post check: ${r.score} out of 100, ${r.label}`);
+    lab.textContent = label; lab.className = hasAi ? tone : '';
+    document.getElementById('pcHead').setAttribute('aria-label', `Post check: ${score} out of 100${hasAi ? '' : ' (estimate)'}, ${label}`);
 
     const icon = {pass: '✓', warn: '!', fail: '✕'};
     let html = '';
+    if(capNote) html += `<div class="pc-detail" style="margin:0 0 8px;color:#8A5600;font-weight:600;">${esc(capNote)}</div>`;
     if(r.placeholders.length){
-      html += `<div class="pc-blocker"><b>Fix before posting:</b> ${r.placeholders.length === 1 ? 'there is a placeholder' : 'there are ' + r.placeholders.length + ' placeholders'} to fill in with your real details (${esc(r.placeholders.slice(0, 3).map(p=> p.text).join(', '))}${r.placeholders.length > 3 ? '…' : ''}). This costs 15 points until it's done.
+      html += `<div class="pc-blocker"><b>Fix before posting:</b> ${r.placeholders.length === 1 ? 'there is a placeholder' : 'there are ' + r.placeholders.length + ' placeholders'} to fill in with your real details (${esc(r.placeholders.slice(0, 3).map(p=> p.text).join(', '))}${r.placeholders.length > 3 ? '…' : ''}). This costs 10 points until it's done.
         <button type="button" class="pc-show" data-range="${r.placeholders[0].range.join(',')}">Show me</button></div>`;
     }
-    html += r.criteria.map(c=> `<div class="pc-row ${c.state}">
+    // AI row first: it's the part people care most about.
+    {
+      const state = !hasAi ? 'warn' : aiPts >= 26 ? 'pass' : aiPts >= 18 ? 'warn' : 'fail';
+      let body = '';
+      if(aiReviewBusy && !hasAi) body = '<div class="pc-detail pc-ai-wait"><span class="pc-spin"></span>Reading your post for clarity and grammar…</div>';
+      else if(!hasAi) body = `<div class="pc-detail">${text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'The AI reads your post once it has at least 80 characters.' : 'The AI reads your post a few seconds after you stop typing.'}</div>`;
+      else {
+        body = `<div class="pc-ai-sub"><span>Makes sense <b>${clarityPts}/15</b></span><span>Grammar &amp; spelling <b>${grammarPts}/15</b></span></div>
+          ${aiReview.summary ? `<div class="pc-detail">${esc(aiReview.summary)}</div>` : ''}
+          ${!current ? `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post. ${aiReviewBusy ? 'Rechecking now…' : 'It updates by itself shortly.'}</div>` : ''}
+          ${aiReview.issues.map((iss, i)=> `<div class="pc-issue">
+              <div class="pc-issue-top"><span class="pc-issue-type ${iss.type}">${iss.type === 'clarity' ? 'Clarity' : 'Grammar'}</span><span class="pc-issue-why">${esc(iss.why)}</span></div>
+              <div class="pc-issue-quote">“${esc(iss.quote)}”</div>
+              ${iss.fix && iss.fix !== iss.quote ? `<div class="pc-issue-fix">→ ${esc(iss.fix)}</div>` : ''}
+              <div class="pc-issue-actions">
+                ${postInput.value.includes(iss.quote) ? `<button type="button" class="pc-show" data-quote="${i}">Show me</button>` : ''}
+                ${iss.fix && iss.fix !== iss.quote && postInput.value.includes(iss.quote) ? `<button type="button" class="pc-show" data-fix="${i}">Apply fix</button>` : ''}
+              </div>
+            </div>`).join('')}
+          ${current && !aiReview.issues.length ? '<div class="pc-detail">No clarity or grammar issues found.</div>' : ''}`;
+      }
+      if(aiReviewError) body += `<div class="pc-detail" style="color:var(--fail);">${esc(aiReviewError)}</div>`;
+      const canCheck = text.replace(/\s+$/, '').length >= AI_REVIEW_MIN_CHARS && !aiReviewBusy && !current;
+      html += `<div class="pc-row ${state}">
+          <div class="pc-row-top"><span class="pc-ico" aria-hidden="true">${hasAi ? icon[state] : '…'}</span><span class="pc-row-label">Makes sense &amp; grammar <span class="pc-ai-badge">AI</span></span>
+            ${canCheck ? '<button type="button" class="pc-show" id="pcAiRun" style="margin-right:8px;">Check now</button>' : ''}
+            <span class="pc-pts">${hasAi ? aiPts : '–'}/30</span></div>
+          <div class="pc-minibar" aria-hidden="true"><i style="width:${hasAi ? Math.round(aiPts / 30 * 100) : 0}%"></i></div>
+          ${body}
+        </div>`;
+    }
+    html += rows.map(c=> `<div class="pc-row ${c.state}">
         <div class="pc-row-top"><span class="pc-ico" aria-hidden="true">${icon[c.state]}</span><span class="pc-row-label">${esc(c.label)}</span><span class="pc-pts">${c.points}/${c.max}</span></div>
-        <div class="pc-minibar" aria-hidden="true"><i style="width:${Math.round(c.points / c.max * 100)}%"></i></div>
+        <div class="pc-minibar" aria-hidden="true"><i style="width:${c.max ? Math.round(c.points / c.max * 100) : 0}%"></i></div>
         <div class="pc-detail">${esc(c.detail)}</div>
         ${c.tips.map(t=> `<div class="pc-tip"><span>${esc(t.text)} ${t.range ? `<button type="button" class="pc-show" data-range="${t.range.join(',')}">Show me</button>` : ''}</span></div>`).join('')}
       </div>`).join('');
     r.notes.forEach(n=> html += `<div class="pc-tip" style="margin-left:0;"><span>${esc(n)}</span></div>`);
-    html += `<div class="pc-note">This checks how your post is written for LinkedIn (hook, spacing, ending and more), not how good your idea is. It's a set of proven rules of thumb, not a guarantee: a post that breaks a rule on purpose can still do great.</div>`;
+    html += `<div class="pc-note">The score is out of 100: 30 points from the AI reading your post (does it make sense, is the grammar right) and 70 from writing checks for LinkedIn (hook, spacing, ending and more). It judges how the post is written, not how good your idea is, and it's a guide, not a guarantee: a post that breaks a rule on purpose can still do great.</div>`;
     document.getElementById('pcBody').innerHTML = html;
+    const run = document.getElementById('pcAiRun');
+    if(run) run.addEventListener('click', e=>{ e.stopPropagation(); runAiReview(true); });
   }
   document.getElementById('pcHead').addEventListener('click', ()=>{
     const wrap = document.getElementById('postCheck');
@@ -3535,8 +3665,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   });
   // "Show me": select that part of the post in the editor.
   document.getElementById('pcBody').addEventListener('click', e=>{
-    const b = e.target.closest('.pc-show'); if(!b) return;
-    const [s0, e0] = b.dataset.range.split(',').map(Number);
+    const b = e.target.closest('.pc-show'); if(!b || b.id === 'pcAiRun') return;
+    if(b.dataset.fix != null){ applyAiFix(Number(b.dataset.fix)); return; }
+    let s0, e0;
+    if(b.dataset.quote != null){
+      const q = aiReview && aiReview.issues[Number(b.dataset.quote)];
+      const at = q ? postInput.value.indexOf(q.quote) : -1;
+      if(at < 0) return;
+      s0 = at; e0 = at + q.quote.length;
+    } else [s0, e0] = b.dataset.range.split(',').map(Number);
     postInput.focus();
     postInput.setSelectionRange(s0, e0);
     // Scroll the textarea so the selection is visible.
@@ -3568,7 +3705,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       if(editorSignature() !== lastSavedSignature) savePost(undefined, null, {quiet: true});
     }, AUTOSAVE_DELAY);
   }
-  postInput.addEventListener('input', ()=>{ updatePostCheck(); renderFirstCommentPreview(); scheduleAutosave(); });
+  postInput.addEventListener('input', ()=>{ updatePostCheck(); renderFirstCommentPreview(); scheduleAutosave(); scheduleAiReview(); });
   document.getElementById('authorHeadlineInput').addEventListener('input', scheduleAutosave);
   window.addEventListener('beforeunload', e=>{
     if(savingNow || (postInput.value.trim() && editorSignature() !== lastSavedSignature)){
@@ -4358,9 +4495,11 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     renderVersionsBar();
     updateClearBtn();
     setFirstComment(draft.firstComment || '');
+    aiReview = draft.aiReview || null; aiReviewError = '';
     previewExpanded = false;
     renderPreview();
     updatePostCheck();
+    scheduleAiReview();
     renderDraftsStrip();
     renderScheduleChip();
     renderCalendar();
@@ -4375,6 +4514,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     setMedia([], {dirty:false});
     resetVersions();
     setFirstComment('');
+    aiReview = null; aiReviewError = ''; clearTimeout(aiReviewTimer);
     previewExpanded = false;
     renderPreview();
     updatePostCheck();
