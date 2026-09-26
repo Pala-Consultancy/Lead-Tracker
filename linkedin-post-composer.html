@@ -3707,8 +3707,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function textHash(t){ let h = 5381; for(let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return String(h >>> 0); }
   function reviewText(){ return postInput.value.replace(/\s+$/, ''); }
   function reviewKey(){ return textHash(postGoal + '|' + idealReader + '|' + reviewText()); }
-  // v2 = the review with hook / specificity / sounds-human; older saved reviews get redone.
-  function aiReviewIsCurrent(){ return !!aiReview && aiReview.v === 2 && aiReview.hash === reviewKey(); }
+  // v3 = current review (hook / specificity / sounds human, fairer clarity rules); older saved reviews get redone.
+  function aiReviewIsCurrent(){ return !!aiReview && aiReview.v >= 3 && aiReview.hash === reviewKey(); }
   function scheduleAiReview(){
     clearTimeout(aiReviewTimer);
     if(!functionsApi || !currentWorkspaceId || reviewText().length < AI_REVIEW_MIN_CHARS || aiReviewIsCurrent()) return;
@@ -3917,7 +3917,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
           ${aiReview.summary ? `<div class="pc-detail">${esc(aiReview.summary)}</div>` : ''}
           ${!postGoal && !withGoal ? '<div class="pc-detail">Tip: pick the goal of this post above, and the AI also checks whether the post reaches it.</div>' : ''}
           ${!idealReader && typeof aiReview.readerFit !== 'number' ? '<div class="pc-detail">Tip: add your ideal reader at the top, and the AI also checks whether the post speaks to them.</div>' : ''}
-          ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${aiReview.v === 2 ? '' : ' (or an older version of the check)'}. It updates by itself shortly.</div>`) : ''}
+          ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${aiReview.v >= 3 ? '' : ' (or an older version of the check)'}. It updates by itself shortly.</div>`) : ''}
           ${(aiReview.hookIdeas || []).length ? `<div class="pc-hookideas"><div class="pc-sub-title">Stronger opening lines</div>${aiReview.hookIdeas.map((h, i)=> `<div class="pc-hookidea"><span>${esc(h)}</span><button type="button" class="pc-show" data-hookidea="${i}">Use this hook</button></div>`).join('')}</div>` : ''}
           ${aiReview.issues.map((iss, i)=> `<div class="pc-issue">
               <div class="pc-issue-top"><span class="pc-issue-type ${iss.type}">${ISSUE_LABELS[iss.type] || 'Note'}</span><span class="pc-issue-why">${esc(iss.why)}</span></div>
