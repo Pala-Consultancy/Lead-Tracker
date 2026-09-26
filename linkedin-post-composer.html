@@ -566,6 +566,10 @@
   .ip-go:hover{filter:brightness(1.07);}
   .ip-go:disabled{filter:grayscale(.3);opacity:.7;}
   .ip-surprise{width:100%;margin-top:8px;}
+  .ip-reset{display:block;width:100%;margin-top:8px;border:0;background:none;padding:6px 0;font:600 12.5px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--lk-muted);cursor:pointer;border-radius:6px;}
+  .ip-reset:hover:not(:disabled){color:#B24020;background:rgba(178,64,32,.06);}
+  .ip-reset:disabled{opacity:.45;cursor:default;}
+  .ip-reset:focus-visible{outline:2px solid #0A66C2;outline-offset:1px;}
   .ip-hint{font-size:11.5px;color:var(--lk-muted);text-align:center;margin-top:8px;}
   .ip-hint kbd{font:600 10.5px 'Inter',sans-serif;background:#fff;border:1px solid rgba(0,0,0,.15);border-bottom-width:2px;border-radius:4px;padding:1px 5px;}
   .ip-note{font-size:11.5px;color:var(--lk-muted);line-height:1.45;margin-top:12px;}
@@ -664,6 +668,71 @@
     .ideas-btn::after,.ip-hero-icon,.idea-card,.idea-card.skeleton::after,.ip-step.active i,.idea-icon-btn.saved,.idea-draft{animation:none !important;}
     .idea-card:hover,.ip-chip:hover,.ip-example:hover{transform:none;}
   }
+
+  /* ---------- First comment ---------- */
+  .fc-wrap{margin-top:12px;}
+  .fc-toggle{border:0;background:none;padding:0;font:600 12.5px 'Inter',sans-serif;color:var(--teal);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .fc-toggle:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px;}
+  .fc-box{margin-top:8px;}
+  .fc-box textarea{width:100%;min-height:64px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:13.5px/1.5 'Inter',sans-serif;color:var(--ink);background:var(--panel-alt);resize:vertical;}
+  .fc-box textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(55,48,179,.12);}
+  .fc-hint{font-size:11.5px;color:var(--slate-light);margin-top:4px;line-height:1.45;}
+  .li-first-comment[hidden]{display:none;}
+  .li-first-comment{display:flex;gap:8px;padding:10px 16px 14px;border-top:1px solid rgba(0,0,0,.06);}
+  .li-first-comment .av{width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,#5B6FD8,#3730B3);color:#fff;font:700 11px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;}
+  .li-first-comment .av img{width:100%;height:100%;object-fit:cover;}
+  .li-first-comment .bubble{flex:1;min-width:0;background:#F2F2F2;border-radius:0 8px 8px 8px;padding:8px 10px;}
+  .li-first-comment .who{font-size:12.5px;font-weight:600;color:var(--li-text);}
+  .li-first-comment .who .tag{font-weight:500;color:var(--li-muted);font-size:11.5px;margin-left:4px;background:rgba(0,0,0,.06);border-radius:4px;padding:0 4px;}
+  .li-first-comment .txt{font-size:13px;line-height:1.43;color:var(--li-text);white-space:pre-wrap;word-break:break-word;margin-top:3px;}
+
+  /* ---------- Post check ---------- */
+  .pc-wrap{margin-top:12px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden;}
+  .pc-head{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px 14px;cursor:pointer;font:700 12.5px 'Inter',sans-serif;color:var(--ink);text-align:left;}
+  .pc-head:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;}
+  .pc-score{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:22px;border-radius:999px;font-size:11.5px;font-weight:800;padding:0 8px;}
+  .pc-score.good{background:var(--success-soft);color:var(--success);}
+  .pc-score.ok{background:var(--amber-soft);color:#8A5600;}
+  .pc-score.low{background:var(--fail-soft);color:var(--fail);}
+  .pc-bar{flex:1;height:5px;border-radius:3px;background:#EEF1F5;overflow:hidden;}
+  .pc-bar i{display:block;height:100%;border-radius:3px;transition:width .35s ease, background .35s;}
+  .pc-chev{transition:transform .2s;color:var(--slate);}
+  .pc-wrap.open .pc-chev{transform:rotate(180deg);}
+  .pc-list{display:none;padding:2px 14px 12px;}
+  .pc-wrap.open .pc-list{display:block;}
+  .pc-item{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:12.5px;line-height:1.45;color:var(--ink);}
+  .pc-item + .pc-item{border-top:1px dashed var(--border);}
+  .pc-ico{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;margin-top:1px;}
+  .pc-item.pass .pc-ico{background:var(--success-soft);color:var(--success);}
+  .pc-item.warn .pc-ico{background:var(--amber-soft);color:#8A5600;}
+  .pc-item.fail .pc-ico{background:var(--fail-soft);color:var(--fail);}
+  .pc-item.info .pc-ico{background:#EEF1F5;color:var(--slate);}
+  .pc-item small{display:block;color:var(--slate);font-size:11.5px;}
+
+  /* ---------- AI edit tools (editor toolbar) ---------- */
+  .fmt-btn.ai{background:linear-gradient(135deg,#0A66C2,#7B3FE4);color:#fff;font-weight:700;font-size:12.5px;padding:0 10px;gap:5px;}
+  .fmt-btn.ai:hover{color:#fff;filter:brightness(1.08);}
+  .ai-pop{position:absolute;top:46px;right:6px;z-index:55;width:300px;max-width:calc(100% - 12px);background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 34px rgba(20,24,40,.18);display:none;overflow:hidden;}
+  .ai-pop.open{display:block;animation:aiPopIn .16s ease both;}
+  @keyframes aiPopIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  .ai-pop-head{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--slate);}
+  .ai-pop-head b{color:var(--ink);}
+  .ai-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 14px;text-align:left;cursor:pointer;font:600 13px 'Inter',sans-serif;color:var(--ink);}
+  .ai-item:hover:not(:disabled),.ai-item:focus-visible{background:var(--panel-alt);outline:none;}
+  .ai-item:disabled{opacity:.5;cursor:wait;}
+  .ai-item .ico{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#F1F4FA;font-size:14px;flex-shrink:0;}
+  .ai-item small{display:block;font-weight:500;color:var(--slate);font-size:11.5px;}
+  .ai-langs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px 50px;}
+  .ai-lang{border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:4px 10px;font:600 12px 'Inter',sans-serif;color:var(--ink);cursor:pointer;}
+  .ai-lang:hover:not(:disabled){border-color:var(--teal);color:var(--teal);}
+  .ai-working{display:flex;align-items:center;gap:10px;padding:14px;font-size:13px;color:var(--slate);}
+  .ai-working .spin{width:16px;height:16px;border:2px solid rgba(55,48,179,.2);border-top-color:var(--teal);border-radius:50%;animation:aiSpin .8s linear infinite;}
+  @keyframes aiSpin{to{transform:rotate(360deg);}}
+  .ai-hooks{padding:4px 10px 10px;}
+  .ai-hook{display:block;width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);border-radius:10px;padding:9px 11px;margin-top:6px;cursor:pointer;font:13px/1.4 'Inter',sans-serif;color:var(--ink);}
+  .ai-hook:hover,.ai-hook:focus-visible{border-color:var(--teal);background:var(--panel-alt);outline:none;}
+  .ai-hook small{display:block;font-size:11px;color:var(--slate);margin-top:3px;}
+  @media (prefers-reduced-motion: reduce){ .ai-pop.open,.ai-working .spin{animation:none;} }
 
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
@@ -917,8 +986,11 @@
             <button type="button" class="fmt-btn" data-fmt="clear" title="Remove formatting" aria-label="Remove formatting">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12M12 4l-3 16M4 20l16-16" /></svg>
             </button>
+            <span class="fmt-sep" aria-hidden="true"></span>
+            <button type="button" class="fmt-btn ai" id="aiEditBtn" title="AI edit: punchier, shorter, grammar, hook, translate" aria-haspopup="true" aria-expanded="false">✨ AI edit</button>
             <span class="fmt-hint">Select text, then pick a style</span>
           </div>
+          <div class="ai-pop" id="aiPop" role="menu" aria-label="AI edit tools"></div>
           <div class="emoji-pop" id="emojiPop" role="dialog" aria-label="Emoji picker">
             <input type="text" class="emoji-search" id="emojiSearch" placeholder="Search emoji (e.g. rocket, check, fire)" autocomplete="off">
             <div class="emoji-tabs" id="emojiTabs"></div>
@@ -942,6 +1014,22 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
           <input type="file" id="videoInput" accept="video/*" hidden>
         </div>
         <div class="media-thumbs" id="mediaThumbs"></div>
+        <div class="fc-wrap">
+          <button type="button" class="fc-toggle" id="fcToggle" aria-expanded="false" aria-controls="fcBox">💬 Add a first comment</button>
+          <div class="fc-box" id="fcBox" hidden>
+            <textarea id="firstCommentInput" maxlength="1250" placeholder="e.g. Here's the link I mentioned: https://…"></textarea>
+            <div class="fc-hint">LinkedIn shows posts with links to fewer people, so put links here. When the post is published automatically, PalaTrack adds this as the first comment right after.</div>
+          </div>
+        </div>
+        <div class="pc-wrap" id="postCheck">
+          <button type="button" class="pc-head" id="pcHead" aria-expanded="false" aria-controls="pcList">
+            <span>Post check</span>
+            <span class="pc-score" id="pcScore">–</span>
+            <span class="pc-bar" aria-hidden="true"><i id="pcBarFill"></i></span>
+            <svg class="pc-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="pc-list" id="pcList"></div>
+        </div>
       </div>
       <div class="composer-footer">
         <span class="char-count" id="charCount">0 / 3,000</span>
@@ -1052,6 +1140,10 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
                     <span class="li-post-stat"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 2.3a1 1 0 0 0-1-.2l-18 6.5a1 1 0 0 0-.1 1.8l7.4 3.6 3.6 7.4a1 1 0 0 0 1.8-.1l6.5-18a1 1 0 0 0-.2-1zM10.5 12.1 6 9.9l11.3-4.1zm2 1.4 5.3-5.3-4.1 11.3z"/></svg></span>
                   </div>
                   <div class="li-post-reactions-icons li-react-stack" aria-hidden="true"><span class="li-react" data-r="like"></span><span class="li-react" data-r="celebrate"></span><span class="li-react" data-r="love"></span></div>
+                </div>
+                <div class="li-first-comment" id="previewFirstComment" hidden>
+                  <div class="av" id="previewFcAvatar"></div>
+                  <div class="bubble"><div class="who"><span id="previewFcName"></span><span class="tag">Author</span></div><div class="txt" id="previewFcText"></div></div>
                 </div>
               </div>
               <!-- Made-up posts so the preview reads like a real feed -->
@@ -1247,6 +1339,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         <div class="ip-actions">
           <button type="button" class="lk-btn primary ip-go" id="ideasGoBtn">✨ Generate 6 ideas</button>
           <button type="button" class="lk-btn ip-surprise" id="ideasSurpriseBtn">🎲 Surprise me</button>
+          <button type="button" class="ip-reset" id="ideasResetBtn" title="Clear your choices and the ideas shown, to start fresh">↺ Clear choices &amp; start over</button>
           <div class="ip-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to generate</div>
         </div>
         <p class="ip-note">Ideas use your headline and your recent posts in PalaTrack, so they match your voice and skip topics you've covered. Check every draft before posting and fill in the [placeholders] with your real details.</p>
@@ -1283,6 +1376,10 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       <label class="auto-toggle" id="autoPublishRow">
         <input type="checkbox" id="autoPublishToggle">
         <span><b>Publish automatically on LinkedIn</b><small id="autoPublishHint"></small></span>
+      </label>
+      <label class="auto-toggle" id="remindEmailRow" style="margin-top:10px;">
+        <input type="checkbox" id="remindEmailToggle" checked>
+        <span><b>Email me a reminder</b><small>At this time you get an email with the post text ready to copy, plus a link to open it.</small></span>
       </label>
       <p class="lk-dialog-note" id="scheduleNote"></p>
     </div>
@@ -1661,10 +1758,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   })();
 
   function markUnsaved(){
-    if(!activeDraftId) return;
-    const statusEl = document.getElementById('saveStatus');
-    statusEl.textContent = 'Unsaved changes';
-    statusEl.className = 'save-status';
+    if(activeDraftId){
+      const statusEl = document.getElementById('saveStatus');
+      statusEl.textContent = 'Unsaved changes';
+      statusEl.className = 'save-status';
+    }
+    if(typeof scheduleAutosave === 'function') scheduleAutosave();
   }
   function setMedia(items, {dirty = true} = {}){
     currentMedia = items;
@@ -2441,6 +2540,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       draftId: activeDraftId,
       versions: versions.slice(),
       activeVersionId,
+      firstComment: fcInput.value,
     };
     startNewPost();
     showToast(
@@ -2450,6 +2550,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         activeDraftId = snapshot.draftId;
         versions = snapshot.versions; activeVersionId = snapshot.activeVersionId;
         renderVersionsBar();
+        setFirstComment(snapshot.firstComment);
         document.getElementById('postTextInput').value = snapshot.text;
         setMedia(snapshot.media, {dirty:false});
         previewExpanded = false;
@@ -2764,6 +2865,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     }
     document.getElementById('ideasGoBtn').disabled = on;
     document.getElementById('ideasSurpriseBtn').disabled = on;
+    updateIdeasResetBtn();
   }
 
   // ---------- Generating ----------
@@ -2810,6 +2912,35 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(ideas.tab !== 'ideas') setIdeasTab('ideas');
     generateIdeas();
   });
+
+  // ---------- Clear choices & start over ----------
+  // Resets goal / format / tone / topic / audience / language to their
+  // defaults and clears the ideas and week plan on screen (saved ideas stay).
+  const IDEA_DEFAULTS = {ideaTopic: '', ideaGoal: 'audience', ideaFormat: 'mix', ideaTone: 'conversational', ideaAudience: '', ideaLanguage: 'auto'};
+  function ideasAreFresh(){
+    const p = ideaPrefs();
+    return Object.keys(IDEA_DEFAULTS).every(k=> (p[k] || '') === IDEA_DEFAULTS[k]) && !ideas.list.length && !ideas.week.length && !ideas.error;
+  }
+  function updateIdeasResetBtn(){
+    const btn = document.getElementById('ideasResetBtn');
+    if(btn) btn.disabled = ideas.loading || ideasAreFresh();
+  }
+  document.getElementById('ideasResetBtn').addEventListener('click', ()=>{
+    const snapshot = {prefs: ideaPrefs(), list: ideas.list, week: ideas.week, weekAdded: ideas.weekAdded, avoid: ideas.avoid, filter: ideas.filter};
+    Object.entries(IDEA_DEFAULTS).forEach(([id, v])=>{ document.getElementById(id).value = v; });
+    ideas.list = []; ideas.week = []; ideas.weekAdded = new Set(); ideas.avoid = []; ideas.filter = 'all'; ideas.error = '';
+    syncIdeaChips(); saveIdeaPrefs(); renderIdeas();
+    document.getElementById('ideaTopic').focus();
+    showToast('Cleared. Pick new options to start fresh (your saved ideas are kept).', false, {label: 'Undo', fn: ()=>{
+      Object.entries(snapshot.prefs).forEach(([id, v])=>{ document.getElementById(id).value = v; });
+      ideas.list = snapshot.list; ideas.week = snapshot.week; ideas.weekAdded = snapshot.weekAdded;
+      ideas.avoid = snapshot.avoid; ideas.filter = snapshot.filter;
+      syncIdeaChips(); saveIdeaPrefs(); renderIdeas();
+    }});
+  });
+  // Keep the button's enabled state current as choices change.
+  document.getElementById('ideasSettings').addEventListener('click', ()=> setTimeout(updateIdeasResetBtn, 0));
+  ['ideaTopic', 'ideaAudience', 'ideaLanguage'].forEach(id=> document.getElementById(id).addEventListener('input', updateIdeasResetBtn));
 
   // ---------- Saved ideas (Firestore: linkedinIdeas, private to the user) ----------
   function loadSavedIdeas(){
@@ -2915,6 +3046,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       authorHeadline: document.getElementById('authorHeadlineInput').value.trim(),
       content: item.post, status: 'scheduled',
       scheduledAt: firebase.firestore.Timestamp.fromDate(when), autoPost: false,
+      remindByEmail: true, reminderAt: firebase.firestore.Timestamp.fromDate(when),
       media: [], versions: [{id: vid, label: 'Version A', content: item.post, media: []}], activeVersionId: vid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2927,7 +3059,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       loadDrafts();
       const first = dates.sort((a, b)=> a - b)[0];
       calMonth = new Date(first.getFullYear(), first.getMonth(), 1);
-      showToast(todo.length > 1 ? `${todo.length} posts added to your calendar as reminders at 9:00. Open one to edit it or turn on auto-publish.` : `Added to your calendar for ${fmtDay(first)} at 9:00.`);
+      showToast(todo.length > 1 ? `${todo.length} posts added to your calendar. You'll get an email reminder at 9:00 each day. Open one to edit it or turn on auto-publish.` : `Added to your calendar for ${fmtDay(first)} at 9:00, with an email reminder.`);
       renderIdeas();
     }).catch(err=> showToast('Could not add to the calendar: ' + (err.message || ''), true));
   }
@@ -3019,6 +3151,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       ? (ideas.week.length ? '🗓️ Plan a new week' : '🗓️ Plan my week')
       : (ideas.list.length ? '✨ Generate new ideas' : '✨ Generate 6 ideas');
     document.getElementById('ideasSurpriseBtn').style.display = ideas.tab === 'week' ? 'none' : '';
+    updateIdeasResetBtn();
 
     let html = ideas.error ? `<div class="ideas-error" role="alert">${esc(ideas.error)}</div>` : '';
     if(ideas.loading){
@@ -3123,6 +3256,224 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(act === 'useversion') useDraftAsVersion(idea.draft, idea.title);
   });
 
+  // ---------- First comment ----------
+  const fcInput = document.getElementById('firstCommentInput');
+  function setFirstCommentOpen(open){
+    document.getElementById('fcBox').hidden = !open;
+    const t = document.getElementById('fcToggle');
+    t.setAttribute('aria-expanded', open ? 'true' : 'false');
+    t.textContent = open ? '💬 First comment' : '💬 Add a first comment';
+  }
+  function setFirstComment(text){
+    fcInput.value = text || '';
+    setFirstCommentOpen(!!fcInput.value.trim());
+    renderFirstCommentPreview();
+  }
+  document.getElementById('fcToggle').addEventListener('click', ()=>{
+    const open = document.getElementById('fcBox').hidden;
+    setFirstCommentOpen(open || !!fcInput.value.trim());
+    if(open) fcInput.focus();
+  });
+  function renderFirstCommentPreview(){
+    const box = document.getElementById('previewFirstComment');
+    const text = fcInput.value.trim();
+    box.hidden = !text || !postInput.value.trim();
+    if(box.hidden) return;
+    const name = document.getElementById('authorNameInput').value.trim() || 'You';
+    document.getElementById('previewFcName').textContent = name;
+    document.getElementById('previewFcText').textContent = text;
+    setAvatar(document.getElementById('previewFcAvatar'), name, previewPhotoURL);
+  }
+  fcInput.addEventListener('input', ()=>{ renderFirstCommentPreview(); updatePostCheck(); scheduleAutosave(); });
+
+  // ---------- Post check (LinkedIn best practices, live) ----------
+  const PLACEHOLDER_RE = /\[[^\]\n]{2,60}\]/g;
+  const CTA_RE = /\?|\b(comment|comments|share|repost|dm me|message me|let me know|thoughts|agree|follow|reach out|link in|sign up|book|join|download|what about you|your take|tell me)\b/i;
+  function postCheckItems(text){
+    const t = text.replace(/\s+$/, '');
+    const lines = t.split('\n');
+    const nonEmpty = lines.filter(l=> l.trim());
+    const hook = (nonEmpty[0] || '').trim();
+    const paragraphs = t.split(/\n\s*\n/).map(p=> p.trim()).filter(Boolean);
+    const longest = Math.max(0, ...paragraphs.map(p=> p.length));
+    const last = (nonEmpty[nonEmpty.length - 1] || '').trim();
+    const hashtags = (t.match(/(^|\s)#[\p{L}\p{N}_]+/gu) || []).length;
+    const links = /(https?:\/\/|www\.)\S+/i.test(t);
+    const placeholders = [...new Set(t.match(PLACEHOLDER_RE) || [])];
+    const items = [];
+    items.push(placeholders.length
+      ? {state: 'fail', label: `Fill in ${placeholders.length === 1 ? 'the placeholder' : placeholders.length + ' placeholders'}`, tip: placeholders.slice(0, 3).join(', ') + (placeholders.length > 3 ? '…' : '')}
+      : {state: 'pass', label: 'No placeholders left'});
+    items.push(!hook ? {state: 'fail', label: 'Start with a hook', tip: 'Your first line is what people see before "…more".'}
+      : hook.length <= 140 ? {state: 'pass', label: 'Hook fits before "…more" on phones', tip: `${hook.length} characters`}
+      : {state: 'warn', label: 'Hook is long for phones', tip: `${hook.length} characters: aim for under 140 so it isn't cut off.`});
+    items.push(longest <= 280 ? {state: 'pass', label: 'Short, easy-to-skim paragraphs'}
+      : {state: 'warn', label: 'Break up long paragraphs', tip: `Your longest paragraph is ${longest} characters. 1–3 lines each reads best on a phone.`});
+    items.push(CTA_RE.test(last) ? {state: 'pass', label: 'Ends with a question or call to action'}
+      : {state: 'warn', label: 'End with a question or call to action', tip: 'A question at the end gets people commenting.'});
+    items.push(hashtags <= 3 ? {state: 'pass', label: hashtags ? `${hashtags} hashtag${hashtags === 1 ? '' : 's'} (3 or fewer)` : 'No hashtag clutter'}
+      : {state: 'warn', label: `${hashtags} hashtags`, tip: 'Use 3 or fewer: more looks spammy and doesn\'t help reach.'});
+    items.push(!links ? {state: 'pass', label: 'No links in the post text'}
+      : {state: 'warn', label: 'Move the link to the first comment', tip: 'LinkedIn shows posts with links to fewer people.'});
+    const len = t.length;
+    items.push(len < 150 ? {state: 'info', label: `${len} characters`, tip: 'Very short. Fine for a quick thought; most strong posts are 600–2,000 characters.'}
+      : len <= 2200 ? {state: 'pass', label: `${len.toLocaleString()} characters: a good length`}
+      : {state: 'info', label: `${len.toLocaleString()} characters`, tip: 'Long posts can work well, but make every line earn its place.'});
+    return items;
+  }
+  function updatePostCheck(){
+    const text = postInput.value;
+    const wrap = document.getElementById('postCheck');
+    const score = document.getElementById('pcScore'), fill = document.getElementById('pcBarFill');
+    if(!text.trim()){
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = '';
+    const items = postCheckItems(text);
+    const scored = items.filter(i=> i.state !== 'info');
+    const passed = scored.filter(i=> i.state === 'pass').length;
+    const ratio = passed / scored.length;
+    score.textContent = `${passed}/${scored.length}`;
+    score.className = 'pc-score ' + (ratio >= .85 ? 'good' : ratio >= .5 ? 'ok' : 'low');
+    fill.style.width = Math.round(ratio * 100) + '%';
+    fill.style.background = ratio >= .85 ? 'var(--success)' : ratio >= .5 ? '#D69E2E' : 'var(--fail)';
+    const icon = {pass: '✓', warn: '!', fail: '✕', info: 'i'};
+    document.getElementById('pcList').innerHTML = items.map(i=> `<div class="pc-item ${i.state}"><span class="pc-ico" aria-hidden="true">${icon[i.state]}</span><div>${esc(i.label)}${i.tip ? `<small>${esc(i.tip)}</small>` : ''}</div></div>`).join('');
+  }
+  document.getElementById('pcHead').addEventListener('click', ()=>{
+    const wrap = document.getElementById('postCheck');
+    wrap.classList.toggle('open');
+    document.getElementById('pcHead').setAttribute('aria-expanded', wrap.classList.contains('open') ? 'true' : 'false');
+  });
+  function unfilledPlaceholders(){ return [...new Set((postInput.value.match(PLACEHOLDER_RE) || []))]; }
+
+  // ---------- Autosave ----------
+  // Saves a few seconds after you stop typing (text, first comment, headline,
+  // photos, versions). Saves run one after another, never at the same time.
+  const AUTOSAVE_DELAY = 2500;
+  let autosaveTimer = null;
+  let lastSavedSignature = '';
+  function editorSignature(){
+    syncActiveVersion();
+    return JSON.stringify([
+      postInput.value, fcInput.value.trim(), document.getElementById('authorHeadlineInput').value.trim(), activeVersionId,
+      versions.map(v=> [v.id, v.label, v.content, (v.media || []).map(m=> m.path || m.name)]),
+    ]);
+  }
+  function markSavedBaseline(){ clearTimeout(autosaveTimer); lastSavedSignature = editorSignature(); }
+  function scheduleAutosave(){
+    clearTimeout(autosaveTimer);
+    if(!currentWorkspaceId || !postInput.value.trim()) return;
+    autosaveTimer = setTimeout(()=>{
+      if(editorSignature() !== lastSavedSignature) savePost(undefined, null, {quiet: true});
+    }, AUTOSAVE_DELAY);
+  }
+  postInput.addEventListener('input', ()=>{ updatePostCheck(); renderFirstCommentPreview(); scheduleAutosave(); });
+  document.getElementById('authorHeadlineInput').addEventListener('input', scheduleAutosave);
+  window.addEventListener('beforeunload', e=>{
+    if(savingNow || (postInput.value.trim() && editorSignature() !== lastSavedSignature)){
+      e.preventDefault(); e.returnValue = '';
+    }
+  });
+
+  // ---------- AI edit tools (editor toolbar → generatePostIdeas, mode "edit") ----------
+  // Works on the selected text, or on the whole post when nothing is selected.
+  // Changes go in with the same undoable insert as the formatting buttons, so
+  // Ctrl+Z (or the Undo in the message) brings the old text back.
+  const aiPop = document.getElementById('aiPop');
+  const aiBtn = document.getElementById('aiEditBtn');
+  const AI_LANGS = [['Dutch','Nederlands'],['English','English'],['French','Français'],['German','Deutsch'],['Spanish','Español']];
+  let aiRange = [0, 0], aiBusy = false;
+  function aiTarget(){
+    const [s0, e0] = aiRange;
+    const whole = s0 === e0;
+    return whole ? {start: 0, end: postInput.value.length, whole: true} : {start: s0, end: e0, whole: false};
+  }
+  function renderAiMenu(){
+    const t = aiTarget();
+    const len = t.end - t.start;
+    aiPop.innerHTML = `
+      <div class="ai-pop-head">Works on <b>${t.whole ? 'your whole post' : `your selection (${len} characters)`}</b>${t.whole ? ' · select text to edit just a part' : ''}</div>
+      <button type="button" class="ai-item" data-ai="punchier" role="menuitem"><span class="ico">⚡</span><span>Make it punchier<small>Stronger words, less filler</small></span></button>
+      <button type="button" class="ai-item" data-ai="shorter" role="menuitem"><span class="ico">✂️</span><span>Make it shorter<small>Same message, fewer words</small></span></button>
+      <button type="button" class="ai-item" data-ai="grammar" role="menuitem"><span class="ico">✔️</span><span>Fix grammar &amp; spelling<small>Only corrects, keeps your style</small></span></button>
+      <button type="button" class="ai-item" data-ai="hook" role="menuitem"><span class="ico">🎣</span><span>Suggest a hook<small>3 opening lines for this post</small></span></button>
+      <button type="button" class="ai-item" data-ai="translate-open" role="menuitem"><span class="ico">🌍</span><span>Translate<small>Pick a language</small></span></button>
+      <div class="ai-langs" id="aiLangs" hidden>${AI_LANGS.map(([v, l])=> `<button type="button" class="ai-lang" data-lang="${v}">${l}</button>`).join('')}</div>`;
+  }
+  function openAiMenu(){
+    if(!postInput.value.trim()){ showToast('Write something first, then use AI edit.', true); postInput.focus(); return; }
+    aiRange = [postInput.selectionStart, postInput.selectionEnd];
+    if(typeof closeEmoji === 'function' && emojiPop.classList.contains('open')) closeEmoji(false);
+    renderAiMenu();
+    aiPop.classList.add('open'); aiBtn.setAttribute('aria-expanded', 'true');
+    setTimeout(()=>{ const f = aiPop.querySelector('.ai-item'); if(f) f.focus(); }, 20);
+  }
+  function closeAiMenu(returnFocus){
+    aiPop.classList.remove('open'); aiBtn.setAttribute('aria-expanded', 'false');
+    if(returnFocus){ postInput.focus(); postInput.setSelectionRange(aiRange[0], aiRange[1]); }
+  }
+  aiBtn.addEventListener('mousedown', e=> e.preventDefault());
+  aiBtn.addEventListener('click', ()=> aiPop.classList.contains('open') ? closeAiMenu(true) : openAiMenu());
+  document.addEventListener('mousedown', e=>{
+    if(aiPop.classList.contains('open') && !aiPop.contains(e.target) && e.target !== aiBtn && !aiBtn.contains(e.target) && !aiBusy) closeAiMenu(false);
+  });
+  aiPop.addEventListener('keydown', e=>{ if(e.key === 'Escape' && !aiBusy){ e.stopPropagation(); closeAiMenu(true); } });
+
+  function applyAiText(t, newText, before, label){
+    if(postInput.value !== before){ showToast('Your text changed while the AI was working. Try again.', true); return; }
+    postInput.focus();
+    postInput.setSelectionRange(t.start, t.end);
+    replaceSelection(newText);
+    showToast(`${label} Press Ctrl+Z to undo.`, false, {label: 'Undo', fn: ()=>{ postInput.focus(); document.execCommand('undo'); }});
+  }
+  function runAi(action, targetLanguage){
+    if(aiBusy) return;
+    if(!functionsApi){ showToast('Could not reach the server. Reload the page and try again.', true); return; }
+    const t = aiTarget();
+    const before = postInput.value;
+    const text = before.slice(t.start, t.end);
+    aiBusy = true;
+    const labels = {punchier: 'Making it punchier…', shorter: 'Making it shorter…', grammar: 'Checking grammar…', hook: 'Writing hooks…', translate: 'Translating…'};
+    aiPop.innerHTML = `<div class="ai-working"><span class="spin"></span>${labels[action] || 'Working…'}</div>`;
+    functionsApi.httpsCallable('generatePostIdeas')({mode: 'edit', action, text, fullPost: before, targetLanguage}).then(res=>{
+      const r = res.data || {};
+      if(action === 'hook'){
+        const hooks = (r.hooks || []).filter(Boolean);
+        if(!hooks.length){ showToast("The AI didn't suggest hooks this time. Try again.", true); closeAiMenu(true); return; }
+        aiPop.innerHTML = `<div class="ai-pop-head">Pick a hook: it <b>replaces your first line</b>.</div><div class="ai-hooks">${hooks.map((h, i)=> `<button type="button" class="ai-hook" data-hook="${i}">${esc(h)}<small>${h.length} characters${h.length <= 140 ? ' · fits before "…more" on phones' : ''}</small></button>`).join('')}</div>`;
+        aiPop.querySelectorAll('.ai-hook').forEach(b=> b.addEventListener('click', ()=>{
+          const val = postInput.value;
+          const lineStart = val.search(/\S/) < 0 ? 0 : val.search(/\S/);
+          let lineEnd = val.indexOf('\n', lineStart); if(lineEnd < 0) lineEnd = val.length;
+          closeAiMenu(false);
+          applyAiText({start: lineStart, end: lineEnd}, hooks[Number(b.dataset.hook)], val, 'New hook added.');
+        }));
+        const first = aiPop.querySelector('.ai-hook'); if(first) first.focus();
+        return;
+      }
+      const out = String(r.text || '');
+      closeAiMenu(false);
+      if(!out.trim()){ showToast("The AI didn't return any text this time. Try again.", true); return; }
+      const done = {punchier: 'Made it punchier.', shorter: 'Made it shorter.', grammar: 'Grammar and spelling fixed.', translate: `Translated to ${targetLanguage}.`};
+      applyAiText(t, out, before, done[action] || 'Done.');
+    }).catch(err=>{
+      console.error(err);
+      closeAiMenu(true);
+      const code = (err && err.code) || '';
+      showToast(code.includes('not-found') ? "AI edit isn't set up on the server yet." : ((err && err.message) || 'The AI edit failed. Try again.'), true);
+    }).finally(()=>{ aiBusy = false; });
+  }
+  aiPop.addEventListener('click', e=>{
+    const lang = e.target.closest('[data-lang]');
+    if(lang){ runAi('translate', lang.dataset.lang); return; }
+    const item = e.target.closest('[data-ai]');
+    if(!item) return;
+    if(item.dataset.ai === 'translate-open'){ const l = document.getElementById('aiLangs'); l.hidden = !l.hidden; if(!l.hidden) l.querySelector('.ai-lang').focus(); return; }
+    runAi(item.dataset.ai);
+  });
+
   // ---------- Saved headline ----------
   // Saved to the user's member doc so it follows them to any device, with a
   // local copy as a fallback (and for an instant fill-in before Firestore loads).
@@ -3186,6 +3537,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     publishState: firebase.firestore.FieldValue.delete(),
     publishError: firebase.firestore.FieldValue.delete(),
     publishAttempts: firebase.firestore.FieldValue.delete(),
+    reminderAt: firebase.firestore.FieldValue.delete(),
   });
   const AUTO_FIELDS_ON = when => ({
     autoPost: true,
@@ -3193,6 +3545,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     publishState: 'queued',
     publishError: firebase.firestore.FieldValue.delete(),
     publishAttempts: firebase.firestore.FieldValue.delete(),
+    reminderAt: firebase.firestore.FieldValue.delete(),
+  });
+  // Reminder posts: linkedinReminders.js emails the post at reminderAt.
+  const REMINDER_FIELDS = (when, on)=> ({
+    remindByEmail: !!on,
+    reminderAt: on ? firebase.firestore.Timestamp.fromDate(when) : firebase.firestore.FieldValue.delete(),
   });
   const fmtDay = d => d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
   const fmtTime = d => d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
@@ -3224,6 +3582,13 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         const a = document.createElement('a');
         a.href = draft.linkedinPostUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'View on LinkedIn ↗';
         actions.appendChild(a);
+      }
+      if(draft.firstCommentState === 'failed' && draft.firstComment){
+        chip.classList.remove('posted'); chip.classList.add('due');
+        textEl.textContent += ". The first comment couldn't be added automatically, so add it yourself.";
+        addLink('Copy first comment', ()=> navigator.clipboard.writeText(draft.firstComment).then(()=> showToast('First comment copied. Paste it under your post on LinkedIn.')));
+      } else if(draft.firstCommentState === 'added'){
+        textEl.textContent += ' · first comment added';
       }
     } else if(state === 'posted'){
       chip.classList.add('posted');
@@ -3270,6 +3635,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const existing = draft && draft.status !== 'posted' ? toDate(draft.scheduledAt) : null;
     // Auto-publish is on by default whenever it's available, unless this post was scheduled without it.
     document.getElementById('autoPublishToggle').checked = linkedinCanAutoPost() && !(draft && draft.scheduledAt && draft.autoPost === false);
+    document.getElementById('remindEmailToggle').checked = !(draft && draft.remindByEmail === false);
+    placeholderWarned = false;
     disarmPublishNow();
     let base;
     if(presetDay || pendingScheduleDate){
@@ -3315,6 +3682,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     updateAutoPublishUI();
   }
   function updateAutoPublishUI(){
+    document.getElementById('remindEmailRow').style.display = document.getElementById('autoPublishToggle').checked ? 'none' : '';
     const row = document.getElementById('autoPublishRow');
     const toggle = document.getElementById('autoPublishToggle');
     const hint = document.getElementById('autoPublishHint');
@@ -3361,18 +3729,30 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   document.addEventListener('keydown', e=>{
     if(e.key === 'Escape' && document.getElementById('scheduleOverlay').classList.contains('open')) closeScheduleModal();
   });
+  let placeholderWarned = false;
   document.getElementById('scheduleConfirmBtn').addEventListener('click', ()=>{
     const when = readScheduleInputs();
     const errEl = document.getElementById('scheduleError');
     if(!when){ errEl.textContent = 'Pick both a date and a time.'; return; }
     if(when.getTime() <= Date.now()){ errEl.textContent = 'That time has already passed. Pick a time in the future.'; return; }
+    const auto = document.getElementById('autoPublishToggle').checked && linkedinCanAutoPost();
+    const left = unfilledPlaceholders();
+    if(left.length && auto){
+      errEl.textContent = `Your post still has ${left.length === 1 ? 'a placeholder' : left.length + ' placeholders'} (${left.slice(0, 2).join(', ')}). Fill ${left.length === 1 ? 'it' : 'them'} in first, so it isn't published like that.`;
+      return;
+    }
+    if(left.length && !placeholderWarned){
+      placeholderWarned = true;
+      errEl.textContent = `Heads-up: your post still has ${left.length === 1 ? 'a placeholder' : left.length + ' placeholders'} (${left.slice(0, 2).join(', ')}). Click Schedule again to schedule it anyway.`;
+      return;
+    }
     const btn = document.getElementById('scheduleConfirmBtn');
     btn.disabled = true;
-    const auto = document.getElementById('autoPublishToggle').checked && linkedinCanAutoPost();
+    const remind = !auto && document.getElementById('remindEmailToggle').checked;
     savePost({
       scheduledAt: firebase.firestore.Timestamp.fromDate(when),
       status: 'scheduled',
-      ...(auto ? AUTO_FIELDS_ON(when) : AUTO_FIELDS_OFF()),
+      ...(auto ? AUTO_FIELDS_ON(when) : {...AUTO_FIELDS_OFF(), ...REMINDER_FIELDS(when, remind)}),
     }, auto ? `Scheduled to publish on LinkedIn ${fmtDay(when)} at ${fmtTime(when)}.` : `Scheduled for ${fmtDay(when)} at ${fmtTime(when)}.`).then(ok=>{
       if(ok){ closeScheduleModal(); calMonth = new Date(when.getFullYear(), when.getMonth(), 1); renderCalendar(); }
     }).finally(()=>{ btn.disabled = false; });
@@ -3415,6 +3795,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(!confirmed) return;
     if(!linkedinCanAutoPost()){ showToast('Connect (or reconnect) LinkedIn above the post text first.', true); return; }
     if(!functionsApi){ showToast('Could not reach the server. Reload the page and try again.', true); return; }
+    const left = unfilledPlaceholders();
+    if(left.length){ showToast(`Fill in ${left.length === 1 ? 'the placeholder' : 'the placeholders'} first (${left.slice(0, 2).join(', ')}), so it isn't published like that.`, true); return; }
     // Save first so LinkedIn gets exactly what's in the editor (and its photos/video are uploaded).
     savePost({}, 'Saved. Publishing to LinkedIn…').then(ok=>{
       if(!ok) return;
@@ -3453,7 +3835,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     collectionRef().doc(draftId).update({
       scheduledAt: firebase.firestore.Timestamp.fromDate(when),
       status: 'scheduled',
-      ...(keepAuto ? AUTO_FIELDS_ON(when) : AUTO_FIELDS_OFF()),
+      ...(keepAuto ? AUTO_FIELDS_ON(when) : {...AUTO_FIELDS_OFF(), ...REMINDER_FIELDS(when, draft.remindByEmail !== false)}),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }).then(()=>{
       showToast(`Moved to ${fmtDay(when)} at ${fmtTime(when)}.`);
@@ -3776,13 +4158,16 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     else loadMediaForDraft(draft);
     renderVersionsBar();
     updateClearBtn();
+    setFirstComment(draft.firstComment || '');
     previewExpanded = false;
     renderPreview();
+    updatePostCheck();
     renderDraftsStrip();
     renderScheduleChip();
     renderCalendar();
     updateHeadlineSaveBtn();
     scheduleAutosaveIndicatorReset();
+    markSavedBaseline();
   }
 
   function startNewPost(){
@@ -3790,12 +4175,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     document.getElementById('postTextInput').value = '';
     setMedia([], {dirty:false});
     resetVersions();
+    setFirstComment('');
     previewExpanded = false;
     renderPreview();
+    updatePostCheck();
     renderDraftsStrip();
     renderScheduleChip();
     renderCalendar();
     scheduleAutosaveIndicatorReset();
+    markSavedBaseline();
     document.getElementById('postTextInput').focus();
   }
 
@@ -3821,13 +4209,27 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   // Saves the post in the editor. `extra` adds fields (e.g. a schedule).
   // New photos/videos are uploaded to Storage first; the post then stores
   // their links. Resolves true on success so callers can chain UI updates.
-  function savePost(extra, successMessage, {toastAction, skipCleanup} = {}){
+  // Saves are queued, so autosave and a button click never overlap.
+  // quiet: used by autosave — no toast, no button flicker, no full reload.
+  let saveQueue = Promise.resolve();
+  let savingNow = false;
+  function savePost(extra, successMessage, opts = {}){
+    const run = ()=> doSavePost(extra, successMessage, opts);
+    const p = saveQueue.then(run, run);
+    saveQueue = p.catch(()=>{});
+    return p;
+  }
+  function doSavePost(extra, successMessage, {toastAction, skipCleanup, quiet} = {}){
     const text = document.getElementById('postTextInput').value;
-    if(!text.trim()){ showToast('Write something first.', true); return Promise.resolve(false); }
+    if(!text.trim()){ if(!quiet) showToast('Write something first.', true); return Promise.resolve(false); }
+    if(quiet && editorSignature() === lastSavedSignature && !extra) return Promise.resolve(true);
     const btn = document.getElementById('saveBtn');
     const scheduleBtn = document.getElementById('scheduleBtn');
-    btn.disabled = true; scheduleBtn.disabled = true;
-    syncActiveVersion();
+    const statusEl = document.getElementById('saveStatus');
+    if(!quiet){ btn.disabled = true; scheduleBtn.disabled = true; }
+    statusEl.textContent = 'Saving…'; statusEl.className = 'save-status';
+    savingNow = true;
+    const signatureAtStart = editorSignature();
     const savingVersions = versions.slice();
     const openId = activeVersionId;
     const items = currentMedia; // same array objects get their url/path filled in as they upload
@@ -3839,20 +4241,24 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       authorName: document.getElementById('authorNameInput').value.trim(),
       authorHeadline: document.getElementById('authorHeadlineInput').value.trim(),
       content: text,
+      firstComment: fcInput.value.trim(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       ...(extra || {})
     };
     const previous = activeDraftId ? (allDrafts.find(d=> d.id === activeDraftId) || {}) : {};
+    const wasNew = !activeDraftId;
     const ensureDoc = activeDraftId
       ? Promise.resolve(activeDraftId)
       : collectionRef().add({status: 'draft', ...withoutDeletes(payload), media: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()})
           .then(ref=>{ activeDraftId = ref.id; return ref.id; });
 
     const meta = list=> (list || []).filter(m=> m.url).map(m=> ({type: m.type, name: m.name || '', url: m.url, path: m.path}));
+    let savedFields = null;
     return ensureDoc.then(postId=>
       uploadPendingMedia(postId, allItems).then(()=>{
         const media = meta(items);
         const versionsMeta = savingVersions.map(v=> ({id: v.id, label: v.label, content: v.content || '', media: meta(v.media)}));
+        savedFields = {postId, media, versionsMeta};
         return collectionRef().doc(postId).update({...payload, media, versions: versionsMeta, activeVersionId: openId}).then(()=>{
           if(skipCleanup) return;
           // Files that were on the saved post (in any version) but got removed.
@@ -3863,26 +4269,40 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         });
       })
     ).then(()=>{
+      savingNow = false;
+      lastSavedSignature = signatureAtStart;
       if(currentMedia === items) renderMedia(); // swap "Not saved" thumbnails for uploaded ones
       renderVersionsBar();
-      const statusEl = document.getElementById('saveStatus');
       statusEl.textContent = 'Saved ✓';
       statusEl.className = 'save-status saved';
+      if(quiet){
+        // Update the local copy instead of re-reading every post from Firestore.
+        const now = firebase.firestore.Timestamp.now();
+        const clean = Object.fromEntries(Object.entries(payload).filter(([k])=> k !== 'updatedAt'));
+        const local = {...previous, ...clean, id: savedFields.postId, media: savedFields.media, versions: savedFields.versionsMeta, activeVersionId: openId, updatedAt: now};
+        if(wasNew){ local.status = 'draft'; local.createdAt = now; allDrafts.unshift(local); }
+        else allDrafts = allDrafts.map(d=> d.id === local.id ? local : d);
+        renderDraftsStrip(); renderScheduleChip(); renderCalendar();
+        // Something changed while this save was running? Save again shortly.
+        if(editorSignature() !== lastSavedSignature) scheduleAutosave();
+        return true;
+      }
       showToast(successMessage || 'Post saved.', false, toastAction);
       return loadDrafts().then(()=>true);
     }).catch(err=>{
+      savingNow = false;
       console.error(err);
-      const statusEl = document.getElementById('saveStatus');
-      statusEl.textContent = '';
+      statusEl.textContent = quiet ? "Couldn't save" : '';
+      statusEl.className = 'save-status';
       const code = err && err.code || '';
       const msg = code.startsWith('storage/unauthorized') ? 'Media upload was blocked by your Storage rules.'
         : code === 'storage/quota-exceeded' ? 'Your Firebase Storage quota is full.'
         : (err.message || '');
-      showToast('Could not save: ' + msg, true);
+      showToast((quiet ? 'Autosave failed: ' : 'Could not save: ') + msg, true);
       if(activeDraftId) loadDrafts(); // the post itself may exist now, even if an upload failed
       return false;
     }).finally(()=>{
-      btn.disabled = false; scheduleBtn.disabled = false;
+      if(!quiet){ btn.disabled = false; scheduleBtn.disabled = false; }
     });
   }
   document.getElementById('saveBtn').addEventListener('click', ()=> savePost());
@@ -3922,7 +4342,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         return;
       }
       currentWorkspaceId = workspaceId;
-      loadDrafts();
+      loadDrafts().then(()=>{
+        // Opened from a reminder email (?post=<id>): open that post in the editor.
+        const wanted = new URLSearchParams(location.search).get('post');
+        const draft = wanted && allDrafts.find(d=> d.id === wanted);
+        if(draft){
+          loadDraftIntoEditor(draft);
+          postInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+        }
+      });
       document.getElementById('pageLoader').style.display = 'none';
       const appRoot = document.getElementById('appRoot');
       appRoot.style.display = 'flex';
