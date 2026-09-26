@@ -512,6 +512,75 @@
   .cmp-actions{display:flex;gap:8px;}
   .cmp-actions .lk-btn{flex:1;}
 
+  /* ---------- Post ideas (AI) ---------- */
+  .ideas-btn{
+    display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:6px 13px;cursor:pointer;
+    font:700 12px 'Inter',sans-serif;color:#fff;background:linear-gradient(135deg,#0A66C2,#7B3FE4);
+    box-shadow:0 4px 12px rgba(10,102,194,.25);transition:transform .15s,box-shadow .15s;margin-left:auto;margin-right:6px;
+  }
+  .ideas-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(10,102,194,.32);}
+  .ideas-btn:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
+  .ideas-dialog{max-width:1180px !important;display:flex;flex-direction:column;max-height:88vh;}
+  .ideas-overlay{padding-top:4vh !important;}
+  .ideas-tabs{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--lk-line);}
+  .ideas-tab{border:0;background:none;padding:12px 14px;font:600 14px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--lk-muted);cursor:pointer;border-bottom:2px solid transparent;}
+  .ideas-tab:hover{color:var(--lk-text);}
+  .ideas-tab.active{color:#0A66C2;border-bottom-color:#0A66C2;}
+  .ideas-tab:focus-visible{outline:2px solid #0A66C2;outline-offset:-2px;}
+  .ideas-main{display:grid;grid-template-columns:270px 1fr;min-height:0;flex:1;}
+  @media (max-width: 860px){ .ideas-main{grid-template-columns:1fr;} }
+  .ideas-settings{padding:18px 20px;border-right:1px solid var(--lk-line);overflow:auto;background:#FCFCFB;}
+  @media (max-width: 860px){ .ideas-settings{border-right:0;border-bottom:1px solid var(--lk-line);} }
+  .ideas-field{margin-bottom:12px;}
+  .ideas-field label{display:block;font-size:12.5px;font-weight:600;color:var(--lk-muted);margin-bottom:4px;}
+  .ideas-field input,.ideas-field select{width:100%;height:36px;border:1px solid rgba(0,0,0,.25);border-radius:6px;padding:0 10px;
+    font:14px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:var(--lk-text);}
+  .ideas-field input:focus,.ideas-field select:focus{outline:none;border-color:#0A66C2;box-shadow:0 0 0 1px #0A66C2;}
+  .ideas-go{width:100%;margin-top:6px;}
+  .ideas-note{font-size:11.5px;color:var(--lk-muted);line-height:1.45;margin-top:10px;}
+  .ideas-results{padding:18px 20px 24px;overflow:auto;background:#F4F2EE;}
+  .ideas-empty{text-align:center;color:var(--lk-muted);font-size:14px;padding:50px 20px;line-height:1.6;}
+  .ideas-empty b{display:block;font-size:17px;color:var(--lk-text);margin-bottom:4px;}
+  .ideas-error{background:#FDECEA;color:#9B2C1F;border-radius:8px;padding:12px 14px;font-size:13.5px;margin-bottom:14px;}
+  .ideas-loading-msg{font-size:13.5px;color:var(--lk-muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .ideas-spinner{width:14px;height:14px;border:2px solid rgba(10,102,194,.25);border-top-color:#0A66C2;border-radius:50%;animation:statsSpinI .8s linear infinite;}
+  @keyframes statsSpinI{to{transform:rotate(360deg);}}
+  .ideas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-items:start;}
+  .idea-card{background:#fff;border:1px solid var(--lk-line);border-radius:10px;padding:14px 16px;animation:ideaIn .3s ease both;}
+  @keyframes ideaIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .idea-card.skeleton{min-height:230px;background:linear-gradient(90deg,#fff 0%,#F3F4F6 50%,#fff 100%);background-size:200% 100%;animation:ideaShimmer 1.2s linear infinite;}
+  @keyframes ideaShimmer{from{background-position:200% 0;}to{background-position:-200% 0;}}
+  @media (prefers-reduced-motion: reduce){ .idea-card,.idea-card.skeleton,.ideas-spinner{animation:none;} }
+  .idea-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .idea-format{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#0A66C2;background:#EAF3FC;border-radius:999px;padding:3px 8px;}
+  .idea-day{font-size:12px;font-weight:700;color:var(--lk-text);}
+  .idea-icon-btn{margin-left:auto;border:0;background:none;width:28px;height:28px;border-radius:50%;cursor:pointer;color:var(--lk-muted);font-size:15px;display:inline-flex;align-items:center;justify-content:center;}
+  .idea-icon-btn + .idea-icon-btn{margin-left:0;}
+  .idea-icon-btn:hover{background:rgba(0,0,0,.06);color:var(--lk-text);}
+  .idea-icon-btn.saved{color:#C97C00;}
+  .idea-icon-btn:focus-visible{outline:2px solid #0A66C2;}
+  .idea-card h3{font-size:15.5px;font-weight:600;margin:0 0 4px;line-height:1.35;}
+  .idea-why{font-size:12.5px;color:var(--lk-muted);margin:0 0 10px;line-height:1.45;}
+  .idea-label{font-size:11.5px;font-weight:700;color:var(--lk-muted);text-transform:uppercase;letter-spacing:.04em;margin:8px 0 5px;}
+  .idea-hook{display:block;width:100%;text-align:left;border:1px solid var(--lk-line);background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;
+    font:13.5px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--lk-text);transition:border-color .12s,background .12s;}
+  .idea-hook:hover{border-color:rgba(10,102,194,.5);}
+  .idea-hook.picked{border-color:#0A66C2;background:#F3F8FD;box-shadow:inset 3px 0 0 #0A66C2;}
+  .idea-hook small{display:block;font-size:11px;margin-top:3px;color:#1F6F5C;font-weight:600;}
+  .idea-hook small.long{color:#8A5600;}
+  .idea-card details{margin-top:4px;font-size:13px;color:rgba(0,0,0,.8);}
+  .idea-card summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--lk-muted);padding:4px 0;}
+  .idea-card ul{margin:4px 0 6px 18px;padding:0;line-height:1.5;}
+  .idea-cta{font-size:12.5px;color:var(--lk-muted);}
+  .idea-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+  .idea-actions select{height:32px;border:1px solid rgba(0,0,0,.25);border-radius:16px;padding:0 10px;font:600 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;}
+  .idea-draft{margin-top:12px;border-top:1px solid var(--lk-line);padding-top:12px;}
+  .idea-draft-text{white-space:pre-wrap;font:13.5px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FAFAF9;border:1px solid var(--lk-line);border-radius:8px;padding:10px 12px;max-height:280px;overflow:auto;}
+  .idea-draft-text.collapsed{max-height:170px;}
+  .idea-draft-meta{font-size:11.5px;color:var(--lk-muted);margin:6px 0 8px;}
+  .ideas-week-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;background:#fff;border:1px solid var(--lk-line);border-radius:10px;padding:12px 14px;font-size:13.5px;}
+  .ideas-week-bar .spacer{flex:1;}
+
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
   .headline-row .composer-input{flex:1;min-width:0;}
@@ -738,6 +807,7 @@
       <div class="composer-field" style="margin-bottom:0;">
         <div class="composer-label-row">
           <label class="composer-label" for="postTextInput">Post text</label>
+          <button type="button" class="ideas-btn" id="ideasBtn" title="Get post ideas and ready-to-edit drafts">✨ Post ideas</button>
           <button type="button" class="clear-btn" id="clearPostBtn" disabled>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
             Clear
@@ -1047,6 +1117,67 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 </div>
 </div>
 
+<div class="lk-overlay lk ideas-overlay" id="ideasOverlay" aria-hidden="true">
+  <div class="lk-dialog ideas-dialog" role="dialog" aria-modal="true" aria-labelledby="ideasTitle">
+    <div class="lk-dialog-head">
+      <div>
+        <h2 id="ideasTitle">✨ Post ideas</h2>
+        <p class="cal-sub" style="margin:2px 0 0;">Ideas and ready-to-edit drafts that fit your headline and the way you write.</p>
+      </div>
+      <button type="button" class="lk-icon-btn" id="ideasCloseBtn" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="ideas-tabs" role="tablist">
+      <button type="button" class="ideas-tab active" data-tab="ideas" role="tab" aria-selected="true">Ideas</button>
+      <button type="button" class="ideas-tab" data-tab="week" role="tab" aria-selected="false">Plan my week</button>
+      <button type="button" class="ideas-tab" data-tab="saved" role="tab" aria-selected="false">Saved <span id="ideasSavedCount"></span></button>
+    </div>
+    <div class="ideas-main">
+      <div class="ideas-settings" id="ideasSettings">
+        <div class="ideas-field"><label for="ideaTopic">Topic (optional)</label><input id="ideaTopic" placeholder="e.g. cold outreach, hiring, pricing"></div>
+        <div class="ideas-field"><label for="ideaGoal">Goal</label>
+          <select id="ideaGoal">
+            <option value="audience">Grow my audience</option>
+            <option value="leads">Get leads &amp; clients</option>
+            <option value="authority">Build authority</option>
+            <option value="engagement">Get more comments</option>
+            <option value="hiring">Hire people</option>
+            <option value="announce">Announce something</option>
+          </select></div>
+        <div class="ideas-field"><label for="ideaFormat">Post format</label>
+          <select id="ideaFormat">
+            <option value="mix">Mix it up</option>
+            <option value="story">Personal stories</option>
+            <option value="tips">Tips &amp; lists</option>
+            <option value="contrarian">Contrarian takes</option>
+            <option value="casestudy">Case studies</option>
+            <option value="behind">Behind the scenes</option>
+            <option value="howto">How-tos</option>
+            <option value="question">Questions &amp; polls</option>
+          </select></div>
+        <div class="ideas-field"><label for="ideaTone">Tone</label>
+          <select id="ideaTone">
+            <option value="conversational">Conversational</option>
+            <option value="bold">Bold &amp; direct</option>
+            <option value="professional">Professional</option>
+            <option value="funny">Light &amp; witty</option>
+          </select></div>
+        <div class="ideas-field"><label for="ideaAudience">Who reads your posts? (optional)</label><input id="ideaAudience" placeholder="e.g. owners of B2B service businesses"></div>
+        <div class="ideas-field"><label for="ideaLanguage">Language</label>
+          <select id="ideaLanguage">
+            <option value="auto">Same as my posts</option>
+            <option value="English">English</option>
+            <option value="Dutch">Nederlands</option>
+            <option value="French">Français</option>
+            <option value="German">Deutsch</option>
+            <option value="Spanish">Español</option>
+          </select></div>
+        <button type="button" class="lk-btn primary ideas-go" id="ideasGoBtn">Generate 6 ideas</button>
+        <p class="ideas-note">Ideas use your headline and your recent posts in PalaTrack, so they match your voice and skip topics you've covered. Check every draft before posting: fill in the [placeholders] with your real details.</p>
+      </div>
+      <div class="ideas-results" id="ideasResults" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
 <div class="lk-overlay lk" id="compareOverlay" aria-hidden="true">
   <div class="lk-dialog cmp-dialog" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
     <div class="lk-dialog-head">
@@ -2429,6 +2560,353 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const qs = params.toString();
     history.replaceState({}, document.title, window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
   })();
+
+  // ---------- Post ideas (AI, via the generatePostIdeas Cloud Function) ----------
+  const IDEAS_PREFS_KEY = 'ptPostIdeasPrefs';
+  const IDEA_FORMAT_LABELS = {story:'Story', tips:'Tips', contrarian:'Contrarian', casestudy:'Case study', behind:'Behind the scenes', howto:'How-to', question:'Question'};
+  const IDEA_LOADING_MSGS = ['Reading your recent posts…', 'Finding angles that fit your audience…', 'Writing hooks that stop the scroll…', 'Checking they fit before "…more" on phones…'];
+  const ideas = {tab: 'ideas', list: [], week: [], saved: [], savedLoaded: false, loading: false, error: '', avoid: [], loadingTimer: null, weekAdded: new Set()};
+  const ideaFieldIds = ['ideaTopic', 'ideaGoal', 'ideaFormat', 'ideaTone', 'ideaAudience', 'ideaLanguage'];
+
+  function ideaPrefs(){
+    const p = {};
+    ideaFieldIds.forEach(id=>{ p[id] = document.getElementById(id).value; });
+    return p;
+  }
+  function restoreIdeaPrefs(){
+    try{
+      const p = JSON.parse(localStorage.getItem(IDEAS_PREFS_KEY) || '{}');
+      ideaFieldIds.forEach(id=>{ if(p[id] != null) document.getElementById(id).value = p[id]; });
+    }catch(e){}
+  }
+  ideaFieldIds.forEach(id=> document.getElementById(id).addEventListener('change', ()=>{
+    try{ localStorage.setItem(IDEAS_PREFS_KEY, JSON.stringify(ideaPrefs())); }catch(e){}
+  }));
+  function ideaRequest(extra){
+    const p = ideaPrefs();
+    return Object.assign({
+      topic: p.ideaTopic, goal: p.ideaGoal, format: p.ideaFormat, tone: p.ideaTone,
+      audience: p.ideaAudience, language: p.ideaLanguage, avoid: ideas.avoid,
+    }, extra);
+  }
+  function callIdeas(extra){
+    if(!functionsApi) return Promise.reject(new Error('Could not reach the server. Reload the page and try again.'));
+    return functionsApi.httpsCallable('generatePostIdeas')(ideaRequest(extra)).then(r=> r.data || {});
+  }
+  function ideaErrorMessage(err){
+    const code = (err && err.code) || '';
+    if(code.includes('not-found')) return "Post ideas aren't set up on the server yet. (Admin: deploy the generatePostIdeas function.)";
+    return (err && err.message) || 'Something went wrong. Please try again.';
+  }
+
+  function openIdeas(){
+    restoreIdeaPrefs();
+    const overlay = document.getElementById('ideasOverlay');
+    overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
+    renderIdeas();
+    loadSavedIdeas();
+    setTimeout(()=> document.getElementById('ideasGoBtn').focus(), 30);
+  }
+  function closeIdeas(){
+    const overlay = document.getElementById('ideasOverlay');
+    overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true');
+  }
+  document.getElementById('ideasBtn').addEventListener('click', openIdeas);
+  document.getElementById('ideasCloseBtn').addEventListener('click', closeIdeas);
+  document.getElementById('ideasOverlay').addEventListener('click', e=>{ if(e.target.id === 'ideasOverlay') closeIdeas(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && document.getElementById('ideasOverlay').classList.contains('open')) closeIdeas(); });
+  document.querySelectorAll('.ideas-tab').forEach(t=> t.addEventListener('click', ()=>{
+    ideas.tab = t.dataset.tab;
+    document.querySelectorAll('.ideas-tab').forEach(x=>{ x.classList.toggle('active', x === t); x.setAttribute('aria-selected', x === t ? 'true' : 'false'); });
+    ideas.error = '';
+    renderIdeas();
+  }));
+
+  function setIdeasLoading(on){
+    ideas.loading = on;
+    clearInterval(ideas.loadingTimer);
+    if(on){
+      let i = 0;
+      ideas.loadingTimer = setInterval(()=>{
+        i = (i + 1) % IDEA_LOADING_MSGS.length;
+        const el = document.getElementById('ideasLoadingMsg');
+        if(el) el.lastChild.textContent = IDEA_LOADING_MSGS[i];
+      }, 2200);
+    }
+    const btn = document.getElementById('ideasGoBtn');
+    btn.disabled = on;
+  }
+
+  document.getElementById('ideasGoBtn').addEventListener('click', ()=>{
+    ideas.error = '';
+    if(ideas.tab === 'week'){
+      setIdeasLoading(true); renderIdeas();
+      callIdeas({mode: 'week'}).then(r=>{
+        ideas.week = r.week || []; ideas.weekAdded = new Set();
+        if(!ideas.week.length) ideas.error = "The AI didn't come up with a plan this time. Try again.";
+      }).catch(err=>{ ideas.error = ideaErrorMessage(err); })
+        .finally(()=>{ setIdeasLoading(false); renderIdeas(); });
+      return;
+    }
+    if(ideas.tab === 'saved'){ ideas.tab = 'ideas'; document.querySelector('.ideas-tab[data-tab="ideas"]').click(); }
+    setIdeasLoading(true); renderIdeas();
+    callIdeas({mode: 'ideas'}).then(r=>{
+      ideas.list = (r.ideas || []).map(normalizeIdea);
+      ideas.avoid = ideas.avoid.concat(ideas.list.map(x=> x.title)).slice(-30); // next batch = new ideas
+      if(!ideas.list.length) ideas.error = "The AI didn't come up with ideas this time. Try again.";
+    }).catch(err=>{ ideas.error = ideaErrorMessage(err); })
+      .finally(()=>{ setIdeasLoading(false); renderIdeas(); });
+  });
+
+  let ideaSeq = 0;
+  function normalizeIdea(x){
+    return {
+      key: 'i' + (++ideaSeq),
+      title: String(x.title || 'Untitled idea'), format: String(x.format || ''), angle: String(x.angle || ''),
+      hooks: (Array.isArray(x.hooks) ? x.hooks : []).map(String).filter(Boolean).slice(0, 3),
+      outline: (Array.isArray(x.outline) ? x.outline : []).map(String).slice(0, 6),
+      cta: String(x.cta || ''), why: String(x.why || ''),
+      picked: 0, length: 'medium', draft: '', writing: false, savedId: x.savedId || null,
+    };
+  }
+
+  // ---------- Saved ideas (Firestore: linkedinIdeas, private to the user) ----------
+  function loadSavedIdeas(){
+    if(!currentUid || ideas.savedLoaded) return;
+    db.collection('linkedinIdeas').where('createdBy', '==', currentUid).get().then(snap=>{
+      const ms = ts=> ts && ts.toMillis ? ts.toMillis() : 0;
+      ideas.saved = snap.docs.map(d=> ({id: d.id, ...d.data()})).sort((a, b)=> ms(b.createdAt) - ms(a.createdAt))
+        .map(d=> normalizeIdea({...d.idea, savedId: d.id}));
+      ideas.savedLoaded = true;
+      renderIdeas();
+    }).catch(err=> console.error('Could not load saved ideas', err));
+  }
+  function toggleSaveIdea(idea){
+    if(idea.savedId){
+      const id = idea.savedId;
+      db.collection('linkedinIdeas').doc(id).delete().then(()=>{
+        ideas.saved = ideas.saved.filter(x=> x.savedId !== id);
+        [...ideas.list, ...ideas.saved].forEach(x=>{ if(x.savedId === id) x.savedId = null; });
+        idea.savedId = null;
+        renderIdeas();
+      }).catch(err=> showToast('Could not remove that idea: ' + (err.message || ''), true));
+      return;
+    }
+    const data = {title: idea.title, format: idea.format, angle: idea.angle, hooks: idea.hooks, outline: idea.outline, cta: idea.cta, why: idea.why};
+    db.collection('linkedinIdeas').add({
+      createdBy: currentUid, workspaceId: currentWorkspaceId, idea: data,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(ref=>{
+      idea.savedId = ref.id;
+      ideas.saved.unshift(normalizeIdea({...data, savedId: ref.id}));
+      showToast('Idea saved. Find it under "Saved".');
+      renderIdeas();
+    }).catch(err=> showToast('Could not save that idea: ' + (err.message || ''), true));
+  }
+
+  // ---------- Using a draft ----------
+  function useDraftAsNewPost(text){
+    syncActiveVersion();
+    const snapshot = {text: postInput.value, media: currentMedia.slice(), draftId: activeDraftId, versions: versions.slice(), activeVersionId};
+    startNewPost();
+    postInput.value = text;
+    versions[0].content = text;
+    previewExpanded = false; renderPreview(); updateClearBtn(); renderVersionsBar();
+    closeIdeas();
+    postInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+    showToast('The draft is in the editor. Fill in any [placeholders], then save or schedule it.', false, {label: 'Undo', fn: ()=>{
+      activeDraftId = snapshot.draftId;
+      versions = snapshot.versions; activeVersionId = snapshot.activeVersionId;
+      postInput.value = snapshot.text;
+      setMedia(snapshot.media, {dirty: false});
+      renderVersionsBar(); previewExpanded = false; renderPreview(); updateClearBtn(); renderDraftsStrip();
+    }});
+  }
+  function useDraftAsVersion(text, title){
+    if(versions.length >= MAX_VERSIONS){ showToast(`This post already has ${MAX_VERSIONS} versions. Remove one first.`, true); return; }
+    syncActiveVersion();
+    const v = {id: newVersionId(), label: ('Idea: ' + title).slice(0, 40), content: text, media: []};
+    versions.push(v);
+    activeVersionId = v.id;
+    showVersion(v);
+    renderVersionsBar();
+    markUnsaved();
+    closeIdeas();
+    postInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+    showToast(`Added as "${v.label}". Use Compare & choose to pick the best version.`);
+  }
+  function writeIdea(idea){
+    idea.writing = true; idea.draft = ''; renderIdeas();
+    callIdeas({mode: 'write', idea, hook: idea.hooks[idea.picked] || idea.hooks[0] || '', length: idea.length}).then(r=>{
+      idea.draft = r.post || '';
+      if(!idea.draft) showToast("The AI didn't write a draft this time. Try again.", true);
+    }).catch(err=> showToast(ideaErrorMessage(err), true))
+      .finally(()=>{ idea.writing = false; renderIdeas(); });
+  }
+  function moreLikeThis(idea){
+    setIdeasLoading(true); ideas.error = ''; renderIdeas();
+    callIdeas({mode: 'variations', idea}).then(r=>{
+      const more = (r.ideas || []).map(normalizeIdea);
+      const at = ideas.list.indexOf(idea);
+      ideas.list.splice(at >= 0 ? at + 1 : 0, 0, ...more);
+      ideas.avoid = ideas.avoid.concat(more.map(x=> x.title)).slice(-30);
+      if(ideas.tab !== 'ideas') document.querySelector('.ideas-tab[data-tab="ideas"]').click();
+    }).catch(err=>{ ideas.error = ideaErrorMessage(err); })
+      .finally(()=>{ setIdeasLoading(false); renderIdeas(); });
+  }
+
+  // ---------- Plan my week → calendar ----------
+  const WEEKDAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  // Monday–Friday of next week, at 9:00.
+  function nextWeekDate(dayName){
+    const d = new Date(); d.setHours(9, 0, 0, 0);
+    const toNextMonday = ((8 - d.getDay()) % 7) || 7;
+    d.setDate(d.getDate() + toNextMonday + Math.max(0, WEEKDAYS.indexOf(dayName)));
+    return d;
+  }
+  function addWeekPostToCalendar(item, idx){
+    const when = nextWeekDate(item.day);
+    const vid = newVersionId();
+    return collectionRef().add({
+      workspaceId: currentWorkspaceId, createdBy: currentUid,
+      authorName: document.getElementById('authorNameInput').value.trim(),
+      authorHeadline: document.getElementById('authorHeadlineInput').value.trim(),
+      content: item.post, status: 'scheduled',
+      scheduledAt: firebase.firestore.Timestamp.fromDate(when), autoPost: false,
+      media: [], versions: [{id: vid, label: 'Version A', content: item.post, media: []}], activeVersionId: vid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(()=>{ ideas.weekAdded.add(idx); return when; });
+  }
+  function addWeekToCalendar(indexes){
+    const todo = indexes.filter(i=> !ideas.weekAdded.has(i));
+    if(!todo.length) return;
+    Promise.all(todo.map(i=> addWeekPostToCalendar(ideas.week[i], i))).then(dates=>{
+      loadDrafts();
+      const first = dates.sort((a, b)=> a - b)[0];
+      calMonth = new Date(first.getFullYear(), first.getMonth(), 1);
+      showToast(todo.length > 1 ? `${todo.length} posts added to your calendar as reminders at 9:00. Open one to edit it or turn on auto-publish.` : `Added to your calendar for ${fmtDay(first)} at 9:00.`);
+      renderIdeas();
+    }).catch(err=> showToast('Could not add to the calendar: ' + (err.message || ''), true));
+  }
+
+  // ---------- Rendering ----------
+  function hookBadge(h){
+    const n = h.length;
+    return n <= 140 ? `<small>${n} characters · fits before "…more" on phones</small>` : `<small class="long">${n} characters · gets cut off on phones</small>`;
+  }
+  function ideaCardHtml(x){
+    const fmt = IDEA_FORMAT_LABELS[x.format] || x.format;
+    return `<div class="idea-card" data-key="${x.key}">
+      <div class="idea-top">
+        ${fmt ? `<span class="idea-format">${esc(fmt)}</span>` : ''}
+        <button type="button" class="idea-icon-btn ${x.savedId ? 'saved' : ''}" data-act="save" title="${x.savedId ? 'Remove from saved' : 'Save for later'}" aria-label="${x.savedId ? 'Remove from saved' : 'Save for later'}">${x.savedId ? '★' : '☆'}</button>
+        ${ideas.tab === 'ideas' ? `<button type="button" class="idea-icon-btn" data-act="dismiss" title="Not for me" aria-label="Not for me">✕</button>` : ''}
+      </div>
+      <h3>${esc(x.title)}</h3>
+      ${x.why ? `<p class="idea-why">${esc(x.why)}</p>` : ''}
+      ${x.hooks.length ? `<div class="idea-label">Pick a hook</div>${x.hooks.map((h, i)=> `<button type="button" class="idea-hook ${i === x.picked ? 'picked' : ''}" data-act="hook" data-i="${i}" aria-pressed="${i === x.picked}">${esc(h)}${hookBadge(h)}</button>`).join('')}` : ''}
+      <details><summary>Outline &amp; call to action</summary>
+        ${x.angle ? `<div style="margin:4px 0;">${esc(x.angle)}</div>` : ''}
+        ${x.outline.length ? `<ul>${x.outline.map(p=> `<li>${esc(p)}</li>`).join('')}</ul>` : ''}
+        ${x.cta ? `<div class="idea-cta"><b>Ends with:</b> ${esc(x.cta)}</div>` : ''}
+      </details>
+      <div class="idea-actions">
+        <select data-act="length" aria-label="Post length">
+          <option value="short" ${x.length === 'short' ? 'selected' : ''}>Short</option>
+          <option value="medium" ${x.length === 'medium' ? 'selected' : ''}>Medium</option>
+          <option value="long" ${x.length === 'long' ? 'selected' : ''}>Long</option>
+        </select>
+        <button type="button" class="lk-btn primary" data-act="write" ${x.writing ? 'disabled' : ''}>${x.writing ? 'Writing…' : x.draft ? 'Rewrite' : 'Write the post'}</button>
+        <button type="button" class="lk-btn" data-act="more" ${ideas.loading ? 'disabled' : ''}>More like this</button>
+      </div>
+      ${x.draft ? `<div class="idea-draft">
+        <div class="idea-draft-text">${esc(x.draft)}</div>
+        <div class="idea-draft-meta">${x.draft.length.toLocaleString()} characters</div>
+        <div class="idea-actions">
+          <button type="button" class="lk-btn primary" data-act="usenew">Use as new post</button>
+          <button type="button" class="lk-btn" data-act="useversion">Add as version</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+  }
+  function weekCardHtml(item, i){
+    const when = nextWeekDate(item.day);
+    const added = ideas.weekAdded.has(i);
+    const fmt = IDEA_FORMAT_LABELS[item.format] || item.format || '';
+    return `<div class="idea-card" data-week="${i}">
+      <div class="idea-top"><span class="idea-day">${esc(item.day)} · ${esc(fmtDay(when))}</span>${fmt ? `<span class="idea-format">${esc(fmt)}</span>` : ''}</div>
+      <h3>${esc(item.title || '')}</h3>
+      <div class="idea-draft-text collapsed">${esc(item.post || '')}</div>
+      <div class="idea-draft-meta">${String(item.post || '').length.toLocaleString()} characters</div>
+      <div class="idea-actions">
+        <button type="button" class="lk-btn primary" data-act="weekadd" ${added ? 'disabled' : ''}>${added ? '✓ On your calendar' : 'Add to calendar'}</button>
+        <button type="button" class="lk-btn" data-act="weekopen">Open in editor</button>
+      </div>
+    </div>`;
+  }
+  function renderIdeas(){
+    const box = document.getElementById('ideasResults');
+    if(!box) return;
+    document.getElementById('ideasSavedCount').textContent = ideas.saved.length ? `(${ideas.saved.length})` : '';
+    document.getElementById('ideasSettings').style.display = ideas.tab === 'saved' ? 'none' : '';
+    document.querySelector('.ideas-main').style.gridTemplateColumns = ideas.tab === 'saved' ? '1fr' : '';
+    const go = document.getElementById('ideasGoBtn');
+    go.textContent = ideas.tab === 'week' ? (ideas.week.length ? 'Plan a new week' : 'Plan my week') : (ideas.list.length ? 'Generate new ideas' : 'Generate 6 ideas');
+    let html = ideas.error ? `<div class="ideas-error" role="alert">${esc(ideas.error)}</div>` : '';
+    if(ideas.loading){
+      html += `<div class="ideas-loading-msg" id="ideasLoadingMsg"><span class="ideas-spinner"></span><span>${IDEA_LOADING_MSGS[0]}</span></div>
+        <div class="ideas-grid">${'<div class="idea-card skeleton"></div>'.repeat(ideas.tab === 'week' ? 5 : 6)}</div>`;
+    }
+    if(ideas.tab === 'ideas' && !ideas.loading){
+      html += ideas.list.length ? `<div class="ideas-grid">${ideas.list.map(ideaCardHtml).join('')}</div>`
+        : `<div class="ideas-empty"><b>Need something to post?</b>Pick a goal and a format on the left (a topic is optional), then click <b>Generate 6 ideas</b>.<br>Each idea comes with 3 hooks, an outline, and a full draft in one click.</div>`;
+    } else if(ideas.tab === 'week' && !ideas.loading){
+      html += ideas.week.length ? `<div class="ideas-week-bar"><span>5 posts for next week, ready to edit.</span><span class="spacer"></span>
+          <button type="button" class="lk-btn primary" id="weekAddAllBtn" ${ideas.weekAdded.size >= ideas.week.length ? 'disabled' : ''}>${ideas.weekAdded.size >= ideas.week.length ? '✓ All on your calendar' : 'Add all to calendar'}</button></div>
+          <div class="ideas-grid">${ideas.week.map(weekCardHtml).join('')}</div>`
+        : `<div class="ideas-empty"><b>A whole week, done in one click.</b>Get 5 full posts for Monday to Friday, each a different format, then add them to your calendar as reminders at 9:00. You can edit each one and turn on auto-publish.</div>`;
+    } else if(ideas.tab === 'saved'){
+      html += !ideas.savedLoaded ? '<div class="ideas-empty">Loading your saved ideas…</div>'
+        : ideas.saved.length ? `<div class="ideas-grid">${ideas.saved.map(ideaCardHtml).join('')}</div>`
+        : '<div class="ideas-empty"><b>No saved ideas yet.</b>Click the ☆ on any idea to keep it here for later.</div>';
+    }
+    box.innerHTML = html;
+    const addAll = document.getElementById('weekAddAllBtn');
+    if(addAll) addAll.addEventListener('click', ()=> addWeekToCalendar(ideas.week.map((_, i)=> i)));
+  }
+  // One click handler for all the buttons inside the results.
+  document.getElementById('ideasResults').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-act]');
+    if(!btn || btn.tagName === 'SELECT') return;
+    const act = btn.dataset.act;
+    const weekCard = btn.closest('[data-week]');
+    if(weekCard){
+      const i = Number(weekCard.dataset.week);
+      if(act === 'weekadd') addWeekToCalendar([i]);
+      if(act === 'weekopen') useDraftAsNewPost(ideas.week[i].post || '');
+      return;
+    }
+    const card = btn.closest('[data-key]');
+    if(!card) return;
+    const pool = ideas.tab === 'saved' ? ideas.saved : ideas.list;
+    const idea = pool.find(x=> x.key === card.dataset.key);
+    if(!idea) return;
+    if(act === 'hook'){ idea.picked = Number(btn.dataset.i); renderIdeas(); }
+    if(act === 'save') toggleSaveIdea(idea);
+    if(act === 'dismiss'){ ideas.list = ideas.list.filter(x=> x !== idea); ideas.avoid.push(idea.title); renderIdeas(); }
+    if(act === 'write') writeIdea(idea);
+    if(act === 'more') moreLikeThis(idea);
+    if(act === 'usenew') useDraftAsNewPost(idea.draft);
+    if(act === 'useversion') useDraftAsVersion(idea.draft, idea.title);
+  });
+  document.getElementById('ideasResults').addEventListener('change', e=>{
+    if(e.target.dataset.act !== 'length') return;
+    const card = e.target.closest('[data-key]');
+    const pool = ideas.tab === 'saved' ? ideas.saved : ideas.list;
+    const idea = card && pool.find(x=> x.key === card.dataset.key);
+    if(idea) idea.length = e.target.value;
+  });
 
   // ---------- Saved headline ----------
   // Saved to the user's member doc so it follows them to any device, with a
