@@ -768,6 +768,47 @@
   .pc-fb-btn:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
   .reader-row{display:flex;gap:8px;align-items:stretch;margin-top:12px;}
   .reader-row .composer-input{flex:1;min-width:0;}
+  /* ---------- "AI is reading" states ---------- */
+  .editor-box.ai-reading .composer-textarea{border-color:#8B7FF0;box-shadow:0 0 0 3px rgba(123,63,228,.12);}
+  .ai-scan{position:absolute;left:1px;right:1px;top:0;height:0;pointer-events:none;overflow:hidden;border-radius:0 0 10px 10px;display:none;z-index:2;}
+  .editor-box.ai-reading .ai-scan{display:block;}
+  .ai-scan::before{content:"";position:absolute;left:0;right:0;height:70px;top:-70px;
+    background:linear-gradient(180deg,rgba(123,63,228,0) 0%,rgba(123,63,228,.10) 60%,rgba(10,102,194,.35) 100%);
+    border-bottom:2px solid rgba(123,63,228,.55);animation:aiScan 2.2s cubic-bezier(.45,0,.55,1) infinite;}
+  @keyframes aiScan{0%{top:-70px;}100%{top:100%;}}
+  .ai-scan-badge{position:absolute;right:10px;top:10px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;
+    background:linear-gradient(135deg,#0A66C2,#7B3FE4);color:#fff;font:700 11.5px 'Inter',sans-serif;box-shadow:0 6px 16px rgba(123,63,228,.35);animation:aiBadge 1.6s ease-in-out infinite;}
+  @keyframes aiBadge{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+
+  .pc-reading{position:relative;margin:10px 0 2px 26px;border-radius:12px;padding:1.5px;overflow:hidden;
+    background:linear-gradient(90deg,#0A66C2,#7B3FE4,#C2255C,#0A66C2);background-size:300% 100%;animation:aiBorder 3s linear infinite;}
+  @keyframes aiBorder{from{background-position:0 0;}to{background-position:300% 0;}}
+  .pc-reading-in{background:var(--panel);border-radius:11px;padding:12px 14px;}
+  .pc-reading-head{display:flex;align-items:center;gap:10px;}
+  .pc-reading-orb{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;
+    background:radial-gradient(circle at 30% 30%,#9F8CFF,#5B3FE4 60%,#0A66C2);box-shadow:0 0 0 0 rgba(123,63,228,.45);animation:aiOrb 1.6s ease-out infinite;}
+  @keyframes aiOrb{0%{box-shadow:0 0 0 0 rgba(123,63,228,.45);}70%{box-shadow:0 0 0 10px rgba(123,63,228,0);}100%{box-shadow:0 0 0 0 rgba(123,63,228,0);}}
+  .pc-reading-title{font:700 13px 'Inter',sans-serif;color:var(--ink);}
+  .pc-reading-sub{font-size:11.5px;color:var(--slate);}
+  .pc-dots::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:aiDots 1.2s steps(4,end) infinite;}
+  @keyframes aiDots{0%{content:"";}25%{content:".";}50%{content:"..";}75%{content:"...";}}
+  .pc-reading-steps{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .pc-step{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font:600 11.5px 'Inter',sans-serif;border:1px solid var(--border);color:var(--slate-light);background:var(--panel-alt);transition:all .25s;}
+  .pc-step i{font-style:normal;width:12px;display:inline-flex;justify-content:center;}
+  .pc-step.active{color:#5B3FE4;border-color:#C9BFFF;background:#F4F1FF;}
+  .pc-step.active i::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid #C9BFFF;border-top-color:#5B3FE4;animation:aiSpin .8s linear infinite;display:block;}
+  .pc-step.done{color:var(--success);border-color:#C3E2D7;background:var(--success-soft);}
+  .pc-step.done i::before{content:"✓";}
+  .pc-reading-bar{height:4px;border-radius:2px;background:#EEF0F6;margin-top:10px;overflow:hidden;}
+  .pc-reading-bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#0A66C2,#7B3FE4);transition:width .6s ease;}
+  .pc-gauge.thinking svg{animation:aiGauge 1.4s linear infinite;}
+  .pc-gauge.thinking .val{stroke:url(#pcThinkGrad) !important;stroke-dasharray:40 86 !important;stroke-dashoffset:0 !important;}
+  @keyframes aiGauge{from{transform:rotate(-90deg);}to{transform:rotate(270deg);}}
+  .pc-ai-cell.pop{animation:aiPopIn .4s cubic-bezier(.3,1.5,.5,1) both;}
+  @keyframes aiPopIn{from{opacity:0;transform:scale(.85) translateY(4px);}to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion: reduce){
+    .ai-scan::before,.ai-scan-badge,.pc-reading,.pc-reading-orb,.pc-step.active i::before,.pc-gauge.thinking svg,.pc-ai-cell.pop,.pc-dots::after{animation:none !important;}
+  }
   .pc-note{font-size:11.5px;color:var(--slate-light);line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
 
   /* ---------- Saved headline ---------- */
@@ -1038,6 +1079,7 @@
             <div class="emoji-tabs" id="emojiTabs"></div>
             <div class="emoji-grid" id="emojiGrid"></div>
           </div>
+          <div class="ai-scan" id="aiScan" aria-hidden="true"><span class="ai-scan-badge">✨ AI is reading</span></div>
           <textarea class="composer-textarea" id="postTextInput" placeholder="Write your LinkedIn post here…
 
 Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; — the preview on the right shows you exactly where that cutoff lands." maxlength="3000"></textarea>
@@ -1070,7 +1112,7 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
         <div class="pc-wrap" id="postCheck">
           <button type="button" class="pc-head" id="pcHead" aria-expanded="false" aria-controls="pcBody">
             <span class="pc-gauge" aria-hidden="true">
-              <svg width="48" height="48" viewBox="0 0 48 48"><circle class="track" cx="24" cy="24" r="20" fill="none" stroke-width="5"/><circle class="val" id="pcGaugeVal" cx="24" cy="24" r="20" fill="none" stroke-width="5" stroke-linecap="round"/></svg>
+              <svg width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="pcThinkGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A66C2"/><stop offset="1" stop-color="#7B3FE4"/></linearGradient></defs><circle class="track" cx="24" cy="24" r="20" fill="none" stroke-width="5"/><circle class="val" id="pcGaugeVal" cx="24" cy="24" r="20" fill="none" stroke-width="5" stroke-linecap="round"/></svg>
               <span id="pcScoreNum">0</span>
             </span>
             <span class="pc-title"><b>Post check · score out of 100</b><span id="pcLabel"></span></span>
@@ -3621,6 +3663,47 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   let aiReview = null;          // {hash, clarity, grammar, summary, issues[], at}
   let aiReviewBusy = false, aiReviewTimer = null, aiReviewLastRun = 0, aiReviewError = '';
   let aiFeedbackState = ''; // '' | 'open' | 'sent'
+  // "AI is reading" animation: one request, so the steps are paced to feel
+  // like the read-through; the last step stays active until the answer lands.
+  let aiReadStep = 0, aiReadTimer = null, aiRevealPending = false, lastShownScore = null;
+  function aiReadSteps(){
+    return ['Reading your post', 'Makes sense', 'Grammar', 'Hook', 'Specific', 'Sounds human',
+      ...(postGoal ? [`Goal: ${POST_GOAL_NAMES[postGoal]}`] : []), ...(idealReader ? ['Your reader'] : [])];
+  }
+  function setAiReading(on){
+    document.querySelector('.editor-box').classList.toggle('ai-reading', on);
+    if(on){
+      // Cover exactly the text area (not the toolbar above it).
+      const scan = document.getElementById('aiScan');
+      scan.style.top = (postInput.offsetTop + 1) + 'px';
+      scan.style.height = Math.max(0, postInput.offsetHeight - 2) + 'px';
+    }
+    clearInterval(aiReadTimer);
+    aiReadStep = 0;
+    if(on){
+      aiReadTimer = setInterval(()=>{
+        const n = aiReadSteps().length;
+        if(aiReadStep < n - 1){ aiReadStep++; renderAiReadingProgress(); }
+      }, 850);
+    }
+  }
+  // Update just the step chips and bar (no full re-render while reading).
+  function renderAiReadingProgress(){
+    const steps = document.querySelectorAll('#pcReading .pc-step');
+    steps.forEach((el, i)=>{ el.className = 'pc-step' + (i < aiReadStep ? ' done' : i === aiReadStep ? ' active' : ''); });
+    const bar = document.querySelector('#pcReading .pc-reading-bar i');
+    if(bar) bar.style.width = Math.min(92, Math.round((aiReadStep + 1) / (steps.length + 0.6) * 100)) + '%';
+  }
+  function aiReadingHtml(rechecking){
+    const steps = aiReadSteps();
+    return `<div class="pc-reading" id="pcReading" role="status" aria-live="polite"><div class="pc-reading-in">
+      <div class="pc-reading-head"><span class="pc-reading-orb" aria-hidden="true">✨</span>
+        <div><div class="pc-reading-title pc-dots">${rechecking ? 'AI is rechecking your post' : 'AI is reading your post'}</div>
+        <div class="pc-reading-sub">Judging it the way a sharp editor would. This takes a few seconds.</div></div></div>
+      <div class="pc-reading-steps">${steps.map((st, i)=> `<span class="pc-step${i < aiReadStep ? ' done' : i === aiReadStep ? ' active' : ''}"><i></i>${esc(st)}</span>`).join('')}</div>
+      <div class="pc-reading-bar"><i style="width:${Math.min(92, Math.round((aiReadStep + 1) / (steps.length + 0.6) * 100))}%"></i></div>
+    </div></div>`;
+  }
   function textHash(t){ let h = 5381; for(let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return String(h >>> 0); }
   function reviewText(){ return postInput.value.replace(/\s+$/, ''); }
   function reviewKey(){ return textHash(postGoal + '|' + idealReader + '|' + reviewText()); }
@@ -3638,6 +3721,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(!functionsApi){ aiReviewError = 'Could not reach the server.'; updatePostCheck(); return; }
     clearTimeout(aiReviewTimer);
     aiReviewBusy = true; aiReviewError = ''; aiReviewLastRun = Date.now();
+    setAiReading(true);
     updatePostCheck();
     const hash = reviewKey();
     const forDraft = activeDraftId;
@@ -3657,6 +3741,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       aiReviewError = code.includes('not-found') ? "The AI review isn't set up on the server yet." : ((err && err.message) || "The AI review didn't work this time.");
     }).finally(()=>{
       aiReviewBusy = false;
+      setAiReading(false);
+      if(aiReviewIsCurrent()) aiRevealPending = true;
       updatePostCheck();
       if(!aiReviewIsCurrent() && !aiReviewError) scheduleAiReview(); // text changed while it ran
     });
@@ -3793,7 +3879,18 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     val.style.strokeDasharray = C;
     val.style.strokeDashoffset = C * (1 - score / 100);
     val.style.stroke = hasAi ? colors[tone] : '#A0AEC0';
-    document.getElementById('pcScoreNum').textContent = score;
+    const gaugeEl = document.querySelector('.pc-gauge');
+    gaugeEl.classList.toggle('thinking', aiReviewBusy);
+    const numEl = document.getElementById('pcScoreNum');
+    if(aiRevealPending && lastShownScore !== null && lastShownScore !== score && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+      const from = lastShownScore, to = score, t0 = performance.now();
+      (function tick(now){
+        const k = Math.min(1, (now - t0) / 700);
+        numEl.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+        if(k < 1) requestAnimationFrame(tick);
+      })(t0);
+    } else numEl.textContent = aiReviewBusy && !hasAi ? '…' : score;
+    lastShownScore = score;
     const lab = document.getElementById('pcLabel');
     lab.textContent = label; lab.className = hasAi ? tone : '';
     document.getElementById('pcHead').setAttribute('aria-label', `Post check: ${score} out of 100${hasAi ? '' : ' (estimate)'}, ${label}`);
@@ -3812,15 +3909,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       const state = !hasAi ? 'warn' : aiPts >= 38 ? 'pass' : aiPts >= 27 ? 'warn' : 'fail';
       const ISSUE_LABELS = {grammar: 'Grammar', clarity: 'Clarity', specificity: 'Be specific', ai: 'Sounds like AI', goal: 'Goal', reader: 'Your reader'};
       let body = '';
-      if(aiReviewBusy && !hasAi) body = '<div class="pc-detail pc-ai-wait"><span class="pc-spin"></span>Reading your post: sense, grammar, hook, specificity and tone…</div>';
+      if(aiReviewBusy && !hasAi) body = aiReadingHtml(false);
       else if(!hasAi) body = `<div class="pc-detail">${text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'The AI reads your post once it has at least 30 characters.' : 'The AI reads your post a few seconds after you stop typing.'}</div>`;
       else {
         const lvl = v=> v >= 8 ? 'hi' : v >= 6 ? 'mid' : 'lo';
-        body = `<div class="pc-ai-grid">${aiDims.map(d=> `<div class="pc-ai-cell ${lvl(d.value)}" title="${esc(d.label)}: ${d.value}/10, worth ${d.max} points"><span>${esc(d.label)}${d.key === 'goalFit' && aiReview.goal ? ` · ${esc(POST_GOAL_NAMES[aiReview.goal] || '')}` : ''}</span><b>${d.value}<small>/10</small></b></div>`).join('')}</div>
+        body = `<div class="pc-ai-grid">${aiDims.map((d, di)=> `<div class="pc-ai-cell ${lvl(d.value)}${aiRevealPending ? ' pop' : ''}" style="${aiRevealPending ? `animation-delay:${di * 90}ms;` : ''}" title="${esc(d.label)}: ${d.value}/10, worth ${d.max} points"><span>${esc(d.label)}${d.key === 'goalFit' && aiReview.goal ? ` · ${esc(POST_GOAL_NAMES[aiReview.goal] || '')}` : ''}</span><b>${d.value}<small>/10</small></b></div>`).join('')}</div>
           ${aiReview.summary ? `<div class="pc-detail">${esc(aiReview.summary)}</div>` : ''}
           ${!postGoal && !withGoal ? '<div class="pc-detail">Tip: pick the goal of this post above, and the AI also checks whether the post reaches it.</div>' : ''}
           ${!idealReader && typeof aiReview.readerFit !== 'number' ? '<div class="pc-detail">Tip: add your ideal reader at the top, and the AI also checks whether the post speaks to them.</div>' : ''}
-          ${!current ? `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${aiReview.v === 2 ? '' : ' (or an older version of the check)'}. ${aiReviewBusy ? 'Rechecking now…' : 'It updates by itself shortly.'}</div>` : ''}
+          ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${aiReview.v === 2 ? '' : ' (or an older version of the check)'}. It updates by itself shortly.</div>`) : ''}
           ${(aiReview.hookIdeas || []).length ? `<div class="pc-hookideas"><div class="pc-sub-title">Stronger opening lines</div>${aiReview.hookIdeas.map((h, i)=> `<div class="pc-hookidea"><span>${esc(h)}</span><button type="button" class="pc-show" data-hookidea="${i}">Use this hook</button></div>`).join('')}</div>` : ''}
           ${aiReview.issues.map((iss, i)=> `<div class="pc-issue">
               <div class="pc-issue-top"><span class="pc-issue-type ${iss.type}">${ISSUE_LABELS[iss.type] || 'Note'}</span><span class="pc-issue-why">${esc(iss.why)}</span></div>
@@ -3856,6 +3953,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     r.notes.forEach(n=> html += `<div class="pc-tip" style="margin-left:0;"><span>${esc(n)}</span></div>`);
     html += `<div class="pc-note">The score is out of 100: 45 points from the AI reading your post (does it make sense, grammar, how strong the hook is, how specific it is, whether it sounds human, and fit with your goal and ideal reader) and 55 from writing checks for LinkedIn (hook length, spacing, ending and more). It judges how the post is written, not how good your idea is, and it's a guide, not a guarantee: a post that breaks a rule on purpose can still do great.</div>`;
     document.getElementById('pcBody').innerHTML = html;
+    aiRevealPending = false; // the pop-in only plays once per fresh review
     const run = document.getElementById('pcAiRun');
     if(run) run.addEventListener('click', e=>{ e.stopPropagation(); runAiReview(true); });
   }
