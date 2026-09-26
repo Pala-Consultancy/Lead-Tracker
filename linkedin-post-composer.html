@@ -686,53 +686,44 @@
   .li-first-comment .who .tag{font-weight:500;color:var(--li-muted);font-size:11.5px;margin-left:4px;background:rgba(0,0,0,.06);border-radius:4px;padding:0 4px;}
   .li-first-comment .txt{font-size:13px;line-height:1.43;color:var(--li-text);white-space:pre-wrap;word-break:break-word;margin-top:3px;}
 
-  /* ---------- Post check ---------- */
-  .pc-wrap{margin-top:12px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden;}
-  .pc-head{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px 14px;cursor:pointer;font:700 12.5px 'Inter',sans-serif;color:var(--ink);text-align:left;}
+  /* ---------- Post check (score out of 100) ---------- */
+  .pc-wrap{margin-top:12px;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;}
+  .pc-head{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:12px 14px;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;}
+  .pc-head:hover{background:var(--panel-alt);}
   .pc-head:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;}
-  .pc-score{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:22px;border-radius:999px;font-size:11.5px;font-weight:800;padding:0 8px;}
-  .pc-score.good{background:var(--success-soft);color:var(--success);}
-  .pc-score.ok{background:var(--amber-soft);color:#8A5600;}
-  .pc-score.low{background:var(--fail-soft);color:var(--fail);}
-  .pc-bar{flex:1;height:5px;border-radius:3px;background:#EEF1F5;overflow:hidden;}
-  .pc-bar i{display:block;height:100%;border-radius:3px;transition:width .35s ease, background .35s;}
-  .pc-chev{transition:transform .2s;color:var(--slate);}
+  .pc-gauge{position:relative;width:48px;height:48px;flex-shrink:0;}
+  .pc-gauge svg{transform:rotate(-90deg);}
+  .pc-gauge .track{stroke:#EEF1F5;}
+  .pc-gauge .val{transition:stroke-dashoffset .5s ease, stroke .3s;}
+  .pc-gauge span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 14px 'Inter',sans-serif;color:var(--ink);}
+  .pc-title{flex:1;min-width:0;}
+  .pc-title b{display:block;font-size:13px;color:var(--ink);}
+  .pc-title span{display:block;font-size:12px;font-weight:600;}
+  .pc-title span.good{color:var(--success);} .pc-title span.ok{color:#8A5600;} .pc-title span.low{color:var(--fail);}
+  .pc-chev{transition:transform .2s;color:var(--slate);flex-shrink:0;}
   .pc-wrap.open .pc-chev{transform:rotate(180deg);}
-  .pc-list{display:none;padding:2px 14px 12px;}
-  .pc-wrap.open .pc-list{display:block;}
-  .pc-item{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:12.5px;line-height:1.45;color:var(--ink);}
-  .pc-item + .pc-item{border-top:1px dashed var(--border);}
-  .pc-ico{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;margin-top:1px;}
-  .pc-item.pass .pc-ico{background:var(--success-soft);color:var(--success);}
-  .pc-item.warn .pc-ico{background:var(--amber-soft);color:#8A5600;}
-  .pc-item.fail .pc-ico{background:var(--fail-soft);color:var(--fail);}
-  .pc-item.info .pc-ico{background:#EEF1F5;color:var(--slate);}
-  .pc-item small{display:block;color:var(--slate);font-size:11.5px;}
-
-  /* ---------- AI edit tools (editor toolbar) ---------- */
-  .fmt-btn.ai{background:linear-gradient(135deg,#0A66C2,#7B3FE4);color:#fff;font-weight:700;font-size:12.5px;padding:0 10px;gap:5px;}
-  .fmt-btn.ai:hover{color:#fff;filter:brightness(1.08);}
-  .ai-pop{position:absolute;top:46px;right:6px;z-index:55;width:300px;max-width:calc(100% - 12px);background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 34px rgba(20,24,40,.18);display:none;overflow:hidden;}
-  .ai-pop.open{display:block;animation:aiPopIn .16s ease both;}
-  @keyframes aiPopIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
-  .ai-pop-head{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--slate);}
-  .ai-pop-head b{color:var(--ink);}
-  .ai-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 14px;text-align:left;cursor:pointer;font:600 13px 'Inter',sans-serif;color:var(--ink);}
-  .ai-item:hover:not(:disabled),.ai-item:focus-visible{background:var(--panel-alt);outline:none;}
-  .ai-item:disabled{opacity:.5;cursor:wait;}
-  .ai-item .ico{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#F1F4FA;font-size:14px;flex-shrink:0;}
-  .ai-item small{display:block;font-weight:500;color:var(--slate);font-size:11.5px;}
-  .ai-langs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px 50px;}
-  .ai-lang{border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:4px 10px;font:600 12px 'Inter',sans-serif;color:var(--ink);cursor:pointer;}
-  .ai-lang:hover:not(:disabled){border-color:var(--teal);color:var(--teal);}
-  .ai-working{display:flex;align-items:center;gap:10px;padding:14px;font-size:13px;color:var(--slate);}
-  .ai-working .spin{width:16px;height:16px;border:2px solid rgba(55,48,179,.2);border-top-color:var(--teal);border-radius:50%;animation:aiSpin .8s linear infinite;}
-  @keyframes aiSpin{to{transform:rotate(360deg);}}
-  .ai-hooks{padding:4px 10px 10px;}
-  .ai-hook{display:block;width:100%;text-align:left;border:1px solid var(--border);background:var(--panel);border-radius:10px;padding:9px 11px;margin-top:6px;cursor:pointer;font:13px/1.4 'Inter',sans-serif;color:var(--ink);}
-  .ai-hook:hover,.ai-hook:focus-visible{border-color:var(--teal);background:var(--panel-alt);outline:none;}
-  .ai-hook small{display:block;font-size:11px;color:var(--slate);margin-top:3px;}
-  @media (prefers-reduced-motion: reduce){ .ai-pop.open,.ai-working .spin{animation:none;} }
+  .pc-body{display:none;padding:0 14px 14px;}
+  .pc-wrap.open .pc-body{display:block;}
+  .pc-blocker{background:var(--fail-soft);color:var(--fail);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45;margin-bottom:10px;}
+  .pc-blocker b{font-weight:700;}
+  .pc-row{padding:10px 0;border-top:1px solid var(--border);}
+  .pc-row:first-of-type{border-top:0;}
+  .pc-row-top{display:flex;align-items:center;gap:8px;}
+  .pc-ico{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;}
+  .pc-row.pass .pc-ico{background:var(--success-soft);color:var(--success);}
+  .pc-row.warn .pc-ico{background:var(--amber-soft);color:#8A5600;}
+  .pc-row.fail .pc-ico{background:var(--fail-soft);color:var(--fail);}
+  .pc-row-label{font-size:12.5px;font-weight:700;color:var(--ink);flex:1;}
+  .pc-pts{font:700 12px 'Inter',sans-serif;color:var(--slate);font-variant-numeric:tabular-nums;}
+  .pc-minibar{height:4px;border-radius:2px;background:#EEF1F5;margin:6px 0 0 26px;overflow:hidden;}
+  .pc-minibar i{display:block;height:100%;border-radius:2px;}
+  .pc-row.pass .pc-minibar i{background:var(--success);} .pc-row.warn .pc-minibar i{background:#D69E2E;} .pc-row.fail .pc-minibar i{background:var(--fail);}
+  .pc-detail{font-size:12px;color:var(--slate);line-height:1.45;margin:5px 0 0 26px;}
+  .pc-tip{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--ink);line-height:1.45;margin:6px 0 0 26px;}
+  .pc-tip::before{content:"→";color:var(--teal);font-weight:700;}
+  .pc-show{border:0;background:none;padding:0;font:700 11.5px 'Inter',sans-serif;color:var(--teal);cursor:pointer;white-space:nowrap;text-decoration:underline;}
+  .pc-show:focus-visible{outline:2px solid var(--teal);outline-offset:1px;border-radius:3px;}
+  .pc-note{font-size:11.5px;color:var(--slate-light);line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
 
   /* ---------- Saved headline ---------- */
   .headline-row{display:flex;gap:8px;align-items:stretch;}
@@ -1022,13 +1013,15 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
           </div>
         </div>
         <div class="pc-wrap" id="postCheck">
-          <button type="button" class="pc-head" id="pcHead" aria-expanded="false" aria-controls="pcList">
-            <span>Post check</span>
-            <span class="pc-score" id="pcScore">–</span>
-            <span class="pc-bar" aria-hidden="true"><i id="pcBarFill"></i></span>
-            <svg class="pc-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          <button type="button" class="pc-head" id="pcHead" aria-expanded="false" aria-controls="pcBody">
+            <span class="pc-gauge" aria-hidden="true">
+              <svg width="48" height="48" viewBox="0 0 48 48"><circle class="track" cx="24" cy="24" r="20" fill="none" stroke-width="5"/><circle class="val" id="pcGaugeVal" cx="24" cy="24" r="20" fill="none" stroke-width="5" stroke-linecap="round"/></svg>
+              <span id="pcScoreNum">0</span>
+            </span>
+            <span class="pc-title"><b>Post check · score out of 100</b><span id="pcLabel"></span></span>
+            <svg class="pc-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </button>
-          <div class="pc-list" id="pcList"></div>
+          <div class="pc-body" id="pcBody"></div>
         </div>
       </div>
       <div class="composer-footer">
@@ -3286,67 +3279,273 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   }
   fcInput.addEventListener('input', ()=>{ renderFirstCommentPreview(); updatePostCheck(); scheduleAutosave(); });
 
-  // ---------- Post check (LinkedIn best practices, live) ----------
+  // ---------- Post check: scoring (0–100) ----------
+  // LinkedIn writing habits, measured the way the post looks on a phone.
+  // Each criterion explains its points and, where useful, points to the exact
+  // paragraph or sentence ("Show me"). These are rules of thumb, not a verdict
+  // on the idea itself — the panel says so too.
+  const PHONE_CHARS_PER_LINE = 50;   // ~358pt-wide text at 14px, like the phone preview
   const PLACEHOLDER_RE = /\[[^\]\n]{2,60}\]/g;
-  const CTA_RE = /\?|\b(comment|comments|share|repost|dm me|message me|let me know|thoughts|agree|follow|reach out|link in|sign up|book|join|download|what about you|your take|tell me)\b/i;
-  function postCheckItems(text){
-    const t = text.replace(/\s+$/, '');
-    const lines = t.split('\n');
-    const nonEmpty = lines.filter(l=> l.trim());
-    const hook = (nonEmpty[0] || '').trim();
-    const paragraphs = t.split(/\n\s*\n/).map(p=> p.trim()).filter(Boolean);
-    const longest = Math.max(0, ...paragraphs.map(p=> p.length));
-    const last = (nonEmpty[nonEmpty.length - 1] || '').trim();
-    const hashtags = (t.match(/(^|\s)#[\p{L}\p{N}_]+/gu) || []).length;
-    const links = /(https?:\/\/|www\.)\S+/i.test(t);
-    const placeholders = [...new Set(t.match(PLACEHOLDER_RE) || [])];
-    const items = [];
-    items.push(placeholders.length
-      ? {state: 'fail', label: `Fill in ${placeholders.length === 1 ? 'the placeholder' : placeholders.length + ' placeholders'}`, tip: placeholders.slice(0, 3).join(', ') + (placeholders.length > 3 ? '…' : '')}
-      : {state: 'pass', label: 'No placeholders left'});
-    items.push(!hook ? {state: 'fail', label: 'Start with a hook', tip: 'Your first line is what people see before "…more".'}
-      : hook.length <= 140 ? {state: 'pass', label: 'Hook fits before "…more" on phones', tip: `${hook.length} characters`}
-      : {state: 'warn', label: 'Hook is long for phones', tip: `${hook.length} characters: aim for under 140 so it isn't cut off.`});
-    items.push(longest <= 280 ? {state: 'pass', label: 'Short, easy-to-skim paragraphs'}
-      : {state: 'warn', label: 'Break up long paragraphs', tip: `Your longest paragraph is ${longest} characters. 1–3 lines each reads best on a phone.`});
-    items.push(CTA_RE.test(last) ? {state: 'pass', label: 'Ends with a question or call to action'}
-      : {state: 'warn', label: 'End with a question or call to action', tip: 'A question at the end gets people commenting.'});
-    items.push(hashtags <= 3 ? {state: 'pass', label: hashtags ? `${hashtags} hashtag${hashtags === 1 ? '' : 's'} (3 or fewer)` : 'No hashtag clutter'}
-      : {state: 'warn', label: `${hashtags} hashtags`, tip: 'Use 3 or fewer: more looks spammy and doesn\'t help reach.'});
-    items.push(!links ? {state: 'pass', label: 'No links in the post text'}
-      : {state: 'warn', label: 'Move the link to the first comment', tip: 'LinkedIn shows posts with links to fewer people.'});
-    const len = t.length;
-    items.push(len < 150 ? {state: 'info', label: `${len} characters`, tip: 'Very short. Fine for a quick thought; most strong posts are 600–2,000 characters.'}
-      : len <= 2200 ? {state: 'pass', label: `${len.toLocaleString()} characters: a good length`}
-      : {state: 'info', label: `${len.toLocaleString()} characters`, tip: 'Long posts can work well, but make every line earn its place.'});
-    return items;
+  const CTA_WORDS = [
+    // English
+    'comment', 'comments', 'share', 'repost', 'dm me', 'message me', 'let me know', 'thoughts', 'agree', 'follow',
+    'reach out', 'link in', 'sign up', 'book a', 'join', 'download', 'your take', 'tell me', 'drop a', 'reply',
+    // Dutch
+    'laat het weten', 'laat me weten', 'reageer', 'reactie', 'deel', 'stuur me', 'stuur mij', 'volg', 'wat denk',
+    'wat vind', 'jouw mening', 'jij?', 'benieuwd', 'contacteer', 'neem contact', 'link in de', 'plan een', 'schrijf je in',
+    // French
+    'commentez', 'partagez', 'dites-moi', 'écrivez-moi', 'votre avis', 'suivez', 'contactez', 'lien en',
+    // German
+    'kommentiert', 'kommentieren', 'teilt', 'schreibt mir', 'eure meinung', 'ihre meinung', 'folgt', 'link im',
+    // Spanish
+    'comenta', 'comparte', 'escríbeme', 'tu opinión', 'sígueme', 'enlace en',
+  ];
+
+  function phoneLines(block){
+    return block.split('\n').reduce((n, line)=> n + Math.max(1, Math.ceil(line.trim().length / PHONE_CHARS_PER_LINE)), 0);
   }
+  // Paragraphs = blocks separated by an empty line, with their position in the text.
+  function paragraphBlocks(text){
+    const out = [];
+    const re = /\S[\s\S]*?(?=\n[ \t]*\n|$)/g;
+    let m;
+    while((m = re.exec(text))){ out.push({text: m[0].replace(/\s+$/, ''), start: m.index, end: m.index + m[0].replace(/\s+$/, '').length}); }
+    return out;
+  }
+  function sentencesOf(text){
+    const out = [];
+    const re = /[^.!?…\n]+[.!?…]*/g;
+    let m;
+    while((m = re.exec(text))){
+      const s = m[0].trim();
+      const words = s.split(/\s+/).filter(w=> /[\p{L}\p{N}]/u.test(w)).length;
+      if(words >= 3) out.push({text: s, words, start: m.index, end: m.index + m[0].length});
+    }
+    return out;
+  }
+
+  function analyzePost(raw, firstComment){
+    const text = String(raw || '').replace(/\s+$/, '');
+    const len = text.length;
+    const blocks = paragraphBlocks(text);
+    const criteria = [];
+
+    // ---- Hook (25) ----
+    {
+      const first = blocks[0];
+      const firstLines = first ? first.text.split('\n') : [];
+      const firstLine = (firstLines[0] || '').trim();
+      const L = firstLine.length;
+      let pts = 0, detail;
+      const tips = [];
+      if(!L){ detail = 'There is no opening line yet.'; }
+      else {
+        pts += L <= 140 ? 18 : L <= 200 ? 10 : 4;
+        const aloneThenGap = firstLines.length === 1 && blocks.length > 1;   // hook, then an empty line
+        const ownLine = firstLines.length > 1;                               // hook, then a line break
+        // Standing on its own only counts when the first line is actually a short hook.
+        if(L <= 200){
+          if(aloneThenGap || blocks.length === 1 && firstLines.length === 1) pts += 7;
+          else if(ownLine) pts += 4;
+        }
+        if(L <= 140) detail = `Your first line is ${L} characters, so it fits before "…more" on phones${aloneThenGap ? ' and stands on its own.' : '.'}`;
+        else if(L <= 200) detail = `Your first line is ${L} characters. On phones about 140 show before "…more", so the end of it gets cut off.`;
+        else detail = `Your post opens with a long paragraph (${L} characters). On phones only about the first 140 characters show before "…more".`;
+        if(L > 140) tips.push({text: 'Make your first line a short hook (under 140 characters) and start a new line after it.', range: [first.start, first.start + firstLine.length]});
+        if(L <= 140 && !aloneThenGap && blocks.length > 1) tips.push({text: 'Put an empty line after your hook so it stands out.', range: [first.start, first.start + firstLine.length]});
+      }
+      const state = pts >= 21 ? 'pass' : pts >= 13 ? 'warn' : 'fail';
+      criteria.push({key: 'hook', label: 'Hook', points: pts, max: 25, state, detail, tips});
+    }
+
+    // ---- White space & readability (30) ----
+    // Measured in phone lines (~50 characters). A paragraph of 1–3 phone lines
+    // is easy to skim. Writing one sentence (or bullet) per line counts as airy
+    // too, even without empty lines, as long as each line is short.
+    {
+      const tips = [];
+      let pts, detail;
+      const measured = blocks.map(b=>{
+        const lines = b.text.split('\n').filter(l=> l.trim());
+        const perLine = lines.map(l=> Math.max(1, Math.ceil(l.trim().length / PHONE_CHARS_PER_LINE)));
+        const total = perLine.reduce((t, n)=> t + n, 0);
+        const lineByLine = lines.length > 1 && Math.max(...perLine) <= 2;
+        // How heavy it feels: a line-by-line block is judged by its longest line
+        // (a little heavier when it runs on for many lines); prose by its total.
+        const heavy = lineByLine ? (lines.length > 8 ? 4 : Math.max(...perLine)) : total;
+        return {...b, lines: total, heavy, lineByLine};
+      });
+      const walls = measured.filter(b=> b.heavy >= 5).sort((a, b)=> b.heavy - a.heavy);
+      const dense = measured.filter(b=> b.heavy === 4);
+      if(len === 0){ pts = 0; detail = 'Nothing to check yet.'; }
+      else if(len < 300){
+        const worst = Math.max(...measured.map(b=> b.heavy));
+        pts = worst <= 4 ? 30 : worst <= 6 ? 22 : 12;
+        detail = worst <= 4 ? 'Short and easy to read on a phone.' : `It's short, but written as one block of about ${worst} lines on a phone.`;
+      } else {
+        const weight = n=> n <= 3 ? 1 : n === 4 ? .6 : n <= 6 ? .25 : 0;
+        const total = measured.reduce((t, b)=> t + b.text.length, 0) || 1;
+        const share = measured.reduce((t, b)=> t + b.text.length * weight(b.heavy), 0) / total;
+        pts = Math.round(30 * share);
+        const oneProseBlock = measured.length === 1 && !measured[0].lineByLine;
+        if(oneProseBlock) pts = Math.min(pts, 4);
+        const airy = Math.round(measured.filter(b=> b.heavy <= 3).reduce((t, b)=> t + b.text.length, 0) / total * 100);
+        if(oneProseBlock) detail = `The whole post is one block of about ${measured[0].lines} lines on a phone: a wall of text that people tend to scroll past.`;
+        else if(walls.length) detail = `${airy}% of your text is in short, skimmable blocks. ${walls.length === 1 ? '1 paragraph is' : walls.length + ' paragraphs are'} 5 or more lines long on a phone.`;
+        else if(dense.length) detail = dense.some(b=> b.lineByLine)
+          ? 'Written line by line, which reads well. An empty line between every 2–3 lines would make it even easier to skim.'
+          : `Mostly readable, but ${dense.length === 1 ? '1 paragraph runs' : dense.length + ' paragraphs run'} to 4 lines on a phone.`;
+        else detail = 'Nicely spaced: your text is in short, skimmable blocks.';
+      }
+      walls.slice(0, 3).forEach((w, i)=> tips.push({text: `${i === 0 ? 'Split this paragraph' : 'And this one'}: about ${w.heavy} lines on a phone. Aim for 1–3 lines, then an empty line.`, range: [w.start, w.end]}));
+      if(!walls.length) dense.slice(0, 2).forEach(d=> tips.push({text: d.lineByLine ? 'Add an empty line between groups of 2–3 lines here.' : 'Consider splitting this paragraph in two.', range: [d.start, d.end]}));
+      const state = pts >= 24 ? 'pass' : pts >= 15 ? 'warn' : 'fail';
+      criteria.push({key: 'space', label: 'White space & readability', points: pts, max: 30, state, detail, tips});
+    }
+
+    // ---- Ending (15) ----
+    // Only the last two sentences count, and call-to-action words must match as
+    // whole words (so "volgende" isn't "volg", and "I want to share" at the
+    // start of a long paragraph isn't a call to action).
+    {
+      // Look past a closing line of hashtags to the real last sentences.
+      const stripTags = t=> t.replace(/(^|\s)#[\p{L}\p{N}_]+/gu, ' ').trim();
+      const last = [...blocks].reverse().find(b=> stripTags(b.text)) || blocks[blocks.length - 1];
+      const lastSentences = last ? (stripTags(last.text).match(/[^.!?…\n]+[.!?…]*/g) || []).map(x=> x.trim()).filter(Boolean).slice(-2) : [];
+      const lastText = lastSentences.join(' ').toLowerCase();
+      const lastLine = last ? last.text.split('\n').filter(l=> l.trim()).pop() : '';
+      const tips = [];
+      let pts = 0, detail;
+      const hasQuestion = /\?/.test(lastText);
+      const cta = CTA_WORDS.find(w=> new RegExp(`(^|[^\\p{L}])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}])`, 'u').test(lastText));
+      if(!last){ detail = 'Nothing to check yet.'; }
+      else if(hasQuestion){ pts = 15; detail = 'You end with a question, which invites comments.'; }
+      else if(cta){ pts = 12; detail = 'You end with a call to action.'; tips.push({text: 'Ending with a direct question usually gets even more comments.'}); }
+      else if(blocks.length === 1 && len < 300){ pts = 7; detail = 'A short thought without a question at the end. That can work, but a question invites more replies.'; }
+      else { pts = 4; detail = "Your post doesn't end with a question or a call to action."; tips.push({text: 'End with a question people can answer in the comments, like "What would you add?"', range: last ? [last.start, last.end] : null}); }
+      const state = pts >= 12 ? 'pass' : pts >= 7 ? 'warn' : 'fail';
+      criteria.push({key: 'ending', label: 'Ending', points: pts, max: 15, state, detail: detail + (lastLine && pts === 4 ? '' : ''), tips});
+    }
+
+    // ---- Sentence length (10) ----
+    {
+      const sents = sentencesOf(text);
+      const tips = [];
+      let pts, detail;
+      if(!sents.length){ pts = len ? 10 : 0; detail = len ? 'Short lines, easy to read.' : 'Nothing to check yet.'; }
+      else {
+        const avg = sents.reduce((t, s)=> t + s.words, 0) / sents.length;
+        pts = avg <= 16 ? 10 : avg <= 20 ? 8 : avg <= 25 ? 6 : avg <= 30 ? 4 : 2;
+        const long = sents.filter(s=> s.words > 35).sort((a, b)=> b.words - a.words);
+        if(long.length) pts = Math.max(0, pts - Math.min(4, long.length * 2));
+        detail = `Sentences average ${Math.round(avg)} words${long.length ? `, and ${long.length === 1 ? '1 sentence is' : long.length + ' sentences are'} over 35 words` : ''}.`;
+        long.slice(0, 2).forEach(s=> tips.push({text: `This sentence has ${s.words} words. Try splitting it in two.`, range: [s.start, s.end]}));
+      }
+      const state = pts >= 8 ? 'pass' : pts >= 5 ? 'warn' : 'fail';
+      criteria.push({key: 'sentences', label: 'Sentence length', points: pts, max: 10, state, detail, tips});
+    }
+
+    // ---- Hashtags (10) ----
+    {
+      const tags = text.match(/(^|\s)#[\p{L}\p{N}_]+/gu) || [];
+      const n = tags.length;
+      const pts = !len ? 0 : n <= 3 ? 5 : n <= 5 ? 2 : 0;
+      const detail = !len ? 'Nothing to check yet.' : n === 0 ? 'No hashtags. That\'s fine: they add little reach on LinkedIn today.'
+        : n <= 3 ? `${n} hashtag${n === 1 ? '' : 's'}: a good amount.` : `${n} hashtags. More than 3 looks spammy and doesn't add reach.`;
+      criteria.push({key: 'hashtags', label: 'Hashtags', points: pts, max: 5, state: pts === 5 ? 'pass' : pts === 2 ? 'warn' : 'fail', detail,
+        tips: n > 3 ? [{text: 'Keep your 1–3 most relevant hashtags and remove the rest.'}] : []});
+    }
+
+    // ---- Links (10) ----
+    {
+      const m = /(https?:\/\/|www\.)\S+/i.exec(text);
+      const pts = !len ? 0 : m ? 3 : 10;
+      const detail = !len ? 'Nothing to check yet.' : m ? 'There is a link in your post. LinkedIn shows posts with links to fewer people.' : 'No links in the post text.';
+      criteria.push({key: 'links', label: 'Links', points: pts, max: 10, state: m ? 'fail' : 'pass', detail,
+        tips: m ? [{text: String(firstComment || '').trim() ? 'Move the link to your first comment (you already have one).' : 'Move the link to a first comment instead (under the editor).', range: [m.index, m.index + m[0].length]}] : []});
+    }
+
+    // ---- Length (10) ----
+    {
+      const pts = !len ? 0 : len < 150 ? 2 : len < 300 ? 3 : len < 600 ? 4 : len <= 2000 ? 5 : len <= 2600 ? 4 : 3;
+      const detail = !len ? 'Nothing to check yet.'
+        : len < 300 ? `${len} characters: short. Quick thoughts can do well, but most strong posts are 600–2,000 characters.`
+        : len < 600 ? `${len} characters: a bit short. There's room to add an example or a takeaway.`
+        : len <= 2000 ? `${len.toLocaleString()} characters: a strong length for LinkedIn.`
+        : `${len.toLocaleString()} characters: long. Long posts can work, but make every line earn its place.`;
+      criteria.push({key: 'length', label: 'Length', points: pts, max: 5, state: pts >= 4 ? 'pass' : 'warn', detail, tips: []});
+    }
+
+    let score = criteria.reduce((t, c)=> t + c.points, 0);
+
+    // ---- Placeholders: must be fixed before posting ----
+    const placeholders = [];
+    let pm; PLACEHOLDER_RE.lastIndex = 0;
+    while((pm = PLACEHOLDER_RE.exec(text))) placeholders.push({text: pm[0], range: [pm.index, pm.index + pm[0].length]});
+    if(placeholders.length) score = Math.max(0, score - 15);
+
+    // ---- Extra tips (no points) ----
+    const notes = [];
+    const emojis = (text.match(/\p{Extended_Pictographic}/gu) || []).length;
+    if(emojis > 8 && emojis > len / 70) notes.push('Lots of emojis. A few help, but too many can make a post harder to read.');
+
+    const label = placeholders.length ? 'Fill in the placeholders first'
+      : score >= 90 ? 'Excellent, ready to post' : score >= 75 ? 'Strong, a few small tweaks' : score >= 55 ? 'Good start, some fixes will help' : 'Needs work, see the tips';
+    const tone = placeholders.length ? 'low' : score >= 75 ? 'good' : score >= 55 ? 'ok' : 'low';
+    return {score, label, tone, criteria, placeholders, notes};
+  }
+
   function updatePostCheck(){
     const text = postInput.value;
     const wrap = document.getElementById('postCheck');
-    const score = document.getElementById('pcScore'), fill = document.getElementById('pcBarFill');
-    if(!text.trim()){
-      wrap.style.display = 'none';
-      return;
-    }
+    if(!text.trim()){ wrap.style.display = 'none'; return; }
     wrap.style.display = '';
-    const items = postCheckItems(text);
-    const scored = items.filter(i=> i.state !== 'info');
-    const passed = scored.filter(i=> i.state === 'pass').length;
-    const ratio = passed / scored.length;
-    score.textContent = `${passed}/${scored.length}`;
-    score.className = 'pc-score ' + (ratio >= .85 ? 'good' : ratio >= .5 ? 'ok' : 'low');
-    fill.style.width = Math.round(ratio * 100) + '%';
-    fill.style.background = ratio >= .85 ? 'var(--success)' : ratio >= .5 ? '#D69E2E' : 'var(--fail)';
-    const icon = {pass: '✓', warn: '!', fail: '✕', info: 'i'};
-    document.getElementById('pcList').innerHTML = items.map(i=> `<div class="pc-item ${i.state}"><span class="pc-ico" aria-hidden="true">${icon[i.state]}</span><div>${esc(i.label)}${i.tip ? `<small>${esc(i.tip)}</small>` : ''}</div></div>`).join('');
+    const r = analyzePost(text, fcInput.value);
+    const colors = {good: 'var(--success)', ok: '#D69E2E', low: 'var(--fail)'};
+    const C = 2 * Math.PI * 20;
+    const val = document.getElementById('pcGaugeVal');
+    val.style.strokeDasharray = C;
+    val.style.strokeDashoffset = C * (1 - r.score / 100);
+    val.style.stroke = colors[r.tone];
+    document.getElementById('pcScoreNum').textContent = r.score;
+    const lab = document.getElementById('pcLabel');
+    lab.textContent = r.label; lab.className = r.tone;
+    document.getElementById('pcHead').setAttribute('aria-label', `Post check: ${r.score} out of 100, ${r.label}`);
+
+    const icon = {pass: '✓', warn: '!', fail: '✕'};
+    let html = '';
+    if(r.placeholders.length){
+      html += `<div class="pc-blocker"><b>Fix before posting:</b> ${r.placeholders.length === 1 ? 'there is a placeholder' : 'there are ' + r.placeholders.length + ' placeholders'} to fill in with your real details (${esc(r.placeholders.slice(0, 3).map(p=> p.text).join(', '))}${r.placeholders.length > 3 ? '…' : ''}). This costs 15 points until it's done.
+        <button type="button" class="pc-show" data-range="${r.placeholders[0].range.join(',')}">Show me</button></div>`;
+    }
+    html += r.criteria.map(c=> `<div class="pc-row ${c.state}">
+        <div class="pc-row-top"><span class="pc-ico" aria-hidden="true">${icon[c.state]}</span><span class="pc-row-label">${esc(c.label)}</span><span class="pc-pts">${c.points}/${c.max}</span></div>
+        <div class="pc-minibar" aria-hidden="true"><i style="width:${Math.round(c.points / c.max * 100)}%"></i></div>
+        <div class="pc-detail">${esc(c.detail)}</div>
+        ${c.tips.map(t=> `<div class="pc-tip"><span>${esc(t.text)} ${t.range ? `<button type="button" class="pc-show" data-range="${t.range.join(',')}">Show me</button>` : ''}</span></div>`).join('')}
+      </div>`).join('');
+    r.notes.forEach(n=> html += `<div class="pc-tip" style="margin-left:0;"><span>${esc(n)}</span></div>`);
+    html += `<div class="pc-note">This checks how your post is written for LinkedIn (hook, spacing, ending and more), not how good your idea is. It's a set of proven rules of thumb, not a guarantee: a post that breaks a rule on purpose can still do great.</div>`;
+    document.getElementById('pcBody').innerHTML = html;
   }
   document.getElementById('pcHead').addEventListener('click', ()=>{
     const wrap = document.getElementById('postCheck');
     wrap.classList.toggle('open');
     document.getElementById('pcHead').setAttribute('aria-expanded', wrap.classList.contains('open') ? 'true' : 'false');
   });
-  function unfilledPlaceholders(){ return [...new Set((postInput.value.match(PLACEHOLDER_RE) || []))]; }
+  // "Show me": select that part of the post in the editor.
+  document.getElementById('pcBody').addEventListener('click', e=>{
+    const b = e.target.closest('.pc-show'); if(!b) return;
+    const [s0, e0] = b.dataset.range.split(',').map(Number);
+    postInput.focus();
+    postInput.setSelectionRange(s0, e0);
+    // Scroll the textarea so the selection is visible.
+    const before = postInput.value.slice(0, s0);
+    const lineHeight = parseFloat(getComputedStyle(postInput).lineHeight) || 20;
+    const approxLine = before.split('\n').length + Math.floor(before.length / 70);
+    postInput.scrollTop = Math.max(0, (approxLine - 3) * lineHeight);
+  });
+  function unfilledPlaceholders(){ PLACEHOLDER_RE.lastIndex = 0; return [...new Set((postInput.value.match(PLACEHOLDER_RE) || []))]; }
 
   // ---------- Autosave ----------
   // Saves a few seconds after you stop typing (text, first comment, headline,
