@@ -2875,6 +2875,8 @@
       verifyEmailTwoStepCodeFn = firebase.functions().httpsCallable('verifyEmailTwoStepCode');
     }catch(e){}
 
+    // Every "Log in" button on the website links here with ?login=1.
+    const cameFromLogInLink = new URLSearchParams(location.search).has('login');
     function completeLoginRedirect(){
       try{ sessionStorage.setItem('ptJustLoggedIn', String(Date.now())); }catch(e){}
       location.href = 'home.html';
@@ -3113,7 +3115,7 @@
       submitBtn.textContent = 'Verifying...';
       verifyEmailTwoStepCodeFn({code, purpose: 'login'}).then(()=>{
         if(auth.currentUser) markEmailTwoStepVerified(auth.currentUser.uid);
-        if(pendingTwoStepContext === 'revalidate'){
+        if(pendingTwoStepContext === 'revalidate' && !cameFromLogInLink){
           // Reveal directly, right here, rather than reloading the page —
           // a reload would just re-run the whole check from scratch again.
           if(auth.currentUser) proceedToRevealBoardsApp(auth.currentUser);
@@ -3920,7 +3922,9 @@
         // included) are satisfied; a genuine revisit reveals this page,
         // since that's what the person was actually trying to do.
         function finishAuthFlow(user){
-          if(isFreshLoginByTimestamp){ completeLoginRedirect(); }
+          // Also when this page was opened from a "Log in" link (?login=1):
+          // someone who's still signed in from before goes to home.html too.
+          if(isFreshLoginByTimestamp || cameFromLogInLink){ completeLoginRedirect(); }
           else{ proceedToRevealBoardsApp(user); }
         }
 
