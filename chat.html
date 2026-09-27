@@ -1127,6 +1127,23 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 <script>
+  // Effective plan: an active subscription (or billing-exempt) = the paid plan;
+  // otherwise the first 7 days after the workspace was created = Premium trial;
+  // after that (and after cancelling) = Free. Same rule as the Cloud Functions
+  // and the Firestore rules.
+  const PT_TRIAL_DAYS = 7;
+  function ptTrialEndsAt(ws){
+    const c = ws && ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
+    return c ? c + PT_TRIAL_DAYS * 86400000 : 0;
+  }
+  function effectivePlanOf(ws){
+    ws = ws || {};
+    if(ws.billingExempt === true) return ws.plan && ws.plan !== 'free' ? ws.plan : 'premium';
+    if(ws.subscriptionActive === true) return ws.plan || 'premium';
+    return Date.now() < ptTrialEndsAt(ws) ? 'premium' : 'free';
+  }
+  function isOnTrial(ws){ ws = ws || {}; return ws.billingExempt !== true && ws.subscriptionActive !== true && Date.now() < ptTrialEndsAt(ws); }
+
 (function(){
   // ---------- i18n ----------
   const TRANSLATIONS = {
@@ -2388,7 +2405,7 @@
       // accounts, etc. Set directly on the workspace doc in Firestore
       // Console (never through any UI), and always wins regardless of
       // what Stripe actually says.
-      subscriptionActive = data.billingExempt === true || data.subscriptionActive === true;
+      subscriptionActive = true; // Free is a real, working plan now (no read-only mode); limits come from effectivePlanOf()
       updateSubscriptionGate();
       document.getElementById('chatLockedState').style.display = 'none';
       document.getElementById('chatSidebar').style.display = '';

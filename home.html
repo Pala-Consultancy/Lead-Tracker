@@ -1352,6 +1352,15 @@
   [data-theme="dark"] .live-dot{box-shadow:0 0 10px 1px rgba(84,179,155,0.5);}
   [data-theme="dark"] ::-webkit-scrollbar-thumb{background:#2E3D4E;}
   [data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#3D5064;}
+
+  .trial-banner{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+    padding:9px 18px;background:linear-gradient(90deg,#3730B3,#7B3FE4);color:#fff;font:500 13px 'Inter',sans-serif;text-align:center;}
+  .trial-banner b{font-weight:700;}
+  .trial-banner a{color:#fff;font-weight:700;background:rgba(255,255,255,.18);border-radius:999px;padding:4px 12px;text-decoration:none;white-space:nowrap;}
+  .trial-banner a:hover{background:rgba(255,255,255,.28);}
+  .trial-banner.ended{background:#FFF1DC;color:#6B4200;}
+  .trial-banner.ended a{color:#6B4200;background:rgba(107,66,0,.1);}
+  .trial-banner[hidden]{display:none;}
 </style>
 </head>
 <body>
@@ -1514,6 +1523,7 @@
 </aside>
 
 <div id="appRoot">
+<div class="trial-banner" id="trialBanner" hidden role="status"></div>
 <div class="app">
   <div class="boards-main-column">
   <header>
@@ -1936,6 +1946,38 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
+  // Effective plan: an active subscription (or billing-exempt) = the paid plan;
+  // otherwise the first 7 days after the workspace was created = Premium trial;
+  // after that (and after cancelling) = Free. Same rule as the Cloud Functions
+  // and the Firestore rules.
+  const PT_TRIAL_DAYS = 7;
+  function ptTrialEndsAt(ws){
+    const c = ws && ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
+    return c ? c + PT_TRIAL_DAYS * 86400000 : 0;
+  }
+  function effectivePlanOf(ws){
+    ws = ws || {};
+    if(ws.billingExempt === true) return ws.plan && ws.plan !== 'free' ? ws.plan : 'premium';
+    if(ws.subscriptionActive === true) return ws.plan || 'premium';
+    return Date.now() < ptTrialEndsAt(ws) ? 'premium' : 'free';
+  }
+  // "Premium trial: 5 days left" on Home, or a one-time note once it's over.
+  function renderTrialBanner(ws){
+    const el = document.getElementById('trialBanner'); if(!el) return;
+    const ends = ptTrialEndsAt(ws);
+    if(isOnTrial(ws)){
+      const daysLeft = Math.max(1, Math.ceil((ends - Date.now()) / 86400000));
+      el.className = 'trial-banner';
+      el.innerHTML = `<span>✨ <b>Premium trial:</b> ${daysLeft} day${daysLeft === 1 ? '' : 's'} left with everything unlocked. After that you're on Free (2 boards, 10 emails and 10 sequences a month).</span><a href="billing.html">Choose a plan</a>`;
+      el.hidden = false;
+    } else if(ws.billingExempt !== true && ws.subscriptionActive !== true && ends && Date.now() - ends < 14 * 86400000){
+      el.className = 'trial-banner ended';
+      el.innerHTML = `<span>Your Premium trial has ended: you're now on the <b>Free plan</b>. Upgrade to get back unlimited emails, AI tools, exports and more.</span><a href="billing.html">See plans</a>`;
+      el.hidden = false;
+    } else el.hidden = true;
+  }
+  function isOnTrial(ws){ ws = ws || {}; return ws.billingExempt !== true && ws.subscriptionActive !== true && Date.now() < ptTrialEndsAt(ws); }
+
 (function(){
   // Mark this session as having started from the home hub, so any page
   // reached later — even several clicks deep — can offer a way back here.
@@ -3396,13 +3438,14 @@
     if(unsubscribeOrgPlan){ unsubscribeOrgPlan(); unsubscribeOrgPlan = null; }
     unsubscribeOrgPlan = workspaceRef.onSnapshot(doc=>{
       const data = doc.exists ? doc.data() : {};
-      orgPlan = data.plan || 'growth';
+      orgPlan = effectivePlanOf(data);
+      renderTrialBanner(data);
       // billingExempt is a manual override for workspaces that shouldn't
       // be gated at all — the builder's own workspace, internal/demo
       // accounts, etc. Set directly on the workspace doc in Firestore
       // Console (never through any UI), and always wins regardless of
       // what Stripe actually says.
-      subscriptionActive = data.billingExempt === true || data.subscriptionActive === true;
+      subscriptionActive = true; // Free is a real, working plan now (no read-only mode); limits come from effectivePlanOf()
       if(auth && auth.currentUser && membersCollection){
         membersCollection.doc(auth.currentUser.uid).get().then(memberDoc=>{
           currentUserIsAdmin = memberDoc.exists && memberDoc.data().isAdmin === true;

@@ -520,6 +520,8 @@
   }
   .ideas-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-100%);animation:ideaBtnShine 4s ease-in-out infinite;}
   @keyframes ideaBtnShine{0%,70%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+  .ideas-btn.locked,.fmt-btn.ai.locked{background:#E3E7EE;color:#5B6B7F;box-shadow:none;}
+  .ideas-btn.locked::after{display:none;}
   .ideas-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(10,102,194,.32);}
   .ideas-btn:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
 
@@ -2925,6 +2927,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 
   // ---------- Open / close / tabs ----------
   function openIdeas(){
+    if(aiLocked()){ showToast(AI_LOCK_MSG, true); return; }
     restoreIdeaPrefs();
     if(!document.getElementById('ideaAudience').value.trim() && idealReader) document.getElementById('ideaAudience').value = idealReader;
     const overlay = document.getElementById('ideasOverlay');
@@ -3608,6 +3611,30 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     return {score, label, tone, criteria, placeholders, notes, words};
   }
 
+  // ---------- Plan: the AI tools aren't on Free ----------
+  // Effective plan, same rule as every page, the Cloud Functions and the rules:
+  // paid plan with an active subscription; else Premium for the first 7 days; then Free.
+  let composerPlan = null; // unknown until the workspace is loaded (the server checks too)
+  function effectivePlanOf(ws){
+    ws = ws || {};
+    if(ws.billingExempt === true) return ws.plan && ws.plan !== 'free' ? ws.plan : 'premium';
+    if(ws.subscriptionActive === true) return ws.plan || 'premium';
+    const c = ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
+    return c && Date.now() < c + 7 * 86400000 ? 'premium' : 'free';
+  }
+  function aiLocked(){ return composerPlan === 'free'; }
+  const AI_LOCK_MSG = "The AI tools (post ideas, AI edit and the AI post check) are part of the 7-day trial and the paid plans. Upgrade in Billing to keep using them.";
+  function applyAiLock(){
+    const locked = aiLocked();
+    ['ideasBtn', 'aiEditBtn'].forEach(id=>{
+      const b = document.getElementById(id); if(!b) return;
+      b.classList.toggle('locked', locked);
+      b.title = locked ? AI_LOCK_MSG : (id === 'ideasBtn' ? 'Get post ideas and ready-to-edit drafts' : 'AI edit: punchier, shorter, grammar, hook, translate');
+      if(locked && !b.textContent.includes('🔒')) b.textContent = '🔒 ' + b.textContent.replace(/^✨\s*/, '');
+    });
+    if(typeof updatePostCheck === 'function') updatePostCheck();
+  }
+
   // ---------- Goal of this post ----------
   // Saved with the post (field "goal") and sent to the AI review, which then
   // also scores how well the post serves that goal.
@@ -3729,6 +3756,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   const AI_REVIEW_LATEST = 4;
   function aiReviewIsCurrent(){ return !!aiReview && aiReview.v >= 3 && aiReview.hash === reviewKey(); }
   function scheduleAiReview(){
+    if(aiLocked()) return;
     clearTimeout(aiReviewTimer); aiReviewTimer = null;
     if(reviewText().length < AI_REVIEW_MIN_CHARS || aiReviewIsCurrent()) return;
     if(aiReviewStuckKey && aiReviewStuckKey === reviewKey()) return;
@@ -3738,6 +3766,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     aiReviewTimer = setTimeout(()=>{ aiReviewTimer = null; runAiReview(false); }, wait);
   }
   function runAiReview(manual){
+    if(aiLocked()){ if(manual) showToast(AI_LOCK_MSG, true); return; }
     if(manual) aiReviewStuckKey = '';
     const text = reviewText();
     if(aiReviewBusy || text.length < AI_REVIEW_MIN_CHARS || (!manual && aiReviewIsCurrent())) return;
@@ -3905,6 +3934,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       : r.placeholders.length ? 'Fill in the placeholders first'
       : score >= 90 ? 'Excellent, ready to post' : score >= 75 ? 'Strong, a few small tweaks' : score >= 55 ? 'Good start, some fixes will help' : 'Needs work, see the tips';
     if(tooShort) {}
+    else if(!hasAi && aiLocked()) label = 'Writing checks only · AI review on paid plans';
     else if(!hasAi && aiReviewStuckKey && aiReviewStuckKey === reviewKey() && !aiReviewBusy) label = "Estimate · the AI review didn't work, see below";
     else if(!hasAi) label = (aiReviewBusy ? 'Estimate · AI is reading your post…' : text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'Estimate · AI review starts at 30 characters' : 'Estimate · AI review coming up') ;
     else if(!current) label += aiReviewBusy ? ' · AI is rechecking…' : ' · AI rechecks soon';
@@ -3946,6 +3976,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       const ISSUE_LABELS = {grammar: 'Grammar', clarity: 'Clarity', specificity: 'Be specific', ai: 'Sounds like AI', structure: 'Structure', goal: 'Goal', reader: 'Your reader'};
       let body = '';
       if(aiReviewBusy && !hasAi) body = aiReadingHtml(false);
+      else if(!hasAi && aiLocked()) body = `<div class="pc-detail">The AI review (sense, grammar, hook, specificity, structure, goal and reader) is part of the 7-day trial and the paid plans. Your score below comes from the writing checks only. <a href="billing.html">Upgrade in Billing</a></div>`;
       else if(!hasAi) body = `<div class="pc-detail">${text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'The AI reads your post once it has at least 30 characters.'
         : outdated ? 'Your post (or its goal) changed since the last review, or the review is from an older version of the check. The AI rereads it in a moment. You can also click "Check now".'
         : 'The AI reads your post a few seconds after you stop typing.'}</div>`;
@@ -3980,7 +4011,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
             : '<span>Is this judgment fair?</span><button type="button" class="pc-fb-btn" data-fb="up" aria-label="Yes, fair">👍</button><button type="button" class="pc-fb-btn" data-fb="down" aria-label="No, I disagree">👎 Disagree</button>'}</div>` : ''}`;
       }
       if(aiReviewError) body += `<div class="pc-detail" style="color:var(--fail);">${esc(aiReviewError)}</div>`;
-      const canCheck = text.replace(/\s+$/, '').length >= AI_REVIEW_MIN_CHARS && !aiReviewBusy && !current;
+      const canCheck = !aiLocked() && text.replace(/\s+$/, '').length >= AI_REVIEW_MIN_CHARS && !aiReviewBusy && !current;
       html += `<div class="pc-row ${state}">
           <div class="pc-row-top"><span class="pc-ico" aria-hidden="true">${hasAi ? icon[state] : '…'}</span><span class="pc-row-label">Content review <span class="pc-ai-badge">AI</span></span>
             ${canCheck ? '<button type="button" class="pc-show" id="pcAiRun" style="margin-right:8px;">Check now</button>' : ''}
@@ -4101,6 +4132,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       <div class="ai-langs" id="aiLangs" hidden>${AI_LANGS.map(([v, l])=> `<button type="button" class="ai-lang" data-lang="${v}">${l}</button>`).join('')}</div>`;
   }
   function openAiMenu(){
+    if(aiLocked()){ showToast(AI_LOCK_MSG, true); return; }
     if(!postInput.value.trim()){ showToast('Write something first, then use AI edit.', true); postInput.focus(); return; }
     aiRange = [postInput.selectionStart, postInput.selectionEnd];
     if(typeof closeEmoji === 'function' && emojiPop.classList.contains('open')) closeEmoji(false);
@@ -5048,6 +5080,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         return;
       }
       currentWorkspaceId = workspaceId;
+      db.doc(`workspaces/${workspaceId}`).get().then(ws=>{ composerPlan = effectivePlanOf(ws.exists ? ws.data() : {}); applyAiLock(); }).catch(()=>{});
       loadDrafts().then(()=>{
         // Opened from a reminder email (?post=<id>): open that post in the editor.
         const wanted = new URLSearchParams(location.search).get('post');

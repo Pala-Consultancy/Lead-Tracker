@@ -491,6 +491,16 @@
   // the export buttons have no server round-trip so this client-side
   // disable is the only gate they need) — this just keeps the UI honest
   // about what's actually available.
+
+  // Effective plan (same rule as every page, the Cloud Functions and the rules):
+  // paid plan with an active subscription; otherwise Premium for the first 7 days; then Free.
+  function effectivePlanOf(ws){
+    ws = ws || {};
+    if(ws.billingExempt === true) return ws.plan && ws.plan !== 'free' ? ws.plan : 'premium';
+    if(ws.subscriptionActive === true) return ws.plan || 'premium';
+    const c = ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
+    return c && Date.now() < c + 7 * 86400000 ? 'premium' : 'free';
+  }
   function applyPlanGating(plan){
     const isPaidPlan = plan === 'starter' || plan === 'premium' || plan === 'growth';
     if(isPaidPlan) return; // buttons start enabled — nothing to do
@@ -1433,7 +1443,7 @@
       loadHistory(workspaceId, user);
       currentWorkspaceId = workspaceId;
       db.doc(`workspaces/${workspaceId}`).get().then(wsDoc=>{
-        applyPlanGating(wsDoc.exists ? (wsDoc.data().plan || 'free') : 'free');
+        applyPlanGating(wsDoc.exists ? effectivePlanOf(wsDoc.data()) : 'free');
       }).catch(()=>{
         applyPlanGating('free'); // can't confirm the plan — don't unlock paid features on a guess
       });
