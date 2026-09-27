@@ -115,27 +115,47 @@
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
 <style>
+  /* The new theme flows out from the button as a soft, glowing wave. */
+  @property --pt-r{syntax:'<length>';inherits:false;initial-value:0px;}
   ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal;}
-  ::view-transition-old(root){z-index:1;} ::view-transition-new(root){z-index:2;}
-  .pt-theme-spark{position:fixed;left:0;top:0;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;pointer-events:none;z-index:2147483647;}
+  ::view-transition-old(root){z-index:1;}
+  ::view-transition-new(root){z-index:2;
+    -webkit-mask-image:radial-gradient(circle at var(--pt-x,50%) var(--pt-y,50%), #000 var(--pt-r), transparent calc(var(--pt-r) + 160px));
+            mask-image:radial-gradient(circle at var(--pt-x,50%) var(--pt-y,50%), #000 var(--pt-r), transparent calc(var(--pt-r) + 160px));}
+  .pt-theme-fx{position:fixed;inset:0;pointer-events:none;z-index:2147483647;overflow:hidden;}
+  .pt-star{position:absolute;border-radius:50%;background:#fff;opacity:0;}
+  .pt-star.glow{box-shadow:0 0 6px 2px rgba(190,185,255,.9), 0 0 18px 6px rgba(122,115,255,.35);}
+  .pt-sun{position:absolute;border-radius:50%;opacity:0;
+    background:radial-gradient(circle, rgba(255,214,140,.55) 0%, rgba(255,181,71,.25) 30%, rgba(255,181,71,0) 70%);}
   .pt-theme-wipe{position:fixed;inset:0;z-index:2147483646;pointer-events:none;}
 </style>
 <script>
 (function(){
   function reduced(){ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
-  function burst(x, y, dark){
-    var colors = dark ? ['#B4AFFF','#8E88FF','#FFFFFF','#D6D3FF'] : ['#FFB547','#FFD28F','#FF9D00','#FFE2B3'];
-    for(var i = 0; i < 12; i++){
-      var el = document.createElement('i'); el.className = 'pt-theme-spark';
-      el.style.background = colors[i % colors.length];
-      if(dark && i % 3 === 0){ el.style.width = el.style.height = '3px'; el.style.boxShadow = '0 0 8px 2px rgba(180,175,255,.8)'; }
-      document.body.appendChild(el);
-      var ang = (Math.PI * 2 * i) / 12 + Math.random() * 0.4, dist = 38 + Math.random() * 46;
-      el.animate([
-        {transform:'translate(' + x + 'px,' + y + 'px) scale(.4)', opacity:1},
-        {transform:'translate(' + (x + Math.cos(ang) * dist) + 'px,' + (y + Math.sin(ang) * dist) + 'px) scale(1)', opacity:0}
-      ], {duration:650 + Math.random() * 250, easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish = (function(n){ return function(){ n.remove(); }; })(el);
+  function layer(){ var d = document.createElement('div'); d.className = 'pt-theme-fx'; document.body.appendChild(d); return d; }
+  // Going dark: stars come out across the whole screen, nearest to the button first.
+  function starfield(x, y){
+    var fx = layer(), n = Math.round(Math.min(90, (innerWidth * innerHeight) / 14000)), maxD = Math.hypot(innerWidth, innerHeight);
+    for(var i = 0; i < n; i++){
+      var s = document.createElement('i'), sx = Math.random() * innerWidth, sy = Math.random() * innerHeight;
+      var size = Math.random() < 0.18 ? 3 : 1 + Math.random() * 1.6;
+      s.className = 'pt-star' + (size >= 3 ? ' glow' : '');
+      s.style.cssText = 'left:' + sx + 'px;top:' + sy + 'px;width:' + size + 'px;height:' + size + 'px;';
+      fx.appendChild(s);
+      var delay = (Math.hypot(sx - x, sy - y) / maxD) * 520 + Math.random() * 260;
+      s.animate([{opacity:0, transform:'scale(.2)'}, {opacity:1, transform:'scale(1)', offset:.35}, {opacity:.85, offset:.7}, {opacity:0, transform:'scale(.6)'}],
+        {duration:1300 + Math.random() * 700, delay:delay, easing:'ease-out', fill:'both'});
     }
+    setTimeout(function(){ fx.remove(); }, 2700);
+  }
+  // Going light: a warm sunrise glow blooms out from the button.
+  function sunrise(x, y){
+    var fx = layer(), sun = document.createElement('i'), R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) * 1.1;
+    sun.className = 'pt-sun';
+    sun.style.cssText = 'left:' + (x - R) + 'px;top:' + (y - R) + 'px;width:' + (R * 2) + 'px;height:' + (R * 2) + 'px;';
+    fx.appendChild(sun);
+    sun.animate([{opacity:0, transform:'scale(.15)'}, {opacity:1, transform:'scale(.7)', offset:.45}, {opacity:0, transform:'scale(1.05)'}],
+      {duration:1300, easing:'cubic-bezier(.2,.7,.2,1)', fill:'both'}).onfinish = function(){ fx.remove(); };
   }
   document.addEventListener('click', function(e){
     var btn = e.target && e.target.closest && e.target.closest('#themeDarkBtn,#themeLightBtn');
@@ -145,24 +165,31 @@
     if(toDark === isDark || reduced()) return;           // nothing to animate: let the page handle it
     e.stopImmediatePropagation(); e.preventDefault();
     var r = btn.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
-    var radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    // A button without a position on screen (e.g. inside a panel that's closing):
+    // start from where the click happened, or else from the middle of the screen.
+    if(!r.width && !r.height){ x = e.clientX || innerWidth / 2; y = e.clientY || innerHeight / 2; }
+    var radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 200;
     var replay = function(){ btn.__ptReplay = true; btn.click(); btn.__ptReplay = false; };
-    if(document.startViewTransition){
+    var after = function(){ toDark ? starfield(x, y) : sunrise(x, y); };
+    var supportsMask = window.CSS && CSS.registerProperty !== undefined;
+    if(document.startViewTransition && supportsMask){
+      var root = document.documentElement;
+      root.style.setProperty('--pt-x', x + 'px'); root.style.setProperty('--pt-y', y + 'px');
       var t = document.startViewTransition(replay);
       t.ready.then(function(){
-        document.documentElement.animate(
-          {clipPath:['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + radius + 'px at ' + x + 'px ' + y + 'px)']},
-          {duration:780, easing:'cubic-bezier(.7,0,.25,1)', pseudoElement:'::view-transition-new(root)'});
+        root.animate({'--pt-r':['0px', radius + 'px']}, {duration:950, easing:'cubic-bezier(.65,0,.25,1)', pseudoElement:'::view-transition-new(root)'});
+        setTimeout(after, 420);  // stars / sunrise start while the wave is still rolling
       });
-      t.finished.then(function(){ burst(x, y, toDark); });
+      t.finished.then(function(){ root.style.removeProperty('--pt-x'); root.style.removeProperty('--pt-y'); });
     } else {
       var wipe = document.createElement('div'); wipe.className = 'pt-theme-wipe';
       wipe.style.background = toDark ? '#0D0F1F' : '#EFF5FC';
       document.body.appendChild(wipe);
       wipe.animate({clipPath:['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + radius + 'px at ' + x + 'px ' + y + 'px)']},
-        {duration:600, easing:'cubic-bezier(.7,0,.25,1)', fill:'forwards'}).onfinish = function(){
+        {duration:650, easing:'cubic-bezier(.65,0,.25,1)', fill:'forwards'}).onfinish = function(){
           replay();
-          wipe.animate({opacity:[1, 0]}, {duration:320, fill:'forwards'}).onfinish = function(){ wipe.remove(); burst(x, y, toDark); };
+          wipe.animate({opacity:[1, 0]}, {duration:340, fill:'forwards'}).onfinish = function(){ wipe.remove(); };
+          after();
         };
     }
   }, true);
@@ -223,6 +250,15 @@
   html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#2B3060;border-radius:8px;}
   html[data-theme="dark"] ::-webkit-scrollbar-track{background:transparent;}
   html[data-theme="dark"] img[src$=".svg"]:not([data-keep-color]){filter:none;}
+  /* The old dark design put a grain texture + glow box behind the page title
+     (dashboard, trash, also in LinkedIn mode). It doesn't fit indigo night. */
+  html[data-theme="dark"] .title-block{box-shadow:none !important;overflow:visible !important;}
+  html[data-theme="dark"] .title-block::after{content:none !important;display:none !important;}
+  /* "Contacted" is the strong black dot in light mode; its dark-mode twin is a
+     strong light dot, so it reads as clearly "on" as the coloured ones. */
+  html[data-theme="dark"] .step-dot.on.contacted, html[data-theme="dark"] .outreach-chip.on.contacted{
+    background:#E4E6FA !important; color:#161934 !important; box-shadow:0 0 0 1px rgba(255,255,255,.1), 0 2px 8px -2px rgba(0,0,0,.6) !important;
+  }
   /* Post composer: its LinkedIn-style parts (calendar, dialogs, compare, ideas)
      define their own colors locally; switch those to the dark theme. */
   html[data-theme="dark"] .lk{--lk-blue:#71B7FB;--lk-blue-dark:#A8D4FF;--lk-text:rgba(236,238,255,.92);--lk-muted:rgba(236,238,255,.62);--lk-line:rgba(255,255,255,.1);--lk-feed:#0D0F1F;}
