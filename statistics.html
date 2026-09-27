@@ -1938,17 +1938,21 @@
   function updateScopeNote(boardIds){
     const note = document.getElementById('scopeNote');
     if(!note) return;
-    if(statsScope !== 'all' || boardIds.length === 0){
+    if(statsScope !== 'all' || (boardIds.length === 0 && !lockedBoardCount)){
       note.style.display = 'none';
       return;
     }
     resolveBoardNames(boardIds).then(()=>{
       const names = boardIds.map(id => boardNameCache[id] || id);
-      note.textContent = `${t('scopeAllBoardsNote').replace('{count}', boardIds.length)}: ${names.join(', ')}`;
+      note.textContent = `${t('scopeAllBoardsNote').replace('{count}', boardIds.length)}: ${names.join(', ')}` +
+        (lockedBoardCount ? ` · ${lockedBoardCount} password-protected ${lockedBoardCount === 1 ? 'board' : 'boards'} not included (open ${lockedBoardCount === 1 ? 'it' : 'them'} and enter the password to include ${lockedBoardCount === 1 ? 'it' : 'them'})` : '');
       note.style.display = '';
     });
   }
 
+  // Loading state, so the page never says "No data yet" before the data has arrived
+  // (or when loading actually failed).
+  let statsLoaded = false, statsLoadError = null, lockedBoardCount = 0;
   function initFirebaseSync(){
     if(!firebaseConnected){
       document.getElementById("content").innerHTML = `<div class="empty-state">
@@ -1960,28 +1964,61 @@
     if(unsubscribeLeadsListener){ unsubscribeLeadsListener(); unsubscribeLeadsListener = null; }
 
     if(statsScope === 'all'){
-      unsubscribeLeadsListener = db.collectionGroup('leads').onSnapshot(snapshot=>{
-        const boardIdsSeen = new Set();
-        allLeadsRaw = snapshot.docs.map(doc=>{
-          const parentBoardId = doc.ref.parent.parent ? doc.ref.parent.parent.id : null;
-          if(parentBoardId) boardIdsSeen.add(parentBoardId);
-          return {id:doc.id, boardId:parentBoardId, ...doc.data()};
-        }).filter(l=>!l.deleted);
-        updateScopeNote(Array.from(boardIdsSeen));
+      // All boards of THIS workspace, read board by board (the same way each
+      // board's own statistics work). Boards in the trash are left out, and
+      // password-protected boards you haven't unlocked are skipped with a note
+      // instead of breaking the whole page.
+      statsLoaded = false; statsLoadError = null;
+      const leadsByBoard = {};
+      const lockedBoards = new Set();
+      const boardListeners = {};
+      let boardsKnown = false;
+      const publish = ()=>{
+        if(!boardsKnown) return;
+        const ids = Object.keys(boardListeners);
+        if(ids.some(id=> !(id in leadsByBoard))) return; // wait until every board has answered once
+        allLeadsRaw = ids.flatMap(id=> leadsByBoard[id] || []);
+        lockedBoardCount = lockedBoards.size;
+        statsLoaded = true;
+        updateScopeNote(ids.filter(id=> !lockedBoards.has(id)));
         applyDateFilter();
+      };
+      const boardsUnsub = boardsCollection.onSnapshot(snap=>{
+        const ids = snap.docs.filter(d=> d.data().deleted !== true).map(d=> d.id);
+        Object.keys(boardListeners).forEach(id=>{
+          if(!ids.includes(id)){ boardListeners[id](); delete boardListeners[id]; delete leadsByBoard[id]; lockedBoards.delete(id); }
+        });
+        ids.forEach(id=>{
+          if(boardListeners[id]) return;
+          boardListeners[id] = boardsCollection.doc(id).collection('leads').onSnapshot(s2=>{
+            leadsByBoard[id] = s2.docs.map(doc=> ({id: doc.id, boardId: id, ...doc.data()})).filter(l=> !l.deleted);
+            lockedBoards.delete(id);
+            publish();
+          }, err=>{
+            // Most often a password-protected board that isn't unlocked in this session.
+            console.warn('Statistics: could not read leads of board', id, err && err.code);
+            leadsByBoard[id] = [];
+            lockedBoards.add(id);
+            publish();
+          });
+        });
+        boardsKnown = true;
+        publish();
       }, err=>{
         console.error("Firestore sync error", err);
-        document.getElementById("content").innerHTML = `<div class="empty-state">
-          <h3>Could not load data</h3>
-          <p>${esc(friendlyErr(err))}</p>
-        </div>`;
+        statsLoadError = err;
+        render();
       });
+      unsubscribeLeadsListener = ()=>{ boardsUnsub(); Object.values(boardListeners).forEach(u=> u()); };
     } else {
       updateScopeNote([]);
+      statsLoaded = false; statsLoadError = null; lockedBoardCount = 0;
       unsubscribeLeadsListener = leadsCollection.onSnapshot(snapshot=>{
         allLeadsRaw = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()})).filter(l=>!l.deleted);
+        statsLoaded = true;
         applyDateFilter();
       }, err=>{
+        statsLoadError = err;
         console.error("Firestore sync error", err);
         document.getElementById("content").innerHTML = `<div class="empty-state">
           <h3>Could not load data</h3>
@@ -2528,6 +2565,24 @@
 
   function render(){
     const container = document.getElementById("content");
+    if(statsLoadError){
+      container.innerHTML = `<div class="empty-state">
+        <h3>Could not load data</h3>
+        <p>${esc(friendlyErr(statsLoadError))}</p>
+      </div>`;
+      return;
+    }
+    if(!statsLoaded){
+      container.innerHTML = `<div class="empty-state"><h3>Loading your statistics…</h3><p>Collecting the leads from your boards.</p></div>`;
+      return;
+    }
+    if(leads.length===0 && lockedBoardCount){
+      container.innerHTML = `<div class="empty-state">
+        <h3>${t('noDataYet')}</h3>
+        <p>${lockedBoardCount === 1 ? '1 board is' : lockedBoardCount + ' boards are'} password-protected and not unlocked in this session, so ${lockedBoardCount === 1 ? 'its leads aren\'t' : 'their leads aren\'t'} included. Open ${lockedBoardCount === 1 ? 'that board' : 'those boards'} and enter the password, then come back here.</p>
+      </div>`;
+      return;
+    }
     if(leads.length===0){
       container.innerHTML = `<div class="empty-state">
         <h3>${t('noDataYet')}</h3>
