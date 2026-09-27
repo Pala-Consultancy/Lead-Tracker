@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
+    --purple:#7A4FB5;
     --ink:#1B2430;
     --paper:#EFF5FC;
     --panel:#FFFFFF;
@@ -811,6 +812,57 @@
   ::-webkit-scrollbar-thumb{background:var(--c-border-alt, var(--border));border-radius:6px;border:2px solid transparent;background-clip:padding-box;}
   ::-webkit-scrollbar-thumb:hover{background:var(--slate-light);background-clip:padding-box;}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+  /* ================= Billing page refresh ================= */
+  /* Plan overview: what you're on, what you've used, how long the trial lasts */
+  .plan-overview{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,1.35fr) auto;gap:0;
+    background:var(--panel);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);margin:0 0 40px;}
+  .plan-overview::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg, var(--teal), var(--purple), var(--amber));}
+  .plan-overview > div{padding:26px 28px 24px;}
+  .plan-overview > div + div{border-left:1px solid var(--border);}
+  .po-label{font:600 12.5px 'Inter',sans-serif;color:var(--slate);margin-bottom:6px;}
+  .po-name{font:800 30px/1.1 'Sora',sans-serif;color:var(--ink);letter-spacing:-.01em;}
+  .po-price{font:500 14px 'IBM Plex Mono',monospace;color:var(--slate);margin-top:6px;}
+  .plan-overview .trial-note{margin:16px 0 0;padding:10px 12px;font-size:12.5px;line-height:1.5;border-radius:10px;}
+  .po-usage{display:flex;flex-direction:column;gap:16px;justify-content:center;}
+  .po-usage-title{font:600 12.5px 'Inter',sans-serif;color:var(--slate);margin-bottom:-4px;}
+  .po-meter-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13.5px;color:var(--ink);margin-bottom:7px;}
+  .po-meter-top b{font:600 14px 'IBM Plex Mono',monospace;white-space:nowrap;}
+  .po-meter-top small{font:500 12px 'Inter',sans-serif;color:var(--slate-light);}
+  .po-meter-bar{height:8px;border-radius:4px;background:var(--c-blue-soft);overflow:hidden;}
+  .po-meter-bar i{display:block;height:100%;border-radius:4px;background:var(--teal);transition:width .8s cubic-bezier(.2,.8,.2,1);}
+  .po-meter:not(.near):not(.full) .po-meter-bar i[style*="width:100%"]{background:linear-gradient(90deg, var(--teal), var(--purple));opacity:.35;}
+  .po-meter.near .po-meter-bar i{background:var(--amber);}
+  .po-meter.full .po-meter-bar i{background:var(--red);}
+  .po-meter.full .po-meter-top b{color:var(--red);}
+  .po-side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-width:170px;}
+  .po-ring{position:relative;width:84px;height:84px;}
+  .po-ring[hidden]{display:none;}
+  .po-ring svg{transform:rotate(-90deg);}
+  .po-ring-track{fill:none;stroke:var(--c-blue-soft);stroke-width:8;}
+  .po-ring-val{fill:none;stroke:var(--teal);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1);}
+  .po-ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;}
+  .po-ring-num b{font:800 24px 'Sora',sans-serif;color:var(--ink);}
+  .po-ring-num span{font:600 10.5px 'Inter',sans-serif;color:var(--slate);margin-top:3px;}
+  .plan-overview .cancel-plan-row{margin:0;text-align:center;}
+  @media (max-width:900px){
+    .plan-overview{grid-template-columns:1fr;}
+    .plan-overview > div + div{border-left:0;border-top:1px solid var(--border);}
+    .po-side{flex-direction:row;justify-content:space-between;min-width:0;}
+  }
+
+  /* Plan cards: key features first, the rest behind "Show all" */
+  .pricing-features li.pf-extra{display:none;}
+  .pricing-features.pf-open li.pf-extra{display:flex;}
+  .features-toggle{margin:14px 0 0;border:0;background:none;padding:6px 0;font:600 13px 'Inter',sans-serif;color:var(--teal);cursor:pointer;text-align:left;}
+  .features-toggle:hover{text-decoration:underline;}
+  .features-toggle:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px;}
+
+  /* Billing details | payment method + invoices, side by side */
+  .billing-lower{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start;margin-top:44px;}
+  .billing-lower .billing-form-card{max-width:none;}
+  @media (max-width:900px){ .billing-lower{grid-template-columns:1fr;} }
+  @media (prefers-reduced-motion: reduce){ .po-meter-bar i,.po-ring-val{transition:none;} }
 </style>
 </head>
 
@@ -896,20 +948,21 @@
     <a class="btn" href="home.html" onclick="if(history.length>1){history.back();return false;}">← Back</a>
   </header>
 
-  <div class="current-plan-banner" id="currentPlanBanner">
-    <div class="plan-orb o1"></div>
-    <div class="plan-orb o2"></div>
-    <div class="current-plan-content">
-      <div class="current-plan-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
-      </div>
-      <div>
-        <div class="k" data-i18n="currentPlanLabel">Current plan</div>
-        <div class="v" id="currentPlanName">Premium</div>
-        <div class="price" id="currentPlanPrice">$57 / month</div>
+  <section class="plan-overview" id="currentPlanBanner" aria-labelledby="currentPlanName">
+    <div class="po-plan">
+      <div class="po-label" data-i18n="currentPlanLabel">Current plan</div>
+      <div class="po-name" id="currentPlanName">Premium</div>
+      <div class="po-price" id="currentPlanPrice">$57 / month</div>
+      <div class="trial-note" id="trialNote" hidden role="status"></div>
+    </div>
+    <div class="po-usage" id="overviewUsage" aria-label="Usage this month"></div>
+    <div class="po-side">
+      <div class="po-ring" id="trialRing" hidden></div>
+      <div class="cancel-plan-row" id="cancelPlanRow">
+        <button type="button" class="cancel-plan-link" id="cancelPlanBtn"><span data-i18n="cancelPlanLink">Cancel my plan</span></button>
       </div>
     </div>
-  </div>
+  </section>
 
   <div id="billingAdminNote"></div>
 
@@ -917,7 +970,6 @@
     <div class="section-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
     <span data-i18n="choosePlanTitle">Choose a plan</span>
   </h2>
-  <div class="trial-note" id="trialNote" hidden role="status"></div>
   <div class="pricing-grid" id="planGrid">
 
     <div class="pricing-card" data-plan="free" id="planCardFree">
@@ -928,7 +980,7 @@
       <div class="pricing-note" data-i18n="readOnlyNote">7-day Premium trial included</div>
       <button type="button" class="pricing-cta ghost" data-i18n="switchToPlan" onclick="window.__billingActions.switchPlan('free')">Switch to this plan</button>
       <ul class="pricing-features">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>7 days of everything in Premium</b>, then:</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>7 days of everything in Premium</b>, then:</span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>2 boards &amp; up to 2 team members</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Real-time boards, dashboard &amp; statistics</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>LinkedIn post composer, scheduling &amp; auto-publishing</li>
@@ -956,22 +1008,22 @@
       <ul class="pricing-features">
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Up to 3 boards</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Up to 3 team members</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Real-time boards &amp; dashboard</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Statistics page</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>LinkedIn tracking mode</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>PalaTrack browser extension for LinkedIn</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Send up to 100 emails/month</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Email sequences (50/month) with reply tracking</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>LinkedIn post composer with live phone, tablet &amp; desktop preview</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Schedule &amp; auto-publish to LinkedIn, with a content calendar</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI post ideas &amp; AI editing</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI post check (score out of 100)</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>LinkedIn message sequences</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Smart reminders</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Real-time boards &amp; dashboard</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Statistics page</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>LinkedIn tracking mode</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>PalaTrack browser extension for LinkedIn</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>9 languages</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Send up to 100 emails/month</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Email sequences (50/month) with reply tracking</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Export email history as CSV/PDF</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Shareable email history links</li>
         <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Alexandre AI assistant</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Smart reminders</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>CSV import &amp; export</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Team chat (unlimited)</li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Email support</li>
@@ -1016,10 +1068,6 @@
 
   </div>
 
-  <div class="cancel-plan-row" id="cancelPlanRow">
-    <button type="button" class="cancel-plan-link" id="cancelPlanBtn"><span data-i18n="cancelPlanLink">Cancel my plan</span></button>
-  </div>
-
   <div class="confirm-overlay" id="cancelPlanModal" style="display:none">
     <div class="confirm-modal">
       <div class="confirm-modal-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
@@ -1032,6 +1080,8 @@
     </div>
   </div>
 
+  <div class="billing-lower">
+    <div class="billing-lower-main">
   <h2 class="section-title">
     <div class="section-icon" style="background:var(--c-green-bg);color:var(--c-green-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2z"/><path d="M2 10h20"/></svg></div>
     <span data-i18n="billingDetailsTitle">Billing details</span>
@@ -1058,7 +1108,9 @@
     </form>
   </div>
 
-  <h2 class="section-title" style="margin-top:36px">
+    </div>
+    <div class="billing-lower-side">
+  <h2 class="section-title">
     <div class="section-icon" style="background:var(--c-purple-bg);color:var(--c-purple-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg></div>
     <span data-i18n="paymentMethodTitle">Payment method</span>
   </h2>
@@ -1071,13 +1123,16 @@
     <button type="button" class="btn" id="managePaymentBtn">Manage payment method</button>
   </div>
 
-  <h2 class="section-title" style="margin-top:36px">
+  <h2 class="section-title" style="margin-top:28px">
     <div class="section-icon" style="background:var(--c-green-bg);color:var(--c-green-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6M9 9h1"/></svg></div>
     <span>Invoices</span>
   </h2>
   <div class="billing-form-card" style="padding:0;overflow:hidden;">
     <div id="invoicesListHolder">
       <div class="invoices-loading">Loading your invoice history…</div>
+    </div>
+  </div>
+
     </div>
   </div>
 
@@ -1426,6 +1481,55 @@
   let currentUserIsAdmin = false;
   let currentPlan = 'premium';
 
+  // ---------- Plan overview: usage this month + trial countdown ----------
+  // Limits mirror the Cloud Functions (sendLeadEmail.js / createSequence.js):
+  // during the 7-day trial and on Premium there's no limit.
+  const USAGE_LIMITS = {
+    emails:    {free: 10, starter: 100, premium: Infinity, growth: Infinity},
+    sequences: {free: 10, starter: 50,  premium: Infinity, growth: Infinity},
+  };
+  function renderOverview(ws){
+    ws = ws || {};
+    const created = ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
+    const trialEnds = created ? created + 7 * 86400000 : 0;
+    const paid = ws.billingExempt === true || ws.subscriptionActive === true;
+    const onTrial = !paid && trialEnds && Date.now() < trialEnds;
+    const plan = ws.billingExempt === true ? 'premium' : paid ? (ws.plan || 'premium') : onTrial ? 'premium' : 'free';
+    const d = new Date();
+    const monthKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    const used = u=> (u && u.monthKey === monthKey ? (u.count || 0) : 0);
+    const rows = [
+      ['Emails sent', used(ws.emailUsage), USAGE_LIMITS.emails[plan]],
+      ['Email sequences started', used(ws.sequenceUsage), USAGE_LIMITS.sequences[plan]],
+    ];
+    const box = document.getElementById('overviewUsage');
+    if(box){
+      const monthName = d.toLocaleDateString(undefined, {month: 'long'});
+      box.innerHTML = `<div class="po-usage-title">This month (${esc(monthName)})</div>` + rows.map(([label, n, max])=>{
+        const unlimited = !isFinite(max);
+        const pct = unlimited ? 0 : Math.min(100, Math.round(n / max * 100));
+        const tone = unlimited ? '' : pct >= 100 ? 'full' : pct >= 80 ? 'near' : '';
+        return `<div class="po-meter ${tone}">
+          <div class="po-meter-top"><span>${label}</span><b>${unlimited ? `${n} <small>· unlimited</small>` : `${n} <small>of ${max}</small>`}</b></div>
+          <div class="po-meter-bar" role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="${unlimited ? n : max}" aria-valuenow="${n}"><i style="width:${unlimited ? 100 : pct}%"></i></div>
+        </div>`;
+      }).join('');
+    }
+    // Trial ring: days left out of 7.
+    const ring = document.getElementById('trialRing');
+    if(ring){
+      if(onTrial){
+        const left = Math.max(1, Math.ceil((trialEnds - Date.now()) / 86400000));
+        const frac = Math.max(0, Math.min(1, (trialEnds - Date.now()) / (7 * 86400000)));
+        const C = 2 * Math.PI * 34;
+        ring.innerHTML = `<svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="34" class="po-ring-track"/><circle cx="42" cy="42" r="34" class="po-ring-val" style="stroke-dasharray:${C};stroke-dashoffset:${C * (1 - frac)}"/></svg>
+          <div class="po-ring-num"><b>${left}</b><span>day${left === 1 ? '' : 's'} left</span></div>`;
+        ring.setAttribute('aria-label', `${left} day${left === 1 ? '' : 's'} left in your Premium trial`);
+        ring.hidden = false;
+      } else ring.hidden = true;
+    }
+  }
+
   function renderPlanState(){
     const info = PLAN_INFO[currentPlan] || PLAN_INFO.premium;
     document.getElementById('currentPlanName').textContent = t(info.nameKey) || info.name;
@@ -1672,6 +1776,24 @@
   }
 
 
+
+  // Long feature lists: show the first 8, the rest behind "Show all N features".
+  document.querySelectorAll('.pricing-card:not([data-plan="free"]) .pricing-features').forEach(ul=>{
+    const items = [...ul.children];
+    if(items.length <= 9) return;
+    items.slice(8).forEach(li=> li.classList.add('pf-extra'));
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'features-toggle';
+    const label = ()=> ul.classList.contains('pf-open') ? 'Show fewer features' : `Show all ${items.length} features`;
+    btn.textContent = label(); btn.setAttribute('aria-expanded', 'false');
+    btn.addEventListener('click', ()=>{
+      ul.classList.toggle('pf-open');
+      btn.setAttribute('aria-expanded', ul.classList.contains('pf-open') ? 'true' : 'false');
+      btn.textContent = label();
+    });
+    ul.after(btn);
+  });
+
   // ---------- Pricing card tilt + spotlight ----------
   document.querySelectorAll('.pricing-card').forEach(card=>{
     let rect = null;
@@ -1737,6 +1859,7 @@
       // No active subscription (and not exempt) = the workspace is read-only,
       // which is the Free plan, whatever plan name is still stored.
       if(data.billingExempt !== true && data.subscriptionActive !== true) currentPlan = 'free';
+      renderOverview(data);
       // Trial status: 7 days of Premium from when the workspace was created.
       {
         const note = document.getElementById('trialNote');
