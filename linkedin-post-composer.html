@@ -809,6 +809,18 @@
   @media (prefers-reduced-motion: reduce){
     .ai-scan::before,.ai-scan-badge,.pc-reading,.pc-reading-orb,.pc-step.active i::before,.pc-gauge.thinking svg,.pc-ai-cell.pop,.pc-dots::after{animation:none !important;}
   }
+  .pc-ai-cell{cursor:pointer;font-family:inherit;text-align:left;}
+  .pc-ai-cell:hover{filter:brightness(.97);}
+  .pc-ai-cell.open{outline:2px solid currentColor;outline-offset:1px;}
+  .pc-ai-cell:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+  .pc-ai-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0 0 26px;}
+  .pc-type-badge,.pc-checked-badge{font:700 11px 'Inter',sans-serif;border-radius:999px;padding:3px 9px;}
+  .pc-type-badge{background:#EEF1F7;color:var(--ink);}
+  .pc-checked-badge{background:var(--success-soft);color:var(--success);}
+  .pc-why-hint{font-size:11px;color:var(--slate-light);margin-left:auto;}
+  .pc-why{margin:8px 0 0 26px;padding:9px 11px;border-radius:10px;background:var(--panel-alt);border:1px solid var(--border);font-size:12.5px;line-height:1.45;color:var(--ink);animation:aiPopIn .2s ease both;}
+  .pc-why b{margin-right:4px;}
+  .pc-why-quote{margin-top:5px;color:var(--slate);font-style:italic;}
   .pc-note{font-size:11.5px;color:var(--slate-light);line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
 
   /* ---------- Saved headline ---------- */
@@ -3663,12 +3675,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   let aiReview = null;          // {hash, clarity, grammar, summary, issues[], at}
   let aiReviewBusy = false, aiReviewTimer = null, aiReviewLastRun = 0, aiReviewError = '';
   let aiFeedbackState = ''; // '' | 'open' | 'sent'
+  let aiWhyOpen = null;       // which sub-score's "why" is open
+  const POST_TYPE_LABELS = {story: '📖 Story', tips: '✅ Tips / list', contrarian: '🔥 Contrarian take', casestudy: '📊 Case study',
+    announcement: '📣 Announcement', question: '❓ Question', opinion: '💭 Opinion', other: '📝 Post'};
   // "AI is reading" animation: one request, so the steps are paced to feel
   // like the read-through; the last step stays active until the answer lands.
   let aiReadStep = 0, aiReadTimer = null, aiRevealPending = false, lastShownScore = null;
   function aiReadSteps(){
-    return ['Reading your post', 'Makes sense', 'Grammar', 'Hook', 'Specific', 'Sounds human',
-      ...(postGoal ? [`Goal: ${POST_GOAL_NAMES[postGoal]}`] : []), ...(idealReader ? ['Your reader'] : [])];
+    return ['Reading your post', 'Post type', 'Makes sense', 'Grammar', 'Hook', 'Specific', 'Sounds human', 'Structure',
+      ...(postGoal ? [`Goal: ${POST_GOAL_NAMES[postGoal]}`] : []), ...(idealReader ? ['Your reader'] : []), 'Double-check if needed'];
   }
   function setAiReading(on){
     document.querySelector('.editor-box').classList.toggle('ai-reading', on);
@@ -3708,27 +3723,30 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function reviewText(){ return postInput.value.replace(/\s+$/, ''); }
   function reviewKey(){ return textHash(postGoal + '|' + idealReader + '|' + reviewText()); }
   // v3 = current review (hook / specificity / sounds human, fairer clarity rules); older saved reviews get redone.
-  function aiReviewIsCurrent(){ return !!aiReview && aiReview.v >= 3 && aiReview.hash === reviewKey(); }
+  function aiReviewIsCurrent(){ return !!aiReview && aiReview.v >= 4 && aiReview.hash === reviewKey(); }
   function scheduleAiReview(){
-    clearTimeout(aiReviewTimer);
-    if(!functionsApi || !currentWorkspaceId || reviewText().length < AI_REVIEW_MIN_CHARS || aiReviewIsCurrent()) return;
+    clearTimeout(aiReviewTimer); aiReviewTimer = null;
+    if(reviewText().length < AI_REVIEW_MIN_CHARS || aiReviewIsCurrent()) return;
+    // Not signed in / connected yet? Try again shortly instead of giving up.
+    if(!functionsApi || !currentWorkspaceId){ aiReviewTimer = setTimeout(scheduleAiReview, 2000); return; }
     const wait = Math.max(6000, 60000 - (Date.now() - aiReviewLastRun));
-    aiReviewTimer = setTimeout(()=> runAiReview(false), wait);
+    aiReviewTimer = setTimeout(()=>{ aiReviewTimer = null; runAiReview(false); }, wait);
   }
   function runAiReview(manual){
     const text = reviewText();
     if(aiReviewBusy || text.length < AI_REVIEW_MIN_CHARS || (!manual && aiReviewIsCurrent())) return;
     if(!functionsApi){ aiReviewError = 'Could not reach the server.'; updatePostCheck(); return; }
-    clearTimeout(aiReviewTimer);
+    clearTimeout(aiReviewTimer); aiReviewTimer = null;
     aiReviewBusy = true; aiReviewError = ''; aiReviewLastRun = Date.now();
     setAiReading(true);
     updatePostCheck();
     const hash = reviewKey();
     const forDraft = activeDraftId;
-    functionsApi.httpsCallable('generatePostIdeas')({mode: 'review', text, goal: postGoal || null, reader: idealReader || null}).then(res=>{
+    functionsApi.httpsCallable('generatePostIdeas', {timeout: 300000})({mode: 'review', text, goal: postGoal || null, reader: idealReader || null}).then(res=>{
       const r = res.data || {};
       const pick = k=> typeof r[k] === 'number' ? {[k]: r[k]} : {};
-      aiReview = {hash, v: r.v || 1, clarity: r.clarity || 0, grammar: r.grammar || 0, ...pick('hook'), ...pick('specificity'), ...pick('human'),
+      aiReview = {hash, v: r.v || 1, clarity: r.clarity || 0, grammar: r.grammar || 0, ...pick('hook'), ...pick('specificity'), ...pick('human'), ...pick('structure'),
+        why: r.why || {}, postType: r.postType || 'other', passes: r.passes || 1,
         summary: r.summary || '', issues: r.issues || [], hookIdeas: r.hookIdeas || [], at: Date.now(),
         ...(typeof r.goalFit === 'number' && r.goal ? {goalFit: r.goalFit, goal: r.goal} : {}),
         ...(typeof r.readerFit === 'number' ? {readerFit: r.readerFit} : {})};
@@ -3803,6 +3821,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   }
 
   function updatePostCheck(){
+    // Only an up-to-date review counts: an outdated one (older post text, a
+    // different goal/reader, or an earlier version of the check) is never used
+    // for the score or any cap. Until the fresh one arrives, this shows the
+    // estimate from the writing checks.
+    const review = aiReviewIsCurrent() ? aiReview : null;
+    const outdated = !!aiReview && !review;
     const text = postInput.value;
     const wrap = document.getElementById('postCheck');
     if(!text.trim()){ wrap.style.display = 'none'; return; }
@@ -3830,17 +3854,17 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const current = aiReviewIsCurrent();
     const AI_DIMS = [
       ['clarity', 'Makes sense', 10], ['grammar', 'Grammar', 10], ['hook', 'Hook strength', 9],
-      ['specificity', 'Specific', 8], ['human', 'Sounds human', 8], ['goalFit', 'Fits your goal', 7], ['readerFit', 'Fits your reader', 7],
+      ['specificity', 'Specific', 8], ['human', 'Sounds human', 8], ['structure', 'Structure', 7], ['goalFit', 'Fits your goal', 7], ['readerFit', 'Fits your reader', 7],
     ];
-    const dims = aiReview ? AI_DIMS.filter(([k])=> typeof aiReview[k] === 'number') : [];
+    const dims = review ? AI_DIMS.filter(([k])=> typeof review[k] === 'number') : [];
     const weightSum = dims.reduce((t, [, , w])=> t + w, 0) || 1;
     const aiDims = dims.map(([k, label, w])=>{
       const max = Math.round(w / weightSum * 45 * 10) / 10;
-      return {key: k, label, value: aiReview[k], points: aiReview[k] / 10 * max, max};
+      return {key: k, label, value: review[k], points: review[k] / 10 * max, max};
     });
-    const aiPts = aiReview ? Math.round(aiDims.reduce((t, d)=> t + d.points, 0)) : null;
+    const aiPts = review ? Math.round(aiDims.reduce((t, d)=> t + d.points, 0)) : null;
     const hasAi = aiPts !== null;
-    const withGoal = hasAi && typeof aiReview.goalFit === 'number';
+    const withGoal = hasAi && typeof review.goalFit === 'number';
     let score = hasAi ? Math.max(0, rulePoints + aiPts - penalty) : Math.max(0, Math.round((rulePoints - penalty) / 55 * 100));
     // Before the AI has read the post, the writing checks alone can't make it look great.
     if(!hasAi) score = Math.min(score, 75);
@@ -3850,18 +3874,18 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     // Safeguards so the verdict never looks better than the post is.
     let capNote = '';
     if(hasAi){
-      const open = aiReview.issues.filter(i=> (i.type === 'grammar' || i.type === 'clarity') && i.quote && postInput.value.includes(i.quote));
+      const open = review.issues.filter(i=> (i.type === 'grammar' || i.type === 'clarity') && i.quote && postInput.value.includes(i.quote));
       const openGrammar = open.filter(i=> i.type === 'grammar').length, openClarity = open.length - openGrammar;
       const what = [openGrammar ? `the grammar ${openGrammar === 1 ? 'mistake' : 'mistakes'}` : '', openClarity ? `the unclear ${openClarity === 1 ? 'part' : 'parts'}` : ''].filter(Boolean).join(' and ');
-      const weak = [['hook', 'the hook'], ['specificity', 'specificity'], ['human', 'sounding human']].filter(([k])=> typeof aiReview[k] === 'number' && aiReview[k] <= 5).map(([, l])=> l);
-      if(aiReview.clarity <= 3 && score > 40){ score = 40; capNote = "Capped at 40 because the AI couldn't find a clear point in the post."; }
-      else if(aiReview.clarity <= 5 && score > 74){ score = 74; capNote = "Capped at 74 because the AI found the post hard to follow."; }
-      else if(withGoal && aiReview.goalFit <= 3 && score > 74){ score = 74; capNote = `Capped at 74 because the post doesn't serve your goal (${POST_GOAL_NAMES[aiReview.goal] || 'the goal'}) yet. See the AI's suggestions.`; }
-      else if(typeof aiReview.readerFit === 'number' && aiReview.readerFit <= 3 && score > 74){ score = 74; capNote = "Capped at 74 because the post doesn't speak to your ideal reader yet."; }
-      else if(typeof aiReview.human === 'number' && aiReview.human <= 3 && typeof aiReview.specificity === 'number' && aiReview.specificity <= 2 && score > 54){ score = 54; capNote = 'Capped at 54 because the post is generic and reads like AI or a template. Add your own example or story, and rewrite the phrases below.'; }
-      else if(typeof aiReview.human === 'number' && aiReview.human <= 3 && score > 74){ score = 74; capNote = 'Capped at 74 because the post reads like AI or a template. See the AI-sounding phrases below.'; }
+      const weak = [['hook', 'the hook'], ['specificity', 'specificity'], ['human', 'sounding human']].filter(([k])=> typeof review[k] === 'number' && review[k] <= 5).map(([, l])=> l);
+      if(review.clarity <= 3 && score > 40){ score = 40; capNote = "Capped at 40 because the AI couldn't find a clear point in the post."; }
+      else if(review.clarity <= 5 && score > 74){ score = 74; capNote = "Capped at 74 because the AI found the post hard to follow."; }
+      else if(withGoal && review.goalFit <= 3 && score > 74){ score = 74; capNote = `Capped at 74 because the post doesn't serve your goal (${POST_GOAL_NAMES[review.goal] || 'the goal'}) yet. See the AI's suggestions.`; }
+      else if(typeof review.readerFit === 'number' && review.readerFit <= 3 && score > 74){ score = 74; capNote = "Capped at 74 because the post doesn't speak to your ideal reader yet."; }
+      else if(typeof review.human === 'number' && review.human <= 3 && typeof review.specificity === 'number' && review.specificity <= 2 && score > 54){ score = 54; capNote = 'Capped at 54 because the post is generic and reads like AI or a template. Add your own example or story, and rewrite the phrases below.'; }
+      else if(typeof review.human === 'number' && review.human <= 3 && score > 74){ score = 74; capNote = 'Capped at 74 because the post reads like AI or a template. See the AI-sounding phrases below.'; }
       else if(open.length && score > 89){ score = 89; capNote = `Capped at 89 until ${what} ${open.length === 1 ? 'is' : 'are'} fixed.`; }
-      else if(withGoal && aiReview.goalFit <= 6 && score > 89){ score = 89; capNote = `Capped at 89: the post only partly serves your goal (${POST_GOAL_NAMES[aiReview.goal] || 'the goal'}).`; }
+      else if(withGoal && review.goalFit <= 6 && score > 89){ score = 89; capNote = `Capped at 89: the post only partly serves your goal (${POST_GOAL_NAMES[review.goal] || 'the goal'}).`; }
       else if(weak.length && score > 89){ score = 89; capNote = `Capped at 89 until ${weak.join(' and ')} ${weak.length === 1 ? 'is' : 'are'} stronger.`; }
       else if(r.words < 40 && score > 89){ score = 89; capNote = 'Very short posts top out at 89. An example or a takeaway would make it stronger.'; }
     }
@@ -3907,19 +3931,27 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     // AI row first: it's the part people care most about.
     {
       const state = !hasAi ? 'warn' : aiPts >= 38 ? 'pass' : aiPts >= 27 ? 'warn' : 'fail';
-      const ISSUE_LABELS = {grammar: 'Grammar', clarity: 'Clarity', specificity: 'Be specific', ai: 'Sounds like AI', goal: 'Goal', reader: 'Your reader'};
+      const ISSUE_LABELS = {grammar: 'Grammar', clarity: 'Clarity', specificity: 'Be specific', ai: 'Sounds like AI', structure: 'Structure', goal: 'Goal', reader: 'Your reader'};
       let body = '';
       if(aiReviewBusy && !hasAi) body = aiReadingHtml(false);
-      else if(!hasAi) body = `<div class="pc-detail">${text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'The AI reads your post once it has at least 30 characters.' : 'The AI reads your post a few seconds after you stop typing.'}</div>`;
+      else if(!hasAi) body = `<div class="pc-detail">${text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'The AI reads your post once it has at least 30 characters.'
+        : outdated ? 'Your post (or its goal) changed since the last review, or the review is from an older version of the check. The AI rereads it in a moment. You can also click "Check now".'
+        : 'The AI reads your post a few seconds after you stop typing.'}</div>`;
       else {
         const lvl = v=> v >= 8 ? 'hi' : v >= 6 ? 'mid' : 'lo';
-        body = `<div class="pc-ai-grid">${aiDims.map((d, di)=> `<div class="pc-ai-cell ${lvl(d.value)}${aiRevealPending ? ' pop' : ''}" style="${aiRevealPending ? `animation-delay:${di * 90}ms;` : ''}" title="${esc(d.label)}: ${d.value}/10, worth ${d.max} points"><span>${esc(d.label)}${d.key === 'goalFit' && aiReview.goal ? ` · ${esc(POST_GOAL_NAMES[aiReview.goal] || '')}` : ''}</span><b>${d.value}<small>/10</small></b></div>`).join('')}</div>
-          ${aiReview.summary ? `<div class="pc-detail">${esc(aiReview.summary)}</div>` : ''}
+        const whyOf = k=> (review.why || {})[k] || null;
+        const openWhy = aiWhyOpen && whyOf(aiWhyOpen) ? aiWhyOpen : null;
+        const openDim = openWhy ? aiDims.find(d=> d.key === openWhy) : null;
+        body = `<div class="pc-ai-meta"><span class="pc-type-badge" title="The AI judged the structure by what this type of post needs">${POST_TYPE_LABELS[review.postType] || POST_TYPE_LABELS.other}</span>${(review.passes || 1) > 1 ? `<span class="pc-checked-badge" title="The first result was close to a threshold, so the AI reviewed the post ${review.passes} times and combined the results">Double-checked ✓</span>` : ''}<span class="pc-why-hint">Click a score to see why</span></div>
+          <div class="pc-ai-grid">${aiDims.map((d, di)=> `<button type="button" data-why="${d.key}" aria-expanded="${openWhy === d.key}" class="pc-ai-cell ${lvl(d.value)}${openWhy === d.key ? ' open' : ''}${aiRevealPending ? ' pop' : ''}" style="${aiRevealPending ? `animation-delay:${di * 90}ms;` : ''}" title="${esc(d.label)}: ${d.value}/10, worth ${d.max} points"><span>${esc(d.label)}${d.key === 'goalFit' && review.goal ? ` · ${esc(POST_GOAL_NAMES[review.goal] || '')}` : ''}</span><b>${d.value}<small>/10</small></b></button>`).join('')}</div>
+          ${openDim ? `<div class="pc-why"><b>${esc(openDim.label)} ${openDim.value}/10</b> ${esc(whyOf(openWhy).text || 'No explanation given.')}
+            ${whyOf(openWhy).quote ? `<div class="pc-why-quote">“${esc(whyOf(openWhy).quote)}”${postInput.value.includes(whyOf(openWhy).quote) ? ` <button type="button" class="pc-show" data-whyquote="${openWhy}">Show me</button>` : ''}</div>` : ''}</div>` : ''}
+          ${review.summary ? `<div class="pc-detail">${esc(review.summary)}</div>` : ''}
           ${!postGoal && !withGoal ? '<div class="pc-detail">Tip: pick the goal of this post above, and the AI also checks whether the post reaches it.</div>' : ''}
-          ${!idealReader && typeof aiReview.readerFit !== 'number' ? '<div class="pc-detail">Tip: add your ideal reader at the top, and the AI also checks whether the post speaks to them.</div>' : ''}
-          ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${aiReview.v >= 3 ? '' : ' (or an older version of the check)'}. It updates by itself shortly.</div>`) : ''}
-          ${(aiReview.hookIdeas || []).length ? `<div class="pc-hookideas"><div class="pc-sub-title">Stronger opening lines</div>${aiReview.hookIdeas.map((h, i)=> `<div class="pc-hookidea"><span>${esc(h)}</span><button type="button" class="pc-show" data-hookidea="${i}">Use this hook</button></div>`).join('')}</div>` : ''}
-          ${aiReview.issues.map((iss, i)=> `<div class="pc-issue">
+          ${!idealReader && typeof review.readerFit !== 'number' ? '<div class="pc-detail">Tip: add your ideal reader at the top, and the AI also checks whether the post speaks to them.</div>' : ''}
+          ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${review.v >= 4 ? '' : ' (or an older version of the check)'}. It updates by itself shortly.</div>`) : ''}
+          ${(review.hookIdeas || []).length ? `<div class="pc-hookideas"><div class="pc-sub-title">Stronger opening lines</div>${review.hookIdeas.map((h, i)=> `<div class="pc-hookidea"><span>${esc(h)}</span><button type="button" class="pc-show" data-hookidea="${i}">Use this hook</button></div>`).join('')}</div>` : ''}
+          ${review.issues.map((iss, i)=> `<div class="pc-issue">
               <div class="pc-issue-top"><span class="pc-issue-type ${iss.type}">${ISSUE_LABELS[iss.type] || 'Note'}</span><span class="pc-issue-why">${esc(iss.why)}</span></div>
               ${iss.quote ? `<div class="pc-issue-quote">“${esc(iss.quote)}”</div>
               ${iss.fix && iss.fix !== iss.quote ? `<div class="pc-issue-fix">→ ${esc(iss.fix)}</div>` : ''}
@@ -3929,7 +3961,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
               </div>` : iss.fix ? `<div class="pc-issue-add">+ ${esc(iss.fix)}</div>
               <div class="pc-issue-actions"><button type="button" class="pc-show" data-fix="${i}">Add to post</button></div>` : ''}
             </div>`).join('')}
-          ${current && !aiReview.issues.length ? '<div class="pc-detail">No issues found.</div>' : ''}
+          ${current && !review.issues.length ? '<div class="pc-detail">No issues found.</div>' : ''}
           ${current ? `<div class="pc-feedback" id="pcFeedback">${aiFeedbackState === 'sent' ? '<span>Thanks, your feedback was sent.</span>'
             : aiFeedbackState === 'open' ? `<textarea id="pcFeedbackText" maxlength="500" placeholder="What did the AI get wrong? (optional)"></textarea><div><button type="button" class="pc-show" id="pcFeedbackSend">Send</button> <button type="button" class="pc-show" id="pcFeedbackCancel" style="color:var(--slate);">Cancel</button></div>`
             : '<span>Is this judgment fair?</span><button type="button" class="pc-fb-btn" data-fb="up" aria-label="Yes, fair">👍</button><button type="button" class="pc-fb-btn" data-fb="down" aria-label="No, I disagree">👎 Disagree</button>'}</div>` : ''}`;
@@ -3951,9 +3983,10 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         ${c.tips.map(t=> `<div class="pc-tip"><span>${esc(t.text)} ${t.range ? `<button type="button" class="pc-show" data-range="${t.range.join(',')}">Show me</button>` : ''}</span></div>`).join('')}
       </div>`).join('');
     r.notes.forEach(n=> html += `<div class="pc-tip" style="margin-left:0;"><span>${esc(n)}</span></div>`);
-    html += `<div class="pc-note">The score is out of 100: 45 points from the AI reading your post (does it make sense, grammar, how strong the hook is, how specific it is, whether it sounds human, and fit with your goal and ideal reader) and 55 from writing checks for LinkedIn (hook length, spacing, ending and more). It judges how the post is written, not how good your idea is, and it's a guide, not a guarantee: a post that breaks a rule on purpose can still do great.</div>`;
+    html += `<div class="pc-note">The score is out of 100: 45 points from the AI reading your post (does it make sense, grammar, how strong the hook is, how specific it is, whether it sounds human, whether the structure fits this type of post, and fit with your goal and ideal reader) and 55 from writing checks for LinkedIn (hook length, spacing, ending and more). Every AI score comes with a reason, and results close to a threshold are double-checked. It judges how the post is written, not how good your idea is, and it's a guide, not a guarantee: a post that breaks a rule on purpose can still do great.</div>`;
     document.getElementById('pcBody').innerHTML = html;
     aiRevealPending = false; // the pop-in only plays once per fresh review
+    if(!review && !aiReviewBusy && !aiReviewTimer) scheduleAiReview();
     const run = document.getElementById('pcAiRun');
     if(run) run.addEventListener('click', e=>{ e.stopPropagation(); runAiReview(true); });
   }
@@ -3964,6 +3997,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   });
   // "Show me": select that part of the post in the editor.
   document.getElementById('pcBody').addEventListener('click', e=>{
+    const whyCell = e.target.closest('[data-why]');
+    if(whyCell){ aiWhyOpen = aiWhyOpen === whyCell.dataset.why ? null : whyCell.dataset.why; updatePostCheck(); return; }
     const fb = e.target.closest('.pc-fb-btn');
     if(fb){
       if(fb.dataset.fb === 'up'){ sendPostCheckFeedback('fair', ''); }
@@ -3974,6 +4009,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(e.target.id === 'pcFeedbackCancel'){ aiFeedbackState = ''; updatePostCheck(); return; }
     const b = e.target.closest('.pc-show'); if(!b || b.id === 'pcAiRun') return;
     if(b.dataset.hookidea != null){ useHookIdea(Number(b.dataset.hookidea)); return; }
+    if(b.dataset.whyquote != null){
+      const q = ((aiReview && aiReview.why) || {})[b.dataset.whyquote];
+      const at = q && q.quote ? postInput.value.indexOf(q.quote) : -1;
+      if(at >= 0){ postInput.focus(); postInput.setSelectionRange(at, at + q.quote.length); }
+      return;
+    }
     if(b.dataset.fix != null){ applyAiFix(Number(b.dataset.fix)); return; }
     let s0, e0;
     if(b.dataset.quote != null){
@@ -4803,7 +4844,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     renderVersionsBar();
     updateClearBtn();
     setFirstComment(draft.firstComment || '');
-    aiReview = draft.aiReview || null; aiReviewError = '';
+    aiReview = draft.aiReview && draft.aiReview.v >= 4 ? draft.aiReview : null; aiReviewError = '';
     setPostGoal(draft.goal || '', {fromLoad: true});
     previewExpanded = false;
     renderPreview();
