@@ -1180,19 +1180,32 @@
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
 <style>
-  /* The new theme flows out from the button as a soft, glowing wave. */
-  @property --pt-r{syntax:'<length>';inherits:false;initial-value:0px;}
+  /* The new theme flows out from the button as a soft, glowing wave: a round,
+     soft-edged mask whose size and position are animated from the button. */
   ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal;}
   ::view-transition-old(root){z-index:1;}
-  ::view-transition-new(root){z-index:2;
-    -webkit-mask-image:radial-gradient(circle at var(--pt-x,50%) var(--pt-y,50%), #000 var(--pt-r), transparent calc(var(--pt-r) + 160px));
-            mask-image:radial-gradient(circle at var(--pt-x,50%) var(--pt-y,50%), #000 var(--pt-r), transparent calc(var(--pt-r) + 160px));}
+  html.pt-wave::view-transition-new(root){z-index:2;
+    -webkit-mask-image:radial-gradient(circle closest-side, #000 86%, transparent 100%);
+            mask-image:radial-gradient(circle closest-side, #000 86%, transparent 100%);
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-size:0 0; mask-size:0 0;}
   .pt-theme-fx{position:fixed;inset:0;pointer-events:none;z-index:2147483647;overflow:hidden;}
   .pt-star{position:absolute;border-radius:50%;background:#fff;opacity:0;}
   .pt-star.glow{box-shadow:0 0 6px 2px rgba(190,185,255,.9), 0 0 18px 6px rgba(122,115,255,.35);}
   .pt-sun{position:absolute;border-radius:50%;opacity:0;
     background:radial-gradient(circle, rgba(255,214,140,.55) 0%, rgba(255,181,71,.25) 30%, rgba(255,181,71,0) 70%);}
   .pt-theme-wipe{position:fixed;inset:0;z-index:2147483646;pointer-events:none;}
+  /* Going dark: a glowing aurora band rides the front of the wave. It's its own
+     layer in the transition, masked to a ring that grows with the wave. */
+  #ptAurora{position:fixed;inset:0;pointer-events:none;z-index:2147483647;view-transition-name:pt-aurora;filter:blur(14px);opacity:.8;
+    background:conic-gradient(from 200deg at var(--pt-x,50%) var(--pt-y,50%), #6D65F6, #A77BFF, #FF7EB6, #7DB7FF, #5FD3E8, #6D65F6);}
+  ::view-transition-group(pt-aurora){animation:none;}
+  ::view-transition-new(pt-aurora){animation:none;z-index:3;mix-blend-mode:screen;
+    -webkit-mask-image:radial-gradient(circle closest-side, transparent 80%, rgba(0,0,0,.95) 89%, rgba(0,0,0,.95) 93%, transparent 99%);
+            mask-image:radial-gradient(circle closest-side, transparent 80%, rgba(0,0,0,.95) 89%, rgba(0,0,0,.95) 93%, transparent 99%);
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-size:0 0; mask-size:0 0;}
+  .pt-meteor{position:absolute;height:2px;width:170px;border-radius:2px;opacity:0;
+    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(214,211,255,.55) 60%, #fff);
+    box-shadow:0 0 10px 1px rgba(190,185,255,.7);transform-origin:right center;}
 </style>
 <script>
 (function(){
@@ -1212,6 +1225,23 @@
         {duration:1300 + Math.random() * 700, delay:delay, easing:'ease-out', fill:'both'});
     }
     setTimeout(function(){ fx.remove(); }, 2700);
+  }
+  // Going dark, the finale: two shooting stars streak across the sky.
+  function meteors(){
+    var fx = layer();
+    for(var i = 0; i < 2; i++){
+      var m = document.createElement('i'); m.className = 'pt-meteor';
+      var sx = innerWidth * (0.55 + Math.random() * 0.4), sy = innerHeight * (0.05 + Math.random() * 0.3), ang = 155 + Math.random() * 15;
+      m.style.cssText = 'left:' + (sx - 170) + 'px;top:' + sy + 'px;';
+      fx.appendChild(m);
+      var dx = Math.cos(ang * Math.PI / 180) * 420, dy = Math.sin(ang * Math.PI / 180) * 420;
+      m.animate([
+        {transform:'rotate(' + ang + 'deg) translateX(0) scaleX(.3)', opacity:0},
+        {opacity:1, offset:.2},
+        {transform:'translate(' + dx + 'px,' + dy + 'px) rotate(' + ang + 'deg) scaleX(1)', opacity:0}
+      ], {duration:900, delay:350 + i * 420, easing:'cubic-bezier(.3,.6,.4,1)', fill:'both'});
+    }
+    setTimeout(function(){ fx.remove(); }, 2200);
   }
   // Going light: a warm sunrise glow blooms out from the button.
   function sunrise(x, y){
@@ -1235,17 +1265,37 @@
     if(!r.width && !r.height){ x = e.clientX || innerWidth / 2; y = e.clientY || innerHeight / 2; }
     var radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 200;
     var replay = function(){ btn.__ptReplay = true; btn.click(); btn.__ptReplay = false; };
-    var after = function(){ toDark ? starfield(x, y) : sunrise(x, y); };
-    var supportsMask = window.CSS && CSS.registerProperty !== undefined;
-    if(document.startViewTransition && supportsMask){
+    var after = function(){ if(toDark){ starfield(x, y); meteors(); } else sunrise(x, y); };
+    if(document.startViewTransition){
       var root = document.documentElement;
+      root.classList.add('pt-wave');
       root.style.setProperty('--pt-x', x + 'px'); root.style.setProperty('--pt-y', y + 'px');
-      var t = document.startViewTransition(replay);
-      t.ready.then(function(){
-        root.animate({'--pt-r':['0px', radius + 'px']}, {duration:950, easing:'cubic-bezier(.65,0,.25,1)', pseudoElement:'::view-transition-new(root)'});
-        setTimeout(after, 420);  // stars / sunrise start while the wave is still rolling
+      // A square mask centred on the button, growing until its soft edge is past every corner.
+      var S = (radius / 0.86) * 2;
+      var grow = function(size){ return [
+        {WebkitMaskSize:'0px 0px', maskSize:'0px 0px', WebkitMaskPosition:x + 'px ' + y + 'px', maskPosition:x + 'px ' + y + 'px'},
+        {WebkitMaskSize:size + 'px ' + size + 'px', maskSize:size + 'px ' + size + 'px',
+         WebkitMaskPosition:(x - size / 2) + 'px ' + (y - size / 2) + 'px', maskPosition:(x - size / 2) + 'px ' + (y - size / 2) + 'px'}]; };
+      var aurora = null, WAVE = toDark ? 1300 : 950;
+      var t = document.startViewTransition(function(){
+        replay();
+        if(toDark){ aurora = document.createElement('div'); aurora.id = 'ptAurora'; aurora.setAttribute('aria-hidden', 'true'); document.body.appendChild(aurora); }
       });
-      t.finished.then(function(){ root.style.removeProperty('--pt-x'); root.style.removeProperty('--pt-y'); });
+      t.ready.then(function(){
+        var ease = toDark ? 'cubic-bezier(.55,.08,.35,1)' : 'cubic-bezier(.4,0,.25,1)';   // night rolls in steadily; morning a little quicker
+        // fill:'forwards' keeps the new theme fully shown until the transition ends (no flash of the old page).
+        root.animate(grow(S), {duration:WAVE, easing:ease, fill:'forwards', pseudoElement:'::view-transition-new(root)'});
+        if(toDark){
+          // Dusk: the light page dims and cools as night rolls in.
+          root.animate({filter:['brightness(1) saturate(1)', 'brightness(.62) saturate(.75) hue-rotate(-8deg)']},
+            {duration:WAVE, easing:'ease-in', fill:'forwards', pseudoElement:'::view-transition-old(root)'});
+          // The aurora band rides the front of the wave.
+          root.animate(grow(S), {duration:WAVE, easing:ease, fill:'forwards', pseudoElement:'::view-transition-new(pt-aurora)'});
+          setTimeout(function(){ if(aurora) aurora.style.opacity = '0'; }, WAVE - 120); // gone before the page shows again
+        }
+        setTimeout(after, toDark ? 700 : 420);  // stars / sunrise start while the wave is still rolling
+      });
+      t.finished.then(function(){ root.classList.remove('pt-wave'); root.style.removeProperty('--pt-x'); root.style.removeProperty('--pt-y'); if(aurora) aurora.remove(); });
     } else {
       var wipe = document.createElement('div'); wipe.className = 'pt-theme-wipe';
       wipe.style.background = toDark ? '#0D0F1F' : '#EFF5FC';
