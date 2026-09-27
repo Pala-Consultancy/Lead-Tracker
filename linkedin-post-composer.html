@@ -3674,6 +3674,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   const AI_REVIEW_MIN_CHARS = 30;
   let aiReview = null;          // {hash, clarity, grammar, summary, issues[], at}
   let aiReviewBusy = false, aiReviewTimer = null, aiReviewLastRun = 0, aiReviewError = '';
+  let aiReviewStuckKey = ''; // never auto-repeat a review that came back unusable for the same text
   let aiFeedbackState = ''; // '' | 'open' | 'sent'
   let aiWhyOpen = null;       // which sub-score's "why" is open
   const POST_TYPE_LABELS = {story: '📖 Story', tips: '✅ Tips / list', contrarian: '🔥 Contrarian take', casestudy: '📊 Case study',
@@ -3723,16 +3724,21 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   function reviewText(){ return postInput.value.replace(/\s+$/, ''); }
   function reviewKey(){ return textHash(postGoal + '|' + idealReader + '|' + reviewText()); }
   // v3 = current review (hook / specificity / sounds human, fairer clarity rules); older saved reviews get redone.
-  function aiReviewIsCurrent(){ return !!aiReview && aiReview.v >= 4 && aiReview.hash === reviewKey(); }
+  // v3+ is accepted (v4 adds reasons, Structure and double-checks; an older
+  // server gets a note to update instead of being thrown away).
+  const AI_REVIEW_LATEST = 4;
+  function aiReviewIsCurrent(){ return !!aiReview && aiReview.v >= 3 && aiReview.hash === reviewKey(); }
   function scheduleAiReview(){
     clearTimeout(aiReviewTimer); aiReviewTimer = null;
     if(reviewText().length < AI_REVIEW_MIN_CHARS || aiReviewIsCurrent()) return;
+    if(aiReviewStuckKey && aiReviewStuckKey === reviewKey()) return;
     // Not signed in / connected yet? Try again shortly instead of giving up.
     if(!functionsApi || !currentWorkspaceId){ aiReviewTimer = setTimeout(scheduleAiReview, 2000); return; }
     const wait = Math.max(6000, 60000 - (Date.now() - aiReviewLastRun));
     aiReviewTimer = setTimeout(()=>{ aiReviewTimer = null; runAiReview(false); }, wait);
   }
   function runAiReview(manual){
+    if(manual) aiReviewStuckKey = '';
     const text = reviewText();
     if(aiReviewBusy || text.length < AI_REVIEW_MIN_CHARS || (!manual && aiReviewIsCurrent())) return;
     if(!functionsApi){ aiReviewError = 'Could not reach the server.'; updatePostCheck(); return; }
@@ -3751,12 +3757,17 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         ...(typeof r.goalFit === 'number' && r.goal ? {goalFit: r.goalFit, goal: r.goal} : {}),
         ...(typeof r.readerFit === 'number' ? {readerFit: r.readerFit} : {})};
       aiFeedbackState = '';
+      if(!aiReviewIsCurrent() && reviewKey() === hash){
+        aiReviewStuckKey = hash;
+        aiReviewError = 'The server sent back an older type of AI review that this page can\'t use. (Admin: deploy the latest generatePostIdeas function.)';
+      }
       // Keep it with the post (only if you're still on the same post).
       if(forDraft && forDraft === activeDraftId) collectionRef().doc(forDraft).update({aiReview}).catch(()=>{});
     }).catch(err=>{
       console.error(err);
       const code = (err && err.code) || '';
       aiReviewError = code.includes('not-found') ? "The AI review isn't set up on the server yet." : ((err && err.message) || "The AI review didn't work this time.");
+      aiReviewStuckKey = hash; // don't retry automatically; a new edit or "Check now" tries again
     }).finally(()=>{
       aiReviewBusy = false;
       setAiReading(false);
@@ -3894,6 +3905,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       : r.placeholders.length ? 'Fill in the placeholders first'
       : score >= 90 ? 'Excellent, ready to post' : score >= 75 ? 'Strong, a few small tweaks' : score >= 55 ? 'Good start, some fixes will help' : 'Needs work, see the tips';
     if(tooShort) {}
+    else if(!hasAi && aiReviewStuckKey && aiReviewStuckKey === reviewKey() && !aiReviewBusy) label = "Estimate · the AI review didn't work, see below";
     else if(!hasAi) label = (aiReviewBusy ? 'Estimate · AI is reading your post…' : text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'Estimate · AI review starts at 30 characters' : 'Estimate · AI review coming up') ;
     else if(!current) label += aiReviewBusy ? ' · AI is rechecking…' : ' · AI rechecks soon';
 
@@ -3950,6 +3962,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
           ${!postGoal && !withGoal ? '<div class="pc-detail">Tip: pick the goal of this post above, and the AI also checks whether the post reaches it.</div>' : ''}
           ${!idealReader && typeof review.readerFit !== 'number' ? '<div class="pc-detail">Tip: add your ideal reader at the top, and the AI also checks whether the post speaks to them.</div>' : ''}
           ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${review.v >= 4 ? '' : ' (or an older version of the check)'}. It updates by itself shortly.</div>`) : ''}
+          ${review.v < AI_REVIEW_LATEST ? '<div class="pc-detail" style="color:#8A5600;">Your server still runs the previous AI review, so reasons per score, Structure and double-checks are missing. (Admin: deploy the latest generatePostIdeas function.)</div>' : ''}
           ${(review.hookIdeas || []).length ? `<div class="pc-hookideas"><div class="pc-sub-title">Stronger opening lines</div>${review.hookIdeas.map((h, i)=> `<div class="pc-hookidea"><span>${esc(h)}</span><button type="button" class="pc-show" data-hookidea="${i}">Use this hook</button></div>`).join('')}</div>` : ''}
           ${review.issues.map((iss, i)=> `<div class="pc-issue">
               <div class="pc-issue-top"><span class="pc-issue-type ${iss.type}">${ISSUE_LABELS[iss.type] || 'Note'}</span><span class="pc-issue-why">${esc(iss.why)}</span></div>
@@ -4844,7 +4857,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     renderVersionsBar();
     updateClearBtn();
     setFirstComment(draft.firstComment || '');
-    aiReview = draft.aiReview && draft.aiReview.v >= 4 ? draft.aiReview : null; aiReviewError = '';
+    aiReview = draft.aiReview && draft.aiReview.v >= 3 ? draft.aiReview : null; aiReviewError = ''; aiReviewStuckKey = '';
     setPostGoal(draft.goal || '', {fromLoad: true});
     previewExpanded = false;
     renderPreview();
