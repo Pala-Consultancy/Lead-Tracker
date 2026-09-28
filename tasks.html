@@ -849,6 +849,20 @@
   .tk-quick button:disabled{opacity:.45;cursor:default;}
   .tk-quick button.done{background:var(--teal);border-color:var(--teal);color:#fff;}
   .tk-cal-chip b{font-weight:800;}
+
+  /* Google Calendar */
+  .tk-gcal{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel-alt);font-size:13px;color:var(--slate);}
+  .tk-gcal.on{background:rgba(66,133,244,.06);}
+  .tk-gcal-txt{display:inline-flex;align-items:center;gap:7px;flex:1;min-width:220px;}
+  .tk-gcal-txt b{color:var(--ink);}
+  .tk-gcal-connect{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--panel);border-radius:10px;padding:8px 13px;font:700 13px 'Inter',sans-serif;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);}
+  .tk-gcal-connect:hover{border-color:#4285F4;}
+  .tk-gcal-toggle,.tk-gcal-dis{border:1px solid var(--border);background:var(--panel);border-radius:9px;padding:6px 11px;font:600 12.5px 'Inter',sans-serif;color:var(--ink);cursor:pointer;}
+  .tk-gcal-toggle.on{border-color:#4285F4;color:#1A57C9;}
+  .tk-gcal-dis:hover{border-color:#D83A52;color:#B42338;}
+  .tk-gcal-connect:focus-visible,.tk-gcal-toggle:focus-visible,.tk-gcal-dis:focus-visible{outline:2px solid #4285F4;outline-offset:2px;}
+  .tk-cal-gev{border-radius:6px;padding:3px 7px;font:600 11.5px 'Inter',sans-serif;color:var(--slate);background:var(--panel-alt);border:1px dashed var(--border);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .tk-cal-gev b{color:var(--ink);}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1298,6 +1312,8 @@ html[data-theme="dark"] .tk-recipe em{color:#F8BE81}
 html[data-theme="dark"] .tk-recipe .on{color:#8CEEC7}
 html[data-theme="dark"] .tk-build-preview b{color:#9995E5}
 html[data-theme="dark"] .tk-build-preview em{color:#F8BE81}
+html[data-theme="dark"] .tk-gcal-toggle.on{color:#87ACF2}
+html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
 </style>
 <!-- pt-dark-theme:end -->
 </head>
@@ -1321,6 +1337,9 @@ html[data-theme="dark"] .tk-build-preview em{color:#F8BE81}
       </a>
       <a class="seq-sidebar-link active" id="navTasks" href="tasks.html" aria-current="page">
         <span class="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Tasks
+      </a>
+      <a class="seq-sidebar-link" id="navCalendar" href="calendar.html">
+        <span class="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span> Calendar
       </a>
       <div class="seq-sidebar-label">Email</div>
       <a class="seq-sidebar-link" id="navSequences" href="sequences.html">
@@ -1764,13 +1783,18 @@ html[data-theme="dark"] .tk-build-preview em{color:#F8BE81}
         <button type="button" class="tk-icon-btn" data-act="cal-today">Today</button>
         <button type="button" class="tk-icon-btn" data-act="cal-prev" aria-label="Previous month">‹</button>
         <button type="button" class="tk-icon-btn" data-act="cal-next" aria-label="Next month">›</button></div>
+      <div class="tk-gcal"><span class="tk-gcal-txt">This view shows your tasks. The full calendar also shows calls, LinkedIn messages, emails, posts and your Google Calendar.</span>
+        <a class="tk-gcal-connect" href="calendar.html" style="text-decoration:none">🗓 Open the full calendar →</a></div>
       <div class="tk-cal-grid">${dows.map(d=>`<div class="tk-cal-dow">${d}</div>`).join('')}
         ${days.map(d=>{
           const iso = toISO(d), items = list.filter(t=> t.dueDate === iso).sort((a, b)=> (a.dueTime || '99').localeCompare(b.dueTime || '99'));
           return `<div class="tk-cal-day${d.getMonth() !== first.getMonth() ? ' other' : ''}${iso === today ? ' today' : ''}" data-drop-date="${iso}">
             <div class="tk-cal-num"><span>${d.getDate()}</span><button type="button" class="tk-cal-add" data-act="new" data-date="${iso}" aria-label="Add a task on ${iso}">+</button></div>
+            ${gcalShown() ? (gcalEventsFor(iso).slice(0, Math.max(0, 4 - Math.min(items.length, 4))).map(ev=>`<div class="tk-cal-gev" title="From your Google Calendar: ${esc(ev.title)}">${ev.time ? `<b>${esc(prettyTime(ev.time))}</b> ` : ''}${esc(ev.title)}</div>`).join('')) : ''}
             ${items.slice(0, 4).map(t=>`<div class="tk-cal-chip${statusOf(t) === 'done' ? ' done' : ''}" draggable="true" data-id="${t.id}" data-act="open" style="background:${STATUS[statusOf(t)].color}" title="${esc(t.title)}">${t.dueTime ? `<b>${esc(prettyTime(t.dueTime))}</b> ` : ''}${esc(t.title || 'Untitled')}</div>`).join('')}
-            ${items.length > 4 ? `<div class="tk-muted" style="font-size:11px">+${items.length - 4} more</div>` : ''}
+            ${(()=>{ const ev = gcalShown() ? gcalEventsFor(iso).length : 0, shownEv = Math.min(ev, Math.max(0, 4 - Math.min(items.length, 4)));
+              const hidden = Math.max(0, items.length - 4) + (ev - shownEv);
+              return hidden ? `<div class="tk-muted" style="font-size:11px">+${hidden} more</div>` : ''; })()}
           </div>`;
         }).join('')}
       </div></div>`;
@@ -1871,6 +1895,9 @@ html[data-theme="dark"] .tk-build-preview em{color:#F8BE81}
     if(act === 'new'){ openDrawer(null, {status: el.dataset.status || 'todo', dueDate: el.dataset.date || null}); return; }
     if(act === 'cal-prev'){ calMonth.setMonth(calMonth.getMonth() - 1); render(); return; }
     if(act === 'cal-next'){ calMonth.setMonth(calMonth.getMonth() + 1); render(); return; }
+    if(act === 'gcal-connect'){ startGcalConnect(el); return; }
+    if(act === 'gcal-disconnect'){ disconnectGcal(); return; }
+    if(act === 'gcal-toggle'){ gcalShow = !gcalShow; localStorage.setItem('ptGcalShow', gcalShow ? '1' : '0'); render(); return; }
     if(act === 'cal-today'){ calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0, 0, 0, 0); render(); return; }
     if(!t) return;
     if(act === 'tick'){ setStatus(t, statusOf(t) === 'done' ? 'todo' : 'done'); return; }
@@ -2264,6 +2291,57 @@ html[data-theme="dark"] .tk-build-preview em{color:#F8BE81}
     const v = builderValue();
     addAutomation({name: 'Custom automation', ...v}).then(()=>{ document.getElementById('tkAutoListView').style.display = ''; document.getElementById('tkAutoBuildView').style.display = 'none'; });
   });
+
+
+  // ---------- Google Calendar (two-way sync; the work happens in googleCalendar.js) ----------
+  let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gcalEvents = {}, gcalLoading = {};
+  function gcalShown(){ return false; }   // Google events live on the Calendar page now
+  function gcalRange(){
+    const first = new Date(calMonth), start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+    const end = new Date(start); end.setDate(start.getDate() + 42);
+    return {key: toISO(start), timeMin: start.toISOString(), timeMax: end.toISOString()};
+  }
+  function gcalEventsFor(iso){ const r = gcalRange(); return (gcalEvents[r.key] || []).filter(e=> e.date === iso); }
+  function loadGcalEvents(){
+    if(!gcalShown()) return;
+    const r = gcalRange(); if(gcalEvents[r.key] || gcalLoading[r.key]) return;
+    gcalLoading[r.key] = true;
+    firebase.functions().httpsCallable('listGoogleCalendarEvents')({timeMin: r.timeMin, timeMax: r.timeMax}).then(res=>{
+      gcalEvents[r.key] = (res.data && res.data.events) || []; gcalLoading[r.key] = false;
+      if(view === 'calendar') render();
+    }).catch(err=>{ gcalLoading[r.key] = false; console.warn('Could not load Google events', err); });
+  }
+  function gcalBarHTML(){
+    if(!gcalConn) return `<div class="tk-gcal"><span class="tk-gcal-txt">Put your tasks and calls in Google Calendar, and see your Google appointments here.</span>
+      <button type="button" class="tk-gcal-connect" data-act="gcal-connect">${GCAL_ICON} Connect Google Calendar</button></div>`;
+    setTimeout(loadGcalEvents, 0);
+    return `<div class="tk-gcal on"><span class="tk-gcal-txt">${GCAL_ICON} Synced with <b>${esc(gcalConn.email || 'Google Calendar')}</b> · your tasks and calls appear in the "PalaTrack" calendar</span>
+      <button type="button" class="tk-gcal-toggle${gcalShow ? ' on' : ''}" data-act="gcal-toggle" aria-pressed="${gcalShow}">${gcalShow ? 'Hide' : 'Show'} my Google events</button>
+      <button type="button" class="tk-gcal-dis" data-act="gcal-disconnect">Disconnect</button></div>`;
+  }
+  const GCAL_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3" fill="#fff" stroke="#4285F4" stroke-width="2"/><path d="M3 9h18" stroke="#4285F4" stroke-width="2"/><rect x="7" y="12" width="4" height="4" rx="1" fill="#34A853"/><rect x="13" y="12" width="4" height="4" rx="1" fill="#FBBC04"/></svg>';
+  function startGcalConnect(btn){
+    if(btn){ btn.disabled = true; btn.textContent = 'Opening Google…'; }
+    firebase.functions().httpsCallable('startGoogleCalendarConnect')({tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Brussels'})
+      .then(res=>{ location.href = res.data.url; })
+      .catch(err=>{ showToast('Could not connect to Google right now: ' + (err.message || ''), true); render(); });
+  }
+  async function disconnectGcal(){
+    const ok = await showConfirmModal({title: 'Disconnect Google Calendar?', message: 'The "PalaTrack" calendar is removed from your Google account, and PalaTrack no longer sees your appointments. Your tasks stay in PalaTrack.', confirmLabel: 'Disconnect'});
+    if(!ok) return;
+    firebase.functions().httpsCallable('disconnectGoogleCalendar')().then(()=>{ gcalEvents = {}; showToast('Google Calendar disconnected.'); })
+      .catch(err=> showToast('Could not disconnect: ' + (err.message || ''), true));
+  }
+  function listenGcal(){
+    db.doc(`calendarConnections/${myUid}`).onSnapshot(d=>{ gcalConn = d.exists ? d.data() : null; if(!gcalConn) gcalEvents = {}; if(view === 'calendar') render(); }, ()=>{});
+    const r = new URLSearchParams(location.search).get('calendarConnect');
+    if(r){
+      showToast(r === 'success' ? '🗓 Google Calendar connected. Your tasks with a date are in the "PalaTrack" calendar now.' : r === 'denied' ? 'Google Calendar was not connected.' : r === 'expired' ? 'That sign-in link expired. Please try again.' : 'Could not connect Google Calendar. Please try again.', r !== 'success' && r !== 'denied');
+      if(r === 'success'){ view = 'calendar'; localStorage.setItem('ptTasksView', 'calendar'); render(); }
+      const q = new URLSearchParams(location.search); q.delete('calendarConnect');
+      history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+    }
+  }
 
   // ---------- Toolbar ----------
   document.getElementById('tkNewBtn').addEventListener('click', ()=> openDrawer(null, {dueDate: todayISO()}));
