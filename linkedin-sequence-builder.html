@@ -615,6 +615,21 @@
 
   @media (max-width:1100px){ .lsb-layout{grid-template-columns:1fr;} .lsb-side{position:static;} }
   @media (max-width:560px){ .lsb-quick{margin-left:0;} .lsb-step{padding-left:0;} .lsb-dot{display:none;} .lsb-step::before{display:none;} .lsb-add{width:100%;margin-left:0;} }
+
+  .lsb-stop{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border-soft);}
+  .lsb-switch{display:inline-flex;align-items:center;gap:9px;cursor:pointer;font:600 13px 'Inter',sans-serif;color:var(--ink);user-select:none;}
+  .lsb-switch input{position:absolute;opacity:0;width:1px;height:1px;}
+  .lsb-switch-ui{width:34px;height:20px;border-radius:999px;background:var(--border);position:relative;transition:background .15s;flex-shrink:0;}
+  .lsb-switch-ui::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s;}
+  .lsb-switch input:checked + .lsb-switch-ui{background:#D83A52;}
+  .lsb-switch input:checked + .lsb-switch-ui::after{transform:translateX(14px);}
+  .lsb-switch input:focus-visible + .lsb-switch-ui{outline:2px solid #0A66C2;outline-offset:2px;}
+  .lsb-stop-days{margin-top:8px;font-size:12.5px;color:var(--slate);line-height:1.6;}
+  .lsb-stop-days input{width:54px;border:1px solid var(--border);border-radius:7px;padding:4px 6px;font:700 12.5px 'IBM Plex Mono',monospace;color:var(--ink);background:var(--panel);text-align:center;margin:0 3px;}
+  .lsb-stop-days b{color:#D83A52;}
+  .lsb-step.skipped .lsb-box{opacity:.45;}
+  .lsb-step.skipped .lsb-dot{background:var(--slate-light);box-shadow:none;}
+  .lsb-skip-note{margin:0 0 10px;font-size:12.5px;color:#8A5600;background:rgba(232,145,45,.1);border-radius:10px;padding:8px 11px;}
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1072,6 +1087,8 @@ html[data-theme="dark"] .lsb-warn.bad{color:#EC8E9B}
 html[data-theme="dark"] .lsb-quick button.on{color:#81BDF8}
 html[data-theme="dark"] .lsb-add:hover{color:#81BDF8}
 html[data-theme="dark"] .lsb-vars-note code{color:#81BDF8}
+html[data-theme="dark"] .lsb-switch-ui::after{background:#161934}
+html[data-theme="dark"] .lsb-skip-note{color:#F8CB81}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -1640,6 +1657,7 @@ window.PTEmoji = (function(){
     db.collection('linkedinSequenceRuns').add({
       workspaceId: currentWorkspaceId, boardId, leadId: leadInfo.id,
       templateId: tpl.id, templateName: tpl.name || 'Untitled sequence',
+      startedBy: auth.currentUser ? auth.currentUser.uid : null,
       steps: tpl.steps,
       currentStepIndex: 0,
       status: 'active',
@@ -1678,6 +1696,8 @@ window.PTEmoji = (function(){
   let editingTemplateId = null;
   let editingSteps = [];
   function lsbType(s, i){ return s.type === 'connect' || s.type === 'message' ? s.type : 'message'; }
+  // The first step with "end here if there's no reply" ends the sequence; anything after it isn't sent.
+  function lsbEndIndex(){ const k = editingSteps.findIndex(s=> s.stopIfNoReply); return k < 0 ? -1 : k; }
   function lsbDayOf(i){ let d = 0; for(let k = 1; k <= i; k++) d += Math.max(0, editingSteps[k].delayDays || 0); return d; }
   function lsbFill(text){
     const name = (document.getElementById('lsbSampleName').value || '').trim();
@@ -1706,7 +1726,7 @@ window.PTEmoji = (function(){
     editingTemplateId = tpl ? tpl.id : null;
     editingSteps = tpl ? JSON.parse(JSON.stringify(tpl.steps || [])) : [{type:'connect', message:'', delayDays:0}];
     if(!editingSteps.length) editingSteps = [{type:'connect', message:'', delayDays:0}];
-    editingSteps.forEach((s, i)=>{ s.type = lsbType(s); s.message = s.message || ''; s.delayDays = i === 0 ? 0 : Math.max(0, parseInt(s.delayDays, 10) || 0); });
+    editingSteps.forEach((s, i)=>{ s.type = lsbType(s); s.message = s.message || ''; s.delayDays = i === 0 ? 0 : Math.max(0, parseInt(s.delayDays, 10) || 0); s.stopIfNoReply = !!s.stopIfNoReply; });
     document.getElementById('editorTitle').textContent = tpl ? 'Edit sequence' : 'New sequence';
     document.getElementById('editorHeadIcon').innerHTML = tpl ? '✎' : '<svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zM7.119 20.452H3.555V9h3.564v11.452z"/></svg>';
     document.getElementById('seqNameInput').value = tpl ? (tpl.name || '') : '';
@@ -1748,8 +1768,9 @@ window.PTEmoji = (function(){
     </div>`;
   }
   function stepHTML(s, i){
-    const type = lsbType(s), last = editingSteps.length - 1, day = lsbDayOf(i);
-    return `<div class="lsb-step ${type}" data-step="${i}">
+    const type = lsbType(s), last = editingSteps.length - 1, day = lsbDayOf(i), end = lsbEndIndex(), skipped = end >= 0 && i > end;
+    return `<div class="lsb-step ${type}${skipped ? ' skipped' : ''}" data-step="${i}">
+      ${skipped && i === end + 1 ? `<div class="lsb-skip-note">The sequence ends after message ${end + 1} if there's no reply, so the messages below won't be sent. Turn off "End the sequence here" on message ${end + 1} to send them.</div>` : ''}
       <div class="lsb-dot" aria-hidden="true">${i + 1}</div>
       <div class="lsb-box">
         <div class="lsb-box-head">
@@ -1773,8 +1794,14 @@ window.PTEmoji = (function(){
         </div>
         <div data-warn="${i}">${lsbWarnings(s).map(w=>`<div class="lsb-warn ${w[0]}">${esc(w[1])}</div>`).join('')}</div>
         ${type === 'connect' ? '<div class="lsb-hint">A note is optional. Short, personal notes (under 200 characters) get accepted most often.</div>' : ''}
+        <div class="lsb-stop${s.stopIfNoReply ? ' on' : ''}">
+          <label class="lsb-switch"><input type="checkbox" data-stop="${i}" ${s.stopIfNoReply ? 'checked' : ''}><span class="lsb-switch-ui" aria-hidden="true"></span>
+            <span>🛑 End the sequence here if there's no reply</span></label>
+          ${s.stopIfNoReply ? `<div class="lsb-stop-days">Wait <input type="number" min="1" max="60" data-replywait="${i}" value="${s.replyWaitDays || 5}" aria-label="Days to wait for a reply after message ${i + 1}"> days for a reply.
+            No reply by <b data-endday="${i}">day ${lsbDayOf(i) + (s.replyWaitDays || 5)}</b>? The sequence ends as "No reply". If they reply, click "Replied on LinkedIn" on the lead.</div>` : ''}
+        </div>
       </div>
-      ${i < last ? waitHTML(i) : ''}
+      ${i < last && !s.stopIfNoReply ? waitHTML(i) : ''}
     </div>`;
   }
   function autoGrowTa(ta){ ta.style.height = 'auto'; ta.style.height = Math.max(96, ta.scrollHeight + 2) + 'px'; }
@@ -1800,18 +1827,20 @@ window.PTEmoji = (function(){
     renderSidePanel();
   }
   function renderSidePanel(){
-    const total = lsbDayOf(editingSteps.length - 1), n = editingSteps.length;
+    const end = lsbEndIndex(), shown = end >= 0 ? editingSteps.slice(0, end + 1) : editingSteps;
+    const total = lsbDayOf(shown.length - 1), n = shown.length;
     document.getElementById('lsbStatSteps').textContent = n;
     document.getElementById('lsbStatDays').textContent = total;
     document.querySelector('#lsbStatSteps + span').textContent = n === 1 ? 'message' : 'messages';
     document.querySelector('#lsbStatDays + span').textContent = total === 1 ? 'day in total' : 'days in total';
-    document.getElementById('lsbSchedule').innerHTML = editingSteps.map((s, i)=>`<div><i class="${lsbType(s)}"></i>${i + 1}. ${lsbType(s) === 'connect' ? 'Connection request' : 'Message'}<em>day ${lsbDayOf(i)}</em></div>`).join('');
-    document.getElementById('lsbChat').innerHTML = editingSteps.map((s, i)=>{
+    document.getElementById('lsbSchedule').innerHTML = shown.map((s, i)=>`<div><i class="${lsbType(s)}"></i>${i + 1}. ${lsbType(s) === 'connect' ? 'Connection request' : 'Message'}<em>day ${lsbDayOf(i)}</em></div>`).join('')
+      + (end >= 0 ? `<div><i style="background:#D83A52"></i>🛑 Ends if no reply<em>day ${lsbDayOf(end) + (editingSteps[end].replyWaitDays || 5)}</em></div>` : '');
+    document.getElementById('lsbChat').innerHTML = shown.map((s, i)=>{
       const txt = lsbFill(s.message).trim();
       return `<div class="lsb-chat-day">Day ${lsbDayOf(i)}</div>` + (lsbType(s) === 'connect'
         ? `<div class="lsb-invite"><div class="lab">🤝 Invitation to connect</div><div class="txt">${txt ? esc(txt) : '<span style="color:var(--slate-light);font-style:italic">Sent without a note</span>'}</div></div>`
         : `<div class="lsb-bubble${txt ? '' : ' empty'}">${txt ? esc(txt) : 'Empty message'}</div>`);
-    }).join('');
+    }).join('') + (end >= 0 ? `<div class="lsb-chat-day" style="color:#D83A52">No reply by day ${lsbDayOf(end) + (editingSteps[end].replyWaitDays || 5)}? The sequence ends</div>` : '');
     document.getElementById('lsbSaveSum').innerHTML = `<b>${n}</b> ${n === 1 ? 'step' : 'steps'} over <b>${total}</b> ${total === 1 ? 'day' : 'days'}`;
   }
   function insertAtCursor(ta, text){
@@ -1822,9 +1851,23 @@ window.PTEmoji = (function(){
   const stepsList = document.getElementById('stepsEditorList');
   stepsList.addEventListener('input', e=>{
     if(e.target.matches('.lsb-text')){ editingSteps[+e.target.dataset.i].message = e.target.value; autoGrowTa(e.target); refreshMeta(); }
+    if(e.target.matches('[data-replywait]')){
+      const i = +e.target.dataset.replywait; editingSteps[i].replyWaitDays = Math.min(60, Math.max(1, parseInt(e.target.value, 10) || 1));
+      const b = document.querySelector(`[data-endday="${i}"]`); if(b) b.textContent = `day ${lsbDayOf(i) + editingSteps[i].replyWaitDays}`;
+      renderSidePanel();
+    }
     if(e.target.matches('[data-delay]')){
       editingSteps[+e.target.dataset.delay].delayDays = Math.min(365, Math.max(0, parseInt(e.target.value, 10) || 0));
       refreshMeta();
+    }
+  });
+  stepsList.addEventListener('change', e=>{
+    if(e.target.matches('[data-stop]')){
+      const i = +e.target.dataset.stop, on = e.target.checked;
+      editingSteps.forEach((s, k)=>{ if(on && k !== i) s.stopIfNoReply = false; });  // only one place can end the sequence
+      editingSteps[i].stopIfNoReply = on;
+      if(on && !editingSteps[i].replyWaitDays) editingSteps[i].replyWaitDays = 5;
+      renderStepsEditor();
     }
   });
   stepsList.addEventListener('mousedown', e=>{ if(e.target.closest('.lsb-var,.li-emoji-btn')) e.preventDefault(); }); // keep the cursor in the message
@@ -1867,11 +1910,14 @@ window.PTEmoji = (function(){
     const name = document.getElementById('seqNameInput').value.trim();
     if(!name){ showToast('Give this sequence a name.', true); document.getElementById('seqNameInput').focus(); return; }
     // Keep connection requests (a note is optional); drop empty messages.
-    const kept = editingSteps.filter(s=> lsbType(s) === 'connect' || s.message.trim());
+    const endAt = lsbEndIndex();
+    const kept = (endAt >= 0 ? editingSteps.slice(0, endAt + 1) : editingSteps).filter(s=> lsbType(s) === 'connect' || s.message.trim());
     if(!kept.some(s=> s.message.trim()) && !kept.some(s=> lsbType(s) === 'connect')){ showToast('Add at least one message.', true); return; }
     const tooLong = kept.find(s=> s.message.length > LSB_LIMITS[lsbType(s)]);
     if(tooLong){ showToast(lsbType(tooLong) === 'connect' ? 'A connection note is longer than LinkedIn allows (300 characters).' : 'A message is longer than LinkedIn allows.', true); return; }
-    const cleanSteps = kept.map((s, i)=> ({type: lsbType(s), message: s.message.trim(), delayDays: i === 0 ? 0 : Math.max(0, s.delayDays || 0)}));
+    const cleanSteps = kept.map((s, i)=> ({type: lsbType(s), message: s.message.trim(), delayDays: i === 0 ? 0 : Math.max(0, s.delayDays || 0),
+      ...(s.stopIfNoReply ? {stopIfNoReply: true, replyWaitDays: Math.min(60, Math.max(1, s.replyWaitDays || 5))} : {})}));
+    if(endAt >= 0 && endAt < editingSteps.length - 1 && editingSteps.slice(endAt + 1).some(s=> s.message.trim())) showToast(`Saved. Messages after message ${endAt + 1} are left out, because the sequence ends there if there's no reply.`);
     const payload = { workspaceId: currentWorkspaceId, name, steps: cleanSteps };
     const saveBtn = document.getElementById('saveSeqBtn');
     saveBtn.disabled = true;
@@ -2047,6 +2093,7 @@ window.PTEmoji = (function(){
         batch.set(ref, {
           workspaceId: currentWorkspaceId, boardId: bId, leadId,
           templateId: tpl.id, templateName: tpl.name || 'Untitled sequence',
+      startedBy: auth.currentUser ? auth.currentUser.uid : null,
           steps: tpl.steps,
           currentStepIndex: 0,
           status: 'active',

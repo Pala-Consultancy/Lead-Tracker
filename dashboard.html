@@ -1025,6 +1025,7 @@
   .notif-item-tag.stalenew{background:var(--c-blue-bg);color:var(--c-blue-fg);}
   .notif-item-tag.nocalldate{background:var(--c-purple-bg);color:var(--c-purple-fg);}
   .notif-item-tag.postcall{background:var(--c-green-bg);color:var(--c-green-fg);}
+  .notif-item-tag.linkedin{background:rgba(10,102,194,.1);color:#0A66C2;}
   .notif-item-time{font-size:11px;color:var(--slate-light);margin-top:4px;}
   .notif-empty{padding:36px 20px;text-align:center;color:var(--slate-light);font-size:13px;}
   .notif-empty-icon{font-size:26px;margin-bottom:10px;}
@@ -2394,6 +2395,7 @@ html[data-theme="dark"] .linkedin-mode-orbit-dot{background:#161934}
 html[data-theme="dark"] .linkedin-mode-badge{background:#161934}
 html[data-theme="dark"] .linkedin-mode-badge span{color:#81BDF8}
 html[data-theme="dark"] .linkedin-mode-overlay.other-platforms .linkedin-mode-badge span{color:#9ADFD1}
+html[data-theme="dark"] .notif-item-tag.linkedin{color:#81BDF8}
 html[data-theme="dark"] .alexandre-avatar{background:rgba(22,25,52,0.20)}
 html[data-theme="dark"] .alexandre-close{background:rgba(22,25,52,0.15)}
 html[data-theme="dark"] .alexandre-close:hover{background:rgba(22,25,52,0.28)}
@@ -2909,6 +2911,7 @@ html[data-theme="dark"] .toast-undo:hover{background:rgba(22,25,52,0.28)}
     <button class="notif-filter-btn" data-notif-filter="stalenew" data-i18n="notifTagNew">New lead</button>
     <button class="notif-filter-btn" data-notif-filter="nocalldate" data-i18n="notifTagNoCallDate">Missing call date</button>
     <button class="notif-filter-btn" data-notif-filter="postcall" data-i18n="notifTagPostCall">Call follow-up</button>
+    <button class="notif-filter-btn" data-notif-filter="linkedin">LinkedIn</button>
     <button class="notif-filter-btn" data-notif-filter="__read__">Read</button>
   </div>
   <div class="notif-panel-body" id="notifPanelBody"></div>
@@ -4401,6 +4404,7 @@ html[data-theme="dark"] .toast-undo:hover{background:rgba(22,25,52,0.28)}
         console.error('Could not sync scheduled emails', err);
       });
     unsubscribeLeads = leadsCollection.onSnapshot(snapshot=>{
+      setTimeout(loadLinkedinDueRuns, 0);
       const allDocs = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
       leads = allDocs.filter(l=>!l.deleted);
       trashedLeads = allDocs.filter(l=>l.deleted).sort((a,b)=>{
@@ -5487,13 +5491,33 @@ html[data-theme="dark"] .toast-undo:hover{background:rgba(22,25,52,0.28)}
     }).sort((a,b)=> new Date(a.callDate) - new Date(b.callDate));
   }
 
+  // LinkedIn sequence messages that are due, for leads on this board.
+  let linkedinDueRuns = [], linkedinDueLoadedAt = 0;
+  function loadLinkedinDueRuns(){
+    if(!db || !workspaceId || !boardId || Date.now() - linkedinDueLoadedAt < 60000) return;
+    linkedinDueLoadedAt = Date.now();
+    db.collection('linkedinSequenceRuns').where('workspaceId', '==', workspaceId).where('boardId', '==', boardId).get().then(snap=>{
+      linkedinDueRuns = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(r=> r.status === 'active' && Array.isArray(r.steps) && (r.currentStepIndex || 0) < r.steps.length &&
+        (!r.nextDueAt || (typeof r.nextDueAt.toDate === 'function' && r.nextDueAt.toDate().getTime() <= Date.now())));
+      renderNotifPanel();
+    }).catch(err=> console.warn('Could not load LinkedIn reminders', err));
+  }
+  setInterval(()=>{ linkedinDueLoadedAt = 0; loadLinkedinDueRuns(); }, 5 * 60 * 1000);
+  function computeLinkedinDueReminders(){
+    return linkedinDueRuns.map(r=>{
+      const lead = leads.find(x=> x.id === r.leadId); if(!lead) return null;
+      const t = r.nextDueAt && typeof r.nextDueAt.toDate === 'function' ? r.nextDueAt.toDate().getTime() : Date.now();
+      return {lead, run: r, type: 'linkedin', time: t, id: `linkedin:${lead.id}:${r.currentStepIndex || 0}`};
+    }).filter(Boolean);
+  }
   function computeAllReminders(){
     const followUps = notifEnabled('followup') ? computeFollowUpReminders().map(l=>({lead:l, type:'followup', time:l.contactedAt.toDate().getTime()})) : [];
     const staleNew = notifEnabled('stalenew') ? computeStaleNewLeads().map(l=>({lead:l, type:'stalenew', time: addLeadMode === 'linkedin' ? new Date(l.requestAcceptedAt).getTime() : new Date(l.dateAdded).getTime()})) : [];
     const missingCallDate = notifEnabled('nocalldate') ? computeMissingCallDateReminders().map(l=>({lead:l, type:'nocalldate', time:l.callBookedAt.toDate().getTime()})) : [];
     const postCall = notifEnabled('postcall') ? computePostCallReminders().map(l=>({lead:l, type:'postcall', time:new Date(l.callDate).getTime()})) : [];
-    return followUps.concat(staleNew, missingCallDate, postCall)
-      .map(r=>({...r, id: `${r.type}:${r.lead.id}`}))
+    const linkedinDue = notifEnabled('linkedinDue') ? computeLinkedinDueReminders() : [];
+    return followUps.concat(staleNew, missingCallDate, postCall, linkedinDue)
+      .map(r=>({...r, id: r.id || `${r.type}:${r.lead.id}`}))
       .sort((a,b)=>a.time-b.time);
   }
 
@@ -5567,7 +5591,14 @@ html[data-theme="dark"] .toast-undo:hover{background:rgba(22,25,52,0.28)}
     body.innerHTML = toolbarHtml + reminders.map(r=>{
       const l = r.lead;
       let message, icon, tagLabel, tagClass;
-      if(r.type === 'stalenew'){
+      if(r.type === 'linkedin'){
+        const run = r.run || {}, n = (run.currentStepIndex || 0) + 1, total = (run.steps || []).length;
+        const st = (run.steps || [])[run.currentStepIndex || 0] || {};
+        message = `Time to send LinkedIn ${st.type === 'connect' ? 'connection request' : 'message'} <strong>${n} of ${total}</strong> to <strong>${esc(l.name || t('lead_singular'))}</strong>`;
+        icon = '💬';
+        tagLabel = 'LinkedIn';
+        tagClass = 'linkedin';
+      } else if(r.type === 'stalenew'){
         message = t('staleNewLeadMessage')
           .replace('{user}', esc(currentUserDisplayName || ''))
           .replace('{name}', esc(l.name || t('lead_singular')));
@@ -7037,8 +7068,8 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
       return db.collection('linkedinSequenceRuns')
         .where('workspaceId', '==', workspaceId)
         .where('leadId', '==', l.id)
-        .where('status', '==', 'active')
-        .get().then(snap=> Promise.all(snap.docs.map(d=> d.ref.update({status: 'paused_replied'}))).then(()=> snap.size));
+        .where('status', 'in', ['active', 'waiting_reply'])
+        .get().then(snap=> Promise.all(snap.docs.map(d=> d.ref.update({status: 'paused_replied', notifyAt: firebase.firestore.FieldValue.delete()}))).then(()=> snap.size));
     }).then(paused=>{
       showToast(on ? (paused ? 'Marked as replied on LinkedIn. Their LinkedIn sequence is paused.' : 'Marked as replied on LinkedIn.') : 'No longer marked as replied on LinkedIn.');
       const fresh = leads.find(x=> x.id === l.id);
@@ -7057,11 +7088,27 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
     db.collection('linkedinSequenceRuns')
       .where('workspaceId', '==', workspaceId)
       .where('leadId', '==', l.id)
-      .where('status', 'in', ['active', 'paused_replied'])
+      .where('status', 'in', ['active', 'paused_replied', 'waiting_reply'])
       .limit(1)
       .get().then(snap=>{
         if(drawerLeadId !== l.id) return; // drawer moved on before this resolved
+        // A reply deadline that has passed ends the sequence (the scheduled function does this too).
+        if(!snap.empty){
+          const r0 = snap.docs[0].data();
+          if(r0.status === 'waiting_reply' && r0.nextDueAt && typeof r0.nextDueAt.toDate === 'function' && r0.nextDueAt.toDate().getTime() <= Date.now()){
+            snap.docs[0].ref.update({status: 'ended_no_reply', endedAt: firebase.firestore.FieldValue.serverTimestamp(), notifyAt: firebase.firestore.FieldValue.delete()})
+              .then(()=> loadLinkedInSequenceForDrawer(l)).catch(()=>{});
+            return;
+          }
+        }
         if(snap.empty){
+          // Show when the last sequence ended without a reply, above the start button.
+          db.collection('linkedinSequenceRuns').where('workspaceId', '==', workspaceId).where('leadId', '==', l.id).where('status', '==', 'ended_no_reply').limit(1).get().then(ended=>{
+            if(drawerLeadId !== l.id || ended.empty) return;
+            const e = ended.docs[0].data();
+            const when = e.endedAt && typeof e.endedAt.toDate === 'function' ? e.endedAt.toDate().toLocaleDateString(undefined, {day:'numeric', month:'short'}) : '';
+            holder.insertAdjacentHTML('afterbegin', `<div class="li-seq-paused" style="margin-bottom:8px;">🛑 <b>${esc(e.templateName || 'LinkedIn sequence')}</b> ended without a reply${when ? ' on ' + esc(when) : ''} (after message ${(e.currentStepIndex || 0)} of ${(e.steps || []).length}).</div>`);
+          }).catch(()=>{});
           holder.innerHTML = `
             <button type="button" class="btn" id="startLinkedInSeqBtn" style="width:100%;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> Start a LinkedIn sequence</button>`;
           const btn = document.getElementById('startLinkedInSeqBtn');
@@ -7069,6 +7116,22 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
           return;
         }
         const run = {id: snap.docs[0].id, ...snap.docs[0].data()};
+        if(run.status === 'waiting_reply'){
+          const until = run.nextDueAt && typeof run.nextDueAt.toDate === 'function' ? run.nextDueAt.toDate() : null;
+          holder.innerHTML = `
+            <div class="li-seq-paused">⏳ <b>${esc(run.templateName || 'LinkedIn sequence')}</b>: all messages sent. Waiting for a reply${until ? ` until <b>${esc(until.toLocaleDateString(undefined, {weekday:'short', day:'numeric', month:'short'}))}</b>` : ''}.
+              No reply by then? The sequence ends as "No reply". If they reply, click "Replied on LinkedIn" above.</div>
+            <div class="drawer-actions-row">
+              <button type="button" class="btn" id="stopLinkedInSeqBtn" style="flex:1;justify-content:center;" title="Stop this sequence">Stop sequence</button>
+            </div>`;
+          document.getElementById('stopLinkedInSeqBtn').onclick = ()=>{
+            db.collection('linkedinSequenceRuns').doc(run.id).update({status: 'stopped', notifyAt: firebase.firestore.FieldValue.delete()}).then(()=>{
+              showToast('LinkedIn sequence stopped.');
+              loadLinkedInSequenceForDrawer(l);
+            }).catch(err=> showToast('Could not stop that: ' + friendlyErr(err), true));
+          };
+          return;
+        }
         if(run.status === 'paused_replied'){
           holder.innerHTML = `
             <div class="li-seq-paused">⏸ <b>${esc(run.templateName || 'LinkedIn sequence')}</b> is paused because they replied on LinkedIn (at step ${(run.currentStepIndex || 0) + 1} of ${(run.steps || []).length}).</div>
@@ -7156,17 +7219,31 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
     };
     document.getElementById('liMarkSentBtn').onclick = ()=>{
       const nextIndex = run.currentStepIndex + 1;
-      const isLastStep = nextIndex >= run.steps.length;
-      const updates = { currentStepIndex: nextIndex, lastSentAt: firebase.firestore.FieldValue.serverTimestamp() };
-      if(isLastStep){
-        updates.status = 'completed';
+      const sentStep = run.steps[run.currentStepIndex] || {};
+      const waitsForReply = !!sentStep.stopIfNoReply;
+      const isLastStep = !waitsForReply && nextIndex >= run.steps.length;
+      const updates = { currentStepIndex: nextIndex, lastSentAt: firebase.firestore.FieldValue.serverTimestamp(), dueNotifiedStep: firebase.firestore.FieldValue.delete() };
+      let doneMsg;
+      if(waitsForReply){
+        // "End the sequence here if there's no reply": wait N days, then it ends by itself.
+        const waitDays = Math.max(1, sentStep.replyWaitDays || 5);
+        const until = firebase.firestore.Timestamp.fromMillis(Date.now() + waitDays * 24*60*60*1000);
+        updates.status = 'waiting_reply'; updates.nextDueAt = until; updates.notifyAt = until;
+        doneMsg = `Marked as sent. Waiting ${waitDays} day${waitDays === 1 ? '' : 's'} for a reply; no reply by then ends the sequence.`;
+      } else if(isLastStep){
+        updates.status = 'completed'; updates.notifyAt = firebase.firestore.FieldValue.delete();
+        doneMsg = 'Sequence completed! 🎉';
       } else {
         const delayDays = run.steps[nextIndex].delayDays || 0;
         updates.nextDueAt = firebase.firestore.Timestamp.fromMillis(Date.now() + delayDays * 24*60*60*1000);
+        // The reminder (email + bell) goes out when the next message is due.
+        updates.notifyAt = delayDays > 0 ? updates.nextDueAt : firebase.firestore.FieldValue.delete();
+        doneMsg = delayDays > 0 ? `Marked as sent. You'll get a reminder in ${delayDays} day${delayDays === 1 ? '' : 's'} for the next message.` : 'Marked as sent. The next message is ready now.';
       }
       db.collection('linkedinSequenceRuns').doc(run.id).update(updates).then(()=>{
         closeLinkedInCompose();
-        showToast(isLastStep ? 'Sequence completed! 🎉' : 'Marked as sent — next step scheduled.');
+        showToast(doneMsg);
+        linkedinDueLoadedAt = 0; loadLinkedinDueRuns();
         loadLinkedInSequenceForDrawer(l);
       }).catch(err=>{
         showToast('Could not update that: ' + friendlyErr(err), true);

@@ -1008,6 +1008,10 @@
      (dashboard, trash, also in LinkedIn mode). It doesn't fit indigo night. */
   html[data-theme="dark"] .title-block{box-shadow:none !important;overflow:visible !important;}
   html[data-theme="dark"] .title-block::after{content:none !important;display:none !important;}
+  /* Source icons (LinkedIn "in", YouTube play button) draw their cut-out in the
+     chip's background colour. In dark mode those backgrounds are translucent,
+     so the cut-out would vanish; draw it in a solid dark colour instead. */
+  html[data-theme="dark"] svg [fill^="var(--c-"][fill$="-bg)"]{fill:#161934;}
   /* "Contacted" is the strong black dot in light mode; its dark-mode twin is a
      strong light dot, so it reads as clearly "on" as the coloured ones. */
   html[data-theme="dark"] .step-dot.on.contacted, html[data-theme="dark"] .outreach-chip.on.contacted{
@@ -1146,6 +1150,25 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
         <div class="notif-toggle-desc">A booked call's date has passed and the status hasn't been updated.</div>
       </div>
       <button type="button" class="notif-toggle-switch" data-key="postcall"><span class="notif-toggle-dot"></span></button>
+    </div>
+  </div>
+
+  <div class="notif-settings-card">
+    <h3>LinkedIn sequences</h3>
+    <p>When it's time to send the next message in a LinkedIn sequence.</p>
+    <div class="notif-toggle-row" data-key="linkedinDue">
+      <div class="notif-toggle-text">
+        <div class="notif-toggle-title">Reminder in PalaTrack</div>
+        <div class="notif-toggle-desc">Shows up under the bell on the board when a LinkedIn message is due.</div>
+      </div>
+      <button type="button" class="notif-toggle-switch" data-key="linkedinDue"><span class="notif-toggle-dot"></span></button>
+    </div>
+    <div class="notif-toggle-row" data-key="linkedinDueEmail">
+      <div class="notif-toggle-text">
+        <div class="notif-toggle-title">Reminder by email</div>
+        <div class="notif-toggle-desc">An email on the day it's due, with the message ready to copy and a button to open the lead.</div>
+      </div>
+      <button type="button" class="notif-toggle-switch" data-key="linkedinDueEmail"><span class="notif-toggle-dot"></span></button>
     </div>
   </div>
 
@@ -1652,7 +1675,7 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
     return source.slice(0,2).toUpperCase();
   }
 
-  const NOTIF_KEYS = ['stalenew','followup','nocalldate','postcall','chatToast','chatDesktop'];
+  const NOTIF_KEYS = ['stalenew','followup','nocalldate','postcall','linkedinDue','linkedinDueEmail','chatToast','chatDesktop'];
   const TOP_LEVEL_KEYS = ['showOnlineStatus'];
   let notifPrefs = {};
   let topLevelPrefs = {};
