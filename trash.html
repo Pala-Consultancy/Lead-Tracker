@@ -163,11 +163,6 @@
     letter-spacing:-0.02em;line-height:1.2;
     color:var(--ink);
   }
-  .updated-pill{
-    background:var(--amber);color:var(--c-amber-dark-text);font-size:10px;font-weight:700;
-    padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;
-    flex-shrink:0;display:inline-block;animation:pill-pop .3s cubic-bezier(.34,1.56,.64,1);
-  }
   @keyframes pill-pop{
     0%{transform:scale(.6);opacity:0;}
     100%{transform:scale(1);opacity:1;}
@@ -1722,6 +1717,10 @@
      (dashboard, trash, also in LinkedIn mode). It doesn't fit indigo night. */
   html[data-theme="dark"] .title-block{box-shadow:none !important;overflow:visible !important;}
   html[data-theme="dark"] .title-block::after{content:none !important;display:none !important;}
+  /* Source icons (LinkedIn "in", YouTube play button) draw their cut-out in the
+     chip's background colour. In dark mode those backgrounds are translucent,
+     so the cut-out would vanish; draw it in a solid dark colour instead. */
+  html[data-theme="dark"] svg [fill^="var(--c-"][fill$="-bg)"]{fill:#161934;}
   /* "Contacted" is the strong black dot in light mode; its dark-mode twin is a
      strong light dot, so it reads as clearly "on" as the coloured ones. */
   html[data-theme="dark"] .step-dot.on.contacted, html[data-theme="dark"] .outreach-chip.on.contacted{
@@ -1740,7 +1739,6 @@
     border-color:#2B3060 !important;
   }
 
-html[data-theme="dark"] .updated-pill{color:#2A1A00}
 html[data-theme="dark"] .bulk-bar{background:#3A3F75}
 html[data-theme="dark"] .bulk-bar select{border:1px solid rgba(122,115,255,0.20);background:rgba(22,25,52,0.10)}
 html[data-theme="dark"] .bulk-bar select option{color:#ECEEFF}
