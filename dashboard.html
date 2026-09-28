@@ -7225,7 +7225,8 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
       const sentStep = run.steps[run.currentStepIndex] || {};
       const waitsForReply = !!sentStep.stopIfNoReply;
       const isLastStep = !waitsForReply && nextIndex >= run.steps.length;
-      const updates = { currentStepIndex: nextIndex, lastSentAt: firebase.firestore.FieldValue.serverTimestamp(), dueNotifiedStep: firebase.firestore.FieldValue.delete() };
+      const updates = { currentStepIndex: nextIndex, lastSentAt: firebase.firestore.FieldValue.serverTimestamp(), dueNotifiedStep: firebase.firestore.FieldValue.delete(),
+        ['stepSentAt.' + run.currentStepIndex]: firebase.firestore.FieldValue.serverTimestamp() };
       let doneMsg;
       if(waitsForReply){
         // "End the sequence here if there's no reply": wait N days, then it ends by itself.

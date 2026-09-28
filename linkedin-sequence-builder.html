@@ -883,6 +883,18 @@
   .lsx-btn.start{padding:8px 14px;}
   .lsx-top{flex-wrap:nowrap;}
   .lsx-due-row{align-self:flex-start;margin-top:2px;}
+
+  /* A message that has been sent */
+  .lsb-sent{flex:1 1 100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font:600 13px 'Inter',sans-serif;color:#157A52;background:rgba(31,169,113,.1);
+    border:1px solid rgba(31,169,113,.3);border-radius:10px;padding:8px 12px;}
+  .lsb-sent b{color:#0F5E3F;}
+  .lsb-sent span{font-weight:500;color:#3C8A68;}
+  .lsb-step.sent-all .lsb-dot{background:linear-gradient(135deg,#1FA971,#157A52);box-shadow:0 4px 12px -4px rgba(31,169,113,.6);font-size:16px;}
+  .lsb-step.sent-all .lsb-box{border-color:rgba(31,169,113,.45);}
+  .lsb-step.sent-some .lsb-dot{box-shadow:0 0 0 3px rgba(31,169,113,.45), 0 4px 12px -4px rgba(10,102,194,.6);}
+  .lsb-step.flash .lsb-box{animation:lsbSentFlash 1.2s ease;}
+  @keyframes lsbSentFlash{0%{box-shadow:0 0 0 0 rgba(31,169,113,.55);background:rgba(31,169,113,.12);}100%{box-shadow:0 0 0 14px rgba(31,169,113,0);}}
+  @media (prefers-reduced-motion: reduce){ .lsb-step.flash .lsb-box{animation:none;} }
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1370,6 +1382,9 @@ html[data-theme="dark"] .lsp-btn.danger{color:#EC8E9B}
 html[data-theme="dark"] .lsb-person .lsp-x:hover{color:#EC8E9B}
 html[data-theme="dark"] .lsx-card.draft::before{background:linear-gradient(90deg,#B7C0D0,rgba(110,146,207,0.15))}
 html[data-theme="dark"] .lsx-card.ended::before{background:linear-gradient(90deg,#6D65F6,rgba(80,71,245,0.15))}
+html[data-theme="dark"] .lsb-sent{color:#8CEEC7}
+html[data-theme="dark"] .lsb-sent b{color:#8AEFC8}
+html[data-theme="dark"] .lsb-sent span{color:#A1D8C0}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -2462,7 +2477,7 @@ window.PTEmoji = (function(){
     renderEditorPeople();
     if(document.getElementById('listView').style.display !== 'none' && allTemplates.length) renderTemplatesGrid();
     if(window.ptRefreshLinkedinBadge) window.ptRefreshLinkedinBadge();
-    renderStepStages(); renderStepReplies(); renderSidePanel();
+    renderStepStages(); lsbFlashSent = null; renderStepReplies(); renderSidePanel();
     const list = document.getElementById('peopleList');
     const rows = lspRuns.filter(lspInGroup);
     if(!rows.length){
@@ -2531,8 +2546,26 @@ window.PTEmoji = (function(){
     if(!d || d.getTime() <= Date.now()) return ['due', 'due now'];
     return ['', 'due ' + d.toLocaleDateString(undefined, {weekday:'short', day:'numeric', month:'short'})];
   }
+  let lsbFlashSent = null;
+  // Who already got message i: everyone past it in this sequence.
+  function stepSentTo(i){ return lspRuns.filter(r=> r.templateId === editingTemplateId && (r.currentStepIndex || 0) > i); }
+  function sentLine(i){
+    const sent = stepSentTo(i); if(!sent.length) return '';
+    const names = sent.map(r=> (lspLeads[r.boardId + '/' + r.leadId] || {}).name || 'a lead');
+    const one = sent.length === 1 ? sent[0] : null;
+    const at = one && one.stepSentAt && one.stepSentAt[i] && typeof one.stepSentAt[i].toDate === 'function' ? one.stepSentAt[i].toDate() : null;
+    return `<div class="lsb-sent" title="${esc(names.join(', '))}">✅ Sent to <b>${one ? esc(names[0]) : sent.length + ' people'}</b>${at ? ` · ${esc(at.toLocaleDateString(undefined, {day:'numeric', month:'short'}))}` : ''}${!one && sent.length <= 3 ? ` <span>(${esc(names.join(', '))})</span>` : ''}</div>`;
+  }
   function renderStepStages(){
     const boxes = document.querySelectorAll('[data-stage]');
+    // The step itself: green ✓ when everyone in the sequence got it, a green ring when some did.
+    const everyone = editingTemplateId ? lspRuns.filter(r=> r.templateId === editingTemplateId).length : 0;
+    document.querySelectorAll('.lsb-step[data-step]').forEach(stepEl=>{
+      const i = +stepEl.dataset.step, n = editingTemplateId ? stepSentTo(i).length : 0;
+      stepEl.classList.toggle('sent-all', !!everyone && n === everyone);
+      stepEl.classList.toggle('sent-some', n > 0 && n < everyone);
+      const dot = stepEl.querySelector('.lsb-dot'); if(dot) dot.textContent = everyone && n === everyone ? '✓' : String(i + 1);
+    });
     boxes.forEach(box=>{
       const i = +box.dataset.stage;
       if(!editingTemplateId){
@@ -2540,11 +2573,12 @@ window.PTEmoji = (function(){
           <button type="button" class="lsb-sbtn" disabled title="Save the sequence first">📤 Message sent</button>`;
         return;
       }
-      const at = stepAtStage(i), dueNow = at.filter(r=> lspDueText(r)[0] === 'due').length;
-      box.innerHTML = (at.length
-        ? `<span class="lsb-rstat">📤 <b>${at.length}</b> ${at.length === 1 ? 'person is' : 'people are'} at this message${dueNow ? ` · <b style="color:#B45F06">${dueNow}</b> due now` : ''}</span>`
-        : `<span class="lsb-rstat">📤 Nobody is at this message right now</span>`)
-        + `<button type="button" class="lsb-sbtn" data-spick="${i}" aria-haspopup="true">📤 Message sent</button>`;
+      const at = stepAtStage(i), dueNow = at.filter(r=> lspDueText(r)[0] === 'due').length, sent = stepSentTo(i).length;
+      box.innerHTML = sentLine(i) + (at.length
+        ? `<span class="lsb-rstat">📤 <b>${at.length}</b> ${at.length === 1 ? 'person is' : 'people are'} waiting for this message${dueNow ? ` · <b style="color:#B45F06">${dueNow}</b> due now` : ''}</span>`
+        : sent ? '' : `<span class="lsb-rstat">📤 Nobody is waiting for this message right now</span>`)
+        + (at.length || !sent ? `<button type="button" class="lsb-sbtn" data-spick="${i}" aria-haspopup="true">📤 Message sent</button>` : '');
+      if(lsbFlashSent === i){ const stepEl = box.closest('.lsb-step'); if(stepEl){ stepEl.classList.remove('flash'); void stepEl.offsetWidth; stepEl.classList.add('flash'); } }
     });
   }
   function openSentPicker(btn, i){
@@ -2572,7 +2606,7 @@ window.PTEmoji = (function(){
     const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'The lead';
     const before = {currentStepIndex: r.currentStepIndex || 0, status: r.status, nextDueAt: r.nextDueAt || null, notifyAt: r.notifyAt || null};
     const sent = (r.steps || [])[i] || {}, nextIndex = i + 1;
-    const upd = {currentStepIndex: nextIndex, lastSentAt: FV.serverTimestamp(), dueNotifiedStep: FV.delete()};
+    const upd = {currentStepIndex: nextIndex, lastSentAt: FV.serverTimestamp(), dueNotifiedStep: FV.delete(), ['stepSentAt.' + i]: FV.serverTimestamp()};
     let msg;
     if(sent.stopIfNoReply){
       const wait = Math.max(1, sent.replyWaitDays || 5), until = TSf.fromMillis(Date.now() + wait * D);
@@ -2590,13 +2624,15 @@ window.PTEmoji = (function(){
     db.collection('linkedinSequenceRuns').doc(runId).update(upd).then(()=>{
       // Remember exactly what was saved (including the reminder), so a later Undo can restore it.
       const savedNotify = upd.notifyAt && typeof upd.notifyAt.toMillis === 'function' ? upd.notifyAt : null;
-      Object.assign(r, {currentStepIndex: nextIndex, status: upd.status || r.status, nextDueAt: upd.nextDueAt || r.nextDueAt, notifyAt: savedNotify});
+      Object.assign(r, {currentStepIndex: nextIndex, status: upd.status || r.status, nextDueAt: upd.nextDueAt || r.nextDueAt, notifyAt: savedNotify,
+        stepSentAt: {...(r.stepSentAt || {}), [i]: {toDate: ()=> new Date(), toMillis: ()=> Date.now()}}});
+      lsbFlashSent = i;
       renderPeople();
       showUndoToast(msg, ()=>{
         db.collection('linkedinSequenceRuns').doc(runId).update({
           currentStepIndex: before.currentStepIndex, status: before.status,
-          nextDueAt: before.nextDueAt || FV.delete(), notifyAt: before.notifyAt || FV.delete()
-        }).then(()=>{ Object.assign(r, before); renderPeople(); });
+          nextDueAt: before.nextDueAt || FV.delete(), notifyAt: before.notifyAt || FV.delete(), ['stepSentAt.' + i]: FV.delete()
+        }).then(()=>{ Object.assign(r, before); if(r.stepSentAt) delete r.stepSentAt[i]; renderPeople(); });
       });
     }).catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
   }
