@@ -824,6 +824,14 @@
   .pc-why{margin:8px 0 0 26px;padding:9px 11px;border-radius:10px;background:var(--panel-alt);border:1px solid var(--border);font-size:12.5px;line-height:1.45;color:var(--ink);animation:aiPopIn .2s ease both;}
   .pc-why b{margin-right:4px;}
   .pc-why-quote{margin-top:5px;color:var(--slate);font-style:italic;}
+  .pc-wrap{position:relative;}
+  .pc-ai-btn{position:absolute;right:46px;top:20px;z-index:2;border:0;border-radius:999px;padding:7px 14px;cursor:pointer;
+    font:700 12.5px 'Inter',sans-serif;color:#fff;background:linear-gradient(135deg,#0A66C2,#7B3FE4);box-shadow:0 4px 12px rgba(10,102,194,.25);transition:transform .15s,opacity .15s;}
+  .pc-ai-btn:hover:not(:disabled){transform:translateY(-1px);}
+  .pc-ai-btn:disabled{opacity:.55;cursor:default;box-shadow:none;}
+  .pc-ai-btn.done{background:var(--success-soft);color:var(--success);opacity:1;}
+  .pc-ai-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .pc-wrap .pc-head .pc-title{padding-right:150px;}
   .pc-note{font-size:11.5px;color:var(--slate-light);line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
 
   /* ---------- Saved headline ---------- */
@@ -1366,6 +1374,10 @@
      (dashboard, trash, also in LinkedIn mode). It doesn't fit indigo night. */
   html[data-theme="dark"] .title-block{box-shadow:none !important;overflow:visible !important;}
   html[data-theme="dark"] .title-block::after{content:none !important;display:none !important;}
+  /* Source icons (LinkedIn "in", YouTube play button) draw their cut-out in the
+     chip's background colour. In dark mode those backgrounds are translucent,
+     so the cut-out would vanish; draw it in a solid dark colour instead. */
+  html[data-theme="dark"] svg [fill^="var(--c-"][fill$="-bg)"]{fill:#161934;}
   /* "Contacted" is the strong black dot in light mode; its dark-mode twin is a
      strong light dot, so it reads as clearly "on" as the coloured ones. */
   html[data-theme="dark"] .step-dot.on.contacted, html[data-theme="dark"] .outreach-chip.on.contacted{
@@ -1679,6 +1691,7 @@ Tip: LinkedIn only shows the first few lines before a &quot;…see more&quot; �
           <div class="goal-chips" id="postGoalChips" role="radiogroup" aria-labelledby="postGoalLabel"></div>
         </div>
         <div class="pc-wrap" id="postCheck">
+          <button type="button" class="pc-ai-btn" id="pcAiTopBtn">✨ Check with AI</button>
           <button type="button" class="pc-head" id="pcHead" aria-expanded="false" aria-controls="pcBody">
             <span class="pc-gauge" aria-hidden="true">
               <svg width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="pcThinkGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A66C2"/><stop offset="1" stop-color="#7B3FE4"/></linearGradient></defs><circle class="track" cx="24" cy="24" r="20" fill="none" stroke-width="5"/><circle class="val" id="pcGaugeVal" cx="24" cy="24" r="20" fill="none" stroke-width="5" stroke-linecap="round"/></svg>
@@ -4310,18 +4323,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   // server gets a note to update instead of being thrown away).
   const AI_REVIEW_LATEST = 4;
   function aiReviewIsCurrent(){ return !!aiReview && aiReview.v >= 3 && aiReview.hash === reviewKey(); }
+  // The AI only reads the post when you click "Check with AI" (never by itself
+  // while typing, or when a post opens). Kept as a function so the places that
+  // used to schedule a scan don't need to change.
   function scheduleAiReview(){
-    if(aiLocked()) return;
     clearTimeout(aiReviewTimer); aiReviewTimer = null;
-    if(reviewText().length < AI_REVIEW_MIN_CHARS || aiReviewIsCurrent()) return;
-    if(aiReviewStuckKey && aiReviewStuckKey === reviewKey()) return;
-    // Not signed in / connected yet? Try again shortly instead of giving up.
-    if(!functionsApi || !currentWorkspaceId){ aiReviewTimer = setTimeout(scheduleAiReview, 2000); return; }
-    const wait = Math.max(6000, 60000 - (Date.now() - aiReviewLastRun));
-    aiReviewTimer = setTimeout(()=>{ aiReviewTimer = null; runAiReview(false); }, wait);
   }
   function runAiReview(manual){
-    if(aiLocked()){ if(manual) showToast(AI_LOCK_MSG, true); return; }
+    if(!manual) return;   // only ever on a click
+    if(aiLocked()){ showToast(AI_LOCK_MSG, true); return; }
     if(manual) aiReviewStuckKey = '';
     const text = reviewText();
     if(aiReviewBusy || text.length < AI_REVIEW_MIN_CHARS || (!manual && aiReviewIsCurrent())) return;
@@ -4357,7 +4367,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       setAiReading(false);
       if(aiReviewIsCurrent()) aiRevealPending = true;
       updatePostCheck();
-      if(!aiReviewIsCurrent() && !aiReviewError) scheduleAiReview(); // text changed while it ran
+      // (If the text changed while it ran, the panel says so and offers to check again.)
     });
   }
   // "Use this hook": replace the first line with one of the AI's opening lines.
@@ -4371,7 +4381,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     postInput.setSelectionRange(start, end);
     replaceSelection(hook, false);
     aiReview.hookIdeas = aiReview.hookIdeas.filter((_, j)=> j !== i);
-    showToast('New hook in place. Press Ctrl+Z to undo. The AI will recheck in a moment.');
+    showToast('New hook in place. Press Ctrl+Z to undo. Click "Check with AI" to update the score.');
     updatePostCheck(); scheduleAiReview();
   }
   // "Is this judgment fair?" — saved to /postCheckFeedback so you can see where
@@ -4401,7 +4411,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       postInput.setSelectionRange(insertAt, insertAt);
       replaceSelection('\n\n' + issue.fix, false);
       aiReview.issues = aiReview.issues.filter((_, j)=> j !== i);
-      showToast('Added to your post. Press Ctrl+Z to undo. The AI will recheck in a moment.');
+      showToast('Added to your post. Press Ctrl+Z to undo. Click "Check with AI" to update the score.');
       updatePostCheck(); scheduleAiReview();
       return;
     }
@@ -4411,7 +4421,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     postInput.setSelectionRange(at, at + issue.quote.length);
     replaceSelection(issue.fix, false);
     aiReview.issues = aiReview.issues.filter((_, j)=> j !== i);
-    showToast('Fix applied. Press Ctrl+Z to undo. The AI will recheck in a moment.');
+    showToast('Fix applied. Press Ctrl+Z to undo. Click "Check with AI" to update the score.');
     updatePostCheck(); scheduleAiReview();
   }
 
@@ -4491,8 +4501,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(tooShort) {}
     else if(!hasAi && aiLocked()) label = 'Writing checks only · AI review on paid plans';
     else if(!hasAi && aiReviewStuckKey && aiReviewStuckKey === reviewKey() && !aiReviewBusy) label = "Estimate · the AI review didn't work, see below";
-    else if(!hasAi) label = (aiReviewBusy ? 'Estimate · AI is reading your post…' : text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'Estimate · AI review starts at 30 characters' : 'Estimate · AI review coming up') ;
-    else if(!current) label += aiReviewBusy ? ' · AI is rechecking…' : ' · AI rechecks soon';
+    else if(!hasAi) label = (aiReviewBusy ? 'Estimate · AI is reading your post…' : text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'Estimate · AI check from 30 characters' : 'Estimate · click “Check with AI” for the full score') ;
+    else if(!current) label += aiReviewBusy ? ' · AI is rechecking…' : ' · post changed, check again';
 
     const colors = {good: 'var(--success)', ok: '#D69E2E', low: 'var(--fail)'};
     const C = 2 * Math.PI * 20;
@@ -4533,8 +4543,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       if(aiReviewBusy && !hasAi) body = aiReadingHtml(false);
       else if(!hasAi && aiLocked()) body = `<div class="pc-detail">The AI review (sense, grammar, hook, specificity, structure, goal and reader) is part of the 7-day trial and the paid plans. Your score below comes from the writing checks only. <a href="billing.html">Upgrade in Billing</a></div>`;
       else if(!hasAi) body = `<div class="pc-detail">${text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'The AI reads your post once it has at least 30 characters.'
-        : outdated ? 'Your post (or its goal) changed since the last review, or the review is from an older version of the check. The AI rereads it in a moment. You can also click "Check now".'
-        : 'The AI reads your post a few seconds after you stop typing.'}</div>`;
+        : outdated ? 'Your post (or its goal) changed since the last AI check. Click “Check with AI” to update the score.'
+        : 'The AI reads your post only when you click “Check with AI”, so it never scans while you type.'}</div>`;
       else {
         const lvl = v=> v >= 8 ? 'hi' : v >= 6 ? 'mid' : 'lo';
         const whyOf = k=> (review.why || {})[k] || null;
@@ -4547,7 +4557,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
           ${review.summary ? `<div class="pc-detail">${esc(review.summary)}</div>` : ''}
           ${!postGoal && !withGoal ? '<div class="pc-detail">Tip: pick the goal of this post above, and the AI also checks whether the post reaches it.</div>' : ''}
           ${!idealReader && typeof review.readerFit !== 'number' ? '<div class="pc-detail">Tip: add your ideal reader at the top, and the AI also checks whether the post speaks to them.</div>' : ''}
-          ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${review.v >= 4 ? '' : ' (or an older version of the check)'}. It updates by itself shortly.</div>`) : ''}
+          ${!current ? (aiReviewBusy ? aiReadingHtml(true) : `<div class="pc-detail" style="color:#8A5600;">This review is for an earlier version of your post${review.v >= 4 ? '' : ' (or an older version of the check)'}. Click “Check with AI” to update it.</div>`) : ''}
           ${review.v < AI_REVIEW_LATEST ? '<div class="pc-detail" style="color:#8A5600;">Your server still runs the previous AI review, so reasons per score, Structure and double-checks are missing. (Admin: deploy the latest generatePostIdeas function.)</div>' : ''}
           ${(review.hookIdeas || []).length ? `<div class="pc-hookideas"><div class="pc-sub-title">Stronger opening lines</div>${review.hookIdeas.map((h, i)=> `<div class="pc-hookidea"><span>${esc(h)}</span><button type="button" class="pc-show" data-hookidea="${i}">Use this hook</button></div>`).join('')}</div>` : ''}
           ${review.issues.map((iss, i)=> `<div class="pc-issue">
@@ -4569,7 +4579,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       const canCheck = !aiLocked() && text.replace(/\s+$/, '').length >= AI_REVIEW_MIN_CHARS && !aiReviewBusy && !current;
       html += `<div class="pc-row ${state}">
           <div class="pc-row-top"><span class="pc-ico" aria-hidden="true">${hasAi ? icon[state] : '…'}</span><span class="pc-row-label">Content review <span class="pc-ai-badge">AI</span></span>
-            ${canCheck ? '<button type="button" class="pc-show" id="pcAiRun" style="margin-right:8px;">Check now</button>' : ''}
+            ${canCheck ? '<button type="button" class="pc-show" id="pcAiRun" style="margin-right:8px;">Check with AI</button>' : ''}
             <span class="pc-pts">${hasAi ? aiPts : '–'}/45</span></div>
           <div class="pc-minibar" aria-hidden="true"><i style="width:${hasAi ? Math.round(aiPts / 45 * 100) : 0}%"></i></div>
           ${body}
@@ -4585,10 +4595,26 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     html += `<div class="pc-note">The score is out of 100: 45 points from the AI reading your post (does it make sense, grammar, how strong the hook is, how specific it is, whether it sounds human, whether the structure fits this type of post, and fit with your goal and ideal reader) and 55 from writing checks for LinkedIn (hook length, spacing, ending and more). Every AI score comes with a reason, and results close to a threshold are double-checked. It judges how the post is written, not how good your idea is, and it's a guide, not a guarantee: a post that breaks a rule on purpose can still do great.</div>`;
     document.getElementById('pcBody').innerHTML = html;
     aiRevealPending = false; // the pop-in only plays once per fresh review
+    {
+      const top = document.getElementById('pcAiTopBtn');
+      const tooShortForAi = text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS;
+      top.classList.remove('done');
+      if(aiLocked()){ top.disabled = false; top.textContent = '🔒 Check with AI'; top.title = AI_LOCK_MSG; }
+      else if(aiReviewBusy){ top.disabled = true; top.textContent = 'Checking…'; top.title = 'The AI is reading your post'; }
+      else if(tooShortForAi){ top.disabled = true; top.textContent = '✨ Check with AI'; top.title = 'Write at least 30 characters first'; }
+      else if(aiReviewIsCurrent()){ top.disabled = true; top.classList.add('done'); top.textContent = '✓ Checked'; top.title = 'The AI has checked this version of your post'; }
+      else { top.disabled = false; top.textContent = aiReview ? '✨ Check again' : '✨ Check with AI'; top.title = 'Let the AI read your post'; }
+    }
     if(!review && !aiReviewBusy && !aiReviewTimer) scheduleAiReview();
     const run = document.getElementById('pcAiRun');
     if(run) run.addEventListener('click', e=>{ e.stopPropagation(); runAiReview(true); });
   }
+  document.getElementById('pcAiTopBtn').addEventListener('click', e=>{
+    e.stopPropagation();
+    runAiReview(true);
+    const wrap = document.getElementById('postCheck');   // open the panel so the reading animation is visible
+    if(!wrap.classList.contains('open')){ wrap.classList.add('open'); document.getElementById('pcHead').setAttribute('aria-expanded', 'true'); }
+  });
   document.getElementById('pcHead').addEventListener('click', ()=>{
     const wrap = document.getElementById('postCheck');
     wrap.classList.toggle('open');
