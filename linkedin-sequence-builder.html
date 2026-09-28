@@ -512,7 +512,7 @@
   #editorView .shell-wide, #editorView{max-width:none;}
   .lsb-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:26px;align-items:start;}
   .lsb-main{min-width:0;}
-  .lsb-side{position:sticky;top:18px;display:flex;flex-direction:column;gap:14px;}
+  .lsb-side{position:sticky;top:80px;display:flex;flex-direction:column;gap:14px;}
   .lsb-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);padding:16px 16px 14px;}
   .lsb-card h3{margin:0 0 10px;font:700 14px 'Sora',sans-serif;color:var(--ink);display:flex;align-items:center;gap:8px;}
   .lsb-card h3 .muted{font:500 12px 'Inter',sans-serif;color:var(--slate);}
@@ -601,11 +601,11 @@
   .lsb-vars-note code{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#0A66C2;}
 
   /* Save bar */
-  .lsb-savebar{position:sticky;bottom:0;z-index:5;margin-top:22px;padding:12px 0 14px;display:flex;align-items:center;gap:12px;
-    background:linear-gradient(to top, var(--paper) 70%, transparent);}
+  .lsb-savebar{position:sticky;top:0;z-index:15;margin:0 0 18px;padding:12px 0;display:flex;align-items:center;gap:12px;
+    background:linear-gradient(to bottom, var(--paper) 75%, transparent);}
   .lsb-savebar .sum{font-size:13px;color:var(--slate);margin-right:auto;}
   .lsb-savebar .sum b{color:var(--ink);}
-  .lsb-savebar .li-cancel-btn,.lsb-savebar .li-save-btn{width:auto;min-width:130px;}
+  .lsb-savebar .li-cancel-btn,.lsb-savebar .li-save-btn{width:auto;min-width:140px;flex:0 0 auto;}
 
   /* Sequence cards: a mini timeline */
   .li-template-card .lsb-mini{display:flex;align-items:center;gap:0;margin:10px 0 2px;}
@@ -691,6 +691,12 @@
   .lsb-rpop button small{margin-left:auto;font-weight:500;font-size:11.5px;color:var(--slate);}
   .lsb-rpop .lsp-av{width:26px;height:26px;font-size:10px;flex-shrink:0;}
   .lsb-sched .rc{margin-left:6px;font:700 11px 'Inter',sans-serif;color:#157A52;background:rgba(31,169,113,.12);border-radius:999px;padding:1px 7px;}
+
+  .lsb-stage .lsb-rstat b{color:#0A66C2;}
+  .lsb-sbtn{margin-left:auto;border:1px solid rgba(10,102,194,.4);background:rgba(10,102,194,.07);color:#0A66C2;border-radius:9px;padding:6px 11px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;}
+  .lsb-sbtn:hover{background:rgba(10,102,194,.14);}
+  .lsb-sbtn:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
+  .lsb-rpop button small.due{color:#B45F06;font-weight:700;}
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1161,6 +1167,9 @@ html[data-theme="dark"] .lsp-state.no{color:#EC8E9B}
 html[data-theme="dark"] .lsb-rstat.top b{color:#8CEEC7}
 html[data-theme="dark"] .lsb-rbtn{color:#8CEEC7}
 html[data-theme="dark"] .lsb-sched .rc{color:#8CEEC7}
+html[data-theme="dark"] .lsb-stage .lsb-rstat b{color:#81BDF8}
+html[data-theme="dark"] .lsb-sbtn{color:#81BDF8}
+html[data-theme="dark"] .lsb-rpop button small.due{color:#F8BE81}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -1315,6 +1324,11 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
         <p class="li-page-sub">Write each message, and choose how many days to wait before the next one goes out.</p>
       </div>
     </div>
+    <div class="lsb-savebar">
+      <div class="sum" id="lsbSaveSum"></div>
+      <button type="button" class="li-cancel-btn" id="cancelEditBtn">Cancel</button>
+      <button type="button" class="li-save-btn" id="saveSeqBtn">Save sequence</button>
+    </div>
     <div class="lsb-layout">
       <div class="lsb-main">
         <div class="li-name-field">
@@ -1350,11 +1364,6 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
           <div class="lsb-vars-note">Variables like <code>{{firstName}}</code> are filled in with each lead's details when you compose the message from their lead card.</div>
         </div>
       </aside>
-    </div>
-    <div class="lsb-savebar">
-      <div class="sum" id="lsbSaveSum"></div>
-      <button type="button" class="li-cancel-btn" id="cancelEditBtn">Cancel</button>
-      <button type="button" class="li-save-btn" id="saveSeqBtn">Save sequence</button>
     </div>
   </div>
 </div>
@@ -1884,6 +1893,7 @@ window.PTEmoji = (function(){
         </div>
         <div data-warn="${i}">${lsbWarnings(s).map(w=>`<div class="lsb-warn ${w[0]}">${esc(w[1])}</div>`).join('')}</div>
         ${type === 'connect' ? '<div class="lsb-hint">A note is optional. Short, personal notes (under 200 characters) get accepted most often.</div>' : ''}
+        <div class="lsb-replies lsb-stage" data-stage="${i}"></div>
         <div class="lsb-replies" data-replies="${i}"></div>
         <div class="lsb-stop${s.stopIfNoReply ? ' on' : ''}">
           <label class="lsb-switch"><input type="checkbox" data-stop="${i}" ${s.stopIfNoReply ? 'checked' : ''}><span class="lsb-switch-ui" aria-hidden="true"></span>
@@ -1901,7 +1911,7 @@ window.PTEmoji = (function(){
     list.innerHTML = editingSteps.map(stepHTML).join('');
     list.querySelectorAll('.lsb-text').forEach(autoGrowTa);
     renderSidePanel();
-    if(typeof renderStepReplies === 'function') renderStepReplies();
+    if(typeof renderStepReplies === 'function'){ renderStepStages(); renderStepReplies(); }
   }
   // Updates everything that depends on the text/timing, without re-drawing the
   // textareas (so typing never loses focus).
@@ -1968,6 +1978,7 @@ window.PTEmoji = (function(){
   stepsList.addEventListener('click', e=>{
     const b = e.target.closest('button'); if(!b) return;
     if(b.dataset.type){ const i = +b.dataset.i; if(editingSteps[i].type !== b.dataset.type){ editingSteps[i].type = b.dataset.type; renderStepsEditor(); } return; }
+    if(b.dataset.spick !== undefined){ const p = document.getElementById('lsbRpop'); if(p && p.parentElement === b.parentElement){ closeReplyPicker(); return; } openSentPicker(b, +b.dataset.spick); return; }
     if(b.dataset.rpick !== undefined){ const p = document.getElementById('lsbRpop'); if(p && p.parentElement === b.parentElement){ closeReplyPicker(); return; } openReplyPicker(b, +b.dataset.rpick); return; }
     if(b.dataset.var){ const ta = stepsList.querySelector(`.lsb-text[data-i="${b.dataset.i}"]`); insertAtCursor(ta, `{{${b.dataset.var}}}`); return; }
     if(b.dataset.quick){ editingSteps[+b.dataset.quick].delayDays = +b.dataset.days; renderStepsEditor(); return; }
@@ -2102,7 +2113,7 @@ window.PTEmoji = (function(){
   }
   function renderPeople(){
     renderEditorPeople();
-    renderStepReplies(); renderSidePanel();
+    renderStepStages(); renderStepReplies(); renderSidePanel();
     const list = document.getElementById('peopleList');
     const rows = lspRuns.filter(lspInGroup);
     if(!rows.length){
@@ -2130,7 +2141,10 @@ window.PTEmoji = (function(){
   // A reply counts for the message it came after: the one chosen when marking
   // it, or else the last message that person received.
   function lspLastSent(r){ return Math.max(0, Math.min((r.steps || []).length, r.currentStepIndex || 0) - 1); }
-  function lspReplyStep(r){ return typeof r.repliedAfterStep === 'number' ? r.repliedAfterStep : lspLastSent(r); }
+  function lspReplyStep(r){
+    if(typeof r.repliedAfterStep === 'number') return r.repliedAfterStep;
+    return (r.currentStepIndex || 0) > 0 ? lspLastSent(r) : -1;   // replied before receiving anything: not counted for a message
+  }
   function lspIsReplied(r){ return r.status === 'replied' || r.status === 'paused_replied'; }
   function stepReplyStats(i){
     const runs = lspRuns.filter(r=> r.templateId === editingTemplateId);
@@ -2154,6 +2168,74 @@ window.PTEmoji = (function(){
         + (st.eligible.length ? `<button type="button" class="lsb-rbtn" data-rpick="${i}" aria-haspopup="true">✅ Mark a reply to this message</button>` : '');
     });
   }
+  // Who is at this message right now (it's their next one to send).
+  function stepAtStage(i){
+    return lspRuns.filter(r=> r.templateId === editingTemplateId && r.status === 'active' && (r.currentStepIndex || 0) === i && i < (r.steps || []).length);
+  }
+  function lspDueText(r){
+    const d = lspTs(r.nextDueAt);
+    if(!d || d.getTime() <= Date.now()) return ['due', 'due now'];
+    return ['', 'due ' + d.toLocaleDateString(undefined, {weekday:'short', day:'numeric', month:'short'})];
+  }
+  function renderStepStages(){
+    const boxes = document.querySelectorAll('[data-stage]');
+    if(!editingTemplateId){ boxes.forEach(b=> b.innerHTML = ''); return; }
+    boxes.forEach(box=>{
+      const i = +box.dataset.stage, at = stepAtStage(i);
+      if(!at.length){ box.innerHTML = ''; return; }
+      const dueNow = at.filter(r=> lspDueText(r)[0] === 'due').length;
+      box.innerHTML = `<span class="lsb-rstat">📤 <b>${at.length}</b> ${at.length === 1 ? 'person is' : 'people are'} at this message${dueNow ? ` · <b style="color:#B45F06">${dueNow}</b> due now` : ''}</span>
+        <button type="button" class="lsb-sbtn" data-spick="${i}" aria-haspopup="true">📤 Mark as sent</button>`;
+    });
+  }
+  function openSentPicker(btn, i){
+    closeReplyPicker();
+    const at = stepAtStage(i);
+    const pop = document.createElement('div'); pop.className = 'lsb-rpop'; pop.id = 'lsbRpop'; pop.setAttribute('role', 'menu');
+    pop.innerHTML = `<div class="t">Who did you send message ${i + 1} to?</div>` + at.map(r=>{
+      const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'Lead', due = lspDueText(r);
+      return `<button type="button" role="menuitem" data-ssel="${r.id}"><span class="lsp-av" aria-hidden="true">${esc((name.trim().split(/\s+/).map(w=> w[0]).join('').slice(0, 2) || '?').toUpperCase())}</span>${esc(name)}<small class="${due[0]}">${esc(due[1])}</small></button>`;
+    }).join('');
+    btn.parentElement.appendChild(pop);
+    const first = pop.querySelector('button'); if(first) first.focus();
+    pop.addEventListener('click', e=>{ const b = e.target.closest('[data-ssel]'); if(!b) return; closeReplyPicker(); markStepSent(b.dataset.ssel, i); });
+  }
+  // The same as "Mark as sent" on the lead card: schedule the next message (and
+  // its reminder), start the wait for a reply, or finish the sequence.
+  function markStepSent(runId, i){
+    const r = lspRuns.find(x=> x.id === runId); if(!r) return;
+    const FV = firebase.firestore.FieldValue, TSf = firebase.firestore.Timestamp, D = 86400000;
+    const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'The lead';
+    const before = {currentStepIndex: r.currentStepIndex || 0, status: r.status, nextDueAt: r.nextDueAt || null, notifyAt: r.notifyAt || null};
+    const sent = (r.steps || [])[i] || {}, nextIndex = i + 1;
+    const upd = {currentStepIndex: nextIndex, lastSentAt: FV.serverTimestamp(), dueNotifiedStep: FV.delete()};
+    let msg;
+    if(sent.stopIfNoReply){
+      const wait = Math.max(1, sent.replyWaitDays || 5), until = TSf.fromMillis(Date.now() + wait * D);
+      upd.status = 'waiting_reply'; upd.nextDueAt = until; upd.notifyAt = until;
+      msg = `Message ${i + 1} sent to ${name}. Waiting ${wait} day${wait === 1 ? '' : 's'} for a reply.`;
+    } else if(nextIndex >= (r.steps || []).length){
+      upd.status = 'completed'; upd.notifyAt = FV.delete();
+      msg = `Message ${i + 1} sent to ${name}. That was the last one. 🎉`;
+    } else {
+      const delay = (r.steps[nextIndex].delayDays || 0);
+      upd.nextDueAt = TSf.fromMillis(Date.now() + delay * D);
+      upd.notifyAt = delay > 0 ? upd.nextDueAt : FV.delete();
+      msg = delay > 0 ? `Message ${i + 1} sent to ${name}. Message ${nextIndex + 1} is due in ${delay} day${delay === 1 ? '' : 's'}; you'll get a reminder.` : `Message ${i + 1} sent to ${name}. Message ${nextIndex + 1} is ready now.`;
+    }
+    db.collection('linkedinSequenceRuns').doc(runId).update(upd).then(()=>{
+      // Remember exactly what was saved (including the reminder), so a later Undo can restore it.
+      const savedNotify = upd.notifyAt && typeof upd.notifyAt.toMillis === 'function' ? upd.notifyAt : null;
+      Object.assign(r, {currentStepIndex: nextIndex, status: upd.status || r.status, nextDueAt: upd.nextDueAt || r.nextDueAt, notifyAt: savedNotify});
+      renderPeople();
+      showUndoToast(msg, ()=>{
+        db.collection('linkedinSequenceRuns').doc(runId).update({
+          currentStepIndex: before.currentStepIndex, status: before.status,
+          nextDueAt: before.nextDueAt || FV.delete(), notifyAt: before.notifyAt || FV.delete()
+        }).then(()=>{ Object.assign(r, before); renderPeople(); });
+      });
+    }).catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
+  }
   function openReplyPicker(btn, i){
     closeReplyPicker();
     const st = stepReplyStats(i);
@@ -2167,7 +2249,7 @@ window.PTEmoji = (function(){
     pop.addEventListener('click', e=>{ const b = e.target.closest('[data-rsel]'); if(!b) return; closeReplyPicker(); markRepliedSuccessfully(b.dataset.rsel, i); });
   }
   function closeReplyPicker(){ const p = document.getElementById('lsbRpop'); if(p) p.remove(); }
-  document.addEventListener('mousedown', e=>{ const p = document.getElementById('lsbRpop'); if(p && !p.contains(e.target) && !e.target.closest('[data-rpick]')) closeReplyPicker(); });
+  document.addEventListener('mousedown', e=>{ const p = document.getElementById('lsbRpop'); if(p && !p.contains(e.target) && !e.target.closest('[data-rpick],[data-spick]')) closeReplyPicker(); });
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeReplyPicker(); });
   function markRepliedSuccessfully(runId, stepIndex){
     const r = lspRuns.find(x=> x.id === runId); if(!r) return;
