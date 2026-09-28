@@ -7140,7 +7140,8 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
     overlay.classList.add('open');
     overlay.querySelector('.confirm-modal').classList.add('open');
     body.innerHTML = `
-      <div class="li-compose-step-chip">Step ${run.currentStepIndex+1} of ${run.steps.length} · <b>${esc(run.templateName || '')}</b></div>
+      <div class="li-compose-step-chip">Step ${run.currentStepIndex+1} of ${run.steps.length} · ${step.type === 'connect' ? '🤝 Connection request' : '💬 Message'} · <b>${esc(run.templateName || '')}</b></div>
+      ${step.type === 'connect' ? `<div class="li-compose-hint" style="margin:0 0 8px;">Send a connection request on LinkedIn${filled.trim() ? ' and paste this as the note (LinkedIn allows 300 characters).' : ' (this step has no note).'}</div>` : ''}
       <textarea id="liComposeText" class="li-compose-textarea">${esc(filled)}</textarea>
       ${!l.linkedinUrl ? `<div class="li-compose-hint">No LinkedIn profile saved for this lead — this opens a LinkedIn search for their name instead.</div>` : ''}
       <div class="li-compose-actions-row">
