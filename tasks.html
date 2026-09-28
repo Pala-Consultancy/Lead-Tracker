@@ -573,6 +573,202 @@
     .board-picker-list{grid-template-columns:1fr;}
   }
 </style>
+<style id="tk-styles">
+  /* ================= Tasks, monday-style ================= */
+  .shell.tk-shell{max-width:1360px;}
+  .tk-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .tk-head h1{font:800 28px/1.15 'Sora',sans-serif;margin:0;color:var(--ink);letter-spacing:-.01em;}
+  .tk-head p{margin:6px 0 0;color:var(--slate);font-size:14px;max-width:640px;}
+  .tk-new-btn{border:0;border-radius:10px;padding:10px 16px;background:var(--teal);color:#fff;font:700 13.5px 'Inter',sans-serif;cursor:pointer;
+    box-shadow:0 6px 16px -6px rgba(55,48,179,.55);display:inline-flex;align-items:center;gap:6px;transition:transform .15s;}
+  .tk-new-btn:hover{transform:translateY(-1px);}
+  .tk-new-btn:focus-visible,.tk-seg button:focus-visible,.tk-icon-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+  .tk-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .tk-seg{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:3px;gap:2px;}
+  .tk-seg button{border:0;background:none;border-radius:8px;padding:7px 12px;font:600 13px 'Inter',sans-serif;color:var(--slate);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .tk-seg button:hover{color:var(--ink);}
+  .tk-seg button.on{background:var(--teal);color:#fff;}
+  .tk-search{flex:1;min-width:180px;max-width:320px;position:relative;}
+  .tk-search input{width:100%;border:1px solid var(--border);background:var(--panel);border-radius:10px;padding:9px 12px 9px 34px;font:14px 'Inter',sans-serif;color:var(--ink);}
+  .tk-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--slate-light);}
+  .tk-summary{margin-left:auto;display:flex;gap:14px;font-size:12.5px;color:var(--slate);}
+  .tk-summary b{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- Table view ---------- */
+  .tk-group{margin-bottom:26px;}
+  .tk-ghead{display:flex;align-items:center;gap:8px;margin:0 0 8px;cursor:pointer;user-select:none;}
+  .tk-ghead .chev{width:22px;height:22px;display:grid;place-items:center;border-radius:6px;color:var(--gcolor);transition:transform .2s;}
+  .tk-group.collapsed .tk-ghead .chev{transform:rotate(-90deg);}
+  .tk-ghead h3{margin:0;font:700 16px 'Sora',sans-serif;color:var(--gcolor);}
+  .tk-ghead .cnt{font-size:12.5px;color:var(--slate);}
+  .tk-table{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);}
+  .tk-group.collapsed .tk-table{display:none;}
+  .tk-row{display:grid;grid-template-columns:6px 38px minmax(240px,1fr) 118px 140px 132px 112px minmax(130px,190px) 40px;align-items:stretch;
+    border-top:1px solid var(--border-soft);min-height:42px;}
+  .tk-row.hdr{border-top:0;min-height:36px;font:600 12px 'Inter',sans-serif;color:var(--slate);background:var(--panel-alt);}
+  .tk-row.hdr > div{display:flex;align-items:center;justify-content:center;}
+  .tk-row.hdr > div.l{justify-content:flex-start;padding-left:10px;}
+  .tk-row > .bar{background:var(--gcolor);}
+  .tk-row .cell{display:flex;align-items:center;justify-content:center;border-left:1px solid var(--border-soft);font-size:13px;color:var(--ink);min-width:0;position:relative;}
+  .tk-row .cell.click{cursor:pointer;}
+  .tk-row .cell.click:hover{background:var(--panel-alt);}
+  .tk-row:not(.hdr):hover{background:rgba(55,48,179,.025);}
+  .tk-row.dragging{opacity:.4;}
+  .c-tick{border-left:0 !important;}
+  .tk-tick{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);background:var(--panel);cursor:pointer;display:grid;place-items:center;color:transparent;padding:0;transition:all .15s;}
+  .tk-tick:hover{border-color:#1FA971;color:#1FA971;}
+  .tk-tick.on{background:#1FA971;border-color:#1FA971;color:#fff;}
+  .c-title{justify-content:flex-start !important;padding:0 10px;gap:8px;}
+  .tk-title{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:text;padding:3px 4px;border-radius:5px;border:1px solid transparent;}
+  .tk-title:hover{border-color:var(--border);}
+  .tk-row.is-done .tk-title{color:var(--slate);text-decoration:line-through;text-decoration-color:rgba(92,107,124,.5);}
+  .tk-title-input{flex:1;min-width:0;border:1px solid var(--teal);border-radius:6px;padding:4px 6px;font:13px 'Inter',sans-serif;color:var(--ink);background:var(--panel);}
+  .tk-chip{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--slate);background:var(--panel-alt);border:1px solid var(--border);border-radius:999px;padding:1px 7px;white-space:nowrap;cursor:pointer;}
+  .tk-chip.full{color:#1FA971;border-color:rgba(31,169,113,.35);}
+  .tk-open{margin-left:auto;opacity:0;border:1px solid var(--border);background:var(--panel);border-radius:6px;padding:2px 8px;font:600 11.5px 'Inter',sans-serif;color:var(--slate);cursor:pointer;transition:opacity .15s;}
+  .tk-row:hover .tk-open,.tk-open:focus-visible{opacity:1;}
+  .tk-status{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font:600 12.5px 'Inter',sans-serif;cursor:pointer;transition:filter .15s;padding:0 6px;text-align:center;}
+  .tk-status:hover{filter:brightness(1.07);}
+  .tk-status.fold{position:relative;overflow:hidden;}
+  .tk-status.fold::after{content:"";position:absolute;right:0;top:0;border-style:solid;border-width:0 10px 10px 0;border-color:transparent rgba(0,0,0,.14) transparent transparent;opacity:0;transition:opacity .15s;}
+  .tk-status.fold:hover::after{opacity:1;}
+  .tk-prio{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font:600 12.5px 'Inter',sans-serif;cursor:pointer;color:var(--slate-light);}
+  .tk-prio.set{color:#fff;}
+  .tk-date{font-size:13px;color:var(--ink);display:inline-flex;align-items:center;gap:5px;}
+  .tk-date.over{color:#D83A52;font-weight:600;}
+  .tk-date.none{color:var(--slate-light);}
+  .tk-date .rep{color:var(--teal);font-size:12px;}
+  .tk-avs{display:flex;align-items:center;}
+  .tk-av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 10.5px 'Inter',sans-serif;color:#fff;background:#6D65F6;border:2px solid var(--panel);overflow:hidden;flex-shrink:0;}
+  .tk-av + .tk-av{margin-left:-8px;}
+  .tk-av img{width:100%;height:100%;object-fit:cover;}
+  .tk-av.add{background:var(--panel-alt);color:var(--slate-light);border:1.5px dashed var(--border);}
+  .tk-lead{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:3px 9px;border-radius:999px;background:var(--panel-alt);border:1px solid var(--border);
+    font:600 12px 'Inter',sans-serif;color:var(--teal);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tk-lead:hover{border-color:var(--teal);}
+  .tk-muted{color:var(--slate-light);font-size:12.5px;}
+  .tk-more{border:0;background:none;color:var(--slate-light);font-size:18px;cursor:pointer;border-radius:6px;width:28px;height:28px;}
+  .tk-more:hover{background:var(--panel-alt);color:var(--ink);}
+  .tk-addrow{display:grid;grid-template-columns:6px 38px 1fr;border-top:1px solid var(--border-soft);min-height:40px;}
+  .tk-addrow > .bar{background:var(--gcolor);opacity:.45;}
+  .tk-addrow input{grid-column:3;border:0;background:transparent;font:13px 'Inter',sans-serif;color:var(--ink);padding:0 14px;outline:none;}
+  .tk-addrow input::placeholder{color:var(--slate-light);}
+  .tk-addrow:focus-within{background:var(--panel-alt);}
+  .tk-battery{display:grid;grid-template-columns:6px 38px minmax(240px,1fr) 118px 140px 132px 112px minmax(130px,190px) 40px;border-top:1px solid var(--border-soft);min-height:34px;background:var(--panel-alt);}
+  .tk-battery .bat{grid-column:5;display:flex;align-items:center;padding:0 8px;}
+  .tk-battery .bat-in{flex:1;height:18px;border-radius:5px;overflow:hidden;display:flex;background:var(--border-soft);}
+  .tk-battery .bat-in i{display:block;height:100%;}
+  .tk-empty{text-align:center;padding:64px 20px;background:var(--panel);border:1px dashed var(--border);border-radius:16px;color:var(--slate);}
+  .tk-empty h3{font:700 18px 'Sora',sans-serif;color:var(--ink);margin:0 0 6px;}
+
+  /* ---------- Kanban view ---------- */
+  .tk-kanban{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:14px;align-items:start;overflow-x:auto;padding-bottom:6px;}
+  .tk-col{background:var(--panel-alt);border:1px solid var(--border);border-radius:14px;min-height:200px;display:flex;flex-direction:column;}
+  .tk-col-head{padding:10px 12px;border-radius:13px 13px 0 0;color:#fff;font:700 13.5px 'Inter',sans-serif;display:flex;justify-content:space-between;align-items:center;}
+  .tk-col-body{padding:10px;display:flex;flex-direction:column;gap:9px;flex:1;min-height:80px;transition:background .15s;border-radius:0 0 13px 13px;}
+  .tk-col-body.over{background:rgba(55,48,179,.07);}
+  .tk-card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:11px 12px;cursor:grab;box-shadow:var(--shadow-sm);transition:transform .12s, box-shadow .12s;}
+  .tk-card:hover{transform:translateY(-1px);box-shadow:var(--shadow);}
+  .tk-card:active{cursor:grabbing;}
+  .tk-card .t{font:600 13.5px 'Inter',sans-serif;color:var(--ink);margin-bottom:8px;line-height:1.35;}
+  .tk-card .m{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .tk-card .m .grow{flex:1;}
+  .tk-card .pr{font:700 10.5px 'Inter',sans-serif;color:#fff;border-radius:5px;padding:2px 7px;}
+  .tk-col-add{border:0;background:none;color:var(--slate);font:600 12.5px 'Inter',sans-serif;padding:8px;border-radius:8px;cursor:pointer;text-align:left;}
+  .tk-col-add:hover{background:var(--panel);color:var(--ink);}
+
+  /* ---------- Calendar view ---------- */
+  .tk-cal{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);}
+  .tk-cal-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);}
+  .tk-cal-head h3{margin:0 auto 0 0;font:700 16px 'Sora',sans-serif;color:var(--ink);}
+  .tk-icon-btn{border:1px solid var(--border);background:var(--panel);border-radius:8px;min-width:32px;height:32px;padding:0 10px;cursor:pointer;color:var(--ink);font:600 12.5px 'Inter',sans-serif;}
+  .tk-icon-btn:hover{border-color:var(--teal);}
+  .tk-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+  .tk-cal-dow{padding:8px 10px;font:600 11.5px 'Inter',sans-serif;color:var(--slate);border-bottom:1px solid var(--border-soft);}
+  .tk-cal-day{min-height:112px;border-right:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);padding:6px;display:flex;flex-direction:column;gap:4px;position:relative;transition:background .12s;}
+  .tk-cal-day:nth-child(7n){border-right:0;}
+  .tk-cal-day.other{background:var(--panel-alt);}
+  .tk-cal-day.over{background:rgba(55,48,179,.07);}
+  .tk-cal-num{font:600 12px 'Inter',sans-serif;color:var(--slate);display:flex;justify-content:space-between;align-items:center;}
+  .tk-cal-day.today .tk-cal-num span{background:var(--teal);color:#fff;border-radius:999px;padding:1px 7px;}
+  .tk-cal-add{opacity:0;border:0;background:none;color:var(--slate);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;border-radius:5px;}
+  .tk-cal-day:hover .tk-cal-add{opacity:1;}
+  .tk-cal-chip{display:flex;align-items:center;gap:6px;border-radius:6px;padding:3px 7px;font:600 11.5px 'Inter',sans-serif;color:#fff;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .tk-cal-chip.done{opacity:.55;text-decoration:line-through;}
+
+  /* ---------- Popovers ---------- */
+  .tk-pop{position:fixed;z-index:80;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);padding:8px;min-width:190px;display:none;}
+  .tk-pop.open{display:block;animation:tkPop .14s ease;}
+  @keyframes tkPop{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  .tk-opt{display:block;width:100%;border:0;border-radius:7px;padding:8px 10px;margin:3px 0;font:600 12.5px 'Inter',sans-serif;cursor:pointer;text-align:center;color:#fff;}
+  .tk-opt.plain{color:var(--ink);background:var(--panel-alt);text-align:left;}
+  .tk-opt:hover{filter:brightness(1.07);}
+  .tk-pop label.tk-person{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ink);}
+  .tk-pop label.tk-person:hover{background:var(--panel-alt);}
+  .tk-pop .tk-pop-title{font:700 11px 'Inter',sans-serif;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;padding:4px 6px 6px;}
+  .tk-pop input[type=date],.tk-pop select{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 8px;font:13px 'Inter',sans-serif;color:var(--ink);background:var(--panel);}
+  .tk-quick{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;}
+  .tk-quick button{border:1px solid var(--border);background:var(--panel-alt);border-radius:7px;padding:6px;font:600 12px 'Inter',sans-serif;color:var(--ink);cursor:pointer;}
+  .tk-quick button:hover{border-color:var(--teal);}
+
+  /* ---------- Item drawer ---------- */
+  .tk-scrim{position:fixed;inset:0;background:rgba(16,20,40,.28);z-index:70;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .tk-scrim.open{opacity:1;pointer-events:auto;}
+  .tk-drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100vw);background:var(--panel);z-index:71;box-shadow:-20px 0 50px -20px rgba(16,24,40,.35);
+    transform:translateX(102%);transition:transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s linear .28s;display:flex;flex-direction:column;visibility:hidden;}
+  .tk-drawer.open{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s;}
+  .tk-dr-head{padding:18px 20px 12px;border-bottom:1px solid var(--border);}
+  .tk-dr-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .tk-dr-top .tk-status{width:auto;height:auto;border-radius:7px;padding:6px 12px;}
+  .tk-dr-close{margin-left:auto;border:0;background:none;font-size:20px;color:var(--slate);cursor:pointer;width:34px;height:34px;border-radius:8px;}
+  .tk-dr-close:hover{background:var(--panel-alt);color:var(--ink);}
+  .tk-dr-title{width:100%;border:1px solid transparent;border-radius:8px;padding:6px 8px;margin-left:-8px;font:700 21px/1.3 'Sora',sans-serif;color:var(--ink);background:transparent;resize:none;overflow:hidden;}
+  .tk-dr-title:hover{border-color:var(--border);}
+  .tk-dr-title:focus{outline:none;border-color:var(--teal);background:var(--panel);}
+  .tk-dr-body{flex:1;overflow-y:auto;padding:16px 20px 24px;}
+  .tk-fields{display:grid;grid-template-columns:110px 1fr;gap:10px 12px;align-items:center;margin-bottom:22px;}
+  .tk-fields .k{font:600 12.5px 'Inter',sans-serif;color:var(--slate);}
+  .tk-fields .v{min-height:34px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .tk-fields select,.tk-fields input[type=date]{border:1px solid var(--border);border-radius:8px;padding:7px 9px;font:13px 'Inter',sans-serif;color:var(--ink);background:var(--panel);}
+  .tk-pill-btn{border:1px solid var(--border);background:var(--panel);border-radius:8px;padding:6px 10px;font:600 12.5px 'Inter',sans-serif;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .tk-pill-btn:hover{border-color:var(--teal);}
+  .tk-sec{margin-bottom:22px;}
+  .tk-sec h4{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:700 13.5px 'Sora',sans-serif;color:var(--ink);}
+  .tk-sec h4 .muted{font:500 12px 'Inter',sans-serif;color:var(--slate);}
+  .tk-progress{height:6px;border-radius:3px;background:var(--border-soft);overflow:hidden;margin-bottom:10px;}
+  .tk-progress i{display:block;height:100%;background:#1FA971;transition:width .3s;}
+  .tk-cl-item{display:flex;align-items:center;gap:9px;padding:6px 6px;border-radius:8px;}
+  .tk-cl-item:hover{background:var(--panel-alt);}
+  .tk-cl-item input[type=checkbox]{width:16px;height:16px;accent-color:#1FA971;cursor:pointer;}
+  .tk-cl-item span{flex:1;font-size:13.5px;color:var(--ink);}
+  .tk-cl-item.done span{color:var(--slate);text-decoration:line-through;}
+  .tk-cl-item button{opacity:0;border:0;background:none;color:var(--slate-light);cursor:pointer;font-size:15px;}
+  .tk-cl-item:hover button{opacity:1;}
+  .tk-cl-add{display:flex;gap:6px;margin-top:6px;}
+  .tk-cl-add input,.tk-notes,.tk-upd-in{flex:1;border:1px solid var(--border);border-radius:9px;padding:8px 10px;font:13.5px 'Inter',sans-serif;color:var(--ink);background:var(--panel);}
+  .tk-notes{width:100%;min-height:86px;resize:vertical;line-height:1.5;}
+  .tk-upd-in{width:100%;min-height:64px;resize:vertical;}
+  .tk-upd-actions{display:flex;justify-content:flex-end;margin-top:6px;}
+  .tk-upd{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--border-soft);}
+  .tk-upd:first-of-type{border-top:0;}
+  .tk-upd .who{font:700 12.5px 'Inter',sans-serif;color:var(--ink);}
+  .tk-upd .when{font-size:11.5px;color:var(--slate-light);margin-left:6px;font-weight:500;}
+  .tk-upd .txt{font-size:13.5px;color:var(--ink);margin-top:3px;white-space:pre-wrap;line-height:1.45;}
+  .tk-upd .del{margin-left:auto;border:0;background:none;color:var(--slate-light);cursor:pointer;font-size:12px;}
+  .tk-dr-foot{border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:10px;}
+  .tk-dr-foot .meta{font-size:12px;color:var(--slate);}
+  .tk-danger{margin-left:auto;border:1px solid transparent;background:none;color:#D83A52;font:600 12.5px 'Inter',sans-serif;cursor:pointer;border-radius:8px;padding:7px 10px;}
+  .tk-danger:hover{background:rgba(216,58,82,.08);}
+  .tk-save{margin-left:auto;border:0;border-radius:9px;padding:9px 16px;background:var(--teal);color:#fff;font:700 13px 'Inter',sans-serif;cursor:pointer;}
+  @media (max-width:900px){
+    .tk-row,.tk-battery{grid-template-columns:6px 34px minmax(170px,1fr) 100px 120px 110px;}
+    .tk-row .c-prio,.tk-row .c-lead,.tk-row .c-more,.tk-battery .bat{display:none;}
+    .tk-kanban{grid-template-columns:repeat(4,260px);}
+    .tk-summary{display:none;}
+  }
+  @media (prefers-reduced-motion: reduce){ .tk-drawer,.tk-pop.open,.tk-card{transition:none;animation:none;} }
+</style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
 <style>
@@ -986,6 +1182,10 @@
      (dashboard, trash, also in LinkedIn mode). It doesn't fit indigo night. */
   html[data-theme="dark"] .title-block{box-shadow:none !important;overflow:visible !important;}
   html[data-theme="dark"] .title-block::after{content:none !important;display:none !important;}
+  /* Source icons (LinkedIn "in", YouTube play button) draw their cut-out in the
+     chip's background colour. In dark mode those backgrounds are translucent,
+     so the cut-out would vanish; draw it in a solid dark colour instead. */
+  html[data-theme="dark"] svg [fill^="var(--c-"][fill$="-bg)"]{fill:#161934;}
   /* "Contacted" is the strong black dot in light mode; its dark-mode twin is a
      strong light dot, so it reads as clearly "on" as the coloured ones. */
   html[data-theme="dark"] .step-dot.on.contacted, html[data-theme="dark"] .outreach-chip.on.contacted{
@@ -1006,6 +1206,8 @@
 
 html[data-theme="dark"] .task-checkbox:checked::after{border:solid #2B3060}
 html[data-theme="dark"] .toast{background:#3A3F75}
+html[data-theme="dark"] .tk-tick:hover{color:#8DEDC6}
+html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
 </style>
 <!-- pt-dark-theme:end -->
 </head>
@@ -1063,130 +1265,45 @@ html[data-theme="dark"] .toast{background:#3A3F75}
   </div>
 
 <div class="seq-main">
-<div class="shell">
-  <a class="back-link" id="backBtn" href="boards.html">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+<div class="shell tk-shell">
+  <a class="back-link" id="backBtn" href="home.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     <span class="back-label">Back</span>
   </a>
 
-  <div class="page-head">
+  <div class="tk-head">
     <div>
-      <h1 class="page-title">Tasks</h1>
-      <p class="page-sub">A running to-do list for reminders and follow-ups that aren't an email or a call — just "check in with them Thursday."</p>
+      <h1>Tasks</h1>
+      <p>Plan what needs to get done today, tomorrow and later, for yourself or your team. Give every task an owner and a status, add a checklist, and link it to a lead.</p>
     </div>
+    <button type="button" class="tk-new-btn" id="tkNewBtn">+ New task</button>
   </div>
 
-  <div class="task-add-panel" id="taskAddPanel" style="display:none;">
-    <div class="field">
-      <label>What do you need to do?</label>
-      <input type="text" id="taskTitleInput" placeholder="e.g. Follow up with Sarah about pricing" maxlength="200">
+  <div class="tk-toolbar">
+    <div class="tk-seg" id="tkViewSeg" role="tablist" aria-label="View">
+      <button type="button" data-view="table" role="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18M3 12h18M3 19h18"/></svg>Table</button>
+      <button type="button" data-view="kanban" role="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="4" height="13" rx="1.5"/></svg>Kanban</button>
+      <button type="button" data-view="calendar" role="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</button>
     </div>
-    <div class="task-add-row2">
-      <div class="field">
-        <label>Due date (optional)</label>
-        <input type="date" id="taskDueDateInput">
-      </div>
-      <div class="field">
-        <label>Link to a board (optional)</label>
-        <select id="taskBoardSelect"><option value="">No board</option></select>
-      </div>
-      <div class="field" id="taskLeadFieldWrap" style="display:none;">
-        <label>Link to a lead</label>
-        <select id="taskLeadSelect"><option value="">No specific lead</option></select>
-      </div>
+    <div class="tk-seg" id="tkScopeSeg" aria-label="Whose tasks">
+      <button type="button" data-scope="mine">My work</button>
+      <button type="button" data-scope="team">Everyone</button>
     </div>
-    <div class="task-add-actions">
-      <button type="button" class="btn-cancel-task" id="cancelTaskBtn">Cancel</button>
-      <button type="button" class="btn-save-task" id="saveTaskBtn">Add task</button>
+    <div class="tk-search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="tkSearch" placeholder="Search tasks" autocomplete="off" aria-label="Search tasks">
     </div>
+    <div class="tk-summary" id="tkSummary" aria-live="polite"></div>
   </div>
 
-  <div class="task-toolbar">
-    <div class="task-tabs" id="taskViewTabs">
-      <button type="button" class="task-tab active" data-view="calendar">Calendar</button>
-      <button type="button" class="task-tab" data-view="today">Today</button>
-      <button type="button" class="task-tab" data-view="list">List</button>
-    </div>
-    <div class="task-tabs" id="taskScopeTabs">
-      <button type="button" class="task-tab active" data-scope="mine">My tasks</button>
-      <button type="button" class="task-tab" data-scope="team">Everyone's tasks</button>
-    </div>
-    <div class="task-search-wrap">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="text" id="taskSearchInput" placeholder="Search tasks…" autocomplete="off">
-      <button type="button" id="taskSearchClear" style="display:none;" title="Clear search">✕</button>
-    </div>
-    <button type="button" class="new-seq-btn task-toolbar-add" id="newTaskBtn">+ New task</button>
-  </div>
-
-  <div class="team-progress-bar" id="teamProgressBar" style="display:none;"></div>
-
-  <div class="task-status-row" id="taskStatusRow" style="display:none;">
-    <div class="task-tabs" id="taskStatusTabs">
-      <button type="button" class="task-tab active" data-tab="open">To do <span class="task-tab-count" id="countOpen"></span></button>
-      <button type="button" class="task-tab" data-tab="completed">Completed <span class="task-tab-count" id="countCompleted"></span></button>
-    </div>
-  </div>
-
-  <div id="taskListHolder" style="display:none;"></div>
-  <div id="taskTodayHolder" style="display:none;"></div>
-  <div id="taskCalendarHolder"></div>
+  <div id="tkView"></div>
 </div>
 </div>
 </div>
 
-<div class="quick-add-scrim" id="quickAddScrim"></div>
-<div class="quick-add-popup" id="quickAddPopup">
-  <div class="quick-add-header">
-    <input type="text" id="quickAddTitle" placeholder="Add title" class="quick-add-title-input" maxlength="200">
-    <button type="button" class="quick-add-close" id="quickAddClose" aria-label="Close">✕</button>
-  </div>
-  <div class="quick-add-date" id="quickAddDateLabel">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-    <span id="quickAddDateText"></span>
-  </div>
-  <button type="button" class="quick-add-more-toggle" id="quickAddMoreToggle">+ Link to a board or lead</button>
-  <div class="quick-add-more" id="quickAddMore" style="display:none;">
-    <select id="quickAddBoardSelect"><option value="">No board</option></select>
-    <select id="quickAddLeadSelect" style="display:none;"><option value="">No specific lead</option></select>
-    <textarea id="quickAddNotes" placeholder="Add notes…" rows="2"></textarea>
-    <div class="priority-picker" id="quickAddPriorityPicker"></div>
-    <div class="task-color-swatches" id="quickAddColorSwatches" style="margin-top:4px;"></div>
-  </div>
-  <div class="quick-add-actions">
-    <button type="button" class="btn-cancel-task" id="quickAddCancelBtn">Cancel</button>
-    <button type="button" class="btn-save-task" id="quickAddSaveBtn">Save</button>
-  </div>
-</div>
-
-<div class="task-detail-scrim" id="taskDetailScrim"></div>
-<div class="task-detail-popup" id="taskDetailPopup">
-  <div class="task-detail-toolbar">
-    <button type="button" class="task-detail-icon-btn" id="taskDetailEditBtn" title="Edit">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-    </button>
-    <button type="button" class="task-detail-icon-btn delete-btn" id="taskDetailDeleteBtn" title="Delete">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
-    </button>
-    <button type="button" class="task-detail-icon-btn complete-btn" id="taskDetailCompleteBtn" title="Mark complete">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-    </button>
-    <button type="button" class="task-detail-icon-btn close-btn" id="taskDetailCloseBtn" title="Close">✕</button>
-  </div>
-  <div class="task-detail-body">
-    <div class="task-detail-title-row">
-      <span class="task-detail-dot" id="taskDetailDot"></span>
-      <div class="task-detail-title" id="taskDetailTitleText"></div>
-    </div>
-    <div class="task-detail-date" id="taskDetailDateText"></div>
-    <div id="taskDetailMeta"></div>
-  </div>
-</div>
-
-<div class="task-color-menu" id="taskColorMenu">
-  <div class="task-color-menu-label">Task color</div>
-  <div class="task-color-swatches" id="taskColorSwatches"></div>
-</div>
+<div class="tk-pop" id="tkPop" role="dialog"></div>
+<div class="tk-scrim" id="tkScrim"></div>
+<aside class="tk-drawer" id="tkDrawer" aria-hidden="true" role="dialog" aria-label="Task details"></aside>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
   <div class="app-confirm-box">
@@ -1205,6 +1322,7 @@ html[data-theme="dark"] .toast{background:#3A3F75}
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
+  // ---------- Firebase ----------
   const firebaseConfig = {
     apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",
     authDomain: "lead-tracker-c5c3a.firebaseapp.com",
@@ -1217,1018 +1335,579 @@ html[data-theme="dark"] .toast{background:#3A3F75}
   const db = firebase.firestore();
   const auth = firebase.auth();
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+  const FV = firebase.firestore.FieldValue;
 
-  function esc(s){ return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-  function initials(name){
-    const parts = (name||'').trim().split(/\s+/).filter(Boolean);
-    if(!parts.length) return '?';
-    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
-  }
+  // ---------- Small helpers ----------
+  function esc(s){ return (s || '').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function initials(name){ const p = (name || '?').trim().split(/\s+/); return ((p[0] || '')[0] || '?').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase(); }
   function showToast(message, danger){
-    const stack = document.getElementById('toastStack');
-    const el = document.createElement('div');
-    el.className = 'toast' + (danger ? ' danger' : '');
-    el.textContent = message;
+    const stack = document.getElementById('toastStack'); if(!stack) return;
+    const el = document.createElement('div'); el.className = 'toast' + (danger ? ' danger' : ''); el.textContent = message;
     stack.appendChild(el);
-    setTimeout(()=>{
-      el.style.transition = 'opacity .2s ease';
-      el.style.opacity = '0';
-      setTimeout(()=>el.remove(), 200);
-    }, 3200);
+    setTimeout(()=>{ el.style.transition = 'opacity .2s ease'; el.style.opacity = '0'; setTimeout(()=>el.remove(), 200); }, 3200);
   }
-
-  // In-app replacement for the native browser confirm() dialog — matches
-  // the rest of the app's styling instead of showing the browser's own
-  // "this site says" popup. Returns a Promise<boolean>.
   function showConfirmModal({title, message, confirmLabel = 'OK'}){
     return new Promise(resolve=>{
       document.getElementById('appConfirmTitle').textContent = title;
       document.getElementById('appConfirmMessage').textContent = message;
-      const okBtn = document.getElementById('appConfirmOkBtn');
-      const cancelBtn = document.getElementById('appConfirmCancelBtn');
-      const overlay = document.getElementById('appConfirmOverlay');
-      okBtn.textContent = confirmLabel;
-      overlay.classList.add('open');
-      function cleanup(result){
-        overlay.classList.remove('open');
-        okBtn.removeEventListener('click', onOk);
-        cancelBtn.removeEventListener('click', onCancel);
-        overlay.removeEventListener('click', onBackdrop);
-        resolve(result);
-      }
-      function onOk(){ cleanup(true); }
-      function onCancel(){ cleanup(false); }
-      function onBackdrop(e){ if(e.target === overlay) cleanup(false); }
-      okBtn.addEventListener('click', onOk);
-      cancelBtn.addEventListener('click', onCancel);
-      overlay.addEventListener('click', onBackdrop);
+      const okBtn = document.getElementById('appConfirmOkBtn'), cancelBtn = document.getElementById('appConfirmCancelBtn'), overlay = document.getElementById('appConfirmOverlay');
+      okBtn.textContent = confirmLabel; overlay.classList.add('open');
+      function done(r){ overlay.classList.remove('open'); okBtn.removeEventListener('click', ok); cancelBtn.removeEventListener('click', no); overlay.removeEventListener('click', bd); resolve(r); }
+      function ok(){ done(true); } function no(){ done(false); } function bd(e){ if(e.target === overlay) done(false); }
+      okBtn.addEventListener('click', ok); cancelBtn.addEventListener('click', no); overlay.addEventListener('click', bd);
     });
   }
+  function toISO(d){ return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  function todayISO(){ return toISO(new Date()); }
+  function addDays(iso, n){ const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return toISO(d); }
+  function addMonths(iso, n){ const d = new Date(iso + 'T00:00:00'); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n);
+    d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return toISO(d); }
+  function endOfWeekISO(){ const d = new Date(); const dow = (d.getDay() + 6) % 7; d.setDate(d.getDate() + (6 - dow)); return toISO(d); }
+  function uid6(){ return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4); }
+  function prettyDate(iso){
+    if(!iso) return '';
+    const t = todayISO();
+    if(iso === t) return 'Today';
+    if(iso === addDays(t, 1)) return 'Tomorrow';
+    if(iso === addDays(t, -1)) return 'Yesterday';
+    const d = new Date(iso + 'T00:00:00'), sameYear = d.getFullYear() === new Date().getFullYear();
+    return d.toLocaleDateString(undefined, sameYear ? {weekday:'short', month:'short', day:'numeric'} : {month:'short', day:'numeric', year:'numeric'});
+  }
+  function timeAgo(ms){
+    const s = Math.round((Date.now() - ms) / 1000);
+    if(s < 60) return 'just now'; if(s < 3600) return Math.round(s / 60) + 'm ago'; if(s < 86400) return Math.round(s / 3600) + 'h ago';
+    return new Date(ms).toLocaleDateString(undefined, {month:'short', day:'numeric'});
+  }
 
-  const params = new URLSearchParams(location.search);
-  if(params.get('from') === 'home'){ try{ sessionStorage.setItem('ptFromHome', '1'); }catch(e){} }
-  let cameFromHome = params.get('from') === 'home';
-  try{ cameFromHome = cameFromHome || sessionStorage.getItem('ptFromHome') === '1'; }catch(e){}
-  document.getElementById('backBtn').href = cameFromHome ? 'home.html' : 'boards.html';
-  document.getElementById('backBtn').onclick = function(){ if(history.length>1){ history.back(); return false; } };
-  if(cameFromHome) document.querySelector('#backBtn .back-label').textContent = 'Back to home';
-  document.getElementById('navDashboard').href = 'dashboard.html';
-  document.getElementById('navSequences').href = 'sequences.html';
-  document.getElementById('navCampaigns').href = 'campaigns.html';
-  document.getElementById('navScheduled').href = 'scheduled-emails.html';
-  document.getElementById('navTrash').href = 'trash.html';
-
-  // A task's color is purely organizational (like Google Calendar's event
-  // colors) — a person choosing to color-code their own tasks is a
-  // different thing from a chart auto-assigning a different hue per
-  // segment, so a real small palette (not a single-hue scale) is the
-  // right call here.
-  const TASK_COLORS = [
-    {id:'indigo', hex:'#3730B3', name:'Indigo'},
-    {id:'red', hex:'#B43B32', name:'Red'},
-    {id:'amber', hex:'#C97C00', name:'Amber'},
-    {id:'green', hex:'#1F6F5C', name:'Green'},
-    {id:'purple', hex:'#7A4FB5', name:'Purple'},
-    {id:'blue', hex:'#1B59A5', name:'Blue'}
+  // ---------- Model ----------
+  const STATUSES = [
+    {id:'todo',    label:'Not started',   color:'#8792A8'},
+    {id:'working', label:'Working on it', color:'#E8912D'},
+    {id:'stuck',   label:'Stuck',         color:'#D83A52'},
+    {id:'done',    label:'Done',          color:'#1FA971'},
   ];
-  function taskColorHex(task){
-    const found = TASK_COLORS.find(c=>c.id === (task && task.color));
-    return found ? found.hex : TASK_COLORS[0].hex;
-  }
+  const STATUS = Object.fromEntries(STATUSES.map(s=>[s.id, s]));
+  const PRIORITIES = [
+    {id:'high',   label:'High',   color:'#2F2A8F'},
+    {id:'medium', label:'Medium', color:'#6D65F6'},
+    {id:'none',   label:'Normal', color:null},
+  ];
+  const PRIORITY = Object.fromEntries(PRIORITIES.map(p=>[p.id, p]));
+  const REPEATS = [['none','Does not repeat'],['daily','Every day'],['weekdays','Every weekday'],['weekly','Every week'],['monthly','Every month']];
+  const GROUPS = [
+    {id:'overdue',  label:'Overdue',   color:'#D83A52'},
+    {id:'today',    label:'Today',     color:'#3730B3'},
+    {id:'tomorrow', label:'Tomorrow',  color:'#7A4FB5'},
+    {id:'week',     label:'This week', color:'#1B7FD6'},
+    {id:'later',    label:'Later',     color:'#0E9C8C'},
+    {id:'nodate',   label:'No date',   color:'#8792A8'},
+    {id:'done',     label:'Done',      color:'#1FA971'},
+  ];
+  const AV_COLORS = ['#6D65F6','#E8912D','#1FA971','#D83A52','#1B7FD6','#7A4FB5','#0E9C8C','#C2410C'];
 
-  // Priority is deliberately just two flagged levels plus "none" — a
-  // third-level "low" flag tends to just add visual noise without adding
-  // real information (everything unflagged already reads as "normal").
-  const FLAG_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M5 3v18h1.5v-6.5h11.8c.6 0 .9-.7.5-1.2l-2.8-3.8 2.8-3.8c.4-.5 0-1.2-.5-1.2H6.5V3H5Z"/></svg>';
-  function priorityFlagHTML(task){
-    if(!task || !task.priority || task.priority === 'none') return '';
-    return `<span class="priority-flag ${task.priority}" title="${task.priority === 'high' ? 'High priority' : 'Medium priority'}">${FLAG_SVG}</span>`;
+  // The done switch (also used by Home and the lead drawer) leads if the two disagree.
+  function statusOf(t){
+    if(t.completed === true) return 'done';
+    if(t.status === 'done') return t.completed === false ? 'todo' : 'done';
+    return STATUS[t.status] ? t.status : 'todo';
   }
-  function renderPriorityPicker(containerId, selected, onPick){
-    const el = document.getElementById(containerId);
-    const opts = [
-      {id:'none', label:'Normal'},
-      {id:'medium', label:'Medium'},
-      {id:'high', label:'High'}
-    ];
-    el.innerHTML = opts.map(o=>`<div class="priority-btn${o.id===(selected||'none')?' active':''}" data-priority="${o.id}">
-      ${o.id !== 'none' ? FLAG_SVG : ''}${o.label}
-    </div>`).join('');
-    el.querySelectorAll('.priority-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>onPick(btn.dataset.priority));
-    });
-  }
-
-  let currentWorkspaceId = null;
-  let myUid = null;
-  let myName = 'You';
-  let allTasks = [];
-  let allBoards = [];
-  let currentTaskTab = 'open';
-  let unsubscribeTasks = null;
-
-  // .toISOString() always converts to UTC first, which can silently shift
-  // the calendar date by a day depending on the browser's local timezone
-  // (e.g. clicking "18" ends up saved or matched as "19"). This builds the
-  // date string from the LOCAL year/month/day directly instead, so it
-  // always matches what's actually shown on screen, in any timezone.
-  function toLocalISO(d){
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  }
-  function todayISO(){ return toLocalISO(new Date()); }
-
-  function daysLabel(dateStr){
-    if(!dateStr) return '';
+  function ownersOf(t){ return (t.assignees && t.assignees.length) ? t.assignees : (t.createdBy ? [t.createdBy] : []); }
+  function groupOf(t){
+    if(statusOf(t) === 'done') return 'done';
+    if(!t.dueDate) return 'nodate';
     const today = todayISO();
-    const d = new Date(dateStr + 'T00:00:00');
-    const t = new Date(today + 'T00:00:00');
-    const diffDays = Math.round((d - t) / 86400000);
-    if(diffDays === 0) return 'Today';
-    if(diffDays === -1) return 'Yesterday';
-    if(diffDays === 1) return 'Tomorrow';
-    return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+    if(t.dueDate < today) return 'overdue';
+    if(t.dueDate === today) return 'today';
+    if(t.dueDate === addDays(today, 1)) return 'tomorrow';
+    if(t.dueDate <= endOfWeekISO()) return 'week';
+    return 'later';
+  }
+  function defaultDateFor(group){
+    const t = todayISO();
+    return {today:t, tomorrow:addDays(t, 1), week: (addDays(t, 2) <= endOfWeekISO() ? addDays(t, 2) : endOfWeekISO()), later:addDays(t, 8), nodate:null}[group] || null;
+  }
+  function nextDate(iso, repeat){
+    if(repeat === 'daily') return addDays(iso, 1);
+    if(repeat === 'weekly') return addDays(iso, 7);
+    if(repeat === 'monthly') return addMonths(iso, 1);
+    if(repeat === 'weekdays'){ let n = addDays(iso, 1); while([0, 6].includes(new Date(n + 'T00:00:00').getDay())) n = addDays(n, 1); return n; }
+    return null;
   }
 
-  // ---------- Add-task panel ----------
-  const addPanel = document.getElementById('taskAddPanel');
-  document.getElementById('newTaskBtn').addEventListener('click', ()=>{
-    const opening = addPanel.style.display === 'none';
-    addPanel.style.display = opening ? 'block' : 'none';
-    if(opening) document.getElementById('taskTitleInput').focus();
-  });
-  document.getElementById('cancelTaskBtn').addEventListener('click', ()=>{
-    addPanel.style.display = 'none';
-    clearAddForm();
-  });
-  function clearAddForm(){
-    document.getElementById('taskTitleInput').value = '';
-    document.getElementById('taskDueDateInput').value = '';
-    document.getElementById('taskBoardSelect').value = '';
-    document.getElementById('taskLeadSelect').innerHTML = '<option value="">No specific lead</option>';
-    document.getElementById('taskLeadFieldWrap').style.display = 'none';
-  }
-  function loadBoardsIntoSelect(){
-    const select = document.getElementById('taskBoardSelect');
-    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').orderBy('createdAt','desc').get().then(snap=>{
-      allBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=>b.deleted !== true);
-      select.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
-        `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
-    }).catch(()=>{});
-  }
-  document.getElementById('taskBoardSelect').addEventListener('change', (e)=>{
-    const bId = e.target.value;
-    const leadWrap = document.getElementById('taskLeadFieldWrap');
-    const leadSelect = document.getElementById('taskLeadSelect');
-    if(!bId){ leadWrap.style.display = 'none'; return; }
-    leadWrap.style.display = 'block';
-    leadSelect.innerHTML = '<option value="">Loading leads…</option>';
-    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').doc(bId).collection('leads').get().then(snap=>{
-      const leads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
-      leadSelect.innerHTML = '<option value="">No specific lead</option>' + leads.map(l=>
-        `<option value="${l.id}">${esc(l.name || 'Unnamed lead')}</option>`).join('');
-    }).catch(()=>{
-      leadSelect.innerHTML = '<option value="">Could not load leads</option>';
-    });
-  });
-  document.getElementById('saveTaskBtn').addEventListener('click', ()=>{
-    const title = document.getElementById('taskTitleInput').value.trim();
-    if(!title){ showToast('Give the task a title first.', true); return; }
-    const dueDate = document.getElementById('taskDueDateInput').value || null;
-    const boardId = document.getElementById('taskBoardSelect').value || null;
-    const leadId = document.getElementById('taskLeadSelect').value || null;
-    const boardName = boardId ? (allBoards.find(b=>b.id===boardId) || {}).name || 'Board' : null;
-    const leadName = leadId ? document.getElementById('taskLeadSelect').selectedOptions[0].textContent : null;
-    const saveBtn = document.getElementById('saveTaskBtn');
-    saveBtn.disabled = true;
-    db.collection('tasks').add({
-      workspaceId: currentWorkspaceId,
-      createdBy: myUid,
-      title, dueDate,
-      boardId, boardName,
-      leadId, leadName,
-      completed: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
-      saveBtn.disabled = false;
-      addPanel.style.display = 'none';
-      clearAddForm();
-      showToast('Task added.');
-    }).catch(err=>{
-      saveBtn.disabled = false;
-      showToast('Could not save that: ' + (err.message || ''), true);
-    });
-  });
+  // ---------- State ----------
+  let myUid = null, myName = 'You', wsId = null;
+  let tasks = [], members = {}, boards = [], leadsByBoard = {};
+  let view = localStorage.getItem('ptTasksView') || 'table';
+  let scope = localStorage.getItem('ptTasksScope') || 'mine';
+  let search = '';
+  let collapsed = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('ptTasksCollapsed') || '["done"]')); }catch(e){ return new Set(['done']); } })();
+  let calMonth = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d; })();
 
-  // ---------- Scope toggle (My tasks / Everyone's tasks) ----------
-  let taskScopeMode = 'mine';
-
-  // ---------- Search (filters every view at once) ----------
-  let taskSearchQuery = '';
-  function searchFilter(tasks){
-    if(!taskSearchQuery) return tasks;
-    const q = taskSearchQuery.toLowerCase();
-    return tasks.filter(t=>
-      (t.title||'').toLowerCase().includes(q) ||
-      (t.leadName||'').toLowerCase().includes(q) ||
-      (t.boardName||'').toLowerCase().includes(q) ||
-      (t.notes||'').toLowerCase().includes(q)
-    );
-  }
-  function rerenderCurrentView(){
-    renderTasks();
-    if(currentTaskView === 'calendar') renderCalendar();
-    if(currentTaskView === 'today') renderTodayView();
-  }
-  document.getElementById('taskSearchInput').addEventListener('input', (e)=>{
-    taskSearchQuery = e.target.value.trim();
-    document.getElementById('taskSearchClear').style.display = taskSearchQuery ? 'block' : 'none';
-    rerenderCurrentView();
-  });
-  document.getElementById('taskSearchClear').addEventListener('click', ()=>{
-    taskSearchQuery = '';
-    document.getElementById('taskSearchInput').value = '';
-    document.getElementById('taskSearchClear').style.display = 'none';
-    rerenderCurrentView();
-  });
-  function renderTeamProgress(){
-    const bar = document.getElementById('teamProgressBar');
-    if(taskScopeMode !== 'team'){ bar.style.display = 'none'; return; }
-    if(allTasks.length === 0){ bar.style.display = 'none'; return; }
-    bar.style.display = 'block';
-
-    const total = allTasks.length;
-    const done = allTasks.filter(t=>t.completed).length;
-    const pct = total > 0 ? Math.round((done/total)*100) : 0;
-
-    // Per-person breakdown, sorted by whoever's completed the most.
-    const byPerson = {};
-    allTasks.forEach(t=>{
-      const name = t.createdByName || 'Unknown';
-      if(!byPerson[name]) byPerson[name] = {done:0, total:0};
-      byPerson[name].total++;
-      if(t.completed) byPerson[name].done++;
-    });
-    const peopleHTML = Object.entries(byPerson)
-      .sort((a,b)=>b[1].done - a[1].done)
-      .map(([name, stat])=>`<div class="team-progress-person">
-        <span class="team-progress-person-badge">${esc(initials(name))}</span>
-        <span>${esc(name)}</span>
-        <span class="team-progress-person-stat">${stat.done}/${stat.total}</span>
-      </div>`).join('');
-
-    bar.innerHTML = `
-      <div class="team-progress-top">
-        <span class="team-progress-label">Team progress</span>
-        <span class="team-progress-count">${done} of ${total} completed (${pct}%)</span>
-      </div>
-      <div class="team-progress-track"><div class="team-progress-fill" style="width:${pct}%"></div></div>
-      <div class="team-progress-people">${peopleHTML}</div>
-    `;
-  }
-
-  function subscribeToTasks(){
-    if(unsubscribeTasks) unsubscribeTasks();
-    let query = db.collection('tasks').where('workspaceId', '==', currentWorkspaceId);
-    if(taskScopeMode === 'mine') query = query.where('createdBy', '==', myUid);
-    unsubscribeTasks = query.onSnapshot(snap=>{
-      allTasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderTasks();
-      renderTeamProgress();
-      if(currentTaskView === 'calendar') renderCalendar();
-      if(currentTaskView === 'today') renderTodayView();
-      document.getElementById('pageLoader').style.display = 'none';
-      const appRoot = document.getElementById('appRoot');
-      appRoot.style.display = 'flex';
-      appRoot.classList.add('reveal');
-    }, err=>{
-      console.error(err);
-      showToast('Could not load tasks: ' + (err.message || ''), true);
-      document.getElementById('pageLoader').style.display = 'none';
-      document.getElementById('appRoot').style.display = 'flex';
+  function visible(){
+    const q = search.trim().toLowerCase();
+    return tasks.filter(t=>{
+      if(scope === 'mine' && t.createdBy !== myUid && !ownersOf(t).includes(myUid)) return false;
+      if(q && !((t.title || '') + ' ' + (t.leadName || '') + ' ' + (t.boardName || '') + ' ' + (t.notes || '')).toLowerCase().includes(q)) return false;
+      return true;
     });
   }
-  document.querySelectorAll('#taskScopeTabs .task-tab').forEach(tab=>{
-    tab.addEventListener('click', ()=>{
-      document.querySelectorAll('#taskScopeTabs .task-tab').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      taskScopeMode = tab.dataset.scope;
-      subscribeToTasks();
-    });
-  });
-
-  // ---------- View toggle (List / Timeline / Calendar) ----------
-  let currentTaskView = 'calendar';
-  document.querySelectorAll('#taskViewTabs .task-tab').forEach(tab=>{
-    tab.addEventListener('click', ()=>{
-      document.querySelectorAll('#taskViewTabs .task-tab').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      currentTaskView = tab.dataset.view;
-      document.getElementById('taskListHolder').style.display = currentTaskView === 'list' ? 'block' : 'none';
-      document.getElementById('taskTodayHolder').style.display = currentTaskView === 'today' ? 'block' : 'none';
-      document.getElementById('taskCalendarHolder').style.display = currentTaskView === 'calendar' ? 'block' : 'none';
-      document.getElementById('taskStatusRow').style.display = currentTaskView === 'list' ? 'block' : 'none';
-      if(currentTaskView === 'calendar') renderCalendar();
-      if(currentTaskView === 'today') renderTodayView();
-    });
-  });
-
-  // ---------- Status tabs (To do / Completed) — list view only ----------
-  document.querySelectorAll('#taskStatusTabs .task-tab').forEach(tab=>{
-    tab.addEventListener('click', ()=>{
-      document.querySelectorAll('#taskStatusTabs .task-tab').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      currentTaskTab = tab.dataset.tab;
-      renderTasks();
-    });
-  });
-
-  const DAY_MS = 86400000;
-  function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
-
-  // ---------- Quick-add popup (click a day, like Google Calendar) ----------
-  // Doubles as the edit popup: quickAddEditingTaskId is null when creating
-  // a new task, or set to an existing task's id when editing one (opened
-  // from the detail popup's Edit button) — same fields, same popup, just
-  // a different Firestore call on Save.
-  let quickAddDateISO = null;
-  let quickAddEditingTaskId = null;
-  let quickAddSelectedColor = TASK_COLORS[0].id;
-  let quickAddSelectedPriority = 'none';
-  const quickAddPopup = document.getElementById('quickAddPopup');
-  const quickAddScrim = document.getElementById('quickAddScrim');
-
-  function renderColorSwatches(containerId, selectedId, onPick){
-    const el = document.getElementById(containerId);
-    el.innerHTML = TASK_COLORS.map(c=>`<div class="task-color-swatch${c.id===selectedId?' selected':''}" style="background:${c.hex}" data-color="${c.id}" title="${c.name}">
-      ${c.id===selectedId ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : ''}
-    </div>`).join('');
-    el.querySelectorAll('.task-color-swatch').forEach(sw=>{
-      sw.addEventListener('click', ()=>onPick(sw.dataset.color));
-    });
+  function person(uid){ return members[uid] || {name: uid === myUid ? myName : 'Teammate'}; }
+  function avatarHTML(uid){
+    const p = person(uid), idx = Math.abs([...uid].reduce((a, c)=>a + c.charCodeAt(0), 0)) % AV_COLORS.length;
+    return `<span class="tk-av" title="${esc(p.name || p.email || '')}" style="background:${AV_COLORS[idx]}">${p.photoURL ? `<img src="${esc(p.photoURL)}" alt="">` : esc(initials(p.name || p.email))}</span>`;
   }
 
-  function openQuickAdd(iso, clickEvent){
-    quickAddEditingTaskId = null;
-    quickAddSelectedColor = TASK_COLORS[0].id;
-    quickAddSelectedPriority = 'none';
-    quickAddDateISO = iso;
-    document.getElementById('quickAddTitle').value = '';
-    document.getElementById('quickAddDateText').textContent =
-      new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
-    document.getElementById('quickAddMore').style.display = 'none';
-    document.getElementById('quickAddMoreToggle').textContent = '+ Link to a board or lead';
-    document.getElementById('quickAddBoardSelect').value = '';
-    document.getElementById('quickAddLeadSelect').innerHTML = '<option value="">No specific lead</option>';
-    document.getElementById('quickAddLeadSelect').style.display = 'none';
-    document.getElementById('quickAddNotes').value = '';
-    document.getElementById('quickAddSaveBtn').textContent = 'Save';
-    const pickColorNew = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew); };
-    renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColorNew);
-    const pickPriorityNew = (id)=>{ quickAddSelectedPriority = id; renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriorityNew); };
-    renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriorityNew);
-
-    ensureBoardsLoaded(()=>{
-      const boardSelect = document.getElementById('quickAddBoardSelect');
-      boardSelect.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
-        `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
-    });
-
-    positionAndOpenQuickAdd(clickEvent);
+  // ---------- Writing ----------
+  function col(){ return db.collection('tasks'); }
+  function save(id, data){ return col().doc(id).update(data).catch(err=>{ console.error(err); showToast('Could not save that: ' + (err.message || ''), true); }); }
+  function setStatus(t, status){
+    const data = {status, completed: status === 'done'};
+    if(status === 'done'){ data.completedAt = FV.serverTimestamp(); data.completedBy = myUid; data.completedByName = myName; }
+    else { data.completedAt = FV.delete(); data.completedBy = FV.delete(); data.completedByName = FV.delete(); }
+    // Recurring: completing it schedules the next one (once).
+    if(status === 'done' && t.repeat && t.repeat !== 'none' && t.dueDate && !t.repeatNextCreated){
+      data.repeatNextCreated = true;
+      const next = nextDate(t.dueDate, t.repeat);
+      col().add({
+        workspaceId: wsId, createdBy: myUid, createdByName: myName,
+        title: t.title || '', dueDate: next, priority: t.priority || 'none', notes: t.notes || null,
+        boardId: t.boardId || null, boardName: t.boardName || null, leadId: t.leadId || null, leadName: t.leadName || null,
+        assignees: ownersOf(t), repeat: t.repeat, status: 'todo', completed: false,
+        checklist: (t.checklist || []).map(c=>({id: uid6(), text: c.text, done: false})), updates: [],
+        createdAt: FV.serverTimestamp()
+      }).then(()=> showToast(`Done. The next one is scheduled for ${prettyDate(next)}.`)).catch(()=>{});
+    }
+    return save(t.id, data);
   }
-  window.openQuickAdd = openQuickAdd;
-
-  function openQuickAddEdit(task){
-    quickAddEditingTaskId = task.id;
-    quickAddSelectedColor = task.color || TASK_COLORS[0].id;
-    quickAddSelectedPriority = task.priority || 'none';
-    quickAddDateISO = task.dueDate || null;
-    document.getElementById('quickAddTitle').value = task.title || '';
-    document.getElementById('quickAddDateText').textContent = task.dueDate
-      ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'})
-      : 'No due date';
-    document.getElementById('quickAddMore').style.display = 'flex';
-    document.getElementById('quickAddMoreToggle').textContent = '– Link to a board or lead';
-    document.getElementById('quickAddNotes').value = task.notes || '';
-    document.getElementById('quickAddSaveBtn').textContent = 'Save changes';
-
-    const pickColor = (id)=>{ quickAddSelectedColor = id; renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColor); };
-    renderColorSwatches('quickAddColorSwatches', quickAddSelectedColor, pickColor);
-    const pickPriority = (id)=>{ quickAddSelectedPriority = id; renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriority); };
-    renderPriorityPicker('quickAddPriorityPicker', quickAddSelectedPriority, pickPriority);
-
-    ensureBoardsLoaded(()=>{
-      const boardSelect = document.getElementById('quickAddBoardSelect');
-      boardSelect.innerHTML = '<option value="">No board</option>' + allBoards.map(b=>
-        `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('');
-      boardSelect.value = task.boardId || '';
-      const leadSelect = document.getElementById('quickAddLeadSelect');
-      if(task.boardId && task.leadId){
-        leadSelect.style.display = 'block';
-        leadSelect.innerHTML = `<option value="${task.leadId}">${esc(task.leadName || 'Lead')}</option>`;
-        db.collection('workspaces').doc(currentWorkspaceId).collection('boards').doc(task.boardId).collection('leads').get().then(snap=>{
-          const leads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
-          leadSelect.innerHTML = '<option value="">No specific lead</option>' + leads.map(l=>
-            `<option value="${l.id}">${esc(l.name || 'Unnamed lead')}</option>`).join('');
-          leadSelect.value = task.leadId;
-        }).catch(()=>{});
-      } else {
-        leadSelect.style.display = 'none';
-        leadSelect.innerHTML = '<option value="">No specific lead</option>';
-      }
-    });
-
-    positionAndOpenQuickAdd(null);
-  }
-  window.openQuickAddEdit = openQuickAddEdit;
-
-  function ensureBoardsLoaded(callback){
-    if(allBoards && allBoards.length){ callback(); return; }
-    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').orderBy('createdAt','desc').get().then(snap=>{
-      allBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=>b.deleted !== true);
-      callback();
-    }).catch(()=>{});
-  }
-
-  function positionAndOpenQuickAdd(clickEvent){
-    const popupWidth = 320;
-    // Editing a task shows every field expanded right away (board, lead,
-    // notes, priority, color) — a lot taller than creating a blank one —
-    // so a fixed height guess kept placing it partly below the viewport
-    // with no way to reach Save. Render it off-screen first, measure its
-    // real height, then position using that actual number.
-    quickAddPopup.style.left = '-9999px';
-    quickAddPopup.style.top = '0px';
-    quickAddScrim.classList.add('open');
-    quickAddPopup.classList.add('open');
-    const popupHeight = Math.min(quickAddPopup.offsetHeight, window.innerHeight - 24);
-
-    let x = clickEvent ? clickEvent.clientX + 12 : window.innerWidth/2 - popupWidth/2;
-    let y = clickEvent ? clickEvent.clientY - 20 : window.innerHeight/2 - popupHeight/2;
-    x = Math.min(Math.max(x, 12), window.innerWidth - popupWidth - 12);
-    y = Math.min(Math.max(y, 12), window.innerHeight - popupHeight - 12);
-    quickAddPopup.style.left = x + 'px';
-    quickAddPopup.style.top = y + 'px';
-
-    setTimeout(()=>document.getElementById('quickAddTitle').focus(), 30);
-    if(clickEvent) clickEvent.stopPropagation();
-  }
-
-  function closeQuickAdd(){
-    quickAddScrim.classList.remove('open');
-    quickAddPopup.classList.remove('open');
-    quickAddEditingTaskId = null;
-  }
-  quickAddScrim.addEventListener('click', closeQuickAdd);
-  document.getElementById('quickAddClose').addEventListener('click', closeQuickAdd);
-  document.getElementById('quickAddCancelBtn').addEventListener('click', closeQuickAdd);
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape' && quickAddPopup.classList.contains('open')) closeQuickAdd();
-  });
-  quickAddPopup.addEventListener('click', (e)=>e.stopPropagation());
-
-  document.getElementById('quickAddMoreToggle').addEventListener('click', ()=>{
-    const more = document.getElementById('quickAddMore');
-    const opening = more.style.display === 'none';
-    more.style.display = opening ? 'flex' : 'none';
-    document.getElementById('quickAddMoreToggle').textContent = opening ? '– Link to a board or lead' : '+ Link to a board or lead';
-  });
-  document.getElementById('quickAddBoardSelect').addEventListener('change', (e)=>{
-    const bId = e.target.value;
-    const leadSelect = document.getElementById('quickAddLeadSelect');
-    if(!bId){ leadSelect.style.display = 'none'; return; }
-    leadSelect.style.display = 'block';
-    leadSelect.innerHTML = '<option value="">Loading leads…</option>';
-    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').doc(bId).collection('leads').get().then(snap=>{
-      const leads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
-      leadSelect.innerHTML = '<option value="">No specific lead</option>' + leads.map(l=>
-        `<option value="${l.id}">${esc(l.name || 'Unnamed lead')}</option>`).join('');
-    }).catch(()=>{
-      leadSelect.innerHTML = '<option value="">Could not load leads</option>';
-    });
-  });
-  document.getElementById('quickAddSaveBtn').addEventListener('click', ()=>{
-    const title = document.getElementById('quickAddTitle').value.trim();
-    if(!title){ showToast('Give the task a title first.', true); return; }
-    const boardId = document.getElementById('quickAddBoardSelect').value || null;
-    const leadId = document.getElementById('quickAddLeadSelect').value || null;
-    const boardName = boardId ? (allBoards.find(b=>b.id===boardId) || {}).name || 'Board' : null;
-    const leadSelectEl = document.getElementById('quickAddLeadSelect');
-    const leadName = leadId ? leadSelectEl.selectedOptions[0].textContent : null;
-    const saveBtn = document.getElementById('quickAddSaveBtn');
-    saveBtn.disabled = true;
-    const notes = document.getElementById('quickAddNotes').value.trim() || null;
-    const data = {
-      title, dueDate: quickAddDateISO,
-      boardId, boardName,
-      leadId, leadName,
-      color: quickAddSelectedColor,
-      priority: quickAddSelectedPriority,
-      notes
+  function createTask(data){
+    const doc = {
+      workspaceId: wsId, createdBy: myUid, createdByName: myName,
+      title: '', dueDate: null, priority: 'none', notes: null, boardId: null, boardName: null, leadId: null, leadName: null,
+      assignees: [myUid], repeat: 'none', status: 'todo', completed: false, checklist: [], updates: [],
+      ...data, createdAt: FV.serverTimestamp()
     };
-    const request = quickAddEditingTaskId
-      ? db.collection('tasks').doc(quickAddEditingTaskId).update(data)
-      : db.collection('tasks').add({
-          ...data,
-          workspaceId: currentWorkspaceId,
-          createdBy: myUid,
-          createdByName: myName,
-          completed: false,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    request.then(()=>{
-      saveBtn.disabled = false;
-      closeQuickAdd();
-      showToast(quickAddEditingTaskId ? 'Task updated.' : 'Task added.');
-    }).catch(err=>{
-      saveBtn.disabled = false;
-      showToast('Could not save that: ' + (err.message || ''), true);
-    });
-  });
-  document.getElementById('quickAddTitle').addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter') document.getElementById('quickAddSaveBtn').click();
-  });
-
-  // ---------- Task detail popup (left-click a pill/chip) ----------
-  let taskDetailCurrentId = null;
-  const taskDetailPopup = document.getElementById('taskDetailPopup');
-  const taskDetailScrim = document.getElementById('taskDetailScrim');
-
-  function openTaskDetail(taskId, clickEvent){
-    const task = allTasks.find(t=>t.id === taskId);
-    if(!task) return;
-    taskDetailCurrentId = taskId;
-
-    document.getElementById('taskDetailDot').style.background = taskColorHex(task);
-    const titleEl = document.getElementById('taskDetailTitleText');
-    titleEl.innerHTML = `${priorityFlagHTML(task)} ${esc(task.title)}`;
-    titleEl.classList.toggle('completed-title', !!task.completed);
-
-    // Date line: overdue shows how many days, completed shows when it was
-    // done, otherwise just the plain due date.
-    const dateEl = document.getElementById('taskDetailDateText');
-    dateEl.className = 'task-detail-date';
-    if(task.completed && task.completedAt){
-      const completedDateStr = task.completedAt.toDate().toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'});
-      dateEl.textContent = task.completedByName
-        ? `✓ Completed by ${task.completedByName} · ${completedDateStr}`
-        : `✓ Completed ${completedDateStr}`;
-      dateEl.classList.add('is-done');
-    } else if(task.dueDate){
-      const dueDate = new Date(task.dueDate + 'T00:00:00');
-      const fullLabel = dueDate.toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric', year:'numeric'});
-      if(!task.completed && task.dueDate < todayISO()){
-        const daysOver = Math.round((startOfDay(new Date()) - startOfDay(dueDate)) / 86400000);
-        dateEl.textContent = `${fullLabel} — ${daysOver} ${daysOver===1?'day':'days'} overdue`;
-        dateEl.classList.add('is-overdue');
-      } else {
-        dateEl.textContent = fullLabel;
-      }
-    } else {
-      dateEl.textContent = 'No due date';
-    }
-
-    const metaEl = document.getElementById('taskDetailMeta');
-    let metaHTML = '';
-    if(task.notes){
-      metaHTML += `<div class="task-detail-notes">${esc(task.notes).replace(/\n/g,'<br>')}</div>`;
-    }
-    if(task.boardId && task.leadId){
-      metaHTML += `<div class="task-detail-meta-row">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        <a href="dashboard.html?board=${encodeURIComponent(task.boardId)}&lead=${encodeURIComponent(task.leadId)}">${esc(task.leadName || 'Lead')}</a>
-        ${task.boardName ? `<span style="color:var(--slate);">· ${esc(task.boardName)}</span>` : ''}
-      </div>`;
-    } else if(task.boardName){
-      metaHTML += `<div class="task-detail-meta-row">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-        <span>${esc(task.boardName)}</span>
-      </div>`;
-    }
-    // Who added it, and when — useful the moment more than one person on
-    // the team can see a task (e.g. one linked to a shared lead).
-    if(task.createdByName){
-      const createdLabel = task.createdAt
-        ? task.createdAt.toDate().toLocaleDateString(undefined, {month:'short', day:'numeric'})
-        : '';
-      metaHTML += `<div class="task-detail-meta-row task-detail-added-row">
-        <span class="task-detail-owner-badge">${esc(initials(task.createdByName))}</span>
-        <span>Added by ${esc(task.createdByName)}${createdLabel ? ` · ${createdLabel}` : ''}</span>
-      </div>`;
-    }
-    metaEl.innerHTML = metaHTML;
-
-    const completeBtn = document.getElementById('taskDetailCompleteBtn');
-    completeBtn.classList.toggle('is-done', !!task.completed);
-    completeBtn.title = task.completed ? 'Mark as not done' : 'Mark complete';
-
-    // Position near the click — measure the real rendered height first
-    // (a task with notes + a linked lead can be much taller than a fixed
-    // guess), then clamp to the viewport using that actual number.
-    const popupWidth = 340;
-    taskDetailPopup.style.left = '-9999px';
-    taskDetailPopup.style.top = '0px';
-    taskDetailScrim.classList.add('open');
-    taskDetailPopup.classList.add('open');
-    const popupHeight = Math.min(taskDetailPopup.offsetHeight, window.innerHeight - 24);
-
-    let x = clickEvent ? clickEvent.clientX + 12 : window.innerWidth/2 - popupWidth/2;
-    let y = clickEvent ? clickEvent.clientY - 20 : window.innerHeight/2 - popupHeight/2;
-    x = Math.min(Math.max(x, 12), window.innerWidth - popupWidth - 12);
-    y = Math.min(Math.max(y, 12), window.innerHeight - popupHeight - 12);
-    taskDetailPopup.style.left = x + 'px';
-    taskDetailPopup.style.top = y + 'px';
-
-    if(clickEvent) clickEvent.stopPropagation();
+    doc.completed = doc.status === 'done';
+    return col().add(doc).catch(err=>{ console.error(err); showToast('Could not add that task: ' + (err.message || ''), true); });
   }
-  window.openTaskDetail = openTaskDetail;
-
-  function closeTaskDetail(){
-    taskDetailScrim.classList.remove('open');
-    taskDetailPopup.classList.remove('open');
-    taskDetailCurrentId = null;
-  }
-  taskDetailScrim.addEventListener('click', closeTaskDetail);
-  document.getElementById('taskDetailCloseBtn').addEventListener('click', closeTaskDetail);
-  taskDetailPopup.addEventListener('click', (e)=>e.stopPropagation());
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape' && taskDetailPopup.classList.contains('open')) closeTaskDetail();
-  });
-
-  document.getElementById('taskDetailEditBtn').addEventListener('click', ()=>{
-    const task = allTasks.find(t=>t.id === taskDetailCurrentId);
-    if(!task) return;
-    closeTaskDetail();
-    openQuickAddEdit(task);
-  });
-  document.getElementById('taskDetailCompleteBtn').addEventListener('click', ()=>{
-    const task = allTasks.find(t=>t.id === taskDetailCurrentId);
-    if(!task) return;
-    db.collection('tasks').doc(task.id).update({
-      completed: !task.completed,
-      completedAt: !task.completed ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete(),
-      completedBy: !task.completed ? myUid : firebase.firestore.FieldValue.delete(),
-      completedByName: !task.completed ? myName : firebase.firestore.FieldValue.delete()
-    }).then(()=>{
-      showToast(task.completed ? 'Marked as not done.' : 'Task completed.');
-      closeTaskDetail();
-    }).catch(err=>showToast('Could not update that: ' + (err.message || ''), true));
-  });
-  document.getElementById('taskDetailDeleteBtn').addEventListener('click', async ()=>{
-    const task = allTasks.find(t=>t.id === taskDetailCurrentId);
-    if(!task) return;
-    const ok = await showConfirmModal({title:'Delete this task?', message:'This can\'t be undone.', confirmLabel:'Delete'});
+  async function deleteTask(t){
+    const ok = await showConfirmModal({title:'Delete this task?', message:`"${t.title || 'Untitled task'}" will be deleted for everyone.`, confirmLabel:'Delete'});
     if(!ok) return;
-    db.collection('tasks').doc(task.id).delete().then(()=>{
-      closeTaskDetail();
-      showToast('Task deleted.');
-    }).catch(err=>showToast('Could not delete that: ' + (err.message || ''), true));
-  });
-
-  // ---------- Right-click color picker ----------
-  let colorMenuTargetId = null;
-  const taskColorMenu = document.getElementById('taskColorMenu');
-
-  function openTaskColorMenu(taskId, clickEvent){
-    const task = allTasks.find(t=>t.id === taskId);
-    if(!task) return;
-    colorMenuTargetId = taskId;
-    renderColorSwatches('taskColorSwatches', task.color || TASK_COLORS[0].id, (colorId)=>{
-      db.collection('tasks').doc(taskId).update({color: colorId}).then(()=>{
-        closeTaskColorMenu();
-      }).catch(err=>showToast('Could not update color: ' + (err.message || ''), true));
-    });
-
-    const menuWidth = 220;
-    const menuHeight = 76;
-    let x = Math.min(Math.max(clickEvent.clientX, 12), window.innerWidth - menuWidth - 12);
-    let y = Math.min(Math.max(clickEvent.clientY, 12), window.innerHeight - menuHeight - 12);
-    taskColorMenu.style.left = x + 'px';
-    taskColorMenu.style.top = y + 'px';
-    taskColorMenu.classList.add('open');
+    closeDrawer();
+    col().doc(t.id).delete().then(()=> showToast('Task deleted.')).catch(err=> showToast('Could not delete that: ' + (err.message || ''), true));
   }
-  window.openTaskColorMenu = openTaskColorMenu;
-
-  function closeTaskColorMenu(){
-    taskColorMenu.classList.remove('open');
-    colorMenuTargetId = null;
+  function duplicateTask(t){
+    const {id, createdAt, completedAt, completedBy, completedByName, repeatNextCreated, ...rest} = t;
+    createTask({...rest, title: (t.title || '') + ' (copy)', status: 'todo', updates: [], checklist: (t.checklist || []).map(c=>({...c, id: uid6(), done: false}))})
+      .then(()=> showToast('Task duplicated.'));
   }
-  document.addEventListener('click', (e)=>{
-    if(taskColorMenu.classList.contains('open') && !taskColorMenu.contains(e.target)) closeTaskColorMenu();
-  });
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape' && taskColorMenu.classList.contains('open')) closeTaskColorMenu();
-  });
 
-  // ---------- Drag-and-drop rescheduling (Timeline + Calendar) ----------
-  let dragTaskId = null;
-  function handleTaskDragStart(taskId, e){
-    dragTaskId = taskId;
-    e.target.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    // Firefox requires setData to be called for drag to work at all.
-    e.dataTransfer.setData('text/plain', taskId);
+  // ---------- Rendering: shared ----------
+  const view$ = document.getElementById('tkView');
+  function render(){
+    document.querySelectorAll('#tkViewSeg button').forEach(b=>{ b.classList.toggle('on', b.dataset.view === view); b.setAttribute('aria-selected', b.dataset.view === view); });
+    document.querySelectorAll('#tkScopeSeg button').forEach(b=> b.classList.toggle('on', b.dataset.scope === scope));
+    const list = visible();
+    const open = list.filter(t=> statusOf(t) !== 'done');
+    const over = open.filter(t=> groupOf(t) === 'overdue').length, today = open.filter(t=> groupOf(t) === 'today').length;
+    document.getElementById('tkSummary').innerHTML = `<span><b>${today}</b> due today</span><span><b style="${over ? 'color:#D83A52' : ''}">${over}</b> overdue</span><span><b>${open.length}</b> open</span>`;
+    if(view === 'kanban') renderKanban(list); else if(view === 'calendar') renderCalendar(list); else renderTable(list);
+    if(drawerId) renderDrawer();
   }
-  window.handleTaskDragStart = handleTaskDragStart;
+  function statusCell(t){ const s = STATUS[statusOf(t)]; return `<div class="tk-status fold" data-act="status" style="background:${s.color}">${s.label}</div>`; }
+  function prioCell(t){ const p = PRIORITY[t.priority] || PRIORITY.none; return `<div class="tk-prio${p.color ? ' set' : ''}" data-act="prio" style="${p.color ? `background:${p.color}` : ''}">${p.color ? p.label : '—'}</div>`; }
+  function dateCell(t){
+    const over = t.dueDate && t.dueDate < todayISO() && statusOf(t) !== 'done';
+    const rep = t.repeat && t.repeat !== 'none' ? `<span class="rep" title="${esc((REPEATS.find(r=>r[0] === t.repeat) || [])[1] || '')}">↻</span>` : '';
+    return t.dueDate ? `<span class="tk-date${over ? ' over' : ''}">${over ? '! ' : ''}${esc(prettyDate(t.dueDate))}${rep}</span>` : `<span class="tk-date none">+ Date</span>`;
+  }
+  function ownersCell(t){ const o = ownersOf(t); return `<div class="tk-avs">${o.slice(0, 3).map(avatarHTML).join('')}${o.length > 3 ? `<span class="tk-av add">+${o.length - 3}</span>` : ''}${o.length ? '' : '<span class="tk-av add">+</span>'}</div>`; }
+  function leadCell(t){
+    if(t.leadId && t.boardId) return `<a class="tk-lead" href="dashboard.html?board=${encodeURIComponent(t.boardId)}&lead=${encodeURIComponent(t.leadId)}" title="Open ${esc(t.leadName || 'lead')}">${esc(t.leadName || 'Lead')}</a>`;
+    if(t.boardId) return `<a class="tk-lead" href="dashboard.html?board=${encodeURIComponent(t.boardId)}">${esc(t.boardName || 'Board')}</a>`;
+    return `<span class="tk-muted" data-act="open">+ Link lead</span>`;
+  }
+  function metaChips(t){
+    const cl = t.checklist || [], done = cl.filter(c=>c.done).length, up = (t.updates || []).length;
+    return (cl.length ? `<span class="tk-chip${done === cl.length ? ' full' : ''}" data-act="open" title="Checklist">☑ ${done}/${cl.length}</span>` : '') +
+           (up ? `<span class="tk-chip" data-act="open" title="Updates">💬 ${up}</span>` : '');
+  }
 
-  function handleTaskDragEnd(e){
-    e.target.classList.remove('dragging');
-    dragTaskId = null;
-    document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  // ---------- Table view (grouped by when it's due, like monday's groups) ----------
+  const COLS = `<div class="tk-row hdr"><div class="bar"></div><div></div><div class="l">Task</div><div>Owner</div><div>Status</div><div>Due date</div><div>Priority</div><div>Lead</div><div></div></div>`;
+  function renderTable(list){
+    if(!list.length && !search){ view$.innerHTML = emptyHTML(); return; }
+    const by = Object.fromEntries(GROUPS.map(g=>[g.id, []]));
+    list.forEach(t=> by[groupOf(t)].push(t));
+    Object.values(by).forEach(arr=> arr.sort((a, b)=> (a.dueDate || '9').localeCompare(b.dueDate || '9') || (PRIORITIES.findIndex(p=>p.id === (a.priority || 'none')) - PRIORITIES.findIndex(p=>p.id === (b.priority || 'none'))) || (a.title || '').localeCompare(b.title || '')));
+    view$.innerHTML = GROUPS.filter(g=> by[g.id].length || g.id === 'today').map(g=>{
+      const items = by[g.id], canAdd = !['overdue', 'done'].includes(g.id);
+      const counts = STATUSES.map(s=>[s, items.filter(t=> statusOf(t) === s.id).length]).filter(x=> x[1]);
+      return `<section class="tk-group${collapsed.has(g.id) ? ' collapsed' : ''}" style="--gcolor:${g.color}" data-group="${g.id}">
+        <div class="tk-ghead" data-act="toggle-group" role="button" tabindex="0" aria-expanded="${!collapsed.has(g.id)}">
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          <h3>${g.label}</h3><span class="cnt">${items.length} ${items.length === 1 ? 'task' : 'tasks'}</span>
+        </div>
+        <div class="tk-table">${COLS}
+          ${items.map(rowHTML).join('')}
+          ${canAdd ? `<div class="tk-addrow"><div class="bar"></div><input type="text" data-add="${g.id}" placeholder="+ Add task${g.id === 'nodate' ? '' : ' for ' + g.label.toLowerCase()}" maxlength="200"></div>` : ''}
+          ${items.length ? `<div class="tk-battery"><div class="bat"><div class="bat-in" title="${counts.map(([s, n])=>`${s.label}: ${n}`).join(' · ')}">${counts.map(([s, n])=>`<i style="width:${n / items.length * 100}%;background:${s.color}"></i>`).join('')}</div></div></div>` : ''}
+        </div>
+      </section>`;
+    }).join('') || `<div class="tk-empty"><h3>No tasks match "${esc(search)}"</h3>Try another search.</div>`;
   }
-  window.handleTaskDragEnd = handleTaskDragEnd;
-
-  function handleTaskDragOver(e){
-    if(!dragTaskId) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    e.currentTarget.classList.add('drag-over');
-  }
-  window.handleTaskDragOver = handleTaskDragOver;
-
-  function handleTaskDragLeave(e){
-    e.currentTarget.classList.remove('drag-over');
-  }
-  window.handleTaskDragLeave = handleTaskDragLeave;
-
-  function handleTaskDrop(iso, e){
-    e.preventDefault();
-    e.currentTarget.classList.remove('drag-over');
-    const taskId = dragTaskId || e.dataTransfer.getData('text/plain');
-    if(!taskId) return;
-    const task = allTasks.find(t=>t.id === taskId);
-    if(!task || task.dueDate === iso) return;
-    db.collection('tasks').doc(taskId).update({dueDate: iso}).then(()=>{
-      showToast('Rescheduled to ' + new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {month:'short', day:'numeric'}) + '.');
-    }).catch(err=>showToast('Could not reschedule: ' + (err.message || ''), true));
-  }
-  window.handleTaskDrop = handleTaskDrop;
-
-  // ---------- Calendar view (month grid) ----------
-  let calendarMonthDate = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
-  function shiftCalendarMonth(delta){
-    calendarMonthDate = new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() + delta, 1);
-    renderCalendar();
-  }
-  function resetCalendarToToday(){
-    const d = new Date(); d.setDate(1); d.setHours(0,0,0,0);
-    calendarMonthDate = d;
-    renderCalendar();
-  }
-  window.shiftCalendarMonth = shiftCalendarMonth;
-  window.resetCalendarToToday = resetCalendarToToday;
-
-  function calendarChipHTML(task, isOverdue){
-    const color = taskColorHex(task);
-    const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
-      ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
-    return `<div class="calendar-chip${isOverdue?' overdue':''}" style="--task-color:${color}"
-      draggable="true"
-      ondragstart="window.handleTaskDragStart('${task.id}', event)"
-      ondragend="window.handleTaskDragEnd(event)"
-      onclick="event.stopPropagation(); window.openTaskDetail('${task.id}', event)"
-      oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;"
-      title="${esc(task.title)}">
-      ${ownerBadge}
-      <span class="calendar-chip-text">${priorityFlagHTML(task)} ${esc(task.title)}</span>
+  function rowHTML(t){
+    return `<div class="tk-row${statusOf(t) === 'done' ? ' is-done' : ''}" data-id="${t.id}">
+      <div class="bar"></div>
+      <div class="cell c-tick"><button type="button" class="tk-tick${statusOf(t) === 'done' ? ' on' : ''}" data-act="tick" aria-label="${statusOf(t) === 'done' ? 'Mark as not done' : 'Mark as done'}">✓</button></div>
+      <div class="cell c-title"><span class="tk-title" data-act="edit-title" title="Click to rename">${esc(t.title || 'Untitled task')}</span>${metaChips(t)}<button type="button" class="tk-open" data-act="open">Open</button></div>
+      <div class="cell click" data-act="owner">${ownersCell(t)}</div>
+      <div class="cell">${statusCell(t)}</div>
+      <div class="cell click" data-act="date">${dateCell(t)}</div>
+      <div class="cell c-prio">${prioCell(t)}</div>
+      <div class="cell c-lead" style="padding:0 8px">${leadCell(t)}</div>
+      <div class="cell c-more"><button type="button" class="tk-more" data-act="more" aria-label="More">⋯</button></div>
     </div>`;
   }
+  function emptyHTML(){
+    return `<div class="tk-empty"><h3>Plan your first task</h3><p style="margin:0 0 16px">Write down what needs to get done, give it a date and an owner, and follow it through to Done.</p>
+      <button type="button" class="tk-new-btn" data-act="new">+ New task</button></div>`;
+  }
 
-  function renderCalendar(){
-    const holder = document.getElementById('taskCalendarHolder');
-    const open = searchFilter(allTasks).filter(t=>!t.completed && t.dueDate);
-    const today = startOfDay(new Date());
-    const todayISOStr = toLocalISO(today);
-
-    const year = calendarMonthDate.getFullYear();
-    const month = calendarMonthDate.getMonth();
-    const monthLabel = calendarMonthDate.toLocaleDateString(undefined, {month:'long', year:'numeric'});
-
-    // Grid always starts on the Monday on/before the 1st, and always shows
-    // 6 full weeks (42 cells) — the same fixed-height approach Google
-    // Calendar's month view uses, so the grid doesn't jump in height
-    // depending on how many weeks a given month happens to span.
-    const firstOfMonth = new Date(year, month, 1);
-    const firstOfMonthDow = (firstOfMonth.getDay() + 6) % 7; // 0=Mon
-    const gridStart = new Date(year, month, 1 - firstOfMonthDow);
-
-    const weekdayLabels = [];
-    for(let i=0;i<7;i++){
-      const d = new Date(gridStart.getTime() + i*DAY_MS);
-      weekdayLabels.push(d.toLocaleDateString(undefined, {weekday:'short'}));
-    }
-
-    let cellsHTML = '';
-    for(let i=0;i<42;i++){
-      const day = new Date(gridStart.getTime() + i*DAY_MS);
-      const iso = toLocalISO(day);
-      const isOtherMonth = day.getMonth() !== month;
-      const isToday = iso === todayISOStr;
-      const isPast = day < today;
-      const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-      const tasksForDay = open.filter(t=>t.dueDate === iso).sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-      const maxShown = 4;
-      const shown = tasksForDay.slice(0, maxShown);
-      const overflow = tasksForDay.length - shown.length;
-      cellsHTML += `<div class="calendar-cell${isOtherMonth?' other-month':''}${isToday?' is-today':''}${isWeekend?' is-weekend':''}"
-        onclick="window.openQuickAdd('${iso}', event)"
-        ondragover="window.handleTaskDragOver(event)"
-        ondragleave="window.handleTaskDragLeave(event)"
-        ondrop="window.handleTaskDrop('${iso}', event)">
-        <div class="calendar-daynum">${day.getDate()}</div>
-        ${shown.map(t=>calendarChipHTML(t, isPast && !isOtherMonth)).join('')}
-        ${overflow > 0 ? `<div class="calendar-more">+${overflow} more</div>` : ''}
+  // ---------- Kanban view (a column per status; drag cards between them) ----------
+  function renderKanban(list){
+    view$.innerHTML = `<div class="tk-kanban">${STATUSES.map(s=>{
+      const items = list.filter(t=> statusOf(t) === s.id).sort((a, b)=> (a.dueDate || '9').localeCompare(b.dueDate || '9'));
+      return `<div class="tk-col" data-status="${s.id}">
+        <div class="tk-col-head" style="background:${s.color}"><span>${s.label}</span><span>${items.length}</span></div>
+        <div class="tk-col-body" data-drop-status="${s.id}">
+          ${items.map(t=>{
+            const p = PRIORITY[t.priority], cl = t.checklist || [];
+            return `<div class="tk-card" draggable="true" data-id="${t.id}" data-act="open">
+              <div class="t">${esc(t.title || 'Untitled task')}</div>
+              <div class="m">${t.dueDate ? dateCell(t) : ''}${p && p.color ? `<span class="pr" style="background:${p.color}">${p.label}</span>` : ''}
+                ${cl.length ? `<span class="tk-chip${cl.every(c=>c.done) ? ' full' : ''}">☑ ${cl.filter(c=>c.done).length}/${cl.length}</span>` : ''}
+                <span class="grow"></span>${ownersCell(t)}</div>
+            </div>`;
+          }).join('')}
+          <button type="button" class="tk-col-add" data-act="new" data-status="${s.id}">+ Add task</button>
+        </div>
       </div>`;
-    }
+    }).join('')}</div>`;
+  }
 
-    holder.innerHTML = `
-      <div class="timeline-nav">
-        <button type="button" class="timeline-nav-btn" onclick="shiftCalendarMonth(-1)" title="Previous month">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <div class="timeline-nav-label">${monthLabel}</div>
-        <button type="button" class="timeline-nav-btn" onclick="shiftCalendarMonth(1)" title="Next month">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-        <button type="button" class="timeline-today-btn" onclick="resetCalendarToToday()">Today</button>
+  // ---------- Calendar view (month; drag tasks to another day) ----------
+  function renderCalendar(list){
+    const first = new Date(calMonth), start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+    const days = []; for(let i = 0; i < 42; i++){ const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+    const today = todayISO(), dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    view$.innerHTML = `<div class="tk-cal">
+      <div class="tk-cal-head"><h3>${first.toLocaleDateString(undefined, {month:'long', year:'numeric'})}</h3>
+        <button type="button" class="tk-icon-btn" data-act="cal-today">Today</button>
+        <button type="button" class="tk-icon-btn" data-act="cal-prev" aria-label="Previous month">‹</button>
+        <button type="button" class="tk-icon-btn" data-act="cal-next" aria-label="Next month">›</button></div>
+      <div class="tk-cal-grid">${dows.map(d=>`<div class="tk-cal-dow">${d}</div>`).join('')}
+        ${days.map(d=>{
+          const iso = toISO(d), items = list.filter(t=> t.dueDate === iso);
+          return `<div class="tk-cal-day${d.getMonth() !== first.getMonth() ? ' other' : ''}${iso === today ? ' today' : ''}" data-drop-date="${iso}">
+            <div class="tk-cal-num"><span>${d.getDate()}</span><button type="button" class="tk-cal-add" data-act="new" data-date="${iso}" aria-label="Add a task on ${iso}">+</button></div>
+            ${items.slice(0, 4).map(t=>`<div class="tk-cal-chip${statusOf(t) === 'done' ? ' done' : ''}" draggable="true" data-id="${t.id}" data-act="open" style="background:${STATUS[statusOf(t)].color}" title="${esc(t.title)}">${esc(t.title || 'Untitled')}</div>`).join('')}
+            ${items.length > 4 ? `<div class="tk-muted" style="font-size:11px">+${items.length - 4} more</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div></div>`;
+  }
+
+  // ---------- Popovers (status, priority, owner, date, more) ----------
+  const pop = document.getElementById('tkPop');
+  let popFor = null;
+  function openPop(anchor, html, taskId){
+    pop.innerHTML = html; pop.classList.add('open'); popFor = taskId;
+    const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    let left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8), top = r.bottom + 6;
+    if(top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+    const f = pop.querySelector('input,button,select'); if(f) f.focus();
+  }
+  function closePop(){ pop.classList.remove('open'); popFor = null; }
+  function popStatus(anchor, t){ openPop(anchor, STATUSES.map(s=>`<button type="button" class="tk-opt" data-set-status="${s.id}" style="background:${s.color}">${s.label}</button>`).join(''), t ? t.id : null); }
+  function popPrio(anchor, t){ openPop(anchor, PRIORITIES.map(p=>`<button type="button" class="tk-opt${p.color ? '' : ' plain'}" data-set-prio="${p.id}" style="${p.color ? `background:${p.color}` : ''}">${p.label}</button>`).join(''), t ? t.id : null); }
+  function popOwner(anchor, t, current){
+    const cur = current || ownersOf(t);
+    const ids = Object.keys(members).length ? Object.keys(members) : [myUid];
+    openPop(anchor, `<div class="tk-pop-title">Owners</div>` + ids.map(uid=>`<label class="tk-person"><input type="checkbox" data-owner="${uid}" ${cur.includes(uid) ? 'checked' : ''}>${avatarHTML(uid)}<span>${esc(person(uid).name || person(uid).email || 'Teammate')}${uid === myUid ? ' (you)' : ''}</span></label>`).join(''), t ? t.id : null);
+  }
+  function popDate(anchor, t, value){
+    const v = value !== undefined ? value : (t && t.dueDate) || '';
+    const tdy = todayISO();
+    openPop(anchor, `<div class="tk-pop-title">Due date</div><input type="date" data-set-date value="${v}">
+      <div class="tk-quick"><button type="button" data-quick-date="${tdy}">Today</button><button type="button" data-quick-date="${addDays(tdy, 1)}">Tomorrow</button>
+      <button type="button" data-quick-date="${addDays(tdy, 7)}">Next week</button><button type="button" data-quick-date="">No date</button></div>`, t ? t.id : null);
+  }
+  function popMore(anchor, t){
+    openPop(anchor, `<button type="button" class="tk-opt plain" data-more="open">Open</button><button type="button" class="tk-opt plain" data-more="dup">Duplicate</button><button type="button" class="tk-opt plain" data-more="del" style="color:#D83A52">Delete</button>`, t.id);
+  }
+  // Popover choices apply to a task (table/kanban) or to the drawer's draft (new task).
+  function applyChoice(kind, value){
+    const t = tasks.find(x=>x.id === popFor);
+    if(!t && drawerDraft){ Object.assign(drawerDraft, kind === 'status' ? {status:value} : kind === 'prio' ? {priority:value} : kind === 'date' ? {dueDate:value || null} : {}); renderDrawer(); return; }
+    if(!t) return;
+    if(kind === 'status') setStatus(t, value);
+    if(kind === 'prio') save(t.id, {priority:value});
+    if(kind === 'date') save(t.id, {dueDate:value || null});
+  }
+  pop.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    if(b.dataset.setStatus){ applyChoice('status', b.dataset.setStatus); closePop(); }
+    else if(b.dataset.setPrio){ applyChoice('prio', b.dataset.setPrio); closePop(); }
+    else if(b.dataset.quickDate !== undefined){ applyChoice('date', b.dataset.quickDate); closePop(); }
+    else if(b.dataset.more){ const t = tasks.find(x=>x.id === popFor); closePop(); if(!t) return;
+      if(b.dataset.more === 'open') openDrawer(t.id); if(b.dataset.more === 'dup') duplicateTask(t); if(b.dataset.more === 'del') deleteTask(t); }
+  });
+  pop.addEventListener('change', e=>{
+    if(e.target.matches('[data-set-date]')){ applyChoice('date', e.target.value); closePop(); }
+    if(e.target.matches('[data-owner]')){
+      const chosen = [...pop.querySelectorAll('[data-owner]:checked')].map(x=>x.dataset.owner);
+      const t = tasks.find(x=>x.id === popFor);
+      if(t) save(t.id, {assignees: chosen}); else if(drawerDraft){ drawerDraft.assignees = chosen; renderDrawer(); }
+    }
+  });
+  document.addEventListener('mousedown', e=>{ if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('[data-act]')) closePop(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ if(pop.classList.contains('open')) closePop(); else if(drawerId || drawerDraft) closeDrawer(); } });
+
+  // ---------- Inline title editing ----------
+  function editTitle(span, t){
+    const input = document.createElement('input'); input.className = 'tk-title-input'; input.value = t.title || ''; input.maxLength = 200;
+    span.replaceWith(input); input.focus(); input.select();
+    let done = false;
+    const finish = (commit)=>{ if(done) return; done = true; const v = input.value.trim();
+      if(commit && v && v !== t.title){ t.title = v; save(t.id, {title: v}); } render(); };
+    input.addEventListener('keydown', e=>{ if(e.key === 'Enter') finish(true); if(e.key === 'Escape') finish(false); });
+    input.addEventListener('blur', ()=> finish(true));
+  }
+
+  // ---------- Clicks in the views ----------
+  view$.addEventListener('click', e=>{
+    const el = e.target.closest('[data-act]'); if(!el) return;
+    const row = e.target.closest('[data-id]'), t = row ? tasks.find(x=>x.id === row.dataset.id) : null, act = el.dataset.act;
+    if(act === 'toggle-group'){ const g = el.closest('.tk-group').dataset.group; collapsed.has(g) ? collapsed.delete(g) : collapsed.add(g);
+      localStorage.setItem('ptTasksCollapsed', JSON.stringify([...collapsed])); render(); return; }
+    if(act === 'new'){ openDrawer(null, {status: el.dataset.status || 'todo', dueDate: el.dataset.date || null}); return; }
+    if(act === 'cal-prev'){ calMonth.setMonth(calMonth.getMonth() - 1); render(); return; }
+    if(act === 'cal-next'){ calMonth.setMonth(calMonth.getMonth() + 1); render(); return; }
+    if(act === 'cal-today'){ calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0, 0, 0, 0); render(); return; }
+    if(!t) return;
+    if(act === 'tick'){ setStatus(t, statusOf(t) === 'done' ? 'todo' : 'done'); return; }
+    if(act === 'edit-title'){ editTitle(el, t); return; }
+    if(act === 'open'){ openDrawer(t.id); return; }
+    if(act === 'status'){ popStatus(el, t); return; }
+    if(act === 'prio'){ popPrio(el, t); return; }
+    if(act === 'owner'){ popOwner(el, t); return; }
+    if(act === 'date'){ popDate(el, t); return; }
+    if(act === 'more'){ popMore(el, t); return; }
+  });
+  view$.addEventListener('keydown', e=>{
+    if(e.target.matches('[data-add]') && e.key === 'Enter'){
+      const title = e.target.value.trim(); if(!title) return;
+      const g = e.target.dataset.add; e.target.value = '';
+      createTask({title, dueDate: defaultDateFor(g)});
+    }
+    if(e.target.matches('.tk-ghead') && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); e.target.click(); }
+  });
+  // Drag and drop: Kanban (change status) and Calendar (change date).
+  let dragId = null;
+  view$.addEventListener('dragstart', e=>{ const c = e.target.closest('[draggable="true"][data-id]'); if(!c) return; dragId = c.dataset.id; e.dataTransfer.effectAllowed = 'move'; c.classList.add('dragging'); });
+  view$.addEventListener('dragend', e=>{ dragId = null; view$.querySelectorAll('.over,.dragging').forEach(x=>x.classList.remove('over', 'dragging')); });
+  view$.addEventListener('dragover', e=>{ const z = e.target.closest('[data-drop-status],[data-drop-date]'); if(!z || !dragId) return; e.preventDefault(); view$.querySelectorAll('.over').forEach(x=> x !== z && x.classList.remove('over')); z.classList.add('over'); });
+  view$.addEventListener('drop', e=>{
+    const z = e.target.closest('[data-drop-status],[data-drop-date]'); if(!z || !dragId) return; e.preventDefault();
+    const t = tasks.find(x=>x.id === dragId); z.classList.remove('over'); if(!t) return;
+    if(z.dataset.dropStatus && z.dataset.dropStatus !== statusOf(t)) setStatus(t, z.dataset.dropStatus);
+    if(z.dataset.dropDate && z.dataset.dropDate !== t.dueDate){ save(t.id, {dueDate: z.dataset.dropDate}); showToast(`Moved to ${prettyDate(z.dataset.dropDate)}.`); }
+  });
+
+  // ---------- Item drawer (details, checklist, notes, updates) ----------
+  const drawer = document.getElementById('tkDrawer'), scrim = document.getElementById('tkScrim');
+  let drawerId = null, drawerDraft = null;
+  function openDrawer(id, preset){
+    closePop();
+    drawerId = id; drawerDraft = id ? null : {title:'', status:'todo', priority:'none', dueDate:null, repeat:'none', assignees:[myUid], checklist:[], notes:'', boardId:null, leadId:null, ...(preset || {})};
+    renderDrawer(true);
+    drawer.classList.add('open'); scrim.classList.add('open'); drawer.setAttribute('aria-hidden', 'false');
+    setTimeout(()=>{ const ti = drawer.querySelector('.tk-dr-title'); if(ti && !id) ti.focus(); }, 60);
+  }
+  function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); drawerId = null; drawerDraft = null; }
+  scrim.addEventListener('click', closeDrawer);
+  function autoGrow(el){ el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+  function renderDrawer(full){
+    const t = drawerId ? tasks.find(x=>x.id === drawerId) : drawerDraft;
+    if(!t){ closeDrawer(); return; }
+    const isNew = !drawerId, s = STATUS[statusOf(t)], p = PRIORITY[t.priority] || PRIORITY.none;
+    const cl = t.checklist || [], clDone = cl.filter(c=>c.done).length;
+    const focused = document.activeElement && drawer.contains(document.activeElement) ? document.activeElement.dataset.f : null;
+    // Keep what's being typed if a live update comes in.
+    const keep = {title: drawer.querySelector('[data-f="title"]'), notes: drawer.querySelector('[data-f="notes"]'), upd: drawer.querySelector('[data-f="upd"]'), cl: drawer.querySelector('[data-f="cl"]')};
+    const typed = {title: keep.title && focused === 'title' ? keep.title.value : null, notes: keep.notes && focused === 'notes' ? keep.notes.value : null, upd: keep.upd ? keep.upd.value : '', cl: keep.cl ? keep.cl.value : ''};
+    const boardOpts = `<option value="">No board</option>` + boards.map(b=>`<option value="${b.id}" ${t.boardId === b.id ? 'selected' : ''}>${esc(b.name || 'Board')}</option>`).join('');
+    const leads = t.boardId ? (leadsByBoard[t.boardId] || null) : [];
+    const leadOpts = `<option value="">No specific lead</option>` + (leads || []).map(l=>`<option value="${l.id}" ${t.leadId === l.id ? 'selected' : ''}>${esc(l.name || 'Lead')}${l.company ? ' — ' + esc(l.company) : ''}</option>`).join('');
+    if(t.boardId && !leads) loadLeads(t.boardId);
+    const ups = (t.updates || []).slice().sort((a, b)=> (b.at || 0) - (a.at || 0));
+    drawer.innerHTML = `
+      <div class="tk-dr-head">
+        <div class="tk-dr-top">
+          <div class="tk-status" data-dr="status" style="background:${s.color}" role="button" tabindex="0">${s.label} ▾</div>
+          ${p.color ? `<span class="tk-chip" style="background:${p.color};color:#fff;border-color:transparent">${p.label} priority</span>` : ''}
+          <button type="button" class="tk-dr-close" data-dr="close" aria-label="Close">✕</button>
+        </div>
+        <textarea class="tk-dr-title" data-f="title" rows="1" maxlength="200" placeholder="What needs to get done?">${esc(typed.title !== null ? typed.title : t.title || '')}</textarea>
       </div>
-      <div class="calendar-wrap">
-        <div class="calendar-weekday-row">${weekdayLabels.map(w=>`<div class="calendar-weekday">${w}</div>`).join('')}</div>
-        <div class="calendar-grid">${cellsHTML}</div>
+      <div class="tk-dr-body">
+        <div class="tk-fields">
+          <div class="k">Owners</div><div class="v"><button type="button" class="tk-pill-btn" data-dr="owner">${ownersCell(t)}<span>${ownersOf(t).length ? ownersOf(t).map(u=> esc((person(u).name || 'Teammate').split(' ')[0])).join(', ') : 'Assign'}</span></button></div>
+          <div class="k">Due date</div><div class="v"><button type="button" class="tk-pill-btn" data-dr="date">${t.dueDate ? dateCell(t) : '<span class="tk-muted">Pick a date</span>'}</button></div>
+          <div class="k">Priority</div><div class="v"><button type="button" class="tk-pill-btn" data-dr="prio">${p.color ? `<span class="pr" style="background:${p.color};color:#fff;border-radius:5px;padding:1px 7px;font-size:11.5px">${p.label}</span>` : 'Normal'}</button></div>
+          <div class="k">Repeat</div><div class="v"><select data-f="repeat" aria-label="Repeat">${REPEATS.map(r=>`<option value="${r[0]}" ${(t.repeat || 'none') === r[0] ? 'selected' : ''}>${r[1]}</option>`).join('')}</select>
+            ${t.repeat && t.repeat !== 'none' && !t.dueDate ? '<span class="tk-muted">Needs a due date</span>' : ''}</div>
+          <div class="k">Board</div><div class="v"><select data-f="board" aria-label="Board">${boardOpts}</select></div>
+          <div class="k">Lead</div><div class="v"><select data-f="lead" aria-label="Lead" ${t.boardId ? '' : 'disabled'}>${t.boardId && !leads ? '<option>Loading leads…</option>' : leadOpts}</select>
+            ${t.leadId && t.boardId ? `<a class="tk-lead" href="dashboard.html?board=${encodeURIComponent(t.boardId)}&lead=${encodeURIComponent(t.leadId)}">Open lead →</a>` : ''}</div>
+        </div>
+        <div class="tk-sec">
+          <h4>Checklist <span class="muted">${cl.length ? `${clDone} of ${cl.length} done` : 'Break it into smaller steps'}</span></h4>
+          ${cl.length ? `<div class="tk-progress"><i style="width:${cl.length ? clDone / cl.length * 100 : 0}%"></i></div>` : ''}
+          ${cl.map(c=>`<div class="tk-cl-item${c.done ? ' done' : ''}"><input type="checkbox" data-cl-toggle="${c.id}" ${c.done ? 'checked' : ''} aria-label="${esc(c.text)}"><span>${esc(c.text)}</span><button type="button" data-cl-del="${c.id}" aria-label="Remove">✕</button></div>`).join('')}
+          <div class="tk-cl-add"><input type="text" data-f="cl" placeholder="Add a step and press Enter" maxlength="160" value="${esc(typed.cl)}"></div>
+        </div>
+        <div class="tk-sec">
+          <h4>Notes</h4>
+          <textarea class="tk-notes" data-f="notes" placeholder="Details, links, context…">${esc(typed.notes !== null ? typed.notes : t.notes || '')}</textarea>
+        </div>
+        ${isNew ? '' : `<div class="tk-sec">
+          <h4>Updates <span class="muted">${ups.length || ''}</span></h4>
+          <textarea class="tk-upd-in" data-f="upd" placeholder="Write an update for your team…">${esc(typed.upd)}</textarea>
+          <div class="tk-upd-actions"><button type="button" class="tk-save" data-dr="post" style="margin:0">Post update</button></div>
+          ${ups.map(u=>`<div class="tk-upd">${avatarHTML(u.uid)}<div style="flex:1;min-width:0"><div class="who">${esc(u.name || 'Teammate')}<span class="when">${timeAgo(u.at || Date.now())}</span>
+            ${u.uid === myUid ? `<button type="button" class="del" data-upd-del="${u.id}">Delete</button>` : ''}</div><div class="txt">${esc(u.text)}</div></div></div>`).join('')}
+        </div>`}
       </div>
-    `;
+      <div class="tk-dr-foot">
+        ${isNew ? `<span class="meta">New task</span><button type="button" class="tk-save" data-dr="create">Create task</button>`
+                : `<span class="meta">Created by ${esc(t.createdByName || person(t.createdBy).name || 'a teammate')}${t.completedByName && statusOf(t) === 'done' ? ` · done by ${esc(t.completedByName)}` : ''}</span>
+                   <button type="button" class="tk-pill-btn" data-dr="dup">Duplicate</button><button type="button" class="tk-danger" data-dr="del">Delete</button>`}
+      </div>`;
+    autoGrow(drawer.querySelector('.tk-dr-title'));
+    if(focused){ const f = drawer.querySelector(`[data-f="${focused}"]`); if(f){ f.focus(); if(f.setSelectionRange && f.value) f.setSelectionRange(f.value.length, f.value.length); } }
   }
-
-  // ---------- Task actions (exposed for inline onclick) ----------
-  window.__toggleTask = function(taskId, completed){
-    db.collection('tasks').doc(taskId).update({
-      completed: !completed,
-      completedAt: !completed ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.delete(),
-      completedBy: !completed ? myUid : firebase.firestore.FieldValue.delete(),
-      completedByName: !completed ? myName : firebase.firestore.FieldValue.delete()
-    }).catch(err=>showToast('Could not update that: ' + (err.message || ''), true));
-  };
-  window.__deleteTask = async function(taskId){
-    const ok = await showConfirmModal({title:'Delete this task?', message:'This can\'t be undone.', confirmLabel:'Delete'});
-    if(!ok) return;
-    db.collection('tasks').doc(taskId).delete().catch(err=>showToast('Could not delete that: ' + (err.message || ''), true));
-  };
-
-  // ---------- Render ----------
-  function taskRowHTML(task){
-    const due = task.dueDate;
-    const isOverdue = due && due < todayISO() && !task.completed;
-    const leadLink = (task.boardId && task.leadId)
-      ? `<a class="task-row-lead" href="dashboard.html?board=${encodeURIComponent(task.boardId)}&lead=${encodeURIComponent(task.leadId)}">↗ ${esc(task.leadName || 'Lead')} · ${esc(task.boardName || '')}</a>`
-      : (task.boardName ? `<span class="task-row-lead" style="color:var(--slate);">${esc(task.boardName)}</span>` : '');
-    const ownerBadge = (taskScopeMode === 'team' && task.createdByName)
-      ? `<span class="task-owner-badge" title="${esc(task.createdByName)}">${esc(initials(task.createdByName))}</span>` : '';
-    // Who finished it is worth showing regardless of scope mode — even in
-    // "My tasks" (all created by you), a teammate could still be the one
-    // who actually checked it off for you.
-    const completedByBit = (task.completed && task.completedByName)
-      ? `<span class="task-row-completedby">✓ ${esc(task.completedByName)}</span>` : '';
-    return `<div class="task-row${task.completed ? ' completed' : ''}" oncontextmenu="window.openTaskColorMenu('${task.id}', event); return false;" style="border-left:3px solid ${taskColorHex(task)}">
-      <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="window.__toggleTask('${task.id}', ${task.completed})">
-      ${ownerBadge}
-      <div class="task-row-body" onclick="window.openTaskDetail('${task.id}', event)" style="cursor:pointer;">
-        <div class="task-row-title">${priorityFlagHTML(task)} ${esc(task.title)}</div>
-        ${leadLink}
-        ${completedByBit}
-      </div>
-      ${due ? `<div class="task-row-due${isOverdue ? ' overdue' : ''}">${esc(daysLabel(due))}</div>` : ''}
-      <button type="button" class="task-row-delete" onclick="window.__deleteTask('${task.id}')" title="Delete task">✕</button>
-    </div>`;
+  function loadLeads(boardId){
+    if(leadsByBoard[boardId] !== undefined) return;
+    leadsByBoard[boardId] = null;
+    db.collection('workspaces').doc(wsId).collection('boards').doc(boardId).collection('leads').get().then(snap=>{
+      leadsByBoard[boardId] = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted).sort((a, b)=>(a.name || '').localeCompare(b.name || ''));
+      if(drawerId || drawerDraft) renderDrawer();
+    }).catch(()=>{ leadsByBoard[boardId] = []; if(drawerId || drawerDraft) renderDrawer(); showToast('Could not load the leads of that board (it may be password-protected).', true); });
   }
-
-  // ---------- Today view (just today, nothing else) ----------
-  function renderTodayView(){
-    const holder = document.getElementById('taskTodayHolder');
-    const today = todayISO();
-    const todaysTasks = searchFilter(allTasks).filter(t=>t.dueDate === today);
-    const open = todaysTasks.filter(t=>!t.completed);
-    const done = todaysTasks.filter(t=>t.completed);
-    const label = new Date(today + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
-
-    let html = `<div class="today-header">
-      <div class="today-header-date">${esc(label)}</div>
-      ${todaysTasks.length ? `<div class="today-header-count">${open.length} open${done.length ? `, ${done.length} done` : ''}</div>` : ''}
-    </div>`;
-
-    if(todaysTasks.length === 0){
-      html += taskSearchQuery
-        ? `<div class="empty-state"><h3>No matches</h3><p>Nothing due today matches "${esc(taskSearchQuery)}".</p></div>`
-        : `<div class="empty-state"><h3>Nothing due today</h3><p>Enjoy the quiet — or click "+ New task" to add one.</p></div>`;
-      holder.innerHTML = html;
-      return;
+  function current(){ return drawerId ? tasks.find(x=>x.id === drawerId) : drawerDraft; }
+  function change(data){ const t = current(); if(!t) return; if(drawerId) save(drawerId, data); else { Object.assign(drawerDraft, data); renderDrawer(); } }
+  drawer.addEventListener('click', e=>{
+    const t = current(); if(!t) return;
+    const b = e.target.closest('[data-dr],[data-cl-del],[data-upd-del]'); if(!b) return;
+    const a = b.dataset.dr;
+    if(a === 'close') closeDrawer();
+    else if(a === 'status'){ popFor = drawerId; popStatus(b, drawerId ? t : null); if(!drawerId) popFor = null; }
+    else if(a === 'prio'){ popPrio(b, drawerId ? t : null); if(!drawerId) popFor = null; }
+    else if(a === 'owner'){ popOwner(b, drawerId ? t : null, ownersOf(t)); if(!drawerId) popFor = null; }
+    else if(a === 'date'){ popDate(b, drawerId ? t : null, t.dueDate || ''); if(!drawerId) popFor = null; }
+    else if(a === 'dup') duplicateTask(t);
+    else if(a === 'del') deleteTask(t);
+    else if(a === 'post'){
+      const box = drawer.querySelector('[data-f="upd"]'), text = box.value.trim(); if(!text) return;
+      box.value = '';
+      save(drawerId, {updates: FV.arrayUnion({id: uid6(), uid: myUid, name: myName, text: text.slice(0, 2000), at: Date.now()})});
     }
-
-    const byPriority = (a,b)=>{
-      const rank = {high:0, medium:1};
-      return (rank[a.priority] ?? 2) - (rank[b.priority] ?? 2);
-    };
-    html += open.sort(byPriority).map(taskRowHTML).join('');
-    if(done.length){
-      html += `<div class="task-group-label" style="margin-top:22px;">Completed today <span class="task-group-count">${done.length}</span></div>`;
-      html += done.map(taskRowHTML).join('');
+    else if(a === 'create'){
+      const title = (drawer.querySelector('[data-f="title"]').value || drawerDraft.title || '').trim();
+      if(!title){ showToast('Give the task a title first.', true); drawer.querySelector('[data-f="title"]').focus(); return; }
+      const notes = (drawer.querySelector('[data-f="notes"]').value || drawerDraft.notes || '').trim() || null;
+      const d = drawerDraft, board = boards.find(x=>x.id === d.boardId), lead = (leadsByBoard[d.boardId] || []).find(l=>l.id === d.leadId);
+      createTask({title, notes, status: d.status, priority: d.priority, dueDate: d.dueDate, repeat: d.repeat, assignees: d.assignees.length ? d.assignees : [myUid],
+        checklist: d.checklist, boardId: d.boardId || null, boardName: board ? board.name : null, leadId: d.leadId || null, leadName: lead ? lead.name : null})
+        .then(()=>{ showToast('Task added.'); closeDrawer(); });
     }
-    holder.innerHTML = html;
+    else if(b.dataset.clDel){ change({checklist: (t.checklist || []).filter(c=> c.id !== b.dataset.clDel)}); }
+    else if(b.dataset.updDel){ save(drawerId, {updates: (t.updates || []).filter(u=> u.id !== b.dataset.updDel)}); }
+  });
+  drawer.addEventListener('keydown', e=>{
+    if(e.target.matches('[data-dr="status"]') && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); e.target.click(); }
+    if(e.target.matches('[data-f="title"]') && e.key === 'Enter'){ e.preventDefault(); e.target.blur(); }
+    if(e.target.matches('[data-f="cl"]') && e.key === 'Enter'){
+      const text = e.target.value.trim(); if(!text) return; e.target.value = '';
+      const t = current(); change({checklist: [...(t.checklist || []), {id: uid6(), text, done: false}]});
+      setTimeout(()=>{ const f = drawer.querySelector('[data-f="cl"]'); if(f) f.focus(); }, 30);
+    }
+    if(e.target.matches('[data-f="upd"]') && e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ drawer.querySelector('[data-dr="post"]').click(); }
+  });
+  drawer.addEventListener('input', e=>{
+    if(e.target.matches('[data-f="title"]')) autoGrow(e.target);
+    if(drawerDraft){ if(e.target.matches('[data-f="title"]')) drawerDraft.title = e.target.value; if(e.target.matches('[data-f="notes"]')) drawerDraft.notes = e.target.value; }
+  });
+  drawer.addEventListener('focusout', e=>{
+    const t = current(); if(!t || !drawerId) return;
+    if(e.target.matches('[data-f="title"]')){ const v = e.target.value.trim(); if(v && v !== t.title) save(drawerId, {title: v}); }
+    if(e.target.matches('[data-f="notes"]')){ const v = e.target.value.trim() || null; if(v !== (t.notes || null)) save(drawerId, {notes: v}); }
+  });
+  drawer.addEventListener('change', e=>{
+    const t = current(); if(!t) return;
+    if(e.target.matches('[data-cl-toggle]')){ change({checklist: (t.checklist || []).map(c=> c.id === e.target.dataset.clToggle ? {...c, done: e.target.checked} : c)}); }
+    if(e.target.matches('[data-f="repeat"]')){ change({repeat: e.target.value, repeatNextCreated: false}); }
+    if(e.target.matches('[data-f="board"]')){
+      const board = boards.find(x=>x.id === e.target.value);
+      change({boardId: board ? board.id : null, boardName: board ? board.name : null, leadId: null, leadName: null});
+      if(board) loadLeads(board.id);
+    }
+    if(e.target.matches('[data-f="lead"]')){
+      const lead = (leadsByBoard[t.boardId] || []).find(l=> l.id === e.target.value);
+      change({leadId: lead ? lead.id : null, leadName: lead ? lead.name : null});
+    }
+  });
+
+  // ---------- Toolbar ----------
+  document.getElementById('tkNewBtn').addEventListener('click', ()=> openDrawer(null, {dueDate: todayISO()}));
+  document.querySelectorAll('#tkViewSeg button').forEach(b=> b.addEventListener('click', ()=>{ view = b.dataset.view; localStorage.setItem('ptTasksView', view); render(); }));
+  document.querySelectorAll('#tkScopeSeg button').forEach(b=> b.addEventListener('click', ()=>{ scope = b.dataset.scope; localStorage.setItem('ptTasksScope', scope); render(); }));
+  document.getElementById('tkSearch').addEventListener('input', e=>{ search = e.target.value; render(); });
+
+  // ---------- Loading ----------
+  function reveal(){
+    document.getElementById('pageLoader').style.display = 'none';
+    const root = document.getElementById('appRoot'); root.style.display = 'flex'; root.classList.add('reveal');
   }
-
-  function renderTasks(){
-    const holder = document.getElementById('taskListHolder');
-    const today = todayISO();
-    const searched = searchFilter(allTasks);
-
-    document.getElementById('countOpen').textContent = `(${searched.filter(t=>!t.completed).length})`;
-    document.getElementById('countCompleted').textContent = `(${searched.filter(t=>t.completed).length})`;
-
-    if(currentTaskTab === 'completed'){
-      const completed = searched.filter(t=>t.completed).sort((a,b)=>{
-        const at = a.completedAt ? a.completedAt.toMillis() : 0;
-        const bt = b.completedAt ? b.completedAt.toMillis() : 0;
-        return bt - at;
-      });
-      if(completed.length === 0){
-        holder.innerHTML = `<div class="empty-state"><h3>Nothing completed yet</h3><p>Tasks you check off will show up here.</p></div>`;
-        return;
-      }
-      holder.innerHTML = completed.map(taskRowHTML).join('');
-      return;
-    }
-
-    const open = searched.filter(t=>!t.completed);
-    if(open.length === 0){
-      holder.innerHTML = taskSearchQuery
-        ? `<div class="empty-state"><h3>No matches</h3><p>Nothing open matches "${esc(taskSearchQuery)}".</p></div>`
-        : `<div class="empty-state"><h3>You're all caught up</h3><p>No open tasks — click "+ New task" to add a reminder or follow-up.</p></div>`;
-      return;
-    }
-
-    // Priority sorts to the top within each date group — high first, then
-    // medium, then everything else in whatever order they already were.
-    const byPriority = (a,b)=>{
-      const rank = {high:0, medium:1};
-      return (rank[a.priority] ?? 2) - (rank[b.priority] ?? 2);
-    };
-    const overdue = open.filter(t=>t.dueDate && t.dueDate < today).sort((a,b)=>a.dueDate.localeCompare(b.dueDate) || byPriority(a,b));
-    const dueToday = open.filter(t=>t.dueDate === today).sort(byPriority);
-    const upcoming = open.filter(t=>t.dueDate && t.dueDate > today).sort((a,b)=>a.dueDate.localeCompare(b.dueDate) || byPriority(a,b));
-    const noDate = open.filter(t=>!t.dueDate).sort(byPriority);
-
-    let html = '';
-    if(overdue.length){
-      html += `<div class="task-group-label overdue">Overdue <span class="task-group-count">${overdue.length}</span></div>`;
-      html += overdue.map(taskRowHTML).join('');
-    }
-    if(dueToday.length){
-      html += `<div class="task-group-label">Today <span class="task-group-count">${dueToday.length}</span></div>`;
-      html += dueToday.map(taskRowHTML).join('');
-    }
-    if(upcoming.length){
-      html += `<div class="task-group-label">Upcoming <span class="task-group-count">${upcoming.length}</span></div>`;
-      html += upcoming.map(taskRowHTML).join('');
-    }
-    if(noDate.length){
-      html += `<div class="task-group-label">No due date <span class="task-group-count">${noDate.length}</span></div>`;
-      html += noDate.map(taskRowHTML).join('');
-    }
-    holder.innerHTML = html;
-  }
-
-  // ---------- Auth & workspace ----------
   auth.onAuthStateChanged(user=>{
-    if(!user){
-      location.href = 'home.html';
-      return;
-    }
+    if(!user){ location.href = 'home.html'; return; }
     myUid = user.uid;
     db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
-      const wsId = doc.exists ? doc.data().workspaceId : null;
-      if(!wsId) return;
-      return db.doc(`workspaces/${wsId}/members/${user.uid}`).get().then(memberDoc=>{
-        myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
-        document.getElementById('seqSidebarUserName').textContent = myName;
-        document.getElementById('seqSidebarAvatar').textContent = initials(myName);
-      });
-    }).catch(()=>{});
-
-    db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
-      const workspaceId = doc.exists ? doc.data().workspaceId : null;
-      if(!workspaceId){
-        showToast('Could not find your workspace.', true);
-        return;
-      }
-      currentWorkspaceId = workspaceId;
-      loadBoardsIntoSelect();
-      subscribeToTasks();
-    }).catch(err=>{
-      console.error(err);
-      showToast('Could not load your workspace.', true);
-    });
+      wsId = doc.exists ? doc.data().workspaceId : null;
+      if(!wsId){ showToast('Could not find your workspace.', true); reveal(); return; }
+      const wsRef = db.collection('workspaces').doc(wsId);
+      wsRef.collection('members').get().then(snap=>{
+        snap.docs.forEach(d=>{ members[d.id] = d.data(); });
+        const me = members[myUid] || {};
+        myName = me.name || user.email || 'You';
+        const n = document.getElementById('seqSidebarUserName'), av = document.getElementById('seqSidebarAvatar');
+        if(n) n.textContent = myName; if(av) av.textContent = initials(myName);
+        render();
+      }).catch(()=>{});
+      wsRef.collection('boards').get().then(snap=>{ boards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=> b.deleted !== true).sort((a, b)=>(a.name || '').localeCompare(b.name || '')); if(drawerId || drawerDraft) renderDrawer(); }).catch(()=>{});
+      db.collection('tasks').where('workspaceId', '==', wsId).onSnapshot(snap=>{
+        tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        render(); reveal();
+        const openId = new URLSearchParams(location.search).get('task');
+        if(openId && tasks.some(t=>t.id === openId) && !drawerId){ openDrawer(openId); history.replaceState(null, '', location.pathname); }
+      }, err=>{ console.error(err); showToast('Could not load tasks: ' + (err.message || ''), true); reveal(); });
+    }).catch(err=>{ console.error(err); showToast('Could not load your workspace.', true); reveal(); });
   });
+  // The day changes at midnight: regroup (Today / Tomorrow / Overdue) without a reload.
+  let lastDay = todayISO();
+  setInterval(()=>{ if(todayISO() !== lastDay){ lastDay = todayISO(); render(); } }, 60000);
 })();
 </script>
 

@@ -3658,13 +3658,13 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
     if(!body || !db || !workspaceId || !auth.currentUser) return;
     const myUid = auth.currentUser.uid;
     const today = toLocalISO(new Date());
+    // Your tasks for today: ones you created, and ones a teammate assigned to you.
     db.collection('tasks')
       .where('workspaceId', '==', workspaceId)
-      .where('createdBy', '==', myUid)
-      .where('dueDate', '==', today)
-      .where('completed', '==', false)
       .get().then(snap=>{
-        const tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        const tasks = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(t=>
+          t.dueDate === today && t.completed !== true && t.status !== 'done' &&
+          (t.createdBy === myUid || (Array.isArray(t.assignees) && t.assignees.includes(myUid))));
         if(tasks.length === 0){
           badge.style.display = 'none';
           body.innerHTML = `<div class="attention-empty">
@@ -3701,6 +3701,7 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
     const myName = (document.getElementById('welcomeName') || {}).textContent || 'You';
     db.collection('tasks').doc(taskId).update({
       completed: true,
+      status: 'done',
       completedAt: firebase.firestore.FieldValue.serverTimestamp(),
       completedBy: auth.currentUser ? auth.currentUser.uid : null,
       completedByName: myName
