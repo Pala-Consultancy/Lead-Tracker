@@ -967,6 +967,7 @@ html[data-theme="dark"] .toast{background:#3A3F75}
   document.getElementById('backBtn').onclick = function(){ if(history.length>1){ history.back(); return false; } };
   document.getElementById('detailBackLink').href = boardId ? `campaigns.html?board=${encodeURIComponent(boardId)}` : 'campaigns.html';
   const boardQS = boardId ? `?board=${encodeURIComponent(boardId)}` : '';
+  let currentBoardName = '';   // shown in the empty state, e.g. "No campaigns yet for LinkedIn | London"
   document.getElementById('navDashboard').href = `dashboard.html${boardQS}`;
   document.getElementById('navSequences').href = `sequences.html${boardQS}`;
   document.getElementById('navScheduled').href = `scheduled-emails.html${boardQS}`;
@@ -1093,7 +1094,7 @@ html[data-theme="dark"] .toast{background:#3A3F75}
     });
     if(filtered.length === 0){
       holder.innerHTML = `<div class="empty-state">
-        <h3>No campaigns ${activeFilter === 'all' ? 'yet' : 'here'}</h3>
+        <h3>No campaigns ${activeFilter === 'all' ? 'yet' : 'here'}${currentBoardName ? ` for ${esc(currentBoardName)}` : ''}</h3>
         <p>${isTrash ? "Nothing in the trash right now." : (activeFilter === 'all' ? 'Click "🎯 New campaign" above to send one sequence to a group of leads at once.' : "No campaigns match this filter.")}</p>
       </div>`;
       return;
@@ -1432,6 +1433,16 @@ html[data-theme="dark"] .toast{background:#3A3F75}
         return;
       }
       startListening(workspaceId);
+      // The chosen board's name, for the empty state and the subtitle.
+      db.doc(`workspaces/${workspaceId}/boards/${boardId}`).get().then(b=>{
+        currentBoardName = b.exists ? (b.data().name || '') : '';
+        if(currentBoardName){
+          const sub = document.querySelector('#listView .page-sub');
+          if(sub) sub.textContent = `One sequence sent to a group of leads at once, tracked and controlled together. Showing ${currentBoardName}.`;
+          const h = document.querySelector('.empty-state h3');
+          if(h && /^No campaigns (yet|here)$/.test(h.textContent.trim())) h.textContent = h.textContent.trim() + ' for ' + currentBoardName;
+        }
+      }).catch(()=>{});
     }).catch(err=>{
       console.error(err);
       showToast('Could not load your workspace.', true);
