@@ -917,6 +917,14 @@
   .lsb-targets .who{font-weight:700;}
   .lsb-targets .muted{color:var(--slate);}
   .lsb-targets button{border:0;background:none;color:#0A66C2;font:600 13px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;margin-left:auto;}
+
+  .lsb-people-sub{margin:12px 0 4px;padding-top:10px;border-top:1px solid var(--border-soft);font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#157A52;}
+  .lsb-person .who b{max-width:100%;}
+
+  .lsb-unsent{margin-left:auto;border:1px solid rgba(31,169,113,.45);background:var(--panel);color:#157A52;border-radius:8px;padding:5px 10px;font:600 12.5px 'Inter',sans-serif;cursor:pointer;}
+  .lsb-unsent:hover{border-color:#D83A52;color:#B42338;}
+  .lsb-unsent:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
+  .lsb-sent{position:relative;}
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1411,6 +1419,9 @@ html[data-theme="dark"] .lsb-sent span{color:#A1D8C0}
 html[data-theme="dark"] .lsb-rlink{color:#81BDF8}
 html[data-theme="dark"] .lsb-rpop .lsb-undo:hover{color:#EC8E9B}
 html[data-theme="dark"] .lsb-targets button{color:#81BDF8}
+html[data-theme="dark"] .lsb-people-sub{color:#8CEEC7}
+html[data-theme="dark"] .lsb-unsent{color:#8CEEC7}
+html[data-theme="dark"] .lsb-unsent:hover{color:#EC8E9B}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -2359,6 +2370,8 @@ window.PTEmoji = (function(){
     const b = e.target.closest('button'); if(!b) return;
     if(b.dataset.type){ const i = +b.dataset.i; if(editingSteps[i].type !== b.dataset.type){ editingSteps[i].type = b.dataset.type; renderStepsEditor(); } return; }
     if(b.dataset.spick !== undefined){ const p = document.getElementById('lsbRpop'); if(p && p.parentElement === b.parentElement){ closeReplyPicker(); return; } openSentPicker(b, +b.dataset.spick); return; }
+    if(b.dataset.unsent !== undefined && !b.closest('#lsbRpop')){ undoSent(b.dataset.unsent, +b.dataset.step); return; }
+    if(b.dataset.unsentpick !== undefined){ const p = document.getElementById('lsbRpop'); if(p && p.parentElement === b.closest('.lsb-replies')){ closeReplyPicker(); return; } openUnsentPicker(b, +b.dataset.unsentpick); return; }
     if(b.dataset.rlist !== undefined){ const p = document.getElementById('lsbRpop'); if(p && p.parentElement === b.parentElement){ closeReplyPicker(); return; } openRepliedList(b, +b.dataset.rlist); return; }
     if(b.dataset.rpick !== undefined){ const p = document.getElementById('lsbRpop'); if(p && p.parentElement === b.parentElement){ closeReplyPicker(); return; } openReplyPicker(b, +b.dataset.rpick); return; }
     if(b.dataset.var){ const ta = stepsList.querySelector(`.lsb-text[data-i="${b.dataset.i}"]`); insertAtCursor(ta, `{{${b.dataset.var}}}`); return; }
@@ -2527,19 +2540,26 @@ window.PTEmoji = (function(){
         (st && st.runs ? `<span class="lsx-head-stat">${st.running} running · ${st.replied} replied · ${st.rate}% reply rate</span>` : '');
     }
     if(!editingTemplateId){ card.style.display = 'none'; return; }
-    const runs = lspRuns.filter(r=> r.templateId === editingTemplateId && LSP_PROGRESS.includes(r.status));
+    const mine = lspRuns.filter(r=> r.templateId === editingTemplateId);
+    const runs = mine.filter(r=> ['active', 'waiting_reply'].includes(r.status));
+    const replied = mine.filter(r=> r.status === 'replied' || r.status === 'paused_replied');
     card.style.display = '';
-    document.getElementById('lsbPeopleCount').textContent = runs.length ? `${runs.length} in progress` : '';
-    document.getElementById('lsbPeopleList').innerHTML = runs.length ? runs.slice(0, 8).map(r=>{
+    document.getElementById('lsbPeopleCount').textContent = [runs.length ? `${runs.length} in progress` : '', replied.length ? `${replied.length} replied` : ''].filter(Boolean).join(' · ');
+    const row = (r, isReplied)=>{
       const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, st = lspState(r), name = lead.name || 'Lead';
       return `<div class="lsb-person">
         <div class="lsp-av" aria-hidden="true">${esc(lssInitials(name))}</div>
-        <div class="who"><b>${esc(name)}</b><span class="lsp-state ${st[0]}">${esc(st[1])}</span></div>
-        ${r.status !== 'paused_replied' ? `<button type="button" class="lsp-btn act" data-replied="${r.id}" title="Did they reply? Mark it: their sequence ends as a success">💬 Mark as replied</button>` : ''}
+        <div class="who"><b title="${esc(name)}">${esc(name)}</b><span class="lsp-state ${st[0]}">${esc(st[1])}</span></div>
+        ${isReplied
+          ? `<button type="button" class="lsp-btn act" data-unreply="${r.id}" title="Marked as replied by mistake? Put them back in the sequence">↩ Undo reply</button>`
+          : `<button type="button" class="lsp-btn act" data-replied="${r.id}" title="Did they reply? Mark it: their sequence ends as a success">💬 Mark as replied</button>`}
         <button type="button" class="lsp-x" data-remove="${r.id}" aria-label="Remove ${esc(name)} from this sequence" title="Remove from this sequence">✕</button>
       </div>`;
-    }).join('') + (runs.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${runs.length - 8} more</div>` : '')
-      : `<div class="lsb-people-empty">Nobody is running this sequence right now. Click "▶ Start sequence" next to the sequence name to start it for one person or several.</div>`;
+    };
+    document.getElementById('lsbPeopleList').innerHTML =
+      (runs.length ? runs.slice(0, 8).map(r=> row(r, false)).join('') + (runs.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${runs.length - 8} more</div>` : '') : '')
+      + (replied.length ? `<div class="lsb-people-sub">Replied</div>` + replied.slice(0, 8).map(r=> row(r, true)).join('') + (replied.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${replied.length - 8} more in the People tab</div>` : '') : '')
+      + (!runs.length && !replied.length ? `<div class="lsb-people-empty">Nobody is running this sequence right now. Click the green Start button next to the sequence name to start it.</div>` : '');
   }
   function renderPeople(){
     renderEditorPeople();
@@ -2619,12 +2639,19 @@ window.PTEmoji = (function(){
   let lsbFlashSent = null;
   // Who already got message i: everyone past it in this sequence.
   function stepSentTo(i){ return lspRuns.filter(r=> r.templateId === editingTemplateId && (r.currentStepIndex || 0) > i); }
+  function stepUndoable(i){
+    return lspRuns.filter(r=> r.templateId === editingTemplateId && (r.currentStepIndex || 0) === i + 1 && ['active', 'waiting_reply', 'completed'].includes(r.status));
+  }
   function sentLine(i){
     const sent = stepSentTo(i); if(!sent.length) return '';
+    const undo = stepUndoable(i);
+    const undoBtn = !undo.length ? ''
+      : sent.length === 1 && undo.length === 1 ? `<button type="button" class="lsb-unsent" data-unsent="${undo[0].id}" data-step="${i}" title="Marked as sent by mistake? Put it back as not sent">↩ Undo sent</button>`
+      : `<button type="button" class="lsb-unsent" data-unsentpick="${i}" aria-haspopup="true" title="Marked as sent by mistake? Pick who to undo it for">↩ Undo sent…</button>`;
     const names = sent.map(r=> (lspLeads[r.boardId + '/' + r.leadId] || {}).name || 'a lead');
     const one = sent.length === 1 ? sent[0] : null;
     const at = one && one.stepSentAt && one.stepSentAt[i] && typeof one.stepSentAt[i].toDate === 'function' ? one.stepSentAt[i].toDate() : null;
-    return `<div class="lsb-sent" title="${esc(names.join(', '))}">✅ Sent to <b>${one ? esc(names[0]) : sent.length + ' people'}</b>${at ? ` · ${esc(at.toLocaleDateString(undefined, {day:'numeric', month:'short'}))}` : ''}${!one && sent.length <= 3 ? ` <span>(${esc(names.join(', '))})</span>` : ''}</div>`;
+    return `<div class="lsb-sent" title="${esc(names.join(', '))}">✅ Sent to <b>${one ? esc(names[0]) : sent.length + ' people'}</b>${at ? ` · ${esc(at.toLocaleDateString(undefined, {day:'numeric', month:'short'}))}` : ''}${!one && sent.length <= 3 ? ` <span>(${esc(names.join(', '))})</span>` : ''}${undoBtn}</div>`;
   }
   function renderStepStages(){
     const boxes = document.querySelectorAll('[data-stage]');
@@ -2706,6 +2733,34 @@ window.PTEmoji = (function(){
       });
     }).catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
   }
+  async function undoSent(runId, i){
+    const r = lspRuns.find(x=> x.id === runId); if(!r) return;
+    const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'this lead';
+    const ok = await showConfirmModal({title: `Undo "sent" for message ${i + 1}?`, message: `Message ${i + 1} goes back to not sent for ${name}. It will be due again, and the reminder for the next message is cancelled.`, confirmLabel: 'Undo sent'});
+    if(!ok) return;
+    const FV = firebase.firestore.FieldValue, TSf = firebase.firestore.Timestamp;
+    const due = TSf.fromMillis(Date.now());
+    db.collection('linkedinSequenceRuns').doc(runId).update({
+      currentStepIndex: i, status: 'active', nextDueAt: due, notifyAt: FV.delete(), dueNotifiedStep: FV.delete(), ['stepSentAt.' + i]: FV.delete()
+    }).then(()=>{
+      Object.assign(r, {currentStepIndex: i, status: 'active', nextDueAt: due, notifyAt: null});
+      if(r.stepSentAt) delete r.stepSentAt[i];
+      renderPeople();
+      showToast(`Message ${i + 1} is marked as not sent for ${name} again.`);
+    }).catch(err=> showToast('Could not undo that: ' + (err.message || ''), true));
+  }
+  function openUnsentPicker(btn, i){
+    closeReplyPicker();
+    const who = stepUndoable(i);
+    const pop = document.createElement('div'); pop.className = 'lsb-rpop'; pop.id = 'lsbRpop'; pop.setAttribute('role', 'menu');
+    pop.innerHTML = `<div class="t">Undo "sent" for message ${i + 1}</div>` + who.map(r=>{
+      const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'Lead';
+      return `<div class="lsb-rrow"><span class="lsp-av" aria-hidden="true">${esc(lssInitials(name))}</span><span class="n">${esc(name)}</span>
+        <button type="button" class="lsb-undo" data-unsent="${r.id}" data-step="${i}">↩ Undo sent</button></div>`;
+    }).join('') + `<div class="lsb-rempty" style="padding-top:8px;">Only people for whom this was the last message marked as sent can be undone here.</div>`;
+    btn.closest('.lsb-replies').appendChild(pop);
+    pop.addEventListener('click', e=>{ const u = e.target.closest('[data-unsent]'); if(!u) return; closeReplyPicker(); undoSent(u.dataset.unsent, +u.dataset.step); });
+  }
   function openReplyPicker(btn, i){
     closeReplyPicker();
     const st = stepReplyStats(i);
@@ -2738,7 +2793,7 @@ window.PTEmoji = (function(){
     pop.addEventListener('click', e=>{ const u = e.target.closest('[data-unreply]'); if(!u) return; closeReplyPicker(); undoReply(u.dataset.unreply); });
   }
   function closeReplyPicker(){ const p = document.getElementById('lsbRpop'); if(p) p.remove(); }
-  document.addEventListener('mousedown', e=>{ const p = document.getElementById('lsbRpop'); if(p && !p.contains(e.target) && !e.target.closest('[data-rpick],[data-spick],[data-rlist]')) closeReplyPicker(); });
+  document.addEventListener('mousedown', e=>{ const p = document.getElementById('lsbRpop'); if(p && !p.contains(e.target) && !e.target.closest('[data-rpick],[data-spick],[data-rlist],[data-unsentpick]')) closeReplyPicker(); });
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeReplyPicker(); });
   function markRepliedSuccessfully(runId, stepIndex){
     const r = lspRuns.find(x=> x.id === runId); if(!r) return;
@@ -2809,6 +2864,7 @@ window.PTEmoji = (function(){
     const x = e.target.closest('[data-remove]'); if(x) removeFromSequence(x.dataset.remove);
   });
   document.getElementById('lsbPeopleList').addEventListener('click', e=>{
+    const u = e.target.closest('[data-unreply]'); if(u){ undoReply(u.dataset.unreply); return; }
     const b = e.target.closest('[data-replied]'); if(b) markRepliedSuccessfully(b.dataset.replied);
     const x = e.target.closest('[data-remove]'); if(x) removeFromSequence(x.dataset.remove);
   });
