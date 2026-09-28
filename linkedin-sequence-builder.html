@@ -697,6 +697,11 @@
   .lsb-sbtn:hover{background:rgba(10,102,194,.14);}
   .lsb-sbtn:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
   .lsb-rpop button small.due{color:#B45F06;font-weight:700;}
+
+  .lsb-rempty{font-size:12.5px;color:var(--slate);line-height:1.5;padding:2px 6px 8px;}
+  .lsb-rpop .lsb-rstart{display:block;width:100%;border:0;border-radius:9px;padding:9px 10px;background:#0A66C2;color:#fff;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-align:center;}
+  .lsb-rpop .lsb-rstart:hover{background:#004182;}
+  .lsb-sbtn:disabled,.lsb-rbtn:disabled{opacity:.45;cursor:not-allowed;}
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -2155,7 +2160,11 @@ window.PTEmoji = (function(){
   }
   function renderStepReplies(){
     const boxes = document.querySelectorAll('[data-replies]');
-    if(!editingTemplateId){ boxes.forEach(b=> b.innerHTML = ''); return; }
+    if(!editingTemplateId){
+      boxes.forEach(b=> b.innerHTML = `<span class="lsb-rstat">💬 Save the sequence first to track replies to this message</span>
+        <button type="button" class="lsb-rbtn" disabled title="Save the sequence first">✅ Replied</button>`);
+      return;
+    }
     const all = editingSteps.map((_, i)=> stepReplyStats(i));
     const best = Math.max(0, ...all.map(x=> x.replies));
     boxes.forEach(box=>{
@@ -2165,7 +2174,7 @@ window.PTEmoji = (function(){
         ? `<span class="lsb-rstat${st.replies && st.replies === best ? ' top' : ''}">💬 <b>${st.replies}</b> replied to this message · <b>${rate}%</b> of the ${st.received} ${st.received === 1 ? 'person' : 'people'} who got it${st.replies && st.replies === best && all.filter(x=> x.replies === best).length === 1 ? ' 🏆' : ''}</span>
            <span class="lsb-rbar" aria-hidden="true"><i style="width:${rate}%"></i></span>`
         : `<span class="lsb-rstat">💬 Nobody has received this message yet</span>`)
-        + (st.eligible.length ? `<button type="button" class="lsb-rbtn" data-rpick="${i}" aria-haspopup="true">✅ Mark a reply to this message</button>` : '');
+        + `<button type="button" class="lsb-rbtn" data-rpick="${i}" aria-haspopup="true">✅ Replied</button>`;
     });
   }
   // Who is at this message right now (it's their next one to send).
@@ -2179,26 +2188,36 @@ window.PTEmoji = (function(){
   }
   function renderStepStages(){
     const boxes = document.querySelectorAll('[data-stage]');
-    if(!editingTemplateId){ boxes.forEach(b=> b.innerHTML = ''); return; }
     boxes.forEach(box=>{
-      const i = +box.dataset.stage, at = stepAtStage(i);
-      if(!at.length){ box.innerHTML = ''; return; }
-      const dueNow = at.filter(r=> lspDueText(r)[0] === 'due').length;
-      box.innerHTML = `<span class="lsb-rstat">📤 <b>${at.length}</b> ${at.length === 1 ? 'person is' : 'people are'} at this message${dueNow ? ` · <b style="color:#B45F06">${dueNow}</b> due now` : ''}</span>
-        <button type="button" class="lsb-sbtn" data-spick="${i}" aria-haspopup="true">📤 Mark as sent</button>`;
+      const i = +box.dataset.stage;
+      if(!editingTemplateId){
+        box.innerHTML = `<span class="lsb-rstat">📤 Save the sequence first to track who got this message</span>
+          <button type="button" class="lsb-sbtn" disabled title="Save the sequence first">📤 Message sent</button>`;
+        return;
+      }
+      const at = stepAtStage(i), dueNow = at.filter(r=> lspDueText(r)[0] === 'due').length;
+      box.innerHTML = (at.length
+        ? `<span class="lsb-rstat">📤 <b>${at.length}</b> ${at.length === 1 ? 'person is' : 'people are'} at this message${dueNow ? ` · <b style="color:#B45F06">${dueNow}</b> due now` : ''}</span>`
+        : `<span class="lsb-rstat">📤 Nobody is at this message right now</span>`)
+        + `<button type="button" class="lsb-sbtn" data-spick="${i}" aria-haspopup="true">📤 Message sent</button>`;
     });
   }
   function openSentPicker(btn, i){
     closeReplyPicker();
     const at = stepAtStage(i);
     const pop = document.createElement('div'); pop.className = 'lsb-rpop'; pop.id = 'lsbRpop'; pop.setAttribute('role', 'menu');
-    pop.innerHTML = `<div class="t">Who did you send message ${i + 1} to?</div>` + at.map(r=>{
+    pop.innerHTML = `<div class="t">Who did you send message ${i + 1} to?</div>` + (at.length ? '' : (()=>{
+      const anyone = lspRuns.some(r=> r.templateId === editingTemplateId && LSP_PROGRESS.includes(r.status));
+      return `<div class="lsb-rempty">${anyone ? 'Nobody is waiting for this message right now. People show up here once the previous message was marked as sent.' : "Nobody is running this sequence yet. Start it for one or more leads, then click here each time you send a message or get a reply."}</div>
+        <button type="button" class="lsb-rstart" data-rstart="1">▶ Start this sequence for leads</button>`;
+    })()) + at.map(r=>{
       const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'Lead', due = lspDueText(r);
       return `<button type="button" role="menuitem" data-ssel="${r.id}"><span class="lsp-av" aria-hidden="true">${esc((name.trim().split(/\s+/).map(w=> w[0]).join('').slice(0, 2) || '?').toUpperCase())}</span>${esc(name)}<small class="${due[0]}">${esc(due[1])}</small></button>`;
     }).join('');
     btn.parentElement.appendChild(pop);
     const first = pop.querySelector('button'); if(first) first.focus();
-    pop.addEventListener('click', e=>{ const b = e.target.closest('[data-ssel]'); if(!b) return; closeReplyPicker(); markStepSent(b.dataset.ssel, i); });
+    pop.addEventListener('click', e=>{ if(e.target.closest('[data-rstart]')){ closeReplyPicker(); startForLeadsFromEditor(); return; }
+      const b = e.target.closest('[data-ssel]'); if(!b) return; closeReplyPicker(); markStepSent(b.dataset.ssel, i); });
   }
   // The same as "Mark as sent" on the lead card: schedule the next message (and
   // its reminder), start the wait for a reply, or finish the sequence.
@@ -2240,13 +2259,25 @@ window.PTEmoji = (function(){
     closeReplyPicker();
     const st = stepReplyStats(i);
     const pop = document.createElement('div'); pop.className = 'lsb-rpop'; pop.id = 'lsbRpop'; pop.setAttribute('role', 'menu');
-    pop.innerHTML = `<div class="t">Who replied to message ${i + 1}?</div>` + st.eligible.map(r=>{
+    pop.innerHTML = `<div class="t">Who replied to message ${i + 1}?</div>` + (st.eligible.length ? '' : (()=>{
+      const anyone = lspRuns.some(r=> r.templateId === editingTemplateId && LSP_PROGRESS.includes(r.status));
+      return `<div class="lsb-rempty">${anyone ? 'Nobody who got this message is still in the sequence. People show up here once this message was marked as sent to them.' : "Nobody is running this sequence yet. Start it for one or more leads, then click here each time you send a message or get a reply."}</div>
+        <button type="button" class="lsb-rstart" data-rstart="1">▶ Start this sequence for leads</button>`;
+    })()) + st.eligible.map(r=>{
       const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'Lead';
       return `<button type="button" role="menuitem" data-rsel="${r.id}"><span class="lsp-av" aria-hidden="true">${esc((name.trim().split(/\s+/).map(w=> w[0]).join('').slice(0, 2) || '?').toUpperCase())}</span>${esc(name)}<small>${esc(lead.company || '')}</small></button>`;
     }).join('');
     btn.parentElement.appendChild(pop);
     const first = pop.querySelector('button'); if(first) first.focus();
-    pop.addEventListener('click', e=>{ const b = e.target.closest('[data-rsel]'); if(!b) return; closeReplyPicker(); markRepliedSuccessfully(b.dataset.rsel, i); });
+    pop.addEventListener('click', e=>{ if(e.target.closest('[data-rstart]')){ closeReplyPicker(); startForLeadsFromEditor(); return; }
+      const b = e.target.closest('[data-rsel]'); if(!b) return; closeReplyPicker(); markRepliedSuccessfully(b.dataset.rsel, i); });
+  }
+  // "Start this sequence for leads": open "For multiple people" with this sequence chosen.
+  function startForLeadsFromEditor(){
+    const id = editingTemplateId;
+    showBulkView(); resetBulkState(); loadBulkBoards();
+    bulkSelectedTemplateId = id;
+    showToast('Pick the board and the leads; this sequence is already selected.');
   }
   function closeReplyPicker(){ const p = document.getElementById('lsbRpop'); if(p) p.remove(); }
   document.addEventListener('mousedown', e=>{ const p = document.getElementById('lsbRpop'); if(p && !p.contains(e.target) && !e.target.closest('[data-rpick],[data-spick]')) closeReplyPicker(); });
