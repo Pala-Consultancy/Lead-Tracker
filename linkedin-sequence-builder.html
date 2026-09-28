@@ -682,8 +682,8 @@
   .lsb-rstat.top b{color:#157A52;}
   .lsb-rbar{width:90px;height:6px;border-radius:3px;background:var(--border-soft);overflow:hidden;}
   .lsb-rbar i{display:block;height:100%;background:#1FA971;}
-  .lsb-rbtn{margin-left:auto;border:1px solid rgba(31,169,113,.4);background:rgba(31,169,113,.07);color:#157A52;border-radius:9px;padding:6px 11px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;}
-  .lsb-rbtn:hover{background:rgba(31,169,113,.14);}
+  .lsb-rbtn{margin-left:auto;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:9px;padding:6px 11px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;box-shadow:var(--shadow-sm);}
+  .lsb-rbtn:hover{border-color:#1FA971;color:#157A52;}
   .lsb-rbtn:focus-visible{outline:2px solid #1FA971;outline-offset:2px;}
   .lsb-rpop{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:300px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);padding:8px;}
   .lsb-rpop .t{font:700 11px 'Inter',sans-serif;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;padding:4px 6px 6px;}
@@ -694,8 +694,8 @@
   .lsb-sched .rc{margin-left:6px;font:700 11px 'Inter',sans-serif;color:#157A52;background:rgba(31,169,113,.12);border-radius:999px;padding:1px 7px;}
 
   .lsb-stage .lsb-rstat b{color:#0A66C2;}
-  .lsb-sbtn{margin-left:auto;border:1px solid rgba(10,102,194,.4);background:rgba(10,102,194,.07);color:#0A66C2;border-radius:9px;padding:6px 11px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;}
-  .lsb-sbtn:hover{background:rgba(10,102,194,.14);}
+  .lsb-sbtn{margin-left:auto;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:9px;padding:6px 11px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;box-shadow:var(--shadow-sm);}
+  .lsb-sbtn:hover{border-color:#0A66C2;color:#0A66C2;}
   .lsb-sbtn:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
   .lsb-rpop button small.due{color:#B45F06;font-weight:700;}
 
@@ -840,6 +840,8 @@
   .lsx-seg button.on span{background:rgba(255,255,255,.22);color:#fff;}
   .lsx-seg button:focus-visible{outline:2px solid #0A66C2;outline-offset:1px;}
   /* Remove someone from a sequence */
+  .lsp-btn.act{color:var(--ink);}
+  .lsp-btn.act:hover{border-color:#1FA971;color:#157A52;}
   .lsp-btn.danger{color:#B42338;}
   .lsp-btn.danger:hover{border-color:#D83A52;background:rgba(216,58,82,.06);}
   .lsb-person .lsp-x{border:1px solid transparent;background:none;color:var(--slate-light);width:28px;height:28px;border-radius:8px;cursor:pointer;flex-shrink:0;font-size:13px;}
@@ -1363,10 +1365,10 @@ html[data-theme="dark"] .lsp-state.wait{color:#BA9EDB}
 html[data-theme="dark"] .lsp-state.ok{color:#8CEEC7}
 html[data-theme="dark"] .lsp-state.no{color:#EC8E9B}
 html[data-theme="dark"] .lsb-rstat.top b{color:#8CEEC7}
-html[data-theme="dark"] .lsb-rbtn{color:#8CEEC7}
+html[data-theme="dark"] .lsb-rbtn:hover{color:#8CEEC7}
 html[data-theme="dark"] .lsb-sched .rc{color:#8CEEC7}
 html[data-theme="dark"] .lsb-stage .lsb-rstat b{color:#81BDF8}
-html[data-theme="dark"] .lsb-sbtn{color:#81BDF8}
+html[data-theme="dark"] .lsb-sbtn:hover{color:#81BDF8}
 html[data-theme="dark"] .lsb-rpop button small.due{color:#F8BE81}
 html[data-theme="dark"] .lsx-filter.on{color:#81BDF8}
 html[data-theme="dark"] .lsx-filter.on span{color:#81BDF8}
@@ -1378,6 +1380,7 @@ html[data-theme="dark"] .lss-lead .busy{color:#F8CB81}
 html[data-theme="dark"] .lss-newseq:hover{color:#81BDF8}
 html[data-theme="dark"] .lss-change{color:#81BDF8}
 html[data-theme="dark"] .lsx-seg button.on span{background:rgba(22,25,52,0.22)}
+html[data-theme="dark"] .lsp-btn.act:hover{color:#8CEEC7}
 html[data-theme="dark"] .lsp-btn.danger{color:#EC8E9B}
 html[data-theme="dark"] .lsb-person .lsp-x:hover{color:#EC8E9B}
 html[data-theme="dark"] .lsx-card.draft::before{background:linear-gradient(90deg,#B7C0D0,rgba(110,146,207,0.15))}
@@ -2467,7 +2470,7 @@ window.PTEmoji = (function(){
       return `<div class="lsb-person">
         <div class="lsp-av" aria-hidden="true">${esc(lssInitials(name))}</div>
         <div class="who"><b>${esc(name)}</b><span class="lsp-state ${st[0]}">${esc(st[1])}</span></div>
-        ${r.status !== 'paused_replied' ? `<button type="button" class="lsp-btn ok" data-replied="${r.id}" title="They replied to message ${lspLastSent(r) + 1}: end their sequence as a success">✅ Replied</button>` : ''}
+        ${r.status !== 'paused_replied' ? `<button type="button" class="lsp-btn act" data-replied="${r.id}" title="Did they reply? Mark it: their sequence ends as a success">💬 Mark as replied</button>` : ''}
         <button type="button" class="lsp-x" data-remove="${r.id}" aria-label="Remove ${esc(name)} from this sequence" title="Remove from this sequence">✕</button>
       </div>`;
     }).join('') + (runs.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${runs.length - 8} more</div>` : '')
@@ -2496,7 +2499,7 @@ window.PTEmoji = (function(){
           <div class="lsp-prog"><i style="width:${total ? done / total * 100 : 0}%"></i></div>
           <span class="lsp-state ${st[0]}">${esc(st[1])}</span></div>
         <div class="lsp-actions">
-          ${canReply || r.status === 'paused_replied' ? `<button type="button" class="lsp-btn ok" data-replied="${r.id}">✅ Replied successfully</button>` : ''}
+          ${canReply || r.status === 'paused_replied' ? `<button type="button" class="lsp-btn act" data-replied="${r.id}" title="Did they reply? Mark it: their sequence ends as a success">💬 Mark as replied</button>` : ''}
           <a class="lsp-btn" href="dashboard.html?board=${encodeURIComponent(r.boardId)}&lead=${encodeURIComponent(r.leadId)}">Open lead</a>
           <button type="button" class="lsp-btn danger" data-remove="${r.id}" title="Remove ${esc(name)} from this sequence">Remove</button>
         </div>
@@ -2522,7 +2525,7 @@ window.PTEmoji = (function(){
     const boxes = document.querySelectorAll('[data-replies]');
     if(!editingTemplateId){
       boxes.forEach(b=> b.innerHTML = `<span class="lsb-rstat">💬 Save the sequence first to track replies to this message</span>
-        <button type="button" class="lsb-rbtn" disabled title="Save the sequence first">✅ Replied</button>`);
+        <button type="button" class="lsb-rbtn" disabled title="Save the sequence first">💬 Mark as replied</button>`);
       return;
     }
     const all = editingSteps.map((_, i)=> stepReplyStats(i));
@@ -2534,7 +2537,7 @@ window.PTEmoji = (function(){
         ? `<span class="lsb-rstat${st.replies && st.replies === best ? ' top' : ''}">💬 <b>${st.replies}</b> replied to this message · <b>${rate}%</b> of the ${st.received} ${st.received === 1 ? 'person' : 'people'} who got it${st.replies && st.replies === best && all.filter(x=> x.replies === best).length === 1 ? ' 🏆' : ''}</span>
            <span class="lsb-rbar" aria-hidden="true"><i style="width:${rate}%"></i></span>`
         : `<span class="lsb-rstat">💬 Nobody has received this message yet</span>`)
-        + `<button type="button" class="lsb-rbtn" data-rpick="${i}" aria-haspopup="true">✅ Replied</button>`;
+        + `<button type="button" class="lsb-rbtn" data-rpick="${i}" aria-haspopup="true" title="Someone replied to this message? Mark it here">💬 Mark as replied</button>`;
     });
   }
   // Who is at this message right now (it's their next one to send).
@@ -2570,14 +2573,14 @@ window.PTEmoji = (function(){
       const i = +box.dataset.stage;
       if(!editingTemplateId){
         box.innerHTML = `<span class="lsb-rstat">📤 Save the sequence first to track who got this message</span>
-          <button type="button" class="lsb-sbtn" disabled title="Save the sequence first">📤 Message sent</button>`;
+          <button type="button" class="lsb-sbtn" disabled title="Save the sequence first">📤 Mark as sent</button>`;
         return;
       }
       const at = stepAtStage(i), dueNow = at.filter(r=> lspDueText(r)[0] === 'due').length, sent = stepSentTo(i).length;
       box.innerHTML = sentLine(i) + (at.length
         ? `<span class="lsb-rstat">📤 <b>${at.length}</b> ${at.length === 1 ? 'person is' : 'people are'} waiting for this message${dueNow ? ` · <b style="color:#B45F06">${dueNow}</b> due now` : ''}</span>`
         : sent ? '' : `<span class="lsb-rstat">📤 Nobody is waiting for this message right now</span>`)
-        + (at.length || !sent ? `<button type="button" class="lsb-sbtn" data-spick="${i}" aria-haspopup="true">📤 Message sent</button>` : '');
+        + (at.length || !sent ? `<button type="button" class="lsb-sbtn" data-spick="${i}" aria-haspopup="true" title="Sent this message on LinkedIn? Mark it here">📤 Mark as sent</button>` : '');
       if(lsbFlashSent === i){ const stepEl = box.closest('.lsb-step'); if(stepEl){ stepEl.classList.remove('flash'); void stepEl.offsetWidth; stepEl.classList.add('flash'); } }
     });
   }
@@ -2587,7 +2590,7 @@ window.PTEmoji = (function(){
     const pop = document.createElement('div'); pop.className = 'lsb-rpop'; pop.id = 'lsbRpop'; pop.setAttribute('role', 'menu');
     pop.innerHTML = `<div class="t">Who did you send message ${i + 1} to?</div>` + (at.length ? '' : (()=>{
       const anyone = lspRuns.some(r=> r.templateId === editingTemplateId && LSP_PROGRESS.includes(r.status));
-      return `<div class="lsb-rempty">${anyone ? 'Nobody is waiting for this message right now. People show up here once the previous message was marked as sent.' : "Nobody is running this sequence yet. Start it for one or more leads, then click here each time you send a message or get a reply."}</div>
+      return `<div class="lsb-rempty">${anyone ? 'Nobody is waiting for this message right now. People show up here once the previous message was marked as sent.' : "Nobody is running this sequence yet. Start it for one or more leads, then then use “Mark as sent” and “Mark as replied” here each time you send a message or get a reply."}</div>
         <button type="button" class="lsb-rstart" data-rstart="1">▶ Start this sequence for leads</button>`;
     })()) + at.map(r=>{
       const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'Lead', due = lspDueText(r);
@@ -2642,7 +2645,7 @@ window.PTEmoji = (function(){
     const pop = document.createElement('div'); pop.className = 'lsb-rpop'; pop.id = 'lsbRpop'; pop.setAttribute('role', 'menu');
     pop.innerHTML = `<div class="t">Who replied to message ${i + 1}?</div>` + (st.eligible.length ? '' : (()=>{
       const anyone = lspRuns.some(r=> r.templateId === editingTemplateId && LSP_PROGRESS.includes(r.status));
-      return `<div class="lsb-rempty">${anyone ? 'Nobody who got this message is still in the sequence. People show up here once this message was marked as sent to them.' : "Nobody is running this sequence yet. Start it for one or more leads, then click here each time you send a message or get a reply."}</div>
+      return `<div class="lsb-rempty">${anyone ? 'Nobody who got this message is still in the sequence. People show up here once this message was marked as sent to them.' : "Nobody is running this sequence yet. Start it for one or more leads, then then use “Mark as sent” and “Mark as replied” here each time you send a message or get a reply."}</div>
         <button type="button" class="lsb-rstart" data-rstart="1">▶ Start this sequence for leads</button>`;
     })()) + st.eligible.map(r=>{
       const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'Lead';
