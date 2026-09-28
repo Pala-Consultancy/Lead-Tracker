@@ -721,7 +721,9 @@
     display:flex;flex-direction:column;gap:8px;animation:lsxIn .35s cubic-bezier(.2,.8,.2,1) both;transition:transform .15s, box-shadow .15s;}
   .lsx-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
   .lsx-card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--border);}
-  .lsx-card.running::before{background:#1FA971;} .lsx-card.draft::before{background:#9AA5B8;} .lsx-card.ended::before{background:#6D65F6;}
+  .lsx-card.running::before{background:#1FA971;}
+  .lsx-card.attention{border-color:rgba(255,59,48,.35);box-shadow:0 0 0 3px rgba(255,59,48,.06), var(--shadow-sm);}
+  .lsx-top{flex-wrap:wrap;} .lsx-card.draft::before{background:#9AA5B8;} .lsx-card.ended::before{background:#6D65F6;}
   @keyframes lsxIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   /* iPhone-style red badge */
   .lsx-badge{position:absolute;top:-8px;right:-8px;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#FF3B30;color:#fff;
@@ -1323,7 +1325,7 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
         <button type="button" class="lsp-tab" data-tab="people" role="tab" aria-selected="false">People <span class="lsp-count" id="lspCount"></span></button>
       </div>
       <div style="display:flex;gap:10px;">
-        <button type="button" class="li-secondary-btn" id="bulkModeBtn">👥 For multiple people</button>
+        <button type="button" class="li-secondary-btn" id="bulkModeBtn">👥 For one or several people</button>
         <button type="button" class="li-new-seq-btn" id="newSeqBtn">+ New sequence</button>
       </div>
     </div>
@@ -1346,7 +1348,7 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
     <div class="li-page-head">
       <div class="li-page-head-icon">👥</div>
       <div>
-        <h1 class="li-page-title">Start a sequence for several people</h1>
+        <h1 class="li-page-title">Start a sequence for one or several people</h1>
         <p class="li-page-sub">Pick a board, choose who's in, then pick which sequence they should all start.</p>
       </div>
     </div>
@@ -1693,6 +1695,8 @@ window.PTEmoji = (function(){
     document.getElementById('listView').style.display = 'block';
     document.querySelector('.shell').classList.remove('lsb-wide');
     document.getElementById('backBtn').style.display = '';
+    // Re-read who's in which sequence, so status, badges and stats are never outdated.
+    if(typeof loadPeople === 'function' && currentWorkspaceId) loadPeople();
   }
   function showEditorView(){
     document.getElementById('listView').style.display = 'none';
@@ -1796,10 +1800,10 @@ window.PTEmoji = (function(){
         const totalDays = steps.reduce((sum, x)=> sum + (x.delayDays || 0), 0);
         const preview = (steps[0] && steps[0].message) ? steps[0].message : '';
         return `
-        <article class="lsx-card ${lab[1]}" style="animation-delay:${Math.min(i, 8) * 40}ms">
-          ${st.due ? `<span class="lsx-badge" aria-label="${st.due} ${st.due === 1 ? 'message' : 'messages'} to send now">${st.due > 99 ? '99+' : st.due}</span>` : ''}
+        <article class="lsx-card ${lab[1]}${st.due ? ' attention' : ''}" style="animation-delay:${Math.min(i, 8) * 40}ms">
           <div class="lsx-top">
             <span class="lsx-status ${lab[1]}"><i></i>${lab[0]}</span>
+            ${st.due ? `<span class="lsx-due-pill"><span class="lsx-dot-badge">${st.due > 99 ? '99+' : st.due}</span> ${st.due === 1 ? 'message' : 'messages'} to send now</span>` : ''}
             <div class="lsx-menu">
               <button type="button" class="li-card-icon-btn" data-edit="${tpl.id}" title="Edit" aria-label="Edit ${esc(tpl.name || 'sequence')}">✎</button>
               <button type="button" class="li-card-icon-btn danger" data-delete="${tpl.id}" title="Delete" aria-label="Delete ${esc(tpl.name || 'sequence')}">🗑</button>
@@ -1815,7 +1819,7 @@ window.PTEmoji = (function(){
           <div class="lsx-foot">
             ${leadInfo
               ? `<button type="button" class="lsx-btn primary" data-use="${tpl.id}">Use for ${esc((leadInfo.name || 'this lead').split(' ')[0])} →</button>`
-              : `${st.due ? `<button type="button" class="lsx-btn due" data-edit="${tpl.id}">📤 ${st.due} to send now</button>` : ''}<button type="button" class="lsx-btn${st.due ? '' : ' primary'}" data-edit="${tpl.id}">Open</button>`}
+              : `<button type="button" class="lsx-btn${st.due ? ' due' : ' primary'}" data-edit="${tpl.id}">${st.due ? `📤 Open and send ${st.due === 1 ? 'the message' : `${st.due} messages`}` : 'Open'}</button>`}
           </div>
         </article>`;
       }).join('')}</div>`;
@@ -2222,7 +2226,7 @@ window.PTEmoji = (function(){
         ${r.status !== 'paused_replied' ? `<button type="button" class="lsp-btn ok" data-replied="${r.id}" title="They replied to message ${lspLastSent(r) + 1}: end their sequence as a success">✅ Replied</button>` : ''}
       </div>`;
     }).join('') + (runs.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${runs.length - 8} more</div>` : '')
-      : `<div class="lsb-people-empty">Nobody is running this sequence right now. Start it for a lead from their lead card, or with "For multiple people".</div>`;
+      : `<div class="lsb-people-empty">Nobody is running this sequence right now. Start it for a lead from their lead card, or with "For one or several people".</div>`;
   }
   function renderPeople(){
     renderEditorPeople();
@@ -2233,7 +2237,7 @@ window.PTEmoji = (function(){
     const rows = lspRuns.filter(lspInGroup);
     if(!rows.length){
       list.innerHTML = `<div class="lsp-empty"><b>${lspFilter === 'progress' ? 'Nobody is in a LinkedIn sequence right now' : lspFilter === 'replied' ? 'No replies yet' : 'Nothing has ended yet'}</b>
-        ${lspFilter === 'progress' ? 'Start a sequence for a lead from their lead card, or use "For multiple people".' : ''}</div>`;
+        ${lspFilter === 'progress' ? 'Start a sequence for a lead from their lead card, or use "For one or several people".' : ''}</div>`;
       return;
     }
     list.innerHTML = rows.map(r=>{
@@ -2382,7 +2386,7 @@ window.PTEmoji = (function(){
     pop.addEventListener('click', e=>{ if(e.target.closest('[data-rstart]')){ closeReplyPicker(); startForLeadsFromEditor(); return; }
       const b = e.target.closest('[data-rsel]'); if(!b) return; closeReplyPicker(); markRepliedSuccessfully(b.dataset.rsel, i); });
   }
-  // "Start this sequence for leads": open "For multiple people" with this sequence chosen.
+  // "Start this sequence for leads": open "For one or several people" with this sequence chosen.
   function startForLeadsFromEditor(){
     const id = editingTemplateId;
     showBulkView(); resetBulkState(); loadBulkBoards();
@@ -2603,6 +2607,7 @@ window.PTEmoji = (function(){
       return batch.commit();
     })).then(()=>{
       showToast(`Started "${tpl.name}" for ${ids.length} ${ids.length===1?'person':'people'}.`);
+      if(typeof loadPeople === 'function') loadPeople();
       showListView();
     }).catch(err=>{
       btn.disabled = false;
