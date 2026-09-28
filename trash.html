@@ -1375,9 +1375,25 @@
       var comp = AC.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3;
       AC.master = AC.createGain(); AC.master.gain.value = 0.9;
       AC.master.connect(comp); comp.connect(AC.destination);
+      addSpace(AC, AC.master);
     }
     if(AC.state === 'suspended') AC.resume();
     return AC;
+  }
+  // Deep space: a generated reverb (a long, dark, stereo tail) that voices can send into.
+  function addSpace(ac, dest){
+    var sec = 3.2, len = Math.floor(ac.sampleRate * sec), ir = ac.createBuffer(2, len, ac.sampleRate);
+    for(var ch = 0; ch < 2; ch++){
+      var d = ir.getChannelData(ch), lp = 0;
+      for(var i = 0; i < len; i++){ lp = lp * 0.72 + (Math.random() * 2 - 1) * 0.28; d[i] = lp * Math.pow(1 - i / len, 3.2); }
+    }
+    var conv = ac.createConvolver(); conv.buffer = ir;
+    ac.space = ac.createGain(); ac.space.gain.value = 0.55;
+    ac.space.connect(conv); conv.connect(dest);
+  }
+  function send(ac, node, amount){   // also send a voice into the space reverb
+    if(!ac.space) return;
+    var g = ac.createGain(); g.gain.value = amount; node.connect(g); g.connect(ac.space);
   }
   function noise(ac){
     if(NOISE) return NOISE;
@@ -1444,7 +1460,7 @@
     lfo.frequency.setValueAtTime(3.2, t); lfo.frequency.linearRampToValueAtTime(7.5, t + dur);
     lfoGain.gain.value = filterPeak * 0.12; lfo.connect(lfoGain); lfoGain.connect(lp.frequency);
     var g = ac.createGain(); env(ac, g, t, level, dur * 0.4, dur * 0.2, dur * 0.4);
-    lp.connect(g); g.connect(ac.master);
+    lp.connect(g); g.connect(ac.master); send(ac, g, 0.5);
     [[1, -9], [1, 11], [2, 5]].forEach(function(v){
       var o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = base * v[0]; o.detune.value = v[1];
       o.connect(lp); o.start(t); o.stop(t + dur + 0.1);
@@ -1462,7 +1478,7 @@
     var g = ac.createGain(); env(ac, g, t, level, dur * 0.3, dur * 0.2, dur * 0.5);
     var out = g;
     if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.setValueAtTime(pan, t); pn.pan.linearRampToValueAtTime(-pan * 0.5, t + dur); g.connect(pn); out = pn; }
-    ring.connect(hp); hp.connect(g); out.connect(ac.master);
+    ring.connect(hp); hp.connect(g); out.connect(ac.master); send(ac, out, 0.7);
     carrier.start(t); mod.start(t); carrier.stop(t + dur + 0.1); mod.stop(t + dur + 0.1);
   }
   // A warp "zip" for each shooting star: an FM sweep that phases past from one side to the other.
@@ -1478,8 +1494,46 @@
     var g = ac.createGain(); env(ac, g, t, level, 0.04, 0.08, 0.45);
     var out = g;
     if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.setValueAtTime(pan, t); pn.pan.linearRampToValueAtTime(-pan, t + 0.55); g.connect(pn); out = pn; }
-    car.connect(bp); bp.connect(g); out.connect(ac.master);
+    car.connect(bp); bp.connect(g); out.connect(ac.master); send(ac, out, 0.8);
     car.start(t); mod.start(t); car.stop(t + 0.65); mod.stop(t + 0.65);
+  }
+  // An alien choir: synthetic "voices" (saws through two moving formant filters)
+  // singing an off-kilter chord, their vowel morphing from "ooh" to "aah".
+  var VOWELS = {oo:[300, 870], aa:[730, 1090], ee:[290, 2250], ah:[650, 1400]};
+  function alienChoir(ac, t, dur, freqs, level, from, to){
+    var mix = ac.createGain(); mix.gain.value = 1;
+    var f1 = ac.createBiquadFilter(), f2 = ac.createBiquadFilter();
+    [f1, f2].forEach(function(f, k){ f.type = 'bandpass'; f.Q.value = k ? 9 : 7;
+      f.frequency.setValueAtTime(VOWELS[from][k], t); f.frequency.exponentialRampToValueAtTime(VOWELS[to][k], t + dur * 0.8); });
+    var g = ac.createGain(); env(ac, g, t, level, dur * 0.35, dur * 0.25, dur * 0.4);
+    mix.connect(f1); mix.connect(f2); f1.connect(g); f2.connect(g); g.connect(ac.master); send(ac, g, 0.9);
+    freqs.forEach(function(f){
+      [-14, 0, 13].forEach(function(c){
+        var o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = c;
+        var vib = ac.createOscillator(), vg = ac.createGain(); vib.frequency.value = 4.6 + Math.random(); vg.gain.value = 3.5;
+        vib.connect(vg); vg.connect(o.detune);
+        o.connect(mix); o.start(t); o.stop(t + dur + 0.1); vib.start(t); vib.stop(t + dur + 0.1);
+      });
+    });
+  }
+  // A theremin wail: a pure tone gliding with a wide, wavering vibrato (1950s UFO).
+  function theremin(ac, t, dur, fFrom, fTo, level, pan){
+    var o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(fFrom, t); o.frequency.exponentialRampToValueAtTime(fTo, t + dur * 0.7);
+    var vib = ac.createOscillator(), vg = ac.createGain(); vib.frequency.setValueAtTime(4.2, t); vib.frequency.linearRampToValueAtTime(6.8, t + dur);
+    vg.gain.setValueAtTime(fFrom * 0.012, t); vg.gain.linearRampToValueAtTime(fTo * 0.035, t + dur); vib.connect(vg); vg.connect(o.frequency);
+    var g = ac.createGain(); env(ac, g, t, level, dur * 0.3, dur * 0.3, dur * 0.4);
+    var out = g;
+    if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.setValueAtTime(pan, t); pn.pan.linearRampToValueAtTime(-pan * 0.3, t + dur); g.connect(pn); out = pn; }
+    o.connect(g); out.connect(ac.master); send(ac, out, 1.0);
+    o.start(t); vib.start(t); o.stop(t + dur + 0.1); vib.stop(t + dur + 0.1);
+  }
+  // A sub drop: a very low tone sinking like a ship touching down.
+  function subDrop(ac, t, level){
+    var o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(92, t); o.frequency.exponentialRampToValueAtTime(34, t + 0.9);
+    var g = ac.createGain(); env(ac, g, t, level, 0.06, 0.25, 0.8);
+    o.connect(g); g.connect(ac.master); o.start(t); o.stop(t + 1.2);
   }
   function playThemeSound(toDark, x){
     if(!soundOn()) return;
@@ -1487,15 +1541,20 @@
     var t = ac.currentTime + 0.02, pan = Math.max(-0.8, Math.min(0.8, (x / innerWidth) * 2 - 1));
     if(toDark){
       whoosh(ac, t, 1.3, 2600, 240, 0.22, pan);                                     // night rolls in
-      pad(ac, t + 0.35, [110, 164.81, 220, 261.63], 0.05, 0.6, 0.5, 1.4, false);   // deep, warm A-minor swell
-      alienHum(ac, t + 0.55, 1.9, 55, 0.035, 140, 1500, 320);                        // an alien energy hum wakes up
-      ringShimmer(ac, t + 0.85, 1.3, 740, 1130, 0.05, -pan);                         // metallic, otherworldly shimmer as the stars appear
-      warp(ac, t + 1.05, 0.05, 0.7); warp(ac, t + 1.47, 0.04, 0.5);                  // the two shooting stars phase past
+      pad(ac, t + 0.35, [110, 164.81, 220, 261.63], 0.04, 0.6, 0.5, 1.4, false);   // the deep, warm swell
+      alienChoir(ac, t + 0.3, 2.3, [110, 155.56, 233.08, 311.13], 0.042, 'oo', 'aa'); // alien voices, an off-kilter chord
+      alienHum(ac, t + 0.55, 1.9, 55, 0.03, 140, 1500, 320);                         // an alien energy hum wakes up
+      subDrop(ac, t + 1.0, 0.11);                                                     // the ship touches down as the wave lands
+      ringShimmer(ac, t + 0.85, 1.3, 740, 1130, 0.04, -pan);                         // metallic, otherworldly shimmer as the stars appear
+      theremin(ac, t + 1.15, 1.5, 520, 880, 0.028, pan * 0.6);                       // a wavering theremin wail rises
+      warp(ac, t + 1.05, 0.045, 0.7); warp(ac, t + 1.47, 0.035, 0.5);                // the two shooting stars phase past
     } else {
       whoosh(ac, t, 0.95, 280, 2800, 0.18, pan);                                    // morning rushes in
       pad(ac, t + 0.2, [261.63, 329.63, 392, 523.25], 0.045, 0.35, 0.4, 1.1, true); // bright, warm C-major sunrise
-      alienHum(ac, t + 0.15, 1.1, 110, 0.03, 220, 3200, 1800);                       // a rising power-up
-      ringShimmer(ac, t + 0.45, 0.8, 1180, 1710, 0.04, pan);                         // a bright metallic glint
+      alienHum(ac, t + 0.15, 1.1, 110, 0.028, 220, 3200, 1800);                      // a rising power-up
+      alienChoir(ac, t + 0.1, 1.3, [261.63, 369.99, 466.16], 0.04, 'oo', 'ee');       // alien voices opening up into the light
+      theremin(ac, t + 0.3, 0.9, 440, 990, 0.022, pan * 0.6);                         // a quick upward theremin glide
+      ringShimmer(ac, t + 0.45, 0.8, 1180, 1710, 0.035, pan);                        // a bright metallic glint
     }
   }
   // Speaker button next to the light/dark switch (remembered per browser).
