@@ -393,7 +393,7 @@
   }
   .li-use-btn:hover{background:#0A66C2;color:#fff;}
 
-  .li-name-field{margin-bottom:22px;max-width:480px;}
+  .li-name-field{margin-bottom:22px;max-width:760px;}
   .li-name-field label{display:block;font-size:12.5px;font-weight:600;color:var(--slate);margin-bottom:6px;}
   .li-name-field input{
     width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--border);
@@ -817,6 +817,15 @@
   .lss-seqline{margin:6px 0 2px;font-size:13.5px;color:var(--slate);}
   .lss-seqline b{color:var(--ink);}
   .lss-change{border:0;background:none;color:#0A66C2;font:600 13px 'Inter',sans-serif;cursor:pointer;padding:0 4px;text-decoration:underline;}
+
+  .lsb-aud{display:inline-flex;background:var(--panel-alt);border:1px solid var(--border);border-radius:12px;padding:3px;gap:2px;flex:0 0 auto;}
+  .lsb-aud-row{display:flex;align-items:center;gap:10px;margin-top:10px;font:600 12.5px 'Inter',sans-serif;color:var(--slate);}
+  .lsb-aud button{border:0;background:none;border-radius:9px;padding:6px 12px;font:600 13px 'Inter',sans-serif;color:var(--slate);cursor:pointer;white-space:nowrap;}
+  .lsb-aud button.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow-sm);}
+  .lsb-aud button:focus-visible{outline:2px solid #0A66C2;outline-offset:1px;}
+  .lsx-filterbar{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center;margin:0 0 14px;}
+  .lsx-filterbar .lsx-filters{margin:0;}
+  .lsx-aud{font:600 11.5px 'Inter',sans-serif;color:var(--slate);background:var(--panel-alt);border:1px solid var(--border);border-radius:999px;padding:3px 9px;white-space:nowrap;}
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1466,6 +1475,12 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
             <input id="seqNameInput" type="text" maxlength="120">
             <button type="button" class="lsb-start-btn" id="lsbStartBtn">▶ Start sequence</button>
           </div>
+          <div class="lsb-aud-row"><span>For</span>
+            <div class="lsb-aud" role="group" aria-label="Who is this sequence for?">
+              <button type="button" data-aud="one" title="For one person">👤 One person</button>
+              <button type="button" data-aud="many" title="For several people">👥 Several people</button>
+            </div>
+          </div>
         </div>
         <div id="lsbTemplates" class="lsb-templates" style="display:none;"></div>
         <div id="stepsEditorList" class="lsb-steps"></div>
@@ -1517,6 +1532,14 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
 <div class="lss-overlay" id="lssOverlay" aria-hidden="true">
   <div class="lss-modal" role="dialog" aria-modal="true" aria-labelledby="lssTitle">
     <button type="button" class="lss-close" id="lssClose" aria-label="Close">✕</button>
+    <div id="lssNewFor" style="display:none;">
+      <h2>Who is this sequence for?</h2>
+      <p class="lss-sub">You can change this later in the sequence.</p>
+      <div class="lss-options">
+        <button type="button" class="lss-option" id="lssNewOne"><span class="ic">👤</span><b>One person</b><span>A sequence you'll send to one lead.</span></button>
+        <button type="button" class="lss-option" id="lssNewMany"><span class="ic">👥</span><b>Several people</b><span>A sequence you'll send to a group of leads.</span></button>
+      </div>
+    </div>
     <div id="lssChoose">
       <h2 id="lssTitle">Who do you want to start <span id="lssSeqName">a sequence</span> for?</h2>
       <p class="lss-sub">You can always start it for more people later.</p>
@@ -1843,7 +1866,7 @@ window.PTEmoji = (function(){
   //   Draft   = nobody has been started on it yet
   //   Running = at least one person is in it (active or waiting for a reply)
   //   Ended   = everyone who was in it has finished
-  let tplFilter = 'all';
+  let tplFilter = 'all', tplAud = 'all';
   function tplStats(tpl){
     const runs = (typeof lspRuns !== 'undefined' ? lspRuns : []).filter(r=> r.templateId === tpl.id);
     const now = Date.now();
@@ -1871,7 +1894,8 @@ window.PTEmoji = (function(){
     const tot = Object.values(stats).reduce((a, x)=> ({due: a.due + x.due, running: a.running + x.running, replied: a.replied + x.replied, runs: a.runs + x.runs}), {due: 0, running: 0, replied: 0, runs: 0});
     const counts = {all: allTemplates.length, running: 0, draft: 0, ended: 0};
     Object.values(stats).forEach(x=> counts[x.status]++);
-    const shown = allTemplates.filter(t=> tplFilter === 'all' || stats[t.id].status === tplFilter)
+    const audCounts = {all: allTemplates.length, one: allTemplates.filter(t=> tplAudience(t) === 'one').length, many: allTemplates.filter(t=> tplAudience(t) === 'many').length};
+    const shown = allTemplates.filter(t=> (tplFilter === 'all' || stats[t.id].status === tplFilter) && (tplAud === 'all' || tplAudience(t) === tplAud))
       .sort((x, y)=> (stats[y.id].due - stats[x.id].due) || (['running', 'draft', 'ended'].indexOf(stats[x.id].status) - ['running', 'draft', 'ended'].indexOf(stats[y.id].status)));
     grid.innerHTML = `
       <div class="lsx-summary">
@@ -1880,11 +1904,17 @@ window.PTEmoji = (function(){
         <div class="lsx-kpi"><b>${tot.replied}</b><span>${tot.replied === 1 ? 'reply' : 'replies'}</span></div>
         <div class="lsx-kpi"><b>${tot.runs ? Math.round(tot.replied / tot.runs * 100) : 0}%</b><span>reply rate</span></div>
       </div>
-      <div class="lsx-filters" role="group" aria-label="Filter sequences">
-        ${[['all', 'All'], ['running', 'Running'], ['draft', 'Draft'], ['ended', 'Ended']].map(([k, l])=>
-          `<button type="button" class="lsx-filter${tplFilter === k ? ' on' : ''}" data-tplf="${k}" aria-pressed="${tplFilter === k}">${l} <span>${counts[k]}</span></button>`).join('')}
+      <div class="lsx-filterbar">
+        <div class="lsx-filters" role="group" aria-label="Filter by status">
+          ${[['all', 'All'], ['running', 'Running'], ['draft', 'Draft'], ['ended', 'Ended']].map(([k, l])=>
+            `<button type="button" class="lsx-filter${tplFilter === k ? ' on' : ''}" data-tplf="${k}" aria-pressed="${tplFilter === k}">${l} <span>${counts[k]}</span></button>`).join('')}
+        </div>
+        <div class="lsx-filters" role="group" aria-label="Filter by who it's for">
+          ${[['all', 'Everyone'], ['one', '👤 For one person'], ['many', '👥 For several people']].map(([k, l])=>
+            `<button type="button" class="lsx-filter${tplAud === k ? ' on' : ''}" data-tpla="${k}" aria-pressed="${tplAud === k}">${l} <span>${audCounts[k]}</span></button>`).join('')}
+        </div>
       </div>
-      ${shown.length ? '' : `<div class="lsp-empty"><b>No ${tplFilter} sequences</b>${tplFilter === 'draft' ? 'Every sequence has been started for at least one lead.' : ''}</div>`}
+      ${shown.length ? '' : `<div class="lsp-empty"><b>No sequences match these filters</b>Try "All" or "Everyone".</div>`}
       <div class="lsx-cards">${shown.map((tpl, i)=>{
         const steps = tpl.steps || [], st = stats[tpl.id], lab = TPL_STATUS[st.status];
         const totalDays = steps.reduce((sum, x)=> sum + (x.delayDays || 0), 0);
@@ -1893,6 +1923,7 @@ window.PTEmoji = (function(){
         <article class="lsx-card ${lab[1]}${st.due ? ' attention' : ''}" style="animation-delay:${Math.min(i, 8) * 40}ms">
           <div class="lsx-top">
             <span class="lsx-status ${lab[1]}"><i></i>${lab[0]}</span>
+            <span class="lsx-aud">${tplAudience(tpl) === 'many' ? '👥 Several people' : '👤 One person'}</span>
             ${st.due ? `<span class="lsx-due-pill"><span class="lsx-dot-badge">${st.due > 99 ? '99+' : st.due}</span> ${st.due === 1 ? 'message' : 'messages'} to send now</span>` : ''}
             <div class="lsx-menu">
               <button type="button" class="li-card-icon-btn" data-edit="${tpl.id}" title="Edit" aria-label="Edit ${esc(tpl.name || 'sequence')}">✎</button>
@@ -1914,7 +1945,8 @@ window.PTEmoji = (function(){
         </article>`;
       }).join('')}</div>`;
     grid.querySelectorAll('[data-tplf]').forEach(b=> b.addEventListener('click', ()=>{ tplFilter = b.dataset.tplf; renderTemplatesGrid(); }));
-    grid.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=> openStartChooser(b.dataset.start)));
+    grid.querySelectorAll('[data-tpla]').forEach(b=> b.addEventListener('click', ()=>{ tplAud = b.dataset.tpla; renderTemplatesGrid(); }));
+    grid.querySelectorAll('[data-start]').forEach(b=> b.addEventListener('click', ()=>{ const t = allTemplates.find(x=> x.id === b.dataset.start); openStartChooser(b.dataset.start, tplAudience(t)); }));
     // People tab badge: the same "due now" number.
     const pc = document.getElementById('lspCount');
     if(pc){ pc.textContent = tot.due || ''; pc.classList.toggle('hot', !!tot.due); }
@@ -1992,6 +2024,18 @@ window.PTEmoji = (function(){
       {type:'message', delayDays:2, message:"Thanks for connecting, {{firstName}}. I really enjoyed our chat about [topic]. Shall we continue it over a quick call next week?"}]},
   ];
   let editingTemplateId = null;
+  let editingAudience = null;   // 'one' | 'many' | null (older sequences)
+  function tplAudience(tpl){
+    if(tpl && (tpl.audience === 'one' || tpl.audience === 'many')) return tpl.audience;
+    // Older sequences: based on how many people they were started for.
+    const n = (typeof lspRuns !== 'undefined' ? lspRuns : []).filter(r=> r.templateId === (tpl && tpl.id)).length;
+    return n > 1 ? 'many' : 'one';
+  }
+  function renderAudience(){
+    document.querySelectorAll('.lsb-aud [data-aud]').forEach(b=>{ const on = b.dataset.aud === editingAudience; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    const start = document.getElementById('lsbStartBtn');
+    if(start) start.textContent = leadInfo ? `▶ Start for ${(leadInfo.name || 'this lead').split(' ')[0]}` : editingAudience === 'many' ? '▶ Start for several people' : editingAudience === 'one' ? '▶ Start for one person' : '▶ Start sequence';
+  }
   let editingSteps = [];
   function lsbType(s, i){ return s.type === 'connect' || s.type === 'message' ? s.type : 'message'; }
   // The first step with "end here if there's no reply" ends the sequence; anything after it isn't sent.
@@ -2020,8 +2064,9 @@ window.PTEmoji = (function(){
     const limit = LSB_LIMITS[lsbType(s)], n = (s.message || '').length;
     return `<span class="lsb-count${n > limit ? ' over' : n > limit * 0.9 ? ' near' : ''}">${n.toLocaleString()} / ${limit.toLocaleString()}</span>`;
   }
-  function openEditor(tpl){
+  function openEditor(tpl, opts){
     editingTemplateId = tpl ? tpl.id : null;
+    editingAudience = tpl ? (tpl.audience === 'one' || tpl.audience === 'many' ? tpl.audience : null) : ((opts && opts.audience) || null);
     editingSteps = tpl ? JSON.parse(JSON.stringify(tpl.steps || [])) : [{type:'connect', message:'', delayDays:0}];
     if(!editingSteps.length) editingSteps = [{type:'connect', message:'', delayDays:0}];
     editingSteps.forEach((s, i)=>{ s.type = lsbType(s); s.message = s.message || ''; s.delayDays = i === 0 ? 0 : Math.max(0, parseInt(s.delayDays, 10) || 0); s.stopIfNoReply = !!s.stopIfNoReply; });
@@ -2036,6 +2081,7 @@ window.PTEmoji = (function(){
     renderEditorPeople();
     lsbSavedSnapshot = tpl ? lsbSnapshot() : '';
     lsbStartAfterSave = false;
+    renderAudience();
     if(tpl) loadPeople();
   }
   function renderTemplatePicker(show){
@@ -2214,14 +2260,15 @@ window.PTEmoji = (function(){
     const tas = stepsList.querySelectorAll('.lsb-text'); if(tas.length) tas[tas.length - 1].focus();
   });
   document.getElementById('cancelEditBtn').addEventListener('click', showListView);
-  document.getElementById('newSeqBtn').addEventListener('click', ()=>openEditor(null));
+  document.getElementById('newSeqBtn').addEventListener('click', ()=> leadInfo ? openEditor(null, {audience: 'one'}) : openNewSequenceChooser());
   let lsbStartAfterSave = false, lsbSavedSnapshot = '';
-  function lsbSnapshot(){ return JSON.stringify([document.getElementById('seqNameInput').value.trim(), editingSteps]); }
+  function lsbSnapshot(){ return JSON.stringify([document.getElementById('seqNameInput').value.trim(), editingSteps, editingAudience]); }
+  document.querySelector('.lsb-aud').addEventListener('click', e=>{ const b = e.target.closest('[data-aud]'); if(!b) return; editingAudience = b.dataset.aud; renderAudience(); });
   document.getElementById('lsbStartBtn').addEventListener('click', ()=>{
     const unsaved = !editingTemplateId || lsbSnapshot() !== lsbSavedSnapshot;
     if(unsaved){ lsbStartAfterSave = true; document.getElementById('saveSeqBtn').click(); return; }
     if(leadInfo){ startSequenceForLead(allTemplates.find(t=> t.id === editingTemplateId) || {id: editingTemplateId, name: document.getElementById('seqNameInput').value.trim(), steps: editingSteps}); return; }
-    startForLeadsFromEditor();
+    openStartChooser(editingTemplateId, editingAudience);
   });
   document.getElementById('saveSeqBtn').addEventListener('click', ()=>{
     const name = document.getElementById('seqNameInput').value.trim();
@@ -2235,7 +2282,7 @@ window.PTEmoji = (function(){
     const cleanSteps = kept.map((s, i)=> ({type: lsbType(s), message: s.message.trim(), delayDays: i === 0 ? 0 : Math.max(0, s.delayDays || 0),
       ...(s.stopIfNoReply ? {stopIfNoReply: true, replyWaitDays: Math.min(60, Math.max(1, s.replyWaitDays || 5))} : {})}));
     if(endAt >= 0 && endAt < editingSteps.length - 1 && editingSteps.slice(endAt + 1).some(s=> s.message.trim())) showToast(`Saved. Messages after message ${endAt + 1} are left out, because the sequence ends there if there's no reply.`);
-    const payload = { workspaceId: currentWorkspaceId, name, steps: cleanSteps };
+    const payload = { workspaceId: currentWorkspaceId, name, steps: cleanSteps, ...(editingAudience ? {audience: editingAudience} : {}) };
     const saveBtn = document.getElementById('saveSeqBtn');
     saveBtn.disabled = true;
     const op = editingTemplateId
@@ -2257,9 +2304,9 @@ window.PTEmoji = (function(){
         loadTemplates();
         if(leadInfo){ startSequenceForLead(tplNow); return; }
         // Make sure the chooser knows the (possibly new) sequence, then ask: one person or several?
-        if(!allTemplates.some(t=> t.id === id)) allTemplates.unshift({id, name, steps: cleanSteps});
-        else allTemplates = allTemplates.map(t=> t.id === id ? {...t, name, steps: cleanSteps} : t);
-        openStartChooser(id);
+        if(!allTemplates.some(t=> t.id === id)) allTemplates.unshift({id, name, steps: cleanSteps, audience: editingAudience || undefined});
+        else allTemplates = allTemplates.map(t=> t.id === id ? {...t, name, steps: cleanSteps, audience: editingAudience || t.audience} : t);
+        openStartChooser(id, editingAudience);
         return;
       }
       if(!editingTemplateId && leadInfo && docRef && docRef.id){
@@ -2565,8 +2612,16 @@ window.PTEmoji = (function(){
   // or several people (the page for starting a group).
   let lssTemplateId = null, lssLeads = [], lssLeadId = null, lssBoards = [], lssBusy = {};
   function lssShow(step){
-    ['lssChoose', 'lssOnePanel'].forEach(id=> document.getElementById(id).style.display = id === step ? '' : 'none');
+    ['lssNewFor', 'lssChoose', 'lssOnePanel'].forEach(id=> document.getElementById(id).style.display = id === step ? '' : 'none');
   }
+  function lssOpenOverlay(){ const ov = document.getElementById('lssOverlay'); ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false'); }
+  // "+ New sequence": first ask who it's for, then open the editor.
+  function openNewSequenceChooser(){
+    lssOpenOverlay(); lssShow('lssNewFor');
+    setTimeout(()=> document.getElementById('lssNewOne').focus(), 30);
+  }
+  document.getElementById('lssNewOne').addEventListener('click', ()=>{ closeStartChooser(); openEditor(null, {audience: 'one'}); });
+  document.getElementById('lssNewMany').addEventListener('click', ()=>{ closeStartChooser(); openEditor(null, {audience: 'many'}); });
   function lssGoChoose(){
     const tpl = allTemplates.find(t=> t.id === lssTemplateId);
     document.getElementById('lssSeqName').textContent = tpl ? `"${tpl.name || 'this sequence'}"` : 'this sequence';
@@ -2578,11 +2633,15 @@ window.PTEmoji = (function(){
     return ((words[0] || '?')[0] + (words.length > 1 ? words[words.length > 2 ? 1 : 1][0] : '')).toUpperCase();
   }
   // Always opened from a sequence (its card, or its editor): only asks one person or several.
-  function openStartChooser(templateId){
+  function openStartChooser(templateId, audience){
     if(!templateId) return;
     lssTemplateId = templateId;
-    const ov = document.getElementById('lssOverlay'); ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
-    lssGoChoose();
+    const tpl = allTemplates.find(t=> t.id === templateId);
+    const aud = audience || (tpl && (tpl.audience === 'one' || tpl.audience === 'many') ? tpl.audience : null);
+    if(aud === 'many'){ showBulkView(); resetBulkState(); loadBulkBoards(); bulkSelectedTemplateId = templateId; return; }
+    lssOpenOverlay();
+    if(aud === 'one'){ document.getElementById('lssOne').click(); return; }   // straight to picking the lead
+    lssGoChoose();                                                             // older sequence without a choice: ask
   }
   function closeStartChooser(){ const ov = document.getElementById('lssOverlay'); ov.classList.remove('open'); ov.setAttribute('aria-hidden', 'true'); }
   document.getElementById('lssClose').addEventListener('click', closeStartChooser);
@@ -2593,7 +2652,10 @@ window.PTEmoji = (function(){
     showBulkView(); resetBulkState(); loadBulkBoards();
     bulkSelectedTemplateId = lssTemplateId;
   });
-  document.getElementById('lssBack').addEventListener('click', ()=> lssGoChoose());
+  document.getElementById('lssBack').addEventListener('click', ()=>{
+    const tpl = allTemplates.find(t=> t.id === lssTemplateId);
+    if(tpl && tpl.audience === 'one') closeStartChooser(); else lssGoChoose();
+  });
   document.getElementById('lssOne').addEventListener('click', ()=>{
     lssShow('lssOnePanel');
     const chosen = allTemplates.find(t=> t.id === lssTemplateId);
