@@ -374,6 +374,54 @@
     o.connect(g); out.connect(ac.master); o.start(t); o.stop(t + 0.7);
     whoosh(ac, t, 0.5, 6000, 2500, 0.05, pan);   // a faint hiss behind it
   }
+  // Sci-fi voices (instead of fairy-tale chimes):
+  // an alien energy hum: detuned saw drone through a resonant filter that slowly opens, with a warble.
+  function alienHum(ac, t, dur, base, level, filterFrom, filterPeak, filterTo){
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 11;
+    lp.frequency.setValueAtTime(filterFrom, t);
+    lp.frequency.exponentialRampToValueAtTime(filterPeak, t + dur * 0.55);
+    lp.frequency.exponentialRampToValueAtTime(filterTo, t + dur);
+    var lfo = ac.createOscillator(), lfoGain = ac.createGain();       // the warble
+    lfo.frequency.setValueAtTime(3.2, t); lfo.frequency.linearRampToValueAtTime(7.5, t + dur);
+    lfoGain.gain.value = filterPeak * 0.12; lfo.connect(lfoGain); lfoGain.connect(lp.frequency);
+    var g = ac.createGain(); env(ac, g, t, level, dur * 0.4, dur * 0.2, dur * 0.4);
+    lp.connect(g); g.connect(ac.master);
+    [[1, -9], [1, 11], [2, 5]].forEach(function(v){
+      var o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = base * v[0]; o.detune.value = v[1];
+      o.connect(lp); o.start(t); o.stop(t + dur + 0.1);
+    });
+    lfo.start(t); lfo.stop(t + dur + 0.1);
+  }
+  // A metallic, otherworldly shimmer: ring modulation (two tones multiplied) gives inharmonic partials.
+  function ringShimmer(ac, t, dur, f1, f2, level, pan){
+    var carrier = ac.createOscillator(), mod = ac.createOscillator(), ring = ac.createGain();
+    carrier.type = 'sine'; mod.type = 'sine';
+    carrier.frequency.setValueAtTime(f1, t); carrier.frequency.exponentialRampToValueAtTime(f1 * 0.94, t + dur);
+    mod.frequency.setValueAtTime(f2, t); mod.frequency.exponentialRampToValueAtTime(f2 * 1.07, t + dur);
+    ring.gain.value = 0; mod.connect(ring.gain); carrier.connect(ring);
+    var hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500;
+    var g = ac.createGain(); env(ac, g, t, level, dur * 0.3, dur * 0.2, dur * 0.5);
+    var out = g;
+    if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.setValueAtTime(pan, t); pn.pan.linearRampToValueAtTime(-pan * 0.5, t + dur); g.connect(pn); out = pn; }
+    ring.connect(hp); hp.connect(g); out.connect(ac.master);
+    carrier.start(t); mod.start(t); carrier.stop(t + dur + 0.1); mod.stop(t + dur + 0.1);
+  }
+  // A warp "zip" for each shooting star: an FM sweep that phases past from one side to the other.
+  function warp(ac, t, level, pan){
+    var car = ac.createOscillator(), mod = ac.createOscillator(), idx = ac.createGain();
+    car.type = 'sine'; mod.type = 'sine';
+    car.frequency.setValueAtTime(420, t); car.frequency.exponentialRampToValueAtTime(140, t + 0.55);
+    mod.frequency.setValueAtTime(420 * 2.47, t); mod.frequency.exponentialRampToValueAtTime(140 * 2.47, t + 0.55);
+    idx.gain.setValueAtTime(900, t); idx.gain.exponentialRampToValueAtTime(30, t + 0.55);
+    mod.connect(idx); idx.connect(car.frequency);
+    var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2;
+    bp.frequency.setValueAtTime(2400, t); bp.frequency.exponentialRampToValueAtTime(500, t + 0.55);
+    var g = ac.createGain(); env(ac, g, t, level, 0.04, 0.08, 0.45);
+    var out = g;
+    if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.setValueAtTime(pan, t); pn.pan.linearRampToValueAtTime(-pan, t + 0.55); g.connect(pn); out = pn; }
+    car.connect(bp); bp.connect(g); out.connect(ac.master);
+    car.start(t); mod.start(t); car.stop(t + 0.65); mod.stop(t + 0.65);
+  }
   function playThemeSound(toDark, x){
     if(!soundOn()) return;
     var ac = audio(); if(!ac) return;
@@ -381,13 +429,14 @@
     if(toDark){
       whoosh(ac, t, 1.3, 2600, 240, 0.22, pan);                                     // night rolls in
       pad(ac, t + 0.35, [110, 164.81, 220, 261.63], 0.05, 0.6, 0.5, 1.4, false);   // deep, warm A-minor swell
-      var notes = [880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];                  // pentatonic, like starlight
-      for(var i = 0; i < 7; i++) bell(ac, t + 0.8 + i * 0.17 + Math.random() * 0.08, notes[Math.floor(Math.random() * notes.length)], 0.03, Math.random() * 1.4 - 0.7);
-      glide(ac, t + 1.05, 0.03, 0.6); glide(ac, t + 1.47, 0.025, 0.4);             // the two shooting stars
+      alienHum(ac, t + 0.55, 1.9, 55, 0.035, 140, 1500, 320);                        // an alien energy hum wakes up
+      ringShimmer(ac, t + 0.85, 1.3, 740, 1130, 0.05, -pan);                         // metallic, otherworldly shimmer as the stars appear
+      warp(ac, t + 1.05, 0.05, 0.7); warp(ac, t + 1.47, 0.04, 0.5);                  // the two shooting stars phase past
     } else {
       whoosh(ac, t, 0.95, 280, 2800, 0.18, pan);                                    // morning rushes in
       pad(ac, t + 0.2, [261.63, 329.63, 392, 523.25], 0.045, 0.35, 0.4, 1.1, true); // bright, warm C-major sunrise
-      [1046.5, 1318.51, 1567.98].forEach(function(f, i){ bell(ac, t + 0.45 + i * 0.12, f, 0.022, i - 1); });
+      alienHum(ac, t + 0.15, 1.1, 110, 0.03, 220, 3200, 1800);                       // a rising power-up
+      ringShimmer(ac, t + 0.45, 0.8, 1180, 1710, 0.04, pan);                         // a bright metallic glint
     }
   }
   // Speaker button next to the light/dark switch (remembered per browser).
