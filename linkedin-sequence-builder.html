@@ -664,6 +664,33 @@
   .lsp-empty{text-align:center;padding:50px 20px;background:var(--panel);border:1px dashed var(--border);border-radius:16px;color:var(--slate);font-size:13.5px;}
   .lsp-empty b{display:block;font:700 16px 'Sora',sans-serif;color:var(--ink);margin-bottom:6px;}
   @media (max-width:760px){ .lsp-row{grid-template-columns:40px 1fr;} .lsp-row > .lsp-seqcol,.lsp-row > .lsp-actions{grid-column:1 / -1;} .lsp-actions{justify-content:flex-start;} }
+
+  .lsb-person{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border-soft);}
+  .lsb-person:first-child{border-top:0;padding-top:0;}
+  .lsb-person .lsp-av{width:32px;height:32px;font-size:11px;flex-shrink:0;}
+  .lsb-person .who{flex:1;min-width:0;}
+  .lsb-person .who b{display:block;font:700 13px 'Inter',sans-serif;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lsb-person .lsp-state{margin-top:3px;font-size:10.5px;padding:2px 7px;}
+  .lsb-person .lsp-btn{padding:6px 9px;font-size:12px;}
+  .lsb-people-empty{font-size:12.5px;color:var(--slate);line-height:1.5;}
+
+  .lsb-replies{margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative;}
+  .lsb-replies:empty{display:none;}
+  .lsb-rstat{font-size:12.5px;color:var(--slate);}
+  .lsb-rstat b{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
+  .lsb-rstat.top b{color:#157A52;}
+  .lsb-rbar{width:90px;height:6px;border-radius:3px;background:var(--border-soft);overflow:hidden;}
+  .lsb-rbar i{display:block;height:100%;background:#1FA971;}
+  .lsb-rbtn{margin-left:auto;border:1px solid rgba(31,169,113,.4);background:rgba(31,169,113,.07);color:#157A52;border-radius:9px;padding:6px 11px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;}
+  .lsb-rbtn:hover{background:rgba(31,169,113,.14);}
+  .lsb-rbtn:focus-visible{outline:2px solid #1FA971;outline-offset:2px;}
+  .lsb-rpop{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:300px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);padding:8px;}
+  .lsb-rpop .t{font:700 11px 'Inter',sans-serif;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;padding:4px 6px 6px;}
+  .lsb-rpop button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:none;border-radius:8px;padding:7px 8px;cursor:pointer;text-align:left;font:600 13px 'Inter',sans-serif;color:var(--ink);}
+  .lsb-rpop button:hover,.lsb-rpop button:focus-visible{background:var(--panel-alt);outline:none;}
+  .lsb-rpop button small{margin-left:auto;font-weight:500;font-size:11.5px;color:var(--slate);}
+  .lsb-rpop .lsp-av{width:26px;height:26px;font-size:10px;flex-shrink:0;}
+  .lsb-sched .rc{margin-left:6px;font:700 11px 'Inter',sans-serif;color:#157A52;background:rgba(31,169,113,.12);border-radius:999px;padding:1px 7px;}
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1131,6 +1158,9 @@ html[data-theme="dark"] .lsp-state.next{color:#81BDF8}
 html[data-theme="dark"] .lsp-state.wait{color:#BA9EDB}
 html[data-theme="dark"] .lsp-state.ok{color:#8CEEC7}
 html[data-theme="dark"] .lsp-state.no{color:#EC8E9B}
+html[data-theme="dark"] .lsb-rstat.top b{color:#8CEEC7}
+html[data-theme="dark"] .lsb-rbtn{color:#8CEEC7}
+html[data-theme="dark"] .lsb-sched .rc{color:#8CEEC7}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -1303,6 +1333,11 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
             <div class="lsb-stat"><b id="lsbStatDays">0</b><span>days in total</span></div>
           </div>
           <div class="lsb-sched" id="lsbSchedule"></div>
+        </div>
+        <div class="lsb-card" id="lsbPeopleCard" style="display:none;">
+          <h3>People in this sequence <span class="muted" id="lsbPeopleCount"></span></h3>
+          <div id="lsbPeopleList"></div>
+          <button type="button" class="lsp-btn" id="lsbPeopleAll" style="width:100%;margin-top:8px;">See everyone in the People tab</button>
         </div>
         <div class="lsb-card">
           <h3>Preview <span class="muted">as the lead will see it</span></h3>
@@ -1788,6 +1823,8 @@ window.PTEmoji = (function(){
     saveBtn.textContent = (!tpl && leadInfo) ? `Save & start for ${(leadInfo.name || 'this lead').split(' ')[0]}` : 'Save sequence';
     renderStepsEditor();
     showEditorView();
+    renderEditorPeople();
+    if(tpl) loadPeople();
   }
   function renderTemplatePicker(show){
     const box = document.getElementById('lsbTemplates');
@@ -1847,6 +1884,7 @@ window.PTEmoji = (function(){
         </div>
         <div data-warn="${i}">${lsbWarnings(s).map(w=>`<div class="lsb-warn ${w[0]}">${esc(w[1])}</div>`).join('')}</div>
         ${type === 'connect' ? '<div class="lsb-hint">A note is optional. Short, personal notes (under 200 characters) get accepted most often.</div>' : ''}
+        <div class="lsb-replies" data-replies="${i}"></div>
         <div class="lsb-stop${s.stopIfNoReply ? ' on' : ''}">
           <label class="lsb-switch"><input type="checkbox" data-stop="${i}" ${s.stopIfNoReply ? 'checked' : ''}><span class="lsb-switch-ui" aria-hidden="true"></span>
             <span>🛑 End the sequence here if there's no reply</span></label>
@@ -1863,6 +1901,7 @@ window.PTEmoji = (function(){
     list.innerHTML = editingSteps.map(stepHTML).join('');
     list.querySelectorAll('.lsb-text').forEach(autoGrowTa);
     renderSidePanel();
+    if(typeof renderStepReplies === 'function') renderStepReplies();
   }
   // Updates everything that depends on the text/timing, without re-drawing the
   // textareas (so typing never loses focus).
@@ -1886,8 +1925,10 @@ window.PTEmoji = (function(){
     document.getElementById('lsbStatDays').textContent = total;
     document.querySelector('#lsbStatSteps + span').textContent = n === 1 ? 'message' : 'messages';
     document.querySelector('#lsbStatDays + span').textContent = total === 1 ? 'day in total' : 'days in total';
-    document.getElementById('lsbSchedule').innerHTML = shown.map((s, i)=>`<div><i class="${lsbType(s)}"></i>${i + 1}. ${lsbType(s) === 'connect' ? 'Connection request' : 'Message'}<em>day ${lsbDayOf(i)}</em></div>`).join('')
-      + (end >= 0 ? `<div><i style="background:#D83A52"></i>🛑 Ends if no reply<em>day ${lsbDayOf(end) + (editingSteps[end].replyWaitDays || 5)}</em></div>` : '');
+    const rc = editingTemplateId && typeof stepReplyStats === 'function' ? shown.map((_, i)=> stepReplyStats(i).replies) : [];
+    const bestRc = Math.max(0, ...rc);
+    document.getElementById('lsbSchedule').innerHTML = shown.map((s, i)=>`<div><i class="${lsbType(s)}"></i>${i + 1}. ${lsbType(s) === 'connect' ? 'Connection request' : 'Message'}${rc[i] ? `<span class="rc" title="${rc[i]} ${rc[i] === 1 ? 'reply' : 'replies'} to this message">💬 ${rc[i]}${rc[i] === bestRc && rc.filter(x=> x === bestRc).length === 1 ? ' 🏆' : ''}</span>` : ''}<em>day ${lsbDayOf(i)}</em></div>`).join('')
+      + (end >= 0 ? `<div><i style="background:#D83A52"></i>Ends if no reply<em>day ${lsbDayOf(end) + (editingSteps[end].replyWaitDays || 5)}</em></div>` : '');
     document.getElementById('lsbChat').innerHTML = shown.map((s, i)=>{
       const txt = lsbFill(s.message).trim();
       return `<div class="lsb-chat-day">Day ${lsbDayOf(i)}</div>` + (lsbType(s) === 'connect'
@@ -1927,6 +1968,7 @@ window.PTEmoji = (function(){
   stepsList.addEventListener('click', e=>{
     const b = e.target.closest('button'); if(!b) return;
     if(b.dataset.type){ const i = +b.dataset.i; if(editingSteps[i].type !== b.dataset.type){ editingSteps[i].type = b.dataset.type; renderStepsEditor(); } return; }
+    if(b.dataset.rpick !== undefined){ const p = document.getElementById('lsbRpop'); if(p && p.parentElement === b.parentElement){ closeReplyPicker(); return; } openReplyPicker(b, +b.dataset.rpick); return; }
     if(b.dataset.var){ const ta = stepsList.querySelector(`.lsb-text[data-i="${b.dataset.i}"]`); insertAtCursor(ta, `{{${b.dataset.var}}}`); return; }
     if(b.dataset.quick){ editingSteps[+b.dataset.quick].delayDays = +b.dataset.days; renderStepsEditor(); return; }
     if(b.dataset.move){
@@ -2040,7 +2082,27 @@ window.PTEmoji = (function(){
       renderPeople();
     }).catch(err=>{ console.error(err); document.getElementById('peopleList').innerHTML = `<div class="lsp-empty"><b>Could not load people</b>${esc(err.message || '')}</div>`; });
   }
+  // The editor's "People in this sequence" card: the same people, for the sequence being edited.
+  function renderEditorPeople(){
+    const card = document.getElementById('lsbPeopleCard');
+    if(!card) return;
+    if(!editingTemplateId){ card.style.display = 'none'; return; }
+    const runs = lspRuns.filter(r=> r.templateId === editingTemplateId && LSP_PROGRESS.includes(r.status));
+    card.style.display = '';
+    document.getElementById('lsbPeopleCount').textContent = runs.length ? `${runs.length} in progress` : '';
+    document.getElementById('lsbPeopleList').innerHTML = runs.length ? runs.slice(0, 8).map(r=>{
+      const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, st = lspState(r), name = lead.name || 'Lead';
+      return `<div class="lsb-person">
+        <div class="lsp-av" aria-hidden="true">${esc((name.trim().split(/\s+/).map(w=> w[0]).join('').slice(0, 2) || '?').toUpperCase())}</div>
+        <div class="who"><b>${esc(name)}</b><span class="lsp-state ${st[0]}">${esc(st[1])}</span></div>
+        ${r.status !== 'paused_replied' ? `<button type="button" class="lsp-btn ok" data-replied="${r.id}" title="They replied to message ${lspLastSent(r) + 1}: end their sequence as a success">✅ Replied</button>` : ''}
+      </div>`;
+    }).join('') + (runs.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${runs.length - 8} more</div>` : '')
+      : `<div class="lsb-people-empty">Nobody is running this sequence right now. Start it for a lead from their lead card, or with "For multiple people".</div>`;
+  }
   function renderPeople(){
+    renderEditorPeople();
+    renderStepReplies(); renderSidePanel();
     const list = document.getElementById('peopleList');
     const rows = lspRuns.filter(lspInGroup);
     if(!rows.length){
@@ -2065,8 +2127,51 @@ window.PTEmoji = (function(){
       </div>`;
     }).join('');
   }
-  function markRepliedSuccessfully(runId){
+  // A reply counts for the message it came after: the one chosen when marking
+  // it, or else the last message that person received.
+  function lspLastSent(r){ return Math.max(0, Math.min((r.steps || []).length, r.currentStepIndex || 0) - 1); }
+  function lspReplyStep(r){ return typeof r.repliedAfterStep === 'number' ? r.repliedAfterStep : lspLastSent(r); }
+  function lspIsReplied(r){ return r.status === 'replied' || r.status === 'paused_replied'; }
+  function stepReplyStats(i){
+    const runs = lspRuns.filter(r=> r.templateId === editingTemplateId);
+    const received = runs.filter(r=> (r.currentStepIndex || 0) > i);
+    const replies = runs.filter(r=> lspIsReplied(r) && lspReplyStep(r) === i);
+    const eligible = received.filter(r=> LSP_PROGRESS.includes(r.status) && !lspIsReplied(r));
+    return {received: received.length, replies: replies.length, eligible};
+  }
+  function renderStepReplies(){
+    const boxes = document.querySelectorAll('[data-replies]');
+    if(!editingTemplateId){ boxes.forEach(b=> b.innerHTML = ''); return; }
+    const all = editingSteps.map((_, i)=> stepReplyStats(i));
+    const best = Math.max(0, ...all.map(x=> x.replies));
+    boxes.forEach(box=>{
+      const i = +box.dataset.replies, st = all[i]; if(!st) return;
+      const rate = st.received ? Math.round(st.replies / st.received * 100) : 0;
+      box.innerHTML = (st.received
+        ? `<span class="lsb-rstat${st.replies && st.replies === best ? ' top' : ''}">💬 <b>${st.replies}</b> replied to this message · <b>${rate}%</b> of the ${st.received} ${st.received === 1 ? 'person' : 'people'} who got it${st.replies && st.replies === best && all.filter(x=> x.replies === best).length === 1 ? ' 🏆' : ''}</span>
+           <span class="lsb-rbar" aria-hidden="true"><i style="width:${rate}%"></i></span>`
+        : `<span class="lsb-rstat">💬 Nobody has received this message yet</span>`)
+        + (st.eligible.length ? `<button type="button" class="lsb-rbtn" data-rpick="${i}" aria-haspopup="true">✅ Mark a reply to this message</button>` : '');
+    });
+  }
+  function openReplyPicker(btn, i){
+    closeReplyPicker();
+    const st = stepReplyStats(i);
+    const pop = document.createElement('div'); pop.className = 'lsb-rpop'; pop.id = 'lsbRpop'; pop.setAttribute('role', 'menu');
+    pop.innerHTML = `<div class="t">Who replied to message ${i + 1}?</div>` + st.eligible.map(r=>{
+      const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'Lead';
+      return `<button type="button" role="menuitem" data-rsel="${r.id}"><span class="lsp-av" aria-hidden="true">${esc((name.trim().split(/\s+/).map(w=> w[0]).join('').slice(0, 2) || '?').toUpperCase())}</span>${esc(name)}<small>${esc(lead.company || '')}</small></button>`;
+    }).join('');
+    btn.parentElement.appendChild(pop);
+    const first = pop.querySelector('button'); if(first) first.focus();
+    pop.addEventListener('click', e=>{ const b = e.target.closest('[data-rsel]'); if(!b) return; closeReplyPicker(); markRepliedSuccessfully(b.dataset.rsel, i); });
+  }
+  function closeReplyPicker(){ const p = document.getElementById('lsbRpop'); if(p) p.remove(); }
+  document.addEventListener('mousedown', e=>{ const p = document.getElementById('lsbRpop'); if(p && !p.contains(e.target) && !e.target.closest('[data-rpick]')) closeReplyPicker(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeReplyPicker(); });
+  function markRepliedSuccessfully(runId, stepIndex){
     const r = lspRuns.find(x=> x.id === runId); if(!r) return;
+    const afterStep = typeof stepIndex === 'number' ? stepIndex : lspLastSent(r);
     const lead = lspLeads[r.boardId + '/' + r.leadId] || {};
     const before = {status: r.status, leadWasReplied: !!lead.linkedinReplied};   // remembered before saving, for Undo
     const FV = firebase.firestore.FieldValue;
@@ -2075,15 +2180,15 @@ window.PTEmoji = (function(){
     if(!lead.repliedAt) leadUpdate.repliedAt = FV.serverTimestamp();
     if(!lead.contactedAt) leadUpdate.contactedAt = FV.serverTimestamp();
     Promise.all([
-      db.collection('linkedinSequenceRuns').doc(runId).update({status: 'replied', repliedAt: FV.serverTimestamp(), notifyAt: FV.delete()}),
+      db.collection('linkedinSequenceRuns').doc(runId).update({status: 'replied', repliedAt: FV.serverTimestamp(), repliedAfterStep: afterStep, notifyAt: FV.delete()}),
       leadRef.update(leadUpdate).catch(()=>{})   // e.g. a locked board: the sequence still ends as replied
     ]).then(()=>{
-      r.status = 'replied'; renderPeople();
+      r.status = 'replied'; r.repliedAfterStep = afterStep; renderPeople();
       const active = lspRuns.filter(x=> ['active', 'waiting_reply'].includes(x.status)).length;
       document.getElementById('lspCount').textContent = active || '';
-      showUndoToast(`🎉 ${lead.name || 'The lead'} replied. Their sequence ended as a success.`, ()=>{
-        db.collection('linkedinSequenceRuns').doc(runId).update({status: before.status, repliedAt: FV.delete()}).then(()=>{
-          r.status = before.status; renderPeople();
+      showUndoToast(`🎉 ${lead.name || 'The lead'} replied to message ${afterStep + 1}. Their sequence ended as a success.`, ()=>{
+        db.collection('linkedinSequenceRuns').doc(runId).update({status: before.status, repliedAt: FV.delete(), repliedAfterStep: FV.delete()}).then(()=>{
+          r.status = before.status; delete r.repliedAfterStep; renderPeople();
           document.getElementById('lspCount').textContent = lspRuns.filter(x=> ['active', 'waiting_reply'].includes(x.status)).length || '';
         });
         if(!before.leadWasReplied) leadRef.update({linkedinReplied: false, linkedinRepliedAt: FV.delete()}).then(()=>{ lead.linkedinReplied = false; }).catch(()=>{});
@@ -2101,6 +2206,10 @@ window.PTEmoji = (function(){
   document.getElementById('peopleList').addEventListener('click', e=>{
     const b = e.target.closest('[data-replied]'); if(b) markRepliedSuccessfully(b.dataset.replied);
   });
+  document.getElementById('lsbPeopleList').addEventListener('click', e=>{
+    const b = e.target.closest('[data-replied]'); if(b) markRepliedSuccessfully(b.dataset.replied);
+  });
+  document.getElementById('lsbPeopleAll').addEventListener('click', ()=>{ showListView(); setListTab('people'); });
   document.querySelectorAll('.lsp-filter').forEach(b=> b.addEventListener('click', ()=>{
     lspFilter = b.dataset.f; document.querySelectorAll('.lsp-filter').forEach(x=> x.classList.toggle('on', x === b)); renderPeople();
   }));
