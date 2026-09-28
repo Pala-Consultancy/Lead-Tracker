@@ -2012,6 +2012,8 @@
     -webkit-mask-image:radial-gradient(circle closest-side, transparent 80%, rgba(0,0,0,.95) 89%, rgba(0,0,0,.95) 93%, transparent 99%);
             mask-image:radial-gradient(circle closest-side, transparent 80%, rgba(0,0,0,.95) 89%, rgba(0,0,0,.95) 93%, transparent 99%);
     -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-size:0 0; mask-size:0 0;}
+  .theme-toggle-btn.pt-sound-btn{flex:0 0 auto;width:38px;padding:9px 0;}
+  .pt-sound-btn svg{display:block;}
   .pt-meteor{position:absolute;height:2px;width:170px;border-radius:2px;opacity:0;
     background:linear-gradient(90deg, rgba(255,255,255,0), rgba(214,211,255,.55) 60%, #fff);
     box-shadow:0 0 10px 1px rgba(190,185,255,.7);transform-origin:right center;}
@@ -2035,6 +2037,116 @@
     }
     setTimeout(function(){ fx.remove(); }, 2700);
   }
+  // ---------- Transition sounds (Web Audio, no files) ----------
+  // Going dark: an airy whoosh sweeping down with the wave, a deep warm swell as
+  // night settles, crystal twinkles timed with the stars and a shimmering glide
+  // for each shooting star. Going light: a rising whoosh and a bright, warm
+  // chord like the sunrise. Soft by design; the speaker button turns it off.
+  var SOUND_KEY = 'ptThemeSound', AC = null, NOISE = null;
+  function soundOn(){ try{ return localStorage.getItem(SOUND_KEY) !== 'off'; }catch(e){ return true; } }
+  function audio(){
+    var C = window.AudioContext || window.webkitAudioContext;
+    if(!C) return null;
+    if(!AC){
+      AC = new C();
+      var comp = AC.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3;
+      AC.master = AC.createGain(); AC.master.gain.value = 0.9;
+      AC.master.connect(comp); comp.connect(AC.destination);
+    }
+    if(AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function noise(ac){
+    if(NOISE) return NOISE;
+    var len = ac.sampleRate * 2, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for(var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return (NOISE = buf);
+  }
+  function env(ac, g, t, peak, attack, hold, release){
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.setValueAtTime(peak, t + attack + hold);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + hold + release);
+  }
+  function whoosh(ac, t, dur, from, to, level, panFrom){
+    var src = ac.createBufferSource(); src.buffer = noise(ac); src.loop = true;
+    var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.8;
+    bp.frequency.setValueAtTime(from, t); bp.frequency.exponentialRampToValueAtTime(to, t + dur);
+    var g = ac.createGain(); env(ac, g, t, level, dur * 0.35, dur * 0.15, dur * 0.6);
+    var out = g;
+    if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.setValueAtTime(panFrom, t); pn.pan.linearRampToValueAtTime(0, t + dur); g.connect(pn); out = pn; }
+    src.connect(bp); bp.connect(g); out.connect(ac.master);
+    src.start(t); src.stop(t + dur * 1.15);
+  }
+  function pad(ac, t, freqs, level, attack, hold, release, bright){
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = bright ? 2600 : 1100; lp.Q.value = 0.3;
+    var g = ac.createGain(); env(ac, g, t, level, attack, hold, release);
+    lp.connect(g); g.connect(ac.master);
+    freqs.forEach(function(f, i){
+      [-4, 4].forEach(function(cents){
+        var o = ac.createOscillator(); o.type = i === 0 ? 'sine' : 'triangle';
+        o.frequency.value = f; o.detune.value = cents;
+        o.connect(lp); o.start(t); o.stop(t + attack + hold + release + 0.1);
+      });
+    });
+  }
+  function bell(ac, t, f, level, pan){
+    var g = ac.createGain(); env(ac, g, t, level, 0.006, 0.02, 0.9);
+    var out = g;
+    if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.value = pan; g.connect(pn); out = pn; }
+    out.connect(ac.master);
+    [[1, 1], [2.01, 0.28], [3.98, 0.08]].forEach(function(p){
+      var o = ac.createOscillator(), og = ac.createGain(); o.type = 'sine';
+      o.frequency.value = f * p[0]; og.gain.value = p[1];
+      o.connect(og); og.connect(g); o.start(t); o.stop(t + 1.05);
+    });
+  }
+  function glide(ac, t, level, pan){
+    var o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(2600, t); o.frequency.exponentialRampToValueAtTime(760, t + 0.55);
+    var g = ac.createGain(); env(ac, g, t, level, 0.02, 0.05, 0.5);
+    var out = g;
+    if(ac.createStereoPanner){ var pn = ac.createStereoPanner(); pn.pan.setValueAtTime(pan, t); pn.pan.linearRampToValueAtTime(-pan, t + 0.6); g.connect(pn); out = pn; }
+    o.connect(g); out.connect(ac.master); o.start(t); o.stop(t + 0.7);
+    whoosh(ac, t, 0.5, 6000, 2500, 0.05, pan);   // a faint hiss behind it
+  }
+  function playThemeSound(toDark, x){
+    if(!soundOn()) return;
+    var ac = audio(); if(!ac) return;
+    var t = ac.currentTime + 0.02, pan = Math.max(-0.8, Math.min(0.8, (x / innerWidth) * 2 - 1));
+    if(toDark){
+      whoosh(ac, t, 1.3, 2600, 240, 0.22, pan);                                     // night rolls in
+      pad(ac, t + 0.35, [110, 164.81, 220, 261.63], 0.05, 0.6, 0.5, 1.4, false);   // deep, warm A-minor swell
+      var notes = [880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];                  // pentatonic, like starlight
+      for(var i = 0; i < 7; i++) bell(ac, t + 0.8 + i * 0.17 + Math.random() * 0.08, notes[Math.floor(Math.random() * notes.length)], 0.03, Math.random() * 1.4 - 0.7);
+      glide(ac, t + 1.05, 0.03, 0.6); glide(ac, t + 1.47, 0.025, 0.4);             // the two shooting stars
+    } else {
+      whoosh(ac, t, 0.95, 280, 2800, 0.18, pan);                                    // morning rushes in
+      pad(ac, t + 0.2, [261.63, 329.63, 392, 523.25], 0.045, 0.35, 0.4, 1.1, true); // bright, warm C-major sunrise
+      [1046.5, 1318.51, 1567.98].forEach(function(f, i){ bell(ac, t + 0.45 + i * 0.12, f, 0.022, i - 1); });
+    }
+  }
+  // Speaker button next to the light/dark switch (remembered per browser).
+  function addSoundButton(){
+    var light = document.getElementById('themeLightBtn');
+    if(!light || document.getElementById('ptSoundBtn')) return;
+    var b = document.createElement('button'); b.type = 'button'; b.id = 'ptSoundBtn';
+    b.className = (light.className || '').replace(/\bactive\b/g, '').trim() + ' pt-sound-btn';
+    var on = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
+    var off = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>';
+    function render(){ var s = soundOn(); b.innerHTML = s ? on : off; b.setAttribute('aria-pressed', s ? 'true' : 'false');
+      b.title = s ? 'Transition sound on (click to mute)' : 'Transition sound off (click to turn on)'; b.setAttribute('aria-label', b.title); }
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      try{ localStorage.setItem(SOUND_KEY, soundOn() ? 'off' : 'on'); }catch(err){}
+      render();
+      if(soundOn()){ var ac = audio(); if(ac) bell(ac, ac.currentTime + 0.02, 1318.51, 0.03, 0); }  // a little "on" chime
+    });
+    render();
+    (document.getElementById('themeDarkBtn') || light).insertAdjacentElement('afterend', b);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addSoundButton); else addSoundButton();
+
   // Going dark, the finale: two shooting stars streak across the sky.
   function meteors(){
     var fx = layer();
@@ -2075,6 +2187,7 @@
     var radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 200;
     var replay = function(){ btn.__ptReplay = true; btn.click(); btn.__ptReplay = false; };
     var after = function(){ if(toDark){ starfield(x, y); meteors(); } else sunrise(x, y); };
+    try{ playThemeSound(toDark, x); }catch(err){}
     if(document.startViewTransition){
       var root = document.documentElement;
       root.classList.add('pt-wave');
