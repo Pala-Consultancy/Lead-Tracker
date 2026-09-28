@@ -342,6 +342,36 @@
   .chat-msg-wrap:hover .chat-msg-delete-btn{opacity:1;transform:scale(1);}
   .chat-msg-delete-btn:hover{background:var(--c-red-bg, #FBE4E2);transform:scale(1.15);}
 
+
+  /* Pinned messages */
+  .chat-msg-pin-btn{position:absolute;top:-10px;background:var(--panel);border:1px solid var(--border);border-radius:50%;width:24px;height:24px;font-size:11px;cursor:pointer;
+    opacity:0;transform:scale(.7);transition:opacity .15s, transform .15s;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(27,36,48,0.12);}
+  .chat-msg-wrap.mine .chat-msg-pin-btn{left:-38px;}
+  .chat-msg-wrap.mine .chat-msg-pin-btn.shift{left:-68px;}
+  .chat-msg-wrap.theirs .chat-msg-pin-btn{right:-38px;}
+  .chat-msg-wrap:hover .chat-msg-pin-btn,.chat-msg-pin-btn:focus-visible{opacity:1;transform:scale(1);}
+  .chat-msg-pin-btn.on{background:#FFF4D6;border-color:#E8B53A;}
+  .chat-msg-pin-btn:hover{transform:scale(1.15);}
+  .chat-msg-wrap.pinned .chat-msg::before{content:"📌 Pinned";display:block;font-size:10.5px;font-weight:700;opacity:.8;margin-bottom:3px;letter-spacing:.02em;}
+  .chat-msg-wrap.pinned .chat-msg.theirs{box-shadow:0 0 0 1.5px #E8B53A, 0 1px 3px rgba(27,36,48,0.06);}
+  .chat-msg-wrap.pinned .chat-msg.mine{box-shadow:0 0 0 2px #F4C95D, 0 3px 10px rgba(55,48,179,0.25);}
+  .chat-msg-wrap.flash .chat-msg{animation:chatPinFlash 1.4s ease;}
+  @keyframes chatPinFlash{0%,30%{transform:scale(1.04);box-shadow:0 0 0 6px rgba(244,201,93,.55);}100%{transform:none;}}
+  .chat-pinbar{position:relative;display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,rgba(244,201,93,.14),var(--panel));flex-wrap:wrap;}
+  .chat-pin-main{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:none;cursor:pointer;text-align:left;padding:2px 0;font:13px 'Inter',sans-serif;color:var(--ink);}
+  .chat-pin-main .txt{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .chat-pin-main b{color:#8A5A00;margin-right:4px;}
+  .chat-pin-more{border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:3px 10px;font:600 12px 'Inter',sans-serif;color:var(--ink);cursor:pointer;white-space:nowrap;}
+  .chat-pin-x{border:0;background:none;color:var(--slate);cursor:pointer;width:26px;height:26px;border-radius:7px;font-size:12px;flex-shrink:0;}
+  .chat-pin-x:hover{background:var(--panel-alt, #F1F5FA);color:#B42338;}
+  .chat-pin-list{flex:1 1 100%;display:flex;flex-direction:column;gap:2px;margin-top:6px;max-height:260px;overflow:auto;}
+  .chat-pin-row{display:flex;align-items:center;gap:6px;border-radius:9px;padding:2px;}
+  .chat-pin-row:hover{background:var(--panel);}
+  .chat-pin-row .go{flex:1;min-width:0;border:0;background:none;text-align:left;cursor:pointer;padding:6px 8px;font:13px 'Inter',sans-serif;color:var(--ink);}
+  .chat-pin-row .go b{color:#8A5A00;margin-right:4px;}
+  .chat-pin-row .go small{display:block;font-size:11px;color:var(--slate);margin-top:1px;}
+  .chat-pin-main:focus-visible,.chat-pin-more:focus-visible,.chat-pin-x:focus-visible,.chat-pin-row .go:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){ .chat-msg-wrap.flash .chat-msg{animation:none;} }
   .chat-delete-confirm{
     position:fixed;inset:0;background:rgba(10,14,20,0.35);z-index:550;
     display:flex;align-items:center;justify-content:center;animation:chat-thread-fade .12s ease;
@@ -1306,6 +1336,10 @@
      (dashboard, trash, also in LinkedIn mode). It doesn't fit indigo night. */
   html[data-theme="dark"] .title-block{box-shadow:none !important;overflow:visible !important;}
   html[data-theme="dark"] .title-block::after{content:none !important;display:none !important;}
+  /* Source icons (LinkedIn "in", YouTube play button) draw their cut-out in the
+     chip's background colour. In dark mode those backgrounds are translucent,
+     so the cut-out would vanish; draw it in a solid dark colour instead. */
+  html[data-theme="dark"] svg [fill^="var(--c-"][fill$="-bg)"]{fill:#161934;}
   /* "Contacted" is the strong black dot in light mode; its dark-mode twin is a
      strong light dot, so it reads as clearly "on" as the coloured ones. */
   html[data-theme="dark"] .step-dot.on.contacted, html[data-theme="dark"] .outreach-chip.on.contacted{
@@ -1336,6 +1370,10 @@ html[data-theme="dark"] .chat-media-remove-btn{background:var(--c-red-bg, rgba(2
 html[data-theme="dark"] .chat-upload-progress-bar{background:var(--c-blue-tint2, rgba(81,158,236,0.15))}
 html[data-theme="dark"] .chat-msg.theirs{background:var(--c-blue-tint2, rgba(81,158,236,0.15))}
 html[data-theme="dark"] .chat-msg-delete-btn:hover{background:var(--c-red-bg, rgba(232,96,85,0.15))}
+html[data-theme="dark"] .chat-msg-pin-btn.on{background:rgba(245,199,71,0.15)}
+html[data-theme="dark"] .chat-pin-main b{color:#F8CF81}
+html[data-theme="dark"] .chat-pin-x:hover{background:var(--panel-alt, rgba(110,153,207,0.15));color:#EC8E9B}
+html[data-theme="dark"] .chat-pin-row .go b{color:#F8CF81}
 html[data-theme="dark"] .group-member-row:hover{background:var(--c-blue-tint2, rgba(81,158,236,0.15))}
 html[data-theme="dark"] .chat-reaction-pill{background:var(--c-blue-tint2, rgba(81,158,236,0.15))}
 html[data-theme="dark"] .chat-input-row textarea{background:var(--c-blue-tint2, rgba(81,158,236,0.15))}
@@ -1469,6 +1507,7 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
           <div class="chat-bg-swatch" data-bg="dark" style="background:linear-gradient(135deg,#2C3444,#1B2430)"></div>
           <div class="chat-bg-swatch" data-bg="dots" style="background:#F3F8FD url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22><circle cx=%222%22 cy=%222%22 r=%221.2%22 fill=%22%23c9d7e8%22/></svg>')"></div>
         </div>
+        <div class="chat-pinbar" id="chatPinBar" hidden></div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-emoji-picker" id="chatEmojiPicker" style="display:none"></div>
         <div class="chat-media-preview" id="chatMediaPreview" style="display:none">
@@ -2235,9 +2274,10 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
         mediaHtml = `<video class="chat-media-video" src="${m.mediaUrl}" controls></video>`;
       }
       const hasMedia = !!mediaHtml;
-      return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}">
+      return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}" data-msg-id="${m.id}">
         <div class="chat-msg ${mine ? 'mine' : 'theirs'}${hasMedia ? ' has-media' : ''}" ondblclick="window.__chatActions.toggleReaction('${m.id}','❤️')">${mediaHtml}${m.text ? esc(m.text) : ''}${time ? `<div class="chat-msg-time"${hasMedia ? ' style="padding:0 4px 4px;"' : ''}>${esc(time)}</div>` : ''}${receiptHtml}</div>
         ${reactBtnHtml}
+        <button type="button" class="chat-msg-pin-btn${deleteBtnHtml ? ' shift' : ''}" onclick="window.__chatActions.togglePin('${m.id}')" title="Pin this message" aria-label="Pin this message">📌</button>
         ${deleteBtnHtml}
         ${reactionsHtml}
       </div>`;
@@ -2246,9 +2286,86 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
       ? `<div class="chat-msg-wrap theirs"><div class="chat-msg theirs chat-typing-bubble"><span></span><span></span><span></span></div></div>`
       : '';
     container.innerHTML = messagesHtml + typingBubbleHtml;
+    markPinnedMessages();
     container.scrollTop = container.scrollHeight;
   }
 
+
+  // ---------- Pinned messages ----------
+  // Stored on the conversation itself (the direct-message or group doc), so every
+  // participant sees the same pins. Up to 10 per chat.
+  let chatPins = [], unsubscribeChatPins = null, pinListOpen = false;
+  const MAX_PINS = 10;
+  function chatParentRef(){
+    if(chatActiveGroupId) return groupChatsCollection.doc(chatActiveGroupId);
+    if(chatActiveOtherUid) return directMessagesCollection.doc(getConversationId(currentUid, chatActiveOtherUid));
+    return null;
+  }
+  function listenChatPins(){
+    if(unsubscribeChatPins){ unsubscribeChatPins(); unsubscribeChatPins = null; }
+    chatPins = []; pinListOpen = false; renderPinBar();
+    const ref = chatParentRef(); if(!ref) return;
+    unsubscribeChatPins = ref.onSnapshot(doc=>{
+      chatPins = (doc.exists && Array.isArray(doc.data().pinned)) ? doc.data().pinned : [];
+      renderPinBar(); markPinnedMessages();
+    }, ()=>{});
+  }
+  function pinPreview(p){ return p.text ? p.text : (p.media === 'image' ? '📷 Photo' : p.media === 'video' ? '🎬 Video' : 'Message'); }
+  function renderPinBar(){
+    const bar = document.getElementById('chatPinBar'); if(!bar) return;
+    if(!chatPins.length){ bar.hidden = true; bar.innerHTML = ''; return; }
+    const latest = chatPins[chatPins.length - 1];
+    bar.hidden = false;
+    bar.innerHTML = `
+      <button type="button" class="chat-pin-main" onclick="window.__chatActions.jumpToMessage('${latest.id}')" title="Go to this message">
+        <span class="ic" aria-hidden="true">📌</span>
+        <span class="txt"><b>${esc(latest.senderName || 'Message')}</b> ${esc(pinPreview(latest))}</span>
+      </button>
+      ${chatPins.length > 1 ? `<button type="button" class="chat-pin-more" onclick="window.__chatActions.togglePinList()" aria-expanded="${pinListOpen}">${chatPins.length} pinned ${pinListOpen ? '▴' : '▾'}</button>` : ''}
+      <button type="button" class="chat-pin-x" onclick="window.__chatActions.togglePin('${latest.id}')" title="Unpin" aria-label="Unpin this message">✕</button>
+      ${pinListOpen ? `<div class="chat-pin-list">${chatPins.slice().reverse().map(p=>`
+        <div class="chat-pin-row">
+          <button type="button" class="go" onclick="window.__chatActions.jumpToMessage('${p.id}')"><b>${esc(p.senderName || 'Message')}</b> ${esc(pinPreview(p))}
+            <small>Pinned by ${esc(p.byUid === currentUid ? 'you' : (p.byName || 'a teammate'))}</small></button>
+          <button type="button" class="chat-pin-x" onclick="window.__chatActions.togglePin('${p.id}')" title="Unpin" aria-label="Unpin">✕</button>
+        </div>`).join('')}</div>` : ''}`;
+  }
+  function markPinnedMessages(){
+    const ids = new Set(chatPins.map(p=> p.id));
+    document.querySelectorAll('#chatMessages .chat-msg-wrap[data-msg-id]').forEach(el=>{
+      const on = ids.has(el.dataset.msgId);
+      el.classList.toggle('pinned', on);
+      const b = el.querySelector('.chat-msg-pin-btn');
+      if(b){ b.title = on ? 'Unpin this message' : 'Pin this message'; b.setAttribute('aria-label', b.title); b.classList.toggle('on', on); }
+    });
+  }
+  function togglePin(msgId){
+    const ref = chatParentRef(); if(!ref) return;
+    const isPinned = chatPins.some(p=> p.id === msgId);
+    let next;
+    if(isPinned) next = chatPins.filter(p=> p.id !== msgId);
+    else {
+      const m = (lastRenderedMessages || []).find(x=> x.id === msgId); if(!m) return;
+      if(chatPins.length >= MAX_PINS){ showToast(`You can pin up to ${MAX_PINS} messages per chat. Unpin one first.`, true); return; }
+      const me = teamMembersList.find(x=> x.id === currentUid) || {};
+      const sender = m.senderId === currentUid ? (me.name || 'You') : (m.senderName || ((teamMembersList.find(x=> x.id === m.senderId) || {}).name) || 'Team member');
+      next = chatPins.concat([{id: m.id, text: (m.text || '').slice(0, 200), media: m.mediaType || null, senderId: m.senderId || null, senderName: sender,
+        byUid: currentUid, byName: me.name || 'Someone', at: Date.now()}]);
+    }
+    ref.set({pinned: next}, {merge: true})
+      .then(()=> showToast(isPinned ? 'Message unpinned.' : '📌 Message pinned for everyone in this chat.'))
+      .catch(err=> showToast('Could not update the pins: ' + (err.message || ''), true));
+  }
+  function jumpToMessage(msgId){
+    const el = document.querySelector(`#chatMessages [data-msg-id="${msgId}"]`);
+    if(!el){ showToast('That message is no longer in this chat. You can unpin it.', true); return; }
+    el.scrollIntoView({behavior: 'smooth', block: 'center'});
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    pinListOpen = false; renderPinBar();
+  }
+  window.__chatActions = Object.assign(window.__chatActions || {}, {
+    togglePin, jumpToMessage, togglePinList(){ pinListOpen = !pinListOpen; renderPinBar(); }
+  });
   function openChatThread(otherUid){
     if(!currentUid || !directMessagesCollection) return;
     clearMediaPreview();
@@ -2278,6 +2395,7 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
       lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
     }, {merge:true}).catch(()=>{});
 
+    listenChatPins();
     if(unsubscribeChatThread) unsubscribeChatThread();
     lastRenderedMessages = [];
     unsubscribeChatThread = directMessagesCollection.doc(convId).collection('thread').orderBy('createdAt').onSnapshot(snap=>{
@@ -2363,10 +2481,11 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
         mediaHtml = `<video class="chat-media-video" src="${m.mediaUrl}" controls></video>`;
       }
       const hasMedia = !!mediaHtml;
-      return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}">
+      return `<div class="chat-msg-wrap ${mine ? 'mine' : 'theirs'}" data-msg-id="${m.id}">
         ${senderHtml}
         <div class="chat-msg ${mine ? 'mine' : 'theirs'}${hasMedia ? ' has-media' : ''}" ondblclick="window.__chatActions.toggleReaction('${m.id}','❤️')">${mediaHtml}${m.text ? esc(m.text) : ''}${time ? `<div class="chat-msg-time"${hasMedia ? ' style="padding:0 4px 4px;"' : ''}>${esc(time)}</div>` : ''}</div>
         ${reactBtnHtml}
+        <button type="button" class="chat-msg-pin-btn${deleteBtnHtml ? ' shift' : ''}" onclick="window.__chatActions.togglePin('${m.id}')" title="Pin this message" aria-label="Pin this message">📌</button>
         ${deleteBtnHtml}
         ${reactionsHtml}
       </div>`;
@@ -2375,6 +2494,7 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
       ? `<div class="chat-msg-wrap theirs"><div class="chat-msg theirs chat-typing-bubble"><span></span><span></span><span></span></div></div>`
       : '';
     container.innerHTML = messagesHtml + typingBubbleHtml;
+    markPinnedMessages();
     container.scrollTop = container.scrollHeight;
   }
 
@@ -2418,6 +2538,7 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
       lastReadAt: { [currentUid]: firebase.firestore.FieldValue.serverTimestamp() }
     }, {merge:true}).catch(()=>{});
 
+    listenChatPins();
     if(unsubscribeGroupThread) unsubscribeGroupThread();
     lastRenderedMessages = [];
     unsubscribeGroupThread = groupChatsCollection.doc(groupId).collection('thread').orderBy('createdAt').onSnapshot(snap=>{
@@ -2715,7 +2836,8 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
     if(activeReactionPicker && !activeReactionPicker.contains(e.target)) closeReactionPicker();
   });
 
-  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox, confirmDeleteMessage };
+  window.__chatActions = { openChatThread, toggleReaction, openReactionPicker, openLightbox, confirmDeleteMessage,
+    togglePin, jumpToMessage, togglePinList(){ pinListOpen = !pinListOpen; renderPinBar(); } };
 
   // ---------- Emoji picker ----------
   const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','🙄','😴','😭','😡','🥳','😎','🤩',
