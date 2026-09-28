@@ -209,6 +209,9 @@
   .app-confirm-btn.primary:hover{background:#96302A;}
 
   /* ---------- Lead picker modal ---------- */
+  .seq-board-pick{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font:600 12.5px 'Inter',sans-serif;color:var(--slate);}
+  .seq-board-pick select{border:1px solid var(--border);background:var(--panel);border-radius:9px;padding:7px 10px;font:600 13px 'Inter',sans-serif;color:var(--ink);cursor:pointer;max-width:320px;}
+  .seq-card-board{display:inline-block;margin-top:4px;font:600 11px 'Inter',sans-serif;color:var(--teal);background:var(--c-blue-bg, #EAF0FB);border-radius:999px;padding:2px 8px;}
   .picker-overlay{
     position:fixed;inset:0;background:rgba(16,32,55,0.4);z-index:200;
     display:flex;align-items:center;justify-content:center;
@@ -663,6 +666,10 @@
      (dashboard, trash, also in LinkedIn mode). It doesn't fit indigo night. */
   html[data-theme="dark"] .title-block{box-shadow:none !important;overflow:visible !important;}
   html[data-theme="dark"] .title-block::after{content:none !important;display:none !important;}
+  /* Source icons (LinkedIn "in", YouTube play button) draw their cut-out in the
+     chip's background colour. In dark mode those backgrounds are translucent,
+     so the cut-out would vanish; draw it in a solid dark colour instead. */
+  html[data-theme="dark"] svg [fill^="var(--c-"][fill$="-bg)"]{fill:#161934;}
   /* "Contacted" is the strong black dot in light mode; its dark-mode twin is a
      strong light dot, so it reads as clearly "on" as the coloured ones. */
   html[data-theme="dark"] .step-dot.on.contacted, html[data-theme="dark"] .outreach-chip.on.contacted{
@@ -681,6 +688,7 @@
     border-color:#2B3060 !important;
   }
 
+html[data-theme="dark"] .seq-card-board{background:var(--c-blue-bg, rgba(92,139,224,0.15))}
 html[data-theme="dark"] .toast{background:#3A3F75}
 </style>
 <!-- pt-dark-theme:end -->
@@ -747,7 +755,10 @@ html[data-theme="dark"] .toast{background:#3A3F75}
   <div class="page-head">
     <div>
       <h1 class="page-title">Email sequences</h1>
-      <p class="page-sub">Every follow-up sequence running for a lead on this board — click one to see how it's going.</p>
+      <p class="page-sub" id="seqPageSub">Every follow-up sequence running for your leads. Click one to see how it's going.</p>
+      <label class="seq-board-pick">Board
+        <select id="seqBoardSelect" aria-label="Show sequences for"><option value="">All boards</option></select>
+      </label>
     </div>
     <div style="display:flex;gap:10px;">
       <button type="button" class="new-seq-btn secondary" id="newCampaignBtn">🎯 New campaign</button>
@@ -807,6 +818,17 @@ html[data-theme="dark"] .toast{background:#3A3F75}
     </div>
     <div class="picker-list" id="pickerList"></div>
     <div class="picker-close"><button type="button" id="pickerCloseBtn">Cancel</button></div>
+  </div>
+</div>
+
+<div class="picker-overlay" id="boardPickOverlay">
+  <div class="picker-modal">
+    <div class="picker-head">
+      <h3 id="boardPickTitle">Which board?</h3>
+      <p id="boardPickSub">Pick the board the lead is on.</p>
+    </div>
+    <div class="picker-list" id="boardPickList"></div>
+    <div class="picker-close"><button type="button" id="boardPickCloseBtn">Cancel</button></div>
   </div>
 </div>
 
@@ -948,6 +970,8 @@ html[data-theme="dark"] .toast{background:#3A3F75}
   let leadNames = {}; // leadId -> {name, email}
   let activeFilter = 'all';
   let boardLeads = []; // for the picker
+  let allBoards = [];   // name per board, and for "All boards"
+  function boardName(id){ const b = allBoards.find(x=> x.id === id); return b ? (b.name || 'Board') : 'Board'; }
 
   function deriveActiveStatus(followUps){
     if(followUps.length === 0) return 'active';
@@ -1057,6 +1081,7 @@ html[data-theme="dark"] .toast{background:#3A3F75}
         <div class="seq-card-body">
           <div class="seq-card-name" data-lead-name="${s.boardId}/${s.leadId}">Loading…</div>
           <div class="seq-card-meta">${s.stepCount} step${s.stepCount===1?'':'s'} &middot; started by ${esc(s.sentByName || 'Someone')}</div>
+          ${!boardId ? `<div class="seq-card-board">${esc(boardName(s.boardId))}</div>` : ''}
         </div>
         ${isTrash ? `
           <div class="seq-card-trash-actions">
@@ -1153,6 +1178,7 @@ html[data-theme="dark"] .toast{background:#3A3F75}
   });
 
   // ---------- New sequence: lead picker ----------
+  let pickerBoardId = null;
   function openPicker(){
     document.getElementById('pickerSearch').value = '';
     renderPickerList('');
@@ -1187,13 +1213,47 @@ html[data-theme="dark"] .toast{background:#3A3F75}
           showToast('This lead has no email address on file.', true);
           return;
         }
-        location.href = `sequence-builder.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(item.dataset.id)}`;
+        location.href = `sequence-builder.html?board=${encodeURIComponent(boardId || pickerBoardId)}&lead=${encodeURIComponent(item.dataset.id)}`;
       });
     });
   }
-  document.getElementById('newSeqBtn').addEventListener('click', openPicker);
+  // Without a board in the link, ask which board first (a sequence always belongs to a lead on a board).
+  function pickBoard(title, sub, onPick){
+    document.getElementById('boardPickTitle').textContent = title;
+    document.getElementById('boardPickSub').textContent = sub;
+    const list = document.getElementById('boardPickList');
+    list.innerHTML = allBoards.length ? allBoards.map(b=>`
+      <div class="picker-item" data-board="${esc(b.id)}" role="button" tabindex="0">
+        <div class="picker-item-avatar">${esc(initials(b.name))}</div>
+        <div><div class="picker-item-name">${esc(b.name || 'Board')}</div></div>
+      </div>`).join('') : `<div class="picker-empty">You don't have any boards yet. Create one on the Boards page first.</div>`;
+    list.querySelectorAll('[data-board]').forEach(item=>{
+      const go = ()=>{ document.getElementById('boardPickOverlay').classList.remove('open'); onPick(item.dataset.board); };
+      item.addEventListener('click', go);
+      item.addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+    });
+    document.getElementById('boardPickOverlay').classList.add('open');
+  }
+  document.getElementById('boardPickCloseBtn').addEventListener('click', ()=> document.getElementById('boardPickOverlay').classList.remove('open'));
+  document.getElementById('boardPickOverlay').addEventListener('click', e=>{ if(e.target.id === 'boardPickOverlay') e.target.classList.remove('open'); });
+  document.getElementById('newSeqBtn').addEventListener('click', ()=>{
+    if(boardId){ openPicker(); return; }
+    pickBoard('Start a new sequence', 'First pick the board the lead is on.', id=>{
+      boardLeads = [];
+      db.collection(`workspaces/${currentWorkspaceId}/boards/${id}/leads`).get().then(snap=>{
+        boardLeads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
+        pickerBoardId = id; openPicker();
+      }).catch(()=> showToast('Could not load the leads of that board (it may be password-protected).', true));
+    });
+  });
   document.getElementById('newCampaignBtn').addEventListener('click', ()=>{
-    location.href = `sequence-builder.html?board=${encodeURIComponent(boardId)}&campaign=1`;
+    if(boardId){ location.href = `sequence-builder.html?board=${encodeURIComponent(boardId)}&campaign=1`; return; }
+    pickBoard('Start a new campaign', 'Pick the board whose leads should get this campaign.', id=>{
+      location.href = `sequence-builder.html?board=${encodeURIComponent(id)}&campaign=1`;
+    });
+  });
+  document.getElementById('seqBoardSelect').addEventListener('change', e=>{
+    location.href = 'sequences.html' + (e.target.value ? '?board=' + encodeURIComponent(e.target.value) : '');
   });
   document.getElementById('pickerCloseBtn').addEventListener('click', closePicker);
   document.getElementById('pickerOverlay').addEventListener('click', (e)=>{
@@ -1217,13 +1277,14 @@ html[data-theme="dark"] .toast{background:#3A3F75}
 
   function startListening(workspaceId){
     currentWorkspaceId = workspaceId;
-    unsubscribeSequences = db.collection('sequences')
-      .where('workspaceId', '==', workspaceId)
-      .where('boardId', '==', boardId)
-      .orderBy('updatedAt', 'desc')
-      .limit(300)
+    const seqQuery = boardId
+      ? db.collection('sequences').where('workspaceId', '==', workspaceId).where('boardId', '==', boardId).orderBy('updatedAt', 'desc').limit(300)
+      : db.collection('sequences').where('workspaceId', '==', workspaceId).limit(500);
+    const ms = t=> t && typeof t.toMillis === 'function' ? t.toMillis() : 0;
+    unsubscribeSequences = seqQuery
       .onSnapshot(snap=>{
         allSequenceDocs = snap.docs.map(doc=>({id: doc.id, ...doc.data()}));
+        if(!boardId) allSequenceDocs.sort((a, b)=> ms(b.updatedAt) - ms(a.updatedAt));
         sequencesLoaded = true;
         revealAndRender();
       }, err=>{
@@ -1231,13 +1292,13 @@ html[data-theme="dark"] .toast{background:#3A3F75}
         sequencesLoaded = true;
         revealAndRender();
       });
-    unsubscribeScheduled = db.collection('scheduledEmails')
-      .where('workspaceId', '==', workspaceId)
-      .where('boardId', '==', boardId)
-      .orderBy('sendAt', 'asc')
-      .limit(500)
+    const schedQuery = boardId
+      ? db.collection('scheduledEmails').where('workspaceId', '==', workspaceId).where('boardId', '==', boardId).orderBy('sendAt', 'asc').limit(500)
+      : db.collection('scheduledEmails').where('workspaceId', '==', workspaceId).limit(1000);
+    unsubscribeScheduled = schedQuery
       .onSnapshot(snap=>{
         allScheduled = snap.docs.map(doc=>({id: doc.id, ...doc.data()}));
+        if(!boardId) allScheduled.sort((a, b)=> ms(a.sendAt) - ms(b.sendAt));
         scheduledLoaded = true;
         revealAndRender();
       }, err=>{
@@ -1252,10 +1313,6 @@ html[data-theme="dark"] .toast{background:#3A3F75}
       location.href = 'home.html';
       return;
     }
-    if(!boardId){
-      document.body.innerHTML = '<div style="padding:60px;text-align:center;font-family:Inter,sans-serif;">This page needs a board specified in the link.</div>';
-      return;
-    }
     db.doc(`userDirectory/${user.uid}`).get().then(doc=>{
       const workspaceId = doc.exists ? doc.data().workspaceId : null;
       if(!workspaceId){
@@ -1263,12 +1320,20 @@ html[data-theme="dark"] .toast{background:#3A3F75}
         return;
       }
       startListening(workspaceId);
+      // Boards: for the board picker at the top, and board names on the cards.
+      db.collection(`workspaces/${workspaceId}/boards`).get().then(snap=>{
+        allBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=> b.deleted !== true).sort((a, b)=> (a.name || '').localeCompare(b.name || ''));
+        const sel = document.getElementById('seqBoardSelect');
+        sel.innerHTML = `<option value="">All boards</option>` + allBoards.map(b=>`<option value="${esc(b.id)}" ${b.id === boardId ? 'selected' : ''}>${esc(b.name || 'Board')}</option>`).join('');
+        if(boardId) document.getElementById('seqPageSub').textContent = `Every follow-up sequence running for a lead on ${boardName(boardId)}. Click one to see how it's going.`;
+        if(!boardId && sequencesLoaded) renderList();
+      }).catch(()=>{});
       db.doc(`workspaces/${workspaceId}/members/${user.uid}`).get().then(memberDoc=>{
         const myName = (memberDoc.exists && memberDoc.data().name) || user.email || 'You';
         document.getElementById('seqSidebarUserName').textContent = myName;
         document.getElementById('seqSidebarAvatar').textContent = initials(myName);
       }).catch(()=>{});
-      db.collection(`workspaces/${workspaceId}/boards/${boardId}/leads`).get().then(snap=>{
+      if(boardId) db.collection(`workspaces/${workspaceId}/boards/${boardId}/leads`).get().then(snap=>{
         boardLeads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>!l.deleted);
       }).catch(err=>console.error('Could not load leads for picker', err));
     }).catch(err=>{
