@@ -768,6 +768,78 @@
     .tk-summary{display:none;}
   }
   @media (prefers-reduced-motion: reduce){ .tk-drawer,.tk-pop.open,.tk-card{transition:none;animation:none;} }
+
+  /* ---------- Bell, automations, mentions ---------- */
+  .tk-head-actions{display:flex;align-items:center;gap:10px;}
+  .tk-bell-wrap{position:relative;}
+  .tk-round-btn{position:relative;width:42px;height:42px;border-radius:12px;border:1px solid var(--border);background:var(--panel);color:var(--ink);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow-sm);}
+  .tk-round-btn:hover{border-color:var(--teal);}
+  .tk-bell-badge{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#FF3B30;color:#fff;font:700 11px/20px -apple-system,'Inter',sans-serif;text-align:center;box-shadow:0 0 0 2px var(--paper);animation:tkPopIn .4s cubic-bezier(.3,1.6,.5,1) both;}
+  @keyframes tkPopIn{from{transform:scale(0);}to{transform:scale(1);}}
+  .tk-bell-panel{position:absolute;right:0;top:calc(100% + 8px);width:min(380px,90vw);background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);z-index:65;overflow:hidden;}
+  .tk-bell-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border-soft);}
+  .tk-bell-head b{font:700 14px 'Sora',sans-serif;color:var(--ink);}
+  .tk-bell-head button{border:0;background:none;color:var(--teal);font:600 12.5px 'Inter',sans-serif;cursor:pointer;}
+  .tk-bell-list{max-height:420px;overflow-y:auto;}
+  .tk-notif{display:flex;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border-soft);background:none;padding:11px 14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .tk-notif:hover{background:var(--panel-alt);}
+  .tk-notif.unread{background:rgba(55,48,179,.05);}
+  .tk-notif .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--panel-alt);flex-shrink:0;font-size:14px;}
+  .tk-notif .t{font:600 13px/1.4 'Inter',sans-serif;color:var(--ink);}
+  .tk-notif .b{font-size:12px;color:var(--slate);margin-top:2px;}
+  .tk-notif .when{font-size:11px;color:var(--slate-light);margin-top:3px;}
+  .tk-notif .dot{width:8px;height:8px;border-radius:50%;background:#3730B3;margin-left:auto;flex-shrink:0;margin-top:6px;}
+  .tk-bell-empty{padding:28px 16px;text-align:center;font-size:13px;color:var(--slate);}
+  .tk-auto-btn{border:1px solid var(--border);background:var(--panel);border-radius:12px;padding:10px 14px;font:700 13.5px 'Inter',sans-serif;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);}
+  .tk-auto-btn:hover{border-color:#E8912D;}
+  .tk-auto-btn span{font:700 11px 'Inter',sans-serif;background:rgba(232,145,45,.15);color:#B45F06;border-radius:999px;padding:1px 7px;margin-left:4px;}
+  .tk-auto-btn span:empty{display:none;}
+  .tk-auto-overlay{position:fixed;inset:0;z-index:95;background:rgba(16,20,40,.4);display:none;align-items:center;justify-content:center;padding:20px;}
+  .tk-auto-overlay.open{display:flex;}
+  .tk-auto-modal{position:relative;width:min(720px,100%);max-height:calc(100vh - 40px);overflow:auto;background:var(--panel);border-radius:22px;box-shadow:var(--shadow-lg);padding:26px;}
+  .tk-auto-modal h2{margin:0 36px 6px 0;font:800 21px 'Sora',sans-serif;color:var(--ink);}
+  .tk-auto-sub{margin:0 0 16px;font-size:13.5px;color:var(--slate);line-height:1.5;}
+  .tk-auto-h3{margin:22px 0 10px;font:700 13px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-light);}
+  .tk-auto-close{position:absolute;top:16px;right:16px;border:0;background:none;width:34px;height:34px;border-radius:9px;font-size:16px;color:var(--slate);cursor:pointer;}
+  .tk-auto-close:hover{background:var(--panel-alt);}
+  .tk-auto-item{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;}
+  .tk-auto-item.off{opacity:.55;}
+  .tk-auto-item .s{flex:1;font-size:13.5px;color:var(--ink);line-height:1.5;}
+  .tk-auto-item .s b{color:#3730B3;}
+  .tk-auto-item .s em{font-style:normal;color:#B45F06;font-weight:700;}
+  .tk-switch{position:relative;width:38px;height:22px;flex-shrink:0;}
+  .tk-switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+  .tk-switch span{position:absolute;inset:0;border-radius:999px;background:var(--border);transition:background .15s;pointer-events:none;}
+  .tk-switch span::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s;}
+  .tk-switch input:checked + span{background:#1FA971;}
+  .tk-switch input:checked + span::after{transform:translateX(16px);}
+  .tk-switch input:focus-visible + span{outline:2px solid var(--teal);outline-offset:2px;}
+  .tk-auto-del{border:0;background:none;color:var(--slate-light);font-size:15px;cursor:pointer;width:30px;height:30px;border-radius:8px;}
+  .tk-auto-del:hover{color:#D83A52;background:var(--panel-alt);}
+  .tk-auto-none{font-size:13px;color:var(--slate);padding:4px 0 2px;}
+  .tk-recipes{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tk-recipe{text-align:left;border:1px solid var(--border);background:var(--panel);border-radius:14px;padding:12px 14px;cursor:pointer;font:13px/1.5 'Inter',sans-serif;color:var(--ink);transition:border-color .15s, transform .15s;}
+  .tk-recipe:hover{border-color:#E8912D;transform:translateY(-1px);}
+  .tk-recipe b{color:#3730B3;} .tk-recipe em{font-style:normal;color:#B45F06;font-weight:700;}
+  .tk-recipe .on{display:block;margin-top:6px;font:700 11.5px 'Inter',sans-serif;color:#157A52;}
+  .tk-auto-new{margin-top:14px;width:100%;border:1.5px dashed var(--border);background:none;border-radius:14px;padding:12px;font:700 13.5px 'Inter',sans-serif;color:var(--slate);cursor:pointer;}
+  .tk-auto-new:hover{border-color:var(--teal);color:var(--teal);}
+  .tk-auto-back{border:0;background:none;color:var(--slate);font:600 13px 'Inter',sans-serif;cursor:pointer;padding:0;margin-bottom:10px;}
+  .tk-build{display:flex;flex-direction:column;gap:12px;margin-top:12px;}
+  .tk-build-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--slate);}
+  .tk-build-row .kw{font:800 14px 'Sora',sans-serif;color:var(--ink);min-width:44px;}
+  .tk-build-row select,.tk-build-row input{border:1px solid var(--border);border-radius:10px;padding:8px 10px;font:13.5px 'Inter',sans-serif;color:var(--ink);background:var(--panel);}
+  .tk-build-row #abTitle{flex:1;min-width:220px;}
+  .tk-build-row #abDays{width:64px;}
+  .tk-build-hint{margin:0;font-size:12.5px;color:var(--slate);}
+  .tk-build-preview{background:rgba(232,145,45,.08);border:1px solid rgba(232,145,45,.3);border-radius:12px;padding:10px 12px;font-size:13.5px;color:var(--ink);line-height:1.5;}
+  .tk-build-preview b{color:#3730B3;} .tk-build-preview em{font-style:normal;color:#B45F06;font-weight:700;}
+  .tk-upd-wrap{position:relative;}
+  .tk-mention{position:absolute;left:8px;top:calc(100% - 4px);z-index:5;min-width:220px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);padding:6px;}
+  .tk-mention button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;border-radius:8px;padding:6px 8px;cursor:pointer;font:600 13px 'Inter',sans-serif;color:var(--ink);text-align:left;}
+  .tk-mention button:hover,.tk-mention button.on{background:var(--panel-alt);}
+  .tk-mention .tk-av{width:24px;height:24px;font-size:10px;}
+  @media (max-width:640px){ .tk-recipes{grid-template-columns:1fr;} .tk-auto-btn{padding:10px;} }
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1208,6 +1280,15 @@ html[data-theme="dark"] .task-checkbox:checked::after{border:solid #2B3060}
 html[data-theme="dark"] .toast{background:#3A3F75}
 html[data-theme="dark"] .tk-tick:hover{color:#8DEDC6}
 html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
+html[data-theme="dark"] .tk-auto-btn span{color:#F8BE81}
+html[data-theme="dark"] .tk-auto-item .s b{color:#9995E5}
+html[data-theme="dark"] .tk-auto-item .s em{color:#F8BE81}
+html[data-theme="dark"] .tk-switch span::after{background:#161934}
+html[data-theme="dark"] .tk-recipe b{color:#9995E5}
+html[data-theme="dark"] .tk-recipe em{color:#F8BE81}
+html[data-theme="dark"] .tk-recipe .on{color:#8CEEC7}
+html[data-theme="dark"] .tk-build-preview b{color:#9995E5}
+html[data-theme="dark"] .tk-build-preview em{color:#F8BE81}
 </style>
 <!-- pt-dark-theme:end -->
 </head>
@@ -1276,7 +1357,20 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
       <h1>Tasks</h1>
       <p>Plan what needs to get done today, tomorrow and later, for yourself or your team. Give every task an owner and a status, add a checklist, and link it to a lead.</p>
     </div>
-    <button type="button" class="tk-new-btn" id="tkNewBtn">+ New task</button>
+    <div class="tk-head-actions">
+      <div class="tk-bell-wrap">
+        <button type="button" class="tk-round-btn" id="tkBellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="tk-bell-badge" id="tkBellBadge" hidden></span>
+        </button>
+        <div class="tk-bell-panel" id="tkBellPanel" hidden>
+          <div class="tk-bell-head"><b>Notifications</b><button type="button" id="tkBellReadAll">Mark all as read</button></div>
+          <div class="tk-bell-list" id="tkBellList"></div>
+        </div>
+      </div>
+      <button type="button" class="tk-auto-btn" id="tkAutoBtn">⚡ Automations <span id="tkAutoCount"></span></button>
+      <button type="button" class="tk-new-btn" id="tkNewBtn">+ New task</button>
+    </div>
   </div>
 
   <div class="tk-toolbar">
@@ -1301,6 +1395,53 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
 </div>
 </div>
 
+
+<div class="tk-auto-overlay" id="tkAutoOverlay" aria-hidden="true">
+  <div class="tk-auto-modal" role="dialog" aria-modal="true" aria-labelledby="tkAutoTitle">
+    <button type="button" class="tk-auto-close" id="tkAutoClose" aria-label="Close">✕</button>
+    <div id="tkAutoListView">
+      <h2 id="tkAutoTitle">⚡ Automations</h2>
+      <p class="tk-auto-sub">Let PalaTrack do the routine work: "When this happens, then do that". They run by themselves, also when nobody has this page open.</p>
+      <div id="tkAutoList"></div>
+      <h3 class="tk-auto-h3">Ready-made recipes</h3>
+      <div class="tk-recipes" id="tkRecipes"></div>
+      <button type="button" class="tk-auto-new" id="tkAutoNew">+ Build your own</button>
+    </div>
+    <div id="tkAutoBuildView" style="display:none;">
+      <button type="button" class="tk-auto-back" id="tkAutoBack">‹ Back</button>
+      <h2>New automation</h2>
+      <div class="tk-build">
+        <div class="tk-build-row"><span class="kw">When</span>
+          <select id="abTrigger" aria-label="When">
+            <option value="task_status">a task's status changes to</option>
+            <option value="checklist_done">all checklist steps of a task are done</option>
+            <option value="task_overdue">a task becomes overdue</option>
+            <option value="lead_status">a lead's status changes to</option>
+          </select>
+          <select id="abTaskStatus" aria-label="Task status"></select>
+          <select id="abLeadStatus" aria-label="Lead status"></select>
+          <select id="abBoard" aria-label="On which board"></select>
+        </div>
+        <div class="tk-build-row"><span class="kw">then</span>
+          <select id="abAction" aria-label="Then"></select>
+          <select id="abSetStatus" aria-label="Set status to"></select>
+          <select id="abWho" aria-label="Who to notify">
+            <option value="owners">its owners</option><option value="creator">the person who created it</option><option value="uid">a specific person…</option>
+          </select>
+          <select id="abPerson" aria-label="Person"></select>
+        </div>
+        <div class="tk-build-row" id="abTaskRow"><span class="kw">task</span>
+          <input id="abTitle" maxlength="160" placeholder="e.g. Prepare the call with {{lead}}" aria-label="Task title">
+          <span>due in</span><input id="abDays" type="number" min="0" max="60" value="1" aria-label="Due in days"><span>days, for</span>
+          <select id="abOwner" aria-label="Owner of the new task"></select>
+        </div>
+        <p class="tk-build-hint" id="abHint"></p>
+        <div class="tk-build-preview" id="abPreview"></div>
+        <button type="button" class="tk-new-btn" id="abSave" style="width:100%;justify-content:center;">Turn on this automation</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="tk-pop" id="tkPop" role="dialog"></div>
 <div class="tk-scrim" id="tkScrim"></div>
 <aside class="tk-drawer" id="tkDrawer" aria-hidden="true" role="dialog" aria-label="Task details"></aside>
@@ -1487,7 +1628,9 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
       ...data, createdAt: FV.serverTimestamp()
     };
     doc.completed = doc.status === 'done';
-    return col().add(doc).catch(err=>{ console.error(err); showToast('Could not add that task: ' + (err.message || ''), true); });
+    return col().add(doc)
+      .then(ref=>{ const others = (doc.assignees || []).filter(u=> u !== myUid); if(others.length && ref && ref.id) sendNotif(others, {type: 'assigned', title: `${myName} assigned you: ${doc.title || 'a task'}`, body: doc.dueDate ? `Due ${prettyDate(doc.dueDate)}` : '', taskId: ref.id}); return ref; })
+      .catch(err=>{ console.error(err); showToast('Could not add that task: ' + (err.message || ''), true); });
   }
   async function deleteTask(t){
     const ok = await showConfirmModal({title:'Delete this task?', message:`"${t.title || 'Untitled task'}" will be deleted for everyone.`, confirmLabel:'Delete'});
@@ -1668,7 +1811,7 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
     if(e.target.matches('[data-owner]')){
       const chosen = [...pop.querySelectorAll('[data-owner]:checked')].map(x=>x.dataset.owner);
       const t = tasks.find(x=>x.id === popFor);
-      if(t) save(t.id, {assignees: chosen}); else if(drawerDraft){ drawerDraft.assignees = chosen; renderDrawer(); }
+      if(t){ notifyAssigned(t, chosen, t.id); save(t.id, {assignees: chosen}); } else if(drawerDraft){ drawerDraft.assignees = chosen; renderDrawer(); }
     }
   });
   document.addEventListener('mousedown', e=>{ if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('[data-act]')) closePop(); });
@@ -1784,7 +1927,7 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
         </div>
         ${isNew ? '' : `<div class="tk-sec">
           <h4>Updates <span class="muted">${ups.length || ''}</span></h4>
-          <textarea class="tk-upd-in" data-f="upd" placeholder="Write an update for your team…">${esc(typed.upd)}</textarea>
+          <div class="tk-upd-wrap"><textarea class="tk-upd-in" data-f="upd" placeholder="Write an update for your team… Type @ to mention someone">${esc(typed.upd)}</textarea><div class="tk-mention" id="tkMention" hidden></div></div>
           <div class="tk-upd-actions"><button type="button" class="tk-save" data-dr="post" style="margin:0">Post update</button></div>
           ${ups.map(u=>`<div class="tk-upd">${avatarHTML(u.uid)}<div style="flex:1;min-width:0"><div class="who">${esc(u.name || 'Teammate')}<span class="when">${timeAgo(u.at || Date.now())}</span>
             ${u.uid === myUid ? `<button type="button" class="del" data-upd-del="${u.id}">Delete</button>` : ''}</div><div class="txt">${esc(u.text)}</div></div></div>`).join('')}
@@ -1823,6 +1966,8 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
       const box = drawer.querySelector('[data-f="upd"]'), text = box.value.trim(); if(!text) return;
       box.value = '';
       save(drawerId, {updates: FV.arrayUnion({id: uid6(), uid: myUid, name: myName, text: text.slice(0, 2000), at: Date.now()})});
+      const mentioned = mentionedUids(text);
+      if(mentioned.length) sendNotif(mentioned, {type: 'mention', title: `${myName} mentioned you in "${t.title || 'a task'}"`, body: text.slice(0, 140), taskId: drawerId});
     }
     else if(a === 'create'){
       const title = (drawer.querySelector('[data-f="title"]').value || drawerDraft.title || '').trim();
@@ -1870,6 +2015,222 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
     }
   });
 
+
+  // ---------- Notifications (bell + email) ----------
+  // Sent to teammates when you assign them a task or @mention them. The server
+  // adds "due today" and automation notifications, and sends the emails.
+  let notifs = [];
+  function sendNotif(uids, n){
+    [...new Set(uids || [])].filter(u=> u && u !== myUid && members[u]).forEach(uid=>{
+      db.collection('userNotifications').add({
+        workspaceId: wsId, uid, type: n.type, title: n.title, body: n.body || '',
+        link: n.taskId ? 'tasks.html?task=' + encodeURIComponent(n.taskId) : 'tasks.html', taskId: n.taskId || null,
+        read: false, emailPending: true, createdAt: FV.serverTimestamp()
+      }).catch(err=> console.warn('Could not notify', err));
+    });
+  }
+  function notifyAssigned(t, newOwners, taskId){
+    const fresh = (newOwners || []).filter(u=> !ownersOf(t || {}).includes(u) || !t);
+    if(fresh.length) sendNotif(fresh, {type: 'assigned', title: `${myName} assigned you: ${(t && t.title) || 'a task'}`, body: t && t.dueDate ? `Due ${prettyDate(t.dueDate)}` : '', taskId: taskId || (t && t.id)});
+  }
+  const NOTIF_IC = {assigned: '👤', mention: '💬', due_today: '⏰', automation: '⚡'};
+  function renderBell(){
+    const unread = notifs.filter(n=> !n.read).length;
+    const badge = document.getElementById('tkBellBadge');
+    badge.hidden = !unread; badge.textContent = unread > 99 ? '99+' : unread;
+    document.getElementById('tkBellBtn').setAttribute('aria-label', unread ? `Notifications, ${unread} unread` : 'Notifications');
+    const list = document.getElementById('tkBellList');
+    list.innerHTML = notifs.length ? notifs.slice(0, 40).map(n=>{
+      const at = n.createdAt && typeof n.createdAt.toMillis === 'function' ? n.createdAt.toMillis() : Date.now();
+      return `<button type="button" class="tk-notif${n.read ? '' : ' unread'}" data-notif="${n.id}">
+        <span class="ic" aria-hidden="true">${NOTIF_IC[n.type] || '🔔'}</span>
+        <span style="flex:1;min-width:0"><div class="t">${esc(n.title)}</div>${n.body ? `<div class="b">${esc(n.body)}</div>` : ''}<div class="when">${timeAgo(at)}</div></span>
+        ${n.read ? '' : '<span class="dot" aria-label="Unread"></span>'}</button>`;
+    }).join('') : `<div class="tk-bell-empty">No notifications yet. You'll see them here when someone assigns you a task, mentions you, or a task is due.</div>`;
+  }
+  const bellBtn = document.getElementById('tkBellBtn'), bellPanel = document.getElementById('tkBellPanel');
+  bellBtn.addEventListener('click', e=>{ e.stopPropagation(); bellPanel.hidden = !bellPanel.hidden; bellBtn.setAttribute('aria-expanded', !bellPanel.hidden); });
+  document.addEventListener('click', e=>{ if(!bellPanel.hidden && !bellPanel.contains(e.target) && e.target !== bellBtn) { bellPanel.hidden = true; bellBtn.setAttribute('aria-expanded', 'false'); } });
+  document.getElementById('tkBellList').addEventListener('click', e=>{
+    const b = e.target.closest('[data-notif]'); if(!b) return;
+    const n = notifs.find(x=> x.id === b.dataset.notif); if(!n) return;
+    if(!n.read) db.collection('userNotifications').doc(n.id).update({read: true, readAt: FV.serverTimestamp()}).catch(()=>{});
+    bellPanel.hidden = true;
+    if(n.taskId && tasks.some(t=> t.id === n.taskId)) openDrawer(n.taskId);
+    else if(n.link && !/^tasks\.html/.test(n.link)) location.href = n.link;
+  });
+  document.getElementById('tkBellReadAll').addEventListener('click', ()=>{
+    notifs.filter(n=> !n.read).forEach(n=> db.collection('userNotifications').doc(n.id).update({read: true, readAt: FV.serverTimestamp()}).catch(()=>{}));
+  });
+  function listenNotifications(){
+    db.collection('userNotifications').where('uid', '==', myUid).limit(200).onSnapshot(snap=>{
+      notifs = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(n=> n.workspaceId === wsId)
+        .sort((a, b)=> ((b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : Date.now()) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : Date.now())));
+      renderBell();
+    }, err=> console.warn('Could not load notifications', err));
+  }
+
+  // ---------- @mentions in updates ----------
+  function mentionedUids(text){
+    return Object.entries(members).filter(([uid, m])=> m.name && new RegExp('@' + m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(text)).map(([uid])=> uid);
+  }
+  let mentionPick = 0;
+  function mentionMatches(ta){
+    const before = ta.value.slice(0, ta.selectionStart), m = before.match(/@([\p{L}\-']*)$/u);
+    if(!m) return null;
+    const q = m[1].toLowerCase();
+    return {start: before.length - m[0].length, list: Object.entries(members).filter(([uid, x])=> uid !== myUid && (x.name || '').toLowerCase().includes(q)).slice(0, 6)};
+  }
+  function renderMention(ta){
+    const box = document.getElementById('tkMention'); if(!box) return;
+    const mm = mentionMatches(ta);
+    if(!mm || !mm.list.length){ box.hidden = true; return; }
+    mentionPick = Math.min(mentionPick, mm.list.length - 1);
+    box.hidden = false;
+    box.innerHTML = mm.list.map(([uid, x], k)=> `<button type="button" data-mention="${uid}" class="${k === mentionPick ? 'on' : ''}">${avatarHTML(uid)}${esc(x.name)}</button>`).join('');
+  }
+  function insertMention(ta, uid){
+    const mm = mentionMatches(ta); if(!mm) return;
+    const name = members[uid].name, end = ta.selectionStart;
+    ta.setRangeText('@' + name + ' ', mm.start, end, 'end'); ta.focus();
+    document.getElementById('tkMention').hidden = true;
+  }
+  drawer.addEventListener('input', e=>{ if(e.target.matches('[data-f="upd"]')){ mentionPick = 0; renderMention(e.target); } });
+  drawer.addEventListener('keydown', e=>{
+    if(!e.target.matches('[data-f="upd"]')) return;
+    const box = document.getElementById('tkMention'); if(!box || box.hidden) return;
+    const btns = [...box.querySelectorAll('[data-mention]')];
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); mentionPick = (mentionPick + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length; renderMention(e.target); }
+    else if(e.key === 'Enter' || e.key === 'Tab'){ if(btns[mentionPick]){ e.preventDefault(); e.stopPropagation(); insertMention(e.target, btns[mentionPick].dataset.mention); } }
+    else if(e.key === 'Escape'){ box.hidden = true; e.stopPropagation(); }
+  }, true);
+  drawer.addEventListener('mousedown', e=>{ const b = e.target.closest('[data-mention]'); if(!b) return; e.preventDefault(); insertMention(drawer.querySelector('[data-f="upd"]'), b.dataset.mention); });
+
+  // ---------- Automations ("When… then…") ----------
+  let automations = [];
+  const TASK_ST = STATUSES.map(x=> [x.id, x.label]);
+  const LEAD_ST = ['New', 'Contacted', 'Call booked', 'Won', 'Lost'];
+  const RECIPES = [
+    {name: 'Warn owners about overdue tasks', trigger: {type: 'task_overdue'}, action: {type: 'notify', who: 'owners'}},
+    {name: 'Checklist done means task done', trigger: {type: 'checklist_done'}, action: {type: 'set_status', status: 'done'}},
+    {name: 'Prepare every booked call', trigger: {type: 'lead_status', status: 'Call booked'}, action: {type: 'create_task', title: 'Prepare the call with {{lead}}', dueInDays: 1}},
+    {name: 'Welcome new customers', trigger: {type: 'lead_status', status: 'Won'}, action: {type: 'create_task', title: 'Send a welcome message to {{lead}}', dueInDays: 0}},
+    {name: 'Tell the creator when a task is done', trigger: {type: 'task_status', status: 'done'}, action: {type: 'notify', who: 'creator'}},
+    {name: 'Flag stuck tasks to the creator', trigger: {type: 'task_status', status: 'stuck'}, action: {type: 'notify', who: 'creator'}},
+  ];
+  function personName(uid){ return uid === myUid ? 'you' : ((members[uid] || {}).name || 'a teammate'); }
+  function boardLabel(id){ const b = boards.find(x=> x.id === id); return b ? (b.name || 'a board') : 'a board'; }
+  function autoSentence(a){
+    const t = a.trigger || {}, x = a.action || {};
+    const when = t.type === 'task_status' ? `a task's status changes to <b>${esc((STATUS[t.status] || {}).label || 'any status')}</b>`
+      : t.type === 'checklist_done' ? `all <b>checklist steps</b> of a task are done`
+      : t.type === 'task_overdue' ? `a task becomes <b>overdue</b>`
+      : `a lead's status changes to <b>${esc(t.status || '?')}</b>${t.boardId ? ` on <b>${esc(boardLabel(t.boardId))}</b>` : ''}`;
+    const then = x.type === 'set_status' ? `set its status to <em>${esc((STATUS[x.status] || {}).label || '?')}</em>`
+      : x.type === 'assign' ? `assign it to <em>${esc(personName(x.uid))}</em>`
+      : x.type === 'notify' ? `notify <em>${x.who === 'uid' ? esc(personName(x.uid)) : x.who === 'creator' ? 'the person who created it' : 'its owners'}</em>`
+      : `create the task <em>"${esc(x.title || 'Follow up')}"</em>, due ${+x.dueInDays ? `in ${+x.dueInDays} day${+x.dueInDays === 1 ? '' : 's'}` : 'the same day'}, for <em>${esc(personName(x.uid || myUid))}</em>`;
+    return `When ${when}, then ${then}.`;
+  }
+  function sameRecipe(a, r){ return JSON.stringify([a.trigger.type, a.trigger.status || null, a.action.type, a.action.status || null, a.action.who || null, a.action.title || null]) ===
+    JSON.stringify([r.trigger.type, r.trigger.status || null, r.action.type, r.action.status || null, r.action.who || null, r.action.title || null]); }
+  function renderAutomations(){
+    const on = automations.filter(a=> a.enabled !== false).length;
+    document.getElementById('tkAutoCount').textContent = on || '';
+    document.getElementById('tkAutoList').innerHTML = automations.length ? automations.map(a=>`
+      <div class="tk-auto-item${a.enabled === false ? ' off' : ''}">
+        <label class="tk-switch" title="${a.enabled === false ? 'Off' : 'On'}"><input type="checkbox" data-auto-toggle="${a.id}" ${a.enabled === false ? '' : 'checked'} aria-label="Turn this automation ${a.enabled === false ? 'on' : 'off'}"><span></span></label>
+        <div class="s">${autoSentence(a)}</div>
+        <button type="button" class="tk-auto-del" data-auto-del="${a.id}" aria-label="Delete this automation" title="Delete">🗑</button>
+      </div>`).join('') : `<div class="tk-auto-none">No automations yet. Switch on a recipe below, or build your own.</div>`;
+    document.getElementById('tkRecipes').innerHTML = RECIPES.map((r, k)=>{
+      const has = automations.some(a=> sameRecipe(a, r));
+      return `<button type="button" class="tk-recipe" data-recipe="${k}" ${has ? 'disabled' : ''}>${autoSentence({...r, action: {...r.action, uid: r.action.type === 'create_task' ? myUid : r.action.uid}})}${has ? '<span class="on">✓ Already on</span>' : ''}</button>`;
+    }).join('');
+  }
+  function listenAutomations(){
+    db.collection('taskAutomations').where('workspaceId', '==', wsId).onSnapshot(snap=>{
+      automations = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderAutomations();
+    }, err=> console.warn('Could not load automations', err));
+  }
+  function addAutomation(a){
+    return db.collection('taskAutomations').add({workspaceId: wsId, createdBy: myUid, enabled: true, name: a.name || 'Automation', trigger: a.trigger, action: a.action, createdAt: FV.serverTimestamp()})
+      .then(()=> showToast('Automation turned on. It runs by itself from now on.'))
+      .catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
+  }
+  const autoOverlay = document.getElementById('tkAutoOverlay');
+  function openAutomations(){ document.getElementById('tkAutoListView').style.display = ''; document.getElementById('tkAutoBuildView').style.display = 'none'; renderAutomations(); autoOverlay.classList.add('open'); autoOverlay.setAttribute('aria-hidden', 'false'); }
+  function closeAutomations(){ autoOverlay.classList.remove('open'); autoOverlay.setAttribute('aria-hidden', 'true'); }
+  document.getElementById('tkAutoBtn').addEventListener('click', openAutomations);
+  document.getElementById('tkAutoClose').addEventListener('click', closeAutomations);
+  autoOverlay.addEventListener('click', e=>{ if(e.target === autoOverlay) closeAutomations(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && autoOverlay.classList.contains('open')) closeAutomations(); });
+  document.getElementById('tkAutoList').addEventListener('change', e=>{
+    const t = e.target.closest('[data-auto-toggle]'); if(!t) return;
+    db.collection('taskAutomations').doc(t.dataset.autoToggle).update({enabled: t.checked}).catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
+  });
+  document.getElementById('tkAutoList').addEventListener('click', async e=>{
+    const d = e.target.closest('[data-auto-del]'); if(!d) return;
+    const ok = await showConfirmModal({title: 'Delete this automation?', message: 'It stops running right away. Tasks it already created stay.', confirmLabel: 'Delete'});
+    if(ok) db.collection('taskAutomations').doc(d.dataset.autoDel).delete().then(()=> showToast('Automation deleted.')).catch(err=> showToast('Could not delete that: ' + (err.message || ''), true));
+  });
+  document.getElementById('tkRecipes').addEventListener('click', e=>{
+    const b = e.target.closest('[data-recipe]'); if(!b || b.disabled) return;
+    const r = RECIPES[+b.dataset.recipe];
+    addAutomation({...r, action: {...r.action, ...(r.action.type === 'create_task' ? {uid: myUid} : {})}});
+  });
+  // The builder
+  const $ = id=> document.getElementById(id);
+  function fillBuilder(){
+    $('abTaskStatus').innerHTML = TASK_ST.map(([v, l])=> `<option value="${v}">${esc(l)}</option>`).join('');
+    $('abSetStatus').innerHTML = TASK_ST.map(([v, l])=> `<option value="${v}">${esc(l)}</option>`).join('');
+    $('abLeadStatus').innerHTML = LEAD_ST.map(v=> `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    $('abBoard').innerHTML = `<option value="">on any board</option>` + boards.map(b=> `<option value="${b.id}">on ${esc(b.name || 'Board')}</option>`).join('');
+    const people = Object.keys(members).length ? Object.keys(members) : [myUid];
+    const opts = people.map(uid=> `<option value="${uid}">${esc(uid === myUid ? (members[uid] || {}).name || 'You' : (members[uid] || {}).name || 'Teammate')}${uid === myUid ? ' (you)' : ''}</option>`).join('');
+    $('abPerson').innerHTML = opts; $('abOwner').innerHTML = opts; $('abOwner').value = myUid;
+    $('abTrigger').value = 'task_status'; $('abTitle').value = ''; $('abDays').value = 1;
+    syncBuilder();
+  }
+  function builderValue(){
+    const tt = $('abTrigger').value, at = $('abAction').value;
+    const trigger = {type: tt, ...(tt === 'task_status' ? {status: $('abTaskStatus').value} : {}), ...(tt === 'lead_status' ? {status: $('abLeadStatus').value, boardId: $('abBoard').value || null} : {})};
+    const action = at === 'set_status' ? {type: at, status: $('abSetStatus').value}
+      : at === 'assign' ? {type: at, uid: $('abPerson').value}
+      : at === 'notify' ? {type: at, who: $('abWho').value, ...($('abWho').value === 'uid' ? {uid: $('abPerson').value} : {})}
+      : {type: 'create_task', title: $('abTitle').value.trim() || 'Follow up with {{lead}}', dueInDays: Math.max(0, parseInt($('abDays').value, 10) || 0), uid: $('abOwner').value || myUid};
+    return {trigger, action};
+  }
+  function syncBuilder(){
+    const tt = $('abTrigger').value, isLead = tt === 'lead_status';
+    $('abTaskStatus').style.display = tt === 'task_status' ? '' : 'none';
+    $('abLeadStatus').style.display = isLead ? '' : 'none';
+    $('abBoard').style.display = isLead ? '' : 'none';
+    // Lead changes can't set a task's status or assign "it": only create a task or notify.
+    const acts = isLead ? [['create_task', 'create a task'], ['notify', 'notify']] : [['set_status', 'set its status to'], ['assign', 'assign it to'], ['notify', 'notify'], ['create_task', 'create a new task']];
+    const prev = $('abAction').value;
+    $('abAction').innerHTML = acts.map(([v, l])=> `<option value="${v}">${l}</option>`).join('');
+    if(acts.some(a=> a[0] === prev)) $('abAction').value = prev;
+    const at = $('abAction').value;
+    if(isLead){ $('abWho').innerHTML = `<option value="uid">a specific person…</option>`; }
+    else if($('abWho').options.length < 3){ $('abWho').innerHTML = `<option value="owners">its owners</option><option value="creator">the person who created it</option><option value="uid">a specific person…</option>`; }
+    $('abSetStatus').style.display = at === 'set_status' ? '' : 'none';
+    $('abWho').style.display = at === 'notify' ? '' : 'none';
+    $('abPerson').style.display = at === 'assign' || (at === 'notify' && $('abWho').value === 'uid') ? '' : 'none';
+    $('abTaskRow').style.display = at === 'create_task' ? '' : 'none';
+    $('abHint').textContent = at === 'create_task' ? (isLead ? 'Tip: {{lead}} is replaced with the name of the lead, and the new task is linked to that lead.' : 'The new task is linked to the same lead as the original task.') : '';
+    $('abPreview').innerHTML = '⚡ ' + autoSentence(builderValue());
+  }
+  ['abTrigger', 'abTaskStatus', 'abLeadStatus', 'abBoard', 'abAction', 'abSetStatus', 'abWho', 'abPerson', 'abOwner'].forEach(id=> $(id).addEventListener('change', syncBuilder));
+  ['abTitle', 'abDays'].forEach(id=> $(id).addEventListener('input', syncBuilder));
+  document.getElementById('tkAutoNew').addEventListener('click', ()=>{ document.getElementById('tkAutoListView').style.display = 'none'; document.getElementById('tkAutoBuildView').style.display = ''; fillBuilder(); $('abTrigger').focus(); });
+  document.getElementById('tkAutoBack').addEventListener('click', ()=>{ document.getElementById('tkAutoListView').style.display = ''; document.getElementById('tkAutoBuildView').style.display = 'none'; });
+  document.getElementById('abSave').addEventListener('click', ()=>{
+    const v = builderValue();
+    addAutomation({name: 'Custom automation', ...v}).then(()=>{ document.getElementById('tkAutoListView').style.display = ''; document.getElementById('tkAutoBuildView').style.display = 'none'; });
+  });
+
   // ---------- Toolbar ----------
   document.getElementById('tkNewBtn').addEventListener('click', ()=> openDrawer(null, {dueDate: todayISO()}));
   document.querySelectorAll('#tkViewSeg button').forEach(b=> b.addEventListener('click', ()=>{ view = b.dataset.view; localStorage.setItem('ptTasksView', view); render(); }));
@@ -1888,6 +2249,7 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
       wsId = doc.exists ? doc.data().workspaceId : null;
       if(!wsId){ showToast('Could not find your workspace.', true); reveal(); return; }
       const wsRef = db.collection('workspaces').doc(wsId);
+      listenNotifications(); listenAutomations();
       wsRef.collection('members').get().then(snap=>{
         snap.docs.forEach(d=>{ members[d.id] = d.data(); });
         const me = members[myUid] || {};
@@ -1978,6 +2340,31 @@ html[data-theme="dark"] .tk-chip.full{color:#8DEDC6}
         load(); setInterval(load, 5 * 60 * 1000);
         window.ptRefreshLinkedinBadge = load;
       }).catch(function(){});
+    });
+  }
+  if(document.readyState === 'complete') start(); else window.addEventListener('load', start);
+})();
+</script>
+
+<!-- Tasks badge: unread task notifications (assigned, mentioned, due today, automations) -->
+<script>
+(function(){
+  function paint(n){
+    document.querySelectorAll('#navTasks, [data-tasks-badge]').forEach(function(el){
+      var b = el.querySelector(':scope > .pt-li-badge');
+      if(!n){ if(b) b.remove(); return; }
+      if(!b){ b = document.createElement('span'); b.className = 'pt-li-badge'; el.appendChild(b); }
+      b.textContent = n > 99 ? '99+' : String(n);
+      b.setAttribute('aria-label', n + (n === 1 ? ' unread task notification' : ' unread task notifications'));
+      b.title = b.getAttribute('aria-label');
+    });
+  }
+  function start(){
+    if(!window.firebase || !firebase.apps || !firebase.apps.length) return;
+    firebase.auth().onAuthStateChanged(function(u){
+      if(!u) return;
+      firebase.firestore().collection('userNotifications').where('uid', '==', u.uid).where('read', '==', false).limit(100)
+        .onSnapshot(function(snap){ paint(snap.size); }, function(){});
     });
   }
   if(document.readyState === 'complete') start(); else window.addEventListener('load', start);

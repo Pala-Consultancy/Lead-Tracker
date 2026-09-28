@@ -5760,5 +5760,30 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   if(document.readyState === 'complete') start(); else window.addEventListener('load', start);
 })();
 </script>
+
+<!-- Tasks badge: unread task notifications (assigned, mentioned, due today, automations) -->
+<script>
+(function(){
+  function paint(n){
+    document.querySelectorAll('#navTasks, [data-tasks-badge]').forEach(function(el){
+      var b = el.querySelector(':scope > .pt-li-badge');
+      if(!n){ if(b) b.remove(); return; }
+      if(!b){ b = document.createElement('span'); b.className = 'pt-li-badge'; el.appendChild(b); }
+      b.textContent = n > 99 ? '99+' : String(n);
+      b.setAttribute('aria-label', n + (n === 1 ? ' unread task notification' : ' unread task notifications'));
+      b.title = b.getAttribute('aria-label');
+    });
+  }
+  function start(){
+    if(!window.firebase || !firebase.apps || !firebase.apps.length) return;
+    firebase.auth().onAuthStateChanged(function(u){
+      if(!u) return;
+      firebase.firestore().collection('userNotifications').where('uid', '==', u.uid).where('read', '==', false).limit(100)
+        .onSnapshot(function(snap){ paint(snap.size); }, function(){});
+    });
+  }
+  if(document.readyState === 'complete') start(); else window.addEventListener('load', start);
+})();
+</script>
 </body>
 </html>
