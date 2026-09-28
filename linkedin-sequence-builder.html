@@ -826,6 +826,24 @@
   .lsx-filterbar{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center;margin:0 0 14px;}
   .lsx-filterbar .lsx-filters{margin:0;}
   .lsx-aud{font:600 11.5px 'Inter',sans-serif;color:var(--slate);background:var(--panel-alt);border:1px solid var(--border);border-radius:999px;padding:3px 9px;white-space:nowrap;}
+
+  /* Filters: two labeled segmented switches in one row */
+  .lsx-filterbar{display:flex;gap:12px 22px;flex-wrap:wrap;align-items:center;margin:0 0 16px;}
+  .lsx-seg-group{display:flex;align-items:center;gap:10px;}
+  .lsx-seg-label{font:700 11.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-light);}
+  .lsx-seg{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:3px;gap:2px;box-shadow:var(--shadow-sm);}
+  .lsx-seg button{border:0;background:none;border-radius:9px;padding:7px 12px;font:600 13px 'Inter',sans-serif;color:var(--slate);cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+  .lsx-seg button:hover{color:var(--ink);}
+  .lsx-seg button span{font:700 11px 'Inter',sans-serif;min-width:18px;text-align:center;background:var(--panel-alt);color:var(--slate);border-radius:999px;padding:1px 6px;}
+  .lsx-seg button.on{background:#0A66C2;color:#fff;}
+  .lsx-seg button.on span{background:rgba(255,255,255,.22);color:#fff;}
+  .lsx-seg button:focus-visible{outline:2px solid #0A66C2;outline-offset:1px;}
+  /* Remove someone from a sequence */
+  .lsp-btn.danger{color:#B42338;}
+  .lsp-btn.danger:hover{border-color:#D83A52;background:rgba(216,58,82,.06);}
+  .lsb-person .lsp-x{border:1px solid transparent;background:none;color:var(--slate-light);width:28px;height:28px;border-radius:8px;cursor:pointer;flex-shrink:0;font-size:13px;}
+  .lsb-person .lsp-x:hover{color:#B42338;border-color:var(--border);background:var(--panel-alt);}
+  .lsb-person .lsp-x:focus-visible{outline:2px solid #0A66C2;outline-offset:1px;}
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1308,6 +1326,9 @@ html[data-theme="dark"] .lsx-due-pill{color:#F08E89}
 html[data-theme="dark"] .lss-lead .busy{color:#F8CB81}
 html[data-theme="dark"] .lss-newseq:hover{color:#81BDF8}
 html[data-theme="dark"] .lss-change{color:#81BDF8}
+html[data-theme="dark"] .lsx-seg button.on span{background:rgba(22,25,52,0.22)}
+html[data-theme="dark"] .lsp-btn.danger{color:#EC8E9B}
+html[data-theme="dark"] .lsb-person .lsp-x:hover{color:#EC8E9B}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -1905,13 +1926,17 @@ window.PTEmoji = (function(){
         <div class="lsx-kpi"><b>${tot.runs ? Math.round(tot.replied / tot.runs * 100) : 0}%</b><span>reply rate</span></div>
       </div>
       <div class="lsx-filterbar">
-        <div class="lsx-filters" role="group" aria-label="Filter by status">
-          ${[['all', 'All'], ['running', 'Running'], ['draft', 'Draft'], ['ended', 'Ended']].map(([k, l])=>
-            `<button type="button" class="lsx-filter${tplFilter === k ? ' on' : ''}" data-tplf="${k}" aria-pressed="${tplFilter === k}">${l} <span>${counts[k]}</span></button>`).join('')}
+        <div class="lsx-seg-group"><span class="lsx-seg-label" id="lsxStatusLabel">Status</span>
+          <div class="lsx-seg" role="group" aria-labelledby="lsxStatusLabel">
+            ${[['all', 'All'], ['running', 'Running'], ['draft', 'Draft'], ['ended', 'Ended']].map(([k, l])=>
+              `<button type="button" class="${tplFilter === k ? 'on' : ''}" data-tplf="${k}" aria-pressed="${tplFilter === k}">${l}<span>${counts[k]}</span></button>`).join('')}
+          </div>
         </div>
-        <div class="lsx-filters" role="group" aria-label="Filter by who it's for">
-          ${[['all', 'Everyone'], ['one', '👤 For one person'], ['many', '👥 For several people']].map(([k, l])=>
-            `<button type="button" class="lsx-filter${tplAud === k ? ' on' : ''}" data-tpla="${k}" aria-pressed="${tplAud === k}">${l} <span>${audCounts[k]}</span></button>`).join('')}
+        <div class="lsx-seg-group"><span class="lsx-seg-label" id="lsxForLabel">For</span>
+          <div class="lsx-seg" role="group" aria-labelledby="lsxForLabel">
+            ${[['all', 'Everyone'], ['one', 'One person'], ['many', 'Several people']].map(([k, l])=>
+              `<button type="button" class="${tplAud === k ? 'on' : ''}" data-tpla="${k}" aria-pressed="${tplAud === k}">${l}<span>${audCounts[k]}</span></button>`).join('')}
+          </div>
         </div>
       </div>
       ${shown.length ? '' : `<div class="lsp-empty"><b>No sequences match these filters</b>Try "All" or "Everyone".</div>`}
@@ -2386,6 +2411,7 @@ window.PTEmoji = (function(){
         <div class="lsp-av" aria-hidden="true">${esc(lssInitials(name))}</div>
         <div class="who"><b>${esc(name)}</b><span class="lsp-state ${st[0]}">${esc(st[1])}</span></div>
         ${r.status !== 'paused_replied' ? `<button type="button" class="lsp-btn ok" data-replied="${r.id}" title="They replied to message ${lspLastSent(r) + 1}: end their sequence as a success">✅ Replied</button>` : ''}
+        <button type="button" class="lsp-x" data-remove="${r.id}" aria-label="Remove ${esc(name)} from this sequence" title="Remove from this sequence">✕</button>
       </div>`;
     }).join('') + (runs.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${runs.length - 8} more</div>` : '')
       : `<div class="lsb-people-empty">Nobody is running this sequence right now. Click "▶ Start sequence" next to the sequence name to start it for one person or several.</div>`;
@@ -2415,6 +2441,7 @@ window.PTEmoji = (function(){
         <div class="lsp-actions">
           ${canReply || r.status === 'paused_replied' ? `<button type="button" class="lsp-btn ok" data-replied="${r.id}">✅ Replied successfully</button>` : ''}
           <a class="lsp-btn" href="dashboard.html?board=${encodeURIComponent(r.boardId)}&lead=${encodeURIComponent(r.leadId)}">Open lead</a>
+          <button type="button" class="lsp-btn danger" data-remove="${r.id}" title="Remove ${esc(name)} from this sequence">Remove</button>
         </div>
       </div>`;
     }).join('');
@@ -2589,10 +2616,34 @@ window.PTEmoji = (function(){
   }
   document.getElementById('peopleList').addEventListener('click', e=>{
     const b = e.target.closest('[data-replied]'); if(b) markRepliedSuccessfully(b.dataset.replied);
+    const x = e.target.closest('[data-remove]'); if(x) removeFromSequence(x.dataset.remove);
   });
   document.getElementById('lsbPeopleList').addEventListener('click', e=>{
     const b = e.target.closest('[data-replied]'); if(b) markRepliedSuccessfully(b.dataset.replied);
+    const x = e.target.closest('[data-remove]'); if(x) removeFromSequence(x.dataset.remove);
   });
+  // Remove someone from a sequence (e.g. added by mistake). Only their place in the
+  // sequence is deleted; the lead stays on its board. Undo puts it back exactly.
+  async function removeFromSequence(runId){
+    const r = lspRuns.find(x=> x.id === runId); if(!r) return;
+    const lead = lspLeads[r.boardId + '/' + r.leadId] || {}, name = lead.name || 'this lead';
+    const ok = await showConfirmModal({
+      title: `Remove ${name} from "${r.templateName || 'this sequence'}"?`,
+      message: 'Their progress in this sequence (messages marked as sent, replies, reminders) is removed. The lead itself stays on its board.',
+      confirmLabel: 'Remove'
+    });
+    if(!ok) return;
+    const {id, ...data} = r;
+    db.collection('linkedinSequenceRuns').doc(runId).delete().then(()=>{
+      lspRuns = lspRuns.filter(x=> x.id !== runId);
+      renderPeople();
+      showUndoToast(`${name} was removed from "${r.templateName || 'the sequence'}".`, ()=>{
+        db.collection('linkedinSequenceRuns').doc(runId).set(data).then(()=>{
+          lspRuns.push({id: runId, ...data}); renderPeople();
+        }).catch(err=> showToast('Could not undo that: ' + (err.message || ''), true));
+      });
+    }).catch(err=> showToast('Could not remove that: ' + (err.message || ''), true));
+  }
   document.getElementById('lsbPeopleAll').addEventListener('click', ()=>{ showListView(); setListTab('people'); });
   document.querySelectorAll('.lsp-filter').forEach(b=> b.addEventListener('click', ()=>{
     lspFilter = b.dataset.f; document.querySelectorAll('.lsp-filter').forEach(x=> x.classList.toggle('on', x === b)); renderPeople();
