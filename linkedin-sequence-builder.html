@@ -760,6 +760,48 @@
   .lsp-count.hot{background:#FF3B30 !important;color:#fff !important;}
   @media (max-width:900px){ .lsx-summary{grid-template-columns:repeat(2,minmax(0,1fr));} }
   @media (prefers-reduced-motion: reduce){ .lsx-card,.lsx-badge,.lsx-status.running i{animation:none;} }
+
+  .lsb-name-row{display:flex;gap:10px;align-items:stretch;}
+  .lsb-name-row input{flex:1;min-width:0;}
+  .lsb-start-btn{flex:0 0 auto;border:0;border-radius:12px;padding:0 18px;background:linear-gradient(135deg,#1FA971,#157A52);color:#fff;font:700 14px 'Inter',sans-serif;cursor:pointer;
+    box-shadow:0 6px 16px -6px rgba(31,169,113,.6);transition:transform .15s, filter .15s;white-space:nowrap;}
+  .lsb-start-btn:hover{transform:translateY(-1px);filter:brightness(1.05);}
+  .lsb-start-btn:focus-visible{outline:2px solid #1FA971;outline-offset:2px;}
+  .lsb-start-btn:disabled{opacity:.6;cursor:default;transform:none;}
+  @media (max-width:560px){ .lsb-name-row{flex-direction:column;} .lsb-start-btn{padding:12px;} }
+
+  /* Start a sequence: one person or several */
+  .lss-overlay{position:fixed;inset:0;z-index:90;background:rgba(16,20,40,.4);display:none;align-items:center;justify-content:center;padding:20px;}
+  .lss-overlay.open{display:flex;animation:lssFade .15s ease;}
+  @keyframes lssFade{from{opacity:0;}to{opacity:1;}}
+  .lss-modal{position:relative;width:min(560px,100%);max-height:calc(100vh - 40px);overflow:auto;background:var(--panel);border-radius:20px;box-shadow:var(--shadow-lg);padding:24px;}
+  .lss-modal h2{margin:0 36px 6px 0;font:700 20px/1.3 'Sora',sans-serif;color:var(--ink);}
+  .lss-sub{margin:0 0 16px;font-size:13.5px;color:var(--slate);}
+  .lss-close{position:absolute;top:14px;right:14px;border:0;background:none;width:34px;height:34px;border-radius:9px;font-size:16px;color:var(--slate);cursor:pointer;}
+  .lss-close:hover{background:var(--panel-alt);color:var(--ink);}
+  .lss-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .lss-option{text-align:left;border:1.5px solid var(--border);background:var(--panel);border-radius:16px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:border-color .15s, transform .15s, box-shadow .15s;font-family:'Inter',sans-serif;}
+  .lss-option:hover{border-color:#0A66C2;transform:translateY(-2px);box-shadow:var(--shadow);}
+  .lss-option .ic{font-size:26px;}
+  .lss-option b{font:700 15.5px 'Sora',sans-serif;color:var(--ink);}
+  .lss-option span:last-child{font-size:12.5px;color:var(--slate);line-height:1.45;}
+  .lss-back{border:0;background:none;color:var(--slate);font:600 13px 'Inter',sans-serif;cursor:pointer;padding:0;margin-bottom:10px;}
+  .lss-label{display:block;font:600 12.5px 'Inter',sans-serif;color:var(--slate);margin:12px 0 6px;}
+  .lss-select{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;font:14px 'Inter',sans-serif;color:var(--ink);background:var(--panel);}
+  .lss-leads{margin-top:8px;max-height:260px;overflow:auto;border:1px solid var(--border-soft);border-radius:12px;}
+  .lss-lead{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--border-soft);background:none;padding:9px 12px;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;}
+  .lss-lead:first-child{border-top:0;}
+  .lss-lead:hover{background:var(--panel-alt);}
+  .lss-lead.on{background:rgba(10,102,194,.08);box-shadow:inset 3px 0 0 #0A66C2;}
+  .lss-lead .lsp-av{width:32px;height:32px;font-size:11px;flex-shrink:0;}
+  .lss-lead b{display:block;font-size:13.5px;color:var(--ink);}
+  .lss-lead small{font-size:12px;color:var(--slate);}
+  .lss-lead .busy{margin-left:auto;font:700 11px 'Inter',sans-serif;color:#8A5600;background:rgba(232,145,45,.12);border-radius:999px;padding:2px 8px;white-space:nowrap;}
+  .lss-empty{padding:16px;font-size:13px;color:var(--slate);text-align:center;}
+  .lss-go{width:100%;margin-top:16px;border:0;border-radius:12px;padding:12px;background:linear-gradient(135deg,#1FA971,#157A52);color:#fff;font:700 14.5px 'Inter',sans-serif;cursor:pointer;}
+  .lss-go:disabled{background:var(--border);color:var(--slate);cursor:default;}
+  .lss-option:focus-visible,.lss-lead:focus-visible,.lss-go:focus-visible,.lss-close:focus-visible{outline:2px solid #0A66C2;outline-offset:2px;}
+  @media (max-width:560px){ .lss-options{grid-template-columns:1fr;} }
   .shell.lsb-wide{max-width:1240px;}
 </style>
 <!-- pt-dark-theme:start -->
@@ -1238,6 +1280,7 @@ html[data-theme="dark"] .lsx-filter.on span{color:#81BDF8}
 html[data-theme="dark"] .lsx-status.running{color:#8CEEC7}
 html[data-theme="dark"] .lsx-btn.due{color:#F08E89}
 html[data-theme="dark"] .lsx-due-pill{color:#F08E89}
+html[data-theme="dark"] .lss-lead .busy{color:#F8CB81}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -1325,7 +1368,7 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
         <button type="button" class="lsp-tab" data-tab="people" role="tab" aria-selected="false">People <span class="lsp-count" id="lspCount"></span></button>
       </div>
       <div style="display:flex;gap:10px;">
-        <button type="button" class="li-secondary-btn" id="bulkModeBtn">👥 For one or several people</button>
+        <button type="button" class="li-secondary-btn" id="bulkModeBtn">▶ Start a sequence</button>
         <button type="button" class="li-new-seq-btn" id="newSeqBtn">+ New sequence</button>
       </div>
     </div>
@@ -1348,7 +1391,7 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
     <div class="li-page-head">
       <div class="li-page-head-icon">👥</div>
       <div>
-        <h1 class="li-page-title">Start a sequence for one or several people</h1>
+        <h1 class="li-page-title">Start a sequence for several people</h1>
         <p class="li-page-sub">Pick a board, choose who's in, then pick which sequence they should all start.</p>
       </div>
     </div>
@@ -1402,7 +1445,10 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
       <div class="lsb-main">
         <div class="li-name-field">
           <label for="seqNameInput">Sequence name</label>
-          <input id="seqNameInput" type="text" maxlength="120">
+          <div class="lsb-name-row">
+            <input id="seqNameInput" type="text" maxlength="120">
+            <button type="button" class="lsb-start-btn" id="lsbStartBtn">▶ Start sequence</button>
+          </div>
         </div>
         <div id="lsbTemplates" class="lsb-templates" style="display:none;"></div>
         <div id="stepsEditorList" class="lsb-steps"></div>
@@ -1450,6 +1496,34 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
   </div>
 </div>
 
+
+<div class="lss-overlay" id="lssOverlay" aria-hidden="true">
+  <div class="lss-modal" role="dialog" aria-modal="true" aria-labelledby="lssTitle">
+    <button type="button" class="lss-close" id="lssClose" aria-label="Close">✕</button>
+    <div id="lssChoose">
+      <h2 id="lssTitle">Who do you want to start <span id="lssSeqName">a sequence</span> for?</h2>
+      <p class="lss-sub">You can always start it for more people later.</p>
+      <div class="lss-options">
+        <button type="button" class="lss-option" id="lssOne"><span class="ic">👤</span><b>One person</b><span>Pick one lead and start right away.</span></button>
+        <button type="button" class="lss-option" id="lssMany"><span class="ic">👥</span><b>Several people</b><span>Select a group of leads on a board and start them all at once.</span></button>
+      </div>
+    </div>
+    <div id="lssOnePanel" style="display:none;">
+      <button type="button" class="lss-back" id="lssBack">‹ Back</button>
+      <h2>Start for one person</h2>
+      <label class="lss-label" for="lssSeqSelect">Sequence</label>
+      <select id="lssSeqSelect" class="lss-select"></select>
+      <label class="lss-label" for="lssBoardSelect">Board</label>
+      <select id="lssBoardSelect" class="lss-select"><option value="">Loading your boards…</option></select>
+      <div id="lssLeadBox" style="display:none;">
+        <label class="lss-label" for="lssSearch">Lead</label>
+        <input id="lssSearch" class="lss-select" type="search" placeholder="Search by name or company" autocomplete="off">
+        <div class="lss-leads" id="lssLeads" role="listbox" aria-label="Leads"></div>
+      </div>
+      <button type="button" class="lss-go" id="lssGo" disabled>Pick a lead</button>
+    </div>
+  </div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -1943,6 +2017,8 @@ window.PTEmoji = (function(){
     renderStepsEditor();
     showEditorView();
     renderEditorPeople();
+    lsbSavedSnapshot = tpl ? lsbSnapshot() : '';
+    lsbStartAfterSave = false;
     if(tpl) loadPeople();
   }
   function renderTemplatePicker(show){
@@ -2122,6 +2198,14 @@ window.PTEmoji = (function(){
   });
   document.getElementById('cancelEditBtn').addEventListener('click', showListView);
   document.getElementById('newSeqBtn').addEventListener('click', ()=>openEditor(null));
+  let lsbStartAfterSave = false, lsbSavedSnapshot = '';
+  function lsbSnapshot(){ return JSON.stringify([document.getElementById('seqNameInput').value.trim(), editingSteps]); }
+  document.getElementById('lsbStartBtn').addEventListener('click', ()=>{
+    const unsaved = !editingTemplateId || lsbSnapshot() !== lsbSavedSnapshot;
+    if(unsaved){ lsbStartAfterSave = true; document.getElementById('saveSeqBtn').click(); return; }
+    if(leadInfo){ startSequenceForLead(allTemplates.find(t=> t.id === editingTemplateId) || {id: editingTemplateId, name: document.getElementById('seqNameInput').value.trim(), steps: editingSteps}); return; }
+    startForLeadsFromEditor();
+  });
   document.getElementById('saveSeqBtn').addEventListener('click', ()=>{
     const name = document.getElementById('seqNameInput').value.trim();
     if(!name){ showToast('Give this sequence a name.', true); document.getElementById('seqNameInput').focus(); return; }
@@ -2147,6 +2231,20 @@ window.PTEmoji = (function(){
     op.then(docRef=>{
       showToast('Sequence saved.');
       saveBtn.disabled = false;
+      if(lsbStartAfterSave){
+        lsbStartAfterSave = false;
+        const id = editingTemplateId || (docRef && docRef.id);
+        const tplNow = {id, name, steps: cleanSteps};
+        if(!editingTemplateId && docRef) editingTemplateId = docRef.id;
+        lsbSavedSnapshot = lsbSnapshot();
+        loadTemplates();
+        if(leadInfo){ startSequenceForLead(tplNow); return; }
+        // Make sure the chooser knows the (possibly new) sequence, then ask: one person or several?
+        if(!allTemplates.some(t=> t.id === id)) allTemplates.unshift({id, name, steps: cleanSteps});
+        else allTemplates = allTemplates.map(t=> t.id === id ? {...t, name, steps: cleanSteps} : t);
+        openStartChooser(id);
+        return;
+      }
       if(!editingTemplateId && leadInfo && docRef && docRef.id){
         // Brand-new sequence created while setting one up for a specific
         // lead — start it for them straight away.
@@ -2156,7 +2254,7 @@ window.PTEmoji = (function(){
         loadTemplates();
       }
     }).catch(err=>{
-      saveBtn.disabled = false;
+      saveBtn.disabled = false; lsbStartAfterSave = false;
       showToast('Could not save that: ' + (err.message || ''), true);
     });
   });
@@ -2226,7 +2324,7 @@ window.PTEmoji = (function(){
         ${r.status !== 'paused_replied' ? `<button type="button" class="lsp-btn ok" data-replied="${r.id}" title="They replied to message ${lspLastSent(r) + 1}: end their sequence as a success">✅ Replied</button>` : ''}
       </div>`;
     }).join('') + (runs.length > 8 ? `<div class="lsb-people-empty" style="margin-top:6px;">+ ${runs.length - 8} more</div>` : '')
-      : `<div class="lsb-people-empty">Nobody is running this sequence right now. Start it for a lead from their lead card, or with "For one or several people".</div>`;
+      : `<div class="lsb-people-empty">Nobody is running this sequence right now. Start it for a lead from their lead card, or with "Start a sequence".</div>`;
   }
   function renderPeople(){
     renderEditorPeople();
@@ -2237,7 +2335,7 @@ window.PTEmoji = (function(){
     const rows = lspRuns.filter(lspInGroup);
     if(!rows.length){
       list.innerHTML = `<div class="lsp-empty"><b>${lspFilter === 'progress' ? 'Nobody is in a LinkedIn sequence right now' : lspFilter === 'replied' ? 'No replies yet' : 'Nothing has ended yet'}</b>
-        ${lspFilter === 'progress' ? 'Start a sequence for a lead from their lead card, or use "For one or several people".' : ''}</div>`;
+        ${lspFilter === 'progress' ? 'Start a sequence for a lead from their lead card, or use "Start a sequence".' : ''}</div>`;
       return;
     }
     list.innerHTML = rows.map(r=>{
@@ -2261,7 +2359,7 @@ window.PTEmoji = (function(){
   // it, or else the last message that person received.
   function lspLastSent(r){ return Math.max(0, Math.min((r.steps || []).length, r.currentStepIndex || 0) - 1); }
   function lspReplyStep(r){
-    if(typeof r.repliedAfterStep === 'number') return r.repliedAfterStep;
+    if(typeof r.repliedAfterStep === 'number' && (r.currentStepIndex || 0) > r.repliedAfterStep) return r.repliedAfterStep;
     return (r.currentStepIndex || 0) > 0 ? lspLastSent(r) : -1;   // replied before receiving anything: not counted for a message
   }
   function lspIsReplied(r){ return r.status === 'replied' || r.status === 'paused_replied'; }
@@ -2386,19 +2484,15 @@ window.PTEmoji = (function(){
     pop.addEventListener('click', e=>{ if(e.target.closest('[data-rstart]')){ closeReplyPicker(); startForLeadsFromEditor(); return; }
       const b = e.target.closest('[data-rsel]'); if(!b) return; closeReplyPicker(); markRepliedSuccessfully(b.dataset.rsel, i); });
   }
-  // "Start this sequence for leads": open "For one or several people" with this sequence chosen.
-  function startForLeadsFromEditor(){
-    const id = editingTemplateId;
-    showBulkView(); resetBulkState(); loadBulkBoards();
-    bulkSelectedTemplateId = id;
-    showToast('Pick the board and the leads; this sequence is already selected.');
-  }
+  // "Start this sequence for leads": open "Start a sequence" with this sequence chosen.
+  function startForLeadsFromEditor(){ openStartChooser(editingTemplateId); }
   function closeReplyPicker(){ const p = document.getElementById('lsbRpop'); if(p) p.remove(); }
   document.addEventListener('mousedown', e=>{ const p = document.getElementById('lsbRpop'); if(p && !p.contains(e.target) && !e.target.closest('[data-rpick],[data-spick]')) closeReplyPicker(); });
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeReplyPicker(); });
   function markRepliedSuccessfully(runId, stepIndex){
     const r = lspRuns.find(x=> x.id === runId); if(!r) return;
-    const afterStep = typeof stepIndex === 'number' ? stepIndex : lspLastSent(r);
+    // No message received yet? Then the reply isn't recorded against any message.
+    const afterStep = typeof stepIndex === 'number' ? stepIndex : ((r.currentStepIndex || 0) > 0 ? lspLastSent(r) : null);
     const lead = lspLeads[r.boardId + '/' + r.leadId] || {};
     const before = {status: r.status, leadWasReplied: !!lead.linkedinReplied};   // remembered before saving, for Undo
     const FV = firebase.firestore.FieldValue;
@@ -2407,12 +2501,12 @@ window.PTEmoji = (function(){
     if(!lead.repliedAt) leadUpdate.repliedAt = FV.serverTimestamp();
     if(!lead.contactedAt) leadUpdate.contactedAt = FV.serverTimestamp();
     Promise.all([
-      db.collection('linkedinSequenceRuns').doc(runId).update({status: 'replied', repliedAt: FV.serverTimestamp(), repliedAfterStep: afterStep, notifyAt: FV.delete()}),
+      db.collection('linkedinSequenceRuns').doc(runId).update({status: 'replied', repliedAt: FV.serverTimestamp(), repliedAfterStep: afterStep === null ? FV.delete() : afterStep, notifyAt: FV.delete()}),
       leadRef.update(leadUpdate).catch(()=>{})   // e.g. a locked board: the sequence still ends as replied
     ]).then(()=>{
       r.status = 'replied'; r.repliedAfterStep = afterStep; renderPeople();
 
-      showUndoToast(`🎉 ${lead.name || 'The lead'} replied to message ${afterStep + 1}. Their sequence ended as a success.`, ()=>{
+      showUndoToast(`🎉 ${lead.name || 'The lead'} replied${afterStep === null ? '' : ` to message ${afterStep + 1}`}. Their sequence ended as a success.`, ()=>{
         db.collection('linkedinSequenceRuns').doc(runId).update({status: before.status, repliedAt: FV.delete(), repliedAfterStep: FV.delete()}).then(()=>{
           r.status = before.status; delete r.repliedAfterStep; renderPeople();
 
@@ -2448,17 +2542,108 @@ window.PTEmoji = (function(){
   }
   document.querySelectorAll('.lsp-tab').forEach(b=> b.addEventListener('click', ()=> setListTab(b.dataset.tab)));
 
+
+  // ---------- Start a sequence: one person or several ----------
+  // Every "Start" button asks first: one person (pick a lead, start right here)
+  // or several people (the page for starting a group).
+  let lssTemplateId = null, lssLeads = [], lssLeadId = null, lssBoards = [], lssBusy = {};
+  function openStartChooser(templateId){
+    lssTemplateId = templateId || null;
+    const tpl = allTemplates.find(t=> t.id === lssTemplateId);
+    document.getElementById('lssSeqName').textContent = tpl ? `"${tpl.name || 'this sequence'}"` : 'a sequence';
+    document.getElementById('lssChoose').style.display = '';
+    document.getElementById('lssOnePanel').style.display = 'none';
+    const ov = document.getElementById('lssOverlay'); ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
+    setTimeout(()=> document.getElementById('lssOne').focus(), 30);
+  }
+  function closeStartChooser(){ const ov = document.getElementById('lssOverlay'); ov.classList.remove('open'); ov.setAttribute('aria-hidden', 'true'); }
+  document.getElementById('lssClose').addEventListener('click', closeStartChooser);
+  document.getElementById('lssOverlay').addEventListener('click', e=>{ if(e.target.id === 'lssOverlay') closeStartChooser(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && document.getElementById('lssOverlay').classList.contains('open')) closeStartChooser(); });
+  document.getElementById('lssMany').addEventListener('click', ()=>{
+    closeStartChooser();
+    showBulkView(); resetBulkState(); loadBulkBoards();
+    bulkSelectedTemplateId = lssTemplateId;
+  });
+  document.getElementById('lssBack').addEventListener('click', ()=>{ document.getElementById('lssOnePanel').style.display = 'none'; document.getElementById('lssChoose').style.display = ''; });
+  document.getElementById('lssOne').addEventListener('click', ()=>{
+    document.getElementById('lssChoose').style.display = 'none';
+    document.getElementById('lssOnePanel').style.display = '';
+    const seq = document.getElementById('lssSeqSelect');
+    seq.innerHTML = `<option value="">Choose a sequence…</option>` + allTemplates.map(t=> `<option value="${t.id}" ${t.id === lssTemplateId ? 'selected' : ''}>${esc(t.name || 'Untitled sequence')}</option>`).join('');
+    lssLeadId = null; lssLeads = []; document.getElementById('lssLeadBox').style.display = 'none'; lssUpdateGo();
+    const board = document.getElementById('lssBoardSelect');
+    board.innerHTML = `<option value="">Loading your boards…</option>`;
+    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').get().then(snap=>{
+      lssBoards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=> b.deleted !== true).sort((a, b)=> (a.name || '').localeCompare(b.name || ''));
+      board.innerHTML = lssBoards.length ? `<option value="">Choose a board…</option>` + lssBoards.map(b=> `<option value="${b.id}">${esc(b.name || 'Untitled board')}</option>`).join('') : `<option value="">You don't have any boards yet</option>`;
+      if(lssBoards.length === 1){ board.value = lssBoards[0].id; board.dispatchEvent(new Event('change')); }
+    }).catch(err=>{ board.innerHTML = `<option value="">Could not load boards</option>`; showToast('Could not load your boards: ' + (err.message || ''), true); });
+    (lssTemplateId ? board : seq).focus();
+  });
+  document.getElementById('lssSeqSelect').addEventListener('change', e=>{ lssTemplateId = e.target.value || null; lssUpdateGo(); });
+  document.getElementById('lssBoardSelect').addEventListener('change', e=>{
+    const bId = e.target.value; lssLeadId = null; lssUpdateGo();
+    const box = document.getElementById('lssLeadBox'), list = document.getElementById('lssLeads');
+    if(!bId){ box.style.display = 'none'; return; }
+    box.style.display = ''; list.innerHTML = `<div class="lss-empty">Loading leads…</div>`;
+    // Who's already running a sequence, so nobody ends up in two at once.
+    lssBusy = {};
+    (typeof lspRuns !== 'undefined' ? lspRuns : []).forEach(r=>{ if(['active', 'waiting_reply'].includes(r.status)) lssBusy[r.boardId + '/' + r.leadId] = r.templateName || 'a sequence'; });
+    db.collection('workspaces').doc(currentWorkspaceId).collection('boards').doc(bId).collection('leads').get().then(snap=>{
+      lssLeads = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=> !l.deleted).sort((a, b)=> (a.name || '').localeCompare(b.name || ''));
+      renderLssLeads();
+    }).catch(()=>{ list.innerHTML = `<div class="lss-empty">Could not load the leads of this board (it may be password-protected).</div>`; });
+  });
+  document.getElementById('lssSearch').addEventListener('input', renderLssLeads);
+  function renderLssLeads(){
+    const q = document.getElementById('lssSearch').value.trim().toLowerCase(), bId = document.getElementById('lssBoardSelect').value;
+    const rows = lssLeads.filter(l=> !q || ((l.name || '') + ' ' + (l.company || '')).toLowerCase().includes(q));
+    const list = document.getElementById('lssLeads');
+    list.innerHTML = rows.length ? rows.map(l=>{
+      const busy = lssBusy[bId + '/' + l.id], name = l.name || 'Unnamed lead';
+      return `<button type="button" class="lss-lead${l.id === lssLeadId ? ' on' : ''}" data-lead="${l.id}" role="option" aria-selected="${l.id === lssLeadId}" ${busy ? 'disabled title="Already in ' + esc(busy) + '"' : ''}>
+        <span class="lsp-av" aria-hidden="true">${esc((name.trim().split(/\s+/).map(w=> w[0]).join('').slice(0, 2) || '?').toUpperCase())}</span>
+        <span><b>${esc(name)}</b><small>${esc([l.jobTitle, l.company].filter(Boolean).join(' · '))}</small></span>
+        ${busy ? `<span class="busy">In "${esc(busy)}"</span>` : ''}
+      </button>`;
+    }).join('') : `<div class="lss-empty">${lssLeads.length ? 'No leads match your search.' : 'This board has no leads yet.'}</div>`;
+  }
+  document.getElementById('lssLeads').addEventListener('click', e=>{
+    const b = e.target.closest('[data-lead]'); if(!b || b.disabled) return;
+    lssLeadId = b.dataset.lead; renderLssLeads(); lssUpdateGo();
+  });
+  function lssUpdateGo(){
+    const go = document.getElementById('lssGo'), lead = lssLeads.find(l=> l.id === lssLeadId);
+    go.disabled = !(lead && lssTemplateId);
+    go.textContent = !lssTemplateId ? 'Choose a sequence' : !lead ? 'Pick a lead' : `▶ Start for ${(lead.name || 'this lead').split(' ')[0]}`;
+  }
+  document.getElementById('lssGo').addEventListener('click', ()=>{
+    const tpl = allTemplates.find(t=> t.id === lssTemplateId), lead = lssLeads.find(l=> l.id === lssLeadId), bId = document.getElementById('lssBoardSelect').value;
+    if(!tpl || !lead || !bId) return;
+    if(!(tpl.steps || []).length){ showToast('That sequence has no steps yet.', true); return; }
+    const go = document.getElementById('lssGo'); go.disabled = true; go.textContent = 'Starting…';
+    db.collection('linkedinSequenceRuns').add({
+      workspaceId: currentWorkspaceId, boardId: bId, leadId: lead.id,
+      templateId: tpl.id, templateName: tpl.name || 'Untitled sequence',
+      startedBy: auth.currentUser ? auth.currentUser.uid : null,
+      steps: tpl.steps, currentStepIndex: 0, status: 'active',
+      nextDueAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      closeStartChooser();
+      showToast(`Started "${tpl.name || 'the sequence'}" for ${lead.name || 'this lead'}. Their first message is ready to send.`);
+      if(typeof loadPeople === 'function') loadPeople();
+    }).catch(err=>{ showToast('Could not start that sequence: ' + (err.message || ''), true); lssUpdateGo(); });
+  });
+
   // ---------- Bulk mode (sequence for several people) ----------
   let bulkBoards = [];
   let bulkLeads = [];
   let bulkSelectedLeadIds = new Set();
   let bulkSelectedTemplateId = null;
 
-  document.getElementById('bulkModeBtn').addEventListener('click', ()=>{
-    showBulkView();
-    resetBulkState();
-    loadBulkBoards();
-  });
+  document.getElementById('bulkModeBtn').addEventListener('click', ()=> openStartChooser(null));
   document.getElementById('bulkBackLink').addEventListener('click', (e)=>{ e.preventDefault(); showListView(); });
 
   function resetBulkState(){
