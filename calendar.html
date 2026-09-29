@@ -1016,6 +1016,7 @@ html[data-theme="dark"] .gc-ev .rz::after{background:rgba(22,25,52,0.70)}
 html[data-theme="dark"] .gc-detail .acts .del:hover{color:#EC8E9B}
 html[data-theme="dark"] .gc-del{color:#EC8E9B}
 html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,0.15))}
+html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
 </style>
 <!-- pt-dark-theme:end -->
 </head>
@@ -1083,32 +1084,62 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
 <!-- Details (click an item) -->
 <div class="gc-pop gc-detail" id="gcDetail" role="dialog" aria-label="Details" hidden></div>
 
-<!-- Full editor -->
+<!-- Colour palette (click the little square) -->
+<div class="gc-palette" id="gcPalette" role="dialog" aria-label="Choose a colour" hidden></div>
+
+<!-- Full editor (like Google Calendar's) -->
 <div class="gc-overlay" id="gcEditorOv" aria-hidden="true">
-  <div class="gc-editor" role="dialog" aria-modal="true" aria-labelledby="eTitle">
-    <div class="gc-ed-head">
-      <input type="text" id="eTitle" class="gc-title-in big" maxlength="200" placeholder="Add title" aria-label="Title">
+  <div class="gc-editor gc-ed2" role="dialog" aria-modal="true" aria-labelledby="eTitle">
+    <div class="ed-top">
       <button type="button" class="gc-x" data-close="editor" aria-label="Close">✕</button>
-    </div>
-    <div class="gc-ed-body">
-      <div class="gc-row"><span class="ic" aria-hidden="true">🕒</span>
-        <input type="date" id="eDate" aria-label="Start date">
-        <input type="time" id="eStart" aria-label="Starts" step="900"><span class="dash">to</span>
-        <input type="time" id="eEnd" aria-label="Ends" step="900">
-        <input type="date" id="eEndDate" aria-label="End date">
-      </div>
-      <label class="gc-check"><input type="checkbox" id="eAllDay"> All day</label>
-      <div class="gc-row"><span class="ic" aria-hidden="true">📍</span><input type="text" id="eLocation" class="wide" maxlength="200" placeholder="Add location or video call link" aria-label="Location"></div>
-      <div class="gc-row top"><span class="ic" aria-hidden="true">📝</span><textarea id="eDesc" class="wide" rows="4" maxlength="4000" placeholder="Add description" aria-label="Description"></textarea></div>
-      <div class="gc-row top"><span class="ic" aria-hidden="true">👥</span><div class="wide"><div class="gc-sub">Guests</div><div id="eGuests" class="gc-guests"></div></div></div>
-      <div class="gc-row"><span class="ic" aria-hidden="true">🎨</span><div id="eColors" class="gc-colors" role="radiogroup" aria-label="Color"></div></div>
-    </div>
-    <div class="gc-ed-foot">
-      <button type="button" class="gc-del" id="eDelete">Delete</button>
-      <span class="grow"></span>
-      <button type="button" class="gc-btn" data-close="editor">Cancel</button>
+      <input type="text" id="eTitle" class="ed-title" maxlength="200" placeholder="Add title" aria-label="Title">
       <button type="button" class="gc-save" id="eSave">Save</button>
     </div>
+    <div class="ed-when">
+      <input type="date" id="eDate" aria-label="Start date">
+      <input type="time" id="eStart" aria-label="Starts" step="900">
+      <span class="ed-to" id="eTo">to</span>
+      <input type="time" id="eEnd" aria-label="Ends" step="900">
+      <input type="date" id="eEndDate" aria-label="End date">
+      <span class="ed-tz" id="eTz"></span>
+    </div>
+    <div class="ed-when2">
+      <label class="gc-check"><input type="checkbox" id="eAllDay"> All day</label>
+      <select id="eRepeat" aria-label="Repeat"></select>
+    </div>
+    <div class="ed-cols">
+      <div class="ed-main">
+        <div class="ed-tabs"><span class="on">Event details</span></div>
+        <div class="ed-row" id="eLocRow"><span class="ic" aria-hidden="true">📍</span><input type="text" id="eLocation" maxlength="300" placeholder="Add location or video call link" aria-label="Location"></div>
+        <div class="ed-row" id="eNotifRow"><span class="ic" aria-hidden="true">🔔</span>
+          <div class="ed-notif" id="eNotifBox">
+            <span class="lab">Notification</span>
+            <input type="number" id="eNotifVal" min="0" max="999" value="10" aria-label="How long before">
+            <select id="eNotifUnit" aria-label="Unit"><option value="1">minutes</option><option value="60">hours</option><option value="1440">days</option></select>
+            <span class="lab">before</span>
+            <button type="button" class="ed-rm" id="eNotifRm" aria-label="Remove notification">✕</button>
+          </div>
+          <button type="button" class="gc-link" id="eNotifAdd">Add notification</button>
+        </div>
+        <div class="ed-row"><span class="ic" aria-hidden="true">📅</span>
+          <span class="ed-cal" id="eCalName"></span>
+          <div class="ed-colorwrap"><button type="button" class="ed-colorbtn" id="eColorBtn" aria-haspopup="true" aria-label="Colour"><i></i><span aria-hidden="true">▾</span></button></div>
+        </div>
+        <div class="ed-row top"><span class="ic" aria-hidden="true">📝</span><textarea id="eDesc" rows="6" maxlength="4000" placeholder="Add description" aria-label="Description"></textarea></div>
+      </div>
+      <div class="ed-side" id="eGuestSide">
+        <div class="ed-tabs"><span class="on">Guests</span></div>
+        <div class="ed-guestadd"><input type="text" id="eGuestSearch" placeholder="Add guests" autocomplete="off" aria-label="Add guests"><div class="ed-suggest" id="eGuestSuggest" hidden></div></div>
+        <div id="eGuestList" class="ed-guestlist"></div>
+        <div class="ed-perms" id="ePerms">
+          <div class="ed-sub">Guest permissions</div>
+          <label class="gc-check"><input type="checkbox" id="eCanModify"> Modify event</label>
+          <label class="gc-check"><input type="checkbox" id="eCanInvite"> Invite others</label>
+          <label class="gc-check"><input type="checkbox" id="eCanSee"> See guest list</label>
+        </div>
+      </div>
+    </div>
+    <div class="ed-foot"><button type="button" class="gc-del" id="eDelete">Delete</button></div>
   </div>
 </div>
 
@@ -1277,6 +1308,83 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
   @media (prefers-reduced-motion: reduce){ .gc-create{transition:none;} }
 
   .gc-private{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.45;color:var(--slate);background:var(--panel-alt,#F6F8FC);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+
+  /* ---------- Details (like Google) ---------- */
+  .gc-detail .tools{display:flex;justify-content:flex-end;gap:2px;margin:-6px -6px 6px 0;}
+  .gc-detail .tools button{border:0;background:none;width:36px;height:36px;border-radius:50%;cursor:pointer;color:var(--slate);display:grid;place-items:center;}
+  .gc-detail .tools button:hover{background:var(--panel-alt);color:var(--ink);}
+  .gc-detail .tools button:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+  .gc-detail .bar{margin:0 0 10px;}
+  .gc-detail .sq{border:0;cursor:default;padding:0;}
+  .gc-detail .sq.can{cursor:pointer;box-shadow:0 0 0 2px var(--panel),0 0 0 3px transparent;transition:transform .12s;}
+  .gc-detail .sq.can:hover{transform:scale(1.25);}
+  .gc-detail .sq.can:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .gc-detail .x{position:static !important;}
+  /* ---------- Colour palette ---------- */
+  .gc-palette{position:fixed;z-index:400;background:var(--panel);border-radius:14px;box-shadow:0 12px 40px -8px rgba(16,24,40,.35),0 0 0 1px var(--border);padding:12px;width:176px;}
+  .gc-palette .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;justify-items:center;}
+  .gc-palette button{width:26px;height:26px;border-radius:50%;border:0;background:var(--c);cursor:pointer;display:grid;place-items:center;color:#fff;font-size:13px;transition:transform .12s;}
+  .gc-palette button:hover{transform:scale(1.15);}
+  .gc-palette button:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+  .gc-palette .nm{margin-top:8px;font:600 11.5px 'Inter',sans-serif;color:var(--slate);text-align:center;min-height:14px;}
+  /* ---------- Editor (like Google) ---------- */
+  .gc-ed2{width:min(1080px,100%) !important;max-height:92vh;padding:0 0 12px;}
+  .ed-top{display:flex;align-items:center;gap:14px;padding:18px 22px 6px;}
+  .ed-top .gc-x{position:static;flex-shrink:0;}
+  .ed-title{flex:1;min-width:0;border:0;border-bottom:1px solid var(--border);padding:8px 2px;font:400 26px 'Sora',sans-serif;color:var(--ink);background:transparent;outline:none;}
+  .ed-title:focus{border-bottom:2px solid var(--teal);}
+  .ed-top .gc-save{border-radius:999px;padding:11px 28px;}
+  .ed-when,.ed-when2{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 22px 0 72px;}
+  .ed-when input,.ed-when2 select{border:0;background:var(--panel-alt);border-radius:8px;padding:10px 12px;font:14px 'Inter',sans-serif;color:var(--ink);}
+  .ed-when input:focus,.ed-when2 select:focus{outline:2px solid var(--teal);}
+  .ed-to{color:var(--slate);font-size:14px;}
+  .ed-tz{font-size:13px;color:var(--slate);margin-left:4px;}
+  .ed-when2 .gc-check{margin:0 10px 0 0;}
+  .ed-cols{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:22px;padding:16px 22px 0;}
+  .ed-main{background:var(--panel);border:1px solid var(--border-soft,var(--border));border-radius:18px;padding:6px 18px 16px;}
+  .ed-side{padding:6px 4px;}
+  .ed-tabs{border-bottom:1px solid var(--border);margin-bottom:12px;}
+  .ed-tabs span{display:inline-block;padding:12px 6px 10px;font:600 14px 'Inter',sans-serif;color:var(--teal);border-bottom:3px solid var(--teal);border-radius:2px;}
+  .ed-row{display:flex;align-items:center;gap:12px;margin:10px 0;flex-wrap:wrap;}
+  .ed-row.top{align-items:flex-start;}
+  .ed-row .ic{width:24px;text-align:center;flex-shrink:0;font-size:16px;}
+  .ed-row > input,.ed-row > textarea{flex:1;min-width:0;border:0;background:var(--panel-alt);border-radius:8px;padding:11px 12px;font:14px 'Inter',sans-serif;color:var(--ink);}
+  .ed-row > textarea{resize:vertical;line-height:1.5;min-height:120px;}
+  .ed-row > input:focus,.ed-row > textarea:focus{outline:2px solid var(--teal);}
+  .ed-notif{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .ed-notif .lab{font-size:14px;color:var(--ink);}
+  .ed-notif input,.ed-notif select{border:0;background:var(--panel-alt);border-radius:8px;padding:9px 10px;font:14px 'Inter',sans-serif;color:var(--ink);}
+  .ed-notif input{width:72px;}
+  .ed-rm{border:0;background:none;color:var(--slate);width:30px;height:30px;border-radius:50%;cursor:pointer;}
+  .ed-rm:hover{background:var(--panel-alt);color:var(--ink);}
+  .ed-cal{font:600 14px 'Inter',sans-serif;color:var(--ink);}
+  .ed-colorwrap{position:relative;}
+  .ed-colorbtn{display:inline-flex;align-items:center;gap:8px;border:0;background:var(--panel-alt);border-radius:8px;padding:8px 12px;cursor:pointer;color:var(--slate);}
+  .ed-colorbtn i{width:18px;height:18px;border-radius:50%;background:var(--c,#3F51B5);}
+  .ed-colorbtn:focus-visible{outline:2px solid var(--teal);}
+  .ed-guestadd{position:relative;}
+  .ed-guestadd input{width:100%;box-sizing:border-box;border:0;background:var(--panel-alt);border-radius:8px;padding:11px 12px;font:14px 'Inter',sans-serif;color:var(--ink);}
+  .ed-guestadd input:focus{outline:2px solid var(--teal);}
+  .ed-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:3;background:var(--panel);border-radius:12px;box-shadow:0 12px 30px -8px rgba(16,24,40,.3),0 0 0 1px var(--border);padding:6px;max-height:240px;overflow:auto;}
+  .ed-suggest button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:none;border-radius:8px;padding:7px 8px;cursor:pointer;font:600 13px 'Inter',sans-serif;color:var(--ink);text-align:left;}
+  .ed-suggest button:hover,.ed-suggest button.on{background:var(--panel-alt);}
+  .ed-suggest .none{padding:8px;font-size:12.5px;color:var(--slate);}
+  .ed-guestlist{display:flex;flex-direction:column;gap:2px;margin:10px 0 8px;}
+  .ed-guest{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:9px;}
+  .ed-guest:hover{background:var(--panel-alt);}
+  .ed-guest .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 11px 'Inter',sans-serif;color:#fff;flex-shrink:0;}
+  .ed-guest .nm{flex:1;min-width:0;font:600 13.5px 'Inter',sans-serif;color:var(--ink);}
+  .ed-guest .nm small{display:block;font:500 11.5px 'Inter',sans-serif;color:var(--slate);}
+  .ed-guest button{border:0;background:none;color:var(--slate);width:28px;height:28px;border-radius:50%;cursor:pointer;}
+  .ed-guest button:hover{background:var(--panel);color:#B42338;}
+  .ed-perms{margin-top:14px;}
+  .ed-sub{font:600 13.5px 'Inter',sans-serif;color:var(--ink);margin-bottom:6px;}
+  .ed-perms .gc-check{display:flex;margin:8px 0 0 0;}
+  .ed-perms.off{opacity:.55;pointer-events:none;}
+  .ed-foot{display:flex;justify-content:flex-start;padding:10px 22px 0;}
+  .gc-ed2.task-mode #eTo,.gc-ed2.task-mode #eEnd,.gc-ed2.task-mode #eEndDate,.gc-ed2.task-mode #eLocRow,.gc-ed2.task-mode #eNotifRow,.gc-ed2.task-mode #eGuestSide{display:none !important;}
+  .gc-ed2.task-mode .ed-cols{grid-template-columns:1fr;}
+  @media (max-width:820px){ .ed-cols{grid-template-columns:1fr;} .ed-when,.ed-when2{padding-left:22px;} }
 </style>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -1350,7 +1458,41 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
     post:     {label: 'LinkedIn posts',    color: '#0E9C8C'},
     google:   {label: 'Google Calendar',   color: '#8792A8'},
   };
-  const COLORS = ['#1B7FD6', '#3730B3', '#7A4FB5', '#D83A52', '#E8912D', '#F4B400', '#1FA971', '#0E9C8C', '#8792A8'];
+  // Google Calendar's event colours (same names and colours, so they match in Google too)
+  const PALETTE = [
+    {name: 'Tomato', hex: '#D50000'}, {name: 'Flamingo', hex: '#E67C73'}, {name: 'Tangerine', hex: '#F4511E'}, {name: 'Banana', hex: '#F6BF26'},
+    {name: 'Sage', hex: '#33B679'}, {name: 'Basil', hex: '#0B8043'}, {name: 'Peacock', hex: '#039BE5'}, {name: 'Blueberry', hex: '#3F51B5'},
+    {name: 'Lavender', hex: '#7986CB'}, {name: 'Grape', hex: '#8E24AA'}, {name: 'Graphite', hex: '#616161'}];
+  const REPEATS = {none: 'Does not repeat', daily: 'Every day', weekdays: 'Every weekday (Monday to Friday)', weekly: 'Weekly', monthly: 'Monthly', yearly: 'Every year'};
+  function repeatLabel(r, iso){
+    if(!r || r === 'none') return '';
+    const d = iso ? fromISO(iso) : null;
+    if(r === 'weekly' && d) return 'Weekly on ' + d.toLocaleDateString(undefined, {weekday: 'long'});
+    if(r === 'monthly' && d) return 'Monthly on day ' + d.getDate();
+    if(r === 'yearly' && d) return 'Every year on ' + d.toLocaleDateString(undefined, {day: 'numeric', month: 'long'});
+    return REPEATS[r] || '';
+  }
+  // Every date a repeating event happens on, between a and b (YYYY-MM-DD).
+  function occurrences(base, repeat, a, b){
+    if(!repeat || repeat === 'none') return base >= a && base <= b ? [base] : (base < a ? [] : []);
+    const out = [], start = fromISO(base);
+    let d = new Date(start), guard = 0;
+    const push = x=>{ const iso = toISO(x); if(iso >= a && iso <= b) out.push(iso); return iso; };
+    if(repeat === 'monthly' || repeat === 'yearly'){
+      for(let k = 0; guard++ < 400; k++){
+        const x = new Date(start.getFullYear() + (repeat === 'yearly' ? k : 0), start.getMonth() + (repeat === 'monthly' ? k : 0), 1);
+        if(new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate() < start.getDate()) continue;   // no 31st that month
+        x.setDate(start.getDate()); if(push(x) > b) break;
+      }
+      return out;
+    }
+    while(guard++ < 2000){
+      if(repeat !== 'weekdays' || (d.getDay() !== 0 && d.getDay() !== 6)){ if(push(d) > b) break; }
+      else if(toISO(d) > b) break;
+      d.setDate(d.getDate() + (repeat === 'weekly' ? 7 : 1));
+    }
+    return out;
+  }
   const AV = ['#6D65F6', '#E8912D', '#1FA971', '#D83A52', '#1B7FD6', '#7A4FB5', '#0E9C8C'];
 
   // ---------- State ----------
@@ -1373,16 +1515,21 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
       if(!e.date) return;
       if(scope === 'mine' && e.createdBy !== myUid && !(e.guests || []).includes(myUid)) return;
       const allDay = !!e.allDay || !e.startTime;
-      out.push({type: 'event', id: e.id, date: e.date, endDate: e.endDate && e.endDate >= e.date ? e.endDate : e.date, time: allDay ? null : e.startTime,
-        end: allDay ? null : (e.endTime || fromMins(toMins(e.startTime) + 60)), allDay, title: e.title || '(No title)', color: e.color || TYPES.event.color,
-        editable: true, resizable: !allDay, raw: e});
+      const span = e.endDate && e.endDate > e.date ? Math.round((fromISO(e.endDate) - fromISO(e.date)) / 86400000) : 0;
+      const r = range(), a = addDaysISO(toISO(r.start), -span - 1), b = toISO(new Date(r.end - 1));
+      const guest = e.createdBy !== myUid, canEdit = !guest || e.guestsCanModify === true;
+      occurrences(e.date, e.repeat, a, b).forEach(d=>{
+        out.push({type: 'event', id: e.id, occ: d, keySuffix: e.repeat && e.repeat !== 'none' ? '@' + d : '', date: d, endDate: addDaysISO(d, span), time: allDay ? null : e.startTime,
+          end: allDay ? null : (e.endTime || fromMins(toMins(e.startTime) + 60)), allDay, title: e.title || '(No title)', color: e.color || TYPES.event.color,
+          editable: canEdit, resizable: canEdit && !allDay, raw: e});
+      });
     });
     tasks.forEach(t=>{
       if(!t.dueDate) return;
       const owners = (t.assignees && t.assignees.length) ? t.assignees : [t.createdBy];
       if(scope === 'mine' && t.createdBy !== myUid && !owners.includes(myUid)) return;
       out.push({type: 'task', id: t.id, date: t.dueDate, time: t.dueTime || null, end: t.dueTime ? fromMins(toMins(t.dueTime) + 30) : null, allDay: !t.dueTime,
-        title: t.title || 'Untitled task', done: t.completed === true || t.status === 'done', editable: true, resizable: false,
+        title: t.title || 'Untitled task', done: t.completed === true || t.status === 'done', editable: true, resizable: false, color: t.calColor || null,
         link: 'tasks.html?task=' + encodeURIComponent(t.id), raw: t});
     });
     calls.forEach(c=>{
@@ -1406,7 +1553,7 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
       const end = g.end && g.end.length > 10 ? g.end.slice(11, 16) : null;
       out.push({type: 'google', id: 'g' + k, date: g.date, time: g.allDay ? null : g.time, end: g.allDay ? null : (end && end > g.time ? end : fromMins(toMins(g.time) + 60)), allDay: !!g.allDay || !g.time, title: g.title});
     });
-    out.forEach(x=>{ x.key = x.type + ':' + x.id; if(!x.color) x.color = TYPES[x.type].color; });
+    out.forEach(x=>{ x.key = x.type + ':' + x.id + (x.keySuffix || ''); if(!x.color) x.color = TYPES[x.type].color; });
     return includeHidden ? out : out.filter(x=> !hidden.has(x.type));
   }
   function onDay(list, iso){ return list.filter(x=> x.date === iso || (x.allDay && x.endDate && x.date < iso && x.endDate >= iso)); }
@@ -1578,49 +1725,87 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
     let start = $('qStart').value || '09:00', end = $('qEnd').value || fromMins(toMins(start) + 60);
     if(!allDay && toMins(end) <= toMins(start)) end = fromMins(toMins(start) + 60);
     saveEvent(null, {title: title || '(No title)', date, endDate: date, allDay, startTime: allDay ? null : start, endTime: allDay ? null : end,
-      location: null, description: null, guests: [], color: null}).then(()=> closePops());
+      location: null, description: null, guests: [], color: null, repeat: 'none', reminderMinutes: 10, guestsCanModify: false, guestsCanInvite: true, guestsCanSeeList: true}).then(()=> closePops());
   });
   $('qMore').addEventListener('click', ()=>{
     if(quickState.type === 'task'){ location.href = 'tasks.html'; return; }
     const date = $('qDate').value || todayISO(), allDay = $('qAllDay').checked;
     closePops();
-    openEditor(null, {title: $('qTitle').value.trim(), date, endDate: date, allDay, startTime: $('qStart').value || '09:00', endTime: $('qEnd').value || '10:00', guests: [], color: null});
+    openEditor('event', null, {title: $('qTitle').value.trim(), date, endDate: date, allDay, startTime: $('qStart').value || '09:00', endTime: $('qEnd').value || '10:00', guests: [], color: null});
   });
   // Details
   function whenText(x){
     if(x.allDay || !x.time){
-      if(x.endDate && x.endDate > x.date) return `${fmtDay(x.date, {weekday: 'short', day: 'numeric', month: 'short'})} – ${fmtDay(x.endDate, {weekday: 'short', day: 'numeric', month: 'short'})}`;
-      return fmtDay(x.date) + ' · all day';
+      if(x.endDate && x.endDate > x.date) return `${fmtDay(x.date, {weekday: 'long', day: 'numeric', month: 'long'})} – ${fmtDay(x.endDate, {weekday: 'long', day: 'numeric', month: 'long'})}`;
+      return fmtDay(x.date);
     }
     return `${fmtDay(x.date)} · ${fmtTime(x.time)}${x.end && x.type !== 'task' ? ' – ' + fmtTime(x.end) : ''}`;
   }
+  const IC = {
+    edit: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    del: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>',
+    open: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+    close: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'};
+  function reminderText(m){ if(m === null || m === undefined || m === '') return ''; m = +m; if(m === 0) return 'At the start';
+    return m % 1440 === 0 ? `${m / 1440} day${m === 1440 ? '' : 's'} before` : m % 60 === 0 ? `${m / 60} hour${m === 60 ? '' : 's'} before` : `${m} minutes before`; }
+  function canColor(x){ return x.type === 'task' || (x.type === 'event' && (x.raw.createdBy === myUid || x.raw.guestsCanModify === true)); }
   function openDetail(key, anchor){
     const x = byKey[key]; if(!x) return;
     closePops();
     const r = anchor.getBoundingClientRect(), e = x.raw || {};
+    const mineEv = x.type === 'event' && e.createdBy === myUid;
+    const showGuests = x.type === 'event' && (mineEv || e.guestsCanSeeList !== false);
     const guests = (e.guests || []).map(u=> (members[u] || {}).name || 'Teammate');
     const loc = e.location ? (/^https?:\/\//i.test(e.location) ? `<a href="${esc(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a>` : esc(e.location)) : '';
-    detail.innerHTML = `<button type="button" class="gc-x" data-close="detail" aria-label="Close">✕</button>
-      <div class="bar"><span class="sq" style="--c:${x.color}"></span><div><h3>${esc(x.title)}</h3><div class="when">${esc(whenText(x))}</div></div></div>
-      ${x.type !== 'event' ? `<div class="line"><span class="ic">🗂</span><span class="v">${esc(TYPES[x.type].label)}${x.type === 'google' ? ' (read only)' : ''}</span></div>` : ''}
+    const canEdit = x.type === 'task' || (x.type === 'event' && (mineEv || e.guestsCanModify === true));
+    const canDel = x.type === 'task' || mineEv;
+    const rep = x.type === 'event' ? repeatLabel(e.repeat, e.date) : x.type === 'task' ? repeatLabel(e.repeat, e.dueDate) : '';
+    detail.innerHTML = `
+      <div class="tools">
+        ${canEdit ? `<button type="button" data-d="edit" title="Edit" aria-label="Edit">${IC.edit}</button>` : ''}
+        ${canDel ? `<button type="button" data-d="delete" title="Delete" aria-label="Delete">${IC.del}</button>` : ''}
+        ${x.link ? `<button type="button" data-d="open" title="Open" aria-label="Open">${IC.open}</button>` : ''}
+        <button type="button" data-close="detail" title="Close" aria-label="Close">${IC.close}</button>
+      </div>
+      <div class="bar"><button type="button" class="sq${canColor(x) ? ' can' : ''}" style="--c:${x.color}" ${canColor(x) ? 'data-d="color" title="Change colour" aria-label="Change colour"' : 'tabindex="-1" aria-hidden="true"'}></button>
+        <div><h3>${esc(x.title)}</h3><div class="when">${esc(whenText(x))}</div>${rep ? `<div class="when">${esc(rep)}</div>` : ''}</div></div>
+      ${x.type === 'event' && e.reminderMinutes !== null && e.reminderMinutes !== undefined ? `<div class="line"><span class="ic">🔔</span><span class="v">${esc(reminderText(e.reminderMinutes))}</span></div>` : ''}
       ${loc ? `<div class="line"><span class="ic">📍</span><span class="v">${loc}</span></div>` : ''}
-      ${e.description ? `<div class="line"><span class="ic">📝</span><span class="v">${esc(e.description)}</span></div>` : ''}
-      ${guests.length ? `<div class="line"><span class="ic">👥</span><span class="v">${esc(guests.join(', '))}</span></div>` : ''}
-      ${x.type === 'event' ? `<div class="line"><span class="ic">👤</span><span class="v">Created by ${esc(e.createdBy === myUid ? 'you' : (e.createdByName || 'a teammate'))}</span></div>` : ''}
-      <div class="acts">
-        ${x.type === 'event' ? `${e.createdBy === myUid ? '<button type="button" class="del" data-d="delete">Delete</button>' : ''}<button type="button" data-d="edit">Edit</button>` : ''}
-        ${x.type === 'task' ? `<button type="button" data-d="done">${x.done ? 'Mark as not done' : '✓ Mark as done'}</button>` : ''}
-        ${x.link ? `<a href="${esc(x.link)}">Open</a>` : ''}
-      </div>`;
+      ${e.description || (x.type === 'task' && e.notes) ? `<div class="line"><span class="ic">📝</span><span class="v">${esc(e.description || e.notes)}</span></div>` : ''}
+      ${showGuests && guests.length ? `<div class="line"><span class="ic">👥</span><span class="v">${guests.length} guest${guests.length === 1 ? '' : 's'}: ${esc(guests.join(', '))}</span></div>` : ''}
+      <div class="line"><span class="ic">📅</span><span class="v">${x.type === 'event' ? esc(mineEv ? myName : (e.createdByName || 'A teammate') + ' (you’re a guest)') : x.type === 'task' ? 'Tasks · ' + esc(myName) : esc(TYPES[x.type].label)}${x.type === 'google' ? ' (read only)' : ''}</span></div>
+      ${x.type === 'task' ? `<div class="acts"><button type="button" data-d="done">${x.done ? 'Mark as not done' : '✓ Mark as done'}</button></div>` : ''}`;
     detail.dataset.key = key;
     place(detail, r.right, r.top + 40);
+  }
+  // Colour palette
+  const pal = $('gcPalette');
+  let palFor = null;
+  function openPalette(anchor, current, onPick){
+    palFor = onPick;
+    pal.innerHTML = `<div class="grid">${PALETTE.map(c=> `<button type="button" style="--c:${c.hex}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" aria-label="${c.name}">${(current || '').toUpperCase() === c.hex ? '✓' : ''}</button>`).join('')}</div><div class="nm" id="gcPalName"></div>`;
+    pal.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    pal.style.left = Math.min(Math.max(8, r.left - 8), innerWidth - pal.offsetWidth - 8) + 'px';
+    pal.style.top = Math.min(r.bottom + 8, innerHeight - pal.offsetHeight - 8) + 'px';
+    (pal.querySelector('button') || pal).focus();
+  }
+  function closePalette(){ pal.hidden = true; palFor = null; }
+  pal.addEventListener('mouseover', e=>{ const b = e.target.closest('[data-hex]'); $('gcPalName').textContent = b ? b.dataset.name : ''; });
+  pal.addEventListener('click', e=>{ const b = e.target.closest('[data-hex]'); if(!b || !palFor) return; const f = palFor; closePalette(); f(b.dataset.hex); });
+  document.addEventListener('mousedown', e=>{ if(!pal.hidden && !pal.contains(e.target) && !e.target.closest('[data-d="color"],#eColorBtn')) closePalette(); });
+  function saveColor(x, hex){
+    const ref = x.type === 'event' ? db.collection('calendarEvents').doc(x.id) : db.collection('tasks').doc(x.id);
+    ref.update(x.type === 'event' ? {color: hex} : {calColor: hex}).then(()=> showToast('Colour changed.')).catch(err=> showToast('Could not change the colour: ' + (err.message || ''), true));
   }
   detail.addEventListener('click', async e=>{
     if(e.target.closest('[data-close="detail"]')){ closePops(); return; }
     const b = e.target.closest('[data-d]'); if(!b) return;
     const x = byKey[detail.dataset.key]; if(!x) return;
-    if(b.dataset.d === 'edit'){ closePops(); openEditor(x.id, x.raw); }
-    if(b.dataset.d === 'delete'){ closePops(); deleteEvent(x.id, x.title); }
+    if(b.dataset.d === 'color'){ openPalette(b, x.color, hex=>{ closePops(); saveColor(x, hex); }); return; }
+    if(b.dataset.d === 'open'){ location.href = x.link; return; }
+    if(b.dataset.d === 'edit'){ closePops(); openEditor(x.type, x.id, x.raw); }
+    if(b.dataset.d === 'delete'){ closePops(); if(x.type === 'event') deleteEvent(x.id, x.title); else deleteTask(x.id, x.title); }
     if(b.dataset.d === 'done'){
       const done = !x.done; closePops();
       db.collection('tasks').doc(x.id).update(done ? {status: 'done', completed: true, completedAt: FV.serverTimestamp(), completedBy: myUid, completedByName: myName}
@@ -1628,51 +1813,121 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
         .then(()=> showToast(done ? 'Task done. ✓' : 'Task marked as not done.')).catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
     }
   });
-  // Full editor
-  function openEditor(id, data){
+
+  // ---------- Full editor (events and tasks) ----------
+  function openEditor(kind, id, data){
     closePops();
-    editState = {id, guests: [...(data.guests || [])], color: data.color || null};
+    if(kind !== 'task' && kind !== 'event'){ data = id; id = kind; kind = 'event'; }   // older calls: openEditor(id, data)
+    data = data || {};
+    const isTask = kind === 'task';
+    const creator = isTask || !id || data.createdBy === myUid || !data.createdBy;
+    editState = {kind, id, creator, guests: [...(data.guests || [])], color: isTask ? (data.calColor || null) : (data.color || null),
+      canInvite: creator || data.guestsCanInvite !== false};
+    const ed = document.querySelector('.gc-ed2'); ed.classList.toggle('task-mode', isTask);
     $('eTitle').value = data.title && data.title !== '(No title)' ? data.title : '';
-    $('eDate').value = data.date || todayISO();
-    $('eEndDate').value = data.endDate || data.date || todayISO();
-    $('eStart').value = data.startTime || '09:00'; $('eEnd').value = data.endTime || fromMins(toMins(data.startTime || '09:00') + 60);
-    $('eAllDay').checked = !!data.allDay;
-    $('eLocation').value = data.location || ''; $('eDesc').value = data.description || '';
-    $('eDelete').style.display = id && (data.createdBy === myUid || !data.createdBy) ? '' : 'none';
-    renderGuests(); renderColors(); syncEditor();
+    const date = isTask ? (data.dueDate || todayISO()) : (data.date || todayISO());
+    $('eDate').value = date;
+    $('eEndDate').value = isTask ? date : (data.endDate || date);
+    const st = isTask ? (data.dueTime || '09:00') : (data.startTime || '09:00');
+    $('eStart').value = st; $('eEnd').value = isTask ? '' : (data.endTime || fromMins(toMins(st) + 60));
+    $('eAllDay').checked = isTask ? !data.dueTime : !!data.allDay;
+    const reps = isTask ? ['none', 'daily', 'weekdays', 'weekly', 'monthly'] : Object.keys(REPEATS);
+    $('eRepeat').innerHTML = reps.map(k=> `<option value="${k}">${esc(k === 'none' ? REPEATS.none : repeatLabel(k, date))}</option>`).join('');
+    $('eRepeat').value = reps.includes(data.repeat) ? data.repeat : 'none';
+    $('eLocation').value = data.location || ''; $('eDesc').value = (isTask ? data.notes : data.description) || '';
+    const rm = data.reminderMinutes;
+    editState.notif = !isTask && (id ? (rm !== null && rm !== undefined) : true);
+    const mins = editState.notif ? (id ? +rm : 10) : 10;
+    const unit = mins && mins % 1440 === 0 ? 1440 : mins && mins % 60 === 0 ? 60 : 1;
+    $('eNotifVal').value = unit === 1 ? mins : mins / unit; $('eNotifUnit').value = String(unit);
+    $('eCanModify').checked = !!data.guestsCanModify; $('eCanInvite').checked = data.guestsCanInvite !== false; $('eCanSee').checked = data.guestsCanSeeList !== false;
+    $('ePerms').classList.toggle('off', !creator);
+    $('eGuestSearch').disabled = !editState.canInvite; $('eGuestSearch').placeholder = editState.canInvite ? 'Add guests' : 'Only the organiser can add guests';
+    $('eCalName').textContent = isTask ? 'Tasks · ' + myName : (creator ? myName : (data.createdByName || 'Organiser'));
+    $('eTz').textContent = (()=>{ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' '); }catch(e){ return ''; } })();
+    $('eDelete').style.display = id && creator ? '' : 'none';
+    $('eDelete').textContent = isTask ? 'Delete task' : 'Delete event';
+    renderGuests(); renderColorBtn(); syncEditor();
     edOv.classList.add('open'); edOv.setAttribute('aria-hidden', 'false');
     setTimeout(()=> $('eTitle').focus(), 30);
   }
-  function closeEditor(){ edOv.classList.remove('open'); edOv.setAttribute('aria-hidden', 'true'); editState = null; }
-  function syncEditor(){ const ad = $('eAllDay').checked; $('eStart').style.display = $('eEnd').style.display = ad ? 'none' : ''; }
+  function closeEditor(){ edOv.classList.remove('open'); edOv.setAttribute('aria-hidden', 'true'); editState = null; $('eGuestSuggest').hidden = true; closePalette(); }
+  function syncEditor(){
+    const ad = $('eAllDay').checked;
+    $('eStart').style.display = ad ? 'none' : ''; $('eEnd').style.display = ad || (editState && editState.kind === 'task') ? 'none' : '';
+    $('eTo').style.display = ad || (editState && editState.kind === 'task') ? 'none' : '';
+    $('eNotifBox').style.display = editState && editState.notif ? '' : 'none';
+    $('eNotifAdd').style.display = editState && editState.notif ? 'none' : '';
+  }
+  function renderColorBtn(){ $('eColorBtn').style.setProperty('--c', editState.color || (editState.kind === 'task' ? TYPES.task.color : TYPES.event.color)); }
   function renderGuests(){
-    const ids = Object.keys(members).filter(u=> u !== myUid);
-    $('eGuests').innerHTML = ids.length ? ids.map((u, k)=>{ const on = editState.guests.includes(u), n = members[u].name || members[u].email || 'Teammate';
-      return `<button type="button" class="gc-guest${on ? ' on' : ''}" data-guest="${u}" aria-pressed="${on}"><span class="av" style="background:${AV[k % AV.length]}">${esc(initials(n))}</span>${esc(n)}${on ? ' ✓' : ''}</button>`; }).join('')
-      : '<span style="font-size:12.5px;color:var(--slate)">Invite teammates on the Team page to add them as guests.</span>';
+    const list = [{uid: myUid, org: true}].filter(()=> editState.creator).concat(editState.guests.map(u=> ({uid: u})));
+    const AVC = u=> AV[Math.abs([...u].reduce((a, c)=> a + c.charCodeAt(0), 0)) % AV.length];
+    $('eGuestList').innerHTML = (editState.creator ? '' : `<div class="ed-guest"><span class="av" style="background:${AVC('org')}">${esc(initials('Organiser'))}</span><span class="nm">Organiser</span></div>`) +
+      list.map(g=>{ const m = members[g.uid] || {}, n = m.name || m.email || 'Teammate';
+        return `<div class="ed-guest"><span class="av" style="background:${AVC(g.uid)}">${esc(initials(n))}</span><span class="nm">${esc(n)}${g.uid === myUid ? ' (you)' : ''}<small>${g.org ? 'Organiser' : esc(m.email || '')}</small></span>
+          ${!g.org && editState.creator ? `<button type="button" data-rmguest="${g.uid}" aria-label="Remove ${esc(n)}">✕</button>` : ''}</div>`; }).join('');
   }
-  function renderColors(){
-    const cur = editState.color || TYPES.event.color;
-    $('eColors').innerHTML = COLORS.map(c=> `<button type="button" role="radio" aria-checked="${c === cur}" class="${c === cur ? 'on' : ''}" style="--c:${c}" data-color="${c}" aria-label="Color"></button>`).join('');
+  let sugPick = 0;
+  function renderSuggest(){
+    const q = $('eGuestSearch').value.trim().toLowerCase(), box = $('eGuestSuggest');
+    if(!q){ box.hidden = true; return; }
+    const hits = Object.entries(members).filter(([u, m])=> u !== myUid && !editState.guests.includes(u) && ((m.name || '') + ' ' + (m.email || '')).toLowerCase().includes(q)).slice(0, 6);
+    sugPick = Math.min(sugPick, Math.max(0, hits.length - 1));
+    box.hidden = false;
+    box.innerHTML = hits.length ? hits.map(([u, m], k)=> `<button type="button" data-addguest="${u}" class="${k === sugPick ? 'on' : ''}"><span>${esc(m.name || m.email || 'Teammate')}</span><small style="color:var(--slate);font-weight:500">${esc(m.email || '')}</small></button>`).join('')
+      : (()=>{ const already = Object.entries(members).filter(([u, m])=> editState.guests.includes(u) && ((m.name || '') + ' ' + (m.email || '')).toLowerCase().includes(q));
+          return `<div class="none">${already.length ? esc(already.map(([u, m])=> m.name || m.email).join(', ')) + (already.length === 1 ? ' is' : ' are') + ' already invited.' : `No teammate matches "${esc(q)}".`}</div>`; })();
   }
-  $('eGuests').addEventListener('click', e=>{ const b = e.target.closest('[data-guest]'); if(!b) return; const u = b.dataset.guest;
-    editState.guests = editState.guests.includes(u) ? editState.guests.filter(x=> x !== u) : editState.guests.concat([u]); renderGuests(); });
-  $('eColors').addEventListener('click', e=>{ const b = e.target.closest('[data-color]'); if(!b) return; editState.color = b.dataset.color; renderColors(); });
+  function addGuest(u){ if(!editState.guests.includes(u)) editState.guests.push(u); $('eGuestSearch').value = ''; $('eGuestSuggest').hidden = true; renderGuests(); $('eGuestSearch').focus(); }
+  $('eGuestSearch').addEventListener('input', ()=>{ sugPick = 0; renderSuggest(); });
+  $('eGuestSearch').addEventListener('keydown', e=>{
+    const btns = [...$('eGuestSuggest').querySelectorAll('[data-addguest]')];
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); if(btns.length){ sugPick = (sugPick + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length; renderSuggest(); } }
+    if(e.key === 'Enter'){ e.preventDefault(); if(btns[sugPick]) addGuest(btns[sugPick].dataset.addguest); }
+    if(e.key === 'Escape'){ $('eGuestSuggest').hidden = true; e.stopPropagation(); }
+  });
+  $('eGuestSuggest').addEventListener('mousedown', e=>{ const b = e.target.closest('[data-addguest]'); if(b){ e.preventDefault(); addGuest(b.dataset.addguest); } });
+  $('eGuestList').addEventListener('click', e=>{ const b = e.target.closest('[data-rmguest]'); if(!b) return; editState.guests = editState.guests.filter(u=> u !== b.dataset.rmguest); renderGuests(); });
+  $('eColorBtn').addEventListener('click', e=>{ openPalette(e.currentTarget, editState.color || TYPES.event.color, hex=>{ editState.color = hex; renderColorBtn(); }); });
+  $('eNotifAdd').addEventListener('click', ()=>{ editState.notif = true; syncEditor(); $('eNotifVal').focus(); });
+  $('eNotifRm').addEventListener('click', ()=>{ editState.notif = false; syncEditor(); });
   $('eAllDay').addEventListener('change', syncEditor);
-  $('eDate').addEventListener('change', ()=>{ if($('eEndDate').value < $('eDate').value) $('eEndDate').value = $('eDate').value; });
+  $('eDate').addEventListener('change', ()=>{
+    if($('eEndDate').value < $('eDate').value) $('eEndDate').value = $('eDate').value;
+    const cur = $('eRepeat').value; [...$('eRepeat').options].forEach(o=>{ if(o.value !== 'none') o.textContent = repeatLabel(o.value, $('eDate').value); }); $('eRepeat').value = cur;
+  });
   $('eStart').addEventListener('change', ()=>{ if($('eEndDate').value === $('eDate').value && toMins($('eEnd').value) <= toMins($('eStart').value)) $('eEnd').value = fromMins(toMins($('eStart').value) + 60); });
   edOv.addEventListener('click', e=>{ if(e.target === edOv || e.target.closest('[data-close="editor"]')) closeEditor(); });
   $('eSave').addEventListener('click', ()=>{
-    const allDay = $('eAllDay').checked, date = $('eDate').value || todayISO();
+    const st = editState; if(!st) return;
+    const allDay = $('eAllDay').checked, date = $('eDate').value || todayISO(), title = $('eTitle').value.trim();
+    if(st.kind === 'task'){
+      const upd = {title: title || 'Untitled task', dueDate: date, dueTime: allDay ? null : ($('eStart').value || null), notes: $('eDesc').value.trim() || null,
+        repeat: $('eRepeat').value, calColor: st.color || null, dueSoonNotifiedFor: FV.delete()};
+      db.collection('tasks').doc(st.id).update(upd).then(()=>{ closeEditor(); showToast('Task saved.'); }).catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
+      return;
+    }
     let endDate = $('eEndDate').value || date; if(endDate < date) endDate = date;
-    let start = $('eStart').value || '09:00', end = $('eEnd').value || fromMins(toMins(start) + 60);
+    const start = $('eStart').value || '09:00', end = $('eEnd').value || fromMins(toMins(start) + 60);
     if(!allDay && endDate === date && toMins(end) <= toMins(start)){ showToast('The end time must be after the start time.', true); $('eEnd').focus(); return; }
-    const data = {title: $('eTitle').value.trim() || '(No title)', date, endDate, allDay, startTime: allDay ? null : start, endTime: allDay ? null : end,
-      location: $('eLocation').value.trim() || null, description: $('eDesc').value.trim() || null, guests: editState.guests, color: editState.color};
-    const id = editState.id;
-    saveEvent(id, data).then(ok=>{ if(ok) closeEditor(); });
+    const mins = Math.max(0, Math.round(+$('eNotifVal').value || 0)) * (+$('eNotifUnit').value || 1);
+    const data = {title: title || '(No title)', date, endDate, allDay, startTime: allDay ? null : start, endTime: allDay ? null : end,
+      repeat: $('eRepeat').value, location: $('eLocation').value.trim() || null, description: $('eDesc').value.trim() || null,
+      color: st.color || null, reminderMinutes: st.notif ? mins : null};
+    if(st.creator){ Object.assign(data, {guests: st.guests, guestsCanModify: $('eCanModify').checked, guestsCanInvite: $('eCanInvite').checked, guestsCanSeeList: $('eCanSee').checked}); }
+    else if(st.canInvite){ data.guests = st.guests; }
+    saveEvent(st.id, data).then(ok=>{ if(ok) closeEditor(); });
   });
-  $('eDelete').addEventListener('click', ()=>{ const id = editState && editState.id; if(!id) return; closeEditor(); deleteEvent(id, $('eTitle').value || 'this event'); });
+  $('eDelete').addEventListener('click', ()=>{ const st = editState; if(!st || !st.id) return; closeEditor();
+    if(st.kind === 'task') deleteTask(st.id, $('eTitle').value || 'this task'); else deleteEvent(st.id, $('eTitle').value || 'this event'); });
+  async function deleteTask(id, title){
+    const ok = await showConfirmModal({title: 'Delete this task?', message: `"${title}" is removed from Tasks for everyone on your team.`, confirmLabel: 'Delete'});
+    if(!ok) return;
+    const t = tasks.find(x=> x.id === id);
+    db.collection('tasks').doc(id).delete().then(()=> showUndo('Task deleted.', ()=>{ if(t){ const {id: _, ...rest} = t; db.collection('tasks').doc(id).set(rest).catch(()=>{}); } }))
+      .catch(err=> showToast('Could not delete that: ' + (err.message || ''), true));
+  }
 
   // ---------- Saving ----------
   function saveEvent(id, data){
@@ -1706,6 +1961,9 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
   function moveItem(x, date, start, end){
     if(x.type === 'event'){
       const len = x.endDate && x.date ? Math.round((fromISO(x.endDate) - fromISO(x.date)) / 86400000) : 0;
+      if(x.raw && x.raw.repeat && x.raw.repeat !== 'none'){   // a repeating event: shift the whole series
+        date = addDaysISO(x.raw.date, Math.round((fromISO(date) - fromISO(x.date)) / 86400000));
+      }
       const upd = start === null ? {date, endDate: addDaysISO(date, len), allDay: true, startTime: null, endTime: null}
         : {date, endDate: date, allDay: false, startTime: start, endTime: end};
       return db.collection('calendarEvents').doc(x.id).update(upd);
@@ -1782,7 +2040,7 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
         .catch(err=>{ showToast('Could not move that: ' + (err.message || ''), true); render(); });
     }
     if(d.mode === 'resize' && d.ne !== undefined){
-      db.collection('calendarEvents').doc(d.x.id).update({endTime: fromMins(Math.min(d.ne, 24 * 60 - 1)), endDate: d.x.date})
+      db.collection('calendarEvents').doc(d.x.id).update({endTime: fromMins(Math.min(d.ne, 24 * 60 - 1)), endDate: (d.x.raw && d.x.raw.date) || d.x.date})
         .then(()=> showToast(`Now until ${fmtTime(fromMins(Math.min(d.ne, 24 * 60 - 1)))}.`)).catch(err=>{ showToast('Could not save that: ' + (err.message || ''), true); render(); });
     }
   });
@@ -1840,7 +2098,7 @@ html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,
     const d = e.target.closest('[data-mini]'); if(d){ cursor = fromISO(d.dataset.mini); if(view === 'month') miniMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1); render(); }
   });
   document.addEventListener('keydown', e=>{
-    if(e.key === 'Escape'){ if(edOv.classList.contains('open')) closeEditor(); else closePops(); return; }
+    if(e.key === 'Escape'){ if(!pal.hidden) closePalette(); else if(edOv.classList.contains('open')) closeEditor(); else closePops(); return; }
     if(e.target.closest('input,textarea,select,[contenteditable]') || e.ctrlKey || e.metaKey || e.altKey || edOv.classList.contains('open')) return;
     const k = e.key.toLowerCase();
     if(k === 'c'){ e.preventDefault(); createNow(); } else if(k === 't') goToday(); else if(k === 'd') setView('day'); else if(k === 'w') setView('week'); else if(k === 'm') setView('month');
