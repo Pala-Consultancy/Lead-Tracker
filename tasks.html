@@ -576,6 +576,13 @@
   .tk-times{display:flex;align-items:center;gap:6px;}
   .tk-times input{flex:1;min-width:0;}
   .tk-times span{font-size:12.5px;color:var(--slate);}
+
+  /* Due date: the date, with the time neatly underneath */
+  .tk-date{display:inline-flex !important;flex-direction:column;align-items:center;justify-content:center;gap:1px !important;line-height:1.25;white-space:nowrap;}
+  .tk-date .d{display:inline-flex;align-items:center;gap:5px;font-weight:600;}
+  .tk-date .tm{margin-left:0 !important;font-size:12px;font-weight:500 !important;color:var(--slate);font-variant-numeric:tabular-nums;}
+  .tk-date.over .d::before{content:"";width:7px;height:7px;border-radius:50%;background:#D83A52;flex-shrink:0;}
+  .tk-date.over .tm{color:#D83A52 !important;opacity:.85;}
 </style>
 <style id="tk-styles">
   /* ================= Tasks, monday-style ================= */
@@ -1652,7 +1659,10 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
   function dateCell(t){
     const over = isLate(t);
     const rep = t.repeat && t.repeat !== 'none' ? `<span class="rep" title="${esc((REPEATS.find(r=>r[0] === t.repeat) || [])[1] || '')}">↻</span>` : '';
-    return t.dueDate ? `<span class="tk-date${over ? ' over' : ''}">${over ? '! ' : ''}${esc(prettyDate(t.dueDate))}${t.dueTime ? `<span class="tm">· ${esc(prettyTime(t.dueTime))}${t.dueEndTime ? ' – ' + esc(prettyTime(t.dueEndTime)) : ''}</span>` : ''}${rep}</span>` : `<span class="tk-date none">+ Date</span>`;
+    if(!t.dueDate) return `<span class="tk-date none">+ Date</span>`;
+    const time = t.dueTime ? `${prettyTime(t.dueTime)}${t.dueEndTime ? ' – ' + prettyTime(t.dueEndTime) : ''}` : '';
+    return `<span class="tk-date${over ? ' over' : ''}${time ? ' has-time' : ''}" title="${over ? 'Overdue · ' : ''}${esc(prettyDate(t.dueDate))}${time ? ' · ' + esc(time) : ''}">
+      <span class="d">${esc(prettyDate(t.dueDate))}${rep}</span>${time ? `<span class="tm">${esc(time)}</span>` : ''}</span>`;
   }
   function ownersCell(t){ const o = ownersOf(t); return `<div class="tk-avs">${o.slice(0, 3).map(avatarHTML).join('')}${o.length > 3 ? `<span class="tk-av add">+${o.length - 3}</span>` : ''}${o.length ? '' : '<span class="tk-av add">+</span>'}</div>`; }
   function leadCell(t){
