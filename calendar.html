@@ -1039,6 +1039,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       <div class="gc-cals">
         <div class="gc-cals-h">My calendars</div>
         <div id="gcCals"></div>
+        <button type="button" class="gc-holbtn" id="gcHolBtn" aria-haspopup="dialog">🎉 <span id="gcHolLabel">Holidays</span> <span aria-hidden="true">▾</span></button>
       </div>
       <div class="gc-private"><span aria-hidden="true">🔒</span> Your calendar is private. Only you see it; guests see the events they're invited to.</div>
       <div class="gc-gbox" id="gcGoogle"></div>
@@ -1074,6 +1075,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   </div>
   <div class="gc-row"><span class="ic" aria-hidden="true">🕒</span>
     <input type="date" id="qDate" aria-label="Date">
+    <div class="q-hol" id="qHolWarn" role="status" hidden></div>
     <span class="q-ev"><input type="time" id="qStart" aria-label="Starts" step="900"> – <input type="time" id="qEnd" aria-label="Ends" step="900"></span>
     <span class="q-task"><input type="time" id="qTaskTime" aria-label="Starts (optional)" step="900"> <span class="q-to">–</span> <input type="time" id="qTaskEnd" aria-label="Ends" step="900"></span>
   </div>
@@ -1088,6 +1090,14 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
 
 <!-- Details (click an item) -->
 <div class="gc-pop gc-detail" id="gcDetail" role="dialog" aria-label="Details" hidden></div>
+
+<!-- Which countries' holidays -->
+<div class="gc-holpop" id="gcHolPop" role="dialog" aria-label="Holidays for which countries" hidden>
+  <div class="hp-h">Show holidays for</div>
+  <input type="search" id="gcHolSearch" placeholder="Search a country" autocomplete="off" aria-label="Search a country">
+  <div class="hp-list" id="gcHolList"></div>
+  <div class="hp-foot" id="gcHolFoot"></div>
+</div>
 
 <!-- Colour palette (click the little square) -->
 <div class="gc-palette" id="gcPalette" role="dialog" aria-label="Choose a colour" hidden></div>
@@ -1112,6 +1122,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       <label class="gc-check"><input type="checkbox" id="eAllDay"> All day</label>
       <select id="eRepeat" aria-label="Repeat"></select>
     </div>
+    <div class="ed-hol" id="eHolWarn" role="status" hidden></div>
     <div class="ed-cols">
       <div class="ed-main">
         <div class="ed-tabs"><span class="on" id="eTabName">Event details</span></div>
@@ -1435,6 +1446,40 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   /* a tall block: the title continues on the next lines (as many as fit), the time underneath */
   .gc-ev:not(.short) .tt{white-space:normal;text-overflow:clip;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--tl, 1);line-clamp:var(--tl, 1);overflow:hidden;overflow-wrap:anywhere;}
   .gc-ev:not(.short) .tm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* Only the calendar scrolls, not the whole page (on normal screens; small screens scroll as usual) */
+  @media (min-width:1051px){
+    html, body{height:100%;overflow:hidden;}
+    .seq-main{overflow:hidden !important;display:flex;flex-direction:column;}
+    .cal-shell{flex:1;min-height:0;display:flex;flex-direction:column;box-sizing:border-box;width:100%;padding-bottom:16px !important;}
+    .gc-layout{flex:1;min-height:0;align-items:stretch !important;}
+    .gc-rail{position:static !important;min-height:0;overflow-y:auto;padding-bottom:12px;scrollbar-width:thin;}
+    .gc-main{display:flex;flex-direction:column;min-height:0;}
+    .gc-view{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto;}
+    .gc-view > .gc-grid-head, .gc-view > .gc-allday{flex-shrink:0;}
+    .gc-view .gc-scroll{flex:1;min-height:0 !important;height:auto !important;}
+  }
+
+  /* ---------- Holidays ---------- */
+  .gc-holbtn{display:flex;align-items:center;gap:6px;width:100%;margin-top:6px;border:0;background:none;border-radius:9px;padding:7px 8px;font:600 12.5px 'Inter',sans-serif;color:var(--slate);cursor:pointer;text-align:left;}
+  .gc-holbtn[hidden], .ed-hol[hidden], .q-hol[hidden]{display:none !important;}
+  .gc-holbtn:hover{background:var(--panel-alt);color:var(--ink);}
+  .gc-holbtn:focus-visible{outline:2px solid var(--teal);}
+  .gc-holbtn span:first-of-type{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .gc-holpop{position:fixed;z-index:95;width:280px;background:var(--panel);border-radius:14px;box-shadow:0 12px 40px -8px rgba(16,24,40,.35),0 0 0 1px var(--border);padding:12px;}
+  .gc-holpop .hp-h{font:700 13px 'Inter',sans-serif;color:var(--ink);margin-bottom:8px;}
+  .gc-holpop input[type=search]{width:100%;box-sizing:border-box;border:1px solid var(--border);background:var(--panel-alt);border-radius:9px;padding:8px 10px;font:13px 'Inter',sans-serif;color:var(--ink);}
+  .gc-holpop .hp-list{max-height:260px;overflow:auto;margin:8px -4px 6px;}
+  .gc-holpop .hp-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font:500 13px 'Inter',sans-serif;color:var(--ink);cursor:pointer;}
+  .gc-holpop .hp-row:hover{background:var(--panel-alt);}
+  .gc-holpop .hp-row input:disabled + *{opacity:.5;}
+  .gc-holpop .hp-none{padding:8px;font-size:12.5px;color:var(--slate);}
+  .gc-holpop .hp-foot{font-size:11.5px;color:var(--slate);}
+  .gc-chip[data-key^="holiday:"]{font-weight:600;}
+  .ed-hol{margin:10px 22px 0 72px;padding:9px 12px;border-radius:10px;background:rgba(11,128,67,.09);color:#0B6B39;font:600 13px 'Inter',sans-serif;}
+  .q-hol{margin-top:6px;padding:7px 10px;border-radius:9px;background:rgba(11,128,67,.09);color:#0B6B39;font:600 12px 'Inter',sans-serif;}
+  html[data-theme="dark"] .ed-hol, html[data-theme="dark"] .q-hol{background:rgba(51,182,121,.14);color:#7FE0AE;}
+  @media (max-width:820px){ .ed-hol{margin-left:22px;} }
 </style>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -1507,6 +1552,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
     linkedin: {label: 'LinkedIn messages', color: '#0A66C2'},
     post:     {label: 'LinkedIn posts',    color: '#0E9C8C'},
     google:   {label: 'Google Calendar',   color: '#8792A8'},
+    holiday:  {label: 'Holidays',          color: '#0B8043'},
   };
   // PalaTrack's main colours (they also match the colours of a connected calendar)
   const PALETTE = [
@@ -1570,6 +1616,78 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   let cursor = new Date(); cursor.setHours(0, 0, 0, 0);
   let miniMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   let events = [], tasks = [], calls = [], posts = [], emails = [], runs = [], leadNames = {};
+  // ---------- Holidays ----------
+  // From Google's holiday calendar when Google is connected (fuller, in your language),
+  // otherwise from the free public-holiday list (Nager.Date). Only shown here, never copied into Google.
+  const TZ_COUNTRY = {'Europe/Brussels': 'BE', 'Europe/Amsterdam': 'NL', 'Europe/Luxembourg': 'LU', 'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Europe/London': 'GB',
+    'Europe/Dublin': 'IE', 'Europe/Madrid': 'ES', 'Europe/Lisbon': 'PT', 'Europe/Rome': 'IT', 'Europe/Zurich': 'CH', 'Europe/Vienna': 'AT', 'Europe/Warsaw': 'PL',
+    'Europe/Prague': 'CZ', 'Europe/Copenhagen': 'DK', 'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Helsinki': 'FI', 'Europe/Athens': 'GR', 'Europe/Budapest': 'HU',
+    'Europe/Bucharest': 'RO', 'Europe/Istanbul': 'TR', 'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US', 'America/Los_Angeles': 'US',
+    'America/Toronto': 'CA', 'America/Vancouver': 'CA', 'America/Mexico_City': 'MX', 'America/Sao_Paulo': 'BR', 'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU',
+    'Pacific/Auckland': 'NZ', 'Asia/Tokyo': 'JP', 'Asia/Singapore': 'SG', 'Asia/Dubai': 'AE', 'Africa/Johannesburg': 'ZA', 'Asia/Kolkata': 'IN'};
+  function detectCountry(){
+    try{ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(TZ_COUNTRY[tz]) return TZ_COUNTRY[tz]; }catch(e){}
+    const m = String(navigator.language || '').match(/-([A-Z]{2})$/i); return m ? m[1].toUpperCase() : 'BE';
+  }
+  const LANG = String(navigator.language || 'en').slice(0, 2).toLowerCase();
+  let countryNames = null; try{ countryNames = new Intl.DisplayNames([navigator.language || 'en'], {type: 'region'}); }catch(e){}
+  // names from the browser; otherwise from the public holiday list, or this short built-in list
+  const CC_NAMES = {BE: 'Belgium', NL: 'Netherlands', LU: 'Luxembourg', FR: 'France', DE: 'Germany', GB: 'United Kingdom', IE: 'Ireland', ES: 'Spain', PT: 'Portugal',
+    IT: 'Italy', CH: 'Switzerland', AT: 'Austria', PL: 'Poland', CZ: 'Czechia', DK: 'Denmark', SE: 'Sweden', NO: 'Norway', FI: 'Finland', GR: 'Greece', HU: 'Hungary',
+    RO: 'Romania', TR: 'Türkiye', US: 'United States', CA: 'Canada', MX: 'Mexico', BR: 'Brazil', AU: 'Australia', NZ: 'New Zealand', JP: 'Japan', SG: 'Singapore',
+    AE: 'United Arab Emirates', ZA: 'South Africa', IN: 'India'};
+  const countryName = cc=> { let n = null; try{ n = countryNames && countryNames.of(cc); }catch(e){} return (n && n !== cc) ? n : (CC_NAMES[cc] || cc); };
+  let holCountries = null, holSaved = false, gcalChecked = false;
+  const holData = {}, holLoading = {};   // "BE:2026" -> {list: [{date, name, localName, observance, regional}], source}
+  function holSet(cc, y, list, source){ holData[cc + ':' + y] = {list, source}; }
+  function loadNager(cc, y){
+    const k = 'ptHol:' + cc + ':' + y;
+    try{ const c = JSON.parse(localStorage.getItem(k) || 'null'); if(c && Date.now() - c.at < 30 * 86400000){ holSet(cc, y, c.list, 'list'); soon(); return Promise.resolve(); } }catch(e){}
+    return fetch(`https://date.nager.at/api/v3/PublicHolidays/${y}/${cc}`).then(r=> r.status === 200 ? r.json() : []).then(rows=>{
+      const list = (rows || []).map(h=> ({date: h.date, name: h.name || h.localName, localName: h.localName && h.localName !== h.name ? h.localName : null,
+        observance: Array.isArray(h.types) && !h.types.includes('Public') && !h.types.includes('Bank'), regional: h.global === false}));
+      holSet(cc, y, list, 'list');
+      try{ localStorage.setItem(k, JSON.stringify({at: Date.now(), list})); }catch(e){}
+      soon();
+    }).catch(()=>{ holSet(cc, y, [], 'none'); });
+  }
+  function loadHolidays(){
+    if(!holCountries || !gcalChecked || hidden.has('holiday')) return;
+    const r = range(), years = [...new Set([r.start.getFullYear(), new Date(r.end - 1).getFullYear()])];
+    years.forEach(y=>{
+      const missing = holCountries.filter(cc=> !holData[cc + ':' + y] && !holLoading[cc + ':' + y]);
+      if(!missing.length) return;
+      missing.forEach(cc=> holLoading[cc + ':' + y] = true);
+      const done = ()=> missing.forEach(cc=> delete holLoading[cc + ':' + y]);
+      if(gcalConn){
+        firebase.functions().httpsCallable('listGoogleHolidays')({countries: missing, year: y, lang: LANG}).then(res=>{
+          const d = res.data || {}, failed = new Set(d.failed || []);
+          missing.forEach(cc=>{
+            if(failed.has(cc) || !d.connected){ loadNager(cc, y); return; }
+            holSet(cc, y, (d.holidays || []).filter(h=> h.country === cc).map(h=> ({date: h.date, name: h.name, localName: null, observance: !!h.observance, regional: false})), 'google');
+          });
+          done(); soon();
+        }).catch(()=>{ Promise.all(missing.map(cc=> loadNager(cc, y))).then(done); });
+      } else Promise.all(missing.map(cc=> loadNager(cc, y))).then(done);
+    });
+  }
+  // public holidays (not observances) on a date, for the warning when planning
+  function holidaysOn(iso){
+    if(!holCountries || !iso) return [];
+    const y = iso.slice(0, 4), out = [];
+    holCountries.forEach(cc=> ((holData[cc + ':' + y] || {}).list || []).forEach(h=>{ if(h.date === iso && !h.observance) out.push({...h, country: cc}); }));
+    return out;
+  }
+  function holWarnText(iso){
+    const hs = holidaysOn(iso); if(!hs.length) return '';
+    const byName = {}; hs.forEach(h=> (byName[h.name] = byName[h.name] || []).push(countryName(h.country) + (h.regional ? ' (some regions)' : '')));
+    return '🎉 That’s ' + Object.entries(byName).map(([n, cs])=> `${n} in ${cs.join(' and ')}`).join('; ') + '.';
+  }
+  function showHolWarn(el, iso){ const t = holWarnText(iso); el.hidden = !t; el.textContent = t; }
+  function saveHolCountries(list){
+    holCountries = list; holSaved = true; render();
+    db.doc(`workspaces/${wsId}/members/${myUid}`).update({holidayCountries: list}).catch(()=>{});
+  }
   let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gEvents = {}, gLoading = {};
   let byKey = {};
   const templateOwners = {};
@@ -1621,6 +1739,22 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       const end = g.end && g.end.length > 10 ? g.end.slice(11, 16) : null;
       out.push({type: 'google', id: 'g' + k, date: g.date, time: g.allDay ? null : g.time, end: g.allDay ? null : (end && end > g.time ? end : fromMins(toMins(g.time) + 60)), allDay: !!g.allDay || !g.time, title: g.title});
     });
+    if(holCountries){
+      const r = range(), a = toISO(r.start), b = toISO(new Date(r.end - 1)), seen = {};
+      holCountries.forEach(cc=>{
+        [...new Set([a.slice(0, 4), b.slice(0, 4)])].forEach(y=>{
+          const d = holData[cc + ':' + y]; if(!d) return;
+          d.list.forEach(h=>{
+            if(h.date < a || h.date > b) return;
+            const k = h.date + '|' + h.name;
+            if(seen[k]){ seen[k].raw.countries.push(cc); return; }
+            const it = {type: 'holiday', id: k, date: h.date, endDate: h.date, time: null, end: null, allDay: true, title: '🎉 ' + h.name, editable: false, resizable: false,
+              obs: h.observance, raw: {...h, countries: [cc], source: d.source}};
+            seen[k] = it; out.push(it);
+          });
+        });
+      });
+    }
     out.forEach(x=>{ x.key = x.type + ':' + x.id + (x.keySuffix || ''); if(!x.color) x.color = TYPES[x.type].color; });
     return includeHidden ? out : out.filter(x=> !hidden.has(x.type));
   }
@@ -1650,7 +1784,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       : cursor.toLocaleDateString(undefined, {month: 'long', year: 'numeric'});
     renderMini(); renderCals(); renderGoogleBox();
     if(view === 'month') renderMonth(r, items); else renderGrid(r, items);
-    loadGoogle();
+    loadGoogle(); loadHolidays();
   }
   function renderMini(){
     const m = miniMonth, start = mondayOf(m), r = range(), a = toISO(r.start), b = toISO(new Date(r.end - 1)), today = todayISO();
@@ -1664,7 +1798,12 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       <span><button type="button" data-mininav="-1" aria-label="Previous month">‹</button><button type="button" data-mininav="1" aria-label="Next month">›</button></span></div>
       <div class="gc-mini-g">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(w=> `<span class="w">${w}</span>`).join('')}${cells}</div>`;
   }
+  function renderHolBtn(){
+    const b = $('gcHolBtn'); b.hidden = hidden.has('holiday') || !holCountries;
+    if(holCountries) $('gcHolLabel').textContent = holCountries.length ? 'Holidays in ' + holCountries.map(countryName).join(', ') : 'Choose a country for holidays';
+  }
   function renderCals(){
+    renderHolBtn();
     const r = range(), a = toISO(r.start), b = toISO(new Date(r.end - 1)), all = allItems(true).filter(x=> x.date >= a && x.date <= b);
     $('gcCals').innerHTML = Object.entries(TYPES).filter(([k])=> k !== 'google' || gcalConn).map(([k, t])=>
       `<button type="button" class="gc-cal${hidden.has(k) ? ' off' : ''}" data-cal="${k}" style="--c:${t.color}" aria-pressed="${!hidden.has(k)}"><span class="box" aria-hidden="true">✓</span>${t.label}<span class="n">${all.filter(x=> x.type === k).length || ''}</span></button>`).join('');
@@ -1770,7 +1909,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
     closePops(true);
     quickState = {type: s.type || 'event', date: s.date, start: s.start || '09:00', end: s.end || '10:00', allDay: !!s.allDay};
     $('qTitle').value = '';
-    $('qDate').value = s.date; $('qStart').value = quickState.start; $('qEnd').value = quickState.end; $('qAllDay').checked = quickState.allDay;
+    $('qDate').value = s.date; showHolWarn($('qHolWarn'), s.date); $('qStart').value = quickState.start; $('qEnd').value = quickState.end; $('qAllDay').checked = quickState.allDay;
     $('qTaskTime').value = s.allDay ? '' : quickState.start;
     $('qTaskEnd').value = s.allDay ? '' : (quickState.end || fromMins(Math.min(toMins(quickState.start) + 60, 24 * 60 - 1)));
     syncQuick(); place(quick, x, y);
@@ -1862,6 +2001,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       <div class="bar"><button type="button" class="sq${canColor(x) ? ' can' : ''}" style="--c:${x.color}" ${canColor(x) ? 'data-d="color" title="Change colour" aria-label="Change colour"' : 'tabindex="-1" aria-hidden="true"'}></button>
         <div><h3>${esc(x.title)}</h3><div class="when">${esc(whenText(x))}</div>${rep ? `<div class="when">${esc(rep)}</div>` : ''}</div></div>
       ${x.type === 'event' && e.reminderMinutes !== null && e.reminderMinutes !== undefined ? `<div class="line"><span class="ic">🔔</span><span class="v">${esc(reminderText(e.reminderMinutes))}</span></div>` : ''}
+      ${x.type === 'holiday' ? `<div class="line"><span class="ic">🎉</span><span class="v"><b>${e.observance ? 'Observance' : 'Public holiday'}</b> in ${esc(e.countries.map(countryName).join(', '))}${e.regional ? ' (some regions)' : ''}${e.localName ? `<br><i>${esc(e.localName)}</i>` : ''}<br><span style="color:var(--slate);font-size:12px">${e.source === 'google' ? 'From your Google holiday calendar' : 'From the public holiday list'}</span></span></div>` : ''}
       ${e.kind === 'ooo' ? `<div class="line"><span class="ic">🧳</span><span class="v"><b>Out of office</b>${e.autoDecline ? '<br>New invitations are declined automatically' : ''}${e.declineExisting ? '<br>Meetings already planned are declined too' : ''}${e.declineMessage && e.autoDecline ? `<br><i>“${esc(e.declineMessage)}”</i>` : ''}</span></div>` : ''}
       ${loc ? `<div class="line"><span class="ic">📍</span><span class="v">${loc}</span></div>` : ''}
       ${e.description || (x.type === 'task' && e.notes) ? `<div class="line"><span class="ic">📝</span><span class="v">${esc(e.description || e.notes)}</span></div>` : ''}
@@ -1955,7 +2095,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
     $('eTz').textContent = (()=>{ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' '); }catch(e){ return ''; } })();
     $('eDelete').style.display = id && creator ? '' : 'none';
     $('eDelete').textContent = isTask ? 'Delete task' : 'Delete event';
-    renderGuests(); renderColorBtn(); syncEditor();
+    renderGuests(); renderColorBtn(); syncEditor(); showHolWarn($('eHolWarn'), $('eDate').value);
     edOv.classList.add('open'); edOv.setAttribute('aria-hidden', 'false');
     setTimeout(()=> $('eTitle').focus(), 30);
   }
@@ -1991,6 +2131,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   }
   function addGuest(u){ if(!editState.guests.includes(u)) editState.guests.push(u); $('eGuestSearch').value = ''; $('eGuestSuggest').hidden = true; renderGuests(); $('eGuestSearch').focus(); }
   $('eGuestSearch').addEventListener('input', ()=>{ sugPick = 0; renderSuggest(); });
+  $('qDate').addEventListener('change', ()=> showHolWarn($('qHolWarn'), $('qDate').value));
   $('eGuestSearch').addEventListener('keydown', e=>{
     const btns = [...$('eGuestSuggest').querySelectorAll('[data-addguest]')];
     if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); if(btns.length){ sugPick = (sugPick + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length; renderSuggest(); } }
@@ -2003,7 +2144,7 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   $('eNotifAdd').addEventListener('click', ()=>{ editState.notif = true; syncEditor(); $('eNotifVal').focus(); });
   $('eNotifRm').addEventListener('click', ()=>{ editState.notif = false; syncEditor(); });
   $('eAllDay').addEventListener('change', syncEditor);
-  $('eDate').addEventListener('change', ()=>{ if(editState) renderGuests();
+  $('eDate').addEventListener('change', ()=>{ showHolWarn($('eHolWarn'), $('eDate').value); if(editState) renderGuests();
     if($('eEndDate').value < $('eDate').value) $('eEndDate').value = $('eDate').value;
     const cur = $('eRepeat').value; [...$('eRepeat').options].forEach(o=>{ if(o.value !== 'none') o.textContent = repeatLabel(o.value, $('eDate').value); }); $('eRepeat').value = cur;
   });
@@ -2255,6 +2396,36 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   $('gcNext').addEventListener('click', ()=> step(1));
   document.querySelectorAll('[data-view]').forEach(b=> b.addEventListener('click', ()=> setView(b.dataset.view)));
 
+  // ----- choosing the countries -----
+  let allCountries = null;
+  const holPop = $('gcHolPop');
+  function loadCountries(){
+    if(allCountries) return Promise.resolve(allCountries);
+    return fetch('https://date.nager.at/api/v3/AvailableCountries').then(r=> r.json()).then(rows=>{ rows.forEach(c=>{ if(!CC_NAMES[c.countryCode]) CC_NAMES[c.countryCode] = c.name; }); allCountries = rows.map(c=> c.countryCode); return allCountries; })
+      .catch(()=> (allCountries = Object.values(TZ_COUNTRY).filter((c, i, arr)=> arr.indexOf(c) === i)));
+  }
+  function renderHolList(){
+    const q = $('gcHolSearch').value.trim().toLowerCase(), picked = holCountries || [];
+    const list = (allCountries || []).map(cc=> ({cc, name: countryName(cc)})).filter(c=> !q || c.name.toLowerCase().includes(q) || c.cc.toLowerCase() === q)
+      .sort((a, b)=> (picked.includes(b.cc) - picked.includes(a.cc)) || a.name.localeCompare(b.name));
+    $('gcHolList').innerHTML = list.length ? list.map(c=> `<label class="hp-row"><input type="checkbox" data-cc="${c.cc}" ${picked.includes(c.cc) ? 'checked' : ''} ${!picked.includes(c.cc) && picked.length >= 3 ? 'disabled' : ''}> ${esc(c.name)}</label>`).join('')
+      : `<div class="hp-none">No country matches "${esc(q)}".</div>`;
+    $('gcHolFoot').textContent = picked.length >= 3 ? 'Up to 3 countries.' : (gcalConn ? 'From your Google holiday calendar.' : 'From the public holiday list.') + (holSaved ? '' : ' Picked from your time zone.');
+  }
+  $('gcHolBtn').addEventListener('click', e=>{
+    const r = e.currentTarget.getBoundingClientRect();
+    holPop.hidden = false; holPop.style.left = Math.min(r.left, innerWidth - 290) + 'px'; holPop.style.top = Math.min(r.bottom + 6, innerHeight - 380) + 'px';
+    $('gcHolSearch').value = ''; renderHolList(); loadCountries().then(()=>{ renderHolList(); $('gcHolSearch').focus(); });
+  });
+  $('gcHolSearch').addEventListener('input', renderHolList);
+  $('gcHolList').addEventListener('change', e=>{
+    const c = e.target.closest('[data-cc]'); if(!c) return;
+    const cur = holCountries || [];
+    const next = c.checked ? [...cur, c.dataset.cc].slice(0, 3) : cur.filter(x=> x !== c.dataset.cc);
+    saveHolCountries(next); renderHolList();
+  });
+  document.addEventListener('mousedown', e=>{ if(!holPop.hidden && !holPop.contains(e.target) && !e.target.closest('#gcHolBtn')) holPop.hidden = true; });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && !holPop.hidden){ holPop.hidden = true; e.stopPropagation(); } }, true);
   $('gcCals').addEventListener('click', e=>{ const c = e.target.closest('[data-cal]'); if(!c) return;
     hidden.has(c.dataset.cal) ? hidden.delete(c.dataset.cal) : hidden.add(c.dataset.cal); localStorage.setItem('ptCalHidden', JSON.stringify([...hidden])); render(); });
   $('gcMini').addEventListener('click', e=>{
@@ -2316,6 +2487,8 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       db.collection('workspaces').doc(wsId).collection('members').get().then(snap=>{
         snap.docs.forEach(d=>{ members[d.id] = d.data(); });
         myName = (members[myUid] || {}).name || user.email || 'You';
+        const saved = (members[myUid] || {}).holidayCountries;
+        holSaved = Array.isArray(saved); holCountries = holSaved ? saved.filter(c=> /^[A-Z]{2}$/.test(c)).slice(0, 3) : [detectCountry()]; soon();
         const n = $('seqSidebarUserName'), av = $('seqSidebarAvatar'); if(n) n.textContent = myName; if(av) av.textContent = initials(myName);
       }).catch(()=>{});
       let first = true;
@@ -2331,7 +2504,11 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       db.collection('tasks').where('workspaceId', '==', wsId).onSnapshot(snap=>{ tasks = snap.docs.map(d=>({id: d.id, ...d.data()})); soon(); reveal(); },
         err=>{ console.error(err); showToast('Could not load tasks: ' + (err.message || ''), true); reveal(); });
       db.collection('linkedinPosts').where('createdBy', '==', myUid).onSnapshot(snap=>{ posts = snap.docs.map(d=>({id: d.id, ...d.data()})).filter(p=> p.status === 'scheduled' && p.workspaceId === wsId); soon(); }, ()=>{});
-      db.doc(`calendarConnections/${myUid}`).onSnapshot(d=>{ gcalConn = d.exists ? d.data() : null; if(!gcalConn) gEvents = {}; soon(); }, ()=>{});
+      db.doc(`calendarConnections/${myUid}`).onSnapshot(d=>{
+        const was = !!gcalConn; gcalConn = d.exists ? d.data() : null; if(!gcalConn) gEvents = {};
+        if(gcalChecked && was !== !!gcalConn) Object.keys(holData).forEach(k=> delete holData[k]);   // connected or disconnected: reload from the other source
+        gcalChecked = true; soon();
+      }, ()=>{ gcalChecked = true; soon(); });
       // who made each LinkedIn sequence (for runs from before "who started it" was recorded)
       db.collection('outOfOffice').where('workspaceId', '==', wsId).onSnapshot(snap=>{ awayList = snap.docs.map(d=>({id: d.id, ...d.data()})); if(editState) renderGuests(); }, ()=>{});
       db.collection('linkedinSequenceTemplates').where('workspaceId', '==', wsId).get().then(snap=>{ snap.docs.forEach(d=>{ templateOwners[d.id] = d.data().createdBy || null; }); soon(); }).catch(()=>{});
