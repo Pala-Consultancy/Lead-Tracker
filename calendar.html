@@ -1017,6 +1017,8 @@ html[data-theme="dark"] .gc-detail .acts .del:hover{color:#EC8E9B}
 html[data-theme="dark"] .gc-del{color:#EC8E9B}
 html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,0.15))}
 html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
+html[data-theme="dark"] .gc-ev.ooo, html[data-theme="dark"] .gc-chip.ooo{background:repeating-linear-gradient(135deg, var(--c) 0 7px, color-mix(in srgb, var(--c) 72%, #161934) 7px 14px) !important}
+html[data-theme="dark"] small.away{color:#EEAE8B !important}
 </style>
 <!-- pt-dark-theme:end -->
 </head>
@@ -1068,6 +1070,7 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
   <div class="gc-tabs" role="tablist">
     <button type="button" data-qtype="event" role="tab">Event</button>
     <button type="button" data-qtype="task" role="tab">Task</button>
+    <button type="button" data-qtype="ooo" role="tab">Out of office</button>
   </div>
   <div class="gc-row"><span class="ic" aria-hidden="true">🕒</span>
     <input type="date" id="qDate" aria-label="Date">
@@ -1075,6 +1078,8 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     <span class="q-task"><input type="time" id="qTaskTime" aria-label="Starts (optional)" step="900"> <span class="q-to">–</span> <input type="time" id="qTaskEnd" aria-label="Ends" step="900"></span>
   </div>
   <label class="gc-check q-ev"><input type="checkbox" id="qAllDay"> All day</label>
+  <div class="q-ooo"><label class="gc-check"><input type="checkbox" id="qAutoDecline" checked> Automatically decline new invitations</label>
+    <p class="q-ooo-hint">🧳 Teammates who invite you during this time see that you're out of office.</p></div>
   <div class="gc-pop-foot">
     <button type="button" class="gc-link" id="qMore">More options</button>
     <button type="button" class="gc-save" id="qSave">Save</button>
@@ -1109,7 +1114,7 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     </div>
     <div class="ed-cols">
       <div class="ed-main">
-        <div class="ed-tabs"><span class="on">Event details</span></div>
+        <div class="ed-tabs"><span class="on" id="eTabName">Event details</span></div>
         <div class="ed-row" id="eLocRow"><span class="ic" aria-hidden="true">📍</span><input type="text" id="eLocation" maxlength="300" placeholder="Add location or video call link" aria-label="Location"></div>
         <div class="ed-row" id="eNotifRow"><span class="ic" aria-hidden="true">🔔</span>
           <div class="ed-notif" id="eNotifBox">
@@ -1125,7 +1130,12 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
           <span class="ed-cal" id="eCalName"></span>
           <div class="ed-colorwrap"><button type="button" class="ed-colorbtn" id="eColorBtn" aria-haspopup="true" aria-label="Colour"><i></i><span aria-hidden="true">▾</span></button></div>
         </div>
-        <div class="ed-row top"><span class="ic" aria-hidden="true">📝</span><textarea id="eDesc" rows="6" maxlength="4000" placeholder="Add description" aria-label="Description"></textarea></div>
+        <div class="ed-ooo" id="eOooRow">
+          <div class="ed-row"><span class="ic" aria-hidden="true">🧳</span><label class="gc-check"><input type="checkbox" id="eAutoDecline"> Automatically decline new invitations</label></div>
+          <div class="ed-row"><span class="ic"></span><label class="gc-check"><input type="checkbox" id="eDeclineExisting"> Also decline meetings already planned in this time</label></div>
+          <div class="ed-row top"><span class="ic" aria-hidden="true">💬</span><textarea id="eDeclineMsg" rows="3" maxlength="500" placeholder="Message sent with the decline" aria-label="Decline message"></textarea></div>
+        </div>
+        <div class="ed-row top" id="eDescRow"><span class="ic" aria-hidden="true">📝</span><textarea id="eDesc" rows="6" maxlength="4000" placeholder="Add description" aria-label="Description"></textarea></div>
       </div>
       <div class="ed-side" id="eGuestSide">
         <div class="ed-tabs"><span class="on">Guests</span></div>
@@ -1395,12 +1405,32 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
   .gc-palette .pl-custom:focus-within{outline:2px solid var(--teal);}
   .gc-palette .pl-dot{width:22px;height:22px;border-radius:50%;background:var(--c);display:grid;place-items:center;color:#fff;font-size:13px;}
   .gc-palette .pl-custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-  .q-task{display:inline-flex;align-items:center;gap:4px;}
+  .gc-pop.task .q-task{display:inline-flex;align-items:center;gap:4px;}
+  .gc-pop:not(.task) .q-task{display:none !important;}
   .q-to{color:var(--slate);}
 
   .gc-ev.copying{opacity:.92;box-shadow:0 10px 24px -8px rgba(16,24,40,.45);}
   .gc-ev.copying::after{content:"+";position:absolute;top:3px;right:3px;width:18px;height:18px;line-height:18px !important;border-radius:50%;background:var(--ink,#16202C);color:#fff;font:700 14px/20px 'Inter',sans-serif;text-align:center;box-shadow:0 0 0 2px var(--panel);}
   body.gc-copying, body.gc-copying *{cursor:copy !important;}
+
+  /* an item lying on top of another gets a thin outline, so you can see where it starts */
+  .gc-col .gc-ev{box-shadow:0 0 0 1px var(--panel, #fff);}
+  .gc-col .gc-ev.dragging,.gc-col .gc-ev.copying{z-index:60 !important;}
+  .gc-col .gc-ev:focus-visible{z-index:59 !important;}
+
+  /* ---------- Out of office ---------- */
+  .gc-pop .q-ooo{display:none;}
+  .gc-pop.ooo .q-ooo{display:block;}
+  .q-ooo-hint{margin:6px 0 0;font-size:12px;color:var(--slate);line-height:1.45;}
+  .gc-ev.ooo,.gc-chip.ooo{background:repeating-linear-gradient(135deg, var(--c) 0 7px, color-mix(in srgb, var(--c) 72%, #fff) 7px 14px) !important;color:#fff;}
+  .gc-ev.ooo .tt::before,.gc-chip.ooo span::before{content:"🧳 ";}
+  .ed-ooo{display:none;}
+  .gc-ed2.ooo-mode .ed-ooo{display:block;}
+  .gc-ed2.ooo-mode #eLocRow,.gc-ed2.ooo-mode #eNotifRow,.gc-ed2.ooo-mode #eGuestSide,.gc-ed2.ooo-mode #eRepeat,.gc-ed2.ooo-mode #eDescRow{display:none !important;}
+  .gc-ed2.ooo-mode .ed-cols{grid-template-columns:1fr;}
+  .ed-ooo textarea{flex:1;min-width:0;border:0;background:var(--panel-alt);border-radius:8px;padding:11px 12px;font:14px 'Inter',sans-serif;color:var(--ink);resize:vertical;}
+  .ed-ooo textarea:focus{outline:2px solid var(--teal);}
+  small.away{display:block;margin-top:2px;color:#B4531E !important;font-weight:600 !important;white-space:normal;}
 </style>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -1485,6 +1515,17 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     {name: 'Lime', hex: '#9CCC65'}, {name: 'Mint', hex: '#26A69A'}, {name: 'Teal', hex: '#00796B'}, {name: 'Sky', hex: '#4FC3F7'},
     {name: 'Cobalt', hex: '#1565C0'}, {name: 'Indigo', hex: '#283593'}, {name: 'Violet', hex: '#7E57C2'}, {name: 'Orchid', hex: '#BA68C8'},
     {name: 'Cocoa', hex: '#6D4C41'}, {name: 'Sand', hex: '#BCAAA4'}, {name: 'Slate', hex: '#546E7A'}, {name: 'Ink', hex: '#263238'}];
+  const OOO_DEFAULTS = {kind: 'ooo', repeat: 'none', location: null, description: null, guests: [], color: null, reminderMinutes: null,
+    guestsCanModify: false, guestsCanInvite: false, guestsCanSeeList: false, autoDecline: true, declineExisting: false,
+    declineMessage: "I'm out of office and will reply when I'm back."};
+  // Teammates' out-of-office times (only when + their message; never anything else from their calendar)
+  let awayList = [];
+  function rangeOf(o){ return [o.date + ' ' + (o.allDay || !o.startTime ? '00:00' : o.startTime), (o.endDate || o.date) + ' ' + (o.allDay || !o.endTime ? '24:00' : o.endTime)]; }
+  function awayDuring(uid, when){
+    const [a, b] = rangeOf(when);
+    return awayList.find(o=> o.uid === uid && rangeOf(o)[0] < b && a < rangeOf(o)[1]) || null;
+  }
+  function editorWhen(){ return {date: $('eDate').value, endDate: $('eEndDate').value || $('eDate').value, allDay: $('eAllDay').checked, startTime: $('eStart').value, endTime: $('eEnd').value}; }
   const REPEATS = {none: 'Does not repeat', daily: 'Every day', weekdays: 'Every weekday (Monday to Friday)', weekly: 'Weekly', monthly: 'Monthly', yearly: 'Every year'};
   function repeatLabel(r, iso){
     if(!r || r === 'none') return '';
@@ -1542,7 +1583,7 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
       const guest = e.createdBy !== myUid, canEdit = !guest || e.guestsCanModify === true;
       occurrences(e.date, e.repeat, a, b).forEach(d=>{
         out.push({type: 'event', id: e.id, occ: d, keySuffix: e.repeat && e.repeat !== 'none' ? '@' + d : '', date: d, endDate: addDaysISO(d, span), time: allDay ? null : e.startTime,
-          end: allDay ? null : (e.endTime || fromMins(toMins(e.startTime) + 60)), allDay, title: e.title || '(No title)', color: e.color || TYPES.event.color,
+          end: allDay ? null : (e.endTime || fromMins(toMins(e.startTime) + 60)), allDay, title: e.title || '(No title)', color: e.color || (e.kind === 'ooo' ? '#616161' : TYPES.event.color), ooo: e.kind === 'ooo',
           editable: canEdit, resizable: canEdit && !allDay, raw: e});
       });
     });
@@ -1636,19 +1677,19 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
 
   // ----- Day / week grid -----
   const HPX = 48;
-  function evHTML(x, lane, lanes){
+  function evHTML(x, left, width, z){
     const s = x.time ? toMins(x.time) : 0, e = Math.max(s + 15, x.end ? toMins(x.end) : s + 30);
-    const top = s / 60 * HPX, h = Math.max(20, (e - s) / 60 * HPX - 2), w = 100 / lanes, short = h < 38;
+    const top = s / 60 * HPX, h = Math.max(20, (e - s) / 60 * HPX - 2), short = h < 38;
     const soft = x.type !== 'event' && x.type !== 'task' && x.type !== 'google' ? ' soft' : '';
-    return `<div class="gc-ev${soft}${x.type === 'google' ? ' google' : ''}${x.done ? ' done' : ''}${short ? ' short' : ''}" tabindex="0" role="button" data-key="${esc(x.key)}"
-      style="top:${top}px;height:${h}px;left:calc(${lane * w}% + 1px);width:calc(${w}% - 6px);--c:${x.color}" aria-label="${esc(x.title)}, ${esc(fmtTime(x.time))}${x.end ? ' to ' + esc(fmtTime(x.end)) : ''}">
+    return `<div class="gc-ev${soft}${x.type === 'google' ? ' google' : ''}${x.done ? ' done' : ''}${short ? ' short' : ''}${x.ooo ? ' ooo' : ''}" tabindex="0" role="button" data-key="${esc(x.key)}"
+      style="top:${top}px;height:${h}px;left:calc(${left}% + 1px);width:calc(${width}% - 6px);z-index:${z};--c:${x.color}" aria-label="${esc(x.title)}, ${esc(fmtTime(x.time))}${x.end ? ' to ' + esc(fmtTime(x.end)) : ''}">
       <span class="tt">${esc(x.title)}</span><span class="tm">${esc(fmtTime(x.time))}${x.end && x.type !== 'task' ? ' – ' + esc(fmtTime(x.end)) : ''}</span>
       ${x.resizable ? '<span class="rz" aria-hidden="true"></span>' : ''}</div>`;
   }
   function chipHTML(x, month){
     const timed = month && x.time && !x.allDay;
     const soft = !timed && x.type !== 'event' && x.type !== 'task' && x.type !== 'google' ? ' soft' : '';
-    return `<button type="button" class="gc-chip${timed ? ' timed' : ''}${soft}${x.type === 'google' ? ' google' : ''}${x.done ? ' done' : ''}" style="--c:${x.color}" data-key="${esc(x.key)}"
+    return `<button type="button" class="gc-chip${timed ? ' timed' : ''}${soft}${x.type === 'google' ? ' google' : ''}${x.done ? ' done' : ''}${x.ooo ? ' ooo' : ''}" style="--c:${x.color}" data-key="${esc(x.key)}"
       ${x.editable ? 'draggable="true"' : ''} title="${esc(x.title)}">${timed ? `<b>${esc(fmtTime(x.time))}</b>` : ''}<span>${esc(x.title)}</span></button>`;
   }
   function renderGrid(r, items){
@@ -1665,18 +1706,29 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     const colsHTML = days.map(iso=>{
       const timed = items.filter(x=> x.date === iso && x.time && !x.allDay).map(x=>({x, s: toMins(x.time), e: Math.max(toMins(x.time) + 15, x.end ? toMins(x.end) : toMins(x.time) + 30)}))
         .sort((a, b)=> a.s - b.s || b.e - a.e);
-      // lanes for overlapping items (like Google, side by side)
-      const placed = [];
-      let group = [], groupEnd = -1;
-      const closeGroup = ()=>{ const n = Math.max(1, ...group.map(q=> q.lane + 1)); group.forEach(q=> q.lanes = n); group = []; };
+      // Overlapping items, like Google Calendar: one that starts later lies ON TOP of the earlier one,
+      // a little indented, so the earlier one keeps its full width. Items starting within
+      // half an hour of each other sit side by side instead.
+      const placed = [], clusters = [];
+      const NEAR = 30, INDENT = 16, MAX_INDENT = 56;
       timed.forEach(p=>{
-        if(p.s >= groupEnd){ closeGroup(); groupEnd = -1; }
-        let lane = 0; while(group.some(q=> q.lane === lane && q.s < p.e && p.s < q.e)) lane++;
-        p.lane = lane; group.push(p); placed.push(p); groupEnd = Math.max(groupEnd, p.e);
+        const active = placed.filter(q=> q.e > p.s);
+        const near = clusters.find(c=> p.s - c.s < NEAR && c.members.some(q=> q.e > p.s));
+        if(near){ near.members.push(p); p.cluster = near; }
+        else {
+          const indent = active.length ? Math.max(...active.map(q=> q.cluster.indent)) + 1 : 0;
+          p.cluster = {s: p.s, indent, members: [p]}; clusters.push(p.cluster);
+        }
+        placed.push(p);
       });
-      closeGroup();
+      clusters.forEach(c=>{
+        const base = Math.min(c.indent * INDENT, MAX_INDENT), avail = 100 - base, n = c.members.length;
+        // side by side, but (like Google) each one a bit wider so they overlap slightly; the later one on top
+        const step = avail / n;
+        c.members.forEach((p, i)=>{ p.left = base + i * step; p.width = i === n - 1 ? avail - i * step : Math.min(step * 1.7, avail - i * step); p.z = 2 + c.indent + i; });
+      });
       return `<div class="gc-col${iso === today ? ' today' : ''}" data-col="${iso}">${hours.map(()=> '<div class="s"></div>').join('')}
-        ${placed.map(p=> evHTML(p.x, p.lane, p.lanes)).join('')}
+        ${placed.map(p=> evHTML(p.x, p.left, p.width, p.z)).join('')}
         ${iso === today ? `<div class="gc-now" style="top:${nowM / 60 * HPX}px"></div>` : ''}</div>`;
     }).join('');
     const prevScroll = $view.querySelector('.gc-scroll') ? $view.querySelector('.gc-scroll').scrollTop : null;
@@ -1720,6 +1772,8 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
   }
   function syncQuick(){
     quick.classList.toggle('task', quickState.type === 'task');
+    quick.classList.toggle('ooo', quickState.type === 'ooo');
+    $('qTitle').placeholder = quickState.type === 'ooo' ? 'Out of office' : 'Add title';
     quick.querySelectorAll('[data-qtype]').forEach(b=>{ const on = b.dataset.qtype === quickState.type; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     const ad = $('qAllDay').checked; $('qStart').disabled = $('qEnd').disabled = ad;
     $('qMore').textContent = quickState.type === 'task' ? 'Open Tasks' : 'More options';
@@ -1749,6 +1803,11 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     const allDay = $('qAllDay').checked;
     let start = $('qStart').value || '09:00', end = $('qEnd').value || fromMins(toMins(start) + 60);
     if(!allDay && toMins(end) <= toMins(start)) end = fromMins(toMins(start) + 60);
+    if(quickState.type === 'ooo'){
+      saveEvent(null, {...OOO_DEFAULTS, title: title || 'Out of office', date, endDate: date, allDay, startTime: allDay ? null : start, endTime: allDay ? null : end,
+        autoDecline: $('qAutoDecline').checked}).then(()=> closePops());
+      return;
+    }
     saveEvent(null, {title: title || '(No title)', date, endDate: date, allDay, startTime: allDay ? null : start, endTime: allDay ? null : end,
       location: null, description: null, guests: [], color: null, repeat: 'none', reminderMinutes: 10, guestsCanModify: false, guestsCanInvite: true, guestsCanSeeList: true}).then(()=> closePops());
   });
@@ -1756,6 +1815,8 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     if(quickState.type === 'task'){ location.href = 'tasks.html'; return; }
     const date = $('qDate').value || todayISO(), allDay = $('qAllDay').checked;
     closePops();
+    if(quickState.type === 'ooo'){ openEditor('event', null, {...OOO_DEFAULTS, title: $('qTitle').value.trim() || 'Out of office', date, endDate: date, allDay,
+      startTime: $('qStart').value || '09:00', endTime: $('qEnd').value || '17:00', autoDecline: $('qAutoDecline').checked}); return; }
     openEditor('event', null, {title: $('qTitle').value.trim(), date, endDate: date, allDay, startTime: $('qStart').value || '09:00', endTime: $('qEnd').value || '10:00', guests: [], color: null});
   });
   // Details
@@ -1795,6 +1856,7 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
       <div class="bar"><button type="button" class="sq${canColor(x) ? ' can' : ''}" style="--c:${x.color}" ${canColor(x) ? 'data-d="color" title="Change colour" aria-label="Change colour"' : 'tabindex="-1" aria-hidden="true"'}></button>
         <div><h3>${esc(x.title)}</h3><div class="when">${esc(whenText(x))}</div>${rep ? `<div class="when">${esc(rep)}</div>` : ''}</div></div>
       ${x.type === 'event' && e.reminderMinutes !== null && e.reminderMinutes !== undefined ? `<div class="line"><span class="ic">🔔</span><span class="v">${esc(reminderText(e.reminderMinutes))}</span></div>` : ''}
+      ${e.kind === 'ooo' ? `<div class="line"><span class="ic">🧳</span><span class="v"><b>Out of office</b>${e.autoDecline ? '<br>New invitations are declined automatically' : ''}${e.declineExisting ? '<br>Meetings already planned are declined too' : ''}${e.declineMessage && e.autoDecline ? `<br><i>“${esc(e.declineMessage)}”</i>` : ''}</span></div>` : ''}
       ${loc ? `<div class="line"><span class="ic">📍</span><span class="v">${loc}</span></div>` : ''}
       ${e.description || (x.type === 'task' && e.notes) ? `<div class="line"><span class="ic">📝</span><span class="v">${esc(e.description || e.notes)}</span></div>` : ''}
       ${showGuests && guests.length ? `<div class="line"><span class="ic">👥</span><span class="v">${guests.length} guest${guests.length === 1 ? '' : 's'}: ${esc(guests.join(', '))}</span></div>` : ''}
@@ -1854,9 +1916,14 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     data = data || {};
     const isTask = kind === 'task';
     const creator = isTask || !id || data.createdBy === myUid || !data.createdBy;
-    editState = {kind, id, creator, guests: [...(data.guests || [])], color: isTask ? (data.calColor || null) : (data.color || null),
+    editState = {kind, id, ooo: kind === 'event' && data.kind === 'ooo', creator, guests: [...(data.guests || [])], color: isTask ? (data.calColor || null) : (data.color || null),
       canInvite: creator || data.guestsCanInvite !== false};
     const ed = document.querySelector('.gc-ed2'); ed.classList.toggle('task-mode', isTask);
+    const isOoo = !isTask && data.kind === 'ooo';
+    ed.classList.toggle('ooo-mode', isOoo);
+    $('eTabName').textContent = isTask ? 'Task details' : isOoo ? 'Out of office' : 'Event details';
+    $('eAutoDecline').checked = data.autoDecline !== false; $('eDeclineExisting').checked = !!data.declineExisting;
+    $('eDeclineMsg').value = data.declineMessage || OOO_DEFAULTS.declineMessage;
     $('eTitle').value = data.title && data.title !== '(No title)' ? data.title : '';
     const date = isTask ? (data.dueDate || todayISO()) : (data.date || todayISO());
     $('eDate').value = date;
@@ -1900,7 +1967,9 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     const AVC = u=> AV[Math.abs([...u].reduce((a, c)=> a + c.charCodeAt(0), 0)) % AV.length];
     $('eGuestList').innerHTML = (editState.creator ? '' : `<div class="ed-guest"><span class="av" style="background:${AVC('org')}">${esc(initials('Organiser'))}</span><span class="nm">Organiser</span></div>`) +
       list.map(g=>{ const m = members[g.uid] || {}, n = m.name || m.email || 'Teammate';
-        return `<div class="ed-guest"><span class="av" style="background:${AVC(g.uid)}">${esc(initials(n))}</span><span class="nm">${esc(n)}${g.uid === myUid ? ' (you)' : ''}<small>${g.org ? 'Organiser' : esc(m.email || '')}</small></span>
+        const away = g.uid !== myUid ? awayDuring(g.uid, editorWhen()) : null;
+        return `<div class="ed-guest"><span class="av" style="background:${AVC(g.uid)}">${esc(initials(n))}</span><span class="nm">${esc(n)}${g.uid === myUid ? ' (you)' : ''}<small>${g.org ? 'Organiser' : esc(m.email || '')}</small>
+          ${away ? `<small class="away">🧳 Out of office${away.autoDecline ? ' · will decline' : ''}${away.declineMessage ? ': “' + esc(away.declineMessage) + '”' : ''}</small>` : ''}</span>
           ${!g.org && editState.creator ? `<button type="button" data-rmguest="${g.uid}" aria-label="Remove ${esc(n)}">✕</button>` : ''}</div>`; }).join('');
   }
   let sugPick = 0;
@@ -1910,7 +1979,7 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     const hits = Object.entries(members).filter(([u, m])=> u !== myUid && !editState.guests.includes(u) && ((m.name || '') + ' ' + (m.email || '')).toLowerCase().includes(q)).slice(0, 6);
     sugPick = Math.min(sugPick, Math.max(0, hits.length - 1));
     box.hidden = false;
-    box.innerHTML = hits.length ? hits.map(([u, m], k)=> `<button type="button" data-addguest="${u}" class="${k === sugPick ? 'on' : ''}"><span>${esc(m.name || m.email || 'Teammate')}</span><small style="color:var(--slate);font-weight:500">${esc(m.email || '')}</small></button>`).join('')
+    box.innerHTML = hits.length ? hits.map(([u, m], k)=> `<button type="button" data-addguest="${u}" class="${k === sugPick ? 'on' : ''}"><span>${esc(m.name || m.email || 'Teammate')}</span><small style="color:var(--slate);font-weight:500">${esc(m.email || '')}</small>${awayDuring(u, editorWhen()) ? '<small class="away">🧳 Out of office</small>' : ''}</button>`).join('')
       : (()=>{ const already = Object.entries(members).filter(([u, m])=> editState.guests.includes(u) && ((m.name || '') + ' ' + (m.email || '')).toLowerCase().includes(q));
           return `<div class="none">${already.length ? esc(already.map(([u, m])=> m.name || m.email).join(', ')) + (already.length === 1 ? ' is' : ' are') + ' already invited.' : `No teammate matches "${esc(q)}".`}</div>`; })();
   }
@@ -1928,11 +1997,11 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
   $('eNotifAdd').addEventListener('click', ()=>{ editState.notif = true; syncEditor(); $('eNotifVal').focus(); });
   $('eNotifRm').addEventListener('click', ()=>{ editState.notif = false; syncEditor(); });
   $('eAllDay').addEventListener('change', syncEditor);
-  $('eDate').addEventListener('change', ()=>{
+  $('eDate').addEventListener('change', ()=>{ if(editState) renderGuests();
     if($('eEndDate').value < $('eDate').value) $('eEndDate').value = $('eDate').value;
     const cur = $('eRepeat').value; [...$('eRepeat').options].forEach(o=>{ if(o.value !== 'none') o.textContent = repeatLabel(o.value, $('eDate').value); }); $('eRepeat').value = cur;
   });
-  $('eStart').addEventListener('change', ()=>{ if(($('eEndDate').value === $('eDate').value || (editState && editState.kind === 'task')) && toMins($('eEnd').value) <= toMins($('eStart').value)) $('eEnd').value = fromMins(Math.min(toMins($('eStart').value) + 60, 24 * 60 - 1)); });
+  $('eStart').addEventListener('change', ()=>{ if(editState) renderGuests(); if(($('eEndDate').value === $('eDate').value || (editState && editState.kind === 'task')) && toMins($('eEnd').value) <= toMins($('eStart').value)) $('eEnd').value = fromMins(Math.min(toMins($('eStart').value) + 60, 24 * 60 - 1)); });
   edOv.addEventListener('click', e=>{ if(e.target === edOv || e.target.closest('[data-close="editor"]')) closeEditor(); });
   $('eSave').addEventListener('click', ()=>{
     const st = editState; if(!st) return;
@@ -1952,6 +2021,13 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
     const data = {title: title || '(No title)', date, endDate, allDay, startTime: allDay ? null : start, endTime: allDay ? null : end,
       repeat: $('eRepeat').value, location: $('eLocation').value.trim() || null, description: $('eDesc').value.trim() || null,
       color: st.color || null, reminderMinutes: st.notif ? mins : null};
+    if(st.ooo){
+      Object.assign(data, {kind: 'ooo', repeat: 'none', location: null, reminderMinutes: null, guests: [], guestsCanModify: false, guestsCanInvite: false, guestsCanSeeList: false,
+        title: title || 'Out of office', autoDecline: $('eAutoDecline').checked, declineExisting: $('eDeclineExisting').checked,
+        declineMessage: $('eDeclineMsg').value.trim() || OOO_DEFAULTS.declineMessage});
+      saveEvent(st.id, data).then(ok=>{ if(ok) closeEditor(); });
+      return;
+    }
     if(st.creator){ Object.assign(data, {guests: st.guests, guestsCanModify: $('eCanModify').checked, guestsCanInvite: $('eCanInvite').checked, guestsCanSeeList: $('eCanSee').checked}); }
     else if(st.canInvite){ data.guests = st.guests; }
     saveEvent(st.id, data).then(ok=>{ if(ok) closeEditor(); });
@@ -2006,6 +2082,7 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
       const mine = r.createdBy === myUid;
       const data = {title: r.title || '(No title)', date, endDate: start ? date : addDaysISO(date, span), allDay: !start, startTime: start || null, endTime: start ? (end || fromMins(Math.min(toMins(start) + 60, 24 * 60 - 1))) : null,
         repeat: 'none', location: r.location || null, description: r.description || null, color: r.color || null,
+        ...(r.kind === 'ooo' ? {kind: 'ooo', autoDecline: r.autoDecline !== false, declineExisting: !!r.declineExisting, declineMessage: r.declineMessage || OOO_DEFAULTS.declineMessage} : {}),
         reminderMinutes: r.reminderMinutes === undefined ? null : r.reminderMinutes,
         guests: mine ? (r.guests || []) : [], guestsCanModify: mine ? !!r.guestsCanModify : false, guestsCanInvite: mine ? r.guestsCanInvite !== false : true, guestsCanSeeList: mine ? r.guestsCanSeeList !== false : true};
       p = saveEvent(null, data, {quiet: true}).then(id=> id ? {col: 'calendarEvents', id} : null);
@@ -2250,6 +2327,7 @@ html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
       db.collection('linkedinPosts').where('createdBy', '==', myUid).onSnapshot(snap=>{ posts = snap.docs.map(d=>({id: d.id, ...d.data()})).filter(p=> p.status === 'scheduled' && p.workspaceId === wsId); soon(); }, ()=>{});
       db.doc(`calendarConnections/${myUid}`).onSnapshot(d=>{ gcalConn = d.exists ? d.data() : null; if(!gcalConn) gEvents = {}; soon(); }, ()=>{});
       // who made each LinkedIn sequence (for runs from before "who started it" was recorded)
+      db.collection('outOfOffice').where('workspaceId', '==', wsId).onSnapshot(snap=>{ awayList = snap.docs.map(d=>({id: d.id, ...d.data()})); if(editState) renderGuests(); }, ()=>{});
       db.collection('linkedinSequenceTemplates').where('workspaceId', '==', wsId).get().then(snap=>{ snap.docs.forEach(d=>{ templateOwners[d.id] = d.data().createdBy || null; }); soon(); }).catch(()=>{});
       loadCalls(); loadRuns();
       setInterval(()=>{ loadCalls(); loadRuns(); gEvents = {}; soon(); }, 5 * 60 * 1000);
