@@ -1015,6 +1015,7 @@ html[data-theme="dark"] .gc-ev{border:1px solid rgba(122,115,255,0.20)}
 html[data-theme="dark"] .gc-ev .rz::after{background:rgba(22,25,52,0.70)}
 html[data-theme="dark"] .gc-detail .acts .del:hover{color:#EC8E9B}
 html[data-theme="dark"] .gc-del{color:#EC8E9B}
+html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,0.15))}
 </style>
 <!-- pt-dark-theme:end -->
 </head>
@@ -1036,13 +1037,7 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
         <div class="gc-cals-h">My calendars</div>
         <div id="gcCals"></div>
       </div>
-      <div class="gc-cals">
-        <div class="gc-cals-h">Show</div>
-        <div class="gc-scope" role="group" aria-label="Whose items">
-          <button type="button" data-scope="mine">Only mine</button>
-          <button type="button" data-scope="team">Everyone</button>
-        </div>
-      </div>
+      <div class="gc-private"><span aria-hidden="true">🔒</span> Your calendar is private. Only you see it; guests see the events they're invited to.</div>
       <div class="gc-gbox" id="gcGoogle"></div>
     </aside>
 
@@ -1280,6 +1275,8 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
   .gc-pop.task .q-task{display:inline;}
   @media (max-width:1050px){ .gc-layout{grid-template-columns:1fr;} .gc-rail{position:static;flex-direction:row;flex-wrap:wrap;} .gc-mini,.gc-gbox{display:none;} }
   @media (prefers-reduced-motion: reduce){ .gc-create{transition:none;} }
+
+  .gc-private{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.45;color:var(--slate);background:var(--panel-alt,#F6F8FC);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
 </style>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -1350,7 +1347,6 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
     task:     {label: 'Tasks',             color: '#3730B3'},
     call:     {label: 'Calls',             color: '#7A4FB5'},
     linkedin: {label: 'LinkedIn messages', color: '#0A66C2'},
-    email:    {label: 'Scheduled emails',  color: '#E8912D'},
     post:     {label: 'LinkedIn posts',    color: '#0E9C8C'},
     google:   {label: 'Google Calendar',   color: '#8792A8'},
   };
@@ -1360,16 +1356,17 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
   // ---------- State ----------
   let myUid = null, myName = 'You', wsId = null, members = {};
   let view = localStorage.getItem('ptCalView2') || 'week';
-  let scope = localStorage.getItem('ptCalScope') || 'mine';
+  const scope = 'mine';   // private: only your own items, never someone else's
   let hidden = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('ptCalHidden') || '[]')); }catch(e){ return new Set(); } })();
   let cursor = new Date(); cursor.setHours(0, 0, 0, 0);
   let miniMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   let events = [], tasks = [], calls = [], posts = [], emails = [], runs = [], leadNames = {};
   let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gEvents = {}, gLoading = {};
   let byKey = {};
+  const templateOwners = {};
 
   // ---------- Everything with a date, in one shape ----------
-  function mine(uid){ return !uid || uid === myUid; }
+  function mine(uid){ return !!uid && uid === myUid; }
   function allItems(includeHidden){
     const out = [];
     events.forEach(e=>{
@@ -1394,14 +1391,11 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
         link: `dashboard.html?board=${encodeURIComponent(c.boardId)}&lead=${encodeURIComponent(c.id)}`});
     });
     runs.forEach(r=>{
-      if(scope === 'mine' && !mine(r.startedBy)) return;
+      // who started it; for older runs (from before this was recorded): who made the sequence
+      if(!mine(r.startedBy || templateOwners[r.templateId])) return;
       const d = tsDate(r.nextDueAt) || new Date(), n = (r.currentStepIndex || 0) + 1, total = (r.steps || []).length;
       out.push({type: 'linkedin', id: r.id, date: toISO(d < new Date() ? new Date() : d), time: null, allDay: true,
         title: `LinkedIn ${n}/${total}: ${leadNames[r.boardId + '/' + r.leadId] || 'a lead'}`, link: `dashboard.html?board=${encodeURIComponent(r.boardId)}&lead=${encodeURIComponent(r.leadId)}`});
-    });
-    emails.forEach(e=>{
-      const d = tsDate(e.sendAt); if(!d || (scope === 'mine' && !mine(e.sentBy))) return;
-      out.push({type: 'email', id: e.id, date: toISO(d), time: hhmm(d), end: fromMins(d.getHours() * 60 + d.getMinutes() + 30), allDay: false, title: 'Email: ' + (e.subject || '(no subject)'), link: 'scheduled-emails.html'});
     });
     posts.forEach(p=>{
       const d = tsDate(p.scheduledAt); if(!d) return;
@@ -1432,7 +1426,7 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
     closePops(true);
     const items = allItems(); byKey = {}; items.forEach(x=> byKey[x.key] = x);
     document.querySelectorAll('[data-view]').forEach(b=> b.classList.toggle('on', b.dataset.view === view));
-    document.querySelectorAll('[data-scope]').forEach(b=> b.classList.toggle('on', b.dataset.scope === scope));
+
     const r = range();
     const last = new Date(r.end - 86400000);
     $('gcTitle').textContent = view === 'day' ? cursor.toLocaleDateString(undefined, {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})
@@ -1614,7 +1608,7 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
       ${guests.length ? `<div class="line"><span class="ic">👥</span><span class="v">${esc(guests.join(', '))}</span></div>` : ''}
       ${x.type === 'event' ? `<div class="line"><span class="ic">👤</span><span class="v">Created by ${esc(e.createdBy === myUid ? 'you' : (e.createdByName || 'a teammate'))}</span></div>` : ''}
       <div class="acts">
-        ${x.type === 'event' ? `<button type="button" class="del" data-d="delete">Delete</button><button type="button" data-d="edit">Edit</button>` : ''}
+        ${x.type === 'event' ? `${e.createdBy === myUid ? '<button type="button" class="del" data-d="delete">Delete</button>' : ''}<button type="button" data-d="edit">Edit</button>` : ''}
         ${x.type === 'task' ? `<button type="button" data-d="done">${x.done ? 'Mark as not done' : '✓ Mark as done'}</button>` : ''}
         ${x.link ? `<a href="${esc(x.link)}">Open</a>` : ''}
       </div>`;
@@ -1644,7 +1638,7 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
     $('eStart').value = data.startTime || '09:00'; $('eEnd').value = data.endTime || fromMins(toMins(data.startTime || '09:00') + 60);
     $('eAllDay').checked = !!data.allDay;
     $('eLocation').value = data.location || ''; $('eDesc').value = data.description || '';
-    $('eDelete').style.display = id ? '' : 'none';
+    $('eDelete').style.display = id && (data.createdBy === myUid || !data.createdBy) ? '' : 'none';
     renderGuests(); renderColors(); syncEditor();
     edOv.classList.add('open'); edOv.setAttribute('aria-hidden', 'false');
     setTimeout(()=> $('eTitle').focus(), 30);
@@ -1838,7 +1832,7 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
   $('gcPrev').addEventListener('click', ()=> step(-1));
   $('gcNext').addEventListener('click', ()=> step(1));
   document.querySelectorAll('[data-view]').forEach(b=> b.addEventListener('click', ()=> setView(b.dataset.view)));
-  document.querySelectorAll('[data-scope]').forEach(b=> b.addEventListener('click', ()=>{ scope = b.dataset.scope; localStorage.setItem('ptCalScope', scope); render(); }));
+
   $('gcCals').addEventListener('click', e=>{ const c = e.target.closest('[data-cal]'); if(!c) return;
     hidden.has(c.dataset.cal) ? hidden.delete(c.dataset.cal) : hidden.add(c.dataset.cal); localStorage.setItem('ptCalHidden', JSON.stringify([...hidden])); render(); });
   $('gcMini').addEventListener('click', e=>{
@@ -1903,16 +1897,21 @@ html[data-theme="dark"] .gc-del{color:#EC8E9B}
         const n = $('seqSidebarUserName'), av = $('seqSidebarAvatar'); if(n) n.textContent = myName; if(av) av.textContent = initials(myName);
       }).catch(()=>{});
       let first = true;
-      db.collection('calendarEvents').where('workspaceId', '==', wsId).onSnapshot(snap=>{
-        events = snap.docs.map(d=>({id: d.id, ...d.data()})); soon();
+      // Two queries the security rules can check: events you created, and events you're a guest of.
+      let myEvents = [], invited = [];
+      const mergeEvents = ()=>{ const seen = new Set(); events = [...myEvents, ...invited].filter(e=> e.workspaceId === wsId && !seen.has(e.id) && seen.add(e.id)); soon(); };
+      db.collection('calendarEvents').where('guests', 'array-contains', myUid).onSnapshot(snap=>{ invited = snap.docs.map(d=>({id: d.id, ...d.data()})); mergeEvents(); }, ()=>{});
+      db.collection('calendarEvents').where('createdBy', '==', myUid).onSnapshot(snap=>{
+        myEvents = snap.docs.map(d=>({id: d.id, ...d.data()})); mergeEvents();
         if(first){ first = false; const q = new URLSearchParams(location.search).get('event'); const ev = q && events.find(x=> x.id === q);
           if(ev){ cursor = fromISO(ev.date); render(); setTimeout(()=>{ const el = $view.querySelector(`[data-key="event:${CSS.escape(ev.id)}"]`); if(el) openDetail('event:' + ev.id, el); }, 80); history.replaceState(null, '', location.pathname); } }
       }, err=> console.warn('Could not load events', err));
       db.collection('tasks').where('workspaceId', '==', wsId).onSnapshot(snap=>{ tasks = snap.docs.map(d=>({id: d.id, ...d.data()})); soon(); reveal(); },
         err=>{ console.error(err); showToast('Could not load tasks: ' + (err.message || ''), true); reveal(); });
-      db.collection('scheduledEmails').where('workspaceId', '==', wsId).onSnapshot(snap=>{ emails = snap.docs.map(d=>({id: d.id, ...d.data()})).filter(e=> e.status === 'pending'); soon(); }, ()=>{});
       db.collection('linkedinPosts').where('createdBy', '==', myUid).onSnapshot(snap=>{ posts = snap.docs.map(d=>({id: d.id, ...d.data()})).filter(p=> p.status === 'scheduled' && p.workspaceId === wsId); soon(); }, ()=>{});
       db.doc(`calendarConnections/${myUid}`).onSnapshot(d=>{ gcalConn = d.exists ? d.data() : null; if(!gcalConn) gEvents = {}; soon(); }, ()=>{});
+      // who made each LinkedIn sequence (for runs from before "who started it" was recorded)
+      db.collection('linkedinSequenceTemplates').where('workspaceId', '==', wsId).get().then(snap=>{ snap.docs.forEach(d=>{ templateOwners[d.id] = d.data().createdBy || null; }); soon(); }).catch(()=>{});
       loadCalls(); loadRuns();
       setInterval(()=>{ loadCalls(); loadRuns(); gEvents = {}; soon(); }, 5 * 60 * 1000);
       const r = new URLSearchParams(location.search).get('calendarConnect');
