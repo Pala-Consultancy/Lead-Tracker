@@ -479,6 +479,16 @@
   ::-webkit-scrollbar-thumb{background:var(--c-border-alt, var(--border));border-radius:6px;border:2px solid transparent;background-clip:padding-box;}
   ::-webkit-scrollbar-thumb:hover{background:var(--slate-light);background-clip:padding-box;}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+  .picker-board{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(55,48,179,.06);border:1px solid rgba(55,48,179,.18);}
+  .picker-board .pb-ic{font-size:18px;}
+  .picker-board .pb-txt{flex:1;min-width:0;display:flex;flex-direction:column;font-size:13px;color:var(--ink);}
+  .picker-board .pb-txt small{font-size:11.5px;color:var(--slate);margin-top:1px;}
+  .picker-board .pb-btn{border:1px solid var(--teal);background:var(--panel);color:var(--teal);border-radius:9px;padding:7px 12px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
+  .picker-board .pb-btn:hover{background:rgba(55,48,179,.08);}
+  .picker-board .pb-btn.on{background:var(--teal);color:#fff;}
+  .picker-board .pb-btn:disabled{opacity:.5;cursor:default;}
+  .picker-board .pb-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1044,7 +1054,8 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
     <div class="picker-head">
       <h3 id="pickerTitle">Duplicate to another lead</h3>
       <p id="pickerDesc">Pick which lead gets a copy of this sequence — as a new draft, so you can review it before starting.</p>
-      <input type="text" class="picker-search" id="pickerSearch" placeholder="Search leads by name or company...">
+      <input type="search" class="picker-search" id="pickerSearch" placeholder="Search leads by name or company..." autocomplete="off" spellcheck="false">
+      <div class="picker-board" id="pickerBoardBar" hidden></div>
     </div>
     <div class="picker-list" id="pickerList"></div>
     <div class="picker-close">
@@ -1388,6 +1399,30 @@ window.PTEmoji = (function(){
   let pickerMultiSelect = false;
   let pickerSelectedIds = new Set();
   let pickerOnConfirm = null;
+  // ----- "Whole board": select every lead on this board (with an email, max 200) -----
+  const MAX_CAMPAIGN_LEADS = 200;
+  let pickerBoardName = '';
+  function renderBoardBar(){
+    const bar = document.getElementById('pickerBoardBar');
+    if(!pickerMultiSelect){ bar.hidden = true; return; }
+    const eligible = boardLeads.filter(l=> l.email);
+    const target = eligible.slice(0, MAX_CAMPAIGN_LEADS);
+    const allOn = target.length > 0 && target.every(l=> pickerSelectedIds.has(l.id));
+    const noEmail = boardLeads.length - eligible.length;
+    bar.hidden = false;
+    bar.innerHTML = `<span class="pb-ic" aria-hidden="true">📋</span>
+      <span class="pb-txt"><b>Whole board${pickerBoardName ? ': ' + esc(pickerBoardName) : ''}</b>
+        <small>${eligible.length} lead${eligible.length === 1 ? '' : 's'} with an email${noEmail ? ` · ${noEmail} without an email ${noEmail === 1 ? 'is' : 'are'} skipped` : ''}${eligible.length > MAX_CAMPAIGN_LEADS ? ` · the first ${MAX_CAMPAIGN_LEADS} are selected (the maximum per campaign)` : ''}</small></span>
+      <button type="button" class="pb-btn${allOn ? ' on' : ''}" id="pickerBoardAll" ${eligible.length ? '' : 'disabled'}>${allOn ? '✓ Whole board selected' : `Select all ${Math.min(eligible.length, MAX_CAMPAIGN_LEADS)}`}</button>`;
+    document.getElementById('pickerBoardAll').onclick = ()=>{
+      if(allOn) target.forEach(l=> pickerSelectedIds.delete(l.id));
+      else { pickerSelectedIds = new Set([...pickerSelectedIds].filter(id=> eligible.some(l=> l.id === id))); target.forEach(l=> pickerSelectedIds.add(l.id)); }
+      renderPickerList(document.getElementById('pickerSearch').value);
+      if(!allOn) showToast(`All ${target.length} lead${target.length === 1 ? '' : 's'} on this board selected.`);
+    };
+    const confirm = document.getElementById('pickerConfirmBtn');
+    confirm.textContent = pickerSelectedIds.size ? `Confirm selection (${pickerSelectedIds.size})` : 'Confirm selection';
+  }
   function openPicker(options = {}){
     pickerMultiSelect = !!options.multiSelect;
     pickerSelectedIds = new Set(options.preselected || []);
@@ -1398,6 +1433,9 @@ window.PTEmoji = (function(){
     document.getElementById('pickerConfirmBtn').style.display = pickerMultiSelect ? '' : 'none';
     document.getElementById('pickerSearch').value = '';
     renderPickerList('');
+    if(pickerMultiSelect && !pickerBoardName && currentWorkspaceId && boardId){
+      db.doc(`workspaces/${currentWorkspaceId}/boards/${boardId}`).get().then(b=>{ pickerBoardName = b.exists ? (b.data().name || '') : ''; renderBoardBar(); }).catch(()=>{});
+    }
     document.getElementById('pickerOverlay').classList.add('open');
     document.getElementById('pickerSearch').focus();
   }
@@ -1409,6 +1447,7 @@ window.PTEmoji = (function(){
     const q = query.trim().toLowerCase();
     const filtered = !q ? boardLeads : boardLeads.filter(l=>
       (l.name||'').toLowerCase().includes(q) || (l.company||'').toLowerCase().includes(q));
+    renderBoardBar();
     if(filtered.length === 0){
       list.innerHTML = `<div class="picker-empty">No leads match "${esc(query)}".</div>`;
       return;
@@ -1423,7 +1462,7 @@ window.PTEmoji = (function(){
           <div class="picker-item-email">${esc(l.email || 'No email on file')}</div>
         </div>
       </div>`;
-    }).join('');
+    }).join('') + (filtered.length > 50 ? `<div class="picker-empty" style="padding:10px 16px;">Showing 50 of ${filtered.length}. Search to find others, or use "Select all" for the whole board.</div>` : '');
     list.querySelectorAll('.picker-item').forEach(item=>{
       item.addEventListener('click', ()=>{
         const lead = boardLeads.find(l=>l.id === item.dataset.id);
@@ -1433,6 +1472,7 @@ window.PTEmoji = (function(){
         }
         if(pickerMultiSelect){
           if(pickerSelectedIds.has(item.dataset.id)) pickerSelectedIds.delete(item.dataset.id);
+          else if(pickerSelectedIds.size >= MAX_CAMPAIGN_LEADS){ showToast(`A campaign can have up to ${MAX_CAMPAIGN_LEADS} leads.`, true); return; }
           else pickerSelectedIds.add(item.dataset.id);
           renderPickerList(document.getElementById('pickerSearch').value);
         } else {
