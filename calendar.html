@@ -1431,6 +1431,10 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   .ed-ooo textarea{flex:1;min-width:0;border:0;background:var(--panel-alt);border-radius:8px;padding:11px 12px;font:14px 'Inter',sans-serif;color:var(--ink);resize:vertical;}
   .ed-ooo textarea:focus{outline:2px solid var(--teal);}
   small.away{display:block;margin-top:2px;color:#B4531E !important;font-weight:600 !important;white-space:normal;}
+
+  /* a tall block: the title continues on the next lines (as many as fit), the time underneath */
+  .gc-ev:not(.short) .tt{white-space:normal;text-overflow:clip;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--tl, 1);line-clamp:var(--tl, 1);overflow:hidden;overflow-wrap:anywhere;}
+  .gc-ev:not(.short) .tm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 </style>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -1680,9 +1684,11 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   function evHTML(x, left, width, z){
     const s = x.time ? toMins(x.time) : 0, e = Math.max(s + 15, x.end ? toMins(x.end) : s + 30);
     const top = s / 60 * HPX, h = Math.max(20, (e - s) / 60 * HPX - 2), short = h < 38;
+    // how many lines of title fit above the time (≈15px a line, 6px padding, 14px for the time)
+    const tl = Math.max(1, Math.floor((h - 6 - 14) / 15));
     const soft = x.type !== 'event' && x.type !== 'task' && x.type !== 'google' ? ' soft' : '';
     return `<div class="gc-ev${soft}${x.type === 'google' ? ' google' : ''}${x.done ? ' done' : ''}${short ? ' short' : ''}${x.ooo ? ' ooo' : ''}" tabindex="0" role="button" data-key="${esc(x.key)}"
-      style="top:${top}px;height:${h}px;left:calc(${left}% + 1px);width:calc(${width}% - 6px);z-index:${z};--c:${x.color}" aria-label="${esc(x.title)}, ${esc(fmtTime(x.time))}${x.end ? ' to ' + esc(fmtTime(x.end)) : ''}">
+      style="top:${top}px;height:${h}px;left:calc(${left}% + 1px);width:calc(${width}% - 6px);z-index:${z};--c:${x.color};--tl:${tl}" aria-label="${esc(x.title)}, ${esc(fmtTime(x.time))}${x.end ? ' to ' + esc(fmtTime(x.end)) : ''}">
       <span class="tt">${esc(x.title)}</span><span class="tm">${esc(fmtTime(x.time))}${x.end && x.type !== 'task' ? ' – ' + esc(fmtTime(x.end)) : ''}</span>
       ${x.resizable ? '<span class="rz" aria-hidden="true"></span>' : ''}</div>`;
   }
