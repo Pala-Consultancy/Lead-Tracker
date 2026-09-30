@@ -211,6 +211,11 @@
       '.ptlib-all{border:0;border-radius:9px;padding:8px 14px;background:var(--teal,#3730B3);color:#fff;font:700 12.5px Inter,sans-serif;cursor:pointer;white-space:nowrap;}' +
       '.ptlib-none{padding:30px 16px;text-align:center;color:var(--slate,#5C6B7C);font-size:13.5px;line-height:1.6;}' +
       '.ptlib-none a{color:var(--teal,#3730B3);font-weight:700;}' +
+      '.ptlib-n{flex-shrink:0;font:700 11px Inter,sans-serif;color:#B4531E;}' +
+      '.ptlib-b .use em{font-style:normal;font-weight:700;margin-left:8px;}' +
+      '.ptlib-used{color:#B4531E;}' +
+      '.ptlib-gaps{color:#8A520D;}' +
+      '.ptlib-blank{background:rgba(232,145,45,.22);color:#8A520D;border-radius:4px;padding:0 2px;}' +
       '@media (max-width:720px){.ptlib{grid-template-columns:1fr;grid-template-rows:40% 60%;}.ptlib-l{border-right:0;border-bottom:1px solid var(--border,#DCE6F2);}}';
     document.head.appendChild(st);
   }
@@ -234,14 +239,27 @@
           p._order = p.folderId && order[p.folderId] !== undefined ? order[p.folderId] : 999;
           out.push(p);
         });
-        return out.sort(function(a, b){ return (a._order - b._order) || (a.folder || '').localeCompare(b.folder || '') || (a.title || '').localeCompare(b.title || ''); });
+        return out.sort(function(a, b){ return (a._order - b._order) || (a.folder || '').localeCompare(b.folder || '') || (usesOf(b) - usesOf(a)) || (a.title || '').localeCompare(b.title || ''); });
       });
     });
   }
-  function previewHTML(text){ return esc(text).replace(/\{([a-zA-Z]+)\}/g, '<span class="ph">{$1}</span>'); }
+  // [bracket parts] still to fill in, e.g. "[one concrete idea]"
+  var BLANK_RE = /\[[^\[\]\n]{1,60}\]/g;
+  function countBlanks(t){ return (String(t || '').match(BLANK_RE) || []).length; }
+  // a short, stable key for a part of a page (to count how often it's used)
+  function partKey(text){ var h = 5381, t = String(text || ''); for(var i = 0; i < t.length; i++){ h = ((h << 5) + h + t.charCodeAt(i)) | 0; } return 'p' + (h >>> 0).toString(36); }
+  function usesOf(p){ var u = p.uses || {}, n = 0; Object.keys(u).forEach(function(k){ n += +u[k] || 0; }); return n; }
+  function recordUse(page, key){
+    try{
+      var upd = {}; upd['uses.' + key] = firebase.firestore.FieldValue.increment(1);
+      // counted on the server only; the picker reads the counts fresh each time it opens
+      firebase.firestore().collection('libraryPages').doc(page.id).update(upd).catch(function(){});
+    }catch(e){}
+  }
+  function previewHTML(text){ return esc(text).replace(/\{([a-zA-Z]+)\}/g, '<span class="ph">{$1}</span>').replace(/\[[^\[\]\n]{1,60}\]/g, function(m){ return '<mark class="ptlib-blank">' + m + '</mark>'; }); }
   function close(v){ if(!box) return; box.remove(); box = null; document.removeEventListener('keydown', onKey, true); var s = state; state = null; if(s){ if(s.back) try{ s.back.focus(); }catch(e){} s.resolve(v || null); } }
   function onKey(e){ if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); close(null); } }
-  function result(html, title){ return {title: title, text: toText(html, state.format), html: toHTML(html, state.format)}; }
+  function result(html, title){ var t = toText(html, state.format); return {title: title, text: t, html: toHTML(html, state.format), blanks: countBlanks(t)}; }
   function renderList(){
     var q = (box.querySelector('.ptlib-l input').value || '').toLowerCase().trim();
     var list = state.pages.filter(function(p){ return !q || ((p.title || '') + ' ' + (p.text || '')).toLowerCase().indexOf(q) >= 0; });
@@ -251,7 +269,8 @@
     var html = '', last = null;
     list.forEach(function(p){
       if(p.folder !== last){ html += '<div class="ptlib-f">' + esc(p.folder || 'Pages') + '</div>'; last = p.folder; }
-      html += '<button type="button" class="ptlib-p' + (state.cur && state.cur.id === p.id ? ' on' : '') + '" data-id="' + esc(p.id) + '"><span>' + esc(p.icon || '📝') + '</span><span>' + esc(p.title || 'Untitled') + '</span></button>';
+      var n = usesOf(p);
+      html += '<button type="button" class="ptlib-p' + (state.cur && state.cur.id === p.id ? ' on' : '') + '" data-id="' + esc(p.id) + '"><span>' + esc(p.icon || '📝') + '</span><span>' + esc(p.title || 'Untitled') + '</span>' + (n ? '<small class="ptlib-n" title="Used ' + n + '× by your team">🔥 ' + n + '</small>' : '') + '</button>';
     });
     el.innerHTML = html;
   }
@@ -264,7 +283,9 @@
       '<button type="button" class="ptlib-x" data-close aria-label="Close">✕</button></div>' +
       '<div class="ptlib-hint">Click a part to put it in your message.' + (state.format === 'linkedin' ? ' Placeholders become {{firstName}} and so on.' : ' Placeholders fill in with each lead\u2019s details when it sends.') + '</div>' +
       '<div class="ptlib-blocks">' + (bl.length ? bl.map(function(b, i){
-        return '<button type="button" class="ptlib-b" data-b="' + i + '">' + (b.heading ? '<small>' + esc(b.heading) + '</small>' : '') + previewHTML(b.text) + '<span class="use">Use this →</span></button>';
+        var used = +((p.uses || {})[partKey(b.text)] || 0), gaps = countBlanks(b.text);
+        return '<button type="button" class="ptlib-b" data-b="' + i + '">' + (b.heading ? '<small>' + esc(b.heading) + '</small>' : '') + previewHTML(b.text) +
+          '<span class="use">Use this →' + (used ? ' <em class="ptlib-used">🔥 Used ' + used + '×</em>' : '') + (gaps ? ' <em class="ptlib-gaps">✏️ ' + gaps + ' blank' + (gaps === 1 ? '' : 's') + ' to fill</em>' : '') + '</span></button>';
       }).join('') : '<div class="ptlib-none">This page is empty.</div>') + '</div>';
     state.blocks = bl;
   }
@@ -284,8 +305,8 @@
       box.addEventListener('click', function(e){
         if(e.target.closest('[data-close]')){ close(null); return; }
         var p = e.target.closest('[data-id]'); if(p){ state.cur = state.pages.filter(function(x){ return x.id === p.dataset.id; })[0] || null; renderList(); renderPage(); return; }
-        if(e.target.closest('[data-all]')){ close(result(state.cur.content || '', state.cur.title)); return; }
-        var b = e.target.closest('[data-b]'); if(b){ close(result(state.blocks[+b.dataset.b].html, state.cur.title)); }
+        if(e.target.closest('[data-all]')){ recordUse(state.cur, 'page'); close(result(state.cur.content || '', state.cur.title)); return; }
+        var b = e.target.closest('[data-b]'); if(b){ var blk = state.blocks[+b.dataset.b]; recordUse(state.cur, partKey(blk.text)); close(result(blk.html, state.cur.title)); }
       });
       box.querySelector('.ptlib-l input').addEventListener('input', renderList);
       setTimeout(function(){ var i = box && box.querySelector('.ptlib-l input'); if(i) i.focus(); }, 30);
@@ -294,5 +315,5 @@
     });
   }
 
-  window.PTLib = {PH: PH, clean: clean, toText: toText, toHTML: toHTML, blocks: blocks, pick: pick, convertPh: convertPh};
+  window.PTLib = {PH: PH, clean: clean, toText: toText, toHTML: toHTML, blocks: blocks, pick: pick, convertPh: convertPh, countBlanks: countBlanks, usesOf: usesOf, BLANK_RE: BLANK_RE};
 })();

@@ -2346,7 +2346,8 @@ window.PTEmoji = (function(){
         const before = ta.value.slice(0, a), multi = res.text.includes('\n');
         const glue = !before ? '' : multi ? (before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n') : (/\s$/.test(before) ? '' : ' ');
         insertAtCursor(ta, glue + res.text);
-        showToast(`Added from "${res.title || 'your Library'}".`);
+        if(res.blanks) showToast(`Added from "${res.title || 'your Library'}". Fill in the ${res.blanks} part${res.blanks === 1 ? '' : 's'} in [brackets] before you send it.`, true);
+        else showToast(`Added from "${res.title || 'your Library'}".`);
       });
       return;
     }

@@ -2241,7 +2241,8 @@ window.PTEmoji = (function(){
         if(el.tagName === 'SPAN' && !el.attributes.length){ while(el.firstChild) el.parentNode.insertBefore(el.firstChild, el); el.remove(); } });
       updateBodyCount();
       body.dispatchEvent(new Event('input', {bubbles: true}));
-      showToast(`Added from "${res.title || 'your Library'}".`);
+      if(res.blanks) showToast(`Added from "${res.title || 'your Library'}". Fill in the ${res.blanks} part${res.blanks === 1 ? '' : 's'} in [brackets] before you send it.`, true);
+      else showToast(`Added from "${res.title || 'your Library'}".`);
     });
   });
   document.getElementById('seqPanelSubject').addEventListener('focus', ()=>{ lastFocusedField = 'subject'; });
