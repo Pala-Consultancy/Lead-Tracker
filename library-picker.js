@@ -24,16 +24,25 @@
 
   // ----- keep only the Library's own formatting -----
   var ALLOWED = {P: 1, H1: 1, H2: 1, H3: 1, UL: 1, OL: 1, LI: 1, BLOCKQUOTE: 1, HR: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, BR: 1, DIV: 1, SPAN: 1, A: 1};
-  var DROP = {SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, TEMPLATE: 1, META: 1, LINK: 1};
+  var DROP = {SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, TEMPLATE: 1, META: 1, LINK: 1, BUTTON: 1, INPUT: 1, SELECT: 1, TEXTAREA: 1};
+  // message flows: a first message with branches ("If no reply after 3 days" → follow-up), as deep as you like
+  var FLOW_CLASSES = ['flow', 'fl-step', 'fl-msg', 'fl-branches', 'fl-branch', 'fl-cond', 'fl-children'];
+  var BRANCH_TONES = ['no', 'yes', 'other'];
   function cleanNode(node){
     Array.prototype.slice.call(node.childNodes).forEach(function(n){
       if(n.nodeType === 3) return;
       if(n.nodeType !== 1){ n.remove(); return; }
       var tag = n.tagName;
-      if(DROP[tag]){ n.remove(); return; }
+      if(DROP[tag] || (n.classList && n.classList.contains('fl-ui'))){ n.remove(); return; }
       if(!ALLOWED[tag]){ cleanNode(n); while(n.firstChild) node.insertBefore(n.firstChild, n); n.remove(); return; }
       var keep = {};
-      if(tag === 'DIV'){ var c = n.classList.contains('todo') ? 'todo' : n.classList.contains('callout') ? 'callout' : null; if(c) keep['class'] = c; if(c === 'todo') keep['data-checked'] = n.getAttribute('data-checked') === 'true' ? 'true' : 'false'; }
+      if(tag === 'DIV'){
+        var c = n.classList.contains('todo') ? 'todo' : n.classList.contains('callout') ? 'callout' : null;
+        FLOW_CLASSES.forEach(function(f){ if(n.classList.contains(f)) c = f; });
+        if(c === 'fl-branch'){ var tone = BRANCH_TONES.filter(function(t){ return n.classList.contains(t); })[0] || 'other'; c = 'fl-branch ' + tone; }
+        if(c) keep['class'] = c;
+        if(c === 'todo') keep['data-checked'] = n.getAttribute('data-checked') === 'true' ? 'true' : 'false';
+      }
       if(tag === 'SPAN' && n.classList.contains('ph')){ var k = n.getAttribute('data-ph'); if(PH.some(function(p){ return p[0] === k; })){ keep['class'] = 'ph'; keep['data-ph'] = k; keep['contenteditable'] = 'false'; n.textContent = '{' + k + '}'; } }
       if(tag === 'A'){ var h = n.getAttribute('href') || ''; if(/^(https?:|mailto:)/i.test(h)){ keep.href = h; keep.target = '_blank'; keep.rel = 'noopener'; } }
       Array.prototype.slice.call(n.attributes).forEach(function(a){ n.removeAttribute(a.name); });
@@ -63,6 +72,7 @@
     return out;
   }
   function blockText(b, fmt){
+    if(isFlow(b)) return flowText(b, fmt);
     var tag = b.nodeType === 1 ? b.tagName : '#text';
     if(tag === '#text') return b.textContent.trim();
     if(tag === 'HR') return '—';
@@ -71,6 +81,43 @@
     }
     if(b.classList && b.classList.contains('todo')) return (b.getAttribute('data-checked') === 'true' ? '☑ ' : '☐ ') + inlineText(b, fmt).trim();
     return inlineText(b, fmt).replace(/\u00a0/g, ' ').trim();
+  }
+  function isFlow(b){ return b && b.nodeType === 1 && b.classList && b.classList.contains('flow'); }
+  function kids(el, cls){ return Array.prototype.filter.call(el ? el.children : [], function(c){ return c.classList && c.classList.contains(cls); }); }
+  // a message's text (it can hold several paragraphs)
+  function msgText(msg, fmt){
+    if(!msg) return '';
+    var blocksIn = Array.prototype.filter.call(msg.children, function(c){ return /^(P|DIV|UL|OL|BLOCKQUOTE|H1|H2|H3)$/.test(c.tagName); });
+    if(!blocksIn.length) return inlineText(msg, fmt).replace(/\u00a0/g, ' ').trim();
+    var out = [], loose = '';
+    msg.childNodes.forEach(function(n){
+      if(n.nodeType === 1 && blocksIn.indexOf(n) >= 0){ if(loose.trim()) out.push(loose.trim()); loose = ''; var t = blockText(n, fmt); if(t) out.push(t); }
+      else if(n.nodeType === 3) loose += n.textContent; else if(n.nodeType === 1) loose += n.tagName === 'BR' ? '\n' : inlineText(n, fmt);
+    });
+    if(loose.trim()) out.push(loose.trim());
+    return out.join('\n');
+  }
+  // every message in a flow, with the path that leads to it
+  function flowSteps(flow, fmt){
+    var out = [];
+    (function walk(steps, path){
+      steps.forEach(function(step, i){
+        var here = path.concat([]);
+        out.push({path: here, text: msgText(kids(step, 'fl-msg')[0], fmt), depth: here.length});
+        kids(kids(step, 'fl-branches')[0], 'fl-branch').forEach(function(br){
+          var cond = (kids(br, 'fl-cond')[0] || {}).textContent || 'Then';
+          walk(kids(kids(br, 'fl-children')[0], 'fl-step'), here.concat([cond.replace(/\s+/g, ' ').trim()]));
+        });
+      });
+    })(kids(flow, 'fl-step'), []);
+    return out;
+  }
+  function flowText(flow, fmt){
+    return flowSteps(flow, fmt).map(function(st){
+      var pad = new Array(st.depth + 1).join('    ');
+      var head = st.depth ? pad.slice(4) + '↳ ' + st.path[st.path.length - 1] + ':\n' : '';
+      return head + st.text.split('\n').map(function(l){ return pad + l; }).join('\n');
+    }).join('\n\n');
   }
   function toText(html, fmt){
     var f = frag(html), parts = [];
@@ -100,6 +147,7 @@
       if(b.nodeType === 3){ if(b.textContent.trim()) out.push('<div>' + esc(b.textContent.trim()) + '</div>'); return; }
       var tag = b.tagName;
       if(tag === 'HR') return;
+      if(isFlow(b)){ out.push('<div>' + esc(flowText(b, fmt)).replace(/\n/g, '<br>') + '</div>'); return; }
       if(tag === 'UL' || tag === 'OL'){ out.push('<' + tag.toLowerCase() + '>' + Array.prototype.map.call(b.children, function(li){ return '<li>' + inlineHTML(li, fmt) + '</li>'; }).join('') + '</' + tag.toLowerCase() + '>'); return; }
       var inner = inlineHTML(b, fmt).trim(); if(!inner || inner === '<br>') return;
       if(/^H[1-3]$/.test(tag)) inner = '<b>' + inner + '</b>';
@@ -114,6 +162,16 @@
     f.childNodes.forEach(function(b){
       if(b.nodeType === 1 && /^H[1-3]$/.test(b.tagName)){ heading = b.textContent.trim(); return; }
       if(b.nodeType === 1 && b.tagName === 'HR') return;
+      if(isFlow(b)){
+        // each message of the flow is its own part, labelled with how you get there
+        flowSteps(b, 'library').forEach(function(st, i){
+          if(!st.text) return;
+          var label = (heading ? heading + ' · ' : '') + (st.depth ? st.path.join(' → ') : 'First message');
+          var p = document.createElement('p'); p.textContent = '';
+          out.push({heading: label, text: st.text, html: '<p>' + esc(st.text).replace(/\{([a-zA-Z]+)\}/g, function(m, k){ return '<span class="ph" contenteditable="false" data-ph="' + k + '">{' + k + '}</span>'; }).replace(/\n/g, '<br>') + '</p>'});
+        });
+        return;
+      }
       var t = blockText(b, 'library'); if(!t) return;
       var wrap = document.createElement('div'); wrap.appendChild(b.cloneNode(true));
       out.push({heading: heading, text: t, html: wrap.innerHTML});

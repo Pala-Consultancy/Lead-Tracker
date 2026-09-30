@@ -145,7 +145,7 @@
   .lib-share:hover:not(:disabled){border-color:var(--teal);color:var(--teal);}
   .lib-share.team{background:rgba(55,48,179,.08);border-color:rgba(55,48,179,.25);color:var(--teal);}
   .lib-share:disabled{cursor:default;opacity:.85;}
-  .lib-doc-inner{max-width:760px;margin:0 auto;padding:18px 40px 120px;}
+  .lib-doc-inner{max-width:1040px;margin:0;padding:18px 56px 120px 56px;}
   .lib-icon{border:0;background:none;font-size:44px;line-height:1;padding:6px;border-radius:12px;cursor:pointer;margin-left:-6px;}
   .lib-icon:hover{background:var(--panel);}
   .lib-title{display:block;width:100%;border:0;background:transparent;resize:none;overflow:hidden;font:800 34px/1.2 'Sora',sans-serif;color:var(--ink);padding:6px 0;outline:none;}
@@ -217,6 +217,39 @@
   .lib-group-h .fm{font-weight:800;letter-spacing:.05em;}
   .lib-rename{flex:1;min-width:0;border:1px solid var(--teal);border-radius:6px;padding:3px 6px;font:700 11.5px 'Inter',sans-serif;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);background:var(--panel);outline:none;}
   .lib-menu button:disabled{opacity:.4;cursor:default;background:none;}
+
+  /* ---------- message flows ---------- */
+  .lib-editor .flow{margin:14px 0;padding:14px 16px 16px;border:1px solid var(--border);border-radius:16px;background:var(--panel);box-shadow:var(--shadow-sm);}
+  .lib-editor .fl-top{display:flex;align-items:center;justify-content:space-between;margin:-2px 0 10px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--slate);user-select:none;}
+  .lib-editor .fl-top button,.lib-editor .fl-head button,.lib-editor .fl-rmb{border:0;background:none;color:var(--slate-light);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:12px;line-height:24px;padding:0;}
+  .lib-editor .fl-top button:hover,.lib-editor .fl-head button:hover,.lib-editor .fl-rmb:hover{background:rgba(216,58,82,.1);color:#B42338;}
+  .lib-editor .fl-step{position:relative;}
+  .lib-editor .fl-head{display:flex;align-items:center;gap:6px;margin:0 0 4px;font:700 11px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);user-select:none;}
+  .lib-editor .fl-head .fl-num::before{content:"✉ ";}
+  .lib-editor .fl-msg{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--panel-alt);min-height:24px;outline:none;line-height:1.6;cursor:text;}
+  .lib-editor .fl-msg p{margin:0 0 4px;}
+  .lib-editor .fl-msg:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(55,48,179,.12);background:var(--panel);}
+  .lib-editor .fl-msg:empty::before,.lib-editor .fl-msg:has(> br:only-child)::before{content:attr(data-placeholder);color:var(--slate-light);pointer-events:none;}
+  .lib-editor .fl-branches{margin-left:14px;padding-left:22px;border-left:2px dashed var(--border);}
+  .lib-editor .fl-branches:empty{display:none;}
+  .lib-editor .fl-branch{position:relative;padding-top:14px;}
+  .lib-editor .fl-branch::before{content:"";position:absolute;left:-22px;top:27px;width:18px;border-top:2px dashed var(--border);}
+  .lib-editor .fl-cond{display:inline-block;border-radius:999px;padding:3px 12px;margin:0 2px 8px 0;font:600 12.5px 'Inter',sans-serif;outline:none;cursor:text;min-width:40px;}
+  .lib-editor .fl-cond:focus{box-shadow:0 0 0 2px var(--teal);}
+  .lib-editor .fl-branch.no > .fl-cond{background:rgba(232,145,45,.15);color:#8A520D;}
+  .lib-editor .fl-branch.yes > .fl-cond{background:rgba(31,169,113,.15);color:#0F6B47;}
+  .lib-editor .fl-branch.other > .fl-cond{background:var(--panel-alt);color:var(--slate);border:1px dashed var(--border);}
+  html[data-theme="dark"] .lib-editor .fl-branch.no > .fl-cond{color:#F4C27A;}
+  html[data-theme="dark"] .lib-editor .fl-branch.yes > .fl-cond{color:#6FD6A8;}
+  .lib-editor .fl-rmb{vertical-align:middle;margin-bottom:8px;opacity:0;}
+  .lib-editor .fl-branch:hover > .fl-rmb,.lib-editor .fl-rmb:focus-visible{opacity:1;}
+  .lib-editor .fl-ctls{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px;opacity:.55;transition:opacity .15s;}
+  .lib-editor .fl-step:hover > .fl-ctls,.lib-editor .fl-step:focus-within > .fl-ctls{opacity:1;}
+  .lib-editor .fl-ctls button{border:1px dashed var(--border);background:var(--panel);border-radius:999px;padding:4px 10px;font:600 11.5px 'Inter',sans-serif;color:var(--slate);cursor:pointer;}
+  .lib-editor .fl-ctls button:hover{border-style:solid;border-color:var(--teal);color:var(--teal);}
+  .lib-editor .fl-ctls button[data-fl="no"]:hover{border-color:#E8912D;color:#8A520D;}
+  .lib-editor .fl-ctls button[data-fl="yes"]:hover{border-color:#1FA971;color:#0F6B47;}
+  @media (max-width:900px){ .lib-doc-inner{padding:14px 18px 100px;} .lib-editor .fl-branches{margin-left:6px;padding-left:14px;} }
 
 </style>
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1009,6 +1042,9 @@
 
 html[data-theme="dark"] .toast{background:#3A3F75}
 html[data-theme="dark"] .lib-menu button.danger{color:#EC8E9B}
+html[data-theme="dark"] .lib-editor .fl-top button:hover, html[data-theme="dark"] .lib-editor .fl-head button:hover, html[data-theme="dark"] .lib-editor .fl-rmb:hover{color:#EC8E9B}
+html[data-theme="dark"] .lib-editor .fl-ctls button[data-fl="no"]:hover{color:#F6C383}
+html[data-theme="dark"] .lib-editor .fl-ctls button[data-fl="yes"]:hover{color:#88F1C8}
 html[data-theme="dark"] .pt-star{background:#161934}
 html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,52,0.00), rgba(22,25,52,0.55) 60%, #161934)}
 </style>
@@ -1068,6 +1104,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <button type="button" data-tool="ul" title="Bulleted list">•</button>
           <button type="button" data-tool="todo" title="To-do">☑</button>
           <button type="button" data-tool="quote" title="Quote">❝</button>
+          <button type="button" data-tool="flow" title="Message flow: a message with follow-ups if there's no reply">🔀 Flow</button>
           <span class="sep"></span>
           <button type="button" data-tool="ph" class="ph-btn" title="Insert a placeholder (or type { )">{ } Placeholder</button>
           <span class="lib-tip">Type <kbd>/</kbd> for more</span>
@@ -1205,6 +1242,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'quote', label: 'Quote', hint: 'Stand-out text', ic: '❝'},
     {k: 'callout', label: 'Callout', hint: 'A highlighted tip', ic: '💡'},
     {k: 'hr', label: 'Divider', hint: 'A line between parts', ic: '—'},
+    {k: 'flow', label: 'Message flow', hint: 'Message → if no reply → follow-up', ic: '🔀'},
     {k: 'ph', label: 'Placeholder', hint: '{firstName}, {company}…', ic: '{ }'}];
   const TEMPLATES = [
     {icon: '🧊', title: 'Icebreakers for cold outreach', folderId: 'icebreakers', folder: 'Icebreakers', desc: 'Five first messages that start a real conversation.',
@@ -1362,6 +1400,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>';
     lastLoadedStamp = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
     ed.contentEditable = canEdit(p) ? 'true' : 'false';
+    decorateFlows();
     $('libSaved').textContent = '';
     renderMeta(); renderTree();
     if(focusTitle) $('libTitle').focus();
@@ -1589,7 +1628,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function convertBlock(k){
     ed.focus();
     let block = curBlock();
+    if(block && block.classList && block.classList.contains('flow')){ if(k === 'flow') return; block = null; }
     if(!block){ block = document.createElement('p'); block.innerHTML = '<br>'; ed.appendChild(block); }
+    if(k === 'flow'){ insertFlow(block); return; }
     if(k === 'hr'){
       const hr = document.createElement('hr'), p = document.createElement('p'); p.innerHTML = '<br>';
       const empty = !block.textContent.trim() && block.nodeName === 'P';
@@ -1609,8 +1650,78 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     caretTo(nb.focus, false); markDirty();
   }
   // put a placeholder at the cursor (inside the sentence), with a space after it
+  // ================= message flows =================
+  // A first message with branches ("If no reply after 3 days" → a follow-up, "If they reply" → …).
+  // Every message can branch again. The buttons and labels (class fl-ui) are drawn here and never saved.
+  function stepHTML(text){ return `<div class="fl-step"><div class="fl-msg">${text ? esc(text) : '<br>'}</div><div class="fl-branches"></div></div>`; }
+  function branchHTML(tone, cond){ return `<div class="fl-branch ${tone}"><div class="fl-cond">${esc(cond)}</div><div class="fl-children">${stepHTML('')}</div></div>`; }
+  const BRANCH_DEFAULT = {no: 'If no reply after 3 days', yes: 'If they reply', other: 'If …'};
+  function ui(tag, cls, html, attrs){ const el = document.createElement(tag); el.className = 'fl-ui ' + cls; el.innerHTML = html; el.contentEditable = 'false'; Object.entries(attrs || {}).forEach(([k, v])=> el.setAttribute(k, v)); return el; }
+  function decorateFlow(flow){
+    flow.querySelectorAll('.fl-ui').forEach(x=> x.remove());
+    flow.contentEditable = 'false';
+    const editable = ed.contentEditable === 'true';
+    flow.prepend(ui('div', 'fl-top', `<span>🔀 Message flow</span>${editable ? '<button type="button" data-fl="rm-flow" title="Remove this flow" aria-label="Remove this flow">✕</button>' : ''}`));
+    const walk = (steps, depth)=> steps.forEach((step, i)=>{
+      const msg = step.querySelector(':scope > .fl-msg'); if(!msg) return;
+      msg.contentEditable = editable ? 'true' : 'false'; msg.setAttribute('data-placeholder', depth ? 'Write this follow-up…' : 'Write your first message…');
+      step.insertBefore(ui('div', 'fl-head', `<span class="fl-num">${depth ? 'Follow-up' : 'First message'}</span>${editable && (depth || steps.length > 1) ? '<button type="button" data-fl="rm-step" title="Remove this message" aria-label="Remove this message">✕</button>' : ''}`), msg);
+      let brs = step.querySelector(':scope > .fl-branches'); if(!brs){ brs = document.createElement('div'); brs.className = 'fl-branches'; step.appendChild(brs); }
+      brs.querySelectorAll(':scope > .fl-branch').forEach(br=>{
+        const cond = br.querySelector(':scope > .fl-cond'); if(cond){ cond.contentEditable = editable ? 'true' : 'false'; cond.spellcheck = true; }
+        if(editable) br.insertBefore(ui('button', 'fl-rmb', '✕', {type: 'button', 'data-fl': 'rm-branch', title: 'Remove this branch', 'aria-label': 'Remove this branch'}), cond ? cond.nextSibling : br.firstChild);
+        const kidsEl = br.querySelector(':scope > .fl-children'); if(kidsEl) walk([...kidsEl.querySelectorAll(':scope > .fl-step')], depth + 1);
+      });
+      if(editable) step.appendChild(ui('div', 'fl-ctls', `<button type="button" data-fl="no">＋ Follow-up if no reply</button><button type="button" data-fl="yes">＋ If they reply</button><button type="button" data-fl="other">＋ Other branch</button>`));
+    });
+    walk([...flow.querySelectorAll(':scope > .fl-step')], 0);
+  }
+  function decorateFlows(){ ed.querySelectorAll(':scope > .flow').forEach(decorateFlow); }
+  function insertFlow(block){
+    const t = document.createElement('template');
+    t.innerHTML = `<div class="flow">${stepHTML('')}</div>`;
+    const flow = t.content.firstChild;
+    flow.querySelector('.fl-branches').innerHTML = branchHTML('no', BRANCH_DEFAULT.no);
+    const empty = block && block.nodeName === 'P' && !block.textContent.trim();
+    if(empty) block.replaceWith(flow); else if(block) block.after(flow); else ed.appendChild(flow);
+    if(!flow.nextSibling){ const p = document.createElement('p'); p.innerHTML = '<br>'; flow.after(p); }
+    decorateFlow(flow);
+    const first = flow.querySelector('.fl-msg'); first.focus(); caretTo(first, true);
+    markDirty();
+  }
+  ed.addEventListener('click', async e=>{
+    const b = e.target.closest('[data-fl]'); if(!b || ed.contentEditable !== 'true') return;
+    e.preventDefault();
+    const flow = b.closest('.flow'), step = b.closest('.fl-step'), a = b.dataset.fl;
+    if(a === 'rm-flow'){ const txt = flow.textContent.replace(/[\s✕＋🔀]|Message flow|First message|Follow-up|If they reply|Other branch/g, '');
+      if(txt.length > 0 && !(await showConfirmModal({title: 'Remove this message flow?', message: 'All its messages and branches are removed from this page.', confirmLabel: 'Remove'}))) return;
+      const p = document.createElement('p'); p.innerHTML = '<br>'; flow.replaceWith(p); caretTo(p, true); markDirty(); return; }
+    if(a === 'rm-branch'){ b.closest('.fl-branch').remove(); }
+    else if(a === 'rm-step'){
+      const parent = step.parentElement;
+      step.remove();
+      // a branch with no messages left goes too
+      if(parent && parent.classList.contains('fl-children') && !parent.querySelector('.fl-step')) parent.closest('.fl-branch').remove();
+    } else if(BRANCH_DEFAULT[a]){
+      const brs = step.querySelector(':scope > .fl-branches');
+      const t = document.createElement('template'); t.innerHTML = branchHTML(a, BRANCH_DEFAULT[a]); const br = t.content.firstChild; brs.appendChild(br);
+      decorateFlow(flow);
+      // "If …": let them type their own condition; otherwise start writing the message
+      const target = a === 'other' ? br.querySelector('.fl-cond') : br.querySelector('.fl-msg');
+      target.focus(); if(a === 'other'){ const r = document.createRange(); r.selectNodeContents(target); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } else caretTo(target, true);
+      markDirty(); return;
+    }
+    decorateFlow(flow); markDirty();
+  });
+  // Enter in a branch condition: go to its message
+  ed.addEventListener('keydown', e=>{
+    const cond = e.target.closest && e.target.closest('.fl-cond');
+    if(cond && e.key === 'Enter'){ e.preventDefault(); const m = cond.parentElement.querySelector('.fl-children .fl-msg'); if(m){ m.focus(); caretTo(m, false); } }
+  }, true);
+
   function insertPh(k){
-    if(document.activeElement !== ed) ed.focus();
+    // inside a flow the message is its own text field: only focus the editor when the cursor is somewhere else entirely
+    if(!ed.contains(document.activeElement)) ed.focus();
     const s = getSelection(); if(!s.rangeCount) return;
     const r = s.getRangeAt(0); r.deleteContents();
     const t = document.createElement('template'); t.innerHTML = phHTML(k);
@@ -1656,6 +1767,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     listMenu($('libPh'), items, rect, it=> insertPh(it.k));
   }
   ed.addEventListener('beforeinput', e=>{
+    if(e.inputType === 'insertText' && e.data === '/' && getSelection().anchorNode && getSelection().anchorNode.parentElement && getSelection().anchorNode.parentElement.closest('.flow')) return;
     if(e.inputType === 'insertText' && (e.data === '/' || e.data === '{')){
       const s = getSelection(); if(!s.rangeCount) return;
       const r = s.getRangeAt(0);
@@ -1736,6 +1848,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const t = b.dataset.tool;
     if(t === 'bold' || t === 'italic'){ document.execCommand(t); markDirty(); }
     else if(t === 'ph') openPhMenu(b.getBoundingClientRect());
+    else if(t === 'flow'){ const cur = curBlock(); insertFlow(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'h2' || t === 'ul' || t === 'todo' || t === 'quote'){ const cur = curBlock(); const k = cur && ((t === 'h2' && cur.nodeName === 'H2') || (t === 'ul' && cur.nodeName === 'UL') || (t === 'quote' && cur.nodeName === 'BLOCKQUOTE') || (t === 'todo' && cur.classList && cur.classList.contains('todo'))) ? 'p' : t; convertBlock(k); }
   });
 
@@ -1762,7 +1875,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(p && !dirty && document.activeElement !== ed && document.activeElement !== $('libTitle')){
       const st = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
       if(st && lastLoadedStamp && st !== lastLoadedStamp && p.updatedBy !== myUid){
-        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; lastLoadedStamp = st;
+        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; decorateFlows(); lastLoadedStamp = st;
       }
     }
     if(curId) renderMeta();
