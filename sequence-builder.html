@@ -489,6 +489,9 @@
   .picker-board .pb-btn.on{background:var(--teal);color:#fff;}
   .picker-board .pb-btn:disabled{opacity:.5;cursor:default;}
   .picker-board .pb-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+  .seq-lib-btn{border:1px solid rgba(55,48,179,.35);background:rgba(55,48,179,.07);color:var(--teal,#3730B3);border-radius:999px;padding:5px 12px;font:700 12px 'Inter',sans-serif;cursor:pointer;}
+  .seq-lib-btn:hover{background:rgba(55,48,179,.14);}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -933,6 +936,7 @@ html[data-theme="dark"] .seq-condition-node{background:rgba(121,71,245,0.15);bor
 html[data-theme="dark"] .seq-canvas-footnote{background:rgba(22,25,52,0.85)}
 html[data-theme="dark"] .window-switch-track::before{background:#161934}
 html[data-theme="dark"] .toast{background:#3A3F75}
+html[data-theme="dark"] .seq-lib-btn{color:var(--teal,#9995E5)}
 html[data-theme="dark"] .pt-emoji-pop{background:var(--panel,#161934);border:1px solid var(--border,rgba(106,149,200,0.35))}
 html[data-theme="dark"] .pt-emoji-search{border-bottom:1px solid var(--border,rgba(106,149,200,0.35));background:var(--panel,#161934);color:var(--ink,#ECEEFF)}
 html[data-theme="dark"] .pt-emoji-search:focus{background:var(--panel-alt,rgba(85,158,231,0.15))}
@@ -1081,7 +1085,7 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
     <div class="seq-panel-head">
       <div class="seq-panel-head-icon" id="seqPanelIcon">✉️</div>
       <div>
-        <h3 id="seqPanelTitle">Send email</h3>
+        <h3 id="seqPanelTitle">Icebreaker</h3>
         <p id="seqPanelSubtitle">Sends right away when the sequence starts.</p>
       </div>
       <button type="button" class="seq-panel-close" id="seqPanelCloseX" title="Close">×</button>
@@ -1101,6 +1105,7 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
           <button type="button" class="seq-var-chip" data-tag="%%city%%">City</button>
           <button type="button" class="seq-var-chip" data-tag="%%country%%">Country</button>
           <button type="button" class="seq-var-chip" data-tag="%%industry%%">Industry</button>
+          <button type="button" class="seq-lib-btn" id="seqLibBtn" title="Use an icebreaker, follow-up or script from your Library">📚 Use from Library</button>
         </div>
       </div>
       <div>
@@ -1162,6 +1167,7 @@ html[data-theme="dark"] .pt-emoji-label{color:var(--slate,#A3A8CC)}
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
+<script src="library-picker.js"></script>
 <!-- PalaTrack emoji picker (shared with linkedin-post-composer.html: same emojis, same search, shared "Recent" list) -->
 <style>
   .pt-emoji-pop{
@@ -1602,7 +1608,8 @@ window.PTEmoji = (function(){
   };
 
   function nodeIconFor(index){ return index === 0 ? '✉️' : '↻'; }
-  function nodeTitleFor(index){ return index === 0 ? 'Send email' : `Follow-up ${index+1}`; }
+  // The first email is the icebreaker; the ones after it are follow-up 1, 2, 3…
+  function nodeTitleFor(index){ return index === 0 ? 'Icebreaker' : `Follow-up ${index}`; }
   function delayMs(step){
     const unitMs = step.delayUnit === 'hours' ? 60*60*1000 : 24*60*60*1000;
     return (step.delayValue || 1) * unitMs;
@@ -2213,6 +2220,30 @@ window.PTEmoji = (function(){
 
   // ---------- Merge-tag variables ----------
   let lastFocusedField = 'body';
+  // "Use from Library": remember where the cursor was in the message, then put the chosen text there
+  let libRange = null;
+  document.addEventListener('selectionchange', ()=>{
+    const s = getSelection(), body = document.getElementById('seqPanelBody');
+    if(s.rangeCount && body && body.contains(s.anchorNode)) libRange = s.getRangeAt(0).cloneRange();
+  });
+  document.getElementById('seqLibBtn').addEventListener('click', ()=>{
+    const body = document.getElementById('seqPanelBody');
+    if(!window.PTLib || body.getAttribute('contenteditable') === 'false') return;
+    const keep = libRange && body.contains(libRange.startContainer) ? libRange : null;
+    PTLib.pick({format: 'email'}).then(res=>{
+      if(!res) return;
+      body.focus();
+      const s = getSelection(); s.removeAllRanges();
+      if(keep) s.addRange(keep); else { const r = document.createRange(); r.selectNodeContents(body); r.collapse(false); s.addRange(r); }
+      document.execCommand('insertHTML', false, res.html);
+      // the browser adds needless style="font-family: inherit"; take it out again
+      body.querySelectorAll('[style]').forEach(el=>{ el.style.removeProperty('font-family'); if(!el.getAttribute('style')) el.removeAttribute('style');
+        if(el.tagName === 'SPAN' && !el.attributes.length){ while(el.firstChild) el.parentNode.insertBefore(el.firstChild, el); el.remove(); } });
+      updateBodyCount();
+      body.dispatchEvent(new Event('input', {bubbles: true}));
+      showToast(`Added from "${res.title || 'your Library'}".`);
+    });
+  });
   document.getElementById('seqPanelSubject').addEventListener('focus', ()=>{ lastFocusedField = 'subject'; });
   document.getElementById('seqPanelBody').addEventListener('focus', ()=>{ lastFocusedField = 'body'; });
   function insertAtCursor(el, text){
@@ -2366,7 +2397,7 @@ window.PTEmoji = (function(){
     let html = `<div class="seq-node" style="cursor:default;">
       <div class="seq-node-icon" style="background:var(--success);">✓</div>
       <div class="seq-node-body">
-        <div class="seq-node-title">Send email</div>
+        <div class="seq-node-title">Icebreaker</div>
         <div class="seq-node-subject">Sent when the sequence started — <a href="email-history.html?board=${encodeURIComponent(boardId)}&lead=${encodeURIComponent(leadId)}" style="color:var(--teal);">view in history</a></div>
       </div>
     </div>`;
@@ -2377,7 +2408,7 @@ window.PTEmoji = (function(){
       <div class="seq-node" data-view-idx="${i}" style="animation-delay:${delay}">
         <div class="seq-node-icon" style="background:${meta.color};">${meta.icon}</div>
         <div class="seq-node-body">
-          <div class="seq-node-title">Follow-up ${step.stepNumber} — ${esc(meta.label)}</div>
+          <div class="seq-node-title">Follow-up ${step.stepNumber - 1} — ${esc(meta.label)}</div>
           <div class="seq-node-subject">${esc(step.subject) || '(no subject)'}</div>
         </div>
       </div>`;
@@ -2393,7 +2424,7 @@ window.PTEmoji = (function(){
     const step = viewSteps[index];
     const meta = STATUS_META[step.status] || {icon:'?', label:step.status};
     document.getElementById('seqPanelIcon').textContent = meta.icon;
-    document.getElementById('seqPanelTitle').textContent = `Follow-up ${step.stepNumber}`;
+    document.getElementById('seqPanelTitle').textContent = `Follow-up ${step.stepNumber - 1}`;
     document.getElementById('seqPanelSubtitle').textContent = meta.label +
       (step.sendAt && typeof step.sendAt.toDate === 'function' ? ' · ' + step.sendAt.toDate().toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'}) : '');
     const subjectEl = document.getElementById('seqPanelSubject');
