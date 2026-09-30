@@ -1123,6 +1123,9 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
       <input type="text" id="eTitle" class="ed-title" maxlength="200" placeholder="Add title" aria-label="Title">
       <button type="button" class="gc-save" id="eSave">Save</button>
     </div>
+    <div class="ed-kind" id="eKind" role="group" aria-label="What is this?">
+      <button type="button" data-ekind="event">Event</button><button type="button" data-ekind="task">Task</button><button type="button" data-ekind="ooo">Out of office</button>
+    </div>
     <div class="ed-when">
       <input type="date" id="eDate" aria-label="Start date">
       <input type="time" id="eStart" aria-label="Starts" step="900">
@@ -1551,6 +1554,14 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
   .gc-theme .th-foot{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 14px;border-top:1px solid var(--border-soft,var(--border));font-size:11.5px;color:var(--slate-light,#8CA0B3);}
   .gc-theme .th-reset{border:0;background:none;color:var(--slate);font:700 12.5px 'Inter',sans-serif;cursor:pointer;padding:0;}
   .gc-theme .th-reset:hover{color:#B42338;}
+
+  .ed-kind{display:inline-flex;gap:2px;margin:6px 22px 0 72px;background:var(--panel-alt);border:1px solid var(--border-soft,var(--border));border-radius:10px;padding:3px;}
+  .ed-kind[hidden]{display:none;}
+  .ed-kind button{border:0;background:none;border-radius:7px;padding:6px 14px;font:600 13px 'Inter',sans-serif;color:var(--slate);cursor:pointer;}
+  .ed-kind button:hover{color:var(--ink);}
+  .ed-kind button.on{background:var(--panel);color:var(--cal-accent, var(--teal));box-shadow:0 1px 2px rgba(16,24,40,.1);}
+  .ed-kind button:focus-visible{outline:2px solid var(--cal-accent, var(--teal));outline-offset:1px;}
+  @media (max-width:820px){ .ed-kind{margin-left:22px;} }
 </style>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -2250,7 +2261,7 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
     data = data || {};
     const isTask = kind === 'task';
     const creator = isTask || !id || data.createdBy === myUid || !data.createdBy;
-    editState = {kind, id, ooo: kind === 'event' && data.kind === 'ooo', creator, guests: [...(data.guests || [])], color: isTask ? (data.calColor || null) : (data.color || null),
+    editState = {kind, id, ooo: kind === 'event' && data.kind === 'ooo', origType: kind === 'task' ? 'task' : (data.kind === 'ooo' ? 'ooo' : 'event'), orig: data, creator, guests: [...(data.guests || [])], color: isTask ? (data.calColor || null) : (data.color || null),
       canInvite: creator || data.guestsCanInvite !== false};
     const ed = document.querySelector('.gc-ed2'); ed.classList.toggle('task-mode', isTask);
     const isOoo = !isTask && data.kind === 'ooo';
@@ -2284,8 +2295,77 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
     $('eDelete').style.display = id && creator ? '' : 'none';
     $('eDelete').textContent = isTask ? 'Delete task' : 'Delete event';
     renderGuests(); renderColorBtn(); syncEditor(); showHolWarn($('eHolWarn'), $('eDate').value);
+    // only whoever owns it can turn it into something else (a guest can't)
+    $('eKind').hidden = !creator; markKind();
     edOv.classList.add('open'); edOv.setAttribute('aria-hidden', 'false');
     setTimeout(()=> $('eTitle').focus(), 30);
+  }
+  function currentKind(){ return editState.kind === 'task' ? 'task' : editState.ooo ? 'ooo' : 'event'; }
+  function markKind(){ const k = currentKind(); document.querySelectorAll('#eKind [data-ekind]').forEach(b=>{ b.classList.toggle('on', b.dataset.ekind === k); b.setAttribute('aria-pressed', b.dataset.ekind === k); }); }
+  // switch between Event, Task and Out of office while editing (what you typed stays)
+  function setEditorKind(k){
+    const st = editState; if(!st || currentKind() === k) return;
+    const wasTask = st.kind === 'task';
+    st.kind = k === 'task' ? 'task' : 'event'; st.ooo = k === 'ooo';
+    const ed = document.querySelector('.gc-ed2');
+    ed.classList.toggle('task-mode', k === 'task'); ed.classList.toggle('ooo-mode', k === 'ooo');
+    $('eTabName').textContent = k === 'task' ? 'Task details' : k === 'ooo' ? 'Out of office' : 'Event details';
+    const date = $('eDate').value || todayISO(), cur = $('eRepeat').value;
+    const reps = k === 'task' ? ['none', 'daily', 'weekdays', 'weekly', 'monthly'] : Object.keys(REPEATS);
+    $('eRepeat').innerHTML = reps.map(r=> `<option value="${r}">${esc(r === 'none' ? REPEATS.none : repeatLabel(r, date))}</option>`).join('');
+    $('eRepeat').value = reps.includes(cur) ? cur : 'none';
+    if(k === 'task') $('eEndDate').value = date;
+    if(k !== 'task' && wasTask && !$('eEndDate').value) $('eEndDate').value = date;
+    if(!$('eEnd').value && $('eStart').value) $('eEnd').value = fromMins(Math.min(toMins($('eStart').value) + 60, 24 * 60 - 1));
+    if(k === 'event' && wasTask && !st.id) st.notif = true;
+    if(k === 'ooo' && !$('eTitle').value.trim()) $('eTitle').value = 'Out of office';
+    $('eCalName').textContent = k === 'task' ? 'Tasks · ' + myName : myName;
+    $('eDelete').textContent = k === 'task' ? 'Delete task' : 'Delete event';
+    renderColorBtn(); renderGuests(); syncEditor(); markKind();
+  }
+  $('eKind').addEventListener('click', e=>{ const b = e.target.closest('[data-ekind]'); if(b) setEditorKind(b.dataset.ekind); });
+  // saving an existing event as a task (or the other way round): make the new one, then remove the old one
+  async function convertOnSave(st, target){
+    const allDay = $('eAllDay').checked, date = $('eDate').value || todayISO(), title = $('eTitle').value.trim();
+    const start = allDay ? null : ($('eStart').value || '09:00');
+    const end = allDay ? null : ($('eEnd').value || fromMins(Math.min(toMins(start) + 60, 24 * 60 - 1)));
+    if(!allDay && toMins(end) <= toMins(start) && ($('eEndDate').value || date) === date){ showToast('The end time must be after the start time.', true); $('eEnd').focus(); return; }
+    const o = st.orig || {}, lost = [];
+    if(target === 'task'){
+      const g = (st.guests || []).length;
+      if(g) lost.push(`Tasks don't have guests: ${g} guest${g === 1 ? '' : 's'} will no longer see this.`);
+      if($('eEndDate').value && $('eEndDate').value > date) lost.push('A task is on one day, so it ends on the day it starts.');
+      if(lost.length && !(await showConfirmModal({title: 'Change this event into a task?', message: lost.join(' '), confirmLabel: 'Change to task'}))) return;
+      const loc = $('eLocation').value.trim(), desc = $('eDesc').value.trim();
+      const rep = ['none', 'daily', 'weekdays', 'weekly', 'monthly'].includes($('eRepeat').value) ? $('eRepeat').value : 'none';
+      try{
+        await db.collection('tasks').add({workspaceId: wsId, createdBy: myUid, createdByName: myName, title: title || 'Untitled task',
+          dueDate: date, dueTime: start, dueEndTime: end, notes: [desc, loc ? '📍 ' + loc : ''].filter(Boolean).join('\n') || null,
+          priority: 'none', assignees: [myUid], repeat: rep, calColor: st.color || null, status: 'todo', completed: false, checklist: [], updates: [], createdAt: FV.serverTimestamp()});
+        await db.collection('calendarEvents').doc(st.id).delete();
+        closeEditor(); showToast('Changed to a task. You’ll find it on the Tasks page too.');
+      }catch(err){ showToast('Could not change it: ' + (err.message || ''), true); }
+      return;
+    }
+    // a task becomes an event (or an out-of-office)
+    const checklist = (o.checklist || []).length, others = (o.assignees || []).filter(u=> u !== myUid).length;
+    if(o.leadName || o.leadId) lost.push(`It's no longer linked to ${o.leadName || 'its lead'}.`);
+    if(checklist) lost.push(`Its checklist (${checklist} item${checklist === 1 ? '' : 's'}) goes.`);
+    if(others) lost.push(`It leaves the Tasks page, also for the ${others} other ${others === 1 ? 'person' : 'people'} it's assigned to.`);
+    if(lost.length && !(await showConfirmModal({title: `Change this task into ${target === 'ooo' ? 'an out-of-office' : 'an event'}?`, message: lost.join(' '), confirmLabel: target === 'ooo' ? 'Change to out of office' : 'Change to event'}))) return;
+    let endDate = $('eEndDate').value || date; if(endDate < date) endDate = date;
+    const mins = Math.max(0, Math.round(+$('eNotifVal').value || 0)) * (+$('eNotifUnit').value || 1);
+    const data = {title: title || (target === 'ooo' ? 'Out of office' : '(No title)'), date, endDate, allDay, startTime: start, endTime: end,
+      repeat: target === 'ooo' ? 'none' : $('eRepeat').value, location: target === 'ooo' ? null : ($('eLocation').value.trim() || null),
+      description: $('eDesc').value.trim() || null, color: st.color || null, reminderMinutes: target === 'ooo' ? null : (st.notif ? mins : null),
+      guests: target === 'ooo' ? [] : st.guests, guestsCanModify: target === 'ooo' ? false : $('eCanModify').checked,
+      guestsCanInvite: target === 'ooo' ? false : $('eCanInvite').checked, guestsCanSeeList: target === 'ooo' ? false : $('eCanSee').checked};
+    if(target === 'ooo') Object.assign(data, {kind: 'ooo', autoDecline: $('eAutoDecline').checked, declineExisting: $('eDeclineExisting').checked,
+      declineMessage: $('eDeclineMsg').value.trim() || OOO_DEFAULTS.declineMessage});
+    const newId = await saveEvent(null, data, {quiet: true});
+    if(!newId) return;
+    try{ await db.collection('tasks').doc(st.id).delete(); }catch(err){ showToast('The event was made, but the old task could not be removed: ' + (err.message || ''), true); return; }
+    closeEditor(); showToast(target === 'ooo' ? 'Changed to out of office.' : 'Changed to an event.');
   }
   function closeEditor(){ edOv.classList.remove('open'); edOv.setAttribute('aria-hidden', 'true'); editState = null; $('eGuestSuggest').hidden = true; closePalette(); }
   function syncEditor(){
@@ -2340,6 +2420,8 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
   edOv.addEventListener('click', e=>{ if(e.target === edOv || e.target.closest('[data-close="editor"]')) closeEditor(); });
   $('eSave').addEventListener('click', ()=>{
     const st = editState; if(!st) return;
+    const target = currentKind();
+    if(st.id && (st.origType === 'task') !== (target === 'task')){ convertOnSave(st, target); return; }
     const allDay = $('eAllDay').checked, date = $('eDate').value || todayISO(), title = $('eTitle').value.trim();
     if(st.kind === 'task'){
       const tStart = allDay ? null : ($('eStart').value || '09:00'), tEnd = allDay ? null : ($('eEnd').value || fromMins(Math.min(toMins(tStart) + 60, 24 * 60 - 1)));
@@ -2363,6 +2445,7 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
       saveEvent(st.id, data).then(ok=>{ if(ok) closeEditor(); });
       return;
     }
+    if(st.origType === 'ooo') Object.assign(data, {kind: FV.delete(), autoDecline: FV.delete(), declineExisting: FV.delete(), declineMessage: FV.delete()});
     if(st.creator){ Object.assign(data, {guests: st.guests, guestsCanModify: $('eCanModify').checked, guestsCanInvite: $('eCanInvite').checked, guestsCanSeeList: $('eCanSee').checked}); }
     else if(st.canInvite){ data.guests = st.guests; }
     saveEvent(st.id, data).then(ok=>{ if(ok) closeEditor(); });
