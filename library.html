@@ -197,7 +197,8 @@
   .lib-tpl-head{display:flex;align-items:center;justify-content:space-between;}
   .lib-tpl-head h2{margin:0;font:800 20px 'Sora',sans-serif;}
   .lib-tpl-sub{margin:6px 0 16px;font-size:13.5px;color:var(--slate);line-height:1.5;}
-  .lib-tpl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+  .lib-tpl-grid{display:block;}
+  .lib-tpl-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:6px;}
   .lib-tpl-card{border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--panel-alt);cursor:pointer;text-align:left;font:inherit;color:inherit;}
   .lib-tpl-card:hover{border-color:var(--teal);box-shadow:var(--shadow);}
   .lib-tpl-card .ic{font-size:26px;}
@@ -250,6 +251,28 @@
   .lib-editor .fl-ctls button[data-fl="no"]:hover{border-color:#E8912D;color:#8A520D;}
   .lib-editor .fl-ctls button[data-fl="yes"]:hover{border-color:#1FA971;color:#0F6B47;}
   @media (max-width:900px){ .lib-doc-inner{padding:14px 18px 100px;} .lib-editor .fl-branches{margin-left:6px;padding-left:14px;} }
+
+  .lib-tpl{width:min(860px,100%) !important;}
+  .lib-tpl-h{font:700 11px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-light);margin:14px 0 8px;}
+  .lib-tpl-card{position:relative;display:block;}
+  .lib-tpl-card:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .lib-tpl-card .fd{margin-right:6px;}
+  .lib-tpl-card .fd.co{background:rgba(31,169,113,.1);color:#0F6B47;}
+  .lib-tpl-card .fd.by{background:var(--panel);color:var(--slate);}
+  .lib-tpl-card .tpl-rm{position:absolute;top:8px;right:8px;border:0;background:none;width:26px;height:26px;border-radius:7px;color:var(--slate-light);cursor:pointer;opacity:0;}
+  .lib-tpl-card:hover .tpl-rm,.lib-tpl-card .tpl-rm:focus-visible{opacity:1;}
+  .lib-tpl-card .tpl-rm:hover{background:rgba(216,58,82,.1);color:#B42338;}
+  .lib-tpl-co{padding:10px 12px;border-radius:12px;background:var(--panel-alt);border:1px solid var(--border-soft);font-size:13px;color:var(--ink);line-height:1.5;}
+  .lib-link{border:0;background:none;padding:0;margin-left:4px;color:var(--teal);font:700 13px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
+  .lib-co{width:min(520px,100%);max-height:90vh;overflow:auto;background:var(--panel);border-radius:18px;padding:22px 24px;box-shadow:var(--shadow-lg);}
+  .lib-co h3{margin:0 0 6px;font:800 18px 'Sora',sans-serif;color:var(--ink);}
+  .lib-co .sub{margin:0 0 14px;font-size:13px;color:var(--slate);line-height:1.5;}
+  .lib-co .co-f{display:block;margin-bottom:12px;}
+  .lib-co .co-f span{display:block;font:600 13px 'Inter',sans-serif;color:var(--ink);margin-bottom:5px;}
+  .lib-co .co-f input{width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font:14px 'Inter',sans-serif;background:var(--panel-alt);color:var(--ink);}
+  .lib-co .co-f input:focus{outline:2px solid var(--teal);background:var(--panel);}
+  .lib-co .co-rem{display:flex;margin:4px 0 0;font-size:12.5px;}
+  .lib-co .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap;}
 
 </style>
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1045,6 +1068,8 @@ html[data-theme="dark"] .lib-menu button.danger{color:#EC8E9B}
 html[data-theme="dark"] .lib-editor .fl-top button:hover, html[data-theme="dark"] .lib-editor .fl-head button:hover, html[data-theme="dark"] .lib-editor .fl-rmb:hover{color:#EC8E9B}
 html[data-theme="dark"] .lib-editor .fl-ctls button[data-fl="no"]:hover{color:#F6C383}
 html[data-theme="dark"] .lib-editor .fl-ctls button[data-fl="yes"]:hover{color:#88F1C8}
+html[data-theme="dark"] .lib-tpl-card .fd.co{color:#88F1C8}
+html[data-theme="dark"] .lib-tpl-card .tpl-rm:hover{color:#EC8E9B}
 html[data-theme="dark"] .pt-star{background:#161934}
 html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,52,0.00), rgba(22,25,52,0.55) 60%, #161934)}
 </style>
@@ -1126,6 +1151,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <div class="lib-menu" id="libMoreMenu" role="menu" hidden>
   <button type="button" role="menuitem" data-more="copy">📋 Copy as text</button>
   <button type="button" role="menuitem" data-more="duplicate">⧉ Duplicate</button>
+  <button type="button" role="menuitem" data-more="template">✨ Save as template</button>
   <button type="button" role="menuitem" data-more="delete" class="danger">🗑 Delete page</button>
 </div>
 <div class="lib-menu lib-emoji" id="libEmoji" role="dialog" aria-label="Choose an icon" hidden></div>
@@ -1141,7 +1167,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <div class="lib-ov" id="libTplOv" aria-hidden="true">
   <div class="lib-tpl" role="dialog" aria-modal="true" aria-labelledby="libTplH">
     <div class="lib-tpl-head"><h2 id="libTplH">Start from a template</h2><button type="button" class="lib-ic" data-close="tpl" aria-label="Close">✕</button></div>
-    <p class="lib-tpl-sub">Ready-made pages to fill in with your own words. Placeholders like <span class="ph">{firstName}</span> are filled in with the lead's details when you use them in a message.</p>
+    <p class="lib-tpl-sub">Ready-made pages to start from. Placeholders like <span class="ph">{firstName}</span> fill in with each lead's details when you use them in a message.</p>
+    <div class="lib-tpl-co" id="libTplCo"></div>
     <div class="lib-tpl-grid" id="libTplGrid"></div>
   </div>
 </div>
@@ -1244,27 +1271,112 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'hr', label: 'Divider', hint: 'A line between parts', ic: '—'},
     {k: 'flow', label: 'Message flow', hint: 'Message → if no reply → follow-up', ic: '🔀'},
     {k: 'ph', label: 'Placeholder', hint: '{firstName}, {company}…', ic: '{ }'}];
+  // ---------- Starter templates ----------
+  // <PH firstName> → a lead placeholder ({firstName}); [[product]] → filled in from "your company".
+  const COMPANY_Q = [
+    {k: 'product',  q: 'What do you sell?',                    ph: 'e.g. a lead-tracking app for agencies', blank: '[what you sell]'},
+    {k: 'audience', q: 'Who do you sell to?',                  ph: 'e.g. marketing agencies with 5 to 50 people', blank: '[who you help]'},
+    {k: 'result',   q: 'What result do your customers get?',   ph: 'e.g. twice as many replies to their outreach', blank: '[the result]'},
+    {k: 'time',     q: 'How fast do they get it?',              ph: 'e.g. within 30 days', blank: '[how fast]'},
+    {k: 'proof',    q: 'An example customer or proof (optional)', ph: 'e.g. Northbridge doubled their meetings in 6 weeks', blank: '[an example customer]'}];
+  const FL = {
+    step: (msg, br = '')=> `<div class="fl-step"><div class="fl-msg">${msg}</div><div class="fl-branches">${br}</div></div>`,
+    br: (tone, cond, ...steps)=> `<div class="fl-branch ${tone}"><div class="fl-cond">${cond}</div><div class="fl-children">${steps.join('')}</div></div>`};
+  const flowOf = step=> `<div class="flow">${step}</div>`;
+  const OBJ = (said, meaning, soft, direct, question, next, avoid)=> `<h2>“${said}”</h2>
+    <div class="callout">What they often mean: ${meaning}</div>
+    <h3>Soft answer</h3><p>${soft}</p><h3>Direct answer</h3><p>${direct}</p><h3>Answer with a question</h3><p>${question}</p>
+    <p><b>Next step:</b> ${next}</p><blockquote>Avoid: ${avoid}</blockquote>`;
   const TEMPLATES = [
-    {icon: '🧊', title: 'Icebreakers for cold outreach', folderId: 'icebreakers', folder: 'Icebreakers', desc: 'Five first messages that start a real conversation.',
-      html: `<h2>Short and personal</h2><p>Hi <PH firstName>, I saw what you're building at <PH company> and had to say: [one specific thing you noticed]. How did you get started with that?</p>
-<h2>A compliment and a question</h2><p>Hi <PH firstName>, your post about [topic] stuck with me. Quick question: how are you handling [challenge] at <PH company> right now?</p>
-<h2>Mutual connection</h2><p>Hi <PH firstName>, [name] mentioned you're the person to talk to about [topic] at <PH company>. Would you be open to a short chat?</p>
-<h2>A useful idea</h2><p>Hi <PH firstName>, I had an idea for <PH company> after looking at [what you looked at]: [idea in one sentence]. Want me to send it over?</p>
-<h2>Straight to the point</h2><p>Hi <PH firstName>, I help [type of company] with [result]. Is that something on your radar at <PH company> this quarter?</p>`},
-    {icon: '🔁', title: 'Follow-up after no reply', folderId: 'follow-ups', folder: 'Follow-ups', desc: 'Friendly nudges for when a lead goes quiet.',
-      html: `<h2>After 3 days</h2><p>Hi <PH firstName>, just bringing this back to the top of your inbox. Would [offer] be useful for <PH company>?</p>
-<h2>After a week</h2><p>Hi <PH firstName>, I know things get busy. Should I check back in a few weeks, or is this simply not a priority right now?</p>
-<h2>The last one</h2><p>Hi <PH firstName>, I'll stop here so I don't clutter your inbox. If [problem] ever becomes a priority at <PH company>, I'm happy to help.</p>`},
-    {icon: '📞', title: 'Call script: first call', folderId: 'call-scripts', folder: 'Call scripts', desc: 'A simple structure for a first sales call.',
-      html: `<h2>Opening (1 minute)</h2><p>Thanks for making time, <PH firstName>. The goal today: understand where <PH company> is at with [topic], and see if we can help. Sound good?</p>
-<h2>Questions to ask</h2><ul><li>How are you handling [process] today?</li><li>What's not working the way you'd like?</li><li>What happens if nothing changes in the next 6 months?</li><li>Who else is involved in a decision like this?</li></ul>
-<h2>Next step</h2><p>Based on what you told me, it makes sense to [next step]. Does [day] work for you?</p>
-<div class="callout">Listen more than you talk: aim for 70% them, 30% you.</div>`},
-    {icon: '🛡️', title: 'Handling objections', folderId: 'objections', folder: 'Objections', desc: 'Calm answers to the objections you hear most.',
-      html: `<h2>"It's too expensive"</h2><p>I understand. Can I ask what you're comparing it to? Most clients see [result] within [time], which covers the cost in [period].</p>
-<h2>"Send me some information"</h2><p>Happy to. So I send you something useful and not a brochure: what's the one thing you'd want to know?</p>
-<h2>"We already work with someone"</h2><p>That's great, it means [topic] matters to you. What would they need to do better for you to consider a change?</p>
-<h2>"Not now"</h2><p>No problem. When would be a better moment, so I can check back in then?</p>`}];
+    {icon: '🛡️', title: 'Handling objections', folderId: 'objections', folder: 'Objections', desc: 'The 6 objections you hear most: what they really mean, 3 ways to answer, and the next step.',
+      html: `<p>For each objection: what's behind it, a soft, a direct and a question answer, and what to do next. Mark what works for you and adapt the rest.</p>` +
+        OBJ('It’s too expensive', '“I don’t see enough value yet” or “I can’t justify this to my boss.”',
+          'I understand, it’s an investment. Can I ask what you’re comparing it to? Most of our customers see [[result]] [[time]], which covers the cost quickly.',
+          'If we can’t get you [[result]], it isn’t worth it, and I’ll tell you that myself. Shall we look at what it would bring <PH company> specifically?',
+          'What would it need to deliver for you to see it as worth the price?',
+          'Offer a short calculation of what it brings <PH company>, or share [[proof]].',
+          'dropping your price straight away. It tells them your price wasn’t real.') +
+        OBJ('Send me some information', '“I want to end this call politely” or “I’m interested but not ready.”',
+          'Happy to. So I send something useful and not a brochure: what’s the one thing you’d want to know?',
+          'Of course. Most people who ask me that want to know if we can really get [[result]]. Is that true for you too?',
+          'What would you need to see in it to take the next step?',
+          'Send it the same day and put a 15-minute follow-up in the calendar right away.',
+          'sending a long PDF with no next step. It rarely gets read.') +
+        OBJ('We already work with someone', '“Switching feels risky” or “I don’t see why you’re better.”',
+          'That’s great, it means this matters to you. What do you like most about working with them?',
+          'Most of our customers also worked with someone before. They switched because they wanted [[result]]. Is that something you’re getting today?',
+          'If you could change one thing about how it works now, what would it be?',
+          'Offer a side-by-side comparison or a small test next to their current solution.',
+          'criticising their current supplier. It makes them defend their own choice.') +
+        OBJ('Not now', '“Not a priority” or “I don’t trust you yet.”',
+          'No problem. When would be a better moment, so I can check back in then?',
+          'Understood. Is it timing, or is it not something <PH company> needs at all? Both are fine answers.',
+          'What would have to change for this to become a priority?',
+          'Agree on a concrete date to reconnect, and put it in your calendar with a reminder.',
+          'a vague “I’ll follow up sometime”. Without a date it never happens.') +
+        OBJ('I need to discuss this with my team', '“I’m not the one who decides” or “I need backup to say yes.”',
+          'Of course, that makes sense. Who else is involved, and what will they want to know?',
+          'Shall I join that conversation for 15 minutes to answer their questions directly?',
+          'What do you think their first question will be?',
+          'Offer a one-page summary they can share, and ask when they’ll talk about it.',
+          'waiting passively. Offer to help them make the case internally.') +
+        OBJ('It’s not a good fit for us', '“I don’t understand how it works for a company like ours.”',
+          'I appreciate the honesty. What makes you feel it doesn’t fit?',
+          'We mostly work with [[audience]]. Does that sound like <PH company>, or are you quite different?',
+          'If it did fit, what would it look like for you?',
+          'Share [[proof]], an example of a customer like them.',
+          'pushing on. If it really doesn’t fit, say so; they’ll remember you for it.')},
+    {icon: '🔗', title: 'LinkedIn outreach flow', folderId: 'icebreakers', folder: 'Icebreakers', desc: 'Connection request, the first message after they accept, and follow-ups, as a message flow.',
+      html: `<p>Send the connection request, then follow the flow. Keep every message short, personal and without a sales pitch in the first one.</p>` +
+        flowOf(FL.step('Hi <PH firstName>, I work with [[audience]] and liked what <PH company> is doing. Happy to connect!',
+          FL.br('yes', 'When they accept', FL.step('Thanks for connecting, <PH firstName>! Quick question: how are you handling [the challenge you solve] at <PH company> right now?',
+            FL.br('no', 'If no reply after 3 days', FL.step('Hi <PH firstName>, no pressure at all. I asked because we helped [[proof]]. Is that relevant for <PH company>?',
+              FL.br('no', 'If no reply after 5 days', FL.step('I’ll leave it here, <PH firstName>. If [[result]] ever becomes a priority, you know where to find me. Good luck with everything!')))) +
+            FL.br('yes', 'If they reply', FL.step('Great to hear, <PH firstName>. Most [[audience]] tell me the same. Would a 15-minute call next week be useful to see if we can get you [[result]]?')))) +
+          FL.br('no', 'If they don’t accept within 7 days', FL.step('Withdraw the request and try again in a month, with a note that mentions something specific from their profile.')))) +
+        `<div class="callout">LinkedIn tip: comment on one of their posts before you connect. People accept far more often when they already know your name.</div>`},
+    {icon: '📧', title: 'Cold email sequence', folderId: 'follow-ups', folder: 'Follow-ups', desc: 'Four emails with the right spacing, from the first email to the last check-in.',
+      html: `<p>Subject line idea: “Quick question about <PH company>”. Keep each email under 100 words.</p>` +
+        flowOf(FL.step('Hi <PH firstName>,<br><br>I help [[audience]] get [[result]] [[time]]. For example, [[proof]].<br><br>Is this something <PH company> is working on this quarter?',
+          FL.br('no', 'If no reply after 3 days', FL.step('Hi <PH firstName>, just bringing this back to the top of your inbox. Would it be worth a 15-minute call to see if we could do the same for <PH company>?',
+            FL.br('no', 'If no reply after 4 days', FL.step('Hi <PH firstName>, one idea for <PH company>: [one concrete idea]. Want me to send over how that would work?',
+              FL.br('no', 'If no reply after 7 days', FL.step('Hi <PH firstName>, I’ll stop here so I don’t clutter your inbox. If [[result]] becomes a priority, just reply to this email.')))))) +
+          FL.br('yes', 'If they reply', FL.step('Thanks <PH firstName>! Does [day] at [time] work for a short call? Or pick a time that suits you here: [link]')))) +
+        `<blockquote>Avoid: attachments in the first email. They often land in spam.</blockquote>`},
+    {icon: '🧊', title: 'Icebreakers for cold outreach', folderId: 'icebreakers', folder: 'Icebreakers', desc: 'Six first lines that start a real conversation, with when to use each.',
+      html: `<h2>The observation</h2><p><i>Use when you’ve seen their website or a post.</i></p><p>Hi <PH firstName>, I noticed [something specific] at <PH company>, and I had to ask: how did that come about?</p>
+        <h2>The compliment and a question</h2><p><i>Use after they posted something.</i></p><p>Hi <PH firstName>, your post about [topic] stuck with me. How are you handling [challenge] at <PH company> right now?</p>
+        <h2>The mutual connection</h2><p><i>Use when you know someone in common.</i></p><p>Hi <PH firstName>, [name] mentioned you’re the person to talk to about [topic] at <PH company>. Open to a short chat?</p>
+        <h2>The useful idea</h2><p><i>Use when you have a real idea for them.</i></p><p>Hi <PH firstName>, I had an idea for <PH company> after looking at [what you looked at]: [idea in one sentence]. Want me to send it over?</p>
+        <h2>Straight to the point</h2><p><i>Use with busy decision makers.</i></p><p>Hi <PH firstName>, I help [[audience]] get [[result]]. Is that on your radar at <PH company> this quarter?</p>
+        <h2>The proof</h2><p><i>Use when you have a customer like them.</i></p><p>Hi <PH firstName>, we recently helped [[proof]]. I thought of <PH company> straight away. Worth a conversation?</p>`},
+    {icon: '🔁', title: 'Follow-up after no reply', folderId: 'follow-ups', folder: 'Follow-ups', desc: 'Friendly nudges that add something new each time, instead of “just checking in”.',
+      html: `<div class="callout">Every follow-up should add something: a question, an idea, proof or a clear way out. Never only “just checking in”.</div>` +
+        flowOf(FL.step('Hi <PH firstName>, bringing this back to the top of your inbox. Would [[result]] be useful for <PH company>?',
+          FL.br('no', 'If no reply after 4 days', FL.step('Hi <PH firstName>, thought this might be useful: [[proof]]. Happy to share how we did it.',
+            FL.br('no', 'If no reply after a week', FL.step('Hi <PH firstName>, should I check back in a few weeks, or is this simply not a priority right now? Both are completely fine.'))))))},
+    {icon: '📞', title: 'Discovery call script', folderId: 'call-scripts', folder: 'Call scripts', desc: 'A first call that finds out if you can help, with the questions that matter.',
+      html: `<h2>Opening (1 minute)</h2><p>Thanks for making time, <PH firstName>. The plan: I’ll ask a few questions about <PH company>, you can ask me anything, and at the end we decide together if a next step makes sense. Sound good?</p>
+        <h2>Where they are now</h2><ul><li>How are you handling [the process you help with] today?</li><li>What’s working well about that?</li><li>What’s not working the way you’d like?</li></ul>
+        <h2>Why it matters</h2><ul><li>What does that cost you, in time, money or missed chances?</li><li>What happens if nothing changes in the next 6 months?</li></ul>
+        <h2>How they decide</h2><ul><li>Who else is involved in a decision like this?</li><li>Have you looked at other solutions? What did you think?</li><li>Is there a budget or a timeline for this?</li></ul>
+        <h2>Closing</h2><p>Based on what you told me, I think we can help you get [[result]]. The next step would be [a demo / a proposal]. Does [day] work?</p>
+        <div class="to-do-hint callout">Listen more than you talk: aim for 70% them, 30% you. Write down their exact words; use them in your follow-up.</div>
+        <h3>After the call</h3><div class="todo" data-checked="false">Send a summary within 24 hours</div><div class="todo" data-checked="false">Put the next step in the calendar</div><div class="todo" data-checked="false">Update the lead’s status in PalaTrack</div>`},
+    {icon: '🎬', title: 'Demo call script', folderId: 'call-scripts', folder: 'Call scripts', desc: 'Show only what matters to them, and end with a clear next step.',
+      html: `<h2>Before the demo</h2><div class="todo" data-checked="false">Re-read the notes from the discovery call</div><div class="todo" data-checked="false">Pick the 3 things that matter most to <PH company></div>
+        <h2>Start (2 minutes)</h2><p>Last time you told me [their main problem]. Today I’ll show you exactly how [[product]] solves that, and nothing else. Stop me any time.</p>
+        <h2>The demo (15 minutes)</h2><ul><li>Problem 1 → show how it’s solved → ask “How would that work for you?”</li><li>Problem 2 → show → ask</li><li>Problem 3 → show → ask</li></ul>
+        <h2>Proof</h2><p>[[proof]]</p>
+        <h2>Next step</h2><p>What did you think? … Great. The next step is [trial / proposal / meeting with the decision maker]. Shall we plan that now?</p>
+        <blockquote>Avoid: showing every feature. Show three things that matter to them.</blockquote>`},
+    {icon: '💎', title: 'Your value proposition', folderId: 'ideas', folder: 'Ideas', desc: 'Who you help, with what, and why it works, in one place. Reuse it in every message.',
+      html: `<h2>In one sentence</h2><p>We help [[audience]] get [[result]] [[time]] with [[product]].</p>
+        <h2>Who we help</h2><p>[[audience]]</p><h2>The problem we solve</h2><p>[The problem, in the words your customers use]</p>
+        <h2>The result</h2><p>[[result]], [[time]].</p><h2>Proof</h2><p>[[proof]]</p>
+        <h2>Why us and not someone else</h2><ul><li>[Reason 1]</li><li>[Reason 2]</li><li>[Reason 3]</li></ul>
+        <div class="callout">Use the sentence at the top in your LinkedIn headline, your email signature and your first messages.</div>`}];
+
 
   let myUid = null, myName = 'You', wsId = null;
   let teamPages = [], myPages = [], pages = {};
@@ -1280,7 +1392,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function setUrl(u){ try{ history.replaceState(null, '', u); }catch(e){} }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c=> ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c])); }
   function phHTML(k){ return `<span class="ph" contenteditable="false" data-ph="${k}">{${k}}</span>`; }
-  function expandTpl(h){ return h.replace(/<PH (\w+)>/g, (m, k)=> phHTML(k)).replace(/\n/g, ''); }
+  // lead placeholders become {firstName} chips; [[product]] etc. are filled in from "your company"
+  function expandTpl(h, prof){
+    prof = prof || {};
+    return h.replace(/<PH (\w+)>/g, (m, k)=> phHTML(k))
+      .replace(/\[\[(\w+)\]\]/g, (m, k)=>{ const v = String(prof[k] || '').trim(); const q = COMPANY_Q.find(x=> x.k === k); return v ? esc(v) : (q ? q.blank : m); })
+      .replace(/\n\s*/g, '');
+  }
+  const usesCompany = t=> /\[\[\w+\]\]/.test(t.html || '');
+  let companyProfile = {}, teamTemplates = [];
   function ago(ts){
     const d = ts && ts.toDate ? ts.toDate() : null; if(!d) return '';
     const s = (Date.now() - d) / 1000;
@@ -1310,7 +1430,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function folderName(id){ return id === '__other' ? 'Other' : ((folderById(id) || {}).name || 'Other'); }
   function saveFolders(next, msg){
     folders = next; renderTree(); if(curId) renderMeta();
-    return db.doc(`libraryFolders/${wsId}`).set({workspaceId: wsId, folders: next, updatedAt: FV.serverTimestamp(), updatedBy: myUid})
+    return db.doc(`libraryFolders/${wsId}`).set({workspaceId: wsId, folders: next, updatedAt: FV.serverTimestamp(), updatedBy: myUid}, {merge: true})
       .then(()=>{ if(msg) showToast(msg); }).catch(err=> showToast('Could not save the folders: ' + (err.message || ''), true));
   }
   // pages in a folder that you're allowed to change (your own, and team pages)
@@ -1466,18 +1586,97 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       openPage(ref.id, !title); return ref.id;
     }).catch(err=>{ showToast('Could not create the page: ' + (err.message || ''), true); return null; });
   }
+  function tplCard(t, i, team){
+    const f = folderById(t.folderId) ? folderName(t.folderId) : folderName((folderById('ideas') || folders[0] || {}).id);
+    return `<div class="lib-tpl-card" role="button" tabindex="0" data-tpl="${team ? 'team:' + esc(t.id) : i}"><span class="ic">${esc(t.icon || '📝')}</span><h3>${esc(t.title || 'Untitled')}</h3>
+      <p>${esc(t.desc || '')}</p><span class="fd">📁 ${esc(f)}</span>${team ? `<span class="fd by">by ${esc(t.createdBy === myUid ? 'you' : (t.createdByName || 'a teammate'))}</span>` : (usesCompany(t) ? '<span class="fd co">🏢 Fills in your company</span>' : '')}
+      ${team && t.createdBy === myUid ? `<button type="button" class="tpl-rm" data-tplrm="${esc(t.id)}" title="Remove this template" aria-label="Remove this template">✕</button>` : ''}</div>`;
+  }
   function openTemplates(){
-    $('libTplGrid').innerHTML = TEMPLATES.map((t, i)=> `<button type="button" class="lib-tpl-card" data-tpl="${i}"><span class="ic">${t.icon}</span><h3>${esc(t.title)}</h3><p>${esc(t.desc)}</p><span class="fd">📁 ${esc(folderById(t.folderId) ? folderName(t.folderId) : folderName((folderById('ideas') || folders[0] || {}).id))}</span></button>`).join('');
+    const filled = COMPANY_Q.filter(q=> String(companyProfile[q.k] || '').trim()).length;
+    $('libTplCo').innerHTML = filled
+      ? `🏢 <b>Your company:</b> ${esc(companyProfile.product || '')}${companyProfile.audience ? ' · for ' + esc(companyProfile.audience) : ''} <button type="button" class="lib-link" data-co="edit">Edit</button>`
+      : `🏢 Templates marked <b>“Fills in your company”</b> ask 5 short questions first, so the page is about your business. <button type="button" class="lib-link" data-co="edit">Fill them in now</button>`;
+    $('libTplGrid').innerHTML = (teamTemplates.length ? `<div class="lib-tpl-h">Your team’s templates</div><div class="lib-tpl-row">${teamTemplates.map(t=> tplCard(t, 0, true)).join('')}</div>` : '')
+      + `<div class="lib-tpl-h">Starter templates</div><div class="lib-tpl-row">${TEMPLATES.map((t, i)=> tplCard(t, i, false)).join('')}</div>`;
     $('libTplOv').classList.add('open'); $('libTplOv').setAttribute('aria-hidden', 'false');
-    setTimeout(()=> ($('libTplGrid').querySelector('button') || {}).focus && $('libTplGrid').querySelector('button').focus(), 30);
+    setTimeout(()=>{ const c = $('libTplGrid').querySelector('.lib-tpl-card'); if(c) c.focus(); }, 30);
   }
   function closeTemplates(){ $('libTplOv').classList.remove('open'); $('libTplOv').setAttribute('aria-hidden', 'true'); }
+  function useTemplate(key){
+    if(String(key).startsWith('team:')){
+      const t = teamTemplates.find(x=> x.id === key.slice(5)); if(!t) return;
+      closeTemplates();
+      createPage({title: t.title, icon: t.icon, folderId: t.folderId, content: t.content}).then(id=>{ if(id) showToast('Page created from your team’s template.'); });
+      return;
+    }
+    const t = TEMPLATES[+key]; if(!t) return;
+    closeTemplates();
+    const make = prof=>{ const html = expandTpl(t.html, prof);
+      return createPage({title: t.title, icon: t.icon, folderId: t.folderId, content: html}).then(id=>{
+        if(!id) return; const left = (PTLib.toText(html, 'library').match(/\[[^\]\n]{2,40}\]/g) || []).length;
+        showToast(left ? `Page created. Fill in the ${left} part${left === 1 ? '' : 's'} in [brackets] and it’s ready.` : 'Page created and filled in with your company. Ready to use!');
+      }); };
+    if(usesCompany(t)) askCompany({forTemplate: t}).then(prof=>{ if(prof) make(prof); });
+    else make(companyProfile);
+  }
+  // "Make it about your company": 5 questions, remembered for the whole team
+  function askCompany({forTemplate} = {}){
+    return new Promise(resolve=>{
+      const ov = document.createElement('div'); ov.className = 'lib-ov open';
+      ov.innerHTML = `<div class="lib-co" role="dialog" aria-modal="true" aria-labelledby="libCoH">
+        <h3 id="libCoH">${forTemplate ? esc(forTemplate.icon + ' ' + forTemplate.title) + ': make it about your company' : '🏢 Your company'}</h3>
+        <p class="sub">Your answers fill in the template, so you get a page about your business, not one full of blanks. You can skip any question.</p>
+        ${COMPANY_Q.map(q=> `<label class="co-f"><span>${esc(q.q)}</span><input type="text" data-co-k="${q.k}" maxlength="160" placeholder="${esc(q.ph)}" value="${esc(companyProfile[q.k] || '')}"></label>`).join('')}
+        <label class="gc-check co-rem"><input type="checkbox" id="libCoRemember" checked> Remember these for my team's next templates</label>
+        <div class="acts">${forTemplate ? '<button type="button" class="lib-btn" data-co-a="skip">Skip, keep the blanks</button>' : '<button type="button" class="lib-btn" data-co-a="cancel">Cancel</button>'}
+          <button type="button" class="lib-btn primary" data-co-a="ok">${forTemplate ? 'Create page' : 'Save'}</button></div></div>`;
+      document.body.appendChild(ov);
+      setTimeout(()=>{ const i = ov.querySelector('input[data-co-k]'); if(i) i.focus(); }, 30);
+      const read = ()=>{ const o = {}; ov.querySelectorAll('[data-co-k]').forEach(i=>{ o[i.dataset.coK] = i.value.trim(); }); return o; };
+      const done = v=>{ ov.remove(); document.removeEventListener('keydown', onKey, true); resolve(v); };
+      const ok = ()=>{
+        const prof = read();
+        if(ov.querySelector('#libCoRemember').checked){
+          companyProfile = {...companyProfile, ...prof};
+          db.doc(`libraryFolders/${wsId}`).set({workspaceId: wsId, folders, companyProfile, updatedAt: FV.serverTimestamp(), updatedBy: myUid}, {merge: true}).catch(()=>{});
+        }
+        done(prof);
+      };
+      const onKey = e=>{
+        if(e.key === 'Escape'){ e.stopPropagation(); done(null); }
+        if(e.key === 'Enter' && e.target.matches('[data-co-k]')){ e.preventDefault(); const all = [...ov.querySelectorAll('[data-co-k]')], i = all.indexOf(e.target); if(i < all.length - 1) all[i + 1].focus(); else ok(); }
+      };
+      document.addEventListener('keydown', onKey, true);
+      ov.addEventListener('click', e=>{
+        if(e.target === ov){ done(null); return; }
+        const a = e.target.closest('[data-co-a]'); if(!a) return;
+        if(a.dataset.coA === 'ok') ok();
+        if(a.dataset.coA === 'skip') done({});
+        if(a.dataset.coA === 'cancel') done(null);
+      });
+    });
+  }
   $('libTplOv').addEventListener('click', e=>{
     if(e.target === $('libTplOv') || e.target.closest('[data-close="tpl"]')){ closeTemplates(); return; }
-    const c = e.target.closest('[data-tpl]'); if(!c) return;
-    const t = TEMPLATES[+c.dataset.tpl]; closeTemplates();
-    createPage({title: t.title, icon: t.icon, folderId: t.folderId, content: expandTpl(t.html)}).then(id=>{ if(id) showToast('Page created. Make it your own!'); });
+    if(e.target.closest('[data-co="edit"]')){ askCompany().then(p=>{ if(p) showToast('Company details saved.'); openTemplates(); }); return; }
+    const rm = e.target.closest('[data-tplrm]');
+    if(rm){ e.stopPropagation(); const t = teamTemplates.find(x=> x.id === rm.dataset.tplrm);
+      showConfirmModal({title: 'Remove this template?', message: `“${t ? t.title : 'This template'}” is no longer offered to your team. Pages already made from it stay.`, confirmLabel: 'Remove'})
+        .then(ok=>{ if(ok) db.collection('libraryTemplates').doc(rm.dataset.tplrm).delete().then(()=> showToast('Template removed.')).catch(err=> showToast('Could not remove it: ' + (err.message || ''), true)); });
+      return; }
+    const c = e.target.closest('[data-tpl]'); if(c) useTemplate(c.dataset.tpl);
   });
+  $('libTplOv').addEventListener('keydown', e=>{ if((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-tpl]')){ e.preventDefault(); useTemplate(e.target.dataset.tpl); } });
+  // "Save as template": this page becomes a template for the whole team
+  async function saveAsTemplate(p){
+    saveNow();
+    const desc = await askText('Save as a template for your team', 'What is it for? (optional)', 'Save template');
+    if(desc === undefined) return;
+    db.collection('libraryTemplates').add({workspaceId: wsId, title: p.title || 'Untitled', icon: p.icon || '📝', folderId: folderIdOf(p) === '__other' ? 'ideas' : folderIdOf(p),
+      desc: desc || '', content: PTLib.clean(p.content || ''), createdBy: myUid, createdByName: myName, createdAt: FV.serverTimestamp()})
+      .then(()=> showToast('Saved as a template. Your team finds it under ＋ New → From a template.')).catch(err=> showToast('Could not save the template: ' + (err.message || ''), true));
+  }
   function newAction(k){
     closeMenus();
     if(k === 'blank') createPage({});
@@ -1549,6 +1748,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const b = e.target.closest('[data-more]'); if(!b) return; closeMenus(); saveNow();
     const p = pages[curId]; if(!p) return;
     if(b.dataset.more === 'copy'){ navigator.clipboard.writeText((p.title ? p.title + '\n\n' : '') + PTLib.toText(p.content || '', 'library')).then(()=> showToast('Copied as text.')).catch(()=> showToast('Could not copy.', true)); }
+    if(b.dataset.more === 'template'){ saveAsTemplate(p); return; }
     if(b.dataset.more === 'duplicate'){ createPage({title: (p.title || 'Untitled') + ' (copy)', icon: p.icon, folderId: folderIdOf(p), content: p.content}).then(id=>{ if(id) showToast('Duplicated. The copy is private to you.'); }); }
     if(b.dataset.more === 'delete'){
       const ok = await showConfirmModal({title: 'Delete this page?', message: `"${p.title || 'Untitled'}" is deleted${p.visibility === 'team' ? ' for your whole team' : ''}.`, confirmLabel: 'Delete'});
@@ -1853,15 +2053,17 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   });
 
   // ================= small prompt =================
-  function askText(title, placeholder){
+  function askText(title, placeholder, okLabel){
     return new Promise(resolve=>{
       const ov = document.createElement('div'); ov.className = 'lib-ov open';
-      ov.innerHTML = `<div class="lib-ask" role="dialog" aria-modal="true" aria-label="${esc(title)}"><h3>${esc(title)}</h3><input type="text" maxlength="60" placeholder="${esc(placeholder || '')}"><div class="acts"><button type="button" class="lib-btn" data-a="no">Cancel</button><button type="button" class="lib-btn primary" data-a="ok">Add</button></div></div>`;
+      ov.innerHTML = `<div class="lib-ask" role="dialog" aria-modal="true" aria-label="${esc(title)}"><h3>${esc(title)}</h3><input type="text" maxlength="60" placeholder="${esc(placeholder || '')}"><div class="acts"><button type="button" class="lib-btn" data-a="no">Cancel</button><button type="button" class="lib-btn primary" data-a="ok">${esc(okLabel || 'Add')}</button></div></div>`;
       document.body.appendChild(ov);
       const inp = ov.querySelector('input'); setTimeout(()=> inp.focus(), 20);
+      // for an optional answer (okLabel given): empty is fine, Cancel gives undefined
+      const cancel = okLabel ? undefined : null, val = ()=> okLabel ? inp.value.trim() : (inp.value.trim() || null);
       const done = v=>{ ov.remove(); resolve(v); };
-      ov.addEventListener('click', e=>{ if(e.target === ov || e.target.closest('[data-a="no"]')) done(null); if(e.target.closest('[data-a="ok"]')) done(inp.value.trim() || null); });
-      inp.addEventListener('keydown', e=>{ if(e.key === 'Enter') done(inp.value.trim() || null); if(e.key === 'Escape') done(null); });
+      ov.addEventListener('click', e=>{ if(e.target === ov || e.target.closest('[data-a="no"]')) done(cancel); if(e.target.closest('[data-a="ok"]')) done(val()); });
+      inp.addEventListener('keydown', e=>{ if(e.key === 'Enter') done(val()); if(e.key === 'Escape') done(cancel); });
     });
   }
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ if($('libTplOv').classList.contains('open')) closeTemplates(); else if(openMenuEl) closeMenus(); } });
@@ -1900,8 +2102,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       myName = (m.exists && m.data().name) || user.displayName || user.email || 'You';
     }catch(e){ showToast('Could not load your workspace.', true); return; }
     let got = 0; const ready = ()=>{ if(++got >= 3) afterFirstLoad(); };
+    db.collection('libraryTemplates').where('workspaceId', '==', wsId).onSnapshot(snap=>{
+      teamTemplates = snap.docs.map(d=> ({id: d.id, ...d.data()})).sort((a, b)=> (a.title || '').localeCompare(b.title || ''));
+      if($('libTplOv').classList.contains('open')) openTemplates();
+    }, ()=>{});
     db.doc(`libraryFolders/${wsId}`).onSnapshot(d=>{
       const list = d.exists && Array.isArray(d.data().folders) ? d.data().folders.filter(f=> f && f.id && f.name) : null;
+      companyProfile = (d.exists && d.data().companyProfile) || {};
       if(list && list.length) folders = list;
       else if(!foldersLoaded){
         // first time: the standard folders, plus any folder names already used on pages or made on this computer
