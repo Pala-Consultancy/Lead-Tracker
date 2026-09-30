@@ -1017,6 +1017,7 @@ html[data-theme="dark"] .gc-detail .acts .del:hover{color:#EC8E9B}
 html[data-theme="dark"] .gc-del{color:#EC8E9B}
 html[data-theme="dark"] .gc-private{background:var(--panel-alt,rgba(110,142,207,0.15))}
 html[data-theme="dark"] .ed-guest button:hover{color:#EC8E9B}
+html[data-theme="dark"] .gc-palette .pl-rm{background:#3A3F75}
 html[data-theme="dark"] .gc-ev.ooo, html[data-theme="dark"] .gc-chip.ooo{background:repeating-linear-gradient(135deg, var(--c) 0 7px, color-mix(in srgb, var(--c) 72%, #161934) 7px 14px) !important}
 html[data-theme="dark"] small.away{color:#EEAE8B !important}
 </style>
@@ -1411,11 +1412,26 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   .gc-palette .grid{grid-template-columns:repeat(6,1fr) !important;gap:8px !important;}
   .gc-palette .pl-h{font:700 10.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-light,#8CA0B3);margin:2px 0 8px;}
   .gc-palette .grid + .pl-h{margin-top:12px;}
-  .gc-palette .pl-custom{position:relative;display:flex;align-items:center;gap:9px;margin-top:12px;padding:7px 8px;border-radius:9px;cursor:pointer;font:600 12.5px 'Inter',sans-serif;color:var(--ink);}
-  .gc-palette .pl-custom:hover{background:var(--panel-alt);}
-  .gc-palette .pl-custom:focus-within{outline:2px solid var(--teal);}
-  .gc-palette .pl-dot{width:22px;height:22px;border-radius:50%;background:var(--c);display:grid;place-items:center;color:#fff;font-size:13px;}
-  .gc-palette .pl-custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .gc-palette .pl-custom{display:flex !important;align-items:center;gap:9px;width:100% !important;height:auto !important;margin-top:12px;padding:7px 8px;border-radius:9px !important;background:none !important;cursor:pointer;font:600 12.5px 'Inter',sans-serif;color:var(--ink) !important;text-align:left;transform:none !important;}
+  .gc-palette .pl-custom:hover{background:var(--panel-alt) !important;}
+  .gc-palette .pl-dot{width:22px;height:22px;border-radius:50%;background:#9AA5B8;display:grid;place-items:center;color:#fff;font-size:13px;flex-shrink:0;}
+  .gc-palette .pl-cw{position:relative;display:grid;place-items:center;}
+  .gc-palette .pl-rm{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;background:var(--ink);color:#fff;font-size:8px;line-height:15px;text-align:center;cursor:pointer;opacity:0;transition:opacity .12s;box-shadow:0 0 0 2px var(--panel);}
+  .gc-palette .pl-cw:hover .pl-rm,.gc-palette .pl-rm:focus-visible{opacity:1;}
+  .gc-palette .pl-maker{margin-top:8px;padding:10px;border-radius:12px;background:var(--panel-alt);border:1px solid var(--border-soft,var(--border));}
+  .gc-palette .pl-maker[hidden]{display:none;}
+  .gc-palette .pl-mk-row{display:flex;align-items:center;gap:8px;}
+  .gc-palette .pl-swatch{position:relative;width:34px;height:34px;border-radius:9px;background:var(--c);flex-shrink:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);}
+  .gc-palette .pl-swatch input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:0;padding:0;}
+  .gc-palette .pl-swatch:focus-within{outline:2px solid var(--teal);outline-offset:2px;}
+  .gc-palette #gcPalHex{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font:600 13px 'IBM Plex Mono',monospace;color:var(--ink);background:var(--panel);text-transform:uppercase;}
+  .gc-palette #gcPalHex.bad{border-color:#D83A52;box-shadow:0 0 0 2px rgba(216,58,82,.15);}
+  .gc-palette .pl-mk-prev{margin-top:8px;border-radius:7px;padding:5px 9px;background:var(--c);color:#fff;font:700 12px 'Inter',sans-serif;}
+  .gc-palette .pl-mk-acts{display:flex;justify-content:flex-end;gap:6px;margin-top:10px;}
+  .gc-palette .pl-mk-acts button{width:auto !important;height:auto !important;border-radius:8px !important;padding:7px 14px;font:700 12.5px 'Inter',sans-serif;transform:none !important;}
+  .gc-palette .pl-cancel{background:none !important;color:var(--slate) !important;border:1px solid var(--border) !important;}
+  .gc-palette .pl-create{background:var(--teal) !important;color:#fff !important;}
+  .gc-palette .pl-create:hover{filter:brightness(1.1);}
   .gc-pop.task .q-task{display:inline-flex;align-items:center;gap:4px;}
   .gc-pop:not(.task) .q-task{display:none !important;}
   .q-to{color:var(--slate);}
@@ -2014,25 +2030,68 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
   // Colour palette
   const pal = $('gcPalette');
   let palFor = null;
+  // Your own colours: made with "Custom colour… → Create", kept on your profile (and on this computer)
+  let customColours = (()=>{ try{ return JSON.parse(localStorage.getItem('ptCustomColours') || '[]').filter(h=> /^#[0-9A-F]{6}$/.test(h)); }catch(e){ return []; } })();
+  function saveCustomColours(list){
+    customColours = list.slice(0, 12);
+    try{ localStorage.setItem('ptCustomColours', JSON.stringify(customColours)); }catch(e){}
+    if(wsId && myUid) db.doc(`workspaces/${wsId}/members/${myUid}`).update({customColours}).catch(()=>{});
+  }
+  let palAnchor = null;
+  function placePalette(){
+    if(!palAnchor) return; const r = palAnchor.getBoundingClientRect();
+    pal.style.left = Math.min(Math.max(8, r.left - 8), innerWidth - pal.offsetWidth - 8) + 'px';
+    pal.style.top = Math.max(8, Math.min(r.bottom + 8, innerHeight - pal.offsetHeight - 8)) + 'px';
+  }
   function openPalette(anchor, current, onPick){
-    palFor = onPick;
+    palFor = onPick; palAnchor = anchor;
     const cur = (current || '').toUpperCase();
     const sw = c=> `<button type="button" style="--c:${c.hex}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" aria-label="${c.name}">${cur === c.hex ? '✓' : ''}</button>`;
-    const known = [...PALETTE, ...MORE_COLOURS].some(c=> c.hex === cur);
+    const swc = h=> `<span class="pl-cw"><button type="button" style="--c:${h}" data-hex="${h}" data-name="Custom ${h}" title="Custom ${h}" aria-label="Custom colour ${h}">${cur === h ? '✓' : ''}</button><span class="pl-rm" data-rmcol="${h}" role="button" tabindex="0" title="Remove this colour" aria-label="Remove custom colour ${h}">✕</span></span>`;
+    const start = /^#[0-9A-F]{6}$/.test(cur) ? cur : (customColours[0] || '#3F51B5');
     pal.innerHTML = `<div class="pl-h">Colours</div><div class="grid">${PALETTE.map(sw).join('')}</div>
       <div class="pl-h">More colours</div><div class="grid">${MORE_COLOURS.map(sw).join('')}</div>
-      <label class="pl-custom"><span class="pl-dot" style="--c:${cur && !known ? cur : '#9AA5B8'}">${cur && !known ? '✓' : '+'}</span> Custom colour…
-        <input type="color" id="gcPalCustom" value="${/^#[0-9A-F]{6}$/.test(cur) ? cur.toLowerCase() : '#3f51b5'}" aria-label="Pick any colour"></label>
+      ${customColours.length ? `<div class="pl-h">Custom colours</div><div class="grid">${customColours.map(swc).join('')}</div>` : ''}
+      <button type="button" class="pl-custom" id="gcPalCustomBtn" aria-expanded="false"><span class="pl-dot">+</span> Custom colour…</button>
+      <div class="pl-maker" id="gcPalMaker" hidden>
+        <div class="pl-mk-row">
+          <label class="pl-swatch" id="gcPalSwatch" style="--c:${start}" title="Click to pick a colour"><input type="color" id="gcPalPick" value="${start.toLowerCase()}" aria-label="Pick a colour"></label>
+          <input type="text" id="gcPalHex" value="${start}" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Colour code, like #2E3592">
+        </div>
+        <div class="pl-mk-prev" id="gcPalPrev" style="--c:${start}">Preview</div>
+        <div class="pl-mk-acts"><button type="button" class="pl-cancel" id="gcPalCancel">Cancel</button><button type="button" class="pl-create" id="gcPalCreate">Create</button></div>
+      </div>
       <div class="nm" id="gcPalName"></div>`;
-    $('gcPalCustom').addEventListener('change', e=>{ if(!palFor) return; const f = palFor; closePalette(); f(e.target.value.toUpperCase()); });
-    pal.hidden = false;
-    const r = anchor.getBoundingClientRect();
-    pal.style.left = Math.min(Math.max(8, r.left - 8), innerWidth - pal.offsetWidth - 8) + 'px';
-    pal.style.top = Math.min(r.bottom + 8, innerHeight - pal.offsetHeight - 8) + 'px';
+    const maker = $('gcPalMaker'), hexIn = $('gcPalHex'), pick = $('gcPalPick');
+    const show = h=>{ $('gcPalSwatch').style.setProperty('--c', h); $('gcPalPrev').style.setProperty('--c', h); };
+    // accepts #00AA88, 00AA88, #0A8 and 0A8
+    const norm = v=>{ v = String(v || '').trim().toUpperCase().replace(/^#/, ''); if(/^[0-9A-F]{3}$/.test(v)) v = v.split('').map(c=> c + c).join(''); return /^[0-9A-F]{6}$/.test(v) ? '#' + v : null; };
+    $('gcPalCustomBtn').addEventListener('click', ()=>{ const open = maker.hidden; maker.hidden = !open; $('gcPalCustomBtn').setAttribute('aria-expanded', open); placePalette(); if(open) hexIn.focus(); });
+    pick.addEventListener('input', ()=>{ const h = pick.value.toUpperCase(); hexIn.value = h; hexIn.classList.remove('bad'); show(h); });
+    hexIn.addEventListener('input', ()=>{ const h = norm(hexIn.value); hexIn.classList.toggle('bad', !h && hexIn.value.length >= 4); if(h){ pick.value = h.toLowerCase(); show(h); } });
+    const create = ()=>{
+      const h = norm(hexIn.value);   // exactly what's in the box (the picker fills it in)
+      if(!h){ hexIn.classList.add('bad'); hexIn.focus(); hexIn.select(); showToast('That colour code isn’t valid. Use something like #2E3592.', true); return; }
+      saveCustomColours([h, ...customColours.filter(x=> x !== h)]);
+      if(!palFor) return; const f = palFor; closePalette(); f(h);
+    };
+    $('gcPalCreate').addEventListener('click', create);
+    hexIn.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); create(); } });
+    $('gcPalCancel').addEventListener('click', ()=>{ maker.hidden = true; $('gcPalCustomBtn').setAttribute('aria-expanded', 'false'); placePalette(); });
+    pal.hidden = false; placePalette();
     (pal.querySelector('button') || pal).focus();
   }
+  // remove a custom colour (the ✕ on it)
+  pal.addEventListener('click', e=>{
+    const rm = e.target.closest('[data-rmcol]'); if(!rm) return;
+    e.stopPropagation(); const h = rm.dataset.rmcol;
+    saveCustomColours(customColours.filter(x=> x !== h));
+    const cw = rm.closest('.pl-cw'); const grid = cw && cw.parentElement; if(cw) cw.remove();
+    if(grid && !grid.children.length){ const hd = grid.previousElementSibling; grid.remove(); if(hd && hd.classList.contains('pl-h')) hd.remove(); }
+    placePalette();
+  }, true);
   function closePalette(){ pal.hidden = true; palFor = null; }
-  pal.addEventListener('mouseover', e=>{ const b = e.target.closest('[data-hex]'); $('gcPalName').textContent = b ? b.dataset.name : ''; });
+  pal.addEventListener('mouseover', e=>{ const b = e.target.closest('[data-hex]'); const n = $('gcPalName'); if(n) n.textContent = b ? b.dataset.name : ''; });
   pal.addEventListener('click', e=>{ const b = e.target.closest('[data-hex]'); if(!b || !palFor) return; const f = palFor; closePalette(); f(b.dataset.hex); });
   document.addEventListener('mousedown', e=>{ if(!pal.hidden && !pal.contains(e.target) && !e.target.closest('[data-d="color"],#eColorBtn')) closePalette(); });
   function saveColor(x, hex){
@@ -2487,6 +2546,8 @@ html[data-theme="dark"] small.away{color:#EEAE8B !important}
       db.collection('workspaces').doc(wsId).collection('members').get().then(snap=>{
         snap.docs.forEach(d=>{ members[d.id] = d.data(); });
         myName = (members[myUid] || {}).name || user.email || 'You';
+        const cc = (members[myUid] || {}).customColours;
+        if(Array.isArray(cc)){ customColours = cc.filter(h=> /^#[0-9A-F]{6}$/.test(h)).slice(0, 12); try{ localStorage.setItem('ptCustomColours', JSON.stringify(customColours)); }catch(e){} }
         const saved = (members[myUid] || {}).holidayCountries;
         holSaved = Array.isArray(saved); holCountries = holSaved ? saved.filter(c=> /^[A-Z]{2}$/.test(c)).slice(0, 3) : [detectCountry()]; soon();
         const n = $('seqSidebarUserName'), av = $('seqSidebarAvatar'); if(n) n.textContent = myName; if(av) av.textContent = initials(myName);
