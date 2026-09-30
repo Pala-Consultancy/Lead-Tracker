@@ -163,11 +163,20 @@
       var ws = d.exists && d.data().workspaceId; if(!ws) return [];
       return Promise.all([
         db.collection('libraryPages').where('workspaceId', '==', ws).where('visibility', '==', 'team').get().catch(function(){ return {docs: []}; }),
-        db.collection('libraryPages').where('createdBy', '==', u.uid).get().catch(function(){ return {docs: []}; })
+        db.collection('libraryPages').where('createdBy', '==', u.uid).get().catch(function(){ return {docs: []}; }),
+        db.doc('libraryFolders/' + ws).get().catch(function(){ return null; })
       ]).then(function(r){
+        // the team's folders, with their current names and order
+        var fl = r[2] && r[2].exists && Array.isArray(r[2].data().folders) ? r[2].data().folders : [];
+        var order = {}, names = {}; fl.forEach(function(f, i){ order[f.id] = i; names[f.id] = f.name; });
         var seen = {}, out = [];
-        r[0].docs.concat(r[1].docs).forEach(function(doc){ if(seen[doc.id]) return; seen[doc.id] = 1; var p = doc.data(); if(p.workspaceId !== ws) return; p.id = doc.id; out.push(p); });
-        return out.sort(function(a, b){ return (a.folder || '').localeCompare(b.folder || '') || (a.title || '').localeCompare(b.title || ''); });
+        r[0].docs.concat(r[1].docs).forEach(function(doc){
+          if(seen[doc.id]) return; seen[doc.id] = 1; var p = doc.data(); if(p.workspaceId !== ws) return; p.id = doc.id;
+          if(p.folderId && names[p.folderId]) p.folder = names[p.folderId];
+          p._order = p.folderId && order[p.folderId] !== undefined ? order[p.folderId] : 999;
+          out.push(p);
+        });
+        return out.sort(function(a, b){ return (a._order - b._order) || (a.folder || '').localeCompare(b.folder || '') || (a.title || '').localeCompare(b.title || ''); });
       });
     });
   }

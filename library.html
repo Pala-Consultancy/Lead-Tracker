@@ -210,6 +210,14 @@
   .lib-ask .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
   @media (max-width:900px){ .lib{grid-template-columns:1fr;} .lib-nav{max-height:40vh;border-right:0;border-bottom:1px solid var(--border);} .lib-doc-inner{padding:14px 18px 100px;} .lib-tpl-grid{grid-template-columns:1fr;} }
 
+  .lib-group-h{user-select:none;}
+  .lib-group-h:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;}
+  .lib-group-h .nm{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lib-group-h .add + .add{margin-left:0;}
+  .lib-group-h .fm{font-weight:800;letter-spacing:.05em;}
+  .lib-rename{flex:1;min-width:0;border:1px solid var(--teal);border-radius:6px;padding:3px 6px;font:700 11.5px 'Inter',sans-serif;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);background:var(--panel);outline:none;}
+  .lib-menu button:disabled{opacity:.4;cursor:default;background:none;}
+
 </style>
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
 <style>
@@ -1084,6 +1092,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <button type="button" role="menuitem" data-more="delete" class="danger">🗑 Delete page</button>
 </div>
 <div class="lib-menu lib-emoji" id="libEmoji" role="dialog" aria-label="Choose an icon" hidden></div>
+<div class="lib-menu" id="libFolderMenu" role="menu" aria-label="Folder options" hidden>
+  <button type="button" role="menuitem" data-fm="rename">✏️ Rename</button>
+  <button type="button" role="menuitem" data-fm="add">＋ New page here</button>
+  <button type="button" role="menuitem" data-fm="up">↑ Move up</button>
+  <button type="button" role="menuitem" data-fm="down">↓ Move down</button>
+  <button type="button" role="menuitem" data-fm="delete" class="danger">🗑 Delete folder</button>
+</div>
 
 <!-- templates -->
 <div class="lib-ov" id="libTplOv" aria-hidden="true">
@@ -1176,7 +1191,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   const $ = id=> document.getElementById(id);
   const FV = firebase.firestore.FieldValue;
-  const DEFAULT_FOLDERS = ['Icebreakers', 'Follow-ups', 'Call scripts', 'Objections', 'Ideas'];
+  const DEFAULT_FOLDERS = [{id: 'icebreakers', name: 'Icebreakers'}, {id: 'follow-ups', name: 'Follow-ups'}, {id: 'call-scripts', name: 'Call scripts'},
+    {id: 'objections', name: 'Objections'}, {id: 'ideas', name: 'Ideas'}];
   const EMOJIS = ['📝','💡','👋','🧊','🔥','🚀','🎯','💬','📞','✉️','🔁','🤝','📈','💰','⭐','✅','📌','🧠','🗂️','📚','🛠️','❓','🙌','⚡','🌱','🏆','🎁','🧭','📣','🔑','🗓️','😊'];
   const SLASH = [
     {k: 'p', label: 'Text', hint: 'Plain writing', ic: 'Aa'},
@@ -1191,22 +1207,22 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'hr', label: 'Divider', hint: 'A line between parts', ic: '—'},
     {k: 'ph', label: 'Placeholder', hint: '{firstName}, {company}…', ic: '{ }'}];
   const TEMPLATES = [
-    {icon: '🧊', title: 'Icebreakers for cold outreach', folder: 'Icebreakers', desc: 'Five first messages that start a real conversation.',
+    {icon: '🧊', title: 'Icebreakers for cold outreach', folderId: 'icebreakers', folder: 'Icebreakers', desc: 'Five first messages that start a real conversation.',
       html: `<h2>Short and personal</h2><p>Hi <PH firstName>, I saw what you're building at <PH company> and had to say: [one specific thing you noticed]. How did you get started with that?</p>
 <h2>A compliment and a question</h2><p>Hi <PH firstName>, your post about [topic] stuck with me. Quick question: how are you handling [challenge] at <PH company> right now?</p>
 <h2>Mutual connection</h2><p>Hi <PH firstName>, [name] mentioned you're the person to talk to about [topic] at <PH company>. Would you be open to a short chat?</p>
 <h2>A useful idea</h2><p>Hi <PH firstName>, I had an idea for <PH company> after looking at [what you looked at]: [idea in one sentence]. Want me to send it over?</p>
 <h2>Straight to the point</h2><p>Hi <PH firstName>, I help [type of company] with [result]. Is that something on your radar at <PH company> this quarter?</p>`},
-    {icon: '🔁', title: 'Follow-up after no reply', folder: 'Follow-ups', desc: 'Friendly nudges for when a lead goes quiet.',
+    {icon: '🔁', title: 'Follow-up after no reply', folderId: 'follow-ups', folder: 'Follow-ups', desc: 'Friendly nudges for when a lead goes quiet.',
       html: `<h2>After 3 days</h2><p>Hi <PH firstName>, just bringing this back to the top of your inbox. Would [offer] be useful for <PH company>?</p>
 <h2>After a week</h2><p>Hi <PH firstName>, I know things get busy. Should I check back in a few weeks, or is this simply not a priority right now?</p>
 <h2>The last one</h2><p>Hi <PH firstName>, I'll stop here so I don't clutter your inbox. If [problem] ever becomes a priority at <PH company>, I'm happy to help.</p>`},
-    {icon: '📞', title: 'Call script: first call', folder: 'Call scripts', desc: 'A simple structure for a first sales call.',
+    {icon: '📞', title: 'Call script: first call', folderId: 'call-scripts', folder: 'Call scripts', desc: 'A simple structure for a first sales call.',
       html: `<h2>Opening (1 minute)</h2><p>Thanks for making time, <PH firstName>. The goal today: understand where <PH company> is at with [topic], and see if we can help. Sound good?</p>
 <h2>Questions to ask</h2><ul><li>How are you handling [process] today?</li><li>What's not working the way you'd like?</li><li>What happens if nothing changes in the next 6 months?</li><li>Who else is involved in a decision like this?</li></ul>
 <h2>Next step</h2><p>Based on what you told me, it makes sense to [next step]. Does [day] work for you?</p>
 <div class="callout">Listen more than you talk: aim for 70% them, 30% you.</div>`},
-    {icon: '🛡️', title: 'Handling objections', folder: 'Objections', desc: 'Calm answers to the objections you hear most.',
+    {icon: '🛡️', title: 'Handling objections', folderId: 'objections', folder: 'Objections', desc: 'Calm answers to the objections you hear most.',
       html: `<h2>"It's too expensive"</h2><p>I understand. Can I ask what you're comparing it to? Most clients see [result] within [time], which covers the cost in [period].</p>
 <h2>"Send me some information"</h2><p>Happy to. So I send you something useful and not a brochure: what's the one thing you'd want to know?</p>
 <h2>"We already work with someone"</h2><p>That's great, it means [topic] matters to you. What would they need to do better for you to consider a change?</p>
@@ -1217,7 +1233,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   let curId = null, dirty = false, saveTimer = null, lastLoadedStamp = null;
   let scope = localStorage.getItem('ptLibScope') || 'all';
   let closedFolders = new Set(JSON.parse(localStorage.getItem('ptLibClosed') || '[]'));
-  let extraFolders = JSON.parse(localStorage.getItem('ptLibFolders') || '[]');
+  let extraFolders = JSON.parse(localStorage.getItem('ptLibFolders') || '[]');   // folders made before they were shared (moved over once)
+  let folders = DEFAULT_FOLDERS.slice(), foldersLoaded = false;
   const ed = $('libEditor');
   document.execCommand('defaultParagraphSeparator', false, 'p');
 
@@ -1241,10 +1258,29 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     Object.keys(justMade).forEach(id=>{ if(Date.now() - justMade[id] < 20000 && pages[id]) next[id] = pages[id]; else delete justMade[id]; });
     pages = next;
   }
-  function folderList(){
-    const used = new Set(allPages().map(p=> p.folder || 'Ideas'));
-    const extra = [...new Set([...extraFolders, ...used])].filter(f=> !DEFAULT_FOLDERS.includes(f)).sort((a, b)=> a.localeCompare(b));
-    return [...DEFAULT_FOLDERS, ...extra];
+  function folderList(){ return folders; }
+  function folderById(id){ return folders.find(f=> f.id === id) || null; }
+  // which folder a page is in: by its id; older pages by their folder name
+  function folderIdOf(p){
+    if(!p) return folders[0] && folders[0].id;
+    if(p.folderId && folderById(p.folderId)) return p.folderId;
+    const nm = p.folder || 'Ideas';
+    const byName = folders.find(f=> f.name === nm) || folders.find(f=> (f.aliases || []).includes(nm));   // also its old names
+    if(byName) return byName.id;
+    return '__other';
+  }
+  function folderName(id){ return id === '__other' ? 'Other' : ((folderById(id) || {}).name || 'Other'); }
+  function saveFolders(next, msg){
+    folders = next; renderTree(); if(curId) renderMeta();
+    return db.doc(`libraryFolders/${wsId}`).set({workspaceId: wsId, folders: next, updatedAt: FV.serverTimestamp(), updatedBy: myUid})
+      .then(()=>{ if(msg) showToast(msg); }).catch(err=> showToast('Could not save the folders: ' + (err.message || ''), true));
+  }
+  // pages in a folder that you're allowed to change (your own, and team pages)
+  function editablePagesIn(id){ return allPages().filter(p=> folderIdOf(p) === id && canEdit(p)); }
+  function movePages(list, toId){
+    const name = folderName(toId), batch = db.batch();
+    list.slice(0, 450).forEach(p=>{ p.folderId = toId; p.folder = name; batch.update(db.collection('libraryPages').doc(p.id), {folderId: toId, folder: name}); });
+    return list.length ? batch.commit() : Promise.resolve();
   }
   function canEdit(p){ return p && (p.createdBy === myUid || p.visibility === 'team'); }
 
@@ -1263,11 +1299,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     let html = '';
     const favs = vis.filter(p=> (p.favorites || []).includes(myUid));
     if(favs.length) html += `<div class="lib-group${closedFolders.has('★') ? ' closed' : ''}"><button type="button" class="lib-group-h" data-fold="★"><span class="chev">▼</span> ⭐ Favourites<span class="n">${favs.length}</span></button><div class="lib-items">${favs.map(item).join('')}</div></div>`;
-    folderList().forEach(f=>{
-      const list = vis.filter(p=> (p.folder || 'Ideas') === f);
+    const groups = folderList().concat(vis.some(p=> folderIdOf(p) === '__other') ? [{id: '__other', name: 'Other'}] : []);
+    groups.forEach(f=>{
+      const list = vis.filter(p=> folderIdOf(p) === f.id);
       if(q && !list.length) return;
-      html += `<div class="lib-group${closedFolders.has(f) && !q ? ' closed' : ''}"><button type="button" class="lib-group-h" data-fold="${esc(f)}"><span class="chev">▼</span> ${esc(f)}<span class="n">${list.length || ''}</span>
-        <span class="add" data-addin="${esc(f)}" role="button" aria-label="New page in ${esc(f)}" title="New page in ${esc(f)}">＋</span></button>
+      const real = f.id !== '__other';
+      html += `<div class="lib-group${closedFolders.has(f.id) && !q ? ' closed' : ''}"><div class="lib-group-h" data-fold="${esc(f.id)}" role="button" tabindex="0" aria-expanded="${!(closedFolders.has(f.id) && !q)}">
+        <span class="chev">▼</span> <span class="nm" ${real ? `data-rename="${esc(f.id)}" title="Double-click to rename"` : ''}>${esc(f.name)}</span><span class="n">${list.length || ''}</span>
+        ${real ? `<span class="add" data-addin="${esc(f.id)}" role="button" tabindex="0" aria-label="New page in ${esc(f.name)}" title="New page in ${esc(f.name)}">＋</span>
+        <span class="add fm" data-fmenu="${esc(f.id)}" role="button" tabindex="0" aria-label="Folder options for ${esc(f.name)}" title="Rename, move or delete">⋯</span>` : ''}</div>
         <div class="lib-items">${list.length ? list.map(item).join('') : '<div class="lib-none">No pages yet</div>'}</div></div>`;
     });
     if(q && !vis.length) html = `<div class="lib-none" style="padding:14px">No page matches "${esc(q)}".</div>`;
@@ -1275,9 +1315,20 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     document.querySelectorAll('.lib-scope [data-scope]').forEach(b=> b.classList.toggle('on', b.dataset.scope === scope));
   }
   $('libTree').addEventListener('click', e=>{
-    const add = e.target.closest('[data-addin]'); if(add){ e.stopPropagation(); createPage({folder: add.dataset.addin}); return; }
+    if(e.target.closest('.lib-rename')) return;
+    const fm = e.target.closest('[data-fmenu]'); if(fm){ e.stopPropagation(); openFolderMenu(fm.dataset.fmenu, fm.getBoundingClientRect()); return; }
+    const add = e.target.closest('[data-addin]'); if(add){ e.stopPropagation(); createPage({folderId: add.dataset.addin}); return; }
     const o = e.target.closest('[data-open]'); if(o){ openPage(o.dataset.open); return; }
-    const f = e.target.closest('[data-fold]'); if(f){ const k = f.dataset.fold; closedFolders.has(k) ? closedFolders.delete(k) : closedFolders.add(k); localStorage.setItem('ptLibClosed', JSON.stringify([...closedFolders])); renderTree(); }
+    const f = e.target.closest('[data-fold]'); if(!f) return;
+    const k = f.dataset.fold;
+    const toggle = ()=>{ closedFolders.has(k) ? closedFolders.delete(k) : closedFolders.add(k); localStorage.setItem('ptLibClosed', JSON.stringify([...closedFolders])); renderTree(); };
+    // on the name: one click folds, a double-click renames (so wait a moment for a second click)
+    if(e.target.closest('[data-rename]')){
+      clearTimeout(foldTimer);
+      if(e.detail >= 2){ startRename(k); return; }
+      foldTimer = setTimeout(toggle, 230); return;
+    }
+    toggle();
   });
   $('libSearch').addEventListener('input', renderTree);
   document.querySelectorAll('.lib-scope [data-scope]').forEach(b=> b.addEventListener('click', ()=>{ scope = b.dataset.scope; localStorage.setItem('ptLibScope', scope); renderTree(); }));
@@ -1286,7 +1337,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function renderMeta(){
     const p = pages[curId]; if(!p) return;
     const mine = p.createdBy === myUid;
-    $('libCrumbFolder').textContent = `${p.folder || 'Ideas'} / ${p.title || 'Untitled'}`;
+    $('libCrumbFolder').textContent = `${folderName(folderIdOf(p))} / ${p.title || 'Untitled'}`;
     const fav = (p.favorites || []).includes(myUid);
     $('libFav').textContent = fav ? '★' : '☆'; $('libFav').setAttribute('aria-pressed', fav); $('libFav').title = fav ? 'Remove from favourites' : 'Add to favourites';
     const sh = $('libShare');
@@ -1294,7 +1345,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     sh.textContent = p.visibility === 'team' ? (mine ? '👥 Shared with team' : `👥 Team page · by ${p.createdByName || 'a teammate'}`) : '🔒 Only me · Share';
     sh.disabled = !mine; sh.title = mine ? (p.visibility === 'team' ? 'Make it private again' : 'Share with your team') : 'Only its author can change who sees it';
     $('libIcon').textContent = p.icon || '📝';
-    $('libFolder').innerHTML = folderList().map(f=> `<option ${f === (p.folder || 'Ideas') ? 'selected' : ''}>${esc(f)}</option>`).join('') + '<option value="__new">＋ New folder…</option>';
+    const inId = folderIdOf(p);
+    $('libFolder').innerHTML = folderList().map(f=> `<option value="${esc(f.id)}" ${f.id === inId ? 'selected' : ''}>${esc(f.name)}</option>`).join('')
+      + (inId === '__other' ? '<option value="__other" selected>Other</option>' : '') + '<option value="__new">＋ New folder…</option>';
     $('libEdited').textContent = p.updatedAt ? `Edited ${ago(p.updatedAt)}${p.updatedByName ? ' by ' + (p.updatedBy === myUid ? 'you' : p.updatedByName) : ''}` : '';
     document.querySelector('[data-more="delete"]').style.display = mine ? '' : 'none';
   }
@@ -1329,7 +1382,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       .catch(err=>{ dirty = true; $('libSaved').textContent = 'Not saved'; showToast('Could not save: ' + (err.message || ''), true); });
   }
   window.addEventListener('beforeunload', ()=>{ if(dirty) saveNow(); });
-  $('libTitle').addEventListener('input', ()=>{ autosizeTitle(); markDirty(); $('libCrumbFolder').textContent = `${(pages[curId] || {}).folder || 'Ideas'} / ${$('libTitle').value || 'Untitled'}`; });
+  $('libTitle').addEventListener('input', ()=>{ autosizeTitle(); markDirty(); $('libCrumbFolder').textContent = `${folderName(folderIdOf(pages[curId]))} / ${$('libTitle').value || 'Untitled'}`; });
   $('libTitle').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); ed.focus(); const r = document.createRange(); r.setStart(ed, 0); r.collapse(true); getSelection().removeAllRanges(); getSelection().addRange(r); } });
   function updateField(upd, msg){
     const p = pages[curId]; if(!p) return;
@@ -1339,8 +1392,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   $('libFolder').addEventListener('change', async e=>{
     let f = e.target.value;
-    if(f === '__new'){ f = await askText('New folder', 'e.g. LinkedIn openers'); if(!f){ renderMeta(); return; } addFolder(f); }
-    updateField({folder: f}, `Moved to ${f}.`);
+    if(f === '__other') return;
+    if(f === '__new'){ const name = await askText('New folder', 'e.g. LinkedIn openers'); if(!name){ renderMeta(); return; } f = addFolder(name); if(!f){ renderMeta(); return; } }
+    updateField({folderId: f, folder: folderName(f)}, `Moved to ${folderName(f)}.`);
   });
   $('libShare').addEventListener('click', ()=>{
     const p = pages[curId]; if(!p || p.createdBy !== myUid) return;
@@ -1355,19 +1409,26 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   });
 
   // ================= creating =================
-  function addFolder(f){ f = f.trim().slice(0, 60); if(f && !folderList().includes(f)){ extraFolders.push(f); localStorage.setItem('ptLibFolders', JSON.stringify(extraFolders)); } return f; }
-  function createPage({title = '', icon = '📝', folder, content = '<p><br></p>', visibility = 'private'} = {}){
+  function addFolder(name){
+    name = String(name || '').trim().slice(0, 60); if(!name) return null;
+    const same = folders.find(f=> f.name.toLowerCase() === name.toLowerCase()); if(same){ showToast(`There's already a folder "${same.name}".`); return same.id; }
+    const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    saveFolders([...folders, {id, name}], `Folder "${name}" added.`); return id;
+  }
+  function createPage({title = '', icon = '📝', folderId, content = '<p><br></p>', visibility = 'private'} = {}){
     const cur = pages[curId];
-    const data = {workspaceId: wsId, title, icon, folder: folder || (cur && cur.folder) || 'Ideas', content: PTLib.clean(content), text: PTLib.toText(content, 'library'),
+    let fid = folderId && folderById(folderId) ? folderId : (cur && folderIdOf(cur) !== '__other' ? folderIdOf(cur) : null);
+    if(!fid) fid = (folderById('ideas') || folders[0] || {id: 'ideas'}).id;
+    const data = {workspaceId: wsId, title, icon, folderId: fid, folder: folderName(fid), content: PTLib.clean(content), text: PTLib.toText(content, 'library'),
       visibility, createdBy: myUid, createdByName: myName, createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp(), updatedBy: myUid, updatedByName: myName, favorites: []};
     return db.collection('libraryPages').add(data).then(ref=>{
       pages[ref.id] = {id: ref.id, ...data, updatedAt: {toMillis: ()=> Date.now(), toDate: ()=> new Date()}}; justMade[ref.id] = Date.now();
-      closedFolders.delete(data.folder);
+      closedFolders.delete(data.folderId);
       openPage(ref.id, !title); return ref.id;
     }).catch(err=>{ showToast('Could not create the page: ' + (err.message || ''), true); return null; });
   }
   function openTemplates(){
-    $('libTplGrid').innerHTML = TEMPLATES.map((t, i)=> `<button type="button" class="lib-tpl-card" data-tpl="${i}"><span class="ic">${t.icon}</span><h3>${esc(t.title)}</h3><p>${esc(t.desc)}</p><span class="fd">📁 ${esc(t.folder)}</span></button>`).join('');
+    $('libTplGrid').innerHTML = TEMPLATES.map((t, i)=> `<button type="button" class="lib-tpl-card" data-tpl="${i}"><span class="ic">${t.icon}</span><h3>${esc(t.title)}</h3><p>${esc(t.desc)}</p><span class="fd">📁 ${esc(folderById(t.folderId) ? folderName(t.folderId) : folderName((folderById('ideas') || folders[0] || {}).id))}</span></button>`).join('');
     $('libTplOv').classList.add('open'); $('libTplOv').setAttribute('aria-hidden', 'false');
     setTimeout(()=> ($('libTplGrid').querySelector('button') || {}).focus && $('libTplGrid').querySelector('button').focus(), 30);
   }
@@ -1376,16 +1437,72 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(e.target === $('libTplOv') || e.target.closest('[data-close="tpl"]')){ closeTemplates(); return; }
     const c = e.target.closest('[data-tpl]'); if(!c) return;
     const t = TEMPLATES[+c.dataset.tpl]; closeTemplates();
-    createPage({title: t.title, icon: t.icon, folder: t.folder, content: expandTpl(t.html)}).then(id=>{ if(id) showToast('Page created. Make it your own!'); });
+    createPage({title: t.title, icon: t.icon, folderId: t.folderId, content: expandTpl(t.html)}).then(id=>{ if(id) showToast('Page created. Make it your own!'); });
   });
   function newAction(k){
     closeMenus();
     if(k === 'blank') createPage({});
     if(k === 'templates') openTemplates();
-    if(k === 'folder') askText('New folder', 'e.g. LinkedIn openers').then(f=>{ if(f){ addFolder(f); renderTree(); showToast(`Folder "${f}" added.`); } });
+    if(k === 'folder') askText('New folder', 'e.g. LinkedIn openers').then(f=>{ if(f) addFolder(f); });
   }
   document.addEventListener('click', e=>{ const n = e.target.closest('[data-new]'); if(n) newAction(n.dataset.new); });
   $('libNew').addEventListener('click', e=>{ e.stopPropagation(); openMenu($('libNewMenu'), e.currentTarget.getBoundingClientRect()); });
+
+  // ================= folder options =================
+  let fmFor = null, foldTimer = null;
+  function openFolderMenu(id, r){
+    fmFor = id; const i = folders.findIndex(f=> f.id === id);
+    const m = $('libFolderMenu');
+    m.querySelector('[data-fm="up"]').disabled = i <= 0; m.querySelector('[data-fm="down"]').disabled = i >= folders.length - 1;
+    m.querySelector('[data-fm="delete"]').disabled = folders.length <= 1;
+    openMenu(m, {left: r.left - 150, bottom: r.bottom});
+  }
+  function startRename(id){
+    const nm = document.querySelector(`[data-rename="${CSS.escape(id)}"]`); const f = folderById(id); if(!nm || !f) return;
+    const inp = document.createElement('input'); inp.className = 'lib-rename'; inp.value = f.name; inp.maxLength = 60; inp.setAttribute('aria-label', 'Folder name');
+    nm.replaceWith(inp); inp.focus(); inp.select();
+    let done = false;
+    const finish = save=>{
+      if(done) return; done = true;
+      const name = inp.value.trim();
+      if(!save || !name || name === f.name){ renderTree(); return; }
+      const clash = folders.find(x=> x.id !== id && x.name.toLowerCase() === name.toLowerCase());
+      if(clash){ showToast(`There's already a folder "${clash.name}".`, true); renderTree(); return; }
+      const old = f.name, inIt = editablePagesIn(id);   // look them up BEFORE the name changes
+      const aliases = [...new Set([...(f.aliases || []), old])].filter(a=> a !== name).slice(-10);
+      saveFolders(folders.map(x=> x.id === id ? {...x, name, aliases} : x), `Renamed "${old}" to "${name}".`);
+      // give those pages the folder's id and new name (a teammate's private page follows via the old name)
+      movePages(inIt, id).catch(()=>{});
+    };
+    inp.addEventListener('keydown', e=>{ e.stopPropagation(); if(e.key === 'Enter'){ e.preventDefault(); finish(true); } if(e.key === 'Escape'){ e.preventDefault(); finish(false); } });
+    inp.addEventListener('blur', ()=> finish(true));
+    inp.addEventListener('click', e=> e.stopPropagation());
+  }
+  $('libTree').addEventListener('dblclick', e=>{ if(e.target.closest('[data-rename]')) e.preventDefault(); });
+  $('libTree').addEventListener('keydown', e=>{
+    const h = e.target.closest('[data-fold], [data-addin], [data-fmenu]'); if(!h || e.target.closest('.lib-rename')) return;
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.target.click(); }
+    if(e.key === 'F2' && e.target.matches('[data-fold]')){ e.preventDefault(); startRename(e.target.dataset.fold); }
+  });
+  $('libFolderMenu').addEventListener('click', async e=>{
+    const b = e.target.closest('[data-fm]'); if(!b || b.disabled) return;
+    const id = fmFor; closeMenus(); const f = folderById(id); if(!f) return;
+    const i = folders.findIndex(x=> x.id === id);
+    if(b.dataset.fm === 'rename') startRename(id);
+    if(b.dataset.fm === 'add') createPage({folderId: id});
+    if(b.dataset.fm === 'up' || b.dataset.fm === 'down'){
+      const j = b.dataset.fm === 'up' ? i - 1 : i + 1, next = folders.slice(); [next[i], next[j]] = [next[j], next[i]]; saveFolders(next);
+    }
+    if(b.dataset.fm === 'delete'){
+      const rest = folders.filter(x=> x.id !== id), to = (rest.find(x=> x.id === 'ideas') || rest[0]);
+      const inIt = allPages().filter(p=> folderIdOf(p) === id);
+      const ok = await showConfirmModal({title: `Delete the folder "${f.name}"?`,
+        message: inIt.length ? `Its ${inIt.length} page${inIt.length === 1 ? '' : 's'} move${inIt.length === 1 ? 's' : ''} to "${to.name}". No page is deleted.` : 'The folder is empty.', confirmLabel: 'Delete folder'});
+      if(!ok) return;
+      await movePages(editablePagesIn(id), to.id).catch(()=>{});
+      saveFolders(rest, `Folder "${f.name}" deleted.`);
+    }
+  });
 
   // ================= more: copy, duplicate, delete =================
   $('libMore').addEventListener('click', e=>{ e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); openMenu($('libMoreMenu'), {left: r.right - 220, bottom: r.bottom}); });
@@ -1393,7 +1510,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const b = e.target.closest('[data-more]'); if(!b) return; closeMenus(); saveNow();
     const p = pages[curId]; if(!p) return;
     if(b.dataset.more === 'copy'){ navigator.clipboard.writeText((p.title ? p.title + '\n\n' : '') + PTLib.toText(p.content || '', 'library')).then(()=> showToast('Copied as text.')).catch(()=> showToast('Could not copy.', true)); }
-    if(b.dataset.more === 'duplicate'){ createPage({title: (p.title || 'Untitled') + ' (copy)', icon: p.icon, folder: p.folder, content: p.content}).then(id=>{ if(id) showToast('Duplicated. The copy is private to you.'); }); }
+    if(b.dataset.more === 'duplicate'){ createPage({title: (p.title || 'Untitled') + ' (copy)', icon: p.icon, folderId: folderIdOf(p), content: p.content}).then(id=>{ if(id) showToast('Duplicated. The copy is private to you.'); }); }
     if(b.dataset.more === 'delete'){
       const ok = await showConfirmModal({title: 'Delete this page?', message: `"${p.title || 'Untitled'}" is deleted${p.visibility === 'team' ? ' for your whole team' : ''}.`, confirmLabel: 'Delete'});
       if(!ok) return;
@@ -1669,7 +1786,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const m = await db.doc(`workspaces/${wsId}/members/${user.uid}`).get();
       myName = (m.exists && m.data().name) || user.displayName || user.email || 'You';
     }catch(e){ showToast('Could not load your workspace.', true); return; }
-    let got = 0; const ready = ()=>{ if(++got >= 2) afterFirstLoad(); };
+    let got = 0; const ready = ()=>{ if(++got >= 3) afterFirstLoad(); };
+    db.doc(`libraryFolders/${wsId}`).onSnapshot(d=>{
+      const list = d.exists && Array.isArray(d.data().folders) ? d.data().folders.filter(f=> f && f.id && f.name) : null;
+      if(list && list.length) folders = list;
+      else if(!foldersLoaded){
+        // first time: the standard folders, plus any folder names already used on pages or made on this computer
+        const names = new Set(DEFAULT_FOLDERS.map(f=> f.name));
+        const extra = [...new Set([...extraFolders, ...allPages().map(p=> p.folder).filter(Boolean)])].filter(n=> !names.has(n));
+        folders = [...DEFAULT_FOLDERS, ...extra.map((n, i)=> ({id: 'f-' + i + '-' + n.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30), name: n}))];
+      }
+      foldersLoaded = true; onData(); ready();
+    }, ()=>{ foldersLoaded = true; ready(); });
     db.collection('libraryPages').where('workspaceId', '==', wsId).where('visibility', '==', 'team').onSnapshot(snap=>{
       teamPages = snap.docs.map(d=> ({id: d.id, ...d.data()})); onData(); ready();
     }, err=>{ console.warn(err); ready(); });
