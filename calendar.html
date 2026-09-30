@@ -1024,6 +1024,8 @@ html[data-theme="dark"] .gc-theme .th-preset .sw.th-bg-tint{background:linear-gr
 html[data-theme="dark"] .gc-theme .th-preset .sw.th-bg-gradient{background:linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 25%, #161934))}
 html[data-theme="dark"] .gc-theme .th-preset .sw.th-bg-dots{background:radial-gradient(#161934 1.2px, transparent 1.5px) 0 0/6px 6px, var(--c)}
 html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
+html[data-theme="dark"] .gc-bell .bl-sw::after{background:#161934}
+html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
 </style>
 <!-- pt-dark-theme:end -->
 </head>
@@ -1056,6 +1058,7 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
         <button type="button" class="gc-btn round" id="gcPrev" aria-label="Previous">‹</button>
         <button type="button" class="gc-btn round" id="gcNext" aria-label="Next">›</button>
         <h1 id="gcTitle"></h1>
+        <button type="button" class="gc-theme-btn gc-bell-btn" id="gcBellBtn" aria-haspopup="dialog" aria-expanded="false" title="Reminders for tasks and events">🔔</button>
         <button type="button" class="gc-theme-btn" id="gcThemeBtn" aria-haspopup="dialog" aria-expanded="false" title="Theme and layout">🎨 Theme</button>
         <div class="gc-views" role="group" aria-label="View">
           <button type="button" data-view="day" title="Day (D)">Day</button>
@@ -1103,6 +1106,18 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
   <input type="search" id="gcHolSearch" placeholder="Search a country" autocomplete="off" aria-label="Search a country">
   <div class="hp-list" id="gcHolList"></div>
   <div class="hp-foot" id="gcHolFoot"></div>
+</div>
+
+<!-- Reminders on/off -->
+<div class="gc-theme gc-bell" id="gcBell" role="dialog" aria-label="Reminders" hidden>
+  <div class="th-head"><b id="gcBellTitle">🔔 Reminders</b><button type="button" class="gc-x" id="gcBellClose" aria-label="Close">✕</button></div>
+  <div class="th-body">
+    <p class="bl-sub">Just before something in your calendar starts, in the bell and by email.</p>
+    <label class="bl-row"><span><b>Before a task starts</b><small>15 minutes before a task with a start time</small></span><input type="checkbox" class="bl-sw" data-rem="taskReminder"></label>
+    <label class="bl-row"><span><b>Before an event starts</b><small>As set on each event, e.g. 10 minutes before</small></span><input type="checkbox" class="bl-sw" data-rem="eventReminder"></label>
+    <button type="button" class="bl-all" id="gcBellAll"></button>
+  </div>
+  <div class="th-foot"><a href="notification-settings.html#calendarReminders" class="th-reset" style="text-decoration:none">All notification settings →</a><span>Just for you</span></div>
 </div>
 
 <!-- Calendar theme -->
@@ -1566,6 +1581,27 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
 
   .gc-join{display:inline-block;background:var(--cal-accent, var(--teal));color:#fff !important;text-decoration:none;font:700 12.5px 'Inter',sans-serif;border-radius:8px;padding:6px 12px;}
   .gc-join:hover{filter:brightness(1.1);}
+
+  .gc-theme .th-link{display:block;border:1px solid var(--border);border-radius:10px;padding:9px 11px;font:600 12.5px 'Inter',sans-serif;color:var(--ink);text-decoration:none;}
+  .gc-theme .th-link:hover{border-color:var(--cal-accent, var(--teal));color:var(--cal-accent, var(--teal));}
+
+  .gc-bell-btn{margin-left:auto;margin-right:6px;padding:8px 11px;font-size:15px;}
+  .gc-bell-btn + .gc-theme-btn{margin-left:0;}
+  .gc-bell-btn.off{border-color:rgba(232,145,45,.5);background:rgba(232,145,45,.1);}
+  .gc-bell{width:320px;}
+  .gc-bell .bl-sub{margin:0 0 10px;font-size:12.5px;color:var(--slate);line-height:1.45;}
+  .gc-bell .bl-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border-soft,var(--border));cursor:pointer;}
+  .gc-bell .bl-row b{display:block;font:700 13px 'Inter',sans-serif;color:var(--ink);}
+  .gc-bell .bl-row small{display:block;font-size:11.5px;color:var(--slate);margin-top:2px;}
+  .gc-bell .bl-sw{appearance:none;-webkit-appearance:none;flex-shrink:0;width:40px;height:22px;border-radius:999px;background:var(--border);position:relative;cursor:pointer;transition:background .15s;margin:0;}
+  .gc-bell .bl-sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s;}
+  .gc-bell .bl-sw:checked{background:var(--cal-accent, var(--teal));}
+  .gc-bell .bl-sw:checked::after{transform:translateX(18px);}
+  .gc-bell .bl-sw:focus-visible{outline:2px solid var(--cal-accent, var(--teal));outline-offset:2px;}
+  .gc-bell .bl-all{width:100%;margin:12px 0 4px;border:1px solid var(--border);background:var(--panel-alt);color:var(--ink);border-radius:10px;padding:10px;font:700 13px 'Inter',sans-serif;cursor:pointer;}
+  .gc-bell .bl-all:hover{border-color:#D83A52;color:#B42338;}
+  .gc-bell .bl-all.on{background:var(--cal-accent, var(--teal));border-color:var(--cal-accent, var(--teal));color:#fff;}
+  .gc-bell .bl-all.on:hover{filter:brightness(1.1);color:#fff;}
 </style>
 
 <div class="app-confirm-overlay" id="appConfirmOverlay">
@@ -2142,6 +2178,42 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
   // Colour palette
   const pal = $('gcPalette');
   let palFor = null;
+  // ----- reminders on / off, right in the calendar -----
+  const remOn = k=> ((members[myUid] || {}).notificationPrefs || {})[k] !== false;
+  function renderBell(){
+    const t = remOn('taskReminder'), e = remOn('eventReminder'), none = !t && !e;
+    $('gcBellBtn').textContent = none ? '🔕' : '🔔';
+    $('gcBellBtn').classList.toggle('off', !t || !e);
+    $('gcBellBtn').title = none ? 'Reminders are off' : (!t || !e) ? 'Some reminders are off' : 'Reminders are on';
+    $('gcBellTitle').textContent = none ? '🔕 Reminders are off' : '🔔 Reminders';
+    document.querySelectorAll('#gcBell [data-rem]').forEach(c=> c.checked = remOn(c.dataset.rem));
+    $('gcBellAll').textContent = none ? '🔔 Turn all reminders on' : '🔕 Turn off all reminders';
+    $('gcBellAll').classList.toggle('on', none);
+  }
+  function setReminders(patch){
+    const m = members[myUid] = members[myUid] || {};
+    m.notificationPrefs = {...(m.notificationPrefs || {}), ...patch};
+    renderBell();
+    const upd = {}; Object.entries(patch).forEach(([k, v])=> upd['notificationPrefs.' + k] = v);
+    return db.doc(`workspaces/${wsId}/members/${myUid}`).update(upd).catch(err=> showToast('Could not save that: ' + (err.message || ''), true));
+  }
+  $('gcBellBtn').addEventListener('click', ()=>{
+    const open = $('gcBell').hidden;
+    closeTheme(); $('gcBell').hidden = !open; $('gcBellBtn').setAttribute('aria-expanded', open);
+    if(open){ renderBell(); $('gcBellAll').focus(); }
+  });
+  $('gcBellClose').addEventListener('click', ()=>{ $('gcBell').hidden = true; $('gcBellBtn').setAttribute('aria-expanded', 'false'); });
+  $('gcBell').addEventListener('change', e=>{
+    const c = e.target.closest('[data-rem]'); if(!c) return;
+    setReminders({[c.dataset.rem]: c.checked}).then(()=> showToast(c.checked ? 'Reminder turned on.' : 'Reminder turned off. You won’t get it in the bell or by email.'));
+  });
+  $('gcBellAll').addEventListener('click', ()=>{
+    const turnOn = !remOn('taskReminder') && !remOn('eventReminder');
+    setReminders({taskReminder: turnOn, eventReminder: turnOn}).then(()=> showToast(turnOn ? 'Reminders are on again.' : 'All reminders are off. Turn them on here whenever you like.'));
+  });
+  document.addEventListener('mousedown', e=>{ if(!$('gcBell').hidden && !$('gcBell').contains(e.target) && !e.target.closest('#gcBellBtn')){ $('gcBell').hidden = true; $('gcBellBtn').setAttribute('aria-expanded', 'false'); } });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && !$('gcBell').hidden){ $('gcBell').hidden = true; $('gcBellBtn').setAttribute('aria-expanded', 'false'); e.stopPropagation(); } }, true);
+
   // ----- the theme panel -----
   function seg(key, opts){ return `<div class="th-seg" role="group">${opts.map(([v, l])=> `<button type="button" data-th="${key}" data-v="${v}" class="${String(theme[key]) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`; }
   function renderThemePanel(){
@@ -2157,11 +2229,12 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
       <div class="th-sec"><div class="th-h">Density</div>${seg('density', [['compact', 'Compact'], ['comfortable', 'Comfortable'], ['spacious', 'Spacious']])}</div>
       <div class="th-sec"><div class="th-h">Time</div>${seg('hour12', [['false', '24-hour · 14:00'], ['true', '12-hour · 2 PM']])}</div>
       <div class="th-sec"><div class="th-h">Week starts on</div>${seg('weekStart', [['1', 'Monday'], ['0', 'Sunday']])}</div>
-      <div class="th-sec"><label class="gc-check th-check"><input type="checkbox" id="gcThemeWeekends" ${theme.weekends !== false ? 'checked' : ''}> Show weekends</label></div>`;
+      <div class="th-sec"><label class="gc-check th-check"><input type="checkbox" id="gcThemeWeekends" ${theme.weekends !== false ? 'checked' : ''}> Show weekends</label></div>
+      <div class="th-sec"><div class="th-h">Reminders</div><a class="th-link" href="notification-settings.html#calendarReminders">🔔 Turn reminders for tasks and events on or off →</a></div>`;
     // the time notation shows as picked once chosen; before that it follows the browser
     if(theme.hour12 === null || theme.hour12 === undefined){ const auto = /[AP]M/i.test(new Date(2020, 0, 1, 14).toLocaleTimeString()); const b = $('gcThemeBody').querySelector(`[data-th="hour12"][data-v="${auto}"]`); if(b) b.classList.add('on'); }
   }
-  function openTheme(){ renderThemePanel(); $('gcTheme').hidden = false; $('gcThemeBtn').setAttribute('aria-expanded', 'true'); const f = $('gcTheme').querySelector('button.on, button'); if(f) f.focus(); }
+  function openTheme(){ $('gcBell').hidden = true; $('gcBellBtn').setAttribute('aria-expanded', 'false'); renderThemePanel(); $('gcTheme').hidden = false; $('gcThemeBtn').setAttribute('aria-expanded', 'true'); const f = $('gcTheme').querySelector('button.on, button'); if(f) f.focus(); }
   function closeTheme(){ $('gcTheme').hidden = true; $('gcThemeBtn').setAttribute('aria-expanded', 'false'); }
   $('gcThemeBtn').addEventListener('click', ()=> $('gcTheme').hidden ? openTheme() : closeTheme());
   $('gcThemeClose').addEventListener('click', closeTheme);
@@ -2766,6 +2839,7 @@ html[data-theme="dark"] .gc-theme .th-reset:hover{color:#EC8E9B}
       db.collection('workspaces').doc(wsId).collection('members').get().then(snap=>{
         snap.docs.forEach(d=>{ members[d.id] = d.data(); });
         myName = (members[myUid] || {}).name || user.email || 'You';
+        renderBell();
         const ct = (members[myUid] || {}).calendarTheme;
         if(ct && typeof ct === 'object' && JSON.stringify({...THEME_DEFAULT, ...ct}) !== JSON.stringify(theme)) setTheme({...THEME_DEFAULT, ...ct}, false);
         const cc = (members[myUid] || {}).customColours;
