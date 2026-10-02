@@ -134,6 +134,69 @@
   .addstep button:hover{border-color:var(--teal);background:#F7F6FF;}
   .addstep b{font-size:13.5px;} .addstep small{font-size:11.5px;color:var(--slate);}
   @media (max-width:640px){ .addstep{grid-template-columns:1fr 1fr;} .two{grid-template-columns:1fr;} }
+  /* page editor */
+  .saved{margin-left:auto;font-size:12.5px;color:var(--slate);font-weight:600;white-space:nowrap;padding-top:6px;}
+  .pgcard{background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;box-shadow:var(--shadow);padding:34px 46px 26px 58px;max-width:900px;margin:0 auto 14px;}
+  @media (max-width:720px){ .pgcard{padding:22px 16px 18px 40px;} }
+  .pg-title{width:100%;border:none;background:none;font:800 34px/1.2 Sora,sans-serif;letter-spacing:-.02em;color:var(--ink);padding:0;outline:none;}
+  .pg-title::placeholder{color:var(--slate-light);}
+  .pg-meta{display:flex;align-items:center;gap:8px;margin:8px 0 18px;font-size:13px;color:var(--slate);flex-wrap:wrap;}
+  .pg-sender{border:none;border-bottom:1px dashed var(--border);background:none;font-size:13px;color:var(--ink);padding:2px 0;min-width:260px;outline:none;}
+  .pg-sender:focus{border-bottom-color:var(--teal);}
+  .pg-count{margin-left:auto;font-size:12px;color:var(--slate-light);}
+  .blk{position:relative;display:flex;align-items:flex-start;margin:2px -12px 2px -46px;padding:2px 12px 2px 46px;border-radius:8px;}
+  .blk-g{position:absolute;left:4px;top:4px;display:flex;gap:2px;opacity:0;transition:opacity .12s;}
+  .blk:hover .blk-g,.blk:focus-within .blk-g{opacity:1;}
+  .g-add,.g-drag{width:20px;height:22px;border:none;background:none;border-radius:5px;color:var(--slate-light);font-size:16px;line-height:22px;text-align:center;cursor:pointer;padding:0;}
+  .g-drag{cursor:grab;font-size:12px;letter-spacing:-2px;}
+  .g-add:hover,.g-drag:hover{background:var(--panel-alt);color:var(--ink);}
+  .g-del{position:absolute;right:-28px;top:4px;width:22px;height:22px;border:none;background:none;border-radius:6px;color:var(--slate-light);opacity:0;font-size:15px;}
+  .blk:hover .g-del{opacity:1;} .g-del:hover{background:var(--fail-soft);color:var(--fail);}
+  .blk.dragging{opacity:.4;} .blk.drop-before{box-shadow:0 -2px 0 var(--teal);} .blk.drop-after{box-shadow:0 2px 0 var(--teal);}
+  .blk-b{flex:1;min-width:0;}
+  .be{outline:none;min-height:1.5em;padding:3px 2px;color:var(--ink);word-wrap:break-word;}
+  .be:empty::before{content:attr(data-ph);color:var(--slate-light);pointer-events:none;}
+  .blk:not(:focus-within) .be-text:empty::before{content:"";}
+  .be-text{font-size:15.5px;line-height:1.65;}
+  .be-h1{font:800 28px/1.25 Sora,sans-serif;margin-top:14px;} .be-h2{font:700 22px/1.3 Sora,sans-serif;margin-top:10px;} .be-h3{font:700 17px/1.35 Sora,sans-serif;margin-top:6px;}
+  .be-callout{background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:12px;padding:12px 14px 12px 42px;font-size:15px;line-height:1.6;position:relative;margin:4px 0;}
+  .be-callout::after{content:"💡";position:absolute;left:14px;top:12px;}
+  .be-quote{border-left:3px solid var(--teal);padding-left:14px;font-size:16px;font-style:italic;color:#334253;margin:4px 0;}
+  .be-list{margin:2px 0;padding-left:24px;font-size:15.5px;line-height:1.65;} .be-list li{padding:1px 0;}
+  .be-list li:empty::before{content:"List item";color:var(--slate-light);}
+  .be-hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
+  .be-todo{display:flex;align-items:flex-start;gap:10px;padding:2px 0;} .be-todo .be{flex:1;font-size:15.5px;line-height:1.6;}
+  .be-box{width:20px;height:20px;border:2px solid var(--slate-light);border-radius:6px;flex-shrink:0;margin-top:4px;}
+  .be-req{font-size:12px;margin-top:5px;white-space:nowrap;}
+  .be-panel{border:1px solid var(--border-soft);border-radius:14px;padding:12px;background:var(--panel-alt);margin:6px 0;}
+  .be-row{display:flex;gap:8px;align-items:center;} .be-row .in{flex:1;} .be-row .or{font-size:12.5px;color:var(--slate);}
+  .be-video{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#0B0F19;margin-top:10px;}
+  .be-video iframe,.be-video video{position:absolute;inset:0;width:100%;height:100%;border:0;}
+  .be-empty{margin-top:10px;padding:28px;border-radius:12px;background:#0B0F19;color:#9AA8BC;text-align:center;font-size:13px;}
+  .be-drop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:22px;border:2px dashed var(--border);border-radius:12px;cursor:pointer;text-align:center;color:var(--slate);font-size:13px;}
+  .be-drop:hover{border-color:var(--teal);color:var(--ink);} .be-drop b{color:var(--ink);font-size:14px;} .be-drop small{font-size:12px;}
+  .be-filecard{display:flex;align-items:center;gap:12px;} .be-filecard > span:nth-child(2){flex:1;min-width:0;} .be-filecard b{display:block;font-size:14px;} .be-filecard small{font-size:12px;color:var(--slate);}
+  .be-ext{width:40px;height:40px;border-radius:10px;background:#E8EEFB;color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-transform:uppercase;flex-shrink:0;}
+  .be-preview{margin-top:10px;border-radius:10px;overflow:hidden;border:1px solid var(--border-soft);background:#fff;}
+  .be-preview iframe{display:block;width:100%;height:480px;border:0;} .be-preview img{display:block;max-width:100%;margin:0 auto;}
+  .be-dl{display:inline-flex;margin-top:10px;padding:9px 16px;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;}
+  .be-imgwrap img{display:block;max-width:100%;border-radius:10px;margin-bottom:6px;}
+  .be-btnprev{padding:9px 16px;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
+  .be-client{border-color:#D6D2FA;background:#F7F6FF;} .be-client .in{margin-top:6px;}
+  .be-tag{font-size:12px;font-weight:700;color:var(--teal);}
+  .pg-add{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:12px 2px 2px;color:var(--slate);font-size:14px;font-weight:600;text-align:left;}
+  .pg-add span{font-weight:500;color:var(--slate-light);font-size:13px;} .pg-add:hover{color:var(--teal);}
+  .slash-menu{position:fixed;z-index:400;width:290px;max-height:min(420px,60vh);overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:6px;display:none;}
+  .slash-menu.open{display:block;}
+  .sm-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-light);padding:8px 8px 4px;}
+  .sm-item{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;border-radius:9px;padding:7px 8px;text-align:left;color:var(--ink);}
+  .sm-item.on,.sm-item:hover{background:var(--panel-alt);}
+  .sm-ic{width:30px;height:30px;border-radius:8px;border:1px solid var(--border-soft);background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+  .sm-item b{display:block;font-size:13.5px;} .sm-item small{font-size:12px;color:var(--slate);}
+  .fmt-bar{position:fixed;z-index:410;display:none;gap:2px;background:#16202C;border-radius:10px;padding:4px;box-shadow:var(--shadow-lg);}
+  .fmt-bar.open{display:flex;} .fmt-bar button{width:32px;height:30px;border:none;background:none;color:#fff;border-radius:7px;font-size:14px;} .fmt-bar button:hover{background:rgba(255,255,255,.14);}
+  html[data-theme="dark"] .be-client{background:rgba(122,115,255,.08);border-color:rgba(122,115,255,.3);}
+  html[data-theme="dark"] .be-ext{background:rgba(122,115,255,.18);}
   /* detail */
   .share{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .share .in{flex:1;min-width:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
@@ -609,7 +672,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <div class="seq-main">
 <div class="shell">
   <div class="ph">
-    <div><h1>Client processes</h1><p>Build your onboarding once, then share it with each new client as one link: videos to watch, documents to download, files to send back, questions and tasks. You see their progress here.</p></div>
+    <div><h1>Client processes</h1><p>Build your onboarding as one page, like a Library page: text, videos that play on the page, documents with a preview and download button, and to-dos, uploads and questions for your client. Share it as one link and follow their progress here.</p></div>
     <div class="acts"><button class="btn" id="newTplBtn">+ New template</button><button class="btn primary" id="startBtn">Start for a client</button></div>
   </div>
   <div class="plan-note hidden" id="planNote"></div>
@@ -620,24 +683,20 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="grid" id="procList"></div>
   </section>
   <section id="tplView" class="hidden"><div class="grid" id="tplList"></div></section>
-<!-- template / process editor -->
-<div class="ov inpage" id="edOv" role="dialog" aria-modal="true" aria-labelledby="edTitle"><div class="dlg">
+<!-- template / client page editor -->
+<div class="ov inpage" id="edOv" role="region" aria-labelledby="edTitle"><div class="dlg">
   <button class="back" data-close>← Back</button>
-  <div class="dlg-top"><div><h2 id="edTitle">New template</h2><p id="edSub">The steps your clients go through. You can reuse it for every new client.</p></div></div>
-  <div class="sec"><div class="two"><label class="f"><span id="edNameLbl">Name</span><input class="in" id="edName" placeholder="e.g. New client onboarding" maxlength="120"></label>
-    <label class="f"><span>Sender (shown to the client)</span><input class="in" id="edSender" placeholder="e.g. Gabriele from Pala Consultancy" maxlength="80"></label></div>
-    <label class="f"><span>Welcome message</span><textarea class="in" id="edWelcome" placeholder="Welcome! Here’s everything to get started. It takes about 20 minutes." maxlength="2000"></textarea></label></div>
-  <div class="sec"><h3>Steps</h3><div id="edSteps"></div>
-    <div class="addstep" id="addStep">
-      <button data-add="video"><b>🎬 Video</b><small>A video they watch on the page</small></button>
-      <button data-add="download"><b>📄 Documents</b><small>Templates and files to download</small></button>
-      <button data-add="upload"><b>📤 Upload request</b><small>They send a file back</small></button>
-      <button data-add="questions"><b>✍️ Questions</b><small>Short or long answers</small></button>
-      <button data-add="task"><b>✅ Task</b><small>Something to do and tick off</small></button>
-      <button data-add="call"><b>📅 Book a call</b><small>A link to schedule a meeting</small></button>
-    </div></div>
-  <div class="foot"><button class="btn" data-close>Cancel</button><button class="btn primary" id="edSave">Save</button></div>
+  <div class="dlg-top"><div><h2 id="edTitle">New template</h2><p id="edSub"></p></div><span class="saved" id="edSaved" aria-live="polite"></span></div>
+  <div class="pgcard">
+    <input class="pg-title" id="edName" maxlength="120" aria-label="Name">
+    <div class="pg-meta"><span>From</span><input class="pg-sender" id="edSender" maxlength="80" placeholder="e.g. Gabriele from Pala Consultancy" aria-label="Sender shown to the client"><span class="pg-count" id="edCount"></span></div>
+    <div id="pgBlocks" class="pg-blocks"></div>
+    <button class="pg-add" id="pgAdd">+ Add a block <span>or type “/” on an empty line</span></button>
+  </div>
+  <div class="foot"><span class="hint" style="margin-right:auto">Everything saves automatically.</span><button class="btn primary" data-close>Done</button></div>
 </div></div>
+<div class="slash-menu" id="slashMenu" role="listbox" aria-label="Add a block"></div>
+<div class="fmt-bar" id="fmtBar"><button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button><button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button><button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button><button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button><button data-cmd="link" title="Link (Ctrl+K)">🔗</button></div>
 
 <!-- one client's process -->
 <div class="ov inpage" id="dtOv" role="dialog" aria-modal="true" aria-labelledby="dtTitle"><div class="dlg">
@@ -650,12 +709,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="hint">Everyone with the link (and the PIN) can open it and complete steps. Making a new link turns the old one off straight away.</div>
   </div>
   <div class="detail-grid">
-    <div class="sec"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><h3 style="margin:0">Progress</h3><span class="chip" id="dtChip"></span></div>
+    <div class="sec"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><h3 style="margin:0">What your client does</h3><span class="chip" id="dtChip"></span></div>
       <div class="pbar"><i id="dtBar"></i></div><div class="meta"><span id="dtProg"></span><span id="dtLast"></span></div>
       <div id="dtSteps" style="margin-top:8px"></div></div>
     <div class="sec"><h3>Activity</h3><div id="dtAct"></div></div>
   </div>
-  <div class="acts-row"><button class="btn" id="dtEdit">Edit steps</button><button class="btn" id="dtArchive">Archive</button><span style="flex:1"></span><button class="btn danger" id="dtDelete">Delete</button></div>
+  <div class="acts-row"><button class="btn" id="dtEdit">Edit page</button><button class="btn" id="dtArchive">Archive</button><span style="flex:1"></span><button class="btn danger" id="dtDelete">Delete</button></div>
 </div></div>
 
 </div>
@@ -760,21 +819,21 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const list = procs.filter((p) => (statusFilter === 'all' || p.status === statusFilter) && (!q || `${p.clientName} ${p.clientContact} ${p.title}`.toLowerCase().includes(q)))
       .sort((a, b) => ms(b.lastClientActivityAt || b.updatedAt) - ms(a.lastClientActivityAt || a.updatedAt));
     $('procList').innerHTML = list.length ? list.map((p) => {
-      const steps = p.steps || [], done = steps.filter((s) => p.progress && p.progress[s.id] && p.progress[s.id].done).length;
+      const steps = tasksOf(p), done = steps.filter((s) => p.progress && p.progress[s.id] && p.progress[s.id].done).length;
       const pct = steps.length ? Math.round(done / steps.length * 100) : 0;
       const st = paused.has(p.id) ? 'paused' : p.status;
       return `<button class="card pc ${esc(p.status)}" data-open="${esc(p.id)}">${p.unseenClientActivity ? '<span class="new-dot" title="New activity from the client"></span>' : ''}
         <div class="row"><span class="av">${esc(initials(p.clientName))}</span><div style="min-width:0;flex:1"><b>${esc(p.clientName || 'Client')}</b><small>${esc(p.title)}${p.clientContact ? ' · ' + esc(p.clientContact) : ''}</small></div>
         <span class="chip ${st}">${{active: 'Active', completed: 'Completed', archived: 'Archived', paused: 'Paused'}[st]}</span></div>
         <div class="pbar"><i style="width:${pct}%"></i></div>
-        <div class="meta"><span>${done} of ${steps.length} steps</span><span>${p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span></div></button>`;
+        <div class="meta"><span>${done} of ${steps.length} done</span><span>${p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span></div></button>`;
     }).join('') : `<div class="card empty" style="grid-column:1/-1"><span class="ic">🤝</span><b>${procs.length ? 'Nothing here' : 'No client processes yet'}</b>
         <p>${procs.length ? 'Try another filter.' : templates.length ? 'Start your first one: pick a template, fill in the client’s name, and share the link.' : 'First build a template with the steps every new client goes through. Then start it for a client and share the link.'}</p>
         ${procs.length ? '' : templates.length ? '<button class="btn primary" data-start>Start for a client</button>' : '<button class="btn primary" data-newtpl>+ New template</button>'}</div>`;
     // templates
     $('tplList').innerHTML = templates.length ? templates.map((t) => `<div class="card tc"><b>${esc(t.name || 'Untitled')}</b>
-        <p>${esc((t.welcome || '').slice(0, 140)) || (t.steps || []).length + ' steps'}</p>
-        <div class="types">${(t.steps || []).map((s) => `<span title="${esc(s.title)}">${(TYPE[s.type] || ['•'])[0]} ${esc(s.title.slice(0, 22))}</span>`).join('') || '<span>No steps yet</span>'}</div>
+        <p>${esc(textOf((blocksOf(t).find((b) => TEXTISH.includes(b.type) && textOf(b.html).trim()) || {}).html).slice(0, 140)) || 'An empty page'}</p>
+        <div class="types">${(() => { const bl = blocksOf(t), c = (k) => bl.filter((b) => b.type === k).length; return [['video', '🎬'], ['file', '📄'], ['todo', '☑'], ['upload', '📤'], ['question', '✍️']].filter(([k]) => c(k)).map(([k, ic]) => `<span>${ic} ${c(k)} ${({video: 'video', file: 'document', todo: 'to-do', upload: 'upload', question: 'question'})[k]}${c(k) > 1 ? 's' : ''}</span>`).join('') || '<span>Text only</span>'; })()}</div>
         <div class="acts"><button class="btn primary sm" data-starttpl="${esc(t.id)}">Start for a client</button><button class="btn sm" data-edittpl="${esc(t.id)}">Edit</button><button class="btn sm" data-duptpl="${esc(t.id)}">Duplicate</button><button class="btn sm danger" data-deltpl="${esc(t.id)}">Delete</button></div></div>`).join('')
       : `<div class="card empty" style="grid-column:1/-1"><span class="ic">🧩</span><b>No templates yet</b><p>A template is your onboarding: a welcome video, the documents they need, what they send back and the questions you ask. Build it once and reuse it for every client.</p><button class="btn primary" data-newtpl>+ New template</button></div>`;
     if (current) { const fresh = procs.find((p) => p.id === current.id); if (fresh) { current = fresh; renderDetail(); } }
@@ -784,130 +843,365 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('statusSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-s]'); if (!b) return; statusFilter = b.dataset.s; [...$('statusSeg').children].forEach((x) => x.setAttribute('aria-pressed', String(x === b))); renderAll(); });
   $('search').addEventListener('input', () => { query = $('search').value; renderAll(); });
 
-  // ---------- The step editor (templates and processes) ----------
+  // ---------- The page editor (templates and a client's own page) ----------
+  // A client process is ONE PAGE, built like a Library page: blocks one under the
+  // other. Type "/" (or click +) for the menu. Text blocks are typed in place; the
+  // other blocks (video, document, image, button, and what the client does: to-do,
+  // upload, question) have their own small settings. Everything saves by itself.
+  const BLOCKS = [
+    {k: 'text', ic: 'Aa', label: 'Text', hint: 'Plain writing'},
+    {k: 'h1', ic: 'H1', label: 'Heading 1', hint: 'Big section title'},
+    {k: 'h2', ic: 'H2', label: 'Heading 2', hint: 'Medium title'},
+    {k: 'h3', ic: 'H3', label: 'Heading 3', hint: 'Small title'},
+    {k: 'bullets', ic: '•', label: 'Bulleted list', hint: 'A simple list'},
+    {k: 'numbers', ic: '1.', label: 'Numbered list', hint: '1, 2, 3…'},
+    {k: 'callout', ic: '💡', label: 'Callout', hint: 'A highlighted note'},
+    {k: 'quote', ic: '❝', label: 'Quote', hint: 'Stand-out text'},
+    {k: 'divider', ic: '—', label: 'Divider', hint: 'A line between parts'},
+    {k: 'video', ic: '🎬', label: 'Video', hint: 'Plays right on the page'},
+    {k: 'file', ic: '📄', label: 'Document', hint: 'Preview + download button'},
+    {k: 'image', ic: '🖼️', label: 'Image', hint: 'A picture or screenshot'},
+    {k: 'button', ic: '🔘', label: 'Button', hint: 'A link, e.g. “Book your call”'},
+    {k: 'todo', ic: '☑', label: 'To-do for the client', hint: 'They tick it off', client: true},
+    {k: 'upload', ic: '📤', label: 'Upload request', hint: 'They send you a file', client: true},
+    {k: 'question', ic: '✍️', label: 'Question', hint: 'They type an answer', client: true},
+  ];
+  const TEXTISH = ['text', 'h1', 'h2', 'h3', 'callout', 'quote'];
+  const INTERACTIVE = ['todo', 'upload', 'question'];
+  const PLACEHOLDER = {text: 'Type something, or “/” for the menu', h1: 'Heading 1', h2: 'Heading 2', h3: 'Heading 3', callout: 'A note that stands out', quote: 'A quote', todo: 'Something your client does'};
+  const OFFICE = /\.(docx?|xlsx?|pptx?)$/i;
+
+  // Rich text is kept tidy: only bold, italic, underline, strikethrough, code, links and line breaks.
+  function cleanHTML(html) {
+    const doc = new DOMParser().parseFromString('<div>' + (html || '') + '</div>', 'text/html');
+    const ALLOW = {B: 1, STRONG: 1, I: 1, EM: 1, U: 1, S: 1, STRIKE: 1, CODE: 1, BR: 1, A: 1, LI: 1, DIV: 1, P: 1, SPAN: 1};
+    (function walk(node) {
+      [...node.childNodes].forEach((c) => {
+        if (c.nodeType === 3) return;
+        if (c.nodeType !== 1 || !ALLOW[c.tagName]) { if (c.nodeType === 1) { walk(c); c.replaceWith(...c.childNodes); } else c.remove(); return; }
+        const href = c.tagName === 'A' ? c.getAttribute('href') : null;
+        [...c.attributes].forEach((a) => c.removeAttribute(a.name));
+        if (c.tagName === 'A') { if (href && /^(https?:|mailto:)/i.test(href)) { c.setAttribute('href', href); c.setAttribute('target', '_blank'); c.setAttribute('rel', 'noopener'); } else c.replaceWith(...c.childNodes); }
+        walk(c);
+      });
+    })(doc.body.firstChild);
+    return doc.body.firstChild.innerHTML.replace(/^(<br>)+$/, '');
+  }
+  const textOf = (html) => { const d = document.createElement('div'); d.innerHTML = html || ''; return d.textContent || ''; };
+  // Older templates were made of steps: shown as a page.
+  function blocksOf(p) {
+    if (Array.isArray(p.blocks)) return p.blocks;
+    const out = [];
+    (p.steps || []).forEach((s) => {
+      out.push({id: s.id + '-h', type: 'h2', html: esc(s.title || '')});
+      if (s.description) out.push({id: s.id + '-d', type: 'text', html: esc(s.description)});
+      if (s.type === 'video' && s.video) out.push({id: s.id + '-v', type: 'video', video: s.video});
+      (s.files || []).forEach((f, i) => out.push({id: s.id + '-f' + i, type: 'file', file: f, preview: true}));
+      if (s.type === 'upload') out.push({id: s.id, type: 'upload', label: s.title, required: s.required !== false});
+      if (s.type === 'questions') (s.questions || []).forEach((q) => out.push({id: s.id + ':' + q.id, type: 'question', label: q.label, qtype: q.type, required: s.required !== false}));
+      if (s.type === 'task' || s.type === 'video' || s.type === 'download') out.push({id: s.id, type: 'todo', html: esc(s.title || 'Done'), required: s.required !== false});
+      if (s.type === 'call') { if (s.link) out.push({id: s.id + '-b', type: 'button', label: 'Book a call', url: s.link}); out.push({id: s.id, type: 'todo', html: 'I’ve booked the call', required: s.required !== false}); }
+    });
+    return out;
+  }
+  const tasksOf = (p) => blocksOf(p).filter((b) => INTERACTIVE.includes(b.type));
+  const labelOf = (b) => (b.type === 'todo' ? textOf(b.html) : b.label) || (b.type === 'upload' ? 'Upload' : b.type === 'question' ? 'Question' : 'To-do');
+  function previewOf(f) {
+    if (!f || !f.url) return '';
+    if (/^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp)$/i.test(f.name)) return `<img src="${esc(f.url)}" alt="">`;
+    if (/pdf/.test(f.contentType || '') || /\.pdf$/i.test(f.name)) return `<iframe src="${esc(f.url)}#toolbar=0" title="${esc(f.name)}"></iframe>`;
+    if (OFFICE.test(f.name)) return `<iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}" title="${esc(f.name)}"></iframe>`;
+    return '';
+  }
+
   function openEditor(kind, data, id) {
-    editing = {kind, id: id || null, data: JSON.parse(JSON.stringify(data || {steps: []}))};
-    editing.data.steps = editing.data.steps || [];
-    $('edTitle').textContent = kind === 'template' ? (id ? 'Edit template' : 'New template') : 'Edit steps for ' + (data.clientName || 'this client');
-    $('edSub').textContent = kind === 'template' ? 'The steps your clients go through. You can reuse it for every new client.' : 'Changes show on the client\u2019s page straight away. Progress on steps you keep stays.';
-    $('edNameLbl').textContent = kind === 'template' ? 'Name' : 'Title shown to the client';
+    const isNew = !id;
+    const col = db.collection(kind === 'template' ? 'clientProcessTemplates' : 'clientProcesses');
+    editing = {kind, id: id || col.doc().id, isNew, data: JSON.parse(JSON.stringify(data || {})), dirty: false};
+    editing.data.blocks = blocksOf(editing.data).map((b) => ({...b}));
+    if (!editing.data.blocks.length) editing.data.blocks = [{id: uidGen(), type: 'h1', html: 'Welcome!'}, {id: uidGen(), type: 'text', html: ''}];
+    $('edTitle').textContent = kind === 'template' ? (isNew ? 'New template' : 'Edit template') : 'Page for ' + (data.clientName || 'this client');
+    $('edSub').textContent = kind === 'template' ? 'Build the page your clients see. Type “/” for videos, documents, to-dos, questions and more.' : 'Changes show on your client’s page straight away. What they already did stays.';
     $('edName').value = kind === 'template' ? (editing.data.name || '') : (editing.data.title || '');
-    $('edSender').value = editing.data.senderName || (kind === 'template' && !id ? myName + (ws.name ? ' from ' + ws.name : '') : '');
-    $('edWelcome').value = editing.data.welcome || '';
-    renderSteps();
+    $('edName').placeholder = kind === 'template' ? 'Name of this template, e.g. New client onboarding' : 'Title shown to the client';
+    $('edSender').value = editing.data.senderName || (isNew ? myName + (ws.name ? ' from ' + ws.name : '') : '');
+    $('edSaved').textContent = isNew ? '' : 'Saved';
+    renderPage();
     $('edOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0;
-    setTimeout(() => $('edName').focus(), 40);
+    setTimeout(() => { if (isNew) $('edName').focus(); }, 40);
   }
-  function stepEditor(s, i, n) {
-    const t = TYPE[s.type] || ['•', s.type];
-    let body = `<label class="f"><span>What should they do? (optional)</span><textarea class="in" data-k="description" data-i="${i}" placeholder="A short explanation">${esc(s.description || '')}</textarea></label>`;
-    if (s.type === 'video') {
-      const mode = s._mode || (s.video && s.video.kind === 'file' && s.video.path ? 'upload' : 'link');
-      body += `<div class="vtabs"><button data-vmode="link" data-i="${i}" aria-pressed="${mode === 'link'}">Paste a video link</button><button data-vmode="upload" data-i="${i}" aria-pressed="${mode === 'upload'}">Upload a video</button></div>`;
-      if (mode === 'link') body += `<input class="in" data-k="videoLink" data-i="${i}" placeholder="https://… (most video sites work, or a link to a video file)" value="${esc(s.video && !s.video.path ? s.video.url : '')}"><div class="hint">It plays right on your client’s page.</div>`;
-      else body += s._up ? `<div class="hint">Uploading ${esc(s._up.name)}… ${s._up.pct}%</div><div class="upbar"><i style="width:${s._up.pct}%"></i></div>`
-        : `${s.video && s.video.path ? `<div class="fitem"><span class="nm">🎬 ${esc(s.video.name || 'Video')}</span><small>${s.video.size ? fsize(s.video.size) : ''}</small></div>` : ''}<label class="btn sm" style="margin-top:6px">${s.video && s.video.path ? 'Replace video' : 'Choose a video file'}<input type="file" accept="video/*" class="hidden" data-vfile="${i}"></label><div class="hint">MP4 or WebM work best · up to 500 MB.</div>`;
-      if (s.video && (s.video.embedUrl || s.video.kind === 'file')) body += `<div class="vprev">${videoTag(s.video)}</div>`;
-      else if (s.video && s.video.url && !s.video.path) body += '<div class="hint">This link can\u2019t be played on the page; your client gets a button to open it.</div>';
+
+  // ---------- Drawing the page ----------
+  function blockHTML(b) {
+    const ce = (cls, tag) => `<${tag || 'div'} class="be be-${cls}" contenteditable="true" data-ph="${esc(PLACEHOLDER[b.type] || '')}">${b.html || ''}</${tag || 'div'}>`;
+    let body = '';
+    if (TEXTISH.includes(b.type)) body = ce(b.type);
+    else if (b.type === 'bullets' || b.type === 'numbers') body = `<${b.type === 'bullets' ? 'ul' : 'ol'} class="be be-list" contenteditable="true">${b.html || '<li></li>'}</${b.type === 'bullets' ? 'ul' : 'ol'}>`;
+    else if (b.type === 'divider') body = '<hr class="be-hr">';
+    else if (b.type === 'todo') body = `<div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>`;
+    else if (b.type === 'video') {
+      const v = b.video;
+      body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="videoLink" placeholder="Paste a video link (most video sites work)" value="${esc(v && !v.path ? v.url : '')}"><span class="or">or</span>
+        <label class="btn sm">${v && v.path ? 'Replace video' : 'Upload a video'}<input type="file" accept="video/*" class="hidden" data-up="video"></label></div>
+        ${b._up ? upBar(b) : ''}${v && (v.embedUrl || v.kind === 'file') ? `<div class="be-video">${videoTag(v)}</div>` : v && v.url ? '<div class="hint">This link can’t play in the page; your client gets a button to open it.</div>' : '<div class="be-empty">🎬 The video plays here, right on your client’s page.</div>'}</div>`;
+    } else if (b.type === 'file') {
+      const f = b.file;
+      body = f ? `<div class="be-panel"><div class="be-filecard"><span class="be-ext">${esc((f.name.split('.').pop() || 'file').slice(0, 4))}</span><span><b>${esc(f.name)}</b><small>${fsize(f.size || 0)}</small></span>
+            <label class="req"><input type="checkbox" data-f="preview" ${b.preview !== false ? 'checked' : ''}> Show a preview</label><label class="link">Replace<input type="file" class="hidden" data-up="file"></label></div>
+          ${b.preview !== false && previewOf(f) ? `<div class="be-preview">${previewOf(f)}</div>` : ''}<div class="be-dl">⬇ Download ${esc(f.name)}</div></div>`
+        : `<div class="be-panel">${b._up ? upBar(b) : `<label class="be-drop">📄 <b>Upload a document</b><small>Word, PDF, Excel, PowerPoint, images or anything else · up to 50 MB. Your client sees a preview and a download button.</small><input type="file" class="hidden" data-up="file"></label>`}</div>`;
+    } else if (b.type === 'image') {
+      body = b.image ? `<div class="be-panel be-imgwrap"><img src="${esc(b.image.url)}" alt=""><label class="link">Replace<input type="file" accept="image/*" class="hidden" data-up="image"></label></div>`
+        : `<div class="be-panel">${b._up ? upBar(b) : '<label class="be-drop">🖼️ <b>Upload an image</b><small>PNG, JPG, GIF or WebP</small><input type="file" accept="image/*" class="hidden" data-up="image"></label>'}</div>`;
+    } else if (b.type === 'button') {
+      body = `<div class="be-panel be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" placeholder="https://…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>`;
+    } else if (b.type === 'upload') {
+      body = `<div class="be-panel be-client"><div class="be-tag">📤 Your client uploads a file here</div><input class="in" data-f="label" placeholder="What should they send? e.g. The signed contract" value="${esc(b.label || '')}">
+        <input class="in" data-f="help" placeholder="Extra explanation (optional)" value="${esc(b.help || '')}">${reqToggle(b)}</div>`;
+    } else if (b.type === 'question') {
+      body = `<div class="be-panel be-client"><div class="be-tag">✍️ Your client answers here</div><div class="be-row"><input class="in" data-f="label" placeholder="Your question, e.g. How many people are on your team?" value="${esc(b.label || '')}">
+        <select class="in" data-f="qtype" style="max-width:150px"><option value="text" ${b.qtype !== 'longtext' ? 'selected' : ''}>Short answer</option><option value="longtext" ${b.qtype === 'longtext' ? 'selected' : ''}>Long answer</option></select></div>${reqToggle(b)}</div>`;
     }
-    if (s.type === 'download' || s.type === 'upload' || s.type === 'task' || s.type === 'questions' || s.type === 'call') {
-      if (s.type === 'download' || s.type === 'upload') {
-        body += `${s.type === 'upload' ? '<div class="hint" style="margin:0 0 6px">Your client uploads a file here (up to 8 MB). Add a template for them to fill in, if you like:</div>' : ''}
-          <div class="flist">${(s.files || []).map((f, j) => `<div class="fitem"><span class="nm">📄 ${esc(f.name)}</span><small>${fsize(f.size || 0)}</small><button class="ib del" data-delfile="${i}:${j}" aria-label="Remove">×</button></div>`).join('')}</div>
-          ${s._up ? `<div class="hint">Uploading ${esc(s._up.name)}… ${s._up.pct}%</div><div class="upbar"><i style="width:${s._up.pct}%"></i></div>` : `<label class="btn sm">+ Add ${s.type === 'upload' ? 'a template' : 'a file'}<input type="file" multiple class="hidden" data-dfile="${i}"></label><span class="hint" style="margin-left:8px">Word, PDF, Excel, anything · up to 50 MB each</span>`}`;
-      }
-      if (s.type === 'questions') body += `<div>${(s.questions || []).map((q, j) => `<div class="qrow"><input class="in" data-q="${i}:${j}" value="${esc(q.label)}" placeholder="Question"><select class="in" data-qt="${i}:${j}"><option value="text" ${q.type !== 'longtext' ? 'selected' : ''}>Short answer</option><option value="longtext" ${q.type === 'longtext' ? 'selected' : ''}>Long answer</option></select><button class="ib del" data-delq="${i}:${j}" aria-label="Remove question">×</button></div>`).join('')}</div><button class="link" data-addq="${i}">+ Add a question</button>`;
-      if (s.type === 'call') body += `<label class="f"><span>Booking link</span><input class="in" data-k="link" data-i="${i}" placeholder="https://… (your scheduling page)" value="${esc(s.link || '')}"></label>`;
-    }
-    body += `<label class="req" style="margin-top:8px"><input type="checkbox" data-req="${i}" ${s.required !== false ? 'checked' : ''}> Required to finish the onboarding</label>`;
-    return `<div class="se" data-se="${i}"><div class="se-top"><span class="n">${i + 1}</span><span class="ty">${t[0]} ${t[1]}</span>
-        <input class="in" data-k="title" data-i="${i}" value="${esc(s.title)}" placeholder="Step title">
-        <button class="ib" data-up="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button><button class="ib" data-down="${i}" ${i === n - 1 ? 'disabled' : ''} aria-label="Move down">↓</button><button class="ib del" data-del="${i}" aria-label="Remove step">×</button></div>
-      <div class="se-body">${body}</div></div>`;
+    return `<div class="blk blk-${b.type}" data-id="${esc(b.id)}"><div class="blk-g"><button class="g-add" data-gadd title="Add below (or type /)" aria-label="Add a block below">+</button><span class="g-drag" draggable="true" title="Drag to move" aria-label="Drag to move">⋮⋮</span></div>
+      <div class="blk-b">${body}</div><button class="g-del" data-gdel title="Remove" aria-label="Remove this block">×</button></div>`;
   }
-  function renderSteps() {
-    const steps = editing.data.steps;
-    $('edSteps').innerHTML = steps.length ? steps.map((s, i) => stepEditor(s, i, steps.length)).join('') : '<p class="hint" style="margin:0 0 10px">No steps yet. Add the first one below.</p>';
+  const reqToggle = (b) => `<label class="req be-req"><input type="checkbox" data-f="required" ${b.required !== false ? 'checked' : ''}> Required</label>`;
+  const upBar = (b) => `<div class="hint">Uploading ${esc(b._up.name)}… <span data-pct>${b._up.pct}</span>%</div><div class="upbar"><i style="width:${b._up.pct}%"></i></div>`;
+  const findB = (id) => editing.data.blocks.findIndex((b) => b.id === id);
+  function renderPage(focusId, atEnd) {
+    $('pgBlocks').innerHTML = editing.data.blocks.map(blockHTML).join('');
+    const n = editing.data.blocks.filter((b) => INTERACTIVE.includes(b.type)).length;
+    $('edCount').textContent = n ? `${n} thing${n === 1 ? '' : 's'} for your client to do` : 'Nothing for your client to do yet: add a to-do, upload request or question';
+    if (focusId) focusBlock(focusId, atEnd);
   }
-  const DEFAULT_TITLE = {video: 'Watch the welcome video', download: 'Download the documents', upload: 'Send us the signed document', questions: 'A few questions about you', task: 'Complete this task', call: 'Book your kick-off call'};
-  $('addStep').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-add]'); if (!b) return;
-    const s = {id: uidGen(), type: b.dataset.add, title: DEFAULT_TITLE[b.dataset.add], description: '', required: true};
-    if (s.type === 'questions') s.questions = [{id: uidGen(), label: '', type: 'text'}];
-    editing.data.steps.push(s); renderSteps();
-    setTimeout(() => { const el = document.querySelector(`[data-se="${editing.data.steps.length - 1}"] [data-k="title"]`); if (el) { el.focus(); el.select(); } }, 30);
-  });
-  $('edSteps').addEventListener('input', (e) => {
-    const t = e.target, st = editing.data.steps;
-    if (t.dataset.k) {
-      const s = st[Number(t.dataset.i)];
-      if (t.dataset.k === 'videoLink') { s.video = videoFromLink(t.value); clearTimeout(t._h); t._h = setTimeout(() => { renderSteps(); const el = document.querySelector(`[data-se="${t.dataset.i}"] [data-k="videoLink"]`); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 700); }
-      else s[t.dataset.k] = t.value;
-    }
-    if (t.dataset.q) { const [i, j] = t.dataset.q.split(':').map(Number); st[i].questions[j].label = t.value; }
-  });
-  $('edSteps').addEventListener('change', (e) => {
-    const t = e.target, st = editing.data.steps;
-    if (t.dataset.req) st[Number(t.dataset.req)].required = t.checked;
-    if (t.dataset.qt) { const [i, j] = t.dataset.qt.split(':').map(Number); st[i].questions[j].type = t.value; }
-    if (t.dataset.vfile) uploadInto(Number(t.dataset.vfile), [...t.files], 'video');
-    if (t.dataset.dfile) uploadInto(Number(t.dataset.dfile), [...t.files], 'doc');
-  });
-  $('edSteps').addEventListener('click', (e) => {
-    const st = editing.data.steps, b = e.target.closest('button'); if (!b) return;
-    const swap = (i, j) => { [st[i], st[j]] = [st[j], st[i]]; renderSteps(); };
-    if (b.dataset.up) swap(Number(b.dataset.up), Number(b.dataset.up) - 1);
-    else if (b.dataset.down) swap(Number(b.dataset.down), Number(b.dataset.down) + 1);
-    else if (b.dataset.del) { const i = Number(b.dataset.del); if (confirm(`Remove “${st[i].title || 'this step'}”?`)) { st.splice(i, 1); renderSteps(); } }
-    else if (b.dataset.vmode) { const s = st[Number(b.dataset.i)]; s._mode = b.dataset.vmode; renderSteps(); }
-    else if (b.dataset.addq) { st[Number(b.dataset.addq)].questions.push({id: uidGen(), label: '', type: 'text'}); renderSteps(); }
-    else if (b.dataset.delq) { const [i, j] = b.dataset.delq.split(':').map(Number); st[i].questions.splice(j, 1); renderSteps(); }
-    else if (b.dataset.delfile) { const [i, j] = b.dataset.delfile.split(':').map(Number); st[i].files.splice(j, 1); renderSteps(); }
-  });
-  // Files you add: videos and documents go to your workspace's storage; the client page gets their private links.
-  async function uploadInto(i, files, kind) {
-    const s = editing.data.steps[i];
-    for (const f of files) {
-      if (kind === 'video' && !/^video\//.test(f.type)) { showToast('That isn\u2019t a video file.', true); continue; }
-      if (f.size > (kind === 'video' ? MAX_VIDEO : MAX_DOC)) { showToast(`${f.name} is larger than ${kind === 'video' ? '500' : '50'} MB.`, true); continue; }
-      const folder = editing.kind === 'template' ? 'tpl-' + (editing.id || (editing.draftId = editing.draftId || uidGen())) : 'proc-' + editing.id;
-      const path = `workspaces/${wsId}/clientProcessFiles/${folder}/${Date.now()}-${f.name.replace(/[\\/]/g, '_').slice(0, 120)}`;
-      s._up = {name: f.name, pct: 0}; renderSteps();
-      try {
-        const task = storage.ref(path).put(f, {contentType: f.type || 'application/octet-stream'});
-        task.on('state_changed', (snap) => { s._up.pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100); const bar = document.querySelector(`[data-se="${i}"] .upbar i`); if (bar) bar.style.width = s._up.pct + '%'; const h = document.querySelector(`[data-se="${i}"] .hint`); if (h) h.textContent = `Uploading ${f.name}… ${s._up.pct}%`; });
-        await task;
-        const url = await storage.ref(path).getDownloadURL();
-        const rec = {name: f.name, path, url, size: f.size, contentType: f.type || ''};
-        if (kind === 'video') s.video = {kind: 'file', url, embedUrl: '', path, name: f.name, size: f.size};
-        else s.files = (s.files || []).concat([rec]);
-      } catch (err) { console.error(err); showToast(`Couldn\u2019t upload ${f.name}.`, true); }
-      s._up = null; renderSteps();
-    }
+  function focusBlock(id, atEnd) {
+    const el = document.querySelector(`.blk[data-id="${CSS.escape(id)}"] [contenteditable]`); if (!el) return;
+    el.focus();
+    const target = el.tagName === 'UL' || el.tagName === 'OL' ? (atEnd ? el.lastElementChild : el.firstElementChild) || el : el;
+    const r = document.createRange(); r.selectNodeContents(target); r.collapse(!atEnd);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
   }
-  const cleanSteps = (steps) => steps.map((s) => { const c = {...s}; delete c._mode; delete c._up; if (c.type === 'questions') c.questions = (c.questions || []).filter((q) => q.label.trim()); return c; });
-  $('edSave').addEventListener('click', async () => {
-    const d = editing.data, name = $('edName').value.trim();
-    if (!name) { showToast(editing.kind === 'template' ? 'Give the template a name.' : 'Give it a title.', true); $('edName').focus(); return; }
-    if (d.steps.some((s) => s._up)) { showToast('Wait until the uploads have finished.', true); return; }
-    if (!d.steps.length) { showToast('Add at least one step.', true); return; }
-    const steps = cleanSteps(d.steps).map((s) => ({...s, title: s.title.trim() || TYPE[s.type][1]}));
+  function newBlock(k) {
+    const b = {id: uidGen(), type: k};
+    if (TEXTISH.includes(k) || k === 'todo') b.html = '';
+    if (k === 'bullets' || k === 'numbers') b.html = '<li></li>';
+    if (INTERACTIVE.includes(k)) b.required = true;
+    if (k === 'file') b.preview = true;
+    return b;
+  }
+  function insertAfter(id, k) {
+    const i = id ? findB(id) : editing.data.blocks.length - 1;
+    const b = newBlock(k); editing.data.blocks.splice(i + 1, 0, b); changed(); renderPage(b.id);
+    if (!TEXTISH.includes(k) && !['bullets', 'numbers', 'todo'].includes(k)) setTimeout(() => { const el = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"] input.in, .blk[data-id="${CSS.escape(b.id)}"] label.be-drop`); if (el && el.focus) el.focus(); }, 30);
+    return b;
+  }
+
+  // ---------- Saving (automatically) ----------
+  let saveTimer = null;
+  function changed() { editing.dirty = true; $('edSaved').textContent = 'Saving…'; clearTimeout(saveTimer); saveTimer = setTimeout(save, 900); }
+  function blocksForSave() {
+    return (editing || {data: {blocks: []}}).data.blocks.map((b) => {
+      const c = {...b}; delete c._up;
+      if ('html' in c) c.html = c.type === 'bullets' || c.type === 'numbers' ? cleanHTML(c.html).replace(/<(?!\/?(li|b|strong|i|em|u|s|code|a|br)\b)[^>]*>/gi, '') : cleanHTML(c.html);
+      return c;
+    });
+  }
+  async function save() {
+    const ed = editing; if (!ed) return;
+    if (ed.data.blocks.some((b) => b._up)) { saveTimer = setTimeout(save, 800); return; }
+    const name = $('edName').value.trim() || (ed.kind === 'template' ? 'Untitled template' : 'Onboarding');
     const now = firebase.firestore.FieldValue.serverTimestamp();
-    const btn = $('edSave'); btn.disabled = true;
+    const col = db.collection(ed.kind === 'template' ? 'clientProcessTemplates' : 'clientProcesses');
+    const data = {senderName: $('edSender').value.trim(), blocks: blocksForSave(), updatedAt: now};
+    if (ed.kind === 'template') data.name = name; else data.title = name;
     try {
-      if (editing.kind === 'template') {
-        const data = {name, senderName: $('edSender').value.trim(), welcome: $('edWelcome').value.trim(), steps, updatedAt: now};
-        if (editing.id) await db.collection('clientProcessTemplates').doc(editing.id).update(data);
-        else { const col = db.collection('clientProcessTemplates'); await (editing.draftId ? col.doc(editing.draftId) : col.doc()).set({...data, workspaceId: wsId, createdBy: uid, createdAt: now}); }
-        showToast('Template saved.');
-      } else {
-        await db.collection('clientProcesses').doc(editing.id).update({title: name, senderName: $('edSender').value.trim(), welcome: $('edWelcome').value.trim(), steps, updatedAt: now});
-        showToast('Steps updated. Your client sees them straight away.');
-      }
-      closeOv('edOv');
-    } catch (err) { console.error(err); showToast('Couldn\u2019t save. Check your connection and try again.', true); }
-    finally { btn.disabled = false; }
+      if (ed.isNew) { ed.isNew = false; await col.doc(ed.id).set({...data, workspaceId: wsId, createdBy: uid, createdAt: now}); }
+      else await col.doc(ed.id).update({...data, steps: firebase.firestore.FieldValue.delete()});
+      ed.dirty = false;
+      if ($('edSaved')) $('edSaved').textContent = 'Saved ✓';
+    } catch (err) { console.error(err); $('edSaved').textContent = 'Couldn’t save. Check your connection.'; }
+  }
+  $('edName').addEventListener('input', changed);
+  $('edSender').addEventListener('input', changed);
+
+  // ---------- Typing ----------
+  const pg = $('pgBlocks');
+  pg.addEventListener('input', (e) => {
+    const blk = e.target.closest('.blk'); if (!blk) return;
+    const b = editing.data.blocks[findB(blk.dataset.id)];
+    const ce = e.target.closest('[contenteditable]');
+    if (ce) {
+      b.html = ce.innerHTML;
+      // "/" at the start of an empty text line opens the menu
+      const t = ce.textContent;
+      if (TEXTISH.includes(b.type) && /^\/[\p{L}\d \-]{0,20}$/u.test(t)) openSlash(blk, t.slice(1).replace(/-/g, ''), true); else if (slash.open && slash.fromText) closeSlash();
+      changed(); return;
+    }
+    const f = e.target.dataset.f;
+    if (f === 'videoLink') { b.video = videoFromLink(e.target.value); changed(); clearTimeout(e.target._h); e.target._h = setTimeout(() => { const pos = e.target.selectionStart; renderPage(); const el = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"] [data-f=videoLink]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } }, 700); return; }
+    if (f && f !== 'required' && f !== 'preview') { b[f] = e.target.value; changed(); if (f === 'label' && b.type === 'button') { const pv = blk.querySelector('.be-btnprev'); if (pv) pv.textContent = e.target.value || 'Button'; } }
   });
+  pg.addEventListener('change', (e) => {
+    const blk = e.target.closest('.blk'); if (!blk) return;
+    const b = editing.data.blocks[findB(blk.dataset.id)], f = e.target.dataset.f;
+    if (f === 'required') { b.required = e.target.checked; changed(); }
+    if (f === 'preview') { b.preview = e.target.checked; changed(); renderPage(); }
+    if (f === 'qtype') { b.qtype = e.target.value; changed(); }
+    if (e.target.dataset.up) uploadInto(b, e.target.files[0], e.target.dataset.up);
+  });
+  const caretAtStart = (el) => { const s = getSelection(); if (!s.rangeCount || !s.isCollapsed) return false; const r = s.getRangeAt(0).cloneRange(); r.selectNodeContents(el); r.setEnd(s.anchorNode, s.anchorOffset); return r.toString().length === 0; };
+  pg.addEventListener('keydown', (e) => {
+    const ce = e.target.closest('[contenteditable]'); if (!ce) return;
+    const blk = ce.closest('.blk'), i = findB(blk.dataset.id), b = editing.data.blocks[i];
+    if (slash.open) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); slash.pick = (slash.pick + (e.key === 'ArrowDown' ? 1 : -1) + slash.items.length) % slash.items.length; drawSlash(); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); if (slash.items[slash.pick]) chooseSlash(slash.items[slash.pick].k); return; }
+      if (e.key === 'Escape') { e.preventDefault(); closeSlash(); return; }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); addLink(); return; }
+    // Enter: a new line below (a list keeps adding points until an empty one)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      if (b.type === 'bullets' || b.type === 'numbers') {
+        const li = getSelection().anchorNode && (getSelection().anchorNode.nodeType === 1 ? getSelection().anchorNode : getSelection().anchorNode.parentElement).closest('li');
+        if (li && !li.textContent.trim()) { e.preventDefault(); li.remove(); b.html = ce.innerHTML || '<li></li>'; const nb = newBlock('text'); editing.data.blocks.splice(i + 1, 0, nb); changed(); renderPage(nb.id); }
+        return;
+      }
+      e.preventDefault();
+      // move what's after the caret to the new line
+      const s = getSelection(); let rest = '';
+      if (s.rangeCount) { const r = s.getRangeAt(0); const after = document.createRange(); after.selectNodeContents(ce); after.setStart(r.endContainer, r.endOffset); const frag = after.extractContents(); const d = document.createElement('div'); d.appendChild(frag); rest = d.innerHTML; b.html = ce.innerHTML; }
+      const nb = newBlock(b.type === 'todo' ? 'todo' : 'text'); nb.html = textOf(rest).trim() ? rest : '';
+      editing.data.blocks.splice(i + 1, 0, nb); changed(); renderPage(nb.id, false);
+      return;
+    }
+    // Backspace at the start: an empty line goes away; a heading/note becomes plain text
+    if (e.key === 'Backspace' && caretAtStart(ce)) {
+      if (!textOf(ce.innerHTML).trim() && editing.data.blocks.length > 1) {
+        e.preventDefault();
+        if (b.type !== 'text') { b.type = 'text'; b.html = ''; changed(); renderPage(b.id); return; }
+        editing.data.blocks.splice(i, 1); changed();
+        const prev = [...editing.data.blocks].slice(0, i).reverse().find((x) => TEXTISH.includes(x.type) || ['todo', 'bullets', 'numbers'].includes(x.type));
+        renderPage(prev && prev.id, true); return;
+      }
+      if (b.type !== 'text' && TEXTISH.includes(b.type)) { e.preventDefault(); b.type = 'text'; b.html = ce.innerHTML; changed(); renderPage(b.id); }
+    }
+  });
+  pg.addEventListener('click', (e) => {
+    const blk = e.target.closest('.blk'); if (!blk) return;
+    if (e.target.closest('[data-gadd]')) { openSlash(blk, '', false); return; }
+    if (e.target.closest('[data-gdel]')) {
+      const i = findB(blk.dataset.id), b = editing.data.blocks[i];
+      if (INTERACTIVE.includes(b.type) && editing.kind === 'process' && (editing.data.progress || {})[b.id] && !confirm('Your client already did this. Remove it anyway?')) return;
+      editing.data.blocks.splice(i, 1);
+      if (!editing.data.blocks.length) editing.data.blocks.push(newBlock('text'));
+      changed(); renderPage(); return;
+    }
+  });
+  $('pgAdd').addEventListener('click', () => {
+    const last = editing.data.blocks[editing.data.blocks.length - 1];
+    if (last && last.type === 'text' && !textOf(last.html).trim()) { focusBlock(last.id); openSlash(document.querySelector(`.blk[data-id="${CSS.escape(last.id)}"]`), '', false); }
+    else openSlash(null, '', false);
+  });
+
+  // ---------- The "/" menu ----------
+  const slash = {open: false, blkId: null, q: '', items: [], pick: 0, fromText: false};
+  function openSlash(blk, q, fromText) {
+    slash.open = true; slash.blkId = blk ? blk.dataset.id : null; slash.q = q || ''; slash.fromText = fromText; slash.pick = 0;
+    const ql = slash.q.toLowerCase();
+    // names that START with what you typed come first ("/vid" → Video, not Divider)
+    const score = (x) => { const l = x.label.toLowerCase().replace(/-/g, ''); if (!ql) return 1; if (l.startsWith(ql) || x.k.startsWith(ql)) return 4; if (l.split(/\s+/).some((w) => w.startsWith(ql))) return 3; if (l.includes(ql) || x.k.includes(ql)) return 2; return x.hint.toLowerCase().includes(ql) ? 1 : 0; };
+    slash.items = BLOCKS.map((x, i) => ({x, i, s: score(x)})).filter((o) => o.s > 0).sort((a, b) => b.s - a.s || a.i - b.i).map((o) => o.x);
+    if (!slash.items.length) { closeSlash(); return; }
+    drawSlash();
+    const anchor = blk || $('pgAdd'), r = anchor.getBoundingClientRect(), m = $('slashMenu');
+    m.classList.add('open');
+    const top = r.bottom + m.offsetHeight + 12 > window.innerHeight ? Math.max(10, r.top - m.offsetHeight - 6) : r.bottom + 6;
+    m.style.top = top + 'px'; m.style.left = Math.min(window.innerWidth - m.offsetWidth - 12, r.left + 34) + 'px';
+  }
+  function drawSlash() {
+    let lastClient = null;
+    $('slashMenu').innerHTML = slash.items.map((x, i) => {
+      const head = lastClient !== !!x.client ? `<div class="sm-head">${x.client ? 'For your client to do' : 'Content'}</div>` : '';
+      lastClient = !!x.client;
+      return `${head}<button type="button" class="sm-item${i === slash.pick ? ' on' : ''}" data-k="${x.k}"><span class="sm-ic">${x.ic}</span><span><b>${esc(x.label)}</b><small>${esc(x.hint)}</small></span></button>`;
+    }).join('');
+    const on = $('slashMenu').querySelector('.on'); if (on) on.scrollIntoView({block: 'nearest'});
+  }
+  function closeSlash() { slash.open = false; $('slashMenu').classList.remove('open'); }
+  function chooseSlash(k) {
+    const i = slash.blkId ? findB(slash.blkId) : -1, b = i >= 0 ? editing.data.blocks[i] : null;
+    closeSlash();
+    // an empty text line (or the "/…" just typed) becomes the new block; otherwise it goes below
+    if (b && b.type === 'text' && (!textOf(b.html).trim() || /^\//.test(textOf(b.html)))) {
+      const nb = newBlock(k); nb.id = b.id; editing.data.blocks[i] = nb; changed(); renderPage(nb.id);
+      if (!TEXTISH.includes(k) && !['bullets', 'numbers', 'todo'].includes(k)) {
+        if (i === editing.data.blocks.length - 1) { editing.data.blocks.push(newBlock('text')); renderPage(); }
+        setTimeout(() => { const el = document.querySelector(`.blk[data-id="${CSS.escape(nb.id)}"] input.in`); if (el) el.focus(); }, 30);
+      }
+    } else insertAfter(b ? b.id : null, k);
+  }
+  $('slashMenu').addEventListener('mousedown', (e) => e.preventDefault());
+  $('slashMenu').addEventListener('click', (e) => { const it = e.target.closest('[data-k]'); if (it) chooseSlash(it.dataset.k); });
+  document.addEventListener('mousedown', (e) => { if (slash.open && !e.target.closest('#slashMenu') && !e.target.closest('[data-gadd]') && !e.target.closest('#pgAdd')) closeSlash(); });
+
+  // ---------- Bold, italic, underline, link (select text) ----------
+  function addLink() { const url = prompt('Link to:', 'https://'); if (url && /^(https?:\/\/|mailto:)/i.test(url)) document.execCommand('createLink', false, url); }
+  document.addEventListener('selectionchange', () => {
+    const bar = $('fmtBar'); if (!editing) { bar.classList.remove('open'); return; }
+    const s = getSelection();
+    const ce = s.rangeCount && s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement).closest('#pgBlocks [contenteditable]');
+    if (!ce || s.isCollapsed) { bar.classList.remove('open'); return; }
+    const r = s.getRangeAt(0).getBoundingClientRect();
+    bar.classList.add('open'); bar.style.top = Math.max(8, r.top - bar.offsetHeight - 8) + 'px'; bar.style.left = Math.max(8, r.left + r.width / 2 - bar.offsetWidth / 2) + 'px';
+  });
+  $('fmtBar').addEventListener('mousedown', (e) => e.preventDefault());
+  $('fmtBar').addEventListener('click', (e) => {
+    const c = e.target.closest('[data-cmd]'); if (!c) return;
+    if (c.dataset.cmd === 'link') addLink(); else document.execCommand(c.dataset.cmd);
+    const ce = getSelection().anchorNode && (getSelection().anchorNode.nodeType === 1 ? getSelection().anchorNode : getSelection().anchorNode.parentElement).closest('[contenteditable]');
+    if (ce) ce.dispatchEvent(new Event('input', {bubbles: true}));
+  });
+
+  // ---------- Moving blocks (drag the ⋮⋮ handle) ----------
+  let dragId = null;
+  pg.addEventListener('dragstart', (e) => { const h = e.target.closest('.g-drag'); if (!h) { e.preventDefault(); return; } dragId = h.closest('.blk').dataset.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); h.closest('.blk').classList.add('dragging'); });
+  pg.addEventListener('dragover', (e) => {
+    if (!dragId) return; e.preventDefault();
+    const blk = e.target.closest('.blk'); pg.querySelectorAll('.drop-before,.drop-after').forEach((x) => x.classList.remove('drop-before', 'drop-after'));
+    if (blk && blk.dataset.id !== dragId) { const r = blk.getBoundingClientRect(); blk.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after'); }
+  });
+  pg.addEventListener('drop', (e) => {
+    if (!dragId) return; e.preventDefault();
+    const blk = e.target.closest('.blk'); const from = findB(dragId);
+    if (blk && blk.dataset.id !== dragId) {
+      const before = blk.classList.contains('drop-before'); const [moved] = editing.data.blocks.splice(from, 1);
+      let to = findB(blk.dataset.id); if (!before) to++; editing.data.blocks.splice(to, 0, moved); changed();
+    }
+    dragId = null; renderPage();
+  });
+  pg.addEventListener('dragend', () => { dragId = null; pg.querySelectorAll('.dragging,.drop-before,.drop-after').forEach((x) => x.classList.remove('dragging', 'drop-before', 'drop-after')); });
+
+  // ---------- Files (videos, documents, images) ----------
+  async function uploadInto(b, f, kind) {
+    if (!f) return;
+    if (kind === 'video' && !/^video\//.test(f.type)) { showToast('That isn’t a video file.', true); return; }
+    if (kind === 'image' && !/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
+    if (f.size > (kind === 'video' ? MAX_VIDEO : MAX_DOC)) { showToast(`${f.name} is larger than ${kind === 'video' ? '500' : '50'} MB.`, true); return; }
+    const folder = (editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id;
+    const path = `workspaces/${wsId}/clientProcessFiles/${folder}/${Date.now()}-${f.name.replace(/[\\/]/g, '_').slice(0, 120)}`;
+    b._up = {name: f.name, pct: 0}; renderPage();
+    try {
+      const task = storage.ref(path).put(f, {contentType: f.type || 'application/octet-stream'});
+      task.on('state_changed', (snap) => { b._up.pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100); const blk = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"]`); if (blk) { const i = blk.querySelector('.upbar i'), t = blk.querySelector('[data-pct]'); if (i) i.style.width = b._up.pct + '%'; if (t) t.textContent = b._up.pct; } });
+      await task;
+      const url = await storage.ref(path).getDownloadURL();
+      const rec = {name: f.name, path, url, size: f.size, contentType: f.type || ''};
+      if (kind === 'video') b.video = {kind: 'file', url, embedUrl: '', path, name: f.name, size: f.size};
+      else if (kind === 'image') b.image = rec;
+      else b.file = rec;
+    } catch (err) { console.error(err); showToast(`Couldn’t upload ${f.name}.`, true); }
+    b._up = null; changed(); renderPage();
+  }
 
   // ---------- Start for a client ----------
   let boardsLoaded = false;
@@ -953,8 +1247,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const token = randToken(), ref = db.collection('clientProcesses').doc(), now = firebase.firestore.FieldValue.serverTimestamp();
       const lead = $('stLead').value ? {boardId: $('stBoard').value, leadId: $('stLead').value, name: $('stLead').selectedOptions[0].dataset.name || ''} : null;
       const batch = db.batch();
-      batch.set(ref, {workspaceId: wsId, createdBy: uid, templateId: t.id, title: t.name, welcome: t.welcome || '', senderName: t.senderName || '',
-        clientName: client, clientContact: $('stContact').value.trim(), lead, steps: t.steps || [], progress: {}, activity: [],
+      batch.set(ref, {workspaceId: wsId, createdBy: uid, templateId: t.id, title: t.name, senderName: t.senderName || '',
+        clientName: client, clientContact: $('stContact').value.trim(), lead, blocks: blocksOf(t), progress: {}, activity: [],
         status: 'active', shareToken: token, hasPin: !!pin, unseenClientActivity: 0, createdAt: now, updatedAt: now});
       batch.set(db.collection('clientProcessLinks').doc(token), {workspaceId: wsId, processId: ref.id, createdBy: uid, createdAt: now, revoked: false, ...(pin ? await pinFields(pin) : {})});
       await batch.commit();
@@ -969,7 +1263,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   let shownPin = '';
   function openDetail(p, pin) { current = p; shownPin = pin || ''; renderDetail(); $('dtOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0; if (p.unseenClientActivity) db.collection('clientProcesses').doc(p.id).update({unseenClientActivity: 0}).catch(() => {}); }
   function renderDetail() {
-    const p = current, steps = p.steps || [], prog = p.progress || {};
+    const p = current, steps = tasksOf(p), prog = p.progress || {};
     const done = steps.filter((s) => prog[s.id] && prog[s.id].done).length, pct = steps.length ? Math.round(done / steps.length * 100) : 0;
     const paused = pausedIds().has(p.id);
     $('dtAv').textContent = initials(p.clientName);
@@ -983,18 +1277,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const st = paused ? 'paused' : p.status;
     $('dtChip').className = 'chip ' + st; $('dtChip').textContent = {active: 'Active', completed: 'Completed', archived: 'Archived', paused: 'Paused (Free plan)'}[st];
     $('dtBar').style.width = pct + '%';
-    $('dtProg').textContent = `${done} of ${steps.length} steps done`;
+    $('dtProg').textContent = `${done} of ${steps.length} done`;
     $('dtLast').textContent = p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Not opened yet';
     $('dtArchive').textContent = p.status === 'archived' ? 'Reopen' : 'Archive';
-    $('dtSteps').innerHTML = steps.map((s, i) => {
-      const r = prog[s.id] || {}, t = TYPE[s.type] || ['•', ''];
-      const answers = s.type === 'questions' && r.answers ? (s.questions || []).filter((q) => r.answers[q.id]).map((q) => `<div><span>${esc(q.label)}</span>${esc(r.answers[q.id])}</div>`).join('') : '';
+    const ICON = {todo: '☑', upload: '📤', question: '✍️'};
+    $('dtSteps').innerHTML = steps.length ? steps.map((s, i) => {
+      const r = prog[s.id] || {};
+      const answer = s.type === 'question' && r.answers && r.answers.value ? `<div class="ans">${esc(r.answers.value)}</div>` : '';
       const ups = (r.uploads || []).map((u, j) => `<div class="fitem"><span class="nm">📎 ${esc(u.name)}</span><small>${fsize(u.size)} · ${esc(u.by)}</small><button class="link" data-dl="${esc(s.id)}:${j}">Download</button></div>`).join('');
-      return `<div class="dstep${r.done ? ' done' : ''}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${t[0]} ${esc(s.title)}</b>
+      return `<div class="dstep${r.done ? ' done' : ''}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${ICON[s.type]} ${esc(labelOf(s))}</b>
         <div class="st">${r.done ? `Done by ${esc(r.doneBy || 'someone')} · ${ago(r.doneAt)}` : s.required === false ? 'Optional · not done yet' : 'Not done yet'}</div>
-        ${answers ? `<div class="ans">${answers}</div>` : ''}${ups ? `<div class="flist">${ups}</div>` : ''}</div>
-        <button class="btn sm" data-mark="${esc(s.id)}">${r.done ? 'Undo' : 'Mark done'}</button></div>`;
-    }).join('');
+        ${answer}${ups ? `<div class="flist">${ups}</div>` : ''}</div>
+        ${s.type === 'todo' ? `<button class="btn sm" data-mark="${esc(s.id)}">${r.done ? 'Undo' : 'Mark done'}</button>` : ''}</div>`;
+    }).join('') : '<div class="hint">This page has nothing for your client to do. Add a to-do, an upload request or a question with “Edit page”.</div>';
     const act = (p.activity || []).slice().reverse().slice(0, 40);
     $('dtAct').innerHTML = act.length ? act.map((a) => `<div class="act-item"><b>${esc(a.by)}</b> ${esc(a.text)}<small>${ago(a.at)}${a.client ? '' : ' · your team'}</small></div>`).join('') : '<div class="hint">Nothing yet. Activity from your client shows up here.</div>';
   }
@@ -1002,9 +1297,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('dtSteps').addEventListener('click', async (e) => {
     const m = e.target.closest('[data-mark]');
     if (m) {
-      const id = m.dataset.mark, prog = {...(current.progress || {})}, r = {...(prog[id] || {})}, step = current.steps.find((s) => s.id === id);
+      const id = m.dataset.mark, prog = {...(current.progress || {})}, r = {...(prog[id] || {})}, step = tasksOf(current).find((s) => s.id === id); step.title = labelOf(step);
       r.done = !r.done; r.doneBy = r.done ? myName : ''; r.doneAt = r.done ? firebase.firestore.Timestamp.now() : null; prog[id] = r;
-      const all = current.steps.filter((s) => s.required !== false).every((s) => prog[s.id] && prog[s.id].done);
+      const all = tasksOf(current).filter((s) => s.required !== false).every((s) => prog[s.id] && prog[s.id].done);
       const activity = (current.activity || []).concat([{text: `${r.done ? 'marked' : 'reopened'} “${step.title}”${r.done ? ' as done' : ''}`, by: myName, at: firebase.firestore.Timestamp.now(), client: false}]).slice(-200);
       const upd = {progress: prog, activity, updatedAt: firebase.firestore.FieldValue.serverTimestamp()};
       if (all && current.status === 'active') { upd.status = 'completed'; upd.completedAt = firebase.firestore.Timestamp.now(); }
@@ -1039,8 +1334,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('dtPinRemove').addEventListener('click', () => { if (confirm('Remove the PIN? Anyone with the new link can then open it.')) newLink('remove'); });
   $('dtEdit').addEventListener('click', () => { const p = current; $('dtOv').classList.remove('open'); current = null; openEditor('process', p, p.id); });
   $('dtArchive').addEventListener('click', async () => {
-    const p = current, steps = p.steps || [], prog = p.progress || {};
-    const all = steps.filter((s) => s.required !== false).every((s) => prog[s.id] && prog[s.id].done);
+    const p = current, steps = tasksOf(p), prog = p.progress || {};
+    const all = steps.length > 0 && steps.filter((s) => s.required !== false).every((s) => prog[s.id] && prog[s.id].done);
     const status = p.status === 'archived' ? (all ? 'completed' : 'active') : 'archived';
     if (status === 'active' && isFree() && procs.filter((x) => x.status === 'active').length >= FREE_ACTIVE_LIMIT) showToast(`Reopened, but on Free only ${FREE_ACTIVE_LIMIT} can be active: the newest ones are paused for clients.`);
     await db.collection('clientProcesses').doc(p.id).update({status, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
@@ -1051,7 +1346,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (!confirm(`Delete the onboarding for ${p.clientName}? Their progress, answers and uploaded files are removed, and the link stops working.`)) return;
     try {
       await db.collection('clientProcessLinks').doc(p.shareToken).update({revoked: true}).catch(() => {});
-      for (const s of p.steps || []) for (const u of ((p.progress || {})[s.id] || {}).uploads || []) await storage.ref(u.path).delete().catch(() => {});
+      for (const s of tasksOf(p)) for (const u of ((p.progress || {})[s.id] || {}).uploads || []) await storage.ref(u.path).delete().catch(() => {});
       await db.collection('clientProcesses').doc(p.id).delete();
       closeOv('dtOv'); current = null; showToast('Deleted.');
     } catch (err) { console.error(err); showToast('Couldn\u2019t delete it.', true); }
@@ -1060,16 +1355,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // ---------- Templates ----------
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.closest('#pgBlocks') || b.closest('#slashMenu') || b.closest('#fmtBar')) return;
     if (b.dataset.newtpl !== undefined || b.id === 'newTplBtn') { setTab('tpl'); openEditor('template', null); }
     else if (b.dataset.start !== undefined || b.id === 'startBtn') openStart();
     else if (b.dataset.starttpl) openStart(b.dataset.starttpl);
     else if (b.dataset.edittpl) { const t = templates.find((x) => x.id === b.dataset.edittpl); openEditor('template', t, t.id); }
     else if (b.dataset.duptpl) { const t = templates.find((x) => x.id === b.dataset.duptpl); const now = firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection('clientProcessTemplates').add({workspaceId: wsId, createdBy: uid, name: t.name + ' (copy)', senderName: t.senderName || '', welcome: t.welcome || '', steps: t.steps || [], createdAt: now, updatedAt: now}); showToast('Template duplicated.'); }
+      await db.collection('clientProcessTemplates').add({workspaceId: wsId, createdBy: uid, name: t.name + ' (copy)', senderName: t.senderName || '', blocks: blocksOf(t), createdAt: now, updatedAt: now}); showToast('Template duplicated.'); }
     else if (b.dataset.deltpl) { const t = templates.find((x) => x.id === b.dataset.deltpl); if (confirm(`Delete the template “${t.name}”? Client processes you already started keep their steps.`)) { await db.collection('clientProcessTemplates').doc(t.id).delete(); showToast('Template deleted.'); } }
     else if (b.dataset.open) openDetail(procs.find((p) => p.id === b.dataset.open));
   });
   function closeOv(id) {
+    if (id === 'edOv' && editing && editing.dirty) { clearTimeout(saveTimer); save(); }
+    if (id === 'edOv') closeSlash();
     $(id).classList.remove('open'); if (id === 'dtOv') current = null; if (id === 'edOv') editing = null;
     if (!document.querySelector('.ov.inpage.open')) document.body.classList.remove('cp-inpage');
   }
