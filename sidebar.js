@@ -54,7 +54,6 @@
       link('navChat', 'chat.html', 'Team chat') +
       link('navLibrary', 'library.html', 'Library') +
       link('navTeam', 'team.html', 'Team') +
-      link('navTrash', 'trash.html' + q, 'Trash') +
     '</nav>' +
     '<div class="seq-sidebar-bottom pts-bottom">' +
       '<div class="theme-toggle-row pts-theme">' +
@@ -77,7 +76,8 @@
     'aside.home-sidebar.pts-host{position:fixed;top:0;left:0;bottom:0;z-index:10;}' +
     'body.pts-on-home .app{margin-left:232px !important;}' +
     '@media (max-width:900px){body.pts-on-home aside.home-sidebar.pts-host{display:none !important;} body.pts-on-home .app{margin-left:0 !important;}}' +
-    '.pts-host .pts-logo{display:block;width:36px;height:36px;border-radius:10px;overflow:hidden;margin:0 0 16px 6px;box-shadow:0 3px 8px rgba(28,91,158,0.28);}' +
+    '.pts-host > *{flex-shrink:0;}' +
+    '.pts-host .pts-logo{display:block;flex-shrink:0;width:36px;height:36px;min-height:36px;border-radius:10px;overflow:hidden;margin:0 0 16px 6px;box-shadow:0 3px 8px rgba(28,91,158,0.28);}' +
     '.pts-host .pts-logo img{width:100%;height:100%;display:block;}' +
     '.pts-host .pts-user{display:flex;align-items:center;gap:10px;padding:8px;margin:0 0 16px;border-radius:12px;background:var(--panel-alt,var(--pts-soft));}' +
     '.pts-host .seq-sidebar-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;background:var(--panel);color:var(--teal);font:700 12px Inter,sans-serif;border:1px solid var(--border);overflow:hidden;}' +

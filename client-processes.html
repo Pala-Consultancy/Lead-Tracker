@@ -87,6 +87,15 @@
   /* overlays */
   .ov{position:fixed;inset:0;z-index:200;background:rgba(15,22,38,.45);display:none;align-items:flex-start;justify-content:center;padding:34px 20px;overflow-y:auto;}
   .ov.open{display:flex;animation:pageFade .18s ease both;}
+  /* the template editor and a client's view open in the page itself */
+  .ov.inpage{position:static;inset:auto;z-index:auto;background:none;padding:0;overflow:visible;display:none;}
+  .ov.inpage.open{display:block;}
+  .ov.inpage .dlg{width:100%;max-width:none;background:none;box-shadow:none;padding:0;border-radius:0;}
+  .ov.inpage .dlg-top h2{font:800 26px Sora,sans-serif;}
+  body.cp-inpage .ph,body.cp-inpage .tabs,body.cp-inpage #planNote,body.cp-inpage #clientsView,body.cp-inpage #tplView{display:none !important;}
+  .back{border:none;background:none;padding:0;margin:0 0 14px;font-size:13.5px;font-weight:600;color:var(--slate);}
+  .back:hover{color:var(--teal);}
+  .ov.inpage .foot{position:sticky;bottom:0;padding:12px 0;background:linear-gradient(transparent,var(--paper) 30%);margin-top:0;}
   .dlg{width:min(760px,100%);background:var(--paper);border-radius:20px;box-shadow:var(--shadow-lg);padding:22px;}
   .dlg.sm{width:min(520px,100%);}
   .dlg-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;}
@@ -611,13 +620,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="grid" id="procList"></div>
   </section>
   <section id="tplView" class="hidden"><div class="grid" id="tplList"></div></section>
-</div>
-</div>
-</div>
-
 <!-- template / process editor -->
-<div class="ov" id="edOv" role="dialog" aria-modal="true" aria-labelledby="edTitle"><div class="dlg">
-  <div class="dlg-top"><div><h2 id="edTitle">New template</h2><p id="edSub">The steps your clients go through. You can reuse it for every new client.</p></div><button class="x" data-close aria-label="Close">×</button></div>
+<div class="ov inpage" id="edOv" role="dialog" aria-modal="true" aria-labelledby="edTitle"><div class="dlg">
+  <button class="back" data-close>← Back</button>
+  <div class="dlg-top"><div><h2 id="edTitle">New template</h2><p id="edSub">The steps your clients go through. You can reuse it for every new client.</p></div></div>
   <div class="sec"><div class="two"><label class="f"><span id="edNameLbl">Name</span><input class="in" id="edName" placeholder="e.g. New client onboarding" maxlength="120"></label>
     <label class="f"><span>Sender (shown to the client)</span><input class="in" id="edSender" placeholder="e.g. Gabriele from Pala Consultancy" maxlength="80"></label></div>
     <label class="f"><span>Welcome message</span><textarea class="in" id="edWelcome" placeholder="Welcome! Here’s everything to get started. It takes about 20 minutes." maxlength="2000"></textarea></label></div>
@@ -633,24 +639,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <div class="foot"><button class="btn" data-close>Cancel</button><button class="btn primary" id="edSave">Save</button></div>
 </div></div>
 
-<!-- start for a client -->
-<div class="ov" id="stOv" role="dialog" aria-modal="true" aria-labelledby="stTitle"><div class="dlg sm">
-  <div class="dlg-top"><div><h2 id="stTitle">Start for a client</h2><p>You’ll get one link to share. Everyone with it can work on it together.</p></div><button class="x" data-close aria-label="Close">×</button></div>
-  <div class="sec">
-    <label class="f"><span>Template</span><select class="in" id="stTpl"></select></label>
-    <div class="two"><label class="f"><span>Client name</span><input class="in" id="stClient" placeholder="e.g. Acme Inc." maxlength="120"></label>
-      <label class="f"><span>Contact person (optional)</span><input class="in" id="stContact" placeholder="e.g. Jane Doe" maxlength="120"></label></div>
-    <label class="f"><span>Link to a lead (optional)</span><div class="two"><select class="in" id="stBoard"><option value="">No lead</option></select><select class="in" id="stLead" disabled><option value="">Pick a board first</option></select></div></label>
-    <label class="req" style="margin-top:6px"><input type="checkbox" id="stPinOn"> Protect with a PIN</label>
-    <div class="f hidden" id="stPinBox" style="margin-top:8px"><span>PIN (4 to 8 digits)</span><input class="in" id="stPin" inputmode="numeric" maxlength="8"></div>
-  </div>
-  <div class="hint bad hidden" id="stErr"></div>
-  <div class="foot"><button class="btn" data-close>Cancel</button><button class="btn primary" id="stGo">Create link</button></div>
-</div></div>
-
 <!-- one client's process -->
-<div class="ov" id="dtOv" role="dialog" aria-modal="true" aria-labelledby="dtTitle"><div class="dlg">
-  <div class="dlg-top"><div class="av" id="dtAv">A</div><div style="min-width:0"><h2 id="dtTitle"></h2><p id="dtSub"></p></div><button class="x" data-close aria-label="Close">×</button></div>
+<div class="ov inpage" id="dtOv" role="dialog" aria-modal="true" aria-labelledby="dtTitle"><div class="dlg">
+  <button class="back" data-close>← Back to clients</button>
+  <div class="dlg-top"><div class="av" id="dtAv">A</div><div style="min-width:0"><h2 id="dtTitle"></h2><p id="dtSub"></p></div></div>
   <div class="sec"><h3>Share with your client</h3>
     <div class="share"><input class="in" id="dtLink" readonly><button class="btn primary sm" id="dtCopy">Copy link</button><a class="btn sm" id="dtPreview" target="_blank" rel="noopener">Open as client ↗</a></div>
     <div class="share" style="margin-top:10px"><span class="pin" id="dtPin"></span><button class="link" id="dtPinChange">Set a PIN</button><button class="link hidden" id="dtPinRemove">Remove PIN</button>
@@ -664,6 +656,25 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="sec"><h3>Activity</h3><div id="dtAct"></div></div>
   </div>
   <div class="acts-row"><button class="btn" id="dtEdit">Edit steps</button><button class="btn" id="dtArchive">Archive</button><span style="flex:1"></span><button class="btn danger" id="dtDelete">Delete</button></div>
+</div></div>
+
+</div>
+</div>
+</div>
+
+<!-- start for a client -->
+<div class="ov" id="stOv" role="dialog" aria-modal="true" aria-labelledby="stTitle"><div class="dlg sm">
+  <div class="dlg-top"><div><h2 id="stTitle">Start for a client</h2><p>You’ll get one link to share. Everyone with it can work on it together.</p></div><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="sec">
+    <label class="f"><span>Template</span><select class="in" id="stTpl"></select></label>
+    <div class="two"><label class="f"><span>Client name</span><input class="in" id="stClient" placeholder="e.g. Acme Inc." maxlength="120"></label>
+      <label class="f"><span>Contact person (optional)</span><input class="in" id="stContact" placeholder="e.g. Jane Doe" maxlength="120"></label></div>
+    <label class="f"><span>Link to a lead (optional)</span><div class="two"><select class="in" id="stBoard"><option value="">No lead</option></select><select class="in" id="stLead" disabled><option value="">Pick a board first</option></select></div></label>
+    <label class="req" style="margin-top:6px"><input type="checkbox" id="stPinOn"> Protect with a PIN</label>
+    <div class="f hidden" id="stPinBox" style="margin-top:8px"><span>PIN (4 to 8 digits)</span><input class="in" id="stPin" inputmode="numeric" maxlength="8"></div>
+  </div>
+  <div class="hint bad hidden" id="stErr"></div>
+  <div class="foot"><button class="btn" data-close>Cancel</button><button class="btn primary" id="stGo">Create link</button></div>
 </div></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -784,7 +795,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     $('edSender').value = editing.data.senderName || (kind === 'template' && !id ? myName + (ws.name ? ' from ' + ws.name : '') : '');
     $('edWelcome').value = editing.data.welcome || '';
     renderSteps();
-    $('edOv').classList.add('open');
+    $('edOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0;
     setTimeout(() => $('edName').focus(), 40);
   }
   function stepEditor(s, i, n) {
@@ -956,7 +967,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   // ---------- One client's process ----------
   let shownPin = '';
-  function openDetail(p, pin) { current = p; shownPin = pin || ''; renderDetail(); $('dtOv').classList.add('open'); if (p.unseenClientActivity) db.collection('clientProcesses').doc(p.id).update({unseenClientActivity: 0}).catch(() => {}); }
+  function openDetail(p, pin) { current = p; shownPin = pin || ''; renderDetail(); $('dtOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0; if (p.unseenClientActivity) db.collection('clientProcesses').doc(p.id).update({unseenClientActivity: 0}).catch(() => {}); }
   function renderDetail() {
     const p = current, steps = p.steps || [], prog = p.progress || {};
     const done = steps.filter((s) => prog[s.id] && prog[s.id].done).length, pct = steps.length ? Math.round(done / steps.length * 100) : 0;
@@ -1026,7 +1037,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('dtNewLink').addEventListener('click', () => newLink(null));
   $('dtPinChange').addEventListener('click', () => newLink('set'));
   $('dtPinRemove').addEventListener('click', () => { if (confirm('Remove the PIN? Anyone with the new link can then open it.')) newLink('remove'); });
-  $('dtEdit').addEventListener('click', () => { const p = current; closeOv('dtOv'); openEditor('process', p, p.id); });
+  $('dtEdit').addEventListener('click', () => { const p = current; $('dtOv').classList.remove('open'); current = null; openEditor('process', p, p.id); });
   $('dtArchive').addEventListener('click', async () => {
     const p = current, steps = p.steps || [], prog = p.progress || {};
     const all = steps.filter((s) => s.required !== false).every((s) => prog[s.id] && prog[s.id].done);
@@ -1058,7 +1069,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     else if (b.dataset.deltpl) { const t = templates.find((x) => x.id === b.dataset.deltpl); if (confirm(`Delete the template “${t.name}”? Client processes you already started keep their steps.`)) { await db.collection('clientProcessTemplates').doc(t.id).delete(); showToast('Template deleted.'); } }
     else if (b.dataset.open) openDetail(procs.find((p) => p.id === b.dataset.open));
   });
-  function closeOv(id) { $(id).classList.remove('open'); if (id === 'dtOv') current = null; if (id === 'edOv') editing = null; }
+  function closeOv(id) {
+    $(id).classList.remove('open'); if (id === 'dtOv') current = null; if (id === 'edOv') editing = null;
+    if (!document.querySelector('.ov.inpage.open')) document.body.classList.remove('cp-inpage');
+  }
   document.querySelectorAll('.ov').forEach((ov) => ov.addEventListener('click', (e) => { if (e.target === ov || e.target.closest('[data-close]')) closeOv(ov.id); }));
   document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; const open = [...document.querySelectorAll('.ov.open')].pop(); if (open) closeOv(open.id); });
 
