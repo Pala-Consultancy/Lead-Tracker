@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Your onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* The shared onboarding page (client-process.html?t=…). Always light, like the other public pages. */
+  :root{
+    --paper:#F1F6FC; --panel:#FFFFFF; --panel-alt:#F8FBFE; --ink:#16202C;
+    --border:#DCE6F2; --border-soft:#E9F0F8; --slate:#5C6B7C; --slate-light:#8CA0B3;
+    --teal:#3730B3; --teal-deep:#191659; --blue:#1B59A5; --violet:#7B3FE4;
+    --success:#1F6F5C; --success-soft:#DCEEE8; --fail:#B43B32; --fail-soft:#FAE1DE; --amber:#C97C00; --amber-soft:#FFF1DC;
+    --brand:linear-gradient(135deg,#1B59A5 0%,#3730B3 55%,#7B3FE4 100%);
+    --shadow:0 1px 2px rgba(16,24,40,0.04),0 2px 6px rgba(16,24,40,0.05),0 10px 24px -8px rgba(16,24,40,0.09);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  button,input,textarea{font-family:inherit;}
+  button{cursor:pointer;}
+  :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .hidden{display:none !important;}
+  .center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);animation:spin .8s linear infinite;}
+  .spinner.sm{width:15px;height:15px;border-width:2px;border-color:rgba(255,255,255,.45);border-top-color:#fff;display:inline-block;vertical-align:-2px;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .card{background:var(--panel);border-radius:18px;box-shadow:var(--shadow);border:1px solid var(--border-soft);}
+  .msg{max-width:440px;width:100%;text-align:center;padding:34px 30px;}
+  .msg .ic{width:64px;height:64px;border-radius:20px;background:var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:30px;}
+  .msg h1{font:700 22px Sora,sans-serif;margin:0 0 8px;letter-spacing:-.01em;} .msg p{margin:0;color:var(--slate);line-height:1.55;font-size:14.5px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:42px;padding:0 18px;border-radius:11px;border:1px solid var(--border);background:var(--panel);color:var(--ink);font-weight:600;font-size:14px;text-decoration:none;}
+  .btn:hover{border-color:#C3D2E4;}
+  .btn.primary{border:none;background:var(--brand);color:#fff;box-shadow:0 6px 16px -6px rgba(55,48,179,.55);}
+  .btn.primary:hover{filter:brightness(1.06);}
+  .btn.done{background:var(--success-soft);color:var(--success);border-color:transparent;}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .field{width:100%;border:1px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14.5px;background:var(--panel-alt);color:var(--ink);}
+  .field:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(55,48,179,.12);}
+  .pin-row{display:flex;gap:8px;margin-top:18px;} .pin-row .field{text-align:center;font-size:20px;letter-spacing:.3em;}
+  .err{color:var(--fail);font-size:13.5px;margin-top:10px;min-height:18px;}
+
+  /* page */
+  .wrap{max-width:860px;margin:0 auto;padding:28px 20px 60px;}
+  .top{position:relative;overflow:hidden;color:#fff;border-radius:22px;padding:28px 28px 24px;background:var(--brand);box-shadow:0 18px 40px -18px rgba(55,48,179,.6);}
+  .top::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);}
+  .from{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.16);border-radius:999px;padding:5px 12px 5px 6px;}
+  .from i{width:22px;height:22px;border-radius:50%;background:#fff;color:var(--teal);font-style:normal;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;}
+  .top h1{font:800 27px/1.2 Sora,sans-serif;margin:14px 0 6px;letter-spacing:-.02em;position:relative;}
+  .top .for{opacity:.85;font-size:14px;}
+  .welcome{margin-top:14px;font-size:14.5px;line-height:1.6;opacity:.95;white-space:pre-wrap;position:relative;max-width:640px;}
+  .prog{margin-top:20px;position:relative;}
+  .prog-line{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .bar{height:10px;border-radius:10px;background:rgba(255,255,255,.22);overflow:hidden;}
+  .bar i{display:block;height:100%;border-radius:10px;background:#fff;transition:width .6s cubic-bezier(.2,.8,.2,1);}
+  .who{margin-top:14px;font-size:12.5px;opacity:.9;position:relative;} .who button{background:none;border:none;color:#fff;text-decoration:underline;font-weight:600;padding:0;font-size:12.5px;}
+  .done-banner{margin-top:18px;padding:16px 18px;border-radius:16px;background:var(--success-soft);color:var(--success);font-weight:600;display:flex;gap:12px;align-items:center;}
+  .done-banner span{font-size:26px;}
+  .layout{display:grid;grid-template-columns:1fr 250px;gap:18px;margin-top:20px;align-items:start;}
+  @media (max-width:820px){ .layout{grid-template-columns:1fr;} }
+  .steps{display:flex;flex-direction:column;gap:10px;}
+  .step{overflow:hidden;}
+  .step-head{display:flex;align-items:center;gap:14px;width:100%;border:none;background:none;padding:16px 18px;text-align:left;color:var(--ink);}
+  .num{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;background:var(--panel-alt);border:1.5px solid var(--border);color:var(--slate);}
+  .step.done .num{background:var(--success);border-color:var(--success);color:#fff;}
+  .step-title{flex:1;min-width:0;} .step-title b{display:block;font-size:15.5px;} .step-title small{display:block;font-size:12.5px;color:var(--slate);margin-top:2px;}
+  .tag{font-size:11.5px;font-weight:700;color:var(--slate);background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:999px;padding:3px 9px;white-space:nowrap;}
+  .step.done .tag{color:var(--success);background:var(--success-soft);border-color:transparent;}
+  .chev{color:var(--slate-light);transition:transform .2s;font-size:13px;} .step.open .chev{transform:rotate(180deg);}
+  .step-body{padding:0 18px 18px 66px;display:none;} .step.open .step-body{display:block;}
+  @media (max-width:560px){ .step-body{padding:0 16px 16px;} }
+  .desc{margin:0 0 14px;font-size:14px;line-height:1.6;color:#334253;white-space:pre-wrap;}
+  .video{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#0B0F19;margin-bottom:14px;}
+  .video iframe,.video video{position:absolute;inset:0;width:100%;height:100%;border:0;}
+  .files{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .file{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--border-soft);border-radius:12px;background:var(--panel-alt);text-decoration:none;color:var(--ink);}
+  .file:hover{border-color:#C3D2E4;}
+  .file .fi{width:36px;height:36px;border-radius:10px;background:#E8EEFB;color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-transform:uppercase;}
+  .file b{display:block;font-size:13.5px;} .file small{font-size:12px;color:var(--slate);} .file .dl{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--teal);}
+  .drop{border:2px dashed var(--border);border-radius:14px;padding:22px;text-align:center;color:var(--slate);font-size:13.5px;margin-bottom:12px;transition:border-color .15s,background .15s;}
+  .drop.over{border-color:var(--teal);background:#F2F1FF;}
+  .drop b{color:var(--ink);} .drop label{color:var(--teal);font-weight:700;cursor:pointer;text-decoration:underline;}
+  .q{margin-bottom:12px;} .q label{display:block;font-size:13.5px;font-weight:600;margin-bottom:6px;}
+  textarea.field{min-height:90px;resize:vertical;line-height:1.5;}
+  .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .by{font-size:12.5px;color:var(--success);font-weight:600;}
+  .side{padding:16px 18px;position:sticky;top:20px;}
+  .side h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-light);}
+  .act{font-size:13px;line-height:1.45;padding:7px 0;border-top:1px solid var(--border-soft);} .act:first-of-type{border-top:none;}
+  .act b{font-weight:600;} .act small{display:block;color:var(--slate-light);font-size:11.5px;}
+  .foot{text-align:center;margin-top:28px;font-size:12px;color:var(--slate-light);}
+  .foot b{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#16202C;color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;transition:all .25s;pointer-events:none;z-index:50;max-width:calc(100vw - 32px);}
+  .toast.show{opacity:1;transform:translate(-50%,0);} .toast.bad{background:var(--fail);}
+  .modal{position:fixed;inset:0;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:40;}
+  .modal .card{max-width:400px;width:100%;padding:26px;} .modal h2{font:700 19px Sora,sans-serif;margin:0 0 6px;} .modal p{margin:0 0 14px;color:var(--slate);font-size:14px;line-height:1.5;}
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important;} }
+</style>
+</head>
+<body>
+<div id="loading" class="center"><div class="spinner"></div></div>
+
+<div id="notice" class="center hidden"><div class="card msg"><div class="ic" id="noticeIc">🔗</div><h1 id="noticeTitle"></h1><p id="noticeText"></p></div></div>
+
+<div id="pinView" class="center hidden"><div class="card msg">
+  <div class="ic">🔒</div><h1>Enter your PIN</h1><p>This onboarding is protected. Enter the PIN you received.</p>
+  <form id="pinForm" class="pin-row"><input id="pinInput" class="field" inputmode="numeric" autocomplete="one-time-code" maxlength="10" aria-label="PIN"><button class="btn primary" type="submit">Open</button></form>
+  <div class="err" id="pinErr" role="alert"></div>
+</div></div>
+
+<div id="page" class="hidden">
+  <div class="wrap">
+    <header class="top">
+      <span class="from"><i id="fromIc">P</i><span id="fromName"></span></span>
+      <h1 id="title"></h1>
+      <div class="for" id="forLine"></div>
+      <div class="welcome" id="welcome"></div>
+      <div class="prog"><div class="prog-line"><span id="progText"></span><span id="progPct"></span></div><div class="bar"><i id="progBar" style="width:0"></i></div></div>
+      <div class="who" id="whoLine"></div>
+    </header>
+    <div id="doneBanner" class="done-banner hidden"><span>🎉</span><div>All done! Thank you, everything has been received. We’ll take it from here.</div></div>
+    <div class="layout">
+      <div class="steps" id="steps"></div>
+      <aside class="card side"><h3>Recent activity</h3><div id="activity"></div></aside>
+    </div>
+    <div class="foot">Onboarding powered by <b>PalaTrack</b></div>
+  </div>
+</div>
+
+<div id="nameModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="nameTitle"><div class="card">
+  <h2 id="nameTitle">Who’s working on this?</h2>
+  <p>Your name is shown next to the steps you complete, so everyone with this link can see who did what.</p>
+  <form id="nameForm"><input id="nameInput" class="field" placeholder="Your name" autocomplete="name" maxlength="80"><div style="height:12px"></div>
+  <button class="btn primary" type="submit" style="width:100%">Continue</button></form>
+</div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
+<script>
+(function(){
+  firebase.initializeApp({apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM", authDomain: "lead-tracker-c5c3a.firebaseapp.com", projectId: "lead-tracker-c5c3a",
+    storageBucket: "lead-tracker-c5c3a.firebasestorage.app", messagingSenderId: "720572896285", appId: "1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"});
+  const fns = firebase.functions();
+  const getFn = fns.httpsCallable('getClientProcess'), stepFn = fns.httpsCallable('updateClientProcessStep'), uploadFn = fns.httpsCallable('uploadClientProcessFile', {timeout: 120000});
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  const token = new URLSearchParams(location.search).get('t') || '';
+  const PIN_KEY = 'ptCpPin:' + token, NAME_KEY = 'ptCpName:' + token;
+  let pin = ''; try { pin = sessionStorage.getItem(PIN_KEY) || ''; } catch (e) { /* ignore */ }
+  let name = ''; try { name = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* ignore */ }
+  let proc = null, open = new Set(), busy = {}, wasDone = null, pendingAction = null;
+
+  const ICON = {video: '🎬', download: '📄', upload: '📤', questions: '✍️', task: '✅', call: '📅'};
+  const TAG = {video: 'Video', download: 'Download', upload: 'Upload', questions: 'Questions', task: 'Task', call: 'Call'};
+  const show = (id) => ['loading', 'notice', 'pinView', 'page'].forEach((x) => $(x).classList.toggle('hidden', x !== id));
+  function notice(icon, title, text) { $('noticeIc').textContent = icon; $('noticeTitle').textContent = title; $('noticeText').textContent = text; show('notice'); }
+  function toast(msg, bad) { const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (bad ? ' bad' : ''); clearTimeout(toast.h); toast.h = setTimeout(() => { t.className = 'toast'; }, 3200); }
+  const when = (iso) => { if (!iso) return ''; const d = new Date(iso), m = Math.round((Date.now() - d) / 60000); if (m < 1) return 'just now'; if (m < 60) return m + ' min ago'; if (m < 1440) return Math.round(m / 60) + ' h ago'; return d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'}); };
+  const size = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
+  const ext = (n) => (String(n).split('.').pop() || 'file').slice(0, 4);
+  const msgOf = (e) => (e && e.message) || 'Something went wrong. Please try again.';
+
+  // ---------- Loading and checking the link ----------
+  async function load(first) {
+    if (!token) { notice('🔗', 'This link isn\u2019t complete', 'Check that you copied the whole link, or ask for it again.'); return; }
+    try {
+      const r = (await getFn({token, pin})).data;
+      if (r.needsPin) {
+        try { sessionStorage.removeItem(PIN_KEY); } catch (e) { /* ignore */ }
+        show('pinView');
+        $('pinErr').textContent = r.wrongPin ? 'That PIN isn\u2019t right. Try again.' : '';
+        setTimeout(() => $('pinInput').focus(), 30);
+        return;
+      }
+      if (r.paused) { notice('⏸️', 'This onboarding is paused', `${r.workspaceName || 'The sender'} will open it again soon. You don\u2019t need to do anything for now.`); return; }
+      proc = r.process;
+      if (first) { const firstOpen = proc.steps.find((s) => !s.state.done); if (firstOpen) open.add(firstOpen.id); }
+      render();
+      show('page');
+    } catch (e) {
+      if (first || !proc) notice('🔗', 'Can\u2019t open this onboarding', msgOf(e));
+    }
+  }
+  $('pinForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    pin = $('pinInput').value.trim();
+    if (!pin) return;
+    try { sessionStorage.setItem(PIN_KEY, pin); } catch (err) { /* ignore */ }
+    show('loading'); load(true);
+  });
+
+  // ---------- Who's working on this ----------
+  function needName(then) {
+    if (name) { then(); return; }
+    pendingAction = then;
+    $('nameModal').classList.remove('hidden');
+    setTimeout(() => $('nameInput').focus(), 30);
+  }
+  $('nameForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = $('nameInput').value.trim(); if (!v) return;
+    name = v; try { localStorage.setItem(NAME_KEY, v); } catch (err) { /* ignore */ }
+    $('nameModal').classList.add('hidden');
+    renderWho();
+    const a = pendingAction; pendingAction = null; if (a) a();
+  });
+
+  // ---------- Rendering ----------
+  function renderWho() {
+    $('whoLine').innerHTML = name ? `Working as <b>${esc(name)}</b> · <button type="button" id="changeName">Not you?</button>` : '';
+    const b = $('changeName'); if (b) b.onclick = () => { name = ''; try { localStorage.removeItem(NAME_KEY); } catch (e) { /* ignore */ } needName(() => {}); };
+  }
+  function stepBody(s, i) {
+    let h = s.description ? `<p class="desc">${esc(s.description)}</p>` : '';
+    if (s.type === 'video' && s.video) {
+      h += s.video.kind === 'file'
+        ? `<div class="video"><video controls preload="metadata" playsinline src="${esc(s.video.url)}"></video></div>`
+        : s.video.embedUrl ? `<div class="video"><iframe src="${esc(s.video.embedUrl)}" title="${esc(s.title)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`
+        : `<p class="desc"><a href="${esc(s.video.url)}" target="_blank" rel="noopener">Open the video ↗</a></p>`;
+    }
+    if (s.files && s.files.length) h += `<div class="files">${s.files.map((f) => `<a class="file" href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}"><span class="fi">${esc(ext(f.name))}</span><span><b>${esc(f.name)}</b><small>${f.size ? size(f.size) : ''}</small></span><span class="dl">Download ↓</span></a>`).join('')}</div>`;
+    if (s.type === 'upload') {
+      h += `<div class="drop" data-drop="${i}"><b>Drop your file here</b> or <label for="up${i}">choose a file</label><input type="file" id="up${i}" data-upload="${i}" class="hidden"><br><small>PDF, Word, Excel, PowerPoint, images, text or ZIP · up to 8 MB</small></div>`;
+      if (s.state.uploads.length) h += `<div class="files">${s.state.uploads.map((u) => `<div class="file"><span class="fi">${esc(ext(u.name))}</span><span><b>${esc(u.name)}</b><small>${size(u.size)} · sent by ${esc(u.by)} ${when(u.at)}</small></span><span class="dl" style="color:var(--success)">✓ Received</span></div>`).join('')}</div>`;
+    }
+    if (s.type === 'questions') {
+      h += s.questions.map((q) => `<div class="q"><label for="q${i}_${esc(q.id)}">${esc(q.label)}</label>${q.type === 'longtext'
+        ? `<textarea class="field" id="q${i}_${esc(q.id)}" data-q="${esc(q.id)}">${esc(s.state.answers[q.id] || '')}</textarea>`
+        : `<input class="field" id="q${i}_${esc(q.id)}" data-q="${esc(q.id)}" value="${esc(s.state.answers[q.id] || '')}">`}</div>`).join('');
+    }
+    if (s.type === 'call' && s.link) h += `<p class="desc"><a class="btn" href="${esc(s.link)}" target="_blank" rel="noopener">📅 Book a time ↗</a></p>`;
+    // the step's button
+    const b = busy[s.id];
+    let act = '';
+    if (s.type === 'questions') act = `<button type="button" class="btn primary" data-answers="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spinner sm"></span>Saving…' : s.state.done ? 'Save changes' : 'Save answers'}</button>`;
+    else if (s.type !== 'upload') act = s.state.done
+      ? `<button type="button" class="btn done" data-undo="${i}" ${b ? 'disabled' : ''}>✓ Done</button>`
+      : `<button type="button" class="btn primary" data-done="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spinner sm"></span>Saving…' : s.type === 'video' ? 'I\u2019ve watched it' : s.type === 'download' ? 'I\u2019ve downloaded it' : s.type === 'call' ? 'I\u2019ve booked it' : 'Mark as done'}</button>`;
+    if (b && s.type === 'upload') act = '<span class="by"><span class="spinner sm" style="border-color:rgba(31,111,92,.3);border-top-color:var(--success)"></span>Uploading…</span>';
+    h += `<div class="actions">${act}${s.state.done && s.state.doneBy ? `<span class="by">Done by ${esc(s.state.doneBy)} · ${when(s.state.doneAt)}</span>` : ''}</div>`;
+    return h;
+  }
+  function render() {
+    document.title = proc.title + ' · Onboarding';
+    $('fromIc').textContent = (proc.workspaceName || 'P').trim()[0].toUpperCase();
+    $('fromName').textContent = proc.senderName ? `${proc.senderName} · ${proc.workspaceName}` : (proc.workspaceName || 'Your onboarding');
+    $('title').textContent = proc.title;
+    $('forLine').textContent = proc.clientName ? 'For ' + proc.clientName : '';
+    $('welcome').textContent = proc.welcome || '';
+    const total = proc.steps.length, done = proc.steps.filter((s) => s.state.done).length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+    $('progText').textContent = `${done} of ${total} step${total === 1 ? '' : 's'} done`;
+    $('progPct').textContent = pct + '%';
+    requestAnimationFrame(() => { $('progBar').style.width = pct + '%'; });
+    renderWho();
+    const allDone = proc.status === 'completed';
+    $('doneBanner').classList.toggle('hidden', !allDone);
+    if (wasDone === false && allDone) celebrate();
+    wasDone = allDone;
+    $('steps').innerHTML = proc.steps.map((s, i) => `<section class="card step${s.state.done ? ' done' : ''}${open.has(s.id) ? ' open' : ''}" data-step="${esc(s.id)}">
+        <button type="button" class="step-head" data-toggle="${i}" aria-expanded="${open.has(s.id)}">
+          <span class="num">${s.state.done ? '✓' : i + 1}</span>
+          <span class="step-title"><b>${esc(s.title)}</b><small>${ICON[s.type] || ''} ${TAG[s.type] || ''}${s.required ? '' : ' · optional'}</small></span>
+          <span class="tag">${s.state.done ? 'Done' : 'To do'}</span><span class="chev">▾</span></button>
+        <div class="step-body">${stepBody(s, i)}</div></section>`).join('');
+    $('activity').innerHTML = proc.activity.length ? proc.activity.map((a) => `<div class="act"><b>${esc(a.by)}</b> ${esc(a.text)}<small>${when(a.at)}</small></div>`).join('') : '<div class="act" style="color:var(--slate)">Nothing yet. Start with step 1.</div>';
+  }
+
+  // ---------- Actions ----------
+  async function act(i, fn) {
+    const s = proc.steps[i];
+    busy[s.id] = true; render();
+    try { const r = (await fn()).data; if (r.process) proc = r.process; else if (r.needsPin) { load(true); return; } }
+    catch (e) { toast(msgOf(e), true); }
+    finally { busy[s.id] = false; render(); }
+  }
+  function next(i) {   // after finishing a step, open the next one that's still to do
+    const s = proc.steps[i]; open.delete(s.id);
+    const n = proc.steps.find((x, j) => j > i && !x.state.done); if (n) open.add(n.id);
+    render();
+    if (n) setTimeout(() => { const el = document.querySelector(`[data-step="${CSS.escape(n.id)}"]`); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 80);
+  }
+  $('steps').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-toggle]');
+    if (t) { const s = proc.steps[Number(t.dataset.toggle)]; if (open.has(s.id)) open.delete(s.id); else open.add(s.id); render(); return; }
+    const d = e.target.closest('[data-done]');
+    if (d) { const i = Number(d.dataset.done); needName(() => act(i, () => stepFn({token, pin, stepId: proc.steps[i].id, action: 'complete', by: {name}})).then(() => { if (proc.steps[i].state.done) next(i); })); return; }
+    const u = e.target.closest('[data-undo]');
+    if (u) { const i = Number(u.dataset.undo); needName(() => act(i, () => stepFn({token, pin, stepId: proc.steps[i].id, action: 'uncomplete', by: {name}}))); return; }
+    const a = e.target.closest('[data-answers]');
+    if (a) {
+      const i = Number(a.dataset.answers), answers = {};
+      document.querySelectorAll(`[data-step="${CSS.escape(proc.steps[i].id)}"] [data-q]`).forEach((el) => { answers[el.dataset.q] = el.value; });
+      needName(() => act(i, () => stepFn({token, pin, stepId: proc.steps[i].id, action: 'answers', answers, by: {name}})).then(() => { toast('Answers saved.'); if (proc.steps[i].state.done) next(i); }));
+    }
+  });
+  function readFile(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(new Error('Couldn\u2019t read the file.')); r.readAsDataURL(f); }); }
+  async function upload(i, f) {
+    if (!f) return;
+    if (f.size > 8 * 1024 * 1024) { toast('This file is larger than 8 MB.', true); return; }
+    needName(async () => {
+      let data; try { data = await readFile(f); } catch (e) { toast(msgOf(e), true); return; }
+      await act(i, () => uploadFn({token, pin, stepId: proc.steps[i].id, name: f.name, contentType: f.type || 'application/octet-stream', data, by: {name}}));
+      if (proc.steps[i].state.uploads.some((x) => x.name === f.name)) toast(`${f.name} received. Thank you!`);
+    });
+  }
+  $('steps').addEventListener('change', (e) => { const inp = e.target.closest('[data-upload]'); if (inp) upload(Number(inp.dataset.upload), inp.files[0]); });
+  ['dragover', 'dragenter'].forEach((ev) => $('steps').addEventListener(ev, (e) => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.add('over'); } }));
+  ['dragleave', 'drop'].forEach((ev) => $('steps').addEventListener(ev, (e) => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.remove('over'); if (ev === 'drop' && e.dataTransfer.files[0]) upload(Number(d.dataset.drop), e.dataTransfer.files[0]); } }));
+
+  // ---------- Everyone on the link sees the same progress ----------
+  setInterval(() => { if (proc && !document.hidden && !Object.values(busy).some(Boolean) && !document.activeElement.matches('input,textarea')) load(false); }, 20000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && proc) load(false); });
+
+  function celebrate() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('canvas'); c.className = 'confetti'; document.body.appendChild(c);
+    const x = c.getContext('2d'), W = c.width = innerWidth, H = c.height = innerHeight, cols = ['#1B59A5', '#3730B3', '#7B3FE4', '#5FD3A8', '#FFB547', '#FF7EB6'];
+    const ps = Array.from({length: 160}, (_, i) => ({x: Math.random() * W, y: -20 - Math.random() * H * 0.4, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, c: cols[i % cols.length], w: 6 + Math.random() * 6, h: 9 + Math.random() * 8}));
+    const t0 = performance.now();
+    (function f(t) { x.clearRect(0, 0, W, H); ps.forEach((p) => { p.vy = Math.min(p.vy + .06, 5); p.x += p.vx + Math.sin((t + p.r * 400) / 300); p.y += p.vy; p.r += p.vr; x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); x.restore(); });
+      if (t - t0 < 4200) requestAnimationFrame(f); else c.remove(); })(t0);
+  }
+  load(true);
+})();
+</script>
+</body>
+</html>
