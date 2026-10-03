@@ -197,6 +197,9 @@
   .fmt-bar.open{display:flex;} .fmt-bar button{width:32px;height:30px;border:none;background:none;color:#fff;border-radius:7px;font-size:14px;} .fmt-bar button:hover{background:rgba(255,255,255,.14);}
   html[data-theme="dark"] .be-client{background:rgba(122,115,255,.08);border-color:rgba(122,115,255,.3);}
   html[data-theme="dark"] .be-ext{background:rgba(122,115,255,.18);}
+  .blk.in-task{box-shadow:inset 3px 0 0 #D6D2FA;} .blk.in-task:hover{box-shadow:inset 3px 0 0 var(--teal);}
+  .blk.is-task + .blk.in-task{margin-top:4px;}
+  html[data-theme="dark"] .blk.in-task{box-shadow:inset 3px 0 0 rgba(122,115,255,.35);}
   /* detail */
   .share{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .share .in{flex:1;min-width:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
@@ -921,7 +924,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     editing.data.blocks = blocksOf(editing.data).map((b) => ({...b}));
     if (!editing.data.blocks.length) editing.data.blocks = [{id: uidGen(), type: 'h1', html: 'Welcome!'}, {id: uidGen(), type: 'text', html: ''}];
     $('edTitle').textContent = kind === 'template' ? (isNew ? 'New template' : 'Edit template') : 'Page for ' + (data.clientName || 'this client');
-    $('edSub').textContent = kind === 'template' ? 'Build the page your clients see. Type “/” for videos, documents, to-dos, questions and more.' : 'Changes show on your client’s page straight away. What they already did stays.';
+    $('edSub').textContent = (kind === 'template' ? 'Your client sees a list of tasks (to-dos, uploads and questions). ' : 'Changes show on your client’s page straight away. ') + 'Put videos, documents and text right under a task: they open when your client clicks that task (shown with a violet line). Type “/” to add.';
     $('edName').value = kind === 'template' ? (editing.data.name || '') : (editing.data.title || '');
     $('edName').placeholder = kind === 'template' ? 'Name of this template, e.g. New client onboarding' : 'Title shown to the client';
     $('edSender').value = editing.data.senderName || (isNew ? myName + (ws.name ? ' from ' + ws.name : '') : '');
@@ -970,6 +973,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const findB = (id) => editing.data.blocks.findIndex((b) => b.id === id);
   function renderPage(focusId, atEnd) {
     $('pgBlocks').innerHTML = editing.data.blocks.map(blockHTML).join('');
+    // what sits under a to-do / upload / question opens inside that task on the client's page: show it with a line
+    let inTask = false;
+    editing.data.blocks.forEach((b, i) => {
+      const el = $('pgBlocks').children[i]; if (!el) return;
+      if (INTERACTIVE.includes(b.type)) { inTask = true; el.classList.add('is-task'); return; }
+      const next = editing.data.blocks.slice(i).find((x) => !['h1', 'h2', 'h3'].includes(x.type));
+      const headingBeforeTask = ['h1', 'h2', 'h3'].includes(b.type) && next && INTERACTIVE.includes(next.type);
+      if (inTask && !headingBeforeTask) el.classList.add('in-task');
+    });
     const n = editing.data.blocks.filter((b) => INTERACTIVE.includes(b.type)).length;
     $('edCount').textContent = n ? `${n} thing${n === 1 ? '' : 's'} for your client to do` : 'Nothing for your client to do yet: add a to-do, upload request or question';
     if (focusId) focusBlock(focusId, atEnd);
