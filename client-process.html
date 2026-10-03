@@ -76,7 +76,7 @@
   .sticky{position:fixed;top:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);
     border-bottom:1px solid var(--border-soft);transform:translateY(-105%);transition:transform .3s var(--ease);}
   .sticky.on{transform:none;}
-  .sticky-in{max-width:1160px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px;}
+  .sticky-in{max-width:860px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px;}
   .sticky b.t{font:700 14.5px Sora,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;}
   .sticky .track{flex:1;height:8px;border-radius:8px;background:var(--border-soft);overflow:hidden;min-width:80px;}
   .sticky .track i{display:block;height:100%;background:var(--brand);border-radius:8px;transition:width .8s var(--ease);}
@@ -84,7 +84,7 @@
   @media (max-width:640px){ .sticky b.t{display:none;} }
 
   /* page */
-  .wrap{max-width:1160px;margin:0 auto;padding:28px 20px 90px;}
+  .wrap{max-width:860px;margin:0 auto;padding:28px 20px 90px;}
   .hero{position:relative;overflow:hidden;color:#fff;border-radius:28px;padding:30px 32px;background:var(--brand);box-shadow:0 30px 60px -28px rgba(55,48,179,.75);animation:rise .5s var(--ease) both;
     display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center;}
   .hero::before{content:"";position:absolute;right:-100px;top:-120px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%);}
@@ -113,8 +113,7 @@
   .act-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink-2);transition:all .15s;}
   .act-btn:hover{border-color:#C9D3E3;color:var(--ink);} .act-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--success-mid);box-shadow:0 0 0 3px var(--success-soft);}
 
-  .layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;margin-top:18px;align-items:start;}
-  @media (max-width:980px){ .layout{grid-template-columns:minmax(0,1fr);} .journey{display:none;} }
+  .layout{margin-top:18px;}
   /* journey overview */
   .journey{position:sticky;top:76px;padding:16px;animation:rise .5s var(--ease) .05s both;}
   .journey h3{margin:2px 4px 12px;font:700 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);}
@@ -137,41 +136,79 @@
   .section{font:700 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:26px 6px 10px;}
   .section:first-child{margin-top:4px;}
 
-  /* task cards */
-  .tasks{display:flex;flex-direction:column;gap:12px;}
-  .task{position:relative;background:var(--panel);border:1px solid var(--border-soft);border-radius:20px;box-shadow:var(--shadow);transition:box-shadow .25s,transform .25s var(--ease),border-color .25s;animation:rise .45s var(--ease) both;}
-  .task::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:4px;border-radius:0 4px 4px 0;background:var(--border);transition:background .3s;}
-  .task.is-next::before{background:var(--brand);}
-  .task.done::before{background:var(--success-mid);}
-  .task:hover{box-shadow:var(--shadow-lg);}
-  .task.is-next{border-color:var(--violet-line);}
-  .task.flash{animation:flash 1.2s ease;}
-  @keyframes flash{0%,100%{box-shadow:var(--shadow);}30%{box-shadow:0 0 0 4px rgba(55,48,179,.18),var(--shadow-lg);}}
-  .t-head{display:flex;align-items:flex-start;gap:14px;padding:20px 22px 0;}
-  .t-num{width:40px;height:40px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 15px Sora,sans-serif;
-    background:var(--violet-wash);color:var(--teal);border:1px solid var(--violet-line);transition:all .35s var(--ease);}
-  .task.done .t-num{background:var(--success-mid);border-color:var(--success-mid);color:#fff;}
-  .task.is-next .t-num{background:var(--brand);border-color:transparent;color:#fff;box-shadow:0 8px 18px -8px rgba(55,48,179,.7);}
-  .t-main{flex:1;min-width:0;padding-top:1px;}
-  .t-main b{display:block;font:700 17px/1.35 Sora,sans-serif;letter-spacing:-.01em;}
-  .task.done .t-main b{color:var(--ink-2);}
-  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
-  .pills:empty{display:none;}
+  /* task cards on a timeline */
+  .tasks{position:relative;display:flex;flex-direction:column;gap:14px;}
+  .task{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);gap:16px;animation:rise .45s var(--ease) both;}
+  /* the line between the checks: grey, green where it's done */
+  .task::before{content:"";position:absolute;left:21px;top:46px;bottom:-16px;width:2px;border-radius:2px;background:var(--border);}
+  .task.done::before{background:linear-gradient(var(--success-mid),#8FD8BC);}
+  .task:last-child::before{display:none;}
+  .rail{padding-top:18px;display:flex;justify-content:center;}
+  .disc{position:relative;width:44px;height:44px;border-radius:50%;border:2px solid var(--border);background:var(--panel);color:var(--ink-3);
+    display:flex;align-items:center;justify-content:center;font:700 15px Sora,sans-serif;transition:border-color .2s,background .3s var(--ease),color .2s,transform .2s var(--ease),box-shadow .2s;padding:0;z-index:1;}
+  .disc[data-tick]{cursor:pointer;}
+  .disc[data-tick]:hover{border-color:var(--success-mid);color:var(--success-mid);transform:scale(1.06);box-shadow:0 0 0 6px rgba(30,158,116,.10);}
+  .disc .n{transition:opacity .15s;} .disc .ck{position:absolute;opacity:0;transition:opacity .15s;}
+  .disc[data-tick]:hover .n{opacity:0;} .disc[data-tick]:hover .ck{opacity:1;}
+  .task.is-next .disc{border-color:transparent;background:var(--brand);color:#fff;box-shadow:0 10px 22px -10px rgba(55,48,179,.75);}
+  .task.is-next .disc[data-tick]:hover{background:var(--success-mid);box-shadow:0 0 0 6px rgba(30,158,116,.14);color:#fff;}
+  .task.done .disc{border-color:var(--success-mid);background:var(--success-mid);color:#fff;box-shadow:none;}
+  .task.done .disc .n{opacity:0;} .task.done .disc .ck{opacity:1;}
+  .task.done .disc[data-tick]:hover{transform:none;box-shadow:0 0 0 6px rgba(30,158,116,.12);}
+  .disc .ck path{stroke-dasharray:24;stroke-dashoffset:0;}
+  .disc.draw .ck path{animation:draw .45s var(--ease) both;}
+  @keyframes draw{from{stroke-dashoffset:24;}to{stroke-dashoffset:0;}}
+  .disc:focus-visible{outline:2px solid var(--teal);outline-offset:3px;}
+  .tcard{min-width:0;background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px -12px rgba(16,24,40,.18);
+    transition:box-shadow .25s,border-color .25s,transform .25s var(--ease);}
+  .task:hover .tcard{box-shadow:0 1px 2px rgba(16,24,40,.04),0 18px 36px -18px rgba(30,30,90,.28);border-color:var(--border);}
+  .task.is-next .tcard{border-color:var(--violet-line);box-shadow:0 0 0 4px rgba(55,48,179,.06),0 18px 36px -18px rgba(30,30,90,.28);}
+  .task.flash .tcard{animation:flash 1.2s ease;}
+  @keyframes flash{30%{box-shadow:0 0 0 5px rgba(55,48,179,.2),0 18px 36px -18px rgba(30,30,90,.28);}}
+  .t-head{display:flex;align-items:flex-start;gap:14px;padding:18px 20px 0;}
+  .t-main{flex:1;min-width:0;}
+  .t-main b{display:block;font:700 17px/1.4 Sora,sans-serif;letter-spacing:-.01em;}
+  .meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:7px;}
+  .meta:empty{display:none;}
+  .pills{display:contents;}
   .pills span{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:999px;padding:3px 9px;}
-  .chip{font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel-alt);color:var(--ink-2);border:1px solid var(--border-soft);margin-top:6px;}
-  .task.is-next .chip{background:var(--violet-wash);color:var(--teal);border-color:var(--violet-line);}
-  .task.done .chip{background:var(--success-soft);color:var(--success);border-color:transparent;}
-  @media (max-width:560px){ .chip{display:none;} }
-  .t-inner{padding:12px 22px 22px 76px;}
-  @media (max-width:640px){ .t-inner{padding:12px 18px 18px;} .t-head{padding:18px 18px 0;} }
-  .t-note{margin:0 0 12px;font-size:14.5px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;}
-  .see-more{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--violet-line);background:var(--violet-wash);color:var(--teal);border-radius:999px;padding:7px 14px;font-size:13.5px;font-weight:700;transition:background .15s,transform .15s;}
-  .see-more:hover{background:#ECE8FF;transform:translateY(-1px);}
+  .see-more{display:inline-flex;align-items:center;gap:5px;border:none;background:none;color:var(--teal);border-radius:999px;padding:3px 8px;font-size:12.5px;font-weight:700;transition:background .15s;}
+  .see-more:hover{background:var(--violet-wash);}
   .see-more svg{transition:transform .3s var(--ease);} .task.more .see-more svg{transform:rotate(180deg);}
+  /* the action next to the title */
+  .act-pill{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 15px 0 11px;border-radius:999px;border:1.5px solid var(--border);background:var(--panel);
+    color:var(--ink);font-size:13.5px;font-weight:700;white-space:nowrap;transition:all .2s var(--ease);flex-shrink:0;}
+  .act-pill .c{width:18px;height:18px;border-radius:50%;border:2px solid #B4BDCC;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+  .act-pill .c svg{opacity:0;transition:opacity .15s;}
+  .act-pill:hover{border-color:var(--success-mid);color:var(--success);background:#F2FBF7;transform:translateY(-1px);box-shadow:0 8px 18px -12px rgba(19,121,91,.6);}
+  .act-pill:hover .c{border-color:var(--success-mid);background:var(--success-mid);} .act-pill:hover .c svg{opacity:1;}
+  .act-pill:active{transform:scale(.97);}
+  .act-pill.go{border-color:transparent;background:var(--brand);color:#fff;padding:0 16px;box-shadow:0 10px 22px -12px rgba(55,48,179,.8);}
+  .act-pill.go:hover{filter:brightness(1.07);color:#fff;background:var(--brand);box-shadow:0 12px 24px -12px rgba(55,48,179,.85);}
+  .act-pill.isdone{border-color:#BFE6D3;background:var(--success-soft);color:var(--success);}
+  .act-pill.isdone .c{border-color:var(--success-mid);background:var(--success-mid);} .act-pill.isdone .c svg{opacity:1;}
+  .act-pill.isdone[data-tick]:hover{border-color:#F1C4BF;background:#FFF6F5;color:var(--fail);box-shadow:none;}
+  .act-pill.isdone[data-tick]:hover .c{border-color:var(--fail);background:var(--fail);}
+  .act-pill .undo-t{display:none;} .act-pill.isdone[data-tick]:hover .done-t{display:none;} .act-pill.isdone[data-tick]:hover .undo-t{display:inline;}
+  .act-pill.static{cursor:default;} .act-pill.static:hover{transform:none;box-shadow:none;border-color:var(--border);background:var(--panel);color:var(--ink-2);}
+  .act-pill.static.isdone:hover{border-color:#BFE6D3;background:var(--success-soft);color:var(--success);}
+  .act-pill:disabled{opacity:.7;cursor:default;transform:none;}
+  @media (max-width:560px){ .act-pill{height:34px;padding:0 12px 0 9px;font-size:12.5px;gap:6px;} .act-pill .c{width:16px;height:16px;} .t-head{flex-wrap:wrap;} .act-slot{order:3;flex-basis:100%;} }
+  .t-inner{padding:12px 20px 18px;}
+  .t-inner:empty{display:none;}
+  .t-note{margin:0;font-size:14.5px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;}
+  .t-note + *{margin-top:12px;}
+  .who-done{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;color:var(--success);font-weight:600;}
   .t-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease);}
   .task.more .t-body{grid-template-rows:1fr;}
   .t-body > div{overflow:hidden;min-height:0;}
-  .task.more .t-body .content{padding-top:16px;}
+  .task.more .t-body .content{padding-top:4px;padding-bottom:4px;}
+  /* finished tasks fold into a compact row */
+  .task.done .t-main b{color:var(--ink-3);}
+  .task.done .t-head{padding-bottom:16px;}
+  .task.done:not(.more):not(.keep) .t-inner{display:none;}
+  .task.done .tcard{background:#FCFDFC;}
+  @media (max-width:560px){ .task{grid-template-columns:36px minmax(0,1fr);gap:10px;} .disc{width:36px;height:36px;font-size:13px;} .task::before{left:17px;top:40px;} .rail{padding-top:16px;} .t-head{padding:16px 16px 0;} .t-inner{padding:10px 16px 16px;} }
   /* what's attached */
   .content > * + *{margin-top:14px;}
   .content h1,.content h2,.content h3{font-family:Sora,sans-serif;letter-spacing:-.01em;margin:18px 0 4px;} .content > :first-child{margin-top:0;}
@@ -199,7 +236,8 @@
   .file .dl{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--teal);background:var(--violet-wash);border:1px solid var(--violet-line);border-radius:10px;padding:8px 12px;white-space:nowrap;}
   .file.received .dl{background:var(--success-soft);color:var(--success);border-color:transparent;}
   /* doing the task */
-  .do{margin-top:16px;}
+  .do{margin-top:4px;}
+  .do:first-child{margin-top:0;}
   .do label.lbl{display:block;font-size:14px;font-weight:600;margin-bottom:8px;}
   .do .help{font-size:13.5px;color:var(--ink-2);margin:-2px 0 10px;line-height:1.5;}
   .do-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;}
@@ -300,7 +338,6 @@
     </header>
     <div class="toolbar"><span class="who" id="whoLine"></span><span class="spacer"></span><button type="button" class="act-btn" id="actBtn"><span class="dot"></span>Activity</button></div>
     <div class="layout">
-      <nav class="card journey" id="journey" aria-label="Your steps"><h3>Your journey</h3><div id="jList"></div><div class="j-foot" id="jFoot"></div></nav>
       <main>
         <div id="doneBanner" class="done-banner hidden"><span class="big">✓</span><div><b>All done, thank you!</b>Everything has been received. We’ll take it from here.</div></div>
         <div id="intro" class="card intro content hidden"></div>
@@ -518,20 +555,15 @@
   // ---------- The action at the bottom of a task ----------
   function doHTML(g, i) {
     const t = g.task, st = t.state || {}, b = busy[t.id];
-    const completed = (label) => `<div class="completed"><span class="ok">${I.check}</span><span><b>${label}</b><small>by ${esc(st.doneBy || 'someone')} · ${when(st.doneAt)}</small></span>${t.type === 'todo' && !g.forms.length ? `<button type="button" class="undo" data-tick="${i}">Undo</button>` : ''}</div>`;
-    if (t.type === 'todo') {
-      if (st.done) return `<div class="do">${completed('Completed')}</div>`;
-      if (g.forms.length) return `<div class="do"><div class="hint">Submit the document${g.forms.length > 1 ? 's' : ''} above to complete this step.</div></div>`;
-      return `<div class="do"><button type="button" class="btn primary done-btn" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving…' : `<span class="tick">${I.check}</span>Mark as done`}</button></div>`;
-    }
-    if (t.type === 'question') return `<div class="do"><label class="lbl" for="q${i}">${esc(t.label || 'Your answer')}</label>${t.qtype === 'longtext'
+    if (t.type === 'todo') return '';
+    if (t.type === 'question') return `<div class="do"><label class="${t.label && t.label === titleOf(t) ? 'sr' : 'lbl'}" for="q${i}">${esc(t.label || 'Your answer')}</label>${t.qtype === 'longtext'
         ? `<textarea class="field" id="q${i}" data-q="${i}" placeholder="Type your answer…">${esc(st.answer || '')}</textarea>` : `<input class="field" id="q${i}" data-q="${i}" placeholder="Type your answer…" value="${esc(st.answer || '')}">`}
-      <div class="do-row"><button type="button" class="btn primary" data-answers="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving…' : `${I.send}${st.done ? 'Save changes' : 'Save answer'}`}</button></div>${st.done ? `<div style="margin-top:12px">${completed('Answered')}</div>` : ''}</div>`;
+      <div class="do-row"><button type="button" class="btn primary" data-answers="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving…' : `${I.send}${st.done ? 'Save changes' : 'Save answer'}`}</button></div></div>`;
     if (t.type === 'upload') return `<div class="do">${t.help ? `<div class="help">${esc(t.help)}</div>` : ''}
       ${b ? '<div class="do-row"><span class="spin dark"></span><span class="hint">Uploading…</span></div>'
         : `<label class="drop" data-drop="${i}"><span class="big">📤</span><b>Drop your file here</b> or click to choose one<small>PDF, Word, Excel, PowerPoint, images, text or ZIP · up to 8 MB</small><input type="file" data-upload="${i}" class="hidden"></label>`}
       ${(st.uploads || []).length ? `<div class="files">${st.uploads.map((u) => `<div class="file received"><span class="fi">${esc(ext(u.name))}</span><span><b>${esc(u.name)}</b><small>${size(u.size)} · sent by ${esc(u.by)} ${when(u.at)}</small></span><span class="dl">${I.check}Received</span></div>`).join('')}</div>` : ''}
-      ${st.done ? `<div style="margin-top:12px">${completed('Received')}</div>` : ''}</div>`;
+</div>`;
     return '';
   }
 
@@ -568,30 +600,42 @@
     const introHTML = intro.map(contentHTML).join('');
     $('intro').classList.toggle('hidden', !introHTML.trim());
     if ($('intro').dataset.html !== introHTML) { $('intro').innerHTML = introHTML; $('intro').dataset.html = introHTML; loadMedia($('intro')); }
-    // journey
-    $('jList').innerHTML = groups.map((g, i) => `<button type="button" class="j-item${g.task.state.done ? ' done' : ''}${next && g === next ? ' next' : ''}" data-goto="${esc(g.task.id)}"><span class="jd">${g.task.state.done ? '✓' : i + 1}</span><span class="tx">${esc(titleOf(g.task))}</span></button>`).join('');
-    $('jFoot').innerHTML = total ? `<b>${done} of ${total}</b> done${next ? ` · next: ${esc(titleOf(next.task))}` : ''}` : '';
     // tasks: built once; afterwards only what changed is updated (a playing video or half-filled document stays)
     const host = $('tasks');
     const sig = groups.map((g) => [g.task.id, g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
     if (host.dataset.sig !== sig) {
       host.innerHTML = groups.map((g, i) => `${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
         <section class="task" id="task-${esc(g.task.id)}" data-id="${esc(g.task.id)}" style="animation-delay:${firstRender ? Math.min(i, 8) * 55 : 0}ms" aria-labelledby="tt-${esc(g.task.id)}">
-          <div class="t-head"><span class="t-num"></span><div class="t-main"><b id="tt-${esc(g.task.id)}">${esc(titleOf(g.task))}</b><div class="pills">${pills(g)}</div></div><span class="chip"></span></div>
-          <div class="t-inner">
-            ${g.task.note ? `<p class="t-note">${esc(g.task.note)}</p>` : ''}
-            ${g.content.length ? `<button type="button" class="see-more" data-more="${i}" aria-expanded="false"><span class="sm-t">See more</span>${I.chev}</button>
-              <div class="t-body"><div><div class="content" data-content="${i}"></div></div></div>` : ''}
-            <div data-docs="${i}"></div>
-            <div data-do="${i}"></div></div></section>`).join('');
+          <div class="rail"><span class="disc-slot"></span></div>
+          <div class="tcard">
+            <div class="t-head"><div class="t-main"><b id="tt-${esc(g.task.id)}">${esc(titleOf(g.task))}</b>
+              <div class="meta"><span class="pills">${pills(g)}</span>${g.content.length ? `<button type="button" class="see-more" data-more="${i}" aria-expanded="false"><span class="sm-t">See more</span>${I.chev}</button>` : ''}</div>
+              <div class="who-slot"></div></div>
+              <div class="act-slot"></div></div>
+            <div class="t-inner">${g.task.note ? `<p class="t-note">${esc(g.task.note)}</p>` : ''}${g.content.length ? `<div class="t-body"><div><div class="content" data-content="${i}"></div></div></div>` : ''}<div data-docs="${i}"></div><div data-do="${i}"></div></div>
+          </div></section>`).join('');
       host.dataset.sig = sig;
     }
     groups.forEach((g, i) => {
       const el = host.querySelector(`.task[data-id="${CSS.escape(g.task.id)}"]`); if (!el) return;
       const st = g.task.state || {}, isNext = next && next === g, isMore = more.has(g.task.id);
       el.classList.toggle('done', !!st.done); el.classList.toggle('is-next', !!isNext); el.classList.toggle('more', isMore);
-      el.querySelector('.t-num').innerHTML = st.done ? I.check : i + 1;
-      el.querySelector('.chip').textContent = st.done ? 'Completed' : isNext ? 'Up next' : 'To do';
+      el.classList.toggle('keep', g.forms.some((a) => openDocs.has(a.id)));
+      // the round check on the timeline (clickable for a plain to-do)
+      const tickable = g.task.type === 'todo' && !g.forms.length;
+      const discHTML = `<button type="button" class="disc" ${tickable ? `data-tick="${i}"` : 'tabindex="-1" aria-hidden="true"'} aria-label="${st.done ? 'Completed. Click to undo' : 'Mark as done'}" title="${tickable ? (st.done ? 'Completed · click to undo' : 'Mark as done') : ''}"><span class="n">${i + 1}</span><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
+      const slot = el.querySelector('.disc-slot'); if (slot.dataset.html !== discHTML) { slot.innerHTML = discHTML; slot.dataset.html = discHTML; }
+      // the action next to the title
+      const b = busy[g.task.id];
+      let act = '';
+      if (g.task.type === 'todo' && !g.forms.length) act = st.done
+        ? `<button type="button" class="act-pill isdone" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${I.check}</span><span class="lbl"><span class="done-t">Completed</span><span class="undo-t">Undo</span></span></button>`
+        : `<button type="button" class="act-pill" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin dark"></span><span class="lbl">Saving…</span>' : `<span class="c">${I.check}</span><span class="lbl">Mark as done</span>`}</button>`;
+      else if (g.forms.length && !st.done) act = `<button type="button" class="act-pill go" data-docopen="${esc(g.forms[0].id)}"><span class="lbl">${Object.keys(st.forms || {}).length ? 'Continue' : 'Fill in'}</span>${I.arrow}</button>`;
+      else act = `<span class="act-pill static${st.done ? ' isdone' : ''}">${st.done ? `<span class="c">${I.check}</span><span class="lbl">Completed</span>` : `<span class="lbl">${isNext ? 'Up next' : 'To do'}</span>`}</span>`;
+      const aslot = el.querySelector('.act-slot'); if (aslot.dataset.html !== act) { aslot.innerHTML = act; aslot.dataset.html = act; }
+      const wslot = el.querySelector('.who-slot'), who = st.done && st.doneBy ? `<div class="who-done">${I.check} ${esc(st.doneBy)} · ${when(st.doneAt)}</div>` : '';
+      if (wslot.dataset.html !== who) { wslot.innerHTML = who; wslot.dataset.html = who; }
       const sm = el.querySelector('.see-more');
       if (sm) { sm.setAttribute('aria-expanded', String(isMore)); sm.querySelector('.sm-t').textContent = isMore ? 'See less' : 'See more'; }
       const c = el.querySelector('.content');
@@ -637,8 +681,8 @@
     const now = groups.find((g) => g.task.id === taskId);
     if (ok && after) after();
     if (now && now.task.state.done && !wasTaskDone) {
-      const num = document.querySelector(`.task[data-id="${CSS.escape(taskId)}"] .t-num`);
-      if (num) { num.animate([{transform: 'scale(.7)'}, {transform: 'scale(1.18)'}, {transform: 'scale(1)'}], {duration: 450, easing: 'cubic-bezier(.3,1.6,.5,1)'}); }
+      const num = document.querySelector(`.task[data-id="${CSS.escape(taskId)}"] .disc`);
+      if (num) { num.classList.add('draw'); num.animate([{transform: 'scale(.8)'}, {transform: 'scale(1.15)'}, {transform: 'scale(1)'}], {duration: 500, easing: 'cubic-bezier(.3,1.6,.5,1)'}); }
       celebrate(false, num);
       more.delete(taskId);
       const nx = nextGroup();
@@ -715,10 +759,6 @@
   // ---------- Sticky bar, journey highlight, activity ----------
   $('stGo').onclick = () => { const nx = nextGroup(); if (nx) goTo(nx.task.id); };
   new IntersectionObserver(([en]) => { $('sticky').classList.toggle('on', !en.isIntersecting && !!proc); $('sticky').setAttribute('aria-hidden', String(en.isIntersecting)); }, {threshold: 0}).observe($('hero'));
-  let raf = null;
-  window.addEventListener('scroll', () => { if (raf) return; raf = requestAnimationFrame(() => { raf = null;
-    let cur = null; document.querySelectorAll('.task').forEach((t) => { if (t.getBoundingClientRect().top < window.innerHeight * 0.4) cur = t.dataset.id; });
-    document.querySelectorAll('.j-item').forEach((j) => j.classList.toggle('cur', j.dataset.goto === cur)); }); }, {passive: true});
   const drawer = (open) => { $('drawer').classList.toggle('open', open); $('scrim').classList.toggle('open', open); };
   $('actBtn').onclick = () => drawer(true); $('drawerClose').onclick = () => drawer(false); $('scrim').onclick = () => drawer(false);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
