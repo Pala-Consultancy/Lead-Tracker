@@ -177,6 +177,10 @@
   .content h1,.content h2,.content h3{font-family:Sora,sans-serif;letter-spacing:-.01em;margin:18px 0 4px;} .content > :first-child{margin-top:0;}
   .content h1{font-size:24px;} .content h2{font-size:19px;} .content h3{font-size:16px;}
   .content p{margin:0;font-size:15px;line-height:1.75;color:#273244;} .content a{color:var(--teal);font-weight:600;}
+  /* written text keeps its paragraphs and empty lines, exactly as typed or pasted in the editor */
+  .content .tx{font-size:15px;line-height:1.75;color:#273244;overflow-wrap:break-word;}
+  .content .tx p{margin:0 0 1em;} .content .tx p:last-child{margin-bottom:0;}
+  .content .tx div{min-height:1em;}
   .content ul,.content ol{margin:0;padding-left:22px;font-size:15px;line-height:1.75;color:#273244;}
   .content blockquote{margin:0;border-left:3px solid var(--teal);padding-left:14px;font-style:italic;color:#334253;}
   .content .callout{display:flex;gap:10px;padding:14px 16px;border-radius:14px;background:var(--violet-wash);border:1px solid var(--violet-line);font-size:14.5px;line-height:1.6;}
@@ -415,11 +419,11 @@
     const h = clean(b.html);
     switch (b.type) {
       case 'h1': case 'h2': case 'h3': return h ? `<${b.type}>${h}</${b.type}>` : '';
-      case 'text': return h ? `<p>${h}</p>` : '';
+      case 'text': return textOf(h) || /<br/i.test(h) ? `<div class="tx">${h}</div>` : '';
       case 'bullets': return `<ul>${h}</ul>`;
       case 'numbers': return `<ol>${h}</ol>`;
-      case 'quote': return h ? `<blockquote>${h}</blockquote>` : '';
-      case 'callout': return h ? `<div class="callout"><span>💡</span><div>${h}</div></div>` : '';
+      case 'quote': return h ? `<blockquote class="tx">${h}</blockquote>` : '';
+      case 'callout': return h ? `<div class="callout"><span>💡</span><div class="tx">${h}</div></div>` : '';
       case 'divider': return '<hr>';
       case 'image': return b.image && isSafeUrl(b.image.url) ? `<img class="img" src="${esc(b.image.url)}" alt="" loading="lazy">` : '';
       case 'video': {
