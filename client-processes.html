@@ -224,6 +224,27 @@
   .blk.in-task{box-shadow:inset 3px 0 0 #D6D2FA;} .blk.in-task:hover{box-shadow:inset 3px 0 0 var(--teal);}
   .blk.is-task + .blk.in-task{margin-top:4px;}
   html[data-theme="dark"] .blk.in-task{box-shadow:inset 3px 0 0 rgba(122,115,255,.35);}
+  /* live progress */
+  .pc-prog{display:flex;align-items:center;gap:10px;margin:14px 0 7px;} .pc-prog .pbar{flex:1;margin:0;} .pc-prog b{font-size:12.5px;color:var(--ink);min-width:34px;text-align:right;}
+  .live-now{display:inline-flex;align-items:center;gap:6px;color:var(--success);font-weight:700;}
+  .live-now i{width:8px;height:8px;border-radius:50%;background:#1E9E74;box-shadow:0 0 0 0 rgba(30,158,116,.5);animation:livepulse 1.6s infinite;}
+  @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(30,158,116,.5);}70%{box-shadow:0 0 0 8px rgba(30,158,116,0);}100%{box-shadow:0 0 0 0 rgba(30,158,116,0);}}
+  .live-badge{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--success);background:var(--success-soft);border-radius:999px;padding:4px 10px;}
+  .live-badge i{width:7px;height:7px;border-radius:50%;background:#1E9E74;animation:livepulse 1.6s infinite;}
+  .dt-prog{display:flex;align-items:center;gap:16px;padding:12px 14px;border-radius:14px;background:var(--panel-alt);border:1px solid var(--border-soft);margin-bottom:6px;}
+  .dt-ring{position:relative;width:64px;height:64px;flex-shrink:0;} .dt-ring svg{width:64px;height:64px;transform:rotate(-90deg);}
+  .dt-ring circle{fill:none;stroke-width:7;stroke-linecap:round;} .dt-ring .tr{stroke:var(--border);} .dt-ring .vl{stroke:#1E9E74;transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1);}
+  .dt-ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 14px Sora,sans-serif;}
+  .dt-count{display:block;font-size:14px;margin-bottom:8px;} .dt-prog .pbar{margin:0 0 6px;} .dt-prog .pbar i{transition:width .9s cubic-bezier(.2,.8,.2,1);}
+  .dstep.just{animation:justdone 2.2s ease;border-radius:12px;}
+  @keyframes justdone{0%{background:rgba(30,158,116,.22);box-shadow:0 0 0 4px rgba(30,158,116,.18);}100%{background:transparent;box-shadow:none;}}
+  .toast.live{display:flex;align-items:center;gap:12px;background:#0F172A;padding:12px 12px 12px 14px;min-width:300px;}
+  .toast.live.fin{background:linear-gradient(135deg,#13795B,#1E9E74);}
+  .lt-ic{width:30px;height:30px;border-radius:50%;background:#1E9E74;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+  .toast.fin .lt-ic{background:rgba(255,255,255,.2);}
+  .lt-tx{flex:1;min-width:0;} .lt-tx b{display:block;font-size:13.5px;} .lt-tx small{display:block;font-size:12px;font-weight:500;opacity:.75;margin-top:1px;}
+  .lt-view{border:none;background:rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:700;}
+  .lt-view:hover{background:rgba(255,255,255,.24);}
   /* detail */
   .share{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .share .in{flex:1;min-width:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
@@ -736,8 +757,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="hint">Everyone with the link (and the PIN) can open it and complete steps. Making a new link turns the old one off straight away.</div>
   </div>
   <div class="detail-grid">
-    <div class="sec"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><h3 style="margin:0">What your client does</h3><span class="chip" id="dtChip"></span></div>
-      <div class="pbar"><i id="dtBar"></i></div><div class="meta"><span id="dtProg"></span><span id="dtLast"></span></div>
+    <div class="sec"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><h3 style="margin:0">What your client does</h3><span class="chip" id="dtChip"></span><span class="live-badge" title="Updates the moment your client does something"><i></i>Live</span></div>
+      <div class="dt-prog"><div class="dt-ring"><svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="27"/><circle class="vl" id="dtRing" cx="32" cy="32" r="27"/></svg><b id="dtPct">0%</b></div>
+        <div style="flex:1;min-width:0"><b id="dtProg" class="dt-count"></b><div class="pbar"><i id="dtBar"></i></div><div class="meta"><span id="dtOpt"></span><span id="dtLast"></span></div></div></div>
       <div id="dtSteps" style="margin-top:8px"></div></div>
     <div class="sec"><h3>Activity</h3><div id="dtAct"></div></div>
   </div>
@@ -846,14 +868,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const list = procs.filter((p) => (statusFilter === 'all' || p.status === statusFilter) && (!q || `${p.clientName} ${p.clientContact} ${p.title}`.toLowerCase().includes(q)))
       .sort((a, b) => ms(b.lastClientActivityAt || b.updatedAt) - ms(a.lastClientActivityAt || a.updatedAt));
     $('procList').innerHTML = list.length ? list.map((p) => {
-      const steps = tasksOf(p), done = steps.filter((s) => p.progress && p.progress[s.id] && p.progress[s.id].done).length;
-      const pct = steps.length ? Math.round(done / steps.length * 100) : 0;
+      const {done, total, pct} = progressOf(p);
       const st = paused.has(p.id) ? 'paused' : p.status;
       return `<button class="card pc ${esc(p.status)}" data-open="${esc(p.id)}">${p.unseenClientActivity ? '<span class="new-dot" title="New activity from the client"></span>' : ''}
         <div class="row"><span class="av">${esc(initials(p.clientName))}</span><div style="min-width:0;flex:1"><b>${esc(p.clientName || 'Client')}</b><small>${esc(p.title)}${p.clientContact ? ' · ' + esc(p.clientContact) : ''}</small></div>
         <span class="chip ${st}">${{active: 'Active', completed: 'Completed', archived: 'Archived', paused: 'Paused'}[st]}</span></div>
-        <div class="pbar"><i style="width:${pct}%"></i></div>
-        <div class="meta"><span>${done} of ${steps.length} done</span><span>${p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span></div></button>`;
+        <div class="pc-prog"><div class="pbar"><i style="width:${pct}%"></i></div><b>${pct}%</b></div>
+        <div class="meta"><span>${done} of ${total} done</span>${activeNow(p) ? '<span class="live-now"><i></i>Active now</span>' : `<span>${p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span>`}</div></button>`;
     }).join('') : `<div class="card empty" style="grid-column:1/-1"><span class="ic">🤝</span><b>${procs.length ? 'Nothing here' : 'No client processes yet'}</b>
         <p>${procs.length ? 'Try another filter.' : templates.length ? 'Start your first one: pick a template, fill in the client’s name, and share the link.' : 'First build a template with the steps every new client goes through. Then start it for a client and share the link.'}</p>
         ${procs.length ? '' : templates.length ? '<button class="btn primary" data-start>Start for a client</button>' : '<button class="btn primary" data-newtpl>+ New template</button>'}</div>`;
@@ -932,6 +953,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     return out;
   }
   const tasksOf = (p) => blocksOf(p).filter((b) => INTERACTIVE.includes(b.type));
+  // progress = required steps done (optional ones don't hold it back), like the client sees it
+  function progressOf(p) {
+    const all = tasksOf(p), req = all.filter((s) => s.required !== false), base = req.length ? req : all, prog = p.progress || {};
+    const done = base.filter((s) => prog[s.id] && prog[s.id].done).length;
+    return {done, total: base.length, pct: p.status === 'completed' ? 100 : base.length ? Math.round(done / base.length * 100) : 0, optional: all.length - req.length};
+  }
+  const activeNow = (p) => p.lastClientActivityAt && Date.now() - ms(p.lastClientActivityAt) < 3 * 60000;
   const labelOf = (b) => (b.type === 'todo' ? textOf(b.html) : b.label) || (b.type === 'upload' ? 'Upload' : b.type === 'question' ? 'Question' : 'To-do');
   function previewOf(f) {
     if (!f || !f.url) return '';
@@ -1408,12 +1436,35 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     finally { btn.disabled = false; }
   });
 
+  // ---------- Live: what the client just did ----------
+  let liveReady = false, flashSteps = [];
+  function noticeChanges(before) {
+    procs.forEach((p) => {
+      const old = before.get(p.id); if (!old) return;
+      const oldN = (old.activity || []).length, fresh = (p.activity || []).slice(oldN).filter((a) => a.client);
+      if (!fresh.length) return;
+      // which steps just changed (to light them up)
+      const op = old.progress || {}, np = p.progress || {};
+      Object.keys(np).forEach((k) => { if (JSON.stringify(op[k] || {}) !== JSON.stringify(np[k])) flashSteps.push(k); });
+      const a = fresh[fresh.length - 1], {pct} = progressOf(p);
+      liveToast(`${a.by} ${a.text}`, `${p.clientName || 'Client'} · ${pct}% done`, p.id, p.status === 'completed' && old.status !== 'completed');
+    });
+  }
+  function liveToast(text, sub, procId, finished) {
+    const el = document.createElement('div'); el.className = 'toast live' + (finished ? ' fin' : '');
+    el.innerHTML = `<span class="lt-ic">${finished ? '🎉' : '✓'}</span><span class="lt-tx"><b>${esc(finished ? 'Onboarding complete! ' + text : text)}</b><small>${esc(sub)}</small></span><button type="button" class="lt-view">View</button>`;
+    el.querySelector('.lt-view').onclick = () => { el.remove(); const p = procs.find((x) => x.id === procId); if (p) { setTab('clients'); if (editing) closeOv('edOv'); openDetail(p); } };
+    $('toastStack').appendChild(el); setTimeout(() => el.remove(), 7000);
+  }
+  // "2 min ago", "Active now" stay up to date
+  setInterval(() => { if (procs.length && !editing) renderAll(); }, 30000);
+
   // ---------- One client's process ----------
   let shownPin = '';
   function openDetail(p, pin) { current = p; shownPin = pin || ''; renderDetail(); $('dtOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0; if (p.unseenClientActivity) db.collection('clientProcesses').doc(p.id).update({unseenClientActivity: 0}).catch(() => {}); }
   function renderDetail() {
     const p = current, steps = tasksOf(p), prog = p.progress || {};
-    const done = steps.filter((s) => prog[s.id] && prog[s.id].done).length, pct = steps.length ? Math.round(done / steps.length * 100) : 0;
+    const {done, total, pct, optional} = progressOf(p);
     const paused = pausedIds().has(p.id);
     $('dtAv').textContent = initials(p.clientName);
     $('dtTitle').textContent = p.clientName || 'Client';
@@ -1426,8 +1477,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const st = paused ? 'paused' : p.status;
     $('dtChip').className = 'chip ' + st; $('dtChip').textContent = {active: 'Active', completed: 'Completed', archived: 'Archived', paused: 'Paused (Free plan)'}[st];
     $('dtBar').style.width = pct + '%';
-    $('dtProg').textContent = `${done} of ${steps.length} done`;
-    $('dtLast').textContent = p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Not opened yet';
+    const C = 2 * Math.PI * 27; $('dtRing').style.strokeDasharray = C; $('dtRing').style.strokeDashoffset = C * (1 - pct / 100);
+    $('dtPct').textContent = pct + '%';
+    $('dtProg').textContent = `${done} of ${total} required step${total === 1 ? '' : 's'} done`;
+    $('dtOpt').textContent = optional ? `+ ${optional} optional` : '';
+    $('dtLast').innerHTML = activeNow(p) ? '<span class="live-now"><i></i>Your client is active right now</span>' : p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Not opened yet';
     $('dtArchive').textContent = p.status === 'archived' ? 'Reopen' : 'Archive';
     const ICON = {todo: '☑', upload: '📤', question: '✍️'};
     $('dtSteps').innerHTML = steps.length ? steps.map((s, i) => {
@@ -1440,7 +1494,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           return `<div class="ans form-ans"><span>📝 ${esc(a.form.title || 'Form')} · filled in by ${esc(sub.by)} ${ago(sub.at)}</span>${a.form.fields.filter((fd) => !['heading', 'paragraph'].includes(fd.type)).map((fd) => `<div><span>${esc(fd.label || 'Field')}</span>${val(fd)}</div>`).join('')}</div>`;
         }).join('');
       const ups = (r.uploads || []).map((u, j) => `<div class="fitem"><span class="nm">📎 ${esc(u.name)}</span><small>${fsize(u.size)} · ${esc(u.by)}</small><button class="link" data-dl="${esc(s.id)}:${j}">Download</button></div>`).join('');
-      return `<div class="dstep${r.done ? ' done' : ''}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${ICON[s.type]} ${esc(labelOf(s))}</b>
+      return `<div class="dstep${r.done ? ' done' : ''}" data-sid="${esc(s.id)}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${ICON[s.type]} ${esc(labelOf(s))}</b>
         <div class="st">${r.done ? `Done by ${esc(r.doneBy || 'someone')} · ${ago(r.doneAt)}` : s.required === false ? 'Optional · not done yet' : 'Not done yet'}</div>
         ${answer}${ups ? `<div class="flist">${ups}</div>` : ''}</div>
         ${s.type === 'todo' ? `<button class="btn sm" data-mark="${esc(s.id)}">${r.done ? 'Undo' : 'Mark done'}</button>` : ''}</div>`;
@@ -1543,7 +1597,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     } catch (e) { showToast('Could not load your workspace.', true); return; }
     let got = 0; const ready = () => { if (++got === 2) { $('pageLoader').style.display = 'none'; const r = $('appRoot'); r.style.display = 'flex'; r.classList.add('reveal'); if (!procs.length && templates.length) setTab('clients'); else if (!procs.length) setTab('tpl'); } };
     db.collection('clientProcessTemplates').where('workspaceId', '==', wsId).onSnapshot((snap) => { templates = snap.docs.map((d) => ({id: d.id, ...d.data()})).sort((a, b) => (a.name || '').localeCompare(b.name || '')); renderAll(); ready(); }, (err) => { console.warn(err); ready(); });
-    db.collection('clientProcesses').where('workspaceId', '==', wsId).onSnapshot((snap) => { procs = snap.docs.map((d) => ({id: d.id, ...d.data()})); renderAll(); ready(); }, (err) => { console.warn(err); ready(); });
+    db.collection('clientProcesses').where('workspaceId', '==', wsId).onSnapshot((snap) => {
+      const before = new Map(procs.map((p) => [p.id, p]));
+      procs = snap.docs.map((d) => ({id: d.id, ...d.data()}));
+      if (liveReady) noticeChanges(before);
+      renderAll(); ready(); liveReady = true;
+      flashSteps.forEach((id) => { const el = document.querySelector(`#dtSteps [data-sid="${CSS.escape(id)}"]`); if (el) { el.classList.remove('just'); void el.offsetWidth; el.classList.add('just'); } });
+      flashSteps = [];
+    }, (err) => { console.warn(err); ready(); });
   });
 </script>
 </body>
