@@ -197,6 +197,29 @@
   .fmt-bar.open{display:flex;} .fmt-bar button{width:32px;height:30px;border:none;background:none;color:#fff;border-radius:7px;font-size:14px;} .fmt-bar button:hover{background:rgba(255,255,255,.14);}
   html[data-theme="dark"] .be-client{background:rgba(122,115,255,.08);border-color:rgba(122,115,255,.3);}
   html[data-theme="dark"] .be-ext{background:rgba(122,115,255,.18);}
+  .be-task{border:1px solid #D6D2FA;background:#F7F6FF;border-radius:14px;padding:10px 12px;margin:6px 0;}
+  .be-task .be-todo{margin-top:4px;}
+  .be-atts{margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+  .be-att{background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:10px;}
+  .be-att-h{display:flex;align-items:center;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:6px;}
+  .be-att-x{margin-left:auto;width:24px;height:24px;border:none;background:none;border-radius:6px;color:var(--slate-light);font-size:15px;}
+  .be-att-x:hover{background:var(--fail-soft);color:var(--fail);}
+  .be-addatt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--slate);}
+  .be-addatt button{border:1px dashed #BDB6F3;background:var(--panel);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;color:var(--teal);}
+  .be-addatt button:hover{border-style:solid;background:#F2F1FF;}
+  .be-video.sm{max-width:420px;margin-top:8px;} .be-drop.sm{padding:14px;}
+  .be-attimg{display:block;max-width:260px;border-radius:10px;}
+  html[data-theme="dark"] .be-task{background:rgba(122,115,255,.08);border-color:rgba(122,115,255,.3);}
+  html[data-theme="dark"] .be-addatt button{background:transparent;}
+  .be-form{border-color:#CFC8FA;}
+  .ff-title{font-weight:700;margin-bottom:6px;} .be-form textarea.in{margin-bottom:6px;}
+  .ff-list{display:flex;flex-direction:column;gap:6px;margin:6px 0;}
+  .ff-row{border:1px solid var(--border-soft);border-radius:10px;padding:8px;background:var(--panel-alt);}
+  .ff-top{display:flex;gap:6px;align-items:flex-start;} .ff-top .in{flex:1;} .ff-type{flex:0 0 150px !important;}
+  .ff-more{display:flex;flex-direction:column;gap:6px;margin:6px 0 0 156px;} .ff-more .req{font-size:12px;}
+  .ff-add{display:flex;gap:10px;align-items:center;flex-wrap:wrap;} .ff-add select{max-width:200px;}
+  @media (max-width:720px){ .ff-more{margin-left:0;} .ff-type{flex-basis:120px !important;} }
+  .form-ans div{margin-top:6px;}
   .blk.in-task{box-shadow:inset 3px 0 0 #D6D2FA;} .blk.in-task:hover{box-shadow:inset 3px 0 0 var(--teal);}
   .blk.is-task + .blk.in-task{margin-top:4px;}
   html[data-theme="dark"] .blk.in-task{box-shadow:inset 3px 0 0 rgba(122,115,255,.35);}
@@ -924,7 +947,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     editing.data.blocks = blocksOf(editing.data).map((b) => ({...b}));
     if (!editing.data.blocks.length) editing.data.blocks = [{id: uidGen(), type: 'h1', html: 'Welcome!'}, {id: uidGen(), type: 'text', html: ''}];
     $('edTitle').textContent = kind === 'template' ? (isNew ? 'New template' : 'Edit template') : 'Page for ' + (data.clientName || 'this client');
-    $('edSub').textContent = (kind === 'template' ? 'Your client sees a list of tasks (to-dos, uploads and questions). ' : 'Changes show on your client’s page straight away. ') + 'Put videos, documents and text right under a task: they open when your client clicks that task (shown with a violet line). Type “/” to add.';
+    $('edSub').textContent = (kind === 'template' ? 'What you put at the top is the welcome your client sees straight away. Below it, add to-dos, uploads and questions: your client marks each one as done. ' : 'Changes show on your client’s page straight away. ') + 'Attach a video, document or image to a task (＋ Video, ＋ Document…): your client opens it with “See more”. Type “/” to add.';
     $('edName').value = kind === 'template' ? (editing.data.name || '') : (editing.data.title || '');
     $('edName').placeholder = kind === 'template' ? 'Name of this template, e.g. New client onboarding' : 'Title shown to the client';
     $('edSender').value = editing.data.senderName || (isNew ? myName + (ws.name ? ' from ' + ws.name : '') : '');
@@ -941,7 +964,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (TEXTISH.includes(b.type)) body = ce(b.type);
     else if (b.type === 'bullets' || b.type === 'numbers') body = `<${b.type === 'bullets' ? 'ul' : 'ol'} class="be be-list" contenteditable="true">${b.html || '<li></li>'}</${b.type === 'bullets' ? 'ul' : 'ol'}>`;
     else if (b.type === 'divider') body = '<hr class="be-hr">';
-    else if (b.type === 'todo') body = `<div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>`;
+    else if (b.type === 'todo') body = `<div class="be-task"><div class="be-tag">☑ To-do for your client</div><div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>${attHTML(b)}</div>`;
     else if (b.type === 'video') {
       const v = b.video;
       body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="videoLink" placeholder="Paste a video link (most video sites work)" value="${esc(v && !v.path ? v.url : '')}"><span class="or">or</span>
@@ -960,14 +983,67 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       body = `<div class="be-panel be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" placeholder="https://…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>`;
     } else if (b.type === 'upload') {
       body = `<div class="be-panel be-client"><div class="be-tag">📤 Your client uploads a file here</div><input class="in" data-f="label" placeholder="What should they send? e.g. The signed contract" value="${esc(b.label || '')}">
-        <input class="in" data-f="help" placeholder="Extra explanation (optional)" value="${esc(b.help || '')}">${reqToggle(b)}</div>`;
+        <input class="in" data-f="help" placeholder="Extra explanation (optional)" value="${esc(b.help || '')}">${reqToggle(b)}${attHTML(b)}</div>`;
     } else if (b.type === 'question') {
       body = `<div class="be-panel be-client"><div class="be-tag">✍️ Your client answers here</div><div class="be-row"><input class="in" data-f="label" placeholder="Your question, e.g. How many people are on your team?" value="${esc(b.label || '')}">
-        <select class="in" data-f="qtype" style="max-width:150px"><option value="text" ${b.qtype !== 'longtext' ? 'selected' : ''}>Short answer</option><option value="longtext" ${b.qtype === 'longtext' ? 'selected' : ''}>Long answer</option></select></div>${reqToggle(b)}</div>`;
+        <select class="in" data-f="qtype" style="max-width:150px"><option value="text" ${b.qtype !== 'longtext' ? 'selected' : ''}>Short answer</option><option value="longtext" ${b.qtype === 'longtext' ? 'selected' : ''}>Long answer</option></select></div>${reqToggle(b)}${attHTML(b)}</div>`;
     }
     return `<div class="blk blk-${b.type}" data-id="${esc(b.id)}"><div class="blk-g"><button class="g-add" data-gadd title="Add below (or type /)" aria-label="Add a block below">+</button><span class="g-drag" draggable="true" title="Drag to move" aria-label="Drag to move">⋮⋮</span></div>
       <div class="blk-b">${body}</div><button class="g-del" data-gdel title="Remove" aria-label="Remove this block">×</button></div>`;
   }
+  // A client task (to-do, upload, question) carries its own attachments and a short note.
+  // On the client's page they open with "See more" inside the task.
+  function attHTML(b) {
+    const list = (b.attachments || []).map((a) => {
+      let inner = '';
+      if (a.kind === 'video') {
+        const v = a.video;
+        inner = `<div class="be-row"><input class="in" data-att="${esc(a.id)}" data-af="videoLink" placeholder="Paste a video link (most video sites work)" value="${esc(v && !v.path ? v.url : '')}"><span class="or">or</span>
+          <label class="btn sm">${v && v.path ? 'Replace' : 'Upload'}<input type="file" accept="video/*" class="hidden" data-attup="${esc(a.id)}" data-kind="video"></label></div>
+          ${a._up ? upBar(a) : v && (v.embedUrl || v.kind === 'file') ? `<div class="be-video sm">${videoTag(v)}</div>` : ''}`;
+      } else if (a.kind === 'file') {
+        const f = a.file;
+        inner = f ? `<div class="be-filecard"><span class="be-ext">${esc((f.name.split('.').pop() || 'file').slice(0, 4))}</span><span><b>${esc(f.name)}</b><small>${fsize(f.size || 0)}</small></span>
+            <label class="req"><input type="checkbox" data-att="${esc(a.id)}" data-af="preview" ${a.preview !== false ? 'checked' : ''}> Preview</label></div>`
+          : a._up ? upBar(a) : `<label class="be-drop sm">📄 <b>Choose a document</b><small>Word, PDF, Excel, PowerPoint or anything else · up to 50 MB</small><input type="file" class="hidden" data-attup="${esc(a.id)}" data-kind="file"></label>`;
+      } else if (a.kind === 'form') {
+        inner = formBuilderHTML(a);
+      } else if (a.kind === 'image') {
+        inner = a.image ? `<img class="be-attimg" src="${esc(a.image.url)}" alt="">` : a._up ? upBar(a) : `<label class="be-drop sm">🖼️ <b>Choose an image</b><input type="file" accept="image/*" class="hidden" data-attup="${esc(a.id)}" data-kind="image"></label>`;
+      }
+      return `<div class="be-att${a.kind === 'form' ? ' be-form' : ''}" data-attid="${esc(a.id)}"><div class="be-att-h">${({video: '🎬 Video', file: '📄 Document', image: '🖼️ Image', form: '📝 Fillable document · your client fills it in on the page'})[a.kind]}<button type="button" class="be-att-x" data-delatt="${esc(a.id)}" aria-label="Remove">×</button></div>${inner}</div>`;
+    }).join('');
+    const hasNote = b.note != null;
+    return `<div class="be-atts">
+      ${hasNote ? `<div class="be-att"><div class="be-att-h">📝 Note (shown on the task)<button type="button" class="be-att-x" data-delnote aria-label="Remove note">×</button></div><textarea class="in" data-f="note" rows="2" placeholder="A short explanation, e.g. Takes about 5 minutes">${esc(b.note || '')}</textarea></div>` : ''}
+      ${list}
+      <div class="be-addatt"><span>Attach to this task:</span><button type="button" data-addatt="video">＋ Video</button><button type="button" data-addatt="file">＋ Document</button><button type="button" data-addatt="image">＋ Image</button><button type="button" data-addatt="form">＋ Form to fill in</button>${hasNote ? '' : '<button type="button" data-addnote>＋ Note</button>'}</div>
+      ${(b.attachments || []).length ? '<div class="hint">Your client sees “See more” on this task to open these.</div>' : ''}</div>`;
+  }
+  // ---------- Fillable documents (forms) ----------
+  const FIELD_TYPES = [['text', 'Short answer'], ['longtext', 'Long answer'], ['email', 'Email'], ['phone', 'Phone'], ['number', 'Number'], ['date', 'Date'],
+    ['choice', 'One choice'], ['multi', 'Several choices'], ['yesno', 'Yes / no'], ['signature', 'Signature'], ['heading', 'Section title'], ['paragraph', 'Explanation text']];
+  const NEEDS_OPTIONS = ['choice', 'multi'];
+  function formBuilderHTML(a) {
+    const f = a.form || (a.form = {title: '', intro: '', fields: []});
+    const fid = esc(a.id);
+    const rows = f.fields.map((x, j) => {
+      const isStatic = x.type === 'heading' || x.type === 'paragraph';
+      return `<div class="ff-row">
+        <div class="ff-top"><select class="in ff-type" data-ff="${fid}:${j}:type">${FIELD_TYPES.map(([k, l]) => `<option value="${k}" ${x.type === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+          ${x.type === 'paragraph' ? `<textarea class="in" data-ff="${fid}:${j}:label" rows="2" placeholder="Text your client reads">${esc(x.label || '')}</textarea>` : `<input class="in" data-ff="${fid}:${j}:label" placeholder="${x.type === 'heading' ? 'Section title' : 'Question, e.g. Company name'}" value="${esc(x.label || '')}">`}
+          <button type="button" class="ib" data-fmove="${fid}:${j}:-1" ${j === 0 ? 'disabled' : ''} aria-label="Up">↑</button><button type="button" class="ib" data-fmove="${fid}:${j}:1" ${j === f.fields.length - 1 ? 'disabled' : ''} aria-label="Down">↓</button><button type="button" class="ib del" data-fdel="${fid}:${j}" aria-label="Remove field">×</button></div>
+        ${isStatic ? '' : `<div class="ff-more"><input class="in" data-ff="${fid}:${j}:help" placeholder="Help text (optional)" value="${esc(x.help || '')}">
+          ${NEEDS_OPTIONS.includes(x.type) ? `<textarea class="in" data-ff="${fid}:${j}:options" rows="3" placeholder="One option per line">${esc((x.options || []).join('\n'))}</textarea>` : ''}
+          <label class="req"><input type="checkbox" data-ff="${fid}:${j}:required" ${x.required ? 'checked' : ''}> Required</label></div>`}</div>`;
+    }).join('');
+    return `<input class="in ff-title" data-att="${fid}" data-af="formTitle" placeholder="Title, e.g. Client intake form" value="${esc(f.title || '')}">
+      <textarea class="in" data-att="${fid}" data-af="formIntro" rows="2" placeholder="Short introduction (optional)">${esc(f.intro || '')}</textarea>
+      <div class="ff-list">${rows || '<div class="hint">No fields yet. Add the first one below.</div>'}</div>
+      <div class="ff-add"><select class="in" data-addfield="${fid}"><option value="">＋ Add a field…</option>${FIELD_TYPES.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select>
+      <span class="hint">Your client fills this in on the page and clicks Submit. You see the answers on their page here.</span></div>`;
+  }
+  function formOf(blk, attId) { const b = editing.data.blocks[findB(blk.dataset.id)]; const a = (b.attachments || []).find((x) => x.id === attId); return a && a.form; }
   const reqToggle = (b) => `<label class="req be-req"><input type="checkbox" data-f="required" ${b.required !== false ? 'checked' : ''}> Required</label>`;
   const upBar = (b) => `<div class="hint">Uploading ${esc(b._up.name)}… <span data-pct>${b._up.pct}</span>%</div><div class="upbar"><i style="width:${b._up.pct}%"></i></div>`;
   const findB = (id) => editing.data.blocks.findIndex((b) => b.id === id);
@@ -1014,13 +1090,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function blocksForSave() {
     return (editing || {data: {blocks: []}}).data.blocks.map((b) => {
       const c = {...b}; delete c._up;
+      if (Array.isArray(c.attachments)) c.attachments = c.attachments.map((a) => { const x = {...a}; delete x._up; return x; }).filter((a) => a.video || a.file || a.image || a.form);
       if ('html' in c) c.html = c.type === 'bullets' || c.type === 'numbers' ? cleanHTML(c.html).replace(/<(?!\/?(li|b|strong|i|em|u|s|code|a|br)\b)[^>]*>/gi, '') : cleanHTML(c.html);
       return c;
     });
   }
   async function save() {
     const ed = editing; if (!ed) return;
-    if (ed.data.blocks.some((b) => b._up)) { saveTimer = setTimeout(save, 800); return; }
+    if (ed.data.blocks.some((b) => b._up || (b.attachments || []).some((a) => a._up))) { saveTimer = setTimeout(save, 800); return; }
     const name = $('edName').value.trim() || (ed.kind === 'template' ? 'Untitled template' : 'Onboarding');
     const now = firebase.firestore.FieldValue.serverTimestamp();
     const col = db.collection(ed.kind === 'template' ? 'clientProcessTemplates' : 'clientProcesses');
@@ -1049,6 +1126,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       if (TEXTISH.includes(b.type) && /^\/[\p{L}\d \-]{0,20}$/u.test(t)) openSlash(blk, t.slice(1).replace(/-/g, ''), true); else if (slash.open && slash.fromText) closeSlash();
       changed(); return;
     }
+    if (e.target.dataset.ff) {                       // a field of a fillable document
+      const [aid, j, prop] = e.target.dataset.ff.split(':'); const form = formOf(blk, aid); if (!form) return;
+      const fld = form.fields[Number(j)]; if (!fld || prop === 'type' || prop === 'required') return;
+      if (prop === 'options') fld.options = e.target.value.split('\n').map((o) => o.trim()).filter(Boolean); else fld[prop] = e.target.value;
+      changed(); return;
+    }
+    if (e.target.dataset.att) {                      // an attachment's field
+      const a = (b.attachments || []).find((x) => x.id === e.target.dataset.att); if (!a) return;
+      if (e.target.dataset.af === 'formTitle' || e.target.dataset.af === 'formIntro') { a.form = a.form || {title: '', intro: '', fields: []}; a.form[e.target.dataset.af === 'formTitle' ? 'title' : 'intro'] = e.target.value; changed(); return; }
+      if (e.target.dataset.af === 'videoLink') { a.video = videoFromLink(e.target.value); changed(); clearTimeout(e.target._h); e.target._h = setTimeout(() => { const pos = e.target.selectionStart; renderPage(); const el = document.querySelector(`[data-att="${CSS.escape(a.id)}"][data-af=videoLink]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } }, 700); }
+      return;
+    }
     const f = e.target.dataset.f;
     if (f === 'videoLink') { b.video = videoFromLink(e.target.value); changed(); clearTimeout(e.target._h); e.target._h = setTimeout(() => { const pos = e.target.selectionStart; renderPage(); const el = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"] [data-f=videoLink]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } }, 700); return; }
     if (f && f !== 'required' && f !== 'preview') { b[f] = e.target.value; changed(); if (f === 'label' && b.type === 'button') { const pv = blk.querySelector('.be-btnprev'); if (pv) pv.textContent = e.target.value || 'Button'; } }
@@ -1059,6 +1148,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (f === 'required') { b.required = e.target.checked; changed(); }
     if (f === 'preview') { b.preview = e.target.checked; changed(); renderPage(); }
     if (f === 'qtype') { b.qtype = e.target.value; changed(); }
+    if (e.target.dataset.att && e.target.dataset.af === 'preview') { const a = (b.attachments || []).find((x) => x.id === e.target.dataset.att); if (a) { a.preview = e.target.checked; changed(); } }
+    if (e.target.dataset.ff) {
+      const [aid, j, prop] = e.target.dataset.ff.split(':'); const form = formOf(blk, aid);
+      if (form && prop === 'type') { form.fields[Number(j)].type = e.target.value; if (NEEDS_OPTIONS.includes(e.target.value) && !(form.fields[Number(j)].options || []).length) form.fields[Number(j)].options = ['Option 1', 'Option 2']; changed(); renderPage(); }
+      if (form && prop === 'required') { form.fields[Number(j)].required = e.target.checked; changed(); }
+    }
+    if (e.target.dataset.addfield) {
+      const form = formOf(blk, e.target.dataset.addfield), type = e.target.value; e.target.value = '';
+      if (form && type) { form.fields.push({id: uidGen(), type, label: '', help: '', required: false, options: NEEDS_OPTIONS.includes(type) ? ['Option 1', 'Option 2'] : []}); changed(); renderPage();
+        setTimeout(() => { const els = document.querySelectorAll(`[data-attid="${CSS.escape(e.target.dataset.addfield)}"] [data-ff$=":label"]`); const el = els[els.length - 1]; if (el) el.focus(); }, 30); }
+    }
+    if (e.target.dataset.attup) { const a = (b.attachments || []).find((x) => x.id === e.target.dataset.attup); if (a) uploadAtt(a, e.target.files[0], e.target.dataset.kind); }
     if (e.target.dataset.up) uploadInto(b, e.target.files[0], e.target.dataset.up);
   });
   const caretAtStart = (el) => { const s = getSelection(); if (!s.rangeCount || !s.isCollapsed) return false; const r = s.getRangeAt(0).cloneRange(); r.selectNodeContents(el); r.setEnd(s.anchorNode, s.anchorOffset); return r.toString().length === 0; };
@@ -1101,6 +1202,23 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   pg.addEventListener('click', (e) => {
     const blk = e.target.closest('.blk'); if (!blk) return;
     if (e.target.closest('[data-gadd]')) { openSlash(blk, '', false); return; }
+    const add = e.target.closest('[data-addatt]');
+    if (add) {
+      const b = editing.data.blocks[findB(blk.dataset.id)];
+      const a = {id: uidGen(), kind: add.dataset.addatt}; if (a.kind === 'file') a.preview = true;
+      if (a.kind === 'form') a.form = {title: '', intro: '', fields: [{id: uidGen(), type: 'text', label: '', help: '', required: true, options: []}]};
+      b.attachments = (b.attachments || []).concat([a]); changed(); renderPage();
+      setTimeout(() => { const el = document.querySelector(`[data-attid="${CSS.escape(a.id)}"] input.in, [data-attid="${CSS.escape(a.id)}"] label.be-drop`); if (el && el.tagName === 'INPUT') el.focus(); else if (el && a.kind !== 'form') el.click(); }, 40);
+      return;
+    }
+    const fm = e.target.closest('[data-fmove]');
+    if (fm) { const [aid, j, d] = fm.dataset.fmove.split(':'); const form = formOf(blk, aid); const i = Number(j), k = i + Number(d); if (form && form.fields[k]) { [form.fields[i], form.fields[k]] = [form.fields[k], form.fields[i]]; changed(); renderPage(); } return; }
+    const fd = e.target.closest('[data-fdel]');
+    if (fd) { const [aid, j] = fd.dataset.fdel.split(':'); const form = formOf(blk, aid); if (form) { form.fields.splice(Number(j), 1); changed(); renderPage(); } return; }
+    const del = e.target.closest('[data-delatt]');
+    if (del) { const b = editing.data.blocks[findB(blk.dataset.id)]; b.attachments = (b.attachments || []).filter((x) => x.id !== del.dataset.delatt); changed(); renderPage(); return; }
+    if (e.target.closest('[data-addnote]')) { const b = editing.data.blocks[findB(blk.dataset.id)]; b.note = ''; changed(); renderPage(); setTimeout(() => { const t = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"] [data-f=note]`); if (t) t.focus(); }, 30); return; }
+    if (e.target.closest('[data-delnote]')) { const b = editing.data.blocks[findB(blk.dataset.id)]; delete b.note; changed(); renderPage(); return; }
     if (e.target.closest('[data-gdel]')) {
       const i = findB(blk.dataset.id), b = editing.data.blocks[i];
       if (INTERACTIVE.includes(b.type) && editing.kind === 'process' && (editing.data.progress || {})[b.id] && !confirm('Your client already did this. Remove it anyway?')) return;
@@ -1194,6 +1312,24 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   pg.addEventListener('dragend', () => { dragId = null; pg.querySelectorAll('.dragging,.drop-before,.drop-after').forEach((x) => x.classList.remove('dragging', 'drop-before', 'drop-after')); });
 
   // ---------- Files (videos, documents, images) ----------
+  async function uploadAtt(a, f, kind) {
+    if (!f) return;
+    if (kind === 'video' && !/^video\//.test(f.type)) { showToast('That isn’t a video file.', true); return; }
+    if (kind === 'image' && !/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
+    if (f.size > (kind === 'video' ? MAX_VIDEO : MAX_DOC)) { showToast(`${f.name} is larger than ${kind === 'video' ? '500' : '50'} MB.`, true); return; }
+    const path = `workspaces/${wsId}/clientProcessFiles/${(editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id}/${Date.now()}-${f.name.replace(/[\\/]/g, '_').slice(0, 120)}`;
+    a._up = {name: f.name, pct: 0}; renderPage();
+    try {
+      const task = storage.ref(path).put(f, {contentType: f.type || 'application/octet-stream'});
+      task.on('state_changed', (snap) => { a._up.pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100); const box = document.querySelector(`[data-attid="${CSS.escape(a.id)}"]`); if (box) { const i = box.querySelector('.upbar i'), t = box.querySelector('[data-pct]'); if (i) i.style.width = a._up.pct + '%'; if (t) t.textContent = a._up.pct; } });
+      await task;
+      const url = await storage.ref(path).getDownloadURL();
+      const rec = {name: f.name, path, url, size: f.size, contentType: f.type || ''};
+      if (kind === 'video') a.video = {kind: 'file', url, embedUrl: '', path, name: f.name, size: f.size};
+      else if (kind === 'image') a.image = rec; else a.file = rec;
+    } catch (err) { console.error(err); showToast(`Couldn’t upload ${f.name}.`, true); }
+    a._up = null; changed(); renderPage();
+  }
   async function uploadInto(b, f, kind) {
     if (!f) return;
     if (kind === 'video' && !/^video\//.test(f.type)) { showToast('That isn’t a video file.', true); return; }
@@ -1295,7 +1431,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const ICON = {todo: '☑', upload: '📤', question: '✍️'};
     $('dtSteps').innerHTML = steps.length ? steps.map((s, i) => {
       const r = prog[s.id] || {};
-      const answer = s.type === 'question' && r.answers && r.answers.value ? `<div class="ans">${esc(r.answers.value)}</div>` : '';
+      const answer = (s.type === 'question' && r.answers && r.answers.value ? `<div class="ans">${esc(r.answers.value)}</div>` : '')
+        + (s.attachments || []).filter((a) => a.kind === 'form' && a.form).map((a) => {
+          const sub = (r.forms || {})[a.id];
+          if (!sub) return `<div class="ans"><span>📝 ${esc(a.form.title || 'Form')}</span>Not filled in yet</div>`;
+          const val = (fd) => { const v = sub.values[fd.id]; if (v == null || v === '') return '<i style="color:var(--slate-light)">–</i>'; if (Array.isArray(v)) return esc(v.join(', ')); if (fd.type === 'signature') return `✍️ <b>${esc(v.name)}</b> (agreed)`; if (fd.type === 'yesno') return v === 'yes' ? 'Yes' : 'No'; return esc(v).replace(/\n/g, '<br>'); };
+          return `<div class="ans form-ans"><span>📝 ${esc(a.form.title || 'Form')} · filled in by ${esc(sub.by)} ${ago(sub.at)}</span>${a.form.fields.filter((fd) => !['heading', 'paragraph'].includes(fd.type)).map((fd) => `<div><span>${esc(fd.label || 'Field')}</span>${val(fd)}</div>`).join('')}</div>`;
+        }).join('');
       const ups = (r.uploads || []).map((u, j) => `<div class="fitem"><span class="nm">📎 ${esc(u.name)}</span><small>${fsize(u.size)} · ${esc(u.by)}</small><button class="link" data-dl="${esc(s.id)}:${j}">Download</button></div>`).join('');
       return `<div class="dstep${r.done ? ' done' : ''}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${ICON[s.type]} ${esc(labelOf(s))}</b>
         <div class="st">${r.done ? `Done by ${esc(r.doneBy || 'someone')} · ${ago(r.doneAt)}` : s.required === false ? 'Optional · not done yet' : 'Not done yet'}</div>

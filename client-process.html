@@ -7,169 +7,271 @@
 <title>Your onboarding</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
-  /* The page a client opens with their link (client-process.html?t=…). Always light, like the other public pages.
-     The client sees a list of what to do; clicking a task opens what belongs to it (videos, documents, text). */
+  /* The page a client opens with their link (client-process.html?t=…). Always light, like PalaTrack's other public pages.
+     Top: the welcome (always open). Below: the tasks the client completes, with "See more" for what's attached,
+     fillable documents they complete right on the page, and a journey overview on the side. */
   :root{
-    --paper:#F3F6FC; --panel:#FFFFFF; --panel-alt:#F8FAFE; --ink:#141C2B; --ink-2:#4A5568; --ink-3:#8A96AA;
-    --border:#DFE6F1; --border-soft:#EBF0F7; --teal:#3730B3; --violet:#7B3FE4; --violet-wash:#F3F1FF; --violet-line:#D9D3FB;
-    --success:#18805C; --success-soft:#E2F5EC; --fail:#B43B32; --fail-soft:#FBE7E4;
+    --paper:#F4F6FB; --panel:#FFFFFF; --panel-alt:#F8FAFD; --ink:#111827; --ink-2:#4B5565; --ink-3:#8B95A7;
+    --border:#E2E7F0; --border-soft:#EDF1F7; --teal:#3730B3; --violet:#7B3FE4; --violet-wash:#F4F2FF; --violet-line:#DCD6FB;
+    --success:#13795B; --success-mid:#1E9E74; --success-soft:#E3F6EE; --fail:#B42318; --fail-soft:#FEECEB; --amber:#B54708; --amber-soft:#FEF4E6;
     --brand:linear-gradient(135deg,#1B59A5 0%,#3730B3 55%,#7B3FE4 100%);
-    --shadow:0 1px 2px rgba(16,24,40,.04),0 2px 8px rgba(16,24,40,.05),0 12px 28px -12px rgba(16,24,40,.12);
-    --shadow-lg:0 6px 16px rgba(16,24,40,.06),0 28px 60px -18px rgba(30,30,90,.28);
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 10px rgba(16,24,40,.04),0 16px 32px -16px rgba(16,24,40,.14);
+    --shadow-lg:0 8px 20px rgba(16,24,40,.06),0 30px 60px -22px rgba(30,30,90,.30);
+    --ease:cubic-bezier(.2,.8,.2,1);
   }
   *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;scroll-padding-top:90px;}
   html,body{margin:0;padding:0;}
   body{background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
-  body::before{content:"";position:fixed;inset:0 0 auto 0;height:420px;z-index:-1;pointer-events:none;
-    background:radial-gradient(70% 100% at 15% 0%,rgba(27,89,165,.10),transparent 70%),radial-gradient(60% 90% at 90% 0%,rgba(123,63,228,.10),transparent 70%);}
-  button,input,textarea{font-family:inherit;}
+  body::before{content:"";position:fixed;inset:0 0 auto 0;height:520px;z-index:-1;pointer-events:none;
+    background:radial-gradient(70% 100% at 10% 0%,rgba(27,89,165,.10),transparent 70%),radial-gradient(60% 90% at 95% 0%,rgba(123,63,228,.10),transparent 70%);}
+  button,input,textarea,select{font-family:inherit;}
   button{cursor:pointer;}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
   .hidden{display:none !important;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
   .center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-  .spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);animation:spin .8s linear infinite;}
-  .spinner.sm{width:15px;height:15px;border-width:2px;border-color:rgba(255,255,255,.45);border-top-color:#fff;display:inline-block;vertical-align:-2px;margin-right:6px;}
+  .spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite;flex-shrink:0;}
+  .spin.dark{border-color:rgba(55,48,179,.2);border-top-color:var(--teal);}
+  .loader{width:30px;height:30px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  @keyframes rise{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+  @keyframes pop{0%{transform:scale(.6);opacity:0;}60%{transform:scale(1.15);opacity:1;}100%{transform:scale(1);}}
   .card{background:var(--panel);border-radius:20px;box-shadow:var(--shadow);border:1px solid var(--border-soft);}
-  .msg{max-width:440px;width:100%;text-align:center;padding:38px 32px;animation:rise .4s ease both;}
-  .msg .ic{width:68px;height:68px;border-radius:22px;background:var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30px;box-shadow:0 12px 28px -10px rgba(55,48,179,.6);}
-  .msg h1{font:700 23px Sora,sans-serif;margin:0 0 8px;letter-spacing:-.01em;} .msg p{margin:0;color:var(--ink-2);line-height:1.55;font-size:14.5px;}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:44px;padding:0 20px;border-radius:12px;border:1px solid var(--border);background:var(--panel);color:var(--ink);font-weight:600;font-size:14.5px;text-decoration:none;transition:transform .12s,box-shadow .15s,filter .15s,border-color .15s;}
-  .btn:hover{border-color:#C5D1E3;transform:translateY(-1px);}
-  .btn.primary{border:none;background:var(--brand);color:#fff;box-shadow:0 10px 22px -10px rgba(55,48,179,.7);}
-  .btn.primary:hover{filter:brightness(1.07);box-shadow:0 14px 26px -10px rgba(55,48,179,.75);}
-  .btn:disabled{opacity:.6;cursor:default;transform:none;}
+  .msg{max-width:440px;width:100%;text-align:center;padding:40px 32px;animation:rise .45s var(--ease) both;}
+  .msg .ic{width:70px;height:70px;border-radius:22px;background:var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30px;box-shadow:0 14px 30px -12px rgba(55,48,179,.6);}
+  .msg h1{font:700 23px Sora,sans-serif;margin:0 0 8px;letter-spacing:-.01em;} .msg p{margin:0;color:var(--ink-2);line-height:1.6;font-size:14.5px;}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:12px;border:1px solid var(--border);background:var(--panel);color:var(--ink);
+    font-weight:600;font-size:14.5px;text-decoration:none;transition:transform .15s var(--ease),box-shadow .2s,filter .2s,border-color .2s,background .2s;white-space:nowrap;}
+  .btn:hover{border-color:#C9D3E3;transform:translateY(-1px);box-shadow:0 6px 16px -10px rgba(16,24,40,.3);}
+  .btn:active{transform:translateY(0) scale(.98);}
+  .btn.primary{border:none;background:var(--brand);color:#fff;box-shadow:0 10px 24px -12px rgba(55,48,179,.8),inset 0 1px 0 rgba(255,255,255,.18);}
+  .btn.primary:hover{filter:brightness(1.07);box-shadow:0 14px 28px -12px rgba(55,48,179,.85),inset 0 1px 0 rgba(255,255,255,.18);}
+  .btn.light{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff;}
+  .btn.light:hover{background:rgba(255,255,255,.24);}
+  .btn.sm{height:36px;padding:0 14px;font-size:13.5px;border-radius:10px;}
+  .btn:disabled{opacity:.65;cursor:default;transform:none;box-shadow:none;}
+  .btn svg{flex-shrink:0;}
+  /* the "Mark as done" button and its completed state */
+  .done-btn{height:46px;padding:0 22px 0 16px;border-radius:13px;}
+  .done-btn .tick{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;}
+  .completed{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:var(--success-soft);border:1px solid #C5EAD9;}
+  .completed .ok{width:30px;height:30px;border-radius:50%;background:var(--success-mid);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:pop .45s var(--ease) both;}
+  .completed b{display:block;font-size:14px;color:#0B5A43;} .completed small{display:block;font-size:12.5px;color:#3E7D68;}
+  .completed .undo{margin-left:auto;border:none;background:none;color:#3E7D68;font-size:13px;font-weight:600;text-decoration:underline;padding:4px;}
+  .completed .undo:hover{color:#0B5A43;}
   .field{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--panel);color:var(--ink);transition:border-color .15s,box-shadow .15s;}
+  .field:hover{border-color:#CDD5E2;}
   .field:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px rgba(55,48,179,.1);}
+  .field.bad{border-color:var(--fail);box-shadow:0 0 0 4px rgba(180,35,24,.08);}
   textarea.field{min-height:110px;resize:vertical;line-height:1.55;}
   .pin-row{display:flex;gap:8px;margin-top:20px;} .pin-row .field{text-align:center;font-size:22px;letter-spacing:.35em;}
   .err{color:var(--fail);font-size:13.5px;margin-top:10px;min-height:18px;}
 
+  /* sticky progress bar (appears when you scroll down) */
+  .sticky{position:fixed;top:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--border-soft);transform:translateY(-105%);transition:transform .3s var(--ease);}
+  .sticky.on{transform:none;}
+  .sticky-in{max-width:1160px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px;}
+  .sticky b.t{font:700 14.5px Sora,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;}
+  .sticky .track{flex:1;height:8px;border-radius:8px;background:var(--border-soft);overflow:hidden;min-width:80px;}
+  .sticky .track i{display:block;height:100%;background:var(--brand);border-radius:8px;transition:width .8s var(--ease);}
+  .sticky .cnt{font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap;}
+  @media (max-width:640px){ .sticky b.t{display:none;} }
+
   /* page */
-  .wrap{max-width:820px;margin:0 auto;padding:30px 20px 80px;}
-  .hero{position:relative;overflow:hidden;color:#fff;border-radius:26px;padding:28px 30px;background:var(--brand);box-shadow:0 26px 50px -24px rgba(55,48,179,.7);animation:rise .45s ease both;
-    display:grid;grid-template-columns:1fr auto;gap:22px;align-items:center;}
-  .hero::before{content:"";position:absolute;right:-90px;top:-110px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);}
-  .hero::after{content:"";position:absolute;left:-60px;bottom:-140px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(167,123,255,.35),transparent 70%);}
+  .wrap{max-width:1160px;margin:0 auto;padding:28px 20px 90px;}
+  .hero{position:relative;overflow:hidden;color:#fff;border-radius:28px;padding:30px 32px;background:var(--brand);box-shadow:0 30px 60px -28px rgba(55,48,179,.75);animation:rise .5s var(--ease) both;
+    display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center;}
+  .hero::before{content:"";position:absolute;right:-100px;top:-120px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%);}
+  .hero::after{content:"";position:absolute;left:-80px;bottom:-160px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(167,123,255,.4),transparent 70%);}
   .hero > *{position:relative;}
-  .from{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.16);border-radius:999px;padding:5px 13px 5px 6px;}
+  .from{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 13px 5px 6px;}
   .from i{width:22px;height:22px;border-radius:50%;background:#fff;color:var(--teal);font-style:normal;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;}
-  .hero h1{font:800 30px/1.15 Sora,sans-serif;margin:14px 0 6px;letter-spacing:-.02em;}
+  .hero h1{font:800 32px/1.12 Sora,sans-serif;margin:14px 0 6px;letter-spacing:-.02em;}
   .hero .for{opacity:.85;font-size:14.5px;}
-  .next{margin-top:16px;display:inline-flex;align-items:center;gap:8px;font-size:13.5px;background:rgba(255,255,255,.14);border-radius:12px;padding:8px 12px;border:1px solid rgba(255,255,255,.18);}
-  .next b{font-weight:700;}
-  .ring{width:118px;height:118px;position:relative;flex-shrink:0;}
-  .ring svg{width:118px;height:118px;transform:rotate(-90deg);}
-  .ring circle{fill:none;stroke-width:10;stroke-linecap:round;}
-  .ring .track{stroke:rgba(255,255,255,.2);} .ring .val{stroke:#fff;transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1);}
+  .segs{display:flex;gap:5px;margin-top:20px;max-width:520px;}
+  .segs i{flex:1;height:7px;border-radius:7px;background:rgba(255,255,255,.22);transition:background .5s;}
+  .segs i.on{background:#fff;} .segs i.now{background:rgba(255,255,255,.55);animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{50%{opacity:.55;}}
+  .hero-cta{display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap;font-size:13.5px;}
+  .hero-cta .nx{opacity:.9;} .hero-cta .nx b{font-weight:700;}
+  .ring{width:128px;height:128px;position:relative;flex-shrink:0;}
+  .ring svg{width:128px;height:128px;transform:rotate(-90deg);}
+  .ring circle{fill:none;stroke-width:11;stroke-linecap:round;}
+  .ring .track{stroke:rgba(255,255,255,.2);} .ring .val{stroke:#fff;transition:stroke-dashoffset 1s var(--ease);}
   .ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .ring .num b{font:800 26px Sora,sans-serif;line-height:1;} .ring .num small{font-size:11.5px;opacity:.85;margin-top:3px;}
-  .bar-mini{display:none;}
-  @media (max-width:560px){ .hero{grid-template-columns:1fr;padding:24px 22px;} .ring{display:none;} .hero h1{font-size:25px;}
-    .bar-mini{display:block;height:8px;border-radius:8px;background:rgba(255,255,255,.22);overflow:hidden;margin-top:14px;} .bar-mini i{display:block;height:100%;background:#fff;border-radius:8px;transition:width .8s;} }
-  .toolbar{display:flex;align-items:center;gap:10px;margin:18px 2px 10px;font-size:13px;color:var(--ink-2);flex-wrap:wrap;}
-  .toolbar .who b{color:var(--ink);} .toolbar .linkish{border:none;background:none;padding:0;color:var(--teal);font-weight:600;font-size:13px;text-decoration:underline;}
+  .ring .num b{font:800 30px Sora,sans-serif;line-height:1;} .ring .num small{font-size:11.5px;opacity:.85;margin-top:4px;}
+  @media (max-width:640px){ .hero{grid-template-columns:1fr;padding:24px 22px;} .ring{display:none;} .hero h1{font-size:26px;} }
+  .toolbar{display:flex;align-items:center;gap:10px;margin:18px 2px 0;font-size:13px;color:var(--ink-2);flex-wrap:wrap;}
+  .toolbar .who b{color:var(--ink);} .linkish{border:none;background:none;padding:0;color:var(--teal);font-weight:600;font-size:13px;text-decoration:underline;}
   .toolbar .spacer{flex:1;}
-  .act-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2);}
-  .act-btn:hover{border-color:#C5D1E3;color:var(--ink);} .act-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px var(--success-soft);}
-  .done-banner{margin:16px 0 4px;padding:18px 20px;border-radius:18px;background:linear-gradient(135deg,#E2F5EC,#EAF7F1);color:var(--success);display:flex;gap:14px;align-items:center;border:1px solid #C7EBDA;animation:rise .4s ease both;}
-  .done-banner span{font-size:30px;} .done-banner b{display:block;font-size:16px;color:#0F5E42;} .done-banner div{font-size:14px;line-height:1.5;}
-  .intro{padding:22px 24px;margin:16px 0 4px;animation:rise .45s ease .05s both;}
-  .section{font:700 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:22px 4px 8px;}
-  /* the task list */
-  .tasks{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
-  .task{background:var(--panel);border:1.5px solid var(--border-soft);border-radius:18px;box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s;animation:rise .4s ease both;overflow:hidden;}
-  .task:hover,.task.open{border-color:var(--violet-line);box-shadow:var(--shadow-lg);}
-  .task.done{border-color:#CDEBDD;}
-  .task.is-next:not(.open){border-color:var(--violet-line);}
-  .t-head{display:flex;align-items:center;gap:14px;width:100%;border:none;background:none;padding:16px 18px;text-align:left;color:var(--ink);}
-  .t-num{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14.5px;
-    background:var(--violet-wash);color:var(--teal);border:1.5px solid var(--violet-line);transition:all .3s cubic-bezier(.3,1.5,.5,1);}
-  .task.done .t-num{background:var(--success);border-color:var(--success);color:#fff;}
-  .task.is-next .t-num{background:var(--brand);border-color:transparent;color:#fff;box-shadow:0 6px 14px -6px rgba(55,48,179,.7);}
-  .t-main{flex:1;min-width:0;}
-  .t-main b{display:block;font-size:16px;line-height:1.35;}
+  .act-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink-2);transition:all .15s;}
+  .act-btn:hover{border-color:#C9D3E3;color:var(--ink);} .act-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--success-mid);box-shadow:0 0 0 3px var(--success-soft);}
+
+  .layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;margin-top:18px;align-items:start;}
+  @media (max-width:980px){ .layout{grid-template-columns:minmax(0,1fr);} .journey{display:none;} }
+  /* journey overview */
+  .journey{position:sticky;top:76px;padding:16px;animation:rise .5s var(--ease) .05s both;}
+  .journey h3{margin:2px 4px 12px;font:700 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);}
+  .j-item{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;border-radius:11px;padding:8px;text-align:left;font-size:13.5px;color:var(--ink-2);position:relative;transition:background .15s,color .15s;}
+  .j-item:hover{background:var(--panel-alt);color:var(--ink);}
+  .j-item.cur{background:var(--violet-wash);color:var(--teal);font-weight:600;}
+  .j-item .jd{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;border:1.5px solid var(--border);background:var(--panel);color:var(--ink-3);transition:all .3s;}
+  .j-item.done .jd{background:var(--success-mid);border-color:var(--success-mid);color:#fff;}
+  .j-item.next .jd{background:var(--brand);border-color:transparent;color:#fff;}
+  .j-item span.tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .j-item.done span.tx{color:var(--ink-3);text-decoration:line-through;text-decoration-color:rgba(139,149,167,.5);}
+  .j-item + .j-item::before{content:"";position:absolute;left:19.5px;top:-6px;width:1.5px;height:10px;background:var(--border);}
+  .j-foot{margin:12px 4px 2px;padding-top:12px;border-top:1px solid var(--border-soft);font-size:12.5px;color:var(--ink-3);}
+  .j-foot b{color:var(--ink);}
+
+  .done-banner{margin:0 0 14px;padding:20px 22px;border-radius:20px;background:linear-gradient(135deg,#E3F6EE,#EEF9F4);display:flex;gap:16px;align-items:center;border:1px solid #C5EAD9;animation:rise .45s var(--ease) both;}
+  .done-banner .big{width:52px;height:52px;border-radius:16px;background:var(--success-mid);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+  .done-banner b{display:block;font:700 17px Sora,sans-serif;color:#0B5A43;} .done-banner div{font-size:14px;line-height:1.55;color:#2F6B57;}
+  .intro{padding:26px 28px;margin:0 0 14px;animation:rise .5s var(--ease) .05s both;}
+  .section{font:700 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:26px 6px 10px;}
+  .section:first-child{margin-top:4px;}
+
+  /* task cards */
+  .tasks{display:flex;flex-direction:column;gap:12px;}
+  .task{position:relative;background:var(--panel);border:1px solid var(--border-soft);border-radius:20px;box-shadow:var(--shadow);transition:box-shadow .25s,transform .25s var(--ease),border-color .25s;animation:rise .45s var(--ease) both;}
+  .task::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:4px;border-radius:0 4px 4px 0;background:var(--border);transition:background .3s;}
+  .task.is-next::before{background:var(--brand);}
+  .task.done::before{background:var(--success-mid);}
+  .task:hover{box-shadow:var(--shadow-lg);}
+  .task.is-next{border-color:var(--violet-line);}
+  .task.flash{animation:flash 1.2s ease;}
+  @keyframes flash{0%,100%{box-shadow:var(--shadow);}30%{box-shadow:0 0 0 4px rgba(55,48,179,.18),var(--shadow-lg);}}
+  .t-head{display:flex;align-items:flex-start;gap:14px;padding:20px 22px 0;}
+  .t-num{width:40px;height:40px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 15px Sora,sans-serif;
+    background:var(--violet-wash);color:var(--teal);border:1px solid var(--violet-line);transition:all .35s var(--ease);}
+  .task.done .t-num{background:var(--success-mid);border-color:var(--success-mid);color:#fff;}
+  .task.is-next .t-num{background:var(--brand);border-color:transparent;color:#fff;box-shadow:0 8px 18px -8px rgba(55,48,179,.7);}
+  .t-main{flex:1;min-width:0;padding-top:1px;}
+  .t-main b{display:block;font:700 17px/1.35 Sora,sans-serif;letter-spacing:-.01em;}
   .task.done .t-main b{color:var(--ink-2);}
-  .t-main small{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;font-size:12px;color:var(--ink-3);}
-  .t-main small span{display:inline-flex;align-items:center;gap:4px;background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:999px;padding:2px 8px;}
-  .t-main small:empty{display:none;}
-  .chip{font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel-alt);color:var(--ink-2);border:1px solid var(--border-soft);}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
+  .pills:empty{display:none;}
+  .pills span{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:999px;padding:3px 9px;}
+  .chip{font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel-alt);color:var(--ink-2);border:1px solid var(--border-soft);margin-top:6px;}
   .task.is-next .chip{background:var(--violet-wash);color:var(--teal);border-color:var(--violet-line);}
   .task.done .chip{background:var(--success-soft);color:var(--success);border-color:transparent;}
-  .chev{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:transform .3s,background .2s;flex-shrink:0;}
-  .t-head:hover .chev{background:var(--panel-alt);color:var(--ink);}
-  .task.open .chev{transform:rotate(180deg);}
   @media (max-width:560px){ .chip{display:none;} }
-  .t-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s cubic-bezier(.2,.8,.2,1);}
-  .task.open .t-body{grid-template-rows:1fr;}
+  .t-inner{padding:12px 22px 22px 76px;}
+  @media (max-width:640px){ .t-inner{padding:12px 18px 18px;} .t-head{padding:18px 18px 0;} }
+  .t-note{margin:0 0 12px;font-size:14.5px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;}
+  .see-more{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--violet-line);background:var(--violet-wash);color:var(--teal);border-radius:999px;padding:7px 14px;font-size:13.5px;font-weight:700;transition:background .15s,transform .15s;}
+  .see-more:hover{background:#ECE8FF;transform:translateY(-1px);}
+  .see-more svg{transition:transform .3s var(--ease);} .task.more .see-more svg{transform:rotate(180deg);}
+  .t-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease);}
+  .task.more .t-body{grid-template-rows:1fr;}
   .t-body > div{overflow:hidden;min-height:0;}
-  .t-inner{padding:2px 22px 22px 70px;}
-  @media (max-width:560px){ .t-inner{padding:2px 16px 18px;} .t-head{padding:14px;} }
-  /* what belongs to a task */
-  .content > * + *{margin-top:12px;}
-  .content h1,.content h2,.content h3{font-family:Sora,sans-serif;letter-spacing:-.01em;margin:16px 0 4px;} .content > :first-child{margin-top:0;}
-  .content h1{font-size:22px;} .content h2{font-size:19px;} .content h3{font-size:16px;}
-  .content p{margin:0;font-size:15px;line-height:1.7;color:#283445;white-space:pre-wrap;} .content a{color:var(--teal);font-weight:600;}
-  .content ul,.content ol{margin:0;padding-left:22px;font-size:15px;line-height:1.7;color:#283445;}
+  .task.more .t-body .content{padding-top:16px;}
+  /* what's attached */
+  .content > * + *{margin-top:14px;}
+  .content h1,.content h2,.content h3{font-family:Sora,sans-serif;letter-spacing:-.01em;margin:18px 0 4px;} .content > :first-child{margin-top:0;}
+  .content h1{font-size:24px;} .content h2{font-size:19px;} .content h3{font-size:16px;}
+  .content p{margin:0;font-size:15px;line-height:1.75;color:#273244;} .content a{color:var(--teal);font-weight:600;}
+  .content ul,.content ol{margin:0;padding-left:22px;font-size:15px;line-height:1.75;color:#273244;}
   .content blockquote{margin:0;border-left:3px solid var(--teal);padding-left:14px;font-style:italic;color:#334253;}
-  .content .callout{display:flex;gap:10px;padding:13px 15px;border-radius:14px;background:var(--violet-wash);border:1px solid var(--violet-line);font-size:14.5px;line-height:1.6;}
-  .content hr{border:none;border-top:1px solid var(--border);margin:18px 0;}
-  .content .img{display:block;max-width:100%;border-radius:14px;}
+  .content .callout{display:flex;gap:10px;padding:14px 16px;border-radius:14px;background:var(--violet-wash);border:1px solid var(--violet-line);font-size:14.5px;line-height:1.6;}
+  .content hr{border:none;border-top:1px solid var(--border);margin:20px 0;}
+  .content .img{display:block;max-width:100%;border-radius:16px;}
   .content a.btn.primary{color:#fff;}
-  .video{position:relative;width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#0B0F19;box-shadow:0 18px 40px -20px rgba(10,14,30,.6);}
+  .video{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;background:#0B0F19;box-shadow:0 22px 44px -22px rgba(10,14,30,.65);}
   .video iframe,.video video{position:absolute;inset:0;width:100%;height:100%;border:0;}
-  .preview{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;}
-  .preview iframe{display:block;width:100%;height:520px;border:0;} .preview img{display:block;max-width:100%;margin:0 auto;}
+  .preview{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#fff;}
+  .preview iframe{display:block;width:100%;height:540px;border:0;} .preview img{display:block;max-width:100%;margin:0 auto;}
   @media (max-width:560px){ .preview iframe{height:400px;} }
-  .file{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--panel-alt);text-decoration:none;color:var(--ink);transition:border-color .15s,transform .15s;}
-  a.file:hover{border-color:var(--violet-line);transform:translateY(-1px);}
-  .file .fi{width:40px;height:40px;border-radius:11px;background:#E9ECFB;color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;flex-shrink:0;text-transform:uppercase;}
+  .file{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--panel-alt);text-decoration:none;color:var(--ink);transition:border-color .15s,transform .15s,box-shadow .2s;}
+  a.file:hover{border-color:var(--violet-line);transform:translateY(-1px);box-shadow:0 8px 18px -12px rgba(16,24,40,.3);}
+  .file .fi{width:42px;height:42px;border-radius:12px;background:#ECEEFC;color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;flex-shrink:0;text-transform:uppercase;}
   .file b{display:block;font-size:14px;word-break:break-word;} .file small{font-size:12px;color:var(--ink-3);}
-  .file .dl{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#fff;background:var(--brand);border-radius:10px;padding:8px 12px;white-space:nowrap;}
-  .file.received .dl{background:var(--success-soft);color:var(--success);}
+  .file .dl{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--teal);background:var(--violet-wash);border:1px solid var(--violet-line);border-radius:10px;padding:8px 12px;white-space:nowrap;}
+  .file.received .dl{background:var(--success-soft);color:var(--success);border-color:transparent;}
   /* doing the task */
-  .do{margin-top:18px;padding-top:18px;border-top:1px dashed var(--border);}
-  .content:empty + div .do{margin-top:4px;padding-top:0;border-top:none;}
+  .do{margin-top:16px;}
   .do label.lbl{display:block;font-size:14px;font-weight:600;margin-bottom:8px;}
   .do .help{font-size:13.5px;color:var(--ink-2);margin:-2px 0 10px;line-height:1.5;}
   .do-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;}
   .do > .do-row:first-child{margin-top:0;}
-  .by{font-size:13px;color:var(--success);font-weight:600;}
   .drop{border:2px dashed var(--border);border-radius:16px;padding:26px;text-align:center;color:var(--ink-2);font-size:14px;transition:border-color .15s,background .15s;cursor:pointer;display:block;}
   .drop:hover,.drop.over{border-color:var(--teal);background:var(--violet-wash);}
-  .drop .big{font-size:26px;display:block;margin-bottom:6px;} .drop b{color:var(--ink);} .drop small{display:block;margin-top:6px;color:var(--ink-3);font-size:12px;}
+  .drop .big{width:46px;height:46px;border-radius:14px;margin:0 auto 10px;background:var(--violet-wash);display:flex;align-items:center;justify-content:center;font-size:22px;} .drop b{color:var(--ink);} .drop small{display:block;margin-top:6px;color:var(--ink-3);font-size:12px;}
   .files{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
-  .check{display:inline-flex;align-items:center;gap:12px;border:1.5px solid var(--violet-line);background:var(--violet-wash);color:var(--teal);border-radius:14px;padding:12px 18px;font-weight:700;font-size:15px;transition:all .2s;}
-  .check:hover{transform:translateY(-1px);box-shadow:0 10px 22px -12px rgba(55,48,179,.6);}
-  .check .box{width:24px;height:24px;border-radius:8px;border:2px solid #A9A3EE;background:#fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;transition:all .25s cubic-bezier(.3,1.5,.5,1);}
-  .check.on{background:var(--success-soft);border-color:#BFE6D3;color:var(--success);}
-  .check.on .box{background:var(--success);border-color:var(--success);}
-  .pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1);}
-  @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.3);}100%{transform:scale(1);}}
+  .hint{font-size:13px;color:var(--ink-3);}
+
+  /* fillable documents */
+  .doc{margin-top:14px;border:1px solid var(--border);border-radius:18px;background:var(--panel);overflow:hidden;transition:box-shadow .2s;}
+  .doc:hover{box-shadow:0 10px 24px -16px rgba(16,24,40,.35);}
+  .doc-h{display:flex;align-items:center;gap:12px;width:100%;border:none;background:linear-gradient(180deg,#FBFAFF,#F6F4FF);padding:14px 16px;text-align:left;color:var(--ink);}
+  .doc-h .di{width:42px;height:42px;border-radius:12px;background:#fff;border:1px solid var(--violet-line);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .doc-h b{display:block;font-size:15px;} .doc-h small{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);margin-top:3px;}
+  .doc-h .meter{width:80px;height:5px;border-radius:5px;background:var(--border-soft);overflow:hidden;display:inline-block;} .doc-h .meter i{display:block;height:100%;background:var(--brand);border-radius:5px;transition:width .3s;}
+  .doc-h .go{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#fff;background:var(--brand);border-radius:10px;padding:8px 13px;white-space:nowrap;}
+  .doc.sent .doc-h{background:linear-gradient(180deg,#F4FBF8,#EDF8F3);} .doc.sent .doc-h .di{border-color:#C5EAD9;}
+  .doc.sent .doc-h .go{background:var(--panel);color:var(--success);border:1px solid #C5EAD9;}
+  .doc-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease);}
+  .doc.open .doc-b{grid-template-rows:1fr;} .doc-b > div{overflow:hidden;min-height:0;}
+  .paper{padding:26px 28px 24px;border-top:1px solid var(--border-soft);background:
+    linear-gradient(var(--panel),var(--panel)) padding-box;}
+  @media (max-width:560px){ .paper{padding:20px 16px;} }
+  .paper .p-title{font:700 20px Sora,sans-serif;margin:0 0 6px;letter-spacing:-.01em;}
+  .paper .p-intro{margin:0 0 18px;font-size:14.5px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;}
+  .fq{margin-bottom:18px;}
+  .fq > label,.fq > .fl{display:block;font-size:14px;font-weight:600;margin-bottom:7px;color:var(--ink);}
+  .fq .req{color:var(--fail);margin-left:3px;}
+  .fq .fh{font-size:12.5px;color:var(--ink-3);margin:-3px 0 8px;line-height:1.45;}
+  .fq .ferr{font-size:12.5px;color:var(--fail);margin-top:6px;}
+  .f-sec{font:700 15px Sora,sans-serif;margin:24px 0 12px;padding-top:16px;border-top:1px solid var(--border-soft);}
+  .f-sec:first-child{margin-top:0;padding-top:0;border-top:none;}
+  .f-par{font-size:14px;line-height:1.65;color:var(--ink-2);margin:0 0 16px;white-space:pre-wrap;}
+  .opts{display:flex;flex-direction:column;gap:7px;}
+  .opt{display:flex;align-items:center;gap:11px;border:1.5px solid var(--border);border-radius:12px;padding:11px 13px;cursor:pointer;font-size:14.5px;transition:border-color .15s,background .15s;}
+  .opt:hover{border-color:#C9D3E3;}
+  .opt input{position:absolute;opacity:0;pointer-events:none;}
+  .opt .mk{width:20px;height:20px;border:2px solid #B9C2D3;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+  .opt.multi .mk{border-radius:6px;}
+  .opt.on{border-color:var(--teal);background:var(--violet-wash);}
+  .opt.on .mk{border-color:var(--teal);background:var(--teal);box-shadow:inset 0 0 0 3px #fff;}
+  .opt.multi.on .mk{box-shadow:none;} .opt.multi.on .mk::after{content:"✓";color:#fff;font-size:12px;font-weight:800;}
+  .opt input:focus-visible + .mk{outline:2px solid var(--teal);outline-offset:2px;}
+  .yn{display:flex;gap:8px;} .yn .opt{flex:1;justify-content:center;}
+  .sign{border:1.5px solid var(--border);border-radius:14px;padding:14px;}
+  .sign .sig-prev{min-height:54px;margin-top:10px;padding:6px 4px 2px;border-bottom:1.5px solid var(--ink);font:600 34px/1.1 Caveat,cursive;color:#1D2A6B;}
+  .sign .sig-prev:empty::before{content:"Your signature appears here";font:500 13px Inter,sans-serif;color:var(--ink-3);}
+  .sign .agree{display:flex;align-items:flex-start;gap:10px;margin-top:12px;font-size:13.5px;color:var(--ink-2);cursor:pointer;}
+  .sign .agree input{width:18px;height:18px;margin-top:1px;accent-color:var(--teal);}
+  .doc-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:16px;margin-top:6px;border-top:1px solid var(--border-soft);}
+  .doc-foot .draft{font-size:12.5px;color:var(--ink-3);}
+
   /* activity drawer */
-  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,92vw);background:var(--panel);box-shadow:-20px 0 50px rgba(10,14,30,.18);z-index:45;transform:translateX(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1);padding:22px;overflow-y:auto;}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:var(--panel);box-shadow:-24px 0 60px rgba(10,14,30,.2);z-index:45;transform:translateX(105%);transition:transform .35s var(--ease);padding:22px;overflow-y:auto;}
   .drawer.open{transform:none;}
-  .drawer h3{margin:0 0 14px;font:700 17px Sora,sans-serif;display:flex;align-items:center;}
-  .drawer h3 button{margin-left:auto;border:none;background:var(--panel-alt);width:32px;height:32px;border-radius:10px;font-size:16px;color:var(--ink-2);}
-  .act{font-size:13.5px;line-height:1.45;padding:10px 0;border-top:1px solid var(--border-soft);} .act:first-of-type{border-top:none;}
+  .drawer h3{margin:0 0 14px;font:700 18px Sora,sans-serif;display:flex;align-items:center;}
+  .drawer h3 button{margin-left:auto;border:none;background:var(--panel-alt);width:34px;height:34px;border-radius:10px;font-size:17px;color:var(--ink-2);}
+  .act{display:flex;gap:10px;font-size:13.5px;line-height:1.45;padding:11px 0;border-top:1px solid var(--border-soft);} .act:first-of-type{border-top:none;}
+  .act .av{width:30px;height:30px;border-radius:50%;background:var(--violet-wash);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
   .act small{display:block;color:var(--ink-3);font-size:12px;margin-top:2px;}
-  .scrim{position:fixed;inset:0;background:rgba(15,22,38,.25);z-index:44;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .scrim{position:fixed;inset:0;background:rgba(15,22,38,.28);z-index:44;opacity:0;pointer-events:none;transition:opacity .25s;}
   .scrim.open{opacity:1;pointer-events:auto;}
-  .foot{text-align:center;margin-top:34px;font-size:12px;color:var(--ink-3);}
+  .foot{text-align:center;margin-top:40px;font-size:12px;color:var(--ink-3);}
   .foot b{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#141C2B;color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:all .25s;pointer-events:none;z-index:60;max-width:calc(100vw - 32px);box-shadow:var(--shadow-lg);}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);display:flex;align-items:center;gap:10px;background:#111827;color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:all .3s var(--ease);pointer-events:none;z-index:60;max-width:calc(100vw - 32px);box-shadow:var(--shadow-lg);}
   .toast.show{opacity:1;transform:translate(-50%,0);} .toast.bad{background:var(--fail);}
-  .modal{position:fixed;inset:0;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
-  .modal .card{max-width:420px;width:100%;padding:28px;animation:rise .3s ease both;} .modal h2{font:700 20px Sora,sans-serif;margin:0 0 6px;} .modal p{margin:0 0 16px;color:var(--ink-2);font-size:14px;line-height:1.5;}
+  .modal{position:fixed;inset:0;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;backdrop-filter:blur(3px);}
+  .modal .card{max-width:420px;width:100%;padding:30px;animation:rise .3s var(--ease) both;} .modal h2{font:700 21px Sora,sans-serif;margin:0 0 6px;} .modal p{margin:0 0 16px;color:var(--ink-2);font-size:14px;line-height:1.55;}
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:70;}
-  @media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important;} }
+  @media (prefers-reduced-motion: reduce){ *,*::before{animation:none !important;transition:none !important;} html{scroll-behavior:auto;} }
 </style>
 </head>
 <body>
-<div id="loading" class="center"><div class="spinner"></div></div>
+<div id="loading" class="center"><div class="loader"></div></div>
 <div id="notice" class="center hidden"><div class="card msg"><div class="ic" id="noticeIc">🔗</div><h1 id="noticeTitle"></h1><p id="noticeText"></p></div></div>
 <div id="pinView" class="center hidden"><div class="card msg">
   <div class="ic">🔒</div><h1>Enter your PIN</h1><p>This onboarding is protected. Enter the PIN you received.</p>
@@ -177,30 +279,36 @@
   <div class="err" id="pinErr" role="alert"></div>
 </div></div>
 
+<div class="sticky" id="sticky" aria-hidden="true"><div class="sticky-in"><b class="t" id="stTitle"></b><div class="track"><i id="stBar" style="width:0"></i></div><span class="cnt" id="stCnt"></span><button type="button" class="btn primary sm" id="stGo">Continue</button></div></div>
+
 <div id="page" class="hidden">
   <div class="wrap">
-    <header class="hero">
+    <header class="hero" id="hero">
       <div>
         <span class="from"><i id="fromIc">P</i><span id="fromName"></span></span>
         <h1 id="title"></h1>
         <div class="for" id="forLine"></div>
-        <div class="next hidden" id="nextLine"></div>
-        <div class="bar-mini"><i id="barMini" style="width:0"></i></div>
+        <div class="segs" id="segs" aria-hidden="true"></div>
+        <div class="hero-cta" id="heroCta"></div>
       </div>
-      <div class="ring" aria-hidden="true"><svg viewBox="0 0 118 118"><circle class="track" cx="59" cy="59" r="50"/><circle class="val" id="ringVal" cx="59" cy="59" r="50"/></svg>
-        <div class="num"><b id="ringNum">0/0</b><small>done</small></div></div>
+      <div class="ring" aria-hidden="true"><svg viewBox="0 0 128 128"><circle class="track" cx="64" cy="64" r="54"/><circle class="val" id="ringVal" cx="64" cy="64" r="54"/></svg>
+        <div class="num"><b id="ringNum">0%</b><small id="ringSub">complete</small></div></div>
     </header>
     <div class="toolbar"><span class="who" id="whoLine"></span><span class="spacer"></span><button type="button" class="act-btn" id="actBtn"><span class="dot"></span>Activity</button></div>
-    <div id="doneBanner" class="done-banner hidden"><span>🎉</span><div><b>All done, thank you!</b>Everything has been received. We’ll take it from here.</div></div>
-    <div id="intro" class="card intro content hidden"></div>
-    <div class="tasks" id="tasks"></div>
+    <div class="layout">
+      <nav class="card journey" id="journey" aria-label="Your steps"><h3>Your journey</h3><div id="jList"></div><div class="j-foot" id="jFoot"></div></nav>
+      <main>
+        <div id="doneBanner" class="done-banner hidden"><span class="big">✓</span><div><b>All done, thank you!</b>Everything has been received. We’ll take it from here.</div></div>
+        <div id="intro" class="card intro content hidden"></div>
+        <div class="tasks" id="tasks"></div>
+      </main>
+    </div>
     <div class="foot">Onboarding powered by <b>PalaTrack</b></div>
   </div>
 </div>
 
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Recent activity"><h3>Recent activity<button type="button" id="drawerClose" aria-label="Close">×</button></h3><div id="activity"></div></aside>
-
 <div id="nameModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="nameTitle"><div class="card">
   <h2 id="nameTitle">Who’s working on this?</h2>
   <p>Your name is shown next to what you complete, so everyone with this link can see who did what.</p>
@@ -220,20 +328,28 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const token = new URLSearchParams(location.search).get('t') || '';
-  const PIN_KEY = 'ptCpPin:' + token, NAME_KEY = 'ptCpName:' + token;
+  const PIN_KEY = 'ptCpPin:' + token, NAME_KEY = 'ptCpName:' + token, DRAFT_KEY = (fid) => 'ptCpDraft:' + token + ':' + fid;
   let pin = ''; try { pin = sessionStorage.getItem(PIN_KEY) || ''; } catch (e) { /* ignore */ }
   let name = ''; try { name = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* ignore */ }
-  let proc = null, groups = [], intro = [], openId = null, busy = {}, wasDone = null, pendingAction = null, firstRender = true;
+  let proc = null, groups = [], intro = [], more = new Set(), openDocs = new Set(), busy = {}, wasDone = null, pendingAction = null, firstRender = true;
+  const I = {
+    check: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    chev: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+    arrow: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    send: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>',
+    dl: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  };
 
   const show = (id) => ['loading', 'notice', 'pinView', 'page'].forEach((x) => $(x).classList.toggle('hidden', x !== id));
   function notice(icon, title, text) { $('noticeIc').textContent = icon; $('noticeTitle').textContent = title; $('noticeText').textContent = text; show('notice'); }
-  function toast(msg, bad) { const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (bad ? ' bad' : ''); clearTimeout(toast.h); toast.h = setTimeout(() => { t.className = 'toast'; }, 3200); }
+  function toast(msg, bad) { const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (bad ? ' bad' : ''); clearTimeout(toast.h); toast.h = setTimeout(() => { t.className = 'toast'; }, 3400); }
   const when = (iso) => { if (!iso) return ''; const d = new Date(iso), m = Math.round((Date.now() - d) / 60000); if (m < 1) return 'just now'; if (m < 60) return m + ' min ago'; if (m < 1440) return Math.round(m / 60) + ' h ago'; return d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'}); };
   const size = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
   const ext = (n) => (String(n).split('.').pop() || 'file').slice(0, 4);
   const msgOf = (e) => (e && e.message) || 'Something went wrong. Please try again.';
   const isSafeUrl = (u) => /^https:\/\//i.test(u || '');
   const textOf = (h) => { const d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').trim(); };
+  const initials = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   // ---------- Loading and checking the link ----------
   async function load(first) {
@@ -255,29 +371,27 @@
     show('loading'); load(true);
   });
 
-  // ---------- The page becomes a list of tasks ----------
-  // Everything placed right under a to-do, upload or question belongs to that task and opens with it.
-  // A heading right above a task is shown as a small section title; what comes before the first task is the welcome.
-  const TASK = ['todo', 'upload', 'question'];
-  const HEAD = ['h1', 'h2', 'h3'];
+  // ---------- The page becomes: a welcome, then tasks ----------
+  // A task's own attachments (and anything placed right under it) open with "See more".
+  // Fillable documents attached to a task are filled in right on the page.
+  const TASK = ['todo', 'upload', 'question'], HEAD = ['h1', 'h2', 'h3'];
   function build() {
-    const blocks = proc.blocks || [];
     groups = []; intro = [];
     let cur = null;
-    blocks.forEach((b) => {
+    (proc.blocks || []).forEach((b) => {
       if (TASK.includes(b.type)) {
         const prev = cur ? cur.content : intro;
         let section = '';
         while (prev.length && HEAD.includes(prev[prev.length - 1].type)) { const h = prev.pop(); section = section || textOf(h.html); }
-        cur = {task: b, content: [], section};
+        const atts = b.attachments || [];
+        cur = {task: b, section, forms: atts.filter((a) => a.kind === 'form' && a.form),
+          content: atts.filter((a) => a.kind !== 'form').map((a) => ({id: a.id, type: a.kind, video: a.video, file: a.file, image: a.image, preview: a.preview}))};
         groups.push(cur);
       } else (cur ? cur.content : intro).push(b);
     });
-    if (firstRender) { const nx = groups.find((g) => !g.task.state.done); openId = nx ? nx.task.id : null; }
   }
   const titleOf = (t) => (t.type === 'todo' ? textOf(t.html) : t.label) || (t.type === 'upload' ? 'Upload a file' : t.type === 'question' ? 'Answer a question' : 'To do');
 
-  // Rich text from the page: only simple formatting and links survive.
   function clean(html) {
     const doc = new DOMParser().parseFromString('<div>' + (html || '') + '</div>', 'text/html');
     const ALLOW = {B: 1, STRONG: 1, I: 1, EM: 1, U: 1, S: 1, STRIKE: 1, CODE: 1, BR: 1, A: 1, LI: 1, DIV: 1, P: 1, SPAN: 1};
@@ -317,104 +431,183 @@
       case 'file': {
         const f = b.file; if (!f || !isSafeUrl(f.url)) return '';
         const pv = b.preview !== false ? previewOf(f) : '';
-        return `${pv ? `<div class="preview">${pv}</div>` : ''}<a class="file" href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}"><span class="fi">${esc(ext(f.name))}</span><span><b>${esc(f.name)}</b><small>${f.size ? size(f.size) : 'Document'}</small></span><span class="dl">⬇ Download</span></a>`;
+        return `${pv ? `<div class="preview">${pv}</div>` : ''}<a class="file" href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}"><span class="fi">${esc(ext(f.name))}</span><span><b>${esc(f.name)}</b><small>${f.size ? size(f.size) : 'Document'}</small></span><span class="dl">${I.dl}Download</span></a>`;
       }
-      case 'button': return b.url && /^(https?:|mailto:)/i.test(b.url) ? `<p><a class="btn primary" href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.label || 'Open')} ↗</a></p>` : '';
+      case 'button': return b.url && /^(https?:|mailto:)/i.test(b.url) ? `<p><a class="btn primary" href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.label || 'Open')} ${I.arrow}</a></p>` : '';
     }
     return '';
   }
-  // the little summary under a task's title: what opens inside
-  function summary(g) {
+  function pills(g) {
     const c = (k) => g.content.filter((b) => b.type === k).length, out = [];
     if (c('video')) out.push(`🎬 ${c('video')} video${c('video') > 1 ? 's' : ''}`);
     if (c('file')) out.push(`📄 ${c('file')} document${c('file') > 1 ? 's' : ''}`);
     if (c('image')) out.push(`🖼️ ${c('image')} image${c('image') > 1 ? 's' : ''}`);
+    if (g.forms.length) out.push(`📝 ${g.forms.length} to fill in`);
     if (c('button')) out.push('🔗 link');
-    if (g.task.type === 'upload') out.push('📤 upload a file');
+    if (g.task.type === 'upload') out.push('📤 upload');
     if (g.task.type === 'question') out.push('✍️ answer');
     if (!g.task.required) out.push('optional');
     return out.map((x) => `<span>${x}</span>`).join('');
   }
+
+  // ---------- Fillable documents ----------
+  const INPUTS = ['text', 'longtext', 'email', 'phone', 'number', 'date', 'choice', 'multi', 'yesno', 'signature'];
+  function draftOf(fid) { try { return JSON.parse(localStorage.getItem(DRAFT_KEY(fid)) || 'null'); } catch (e) { return null; } }
+  function valuesFor(g, a) { const sub = ((g.task.state || {}).forms || {})[a.id]; return draftOf(a.id) || (sub && sub.values) || {}; }
+  const filled = (v) => !(v == null || v === '' || (Array.isArray(v) && !v.length) || (typeof v === 'object' && !Array.isArray(v) && !(v.name && v.agree)));
+  function fieldHTML(fd, v, key) {
+    const id = `${key}_${esc(fd.id)}`, req = fd.required ? '<span class="req" aria-hidden="true">*</span>' : '';
+    const help = fd.help ? `<div class="fh">${esc(fd.help)}</div>` : '';
+    if (fd.type === 'heading') return `<div class="f-sec">${esc(fd.label)}</div>`;
+    if (fd.type === 'paragraph') return `<p class="f-par">${esc(fd.label)}</p>`;
+    const lab = `<label for="${id}">${esc(fd.label || 'Question')}${req}</label>${help}`;
+    const common = `id="${id}" data-fld="${esc(fd.id)}" ${fd.required ? 'aria-required="true"' : ''}`;
+    let input = '';
+    if (fd.type === 'longtext') input = `<textarea class="field" ${common} rows="4">${esc(v || '')}</textarea>`;
+    else if (['text', 'email', 'phone', 'number', 'date'].includes(fd.type)) input = `<input class="field" ${common} type="${({text: 'text', email: 'email', phone: 'tel', number: 'number', date: 'date'})[fd.type]}" value="${esc(v || '')}" ${fd.type === 'email' ? 'autocomplete="email"' : ''}>`;
+    else if (fd.type === 'choice' || fd.type === 'multi') {
+      const multi = fd.type === 'multi', sel = multi ? (Array.isArray(v) ? v : []) : v;
+      return `<fieldset class="fq" style="border:0;padding:0;margin:0 0 18px"><legend class="fl">${esc(fd.label || 'Question')}${req}</legend>${help}<div class="opts">${fd.options.map((o, k) => {
+        const on = multi ? sel.includes(o) : sel === o;
+        return `<label class="opt${multi ? ' multi' : ''}${on ? ' on' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${id}" data-fld="${esc(fd.id)}" value="${esc(o)}" ${on ? 'checked' : ''}><span class="mk"></span>${esc(o)}</label>`;
+      }).join('')}</div></fieldset>`;
+    } else if (fd.type === 'yesno') {
+      return `<fieldset class="fq" style="border:0;padding:0;margin:0 0 18px"><legend class="fl">${esc(fd.label || 'Question')}${req}</legend>${help}<div class="yn">${['yes', 'no'].map((o) => `<label class="opt${v === o ? ' on' : ''}"><input type="radio" name="${id}" data-fld="${esc(fd.id)}" value="${o}" ${v === o ? 'checked' : ''}><span class="mk"></span>${o === 'yes' ? 'Yes' : 'No'}</label>`).join('')}</div></fieldset>`;
+    } else if (fd.type === 'signature') {
+      const sv = v && typeof v === 'object' ? v : {};
+      return `<div class="fq"><span class="fl">${esc(fd.label || 'Signature')}${req}</span>${help}<div class="sign">
+        <input class="field" id="${id}" data-fld="${esc(fd.id)}" data-sig="name" placeholder="Type your full name" value="${esc(sv.name || '')}" autocomplete="name">
+        <div class="sig-prev" aria-hidden="true">${esc(sv.name || '')}</div>
+        <label class="agree"><input type="checkbox" data-fld="${esc(fd.id)}" data-sig="agree" ${sv.agree ? 'checked' : ''}><span>I agree and sign this document electronically.</span></label></div></div>`;
+    }
+    return `<div class="fq">${lab}${input}</div>`;
+  }
+  function docHTML(g, a, gi) {
+    const f = a.form, sub = ((g.task.state || {}).forms || {})[a.id], vals = valuesFor(g, a), isOpen = openDocs.has(a.id), key = `d${gi}_${esc(a.id)}`;
+    const inputs = f.fields.filter((x) => INPUTS.includes(x.type)), n = inputs.filter((x) => filled(vals[x.id])).length;
+    const draft = !!draftOf(a.id);
+    return `<div class="doc${sub && !draft ? ' sent' : ''}${isOpen ? ' open' : ''}" data-doc="${esc(a.id)}" data-g="${gi}">
+      <button type="button" class="doc-h" data-docopen="${esc(a.id)}" aria-expanded="${isOpen}">
+        <span class="di">${sub && !draft ? '✅' : '📝'}</span>
+        <span><b>${esc(f.title || 'Document to fill in')}</b><small>${sub && !draft ? `Submitted by ${esc(sub.by)} · ${when(sub.at)}` : `<span class="meter"><i style="width:${inputs.length ? n / inputs.length * 100 : 0}%"></i></span>${n} of ${inputs.length} answered${draft ? ' · draft saved' : ''}`}</small></span>
+        <span class="go">${isOpen ? 'Close' : sub && !draft ? 'View or edit' : n ? 'Continue' : 'Fill in'} ${isOpen ? '' : I.arrow}</span></button>
+      <div class="doc-b"><div><form class="paper" data-form="${esc(a.id)}" novalidate>
+        <h3 class="p-title">${esc(f.title || 'Document to fill in')}</h3>${f.intro ? `<p class="p-intro">${esc(f.intro)}</p>` : ''}
+        ${f.fields.map((fd) => fieldHTML(fd, vals[fd.id], key)).join('')}
+        <div class="doc-foot"><button type="submit" class="btn primary" ${busy['f:' + a.id] ? 'disabled' : ''}>${busy['f:' + a.id] ? '<span class="spin"></span>Submitting…' : `${I.send}${sub ? 'Submit changes' : 'Submit'}`}</button>
+          <span class="draft" data-draftnote>${draft ? 'Your answers are saved on this device until you submit.' : 'Required fields are marked with *.'}</span></div>
+      </form></div></div></div>`;
+  }
+  function readForm(formEl, a) {
+    const vals = {};
+    a.form.fields.forEach((fd) => {
+      if (!INPUTS.includes(fd.type)) return;
+      const els = formEl.querySelectorAll(`[data-fld="${CSS.escape(fd.id)}"]`);
+      if (fd.type === 'multi') vals[fd.id] = [...els].filter((x) => x.checked).map((x) => x.value);
+      else if (fd.type === 'choice' || fd.type === 'yesno') { const c = [...els].find((x) => x.checked); vals[fd.id] = c ? c.value : ''; }
+      else if (fd.type === 'signature') { const nm = formEl.querySelector(`[data-fld="${CSS.escape(fd.id)}"][data-sig=name]`), ag = formEl.querySelector(`[data-fld="${CSS.escape(fd.id)}"][data-sig=agree]`); vals[fd.id] = {name: nm ? nm.value : '', agree: !!(ag && ag.checked)}; }
+      else { const el = els[0]; vals[fd.id] = el ? el.value : ''; }
+    });
+    return vals;
+  }
+
+  // ---------- The action at the bottom of a task ----------
   function doHTML(g, i) {
     const t = g.task, st = t.state || {}, b = busy[t.id];
-    const who = st.done && st.doneBy ? `<span class="by">✓ Done by ${esc(st.doneBy)} · ${when(st.doneAt)}</span>` : '';
-    if (t.type === 'todo') return `<div class="do"><div class="do-row"><button type="button" class="check${st.done ? ' on' : ''}" data-tick="${i}" ${b ? 'disabled' : ''} aria-pressed="${!!st.done}"><span class="box">${st.done ? '✓' : ''}</span>${b ? 'Saving…' : st.done ? 'Done' : 'Mark as done'}</button>${who}</div></div>`;
+    const completed = (label) => `<div class="completed"><span class="ok">${I.check}</span><span><b>${label}</b><small>by ${esc(st.doneBy || 'someone')} · ${when(st.doneAt)}</small></span>${t.type === 'todo' && !g.forms.length ? `<button type="button" class="undo" data-tick="${i}">Undo</button>` : ''}</div>`;
+    if (t.type === 'todo') {
+      if (st.done) return `<div class="do">${completed('Completed')}</div>`;
+      if (g.forms.length) return `<div class="do"><div class="hint">Submit the document${g.forms.length > 1 ? 's' : ''} above to complete this step.</div></div>`;
+      return `<div class="do"><button type="button" class="btn primary done-btn" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving…' : `<span class="tick">${I.check}</span>Mark as done`}</button></div>`;
+    }
     if (t.type === 'question') return `<div class="do"><label class="lbl" for="q${i}">${esc(t.label || 'Your answer')}</label>${t.qtype === 'longtext'
         ? `<textarea class="field" id="q${i}" data-q="${i}" placeholder="Type your answer…">${esc(st.answer || '')}</textarea>` : `<input class="field" id="q${i}" data-q="${i}" placeholder="Type your answer…" value="${esc(st.answer || '')}">`}
-      <div class="do-row"><button type="button" class="btn primary" data-answers="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spinner sm"></span>Saving…' : st.done ? 'Save changes' : 'Save answer'}</button>${who}</div></div>`;
+      <div class="do-row"><button type="button" class="btn primary" data-answers="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving…' : `${I.send}${st.done ? 'Save changes' : 'Save answer'}`}</button></div>${st.done ? `<div style="margin-top:12px">${completed('Answered')}</div>` : ''}</div>`;
     if (t.type === 'upload') return `<div class="do">${t.help ? `<div class="help">${esc(t.help)}</div>` : ''}
-      ${b ? '<div class="by"><span class="spinner sm" style="border-color:rgba(24,128,92,.3);border-top-color:var(--success)"></span>Uploading…</div>'
+      ${b ? '<div class="do-row"><span class="spin dark"></span><span class="hint">Uploading…</span></div>'
         : `<label class="drop" data-drop="${i}"><span class="big">📤</span><b>Drop your file here</b> or click to choose one<small>PDF, Word, Excel, PowerPoint, images, text or ZIP · up to 8 MB</small><input type="file" data-upload="${i}" class="hidden"></label>`}
-      ${(st.uploads || []).length ? `<div class="files">${st.uploads.map((u) => `<div class="file received"><span class="fi">${esc(ext(u.name))}</span><span><b>${esc(u.name)}</b><small>${size(u.size)} · sent by ${esc(u.by)} ${when(u.at)}</small></span><span class="dl">✓ Received</span></div>`).join('')}</div>` : ''}
-      ${who ? `<div class="do-row">${who}</div>` : ''}</div>`;
+      ${(st.uploads || []).length ? `<div class="files">${st.uploads.map((u) => `<div class="file received"><span class="fi">${esc(ext(u.name))}</span><span><b>${esc(u.name)}</b><small>${size(u.size)} · sent by ${esc(u.by)} ${when(u.at)}</small></span><span class="dl">${I.check}Received</span></div>`).join('')}</div>` : ''}
+      ${st.done ? `<div style="margin-top:12px">${completed('Received')}</div>` : ''}</div>`;
     return '';
   }
 
   // ---------- Drawing ----------
   function renderWho() {
-    $('whoLine').innerHTML = name ? `Working as <b>${esc(name)}</b> · <button type="button" class="linkish" id="changeName">Not you?</button>` : 'Open a task below to get started.';
+    $('whoLine').innerHTML = name ? `Working as <b>${esc(name)}</b> · <button type="button" class="linkish" id="changeName">Not you?</button>` : 'Work through the steps below. Your progress is saved automatically.';
     const b = $('changeName'); if (b) b.onclick = () => { name = ''; try { localStorage.removeItem(NAME_KEY); } catch (e) { /* ignore */ } needName(() => {}); };
   }
+  const nextGroup = () => groups.find((g) => !g.task.state.done);
   function render() {
     document.title = proc.title + ' · Onboarding';
     $('fromIc').textContent = (proc.workspaceName || proc.senderName || 'P').trim()[0].toUpperCase();
     $('fromName').textContent = proc.senderName || proc.workspaceName || 'Your onboarding';
-    $('title').textContent = proc.title;
+    $('title').textContent = proc.title; $('stTitle').textContent = proc.title;
     $('forLine').textContent = proc.clientName ? 'For ' + proc.clientName : '';
-    const total = groups.length, done = groups.filter((g) => g.task.state.done).length;
-    const C = 2 * Math.PI * 50;
+    // progress counts the required tasks (optional ones don't hold the bar back)
+    const req = groups.filter((g) => g.task.required !== false), base = req.length ? req : groups;
+    const total = base.length, done = base.filter((g) => g.task.state.done).length, pct = proc.status === 'completed' ? 100 : total ? Math.round(done / total * 100) : 0;
+    const next = nextGroup();
+    const C = 2 * Math.PI * 54;
     $('ringVal').style.strokeDasharray = C;
-    requestAnimationFrame(() => { $('ringVal').style.strokeDashoffset = C * (1 - (total ? done / total : 0)); $('barMini').style.width = (total ? done / total * 100 : 0) + '%'; });
-    $('ringNum').textContent = `${done}/${total}`;
-    const next = groups.find((g) => !g.task.state.done);
-    $('nextLine').classList.toggle('hidden', !next);
-    if (next) $('nextLine').innerHTML = `Next up: <b>${esc(titleOf(next.task))}</b>`;
+    requestAnimationFrame(() => { $('ringVal').style.strokeDashoffset = C * (1 - pct / 100); $('stBar').style.width = pct + '%'; });
+    $('ringNum').textContent = pct + '%'; $('ringSub').textContent = `${done} of ${total} done`;
+    $('stCnt').textContent = `${done}/${total}`;
+    $('segs').innerHTML = groups.map((g) => `<i class="${g.task.state.done ? 'on' : next && g === next ? 'now' : ''}"></i>`).join('');
+    $('heroCta').innerHTML = next ? `<button type="button" class="btn light sm" data-goto="${esc(next.task.id)}">${done ? 'Continue' : 'Start'} ${I.arrow}</button><span class="nx">Next up: <b>${esc(titleOf(next.task))}</b></span>` : '<span class="nx"><b>Everything is done.</b> Thank you!</span>';
+    $('stGo').classList.toggle('hidden', !next);
     renderWho();
     const allDone = proc.status === 'completed';
     $('doneBanner').classList.toggle('hidden', !allDone);
     if (wasDone === false && allDone) celebrate(true);
     wasDone = allDone;
-    // the welcome (what comes before the first task)
+    // welcome
     const introHTML = intro.map(contentHTML).join('');
     $('intro').classList.toggle('hidden', !introHTML.trim());
     if ($('intro').dataset.html !== introHTML) { $('intro').innerHTML = introHTML; $('intro').dataset.html = introHTML; loadMedia($('intro')); }
-    // the tasks: an open task keeps its video playing, so only what changed is redrawn
+    // journey
+    $('jList').innerHTML = groups.map((g, i) => `<button type="button" class="j-item${g.task.state.done ? ' done' : ''}${next && g === next ? ' next' : ''}" data-goto="${esc(g.task.id)}"><span class="jd">${g.task.state.done ? '✓' : i + 1}</span><span class="tx">${esc(titleOf(g.task))}</span></button>`).join('');
+    $('jFoot').innerHTML = total ? `<b>${done} of ${total}</b> done${next ? ` · next: ${esc(titleOf(next.task))}` : ''}` : '';
+    // tasks: built once; afterwards only what changed is updated (a playing video or half-filled document stays)
     const host = $('tasks');
-    const sig = groups.map((g) => g.task.id + ':' + g.content.map((b) => b.id).join(',') + ':' + g.section).join('|');
+    const sig = groups.map((g) => [g.task.id, g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
     if (host.dataset.sig !== sig) {
-      host.innerHTML = groups.map((g, i) => {
-        const t = g.task;
-        return `${g.section && g.section.toLowerCase() !== titleOf(t).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
-          <section class="task" data-id="${esc(t.id)}" style="animation-delay:${firstRender ? i * 50 : 0}ms">
-          <button type="button" class="t-head" data-toggle="${i}"><span class="t-num"></span>
-            <span class="t-main"><b>${esc(titleOf(t))}</b><small>${summary(g)}</small></span>
-            <span class="chip"></span>
-            <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
-          <div class="t-body"><div><div class="t-inner"><div class="content" data-content="${i}"></div><div data-do="${i}"></div></div></div></div></section>`;
-      }).join('');
+      host.innerHTML = groups.map((g, i) => `${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
+        <section class="task" id="task-${esc(g.task.id)}" data-id="${esc(g.task.id)}" style="animation-delay:${firstRender ? Math.min(i, 8) * 55 : 0}ms" aria-labelledby="tt-${esc(g.task.id)}">
+          <div class="t-head"><span class="t-num"></span><div class="t-main"><b id="tt-${esc(g.task.id)}">${esc(titleOf(g.task))}</b><div class="pills">${pills(g)}</div></div><span class="chip"></span></div>
+          <div class="t-inner">
+            ${g.task.note ? `<p class="t-note">${esc(g.task.note)}</p>` : ''}
+            ${g.content.length ? `<button type="button" class="see-more" data-more="${i}" aria-expanded="false"><span class="sm-t">See more</span>${I.chev}</button>
+              <div class="t-body"><div><div class="content" data-content="${i}"></div></div></div>` : ''}
+            <div data-docs="${i}"></div>
+            <div data-do="${i}"></div></div></section>`).join('');
       host.dataset.sig = sig;
     }
     groups.forEach((g, i) => {
       const el = host.querySelector(`.task[data-id="${CSS.escape(g.task.id)}"]`); if (!el) return;
-      const st = g.task.state || {}, isNext = next && next.task.id === g.task.id, isOpen = openId === g.task.id;
-      el.classList.toggle('done', !!st.done); el.classList.toggle('is-next', !!isNext); el.classList.toggle('open', isOpen);
-      el.querySelector('.t-num').textContent = st.done ? '✓' : i + 1;
-      el.querySelector('.chip').textContent = st.done ? 'Done' : isNext ? 'Up next' : 'To do';
-      el.querySelector('.t-head').setAttribute('aria-expanded', String(isOpen));
-      const c = el.querySelector('.content'), d = el.querySelector('[data-do]');
-      const ch = g.content.map(contentHTML).join('');
-      if (c.dataset.html !== ch) { c.innerHTML = ch; c.dataset.html = ch; }
-      const dh = doHTML(g, i);
+      const st = g.task.state || {}, isNext = next && next === g, isMore = more.has(g.task.id);
+      el.classList.toggle('done', !!st.done); el.classList.toggle('is-next', !!isNext); el.classList.toggle('more', isMore);
+      el.querySelector('.t-num').innerHTML = st.done ? I.check : i + 1;
+      el.querySelector('.chip').textContent = st.done ? 'Completed' : isNext ? 'Up next' : 'To do';
+      const sm = el.querySelector('.see-more');
+      if (sm) { sm.setAttribute('aria-expanded', String(isMore)); sm.querySelector('.sm-t').textContent = isMore ? 'See less' : 'See more'; }
+      const c = el.querySelector('.content');
+      if (c) { const ch = g.content.map(contentHTML).join(''); if (c.dataset.html !== ch) { c.innerHTML = ch; c.dataset.html = ch; } if (isMore) loadMedia(c); }
+      // documents: never redrawn while someone is typing in one that's open
+      const dbox = el.querySelector('[data-docs]');
+      const dKey = g.forms.map((a) => a.id + ':' + JSON.stringify(((st.forms || {})[a.id] || {}).at || '') + ':' + openDocs.has(a.id) + ':' + !!busy['f:' + a.id] + ':' + !!draftOf(a.id)).join('|');
+      const typing = dbox.contains(document.activeElement) && document.activeElement.matches('input,textarea');
+      if (dbox.dataset.key !== dKey && !typing) { dbox.innerHTML = g.forms.map((a) => docHTML(g, a, i)).join(''); dbox.dataset.key = dKey; }
+      const d = el.querySelector('[data-do]'), dh = doHTML(g, i);
       if (d.dataset.html !== dh && !(d.contains(document.activeElement) && document.activeElement.matches('input,textarea'))) { d.innerHTML = dh; d.dataset.html = dh; }
-      if (isOpen) loadMedia(el);     // videos and previews load when their task is opened
     });
-    $('activity').innerHTML = proc.activity.length ? proc.activity.map((a) => `<div class="act"><b>${esc(a.by)}</b> ${esc(a.text)}<small>${when(a.at)}</small></div>`).join('') : '<div class="act" style="color:var(--ink-3)">Nothing yet. Open the first task to get started.</div>';
+    $('activity').innerHTML = proc.activity.length ? proc.activity.map((a) => `<div class="act"><span class="av">${esc(initials(a.by))}</span><div><b>${esc(a.by)}</b> ${esc(a.text)}<small>${when(a.at)}</small></div></div>`).join('') : '<div class="act" style="color:var(--ink-3)">Nothing yet. Start with the first step.</div>';
     firstRender = false;
   }
   function loadMedia(el) { el.querySelectorAll('iframe[data-src]').forEach((f) => { f.src = f.dataset.src; f.removeAttribute('data-src'); }); }
-  function openTask(id, scroll) {
-    openId = id; render();
-    if (scroll && id) setTimeout(() => { const el = document.querySelector(`.task[data-id="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 140);
+  function goTo(id) {
+    const el = document.querySelector(`.task[data-id="${CSS.escape(id)}"]`); if (!el) return;
+    el.scrollIntoView({behavior: 'smooth', block: 'start'});
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
   }
 
   // ---------- Who's working on this ----------
@@ -429,49 +622,99 @@
     const a = pendingAction; pendingAction = null; if (a) a();
   });
 
-  // ---------- Doing a task ----------
-  async function act(i, fn, after) {
-    const t = groups[i].task, wasTaskDone = !!t.state.done;
-    busy[t.id] = true; render();
-    try { const r = (await fn()).data; if (r.process) { proc = r.process; build(); } else if (r.needsPin) { load(true); return; } }
+  // ---------- Doing things ----------
+  async function act(key, taskId, fn, after) {
+    const before = groups.find((g) => g.task.id === taskId), wasTaskDone = !!(before && before.task.state.done);
+    busy[key] = true; render();
+    let ok = false;
+    try { const r = (await fn()).data; if (r.process) { proc = r.process; build(); ok = true; } else if (r.needsPin) { load(true); return false; } }
     catch (e) { toast(msgOf(e), true); }
-    finally { busy[t.id] = false; render(); }
-    const now = groups.find((g) => g.task.id === t.id);
+    finally { busy[key] = false; render(); }
+    const now = groups.find((g) => g.task.id === taskId);
+    if (ok && after) after();
     if (now && now.task.state.done && !wasTaskDone) {
-      const num = document.querySelector(`.task[data-id="${CSS.escape(t.id)}"] .t-num`);
-      if (num) { num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop'); }
+      const num = document.querySelector(`.task[data-id="${CSS.escape(taskId)}"] .t-num`);
+      if (num) { num.animate([{transform: 'scale(.7)'}, {transform: 'scale(1.18)'}, {transform: 'scale(1)'}], {duration: 450, easing: 'cubic-bezier(.3,1.6,.5,1)'}); }
       celebrate(false, num);
-      if (after) after();
-      const nx = groups.find((g) => !g.task.state.done);   // on to the next one
-      setTimeout(() => openTask(nx ? nx.task.id : null, !!nx), 700);
-    } else if (after) after();
+      more.delete(taskId);
+      const nx = nextGroup();
+      setTimeout(() => { render(); if (nx && proc.status !== 'completed') goTo(nx.task.id); }, 750);
+    }
+    return ok;
   }
-  $('tasks').addEventListener('click', (e) => {
-    const tg = e.target.closest('[data-toggle]');
-    if (tg) { const g = groups[Number(tg.dataset.toggle)]; openTask(openId === g.task.id ? null : g.task.id, false); return; }
+  document.addEventListener('click', (e) => {
+    const gt = e.target.closest('[data-goto]'); if (gt) { goTo(gt.dataset.goto); return; }
+    if (!e.target.closest('#tasks')) return;
+    const mo = e.target.closest('[data-more]');
+    if (mo) { const g = groups[Number(mo.dataset.more)]; if (more.has(g.task.id)) more.delete(g.task.id); else more.add(g.task.id); render(); return; }
+    const dop = e.target.closest('[data-docopen]');
+    if (dop) { const id = dop.dataset.docopen; if (openDocs.has(id)) openDocs.delete(id); else openDocs.add(id); render(); if (openDocs.has(id)) setTimeout(() => { const f = document.querySelector(`[data-form="${CSS.escape(id)}"] .field`); if (f) f.focus({preventScroll: true}); }, 350); return; }
     const t = e.target.closest('[data-tick]');
-    if (t) { const i = Number(t.dataset.tick), task = groups[i].task; needName(() => act(i, () => stepFn({token, pin, stepId: task.id, action: task.state.done ? 'uncomplete' : 'complete', by: {name}}))); return; }
+    if (t) { const g = groups[Number(t.dataset.tick)], task = g.task; needName(() => act(task.id, task.id, () => stepFn({token, pin, stepId: task.id, action: task.state.done ? 'uncomplete' : 'complete', by: {name}}))); return; }
     const a = e.target.closest('[data-answers]');
     if (a) {
       const i = Number(a.dataset.answers), el = document.querySelector(`[data-q="${i}"]`), value = el ? el.value : '';
       if (!value.trim()) { toast('Type your answer first.', true); if (el) el.focus(); return; }
-      needName(() => act(i, () => stepFn({token, pin, stepId: groups[i].task.id, action: 'answers', answers: {value}, by: {name}}), () => toast('Answer saved. Thank you!')));
+      const task = groups[i].task;
+      needName(() => act(task.id, task.id, () => stepFn({token, pin, stepId: task.id, action: 'answers', answers: {value}, by: {name}}), () => toast('Answer saved. Thank you!')));
     }
+  });
+  // documents: drafts while typing, checks and submitting
+  document.addEventListener('input', (e) => {
+    const form = e.target.closest('[data-form]'); if (!form) return;
+    const box = form.closest('[data-doc]'), g = groups[Number(box.dataset.g)], a = g.forms.find((x) => x.id === form.dataset.form);
+    e.target.classList.remove('bad'); const er = e.target.closest('.fq') && e.target.closest('.fq').querySelector('.ferr'); if (er) er.remove();
+    if (e.target.dataset.sig === 'name') { const pv = e.target.parentElement.querySelector('.sig-prev'); if (pv) pv.textContent = e.target.value; }
+    if (e.target.type === 'radio' || e.target.type === 'checkbox') form.querySelectorAll('.opt').forEach((o) => { const inp = o.querySelector('input'); o.classList.toggle('on', inp.checked); });
+    const vals = readForm(form, a);
+    try { localStorage.setItem(DRAFT_KEY(a.id), JSON.stringify(vals)); } catch (err) { /* ignore */ }
+    const inputs = a.form.fields.filter((x) => INPUTS.includes(x.type)), n = inputs.filter((x) => filled(vals[x.id])).length;
+    const meter = box.querySelector('.meter i'), sm = box.querySelector('.doc-h small'), note = form.querySelector('[data-draftnote]');
+    if (meter) meter.style.width = (inputs.length ? n / inputs.length * 100 : 0) + '%';
+    if (sm && meter) sm.lastChild.textContent = `${n} of ${inputs.length} answered · draft saved`;
+    if (note) note.textContent = 'Your answers are saved on this device until you submit.';
+  });
+  document.addEventListener('change', (e) => { if (e.target.closest('[data-form]') && (e.target.type === 'radio' || e.target.type === 'checkbox')) e.target.dispatchEvent(new Event('input', {bubbles: true})); });
+  document.addEventListener('submit', (e) => {
+    const form = e.target.closest('[data-form]'); if (!form) return;
+    e.preventDefault();
+    const box = form.closest('[data-doc]'), g = groups[Number(box.dataset.g)], a = g.forms.find((x) => x.id === form.dataset.form);
+    const vals = readForm(form, a);
+    let first = null;
+    a.form.fields.forEach((fd) => {
+      if (!INPUTS.includes(fd.type)) return;
+      const v = vals[fd.id], bad = (fd.required && !filled(v)) || (fd.type === 'email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+      const el = form.querySelector(`[data-fld="${CSS.escape(fd.id)}"]`), wrap = el && (el.closest('.fq') || el.closest('fieldset'));
+      if (wrap) { const old = wrap.querySelector('.ferr'); if (old) old.remove(); }
+      if (bad && wrap) { if (el.classList.contains('field')) el.classList.add('bad'); wrap.insertAdjacentHTML('beforeend', `<div class="ferr">${fd.type === 'email' && v ? 'This isn\u2019t a valid email address.' : fd.type === 'signature' ? 'Type your name and tick the box to sign.' : 'This one is required.'}</div>`); first = first || el; }
+    });
+    if (first) { first.scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => first.focus({preventScroll: true}), 300); toast('A few required answers are still missing.', true); return; }
+    needName(() => act('f:' + a.id, g.task.id, () => stepFn({token, pin, stepId: g.task.id, action: 'form', formId: a.id, values: vals, by: {name}}), () => {
+      try { localStorage.removeItem(DRAFT_KEY(a.id)); } catch (err) { /* ignore */ }
+      openDocs.delete(a.id); render(); toast(`“${a.form.title || 'Document'}” submitted. Thank you!`);
+    }));
   });
   function readFile(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(new Error('Couldn\u2019t read the file.')); r.readAsDataURL(f); }); }
   async function upload(i, f) {
     if (!f) return;
     if (f.size > 8 * 1024 * 1024) { toast('This file is larger than 8 MB.', true); return; }
+    const task = groups[i].task;
     needName(async () => {
       let data; try { data = await readFile(f); } catch (e) { toast(msgOf(e), true); return; }
-      await act(i, () => uploadFn({token, pin, stepId: groups[i].task.id, name: f.name, contentType: f.type || 'application/octet-stream', data, by: {name}}), () => toast(`${f.name} received. Thank you!`));
+      await act(task.id, task.id, () => uploadFn({token, pin, stepId: task.id, name: f.name, contentType: f.type || 'application/octet-stream', data, by: {name}}), () => toast(`${f.name} received. Thank you!`));
     });
   }
   $('tasks').addEventListener('change', (e) => { const inp = e.target.closest('[data-upload]'); if (inp) upload(Number(inp.dataset.upload), inp.files[0]); });
   ['dragover', 'dragenter'].forEach((ev) => $('tasks').addEventListener(ev, (e) => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.add('over'); } }));
   ['dragleave', 'drop'].forEach((ev) => $('tasks').addEventListener(ev, (e) => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.remove('over'); if (ev === 'drop' && e.dataTransfer.files[0]) upload(Number(d.dataset.drop), e.dataTransfer.files[0]); } }));
 
-  // ---------- Activity drawer ----------
+  // ---------- Sticky bar, journey highlight, activity ----------
+  $('stGo').onclick = () => { const nx = nextGroup(); if (nx) goTo(nx.task.id); };
+  new IntersectionObserver(([en]) => { $('sticky').classList.toggle('on', !en.isIntersecting && !!proc); $('sticky').setAttribute('aria-hidden', String(en.isIntersecting)); }, {threshold: 0}).observe($('hero'));
+  let raf = null;
+  window.addEventListener('scroll', () => { if (raf) return; raf = requestAnimationFrame(() => { raf = null;
+    let cur = null; document.querySelectorAll('.task').forEach((t) => { if (t.getBoundingClientRect().top < window.innerHeight * 0.4) cur = t.dataset.id; });
+    document.querySelectorAll('.j-item').forEach((j) => j.classList.toggle('cur', j.dataset.goto === cur)); }); }, {passive: true});
   const drawer = (open) => { $('drawer').classList.toggle('open', open); $('scrim').classList.toggle('open', open); };
   $('actBtn').onclick = () => drawer(true); $('drawerClose').onclick = () => drawer(false); $('scrim').onclick = () => drawer(false);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
@@ -480,15 +723,14 @@
   setInterval(() => { if (proc && !document.hidden && !Object.values(busy).some(Boolean) && !document.activeElement.matches('input,textarea')) load(false); }, 20000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && proc) load(false); });
 
-  // a small burst for one task, confetti for the whole thing
   function celebrate(big, from) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const c = document.createElement('canvas'); c.className = 'confetti'; document.body.appendChild(c);
     const x = c.getContext('2d'), W = c.width = innerWidth, H = c.height = innerHeight, cols = ['#1B59A5', '#3730B3', '#7B3FE4', '#5FD3A8', '#FFB547', '#FF7EB6'];
     const r0 = from ? from.getBoundingClientRect() : null, ox = r0 ? r0.left + r0.width / 2 : W / 2, oy = r0 ? r0.top + r0.height / 2 : H / 3;
-    const ps = Array.from({length: big ? 170 : 26}, (_, i) => big
+    const ps = Array.from({length: big ? 180 : 28}, (_, i) => big
       ? {x: Math.random() * W, y: -20 - Math.random() * H * 0.4, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, c: cols[i % cols.length], w: 6 + Math.random() * 6, h: 9 + Math.random() * 8}
-      : {x: ox, y: oy, vx: Math.cos(i / 26 * 6.28) * (3 + Math.random() * 3), vy: Math.sin(i / 26 * 6.28) * (3 + Math.random() * 3) - 2, r: Math.random() * 6.28, vr: (Math.random() - .5) * .4, c: cols[i % cols.length], w: 5 + Math.random() * 4, h: 7 + Math.random() * 5});
+      : {x: ox, y: oy, vx: Math.cos(i / 28 * 6.28) * (3 + Math.random() * 3), vy: Math.sin(i / 28 * 6.28) * (3 + Math.random() * 3) - 2, r: Math.random() * 6.28, vr: (Math.random() - .5) * .4, c: cols[i % cols.length], w: 5 + Math.random() * 4, h: 7 + Math.random() * 5});
     const t0 = performance.now(), dur = big ? 4200 : 900;
     (function f(t) {
       x.clearRect(0, 0, W, H);
