@@ -309,6 +309,90 @@
   .modal{position:fixed;inset:0;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;backdrop-filter:blur(3px);}
   .modal .card{max-width:420px;width:100%;padding:30px;animation:rise .3s var(--ease) both;} .modal h2{font:700 21px Sora,sans-serif;margin:0 0 6px;} .modal p{margin:0 0 16px;color:var(--ink-2);font-size:14px;line-height:1.55;}
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:70;}
+
+  /* =================== Split-screen design =================== */
+  body{background:#F3F4FA;}
+  body::before{height:auto;inset:0;background:
+    radial-gradient(900px 500px at 85% -10%,rgba(123,63,228,.10),transparent 60%),
+    radial-gradient(800px 500px at 30% 110%,rgba(27,89,165,.08),transparent 60%),
+    radial-gradient(rgba(55,48,179,.07) 1px,transparent 1.4px) 0 0/22px 22px;}
+  .shell{max-width:1360px;margin:0 auto;padding:24px;display:grid;grid-template-columns:400px minmax(0,1fr);gap:36px;align-items:start;}
+  /* the cover */
+  .cover{position:sticky;top:24px;height:calc(100vh - 48px);min-height:560px;border-radius:32px;overflow:hidden;color:#fff;
+    background:linear-gradient(160deg,#0F1442 0%,#1E2A86 38%,#3730B3 68%,#6D3FD9 100%);box-shadow:0 40px 80px -40px rgba(26,22,90,.75),inset 0 1px 0 rgba(255,255,255,.12);
+    animation:rise .55s var(--ease) both;display:block;padding:0;}
+  .cover::before,.cover::after{display:none;}
+  .orb{position:absolute;border-radius:50%;filter:blur(2px);pointer-events:none;}
+  .o1{width:420px;height:420px;right:-180px;top:-160px;background:radial-gradient(circle,rgba(142,240,201,.28),transparent 65%);animation:drift 14s ease-in-out infinite alternate;}
+  .o2{width:380px;height:380px;left:-170px;bottom:-140px;background:radial-gradient(circle,rgba(167,123,255,.45),transparent 65%);animation:drift 18s ease-in-out infinite alternate-reverse;}
+  .o3{width:260px;height:260px;right:-60px;bottom:120px;background:radial-gradient(circle,rgba(91,140,255,.30),transparent 65%);animation:drift 16s ease-in-out infinite alternate;}
+  @keyframes drift{to{transform:translate(-30px,40px) scale(1.08);}}
+  .cover-in{position:relative;height:100%;display:flex;flex-direction:column;padding:30px 28px 24px;}
+  .cover .from{align-self:flex-start;}
+  .cover h1{font:800 34px/1.1 Sora,sans-serif;letter-spacing:-.025em;margin:22px 0 6px;}
+  .cover .for{opacity:.75;font-size:15px;}
+  .c-ring{display:flex;align-items:center;gap:18px;margin:26px 0 22px;padding:16px;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(6px);}
+  .c-ring .ring,.c-ring .ring svg{width:104px;height:104px;}
+  .c-ring .ring circle{stroke-width:10;}
+  .c-ring .ring .val{stroke:url(#rg);}
+  .c-ring .ring .num b{font-size:24px;} .c-ring .ring .num small{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;opacity:.7;}
+  .c-stat{flex:1;min-width:0;} .c-stat b{display:block;font:700 15px Sora,sans-serif;}
+  .c-stat .segs{margin-top:12px;max-width:none;gap:4px;} .c-stat .segs i{height:6px;}
+  .c-stat .segs i.on{background:#8EF0C9;}
+  .steps-h{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin:0 4px 8px;}
+  .steps{flex:1;min-height:0;overflow-y:auto;margin:0 -6px;padding:0 6px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent;}
+  .s-item{display:flex;align-items:center;gap:12px;width:100%;border:none;background:none;border-radius:14px;padding:9px 10px;text-align:left;color:rgba(255,255,255,.82);font-size:14px;transition:background .15s,color .15s;position:relative;}
+  .s-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+  .s-item .sd{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 12px Sora,sans-serif;border:1.5px solid rgba(255,255,255,.3);transition:all .3s;}
+  .s-item.done{color:rgba(255,255,255,.55);} .s-item.done .st{text-decoration:line-through;text-decoration-color:rgba(255,255,255,.35);}
+  .s-item.done .sd{background:#8EF0C9;border-color:#8EF0C9;color:#0F3D2E;}
+  .s-item.next{background:rgba(255,255,255,.12);color:#fff;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);}
+  .s-item.next .sd{background:#fff;border-color:#fff;color:var(--teal);}
+  .s-item .st{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .s-item .nowtag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:#8EF0C9;color:#0F3D2E;border-radius:999px;padding:2px 8px;}
+  .s-item + .s-item::before{content:"";position:absolute;left:23.5px;top:-7px;width:1.5px;height:12px;background:rgba(255,255,255,.18);}
+  .hero-cta{margin:16px 0 0;display:block;}
+  .btn.cta{width:100%;height:auto;min-height:58px;justify-content:space-between;padding:12px 18px;border-radius:16px;border:none;background:#fff;color:var(--ink);text-align:left;box-shadow:0 18px 34px -18px rgba(0,0,0,.6);}
+  .btn.cta:hover{transform:translateY(-2px);box-shadow:0 22px 40px -18px rgba(0,0,0,.65);}
+  .btn.cta span{min-width:0;overflow:hidden;} .btn.cta small{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.02em;}
+  .btn.cta span{font-weight:700;font-size:14.5px;white-space:nowrap;text-overflow:ellipsis;}
+  .btn.cta svg{color:var(--teal);}
+  .all-done{padding:14px 16px;border-radius:16px;background:rgba(142,240,201,.16);border:1px solid rgba(142,240,201,.4);font-weight:700;}
+  .c-foot{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:rgba(255,255,255,.75);}
+  .c-foot .who{flex:1;min-width:0;} .c-foot .who b{color:#fff;} .c-foot .linkish{color:#C8C2FF;}
+  .c-foot .act-btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);color:#fff;}
+  .c-foot .act-btn:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff;}
+  /* the content */
+  .main{min-width:0;padding-top:6px;}
+  .intro{padding:40px 44px;border-radius:28px;margin-bottom:26px;position:relative;overflow:hidden;border:1px solid rgba(220,214,251,.7);
+    background:linear-gradient(180deg,#FFFFFF 0%,#FDFCFF 100%);box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 60px -36px rgba(30,30,90,.35);}
+  .intro::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--brand);}
+  .intro h1:first-child{font-size:32px;letter-spacing:-.025em;}
+  .intro .tx{font-size:16px;line-height:1.8;}
+  .intro .video{margin-top:22px;border-radius:20px;}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;}
+  .task.is-next .eyebrow{color:var(--teal);} .task.done .eyebrow{color:#7FB8A3;}
+  .tcard{border-radius:22px;border-color:rgba(226,231,240,.9);}
+  .t-head{padding:20px 22px 0;} .t-inner{padding:12px 22px 20px;}
+  .task.done .t-head{padding-bottom:18px;}
+  .tasks{gap:16px;}
+  .section{margin:30px 4px 12px 62px;}
+  .done-banner{border-radius:24px;}
+  .foot{margin-top:48px;}
+  .toolbar{display:none;}
+  /* phones and small screens: the cover becomes a header */
+  @media (max-width:1060px){
+    .shell{grid-template-columns:minmax(0,1fr);gap:22px;padding:16px;}
+    .cover{position:relative;top:0;height:auto;min-height:0;border-radius:26px;}
+    .cover-in{padding:24px 22px 20px;}
+    .cover h1{font-size:27px;margin-top:16px;}
+    .steps-h,.steps{display:none;}
+    .c-ring{margin:18px 0 0;}
+    .intro{padding:26px 22px;border-radius:22px;}
+    .intro h1:first-child{font-size:25px;}
+    .section{margin-left:56px;}
+  }
+  @media (min-width:1061px){ .sticky{display:none;} }
   @media (prefers-reduced-motion: reduce){ *,*::before{animation:none !important;transition:none !important;} html{scroll-behavior:auto;} }
 </style>
 </head>
@@ -324,27 +408,31 @@
 <div class="sticky" id="sticky" aria-hidden="true"><div class="sticky-in"><b class="t" id="stTitle"></b><div class="track"><i id="stBar" style="width:0"></i></div><span class="cnt" id="stCnt"></span><button type="button" class="btn primary sm" id="stGo">Continue</button></div></div>
 
 <div id="page" class="hidden">
-  <div class="wrap">
-    <header class="hero" id="hero">
-      <div>
+  <div class="shell">
+    <aside class="cover" id="hero" aria-label="Your progress">
+      <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+      <div class="cover-in">
         <span class="from"><i id="fromIc">P</i><span id="fromName"></span></span>
         <h1 id="title"></h1>
         <div class="for" id="forLine"></div>
-        <div class="segs" id="segs" aria-hidden="true"></div>
+        <div class="c-ring">
+          <div class="ring" aria-hidden="true"><svg viewBox="0 0 128 128"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#8EF0C9"/></linearGradient></defs>
+            <circle class="track" cx="64" cy="64" r="54"/><circle class="val" id="ringVal" cx="64" cy="64" r="54"/></svg>
+            <div class="num"><b id="ringNum">0%</b><small>complete</small></div></div>
+          <div class="c-stat"><b id="ringSub">0 of 0 done</b><div class="segs" id="segs" aria-hidden="true"></div></div>
+        </div>
+        <div class="steps-h">Your steps</div>
+        <nav class="steps" id="stepList" aria-label="Your steps"></nav>
         <div class="hero-cta" id="heroCta"></div>
+        <div class="c-foot"><span class="who" id="whoLine"></span><button type="button" class="act-btn" id="actBtn"><span class="dot"></span>Activity</button></div>
       </div>
-      <div class="ring" aria-hidden="true"><svg viewBox="0 0 128 128"><circle class="track" cx="64" cy="64" r="54"/><circle class="val" id="ringVal" cx="64" cy="64" r="54"/></svg>
-        <div class="num"><b id="ringNum">0%</b><small id="ringSub">complete</small></div></div>
-    </header>
-    <div class="toolbar"><span class="who" id="whoLine"></span><span class="spacer"></span><button type="button" class="act-btn" id="actBtn"><span class="dot"></span>Activity</button></div>
-    <div class="layout">
-      <main>
-        <div id="doneBanner" class="done-banner hidden"><span class="big">✓</span><div><b>All done, thank you!</b>Everything has been received. We’ll take it from here.</div></div>
-        <div id="intro" class="card intro content hidden"></div>
-        <div class="tasks" id="tasks"></div>
-      </main>
-    </div>
-    <div class="foot">Onboarding powered by <b>PalaTrack</b></div>
+    </aside>
+    <main class="main">
+      <div id="doneBanner" class="done-banner hidden"><span class="big">✓</span><div><b>All done, thank you!</b>Everything has been received. We’ll take it from here.</div></div>
+      <div id="intro" class="card intro content hidden"></div>
+      <div class="tasks" id="tasks"></div>
+      <div class="foot">Onboarding powered by <b>PalaTrack</b></div>
+    </main>
   </div>
 </div>
 
@@ -487,7 +575,6 @@
     if (c('button')) out.push('🔗 link');
     if (g.task.type === 'upload') out.push('📤 upload');
     if (g.task.type === 'question') out.push('✍️ answer');
-    if (!g.task.required) out.push('optional');
     return out.map((x) => `<span>${x}</span>`).join('');
   }
 
@@ -586,10 +673,11 @@
     const C = 2 * Math.PI * 54;
     $('ringVal').style.strokeDasharray = C;
     requestAnimationFrame(() => { $('ringVal').style.strokeDashoffset = C * (1 - pct / 100); $('stBar').style.width = pct + '%'; });
-    $('ringNum').textContent = pct + '%'; $('ringSub').textContent = `${done} of ${total} done`;
+    $('ringNum').textContent = pct + '%'; $('ringSub').textContent = total ? `${done} of ${total} steps done` : 'No steps yet';
     $('stCnt').textContent = `${done}/${total}`;
-    $('segs').innerHTML = groups.map((g) => `<i class="${g.task.state.done ? 'on' : next && g === next ? 'now' : ''}"></i>`).join('');
-    $('heroCta').innerHTML = next ? `<button type="button" class="btn light sm" data-goto="${esc(next.task.id)}">${done ? 'Continue' : 'Start'} ${I.arrow}</button><span class="nx">Next up: <b>${esc(titleOf(next.task))}</b></span>` : '<span class="nx"><b>Everything is done.</b> Thank you!</span>';
+    $('segs').innerHTML = base.map((g) => `<i class="${g.task.state.done ? 'on' : next && g === next ? 'now' : ''}"></i>`).join('');
+    $('stepList').innerHTML = groups.map((g, i) => `<button type="button" class="s-item${g.task.state.done ? ' done' : ''}${next && g === next ? ' next' : ''}" data-goto="${esc(g.task.id)}"><span class="sd">${g.task.state.done ? I.check : i + 1}</span><span class="st">${esc(titleOf(g.task))}</span>${next && g === next ? '<span class="nowtag">Now</span>' : ''}</button>`).join('');
+    $('heroCta').innerHTML = next ? `<button type="button" class="btn cta" data-goto="${esc(next.task.id)}"><span><small>${done ? 'Continue with' : 'Start with'}</small>${esc(titleOf(next.task))}</span>${I.arrow}</button>` : '<div class="all-done">🎉 Everything is done. Thank you!</div>';
     $('stGo').classList.toggle('hidden', !next);
     renderWho();
     const allDone = proc.status === 'completed';
@@ -608,7 +696,7 @@
         <section class="task" id="task-${esc(g.task.id)}" data-id="${esc(g.task.id)}" style="animation-delay:${firstRender ? Math.min(i, 8) * 55 : 0}ms" aria-labelledby="tt-${esc(g.task.id)}">
           <div class="rail"><span class="disc-slot"></span></div>
           <div class="tcard">
-            <div class="t-head"><div class="t-main"><b id="tt-${esc(g.task.id)}">${esc(titleOf(g.task))}</b>
+            <div class="t-head"><div class="t-main"><div class="eyebrow">Step ${i + 1} of ${groups.length}${g.task.required === false ? ' · optional' : ''}</div><b id="tt-${esc(g.task.id)}">${esc(titleOf(g.task))}</b>
               <div class="meta"><span class="pills">${pills(g)}</span>${g.content.length ? `<button type="button" class="see-more" data-more="${i}" aria-expanded="false"><span class="sm-t">See more</span>${I.chev}</button>` : ''}</div>
               <div class="who-slot"></div></div>
               <div class="act-slot"></div></div>
