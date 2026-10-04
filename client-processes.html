@@ -242,6 +242,7 @@
   .bb-add{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;cursor:pointer;color:var(--teal);font-weight:600;font-size:13.5px;}
   .bb-add small{font-weight:500;color:var(--slate-light);font-size:12px;}
   .bb-up{font-size:13px;color:var(--slate);}
+  .bb-from{font-size:12.5px;color:var(--slate);}
   .bb-colors{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .sw{width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--border);position:relative;padding:0;}
   .sw.on{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ink);}
@@ -845,6 +846,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const MAX_VIDEO = 500 * 1024 * 1024, MAX_DOC = 50 * 1024 * 1024;
   const TYPE = {video: ['🎬', 'Video'], download: ['📄', 'Documents'], upload: ['📤', 'Upload request'], questions: ['✍️', 'Questions'], task: ['✅', 'Task'], call: ['📅', 'Book a call']};
   const PORTAL = new URL('client-process.html', location.href).href;
+  let myProfile = {};
   let uid = null, wsId = null, myName = '', ws = {}, templates = [], procs = [], statusFilter = 'active', query = '';
   let editing = null;   // {kind:'template'|'process', id, data}
   let current = null;   // the process open in the detail window
@@ -1017,13 +1019,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         : `<label class="bb-add">＋ ${label}<small>${hint}</small><input type="file" accept="image/*" class="hidden" data-bup="${kind}"></label>`;
     };
     $('bbLogo').innerHTML = img('logo', 'Upload logo', 'PNG or SVG, transparent works best');
-    $('bbPhoto').innerHTML = img('photo', 'Upload photo', 'A friendly headshot');
+    // no photo of its own: your tracker profile photo is used (what your client sees)
+    $('bbPhoto').innerHTML = !(b.photo && b.photo.url) && !b._up_photo && myProfile.photoURL
+      ? `<img src="${esc(myProfile.photoURL)}" alt=""><span class="bb-from">From your tracker profile</span><span class="bb-acts"><label class="link">Use a different photo<input type="file" accept="image/*" class="hidden" data-bup="photo"></label></span>`
+      : img('photo', 'Upload photo', 'Or set one in your tracker profile (Settings)');
     $('bbCover').innerHTML = img('cover', 'Upload cover image', 'Wide, at least 1600 px');
     const cur = /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color.toUpperCase() : '';
     $('bbColors').innerHTML = BRAND_COLORS.map((c) => `<button type="button" class="sw${cur === c ? ' on' : ''}" style="background:${c}" data-bcolor="${c}" aria-label="Color ${c}"></button>`).join('')
       + `<label class="sw custom${cur && !BRAND_COLORS.includes(cur) ? ' on' : ''}" title="Your own color" style="${cur && !BRAND_COLORS.includes(cur) ? 'background:' + cur : ''}"><input type="color" id="bbColor" value="${cur || '#3730B3'}"></label><code>${cur || 'Default'}</code>`;
-    $('bbRole').value = b.role || ''; $('bbCompany').value = b.company || (editing.isNew ? (ws.name || '') : '');
-    $('bbPrev').innerHTML = `${b.logo && b.logo.url ? `<img src="${esc(b.logo.url)}" alt="">` : ''}${b.photo && b.photo.url ? `<img class="r" src="${esc(b.photo.url)}" alt="">` : ''}<i style="background:${cur || '#3730B3'}"></i>`;
+    $('bbRole').value = b.role || ''; $('bbRole').placeholder = myProfile.role ? myProfile.role + ' (from your profile)' : 'e.g. Founder';
+    $('bbCompany').value = b.company || ''; $('bbCompany').placeholder = (myProfile.company || ws.name || 'Your company') + ' (from your profile)';
+    const ph = (b.photo && b.photo.url) || myProfile.photoURL;
+    $('bbPrev').innerHTML = `${b.logo && b.logo.url ? `<img src="${esc(b.logo.url)}" alt="">` : ''}${ph ? `<img class="r" src="${esc(ph)}" alt="">` : ''}<i style="background:${cur || '#3730B3'}"></i>`;
   }
   async function uploadBrand(kind, f) {
     if (!f) return;
@@ -1679,6 +1686,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       if (!wsId) { location.href = 'home.html'; return; }
       const [m, w] = await Promise.all([db.doc(`workspaces/${wsId}/members/${uid}`).get(), db.doc(`workspaces/${wsId}`).get()]);
       myName = (m.exists && m.data().name) || user.displayName || user.email || 'You';
+      myProfile = m.exists ? m.data() : {};
       ws = w.exists ? w.data() : {};
     } catch (e) { showToast('Could not load your workspace.', true); return; }
     let got = 0; const ready = () => { if (++got === 2) { $('pageLoader').style.display = 'none'; const r = $('appRoot'); r.style.display = 'flex'; r.classList.add('reveal'); if (!procs.length && templates.length) setTab('clients'); else if (!procs.length) setTab('tpl'); } };
