@@ -393,6 +393,43 @@
     .section{margin-left:56px;}
   }
   @media (min-width:1061px){ .sticky{display:none;} }
+
+  /* =================== refinements =================== */
+  .tcard{position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.04),0 4px 14px -10px rgba(16,24,40,.16);}
+  .task:hover .tcard{border-color:#D9D5F7;box-shadow:0 1px 2px rgba(16,24,40,.04),0 14px 30px -18px rgba(30,30,90,.25);}
+  .task.is-next .tcard{border-color:#D9D5F7;box-shadow:0 1px 2px rgba(16,24,40,.04),0 14px 30px -18px rgba(30,30,90,.25);}
+  .task.is-next .tcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand);}
+  .t-head{padding:20px 22px 0 24px;align-items:center;}
+  .t-main b{font-size:18px;}
+  .meta{margin-top:8px;}
+  .t-inner{padding:14px 22px 20px 24px;}
+  .t-inner > :first-child{margin-top:0;}
+  .eyebrow{margin-bottom:5px;}
+  .act-pill.ghost{background:var(--panel-alt);color:var(--ink-2);border-color:var(--border);}
+  .act-pill.ghost:hover{background:var(--panel);color:var(--ink);border-color:#C9D3E3;box-shadow:none;}
+  /* the document row: one clean row, no second button */
+  .doc{margin-top:0;border-radius:16px;border-color:var(--border-soft);}
+  .doc + .doc{margin-top:10px;}
+  .doc-h{padding:14px 16px;gap:14px;background:var(--panel-alt);transition:background .15s;}
+  .doc-h:hover{background:#F4F2FF;}
+  .doc-h .di{width:40px;height:40px;border-radius:12px;font-size:18px;box-shadow:0 2px 6px -3px rgba(16,24,40,.2);}
+  .doc-tx{flex:1;min-width:0;} .doc-tx b{font-size:15px;} .doc-h small{margin-top:5px;}
+  .doc-h .meter{width:96px;height:6px;}
+  .doc-chev{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-3);background:var(--panel);border:1px solid var(--border-soft);flex-shrink:0;transition:transform .35s var(--ease),color .15s,border-color .15s;}
+  .doc-h:hover .doc-chev{color:var(--teal);border-color:var(--violet-line);}
+  .doc.open .doc-chev{transform:rotate(180deg);color:var(--teal);}
+  .doc.sent .doc-h{background:#F3FAF7;} .doc.sent .doc-h:hover{background:#EAF7F1;}
+  .paper{border-top:1px solid var(--border-soft);}
+  .see-more{margin-left:2px;}
+  .task.bare .t-inner{padding:0;} .task.bare .t-head{padding-bottom:20px;}
+  .task.more.bare .t-inner{padding:12px 22px 20px 24px;}
+  /* a status, not a button */
+  .act-pill.static{height:28px;padding:0 11px;border:none;background:var(--panel-alt);color:var(--ink-3);font-size:12px;font-weight:700;letter-spacing:.02em;}
+  .act-pill.static:hover{background:var(--panel-alt);color:var(--ink-3);}
+  .task.is-next .act-pill.static{background:var(--violet-wash);color:var(--teal);}
+  .act-pill.static.isdone{height:34px;padding:0 13px 0 9px;background:var(--success-soft);color:var(--success);}
+  .task.done .t-head{padding-bottom:20px;}
+  @media (max-width:560px){ .t-head{padding:16px 16px 0;} .t-inner{padding:12px 16px 16px;} .t-main b{font-size:16px;} .doc-h .meter{width:60px;} }
   @media (prefers-reduced-motion: reduce){ *,*::before{animation:none !important;transition:none !important;} html{scroll-behavior:auto;} }
 </style>
 </head>
@@ -571,7 +608,6 @@
     if (c('video')) out.push(`🎬 ${c('video')} video${c('video') > 1 ? 's' : ''}`);
     if (c('file')) out.push(`📄 ${c('file')} document${c('file') > 1 ? 's' : ''}`);
     if (c('image')) out.push(`🖼️ ${c('image')} image${c('image') > 1 ? 's' : ''}`);
-    if (g.forms.length) out.push(`📝 ${g.forms.length} to fill in`);
     if (c('button')) out.push('🔗 link');
     if (g.task.type === 'upload') out.push('📤 upload');
     if (g.task.type === 'question') out.push('✍️ answer');
@@ -617,8 +653,8 @@
     return `<div class="doc${sub && !draft ? ' sent' : ''}${isOpen ? ' open' : ''}" data-doc="${esc(a.id)}" data-g="${gi}">
       <button type="button" class="doc-h" data-docopen="${esc(a.id)}" aria-expanded="${isOpen}">
         <span class="di">${sub && !draft ? '✅' : '📝'}</span>
-        <span><b>${esc(f.title || 'Document to fill in')}</b><small>${sub && !draft ? `Submitted by ${esc(sub.by)} · ${when(sub.at)}` : `<span class="meter"><i style="width:${inputs.length ? n / inputs.length * 100 : 0}%"></i></span>${n} of ${inputs.length} answered${draft ? ' · draft saved' : ''}`}</small></span>
-        <span class="go">${isOpen ? 'Close' : sub && !draft ? 'View or edit' : n ? 'Continue' : 'Fill in'} ${isOpen ? '' : I.arrow}</span></button>
+        <span class="doc-tx"><b>${esc(f.title || 'Document to fill in')}</b><small>${sub && !draft ? `Submitted by ${esc(sub.by)} · ${when(sub.at)} · click to view or edit` : `<span class="meter"><i style="width:${inputs.length ? n / inputs.length * 100 : 0}%"></i></span>${n} of ${inputs.length} answered${draft ? ' · draft saved' : ''}`}</small></span>
+        <span class="doc-chev" aria-hidden="true">${I.chev}</span></button>
       <div class="doc-b"><div><form class="paper" data-form="${esc(a.id)}" novalidate>
         <h3 class="p-title">${esc(f.title || 'Document to fill in')}</h3>${f.intro ? `<p class="p-intro">${esc(f.intro)}</p>` : ''}
         ${f.fields.map((fd) => fieldHTML(fd, vals[fd.id], key)).join('')}
@@ -719,7 +755,8 @@
       if (g.task.type === 'todo' && !g.forms.length) act = st.done
         ? `<button type="button" class="act-pill isdone" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${I.check}</span><span class="lbl"><span class="done-t">Completed</span><span class="undo-t">Undo</span></span></button>`
         : `<button type="button" class="act-pill" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin dark"></span><span class="lbl">Saving…</span>' : `<span class="c">${I.check}</span><span class="lbl">Mark as done</span>`}</button>`;
-      else if (g.forms.length && !st.done) act = `<button type="button" class="act-pill go" data-docopen="${esc(g.forms[0].id)}"><span class="lbl">${Object.keys(st.forms || {}).length ? 'Continue' : 'Fill in'}</span>${I.arrow}</button>`;
+      else if (g.forms.length && !st.done) { const f0 = g.forms[0], open = openDocs.has(f0.id), started = !!draftOf(f0.id) || Object.keys(st.forms || {}).length;
+        act = `<button type="button" class="act-pill ${open ? 'ghost' : 'go'}" data-docopen="${esc(f0.id)}"><span class="lbl">${open ? 'Close' : started ? 'Continue' : 'Fill in'}</span>${open ? '' : I.arrow}</button>`; }
       else act = `<span class="act-pill static${st.done ? ' isdone' : ''}">${st.done ? `<span class="c">${I.check}</span><span class="lbl">Completed</span>` : `<span class="lbl">${isNext ? 'Up next' : 'To do'}</span>`}</span>`;
       const aslot = el.querySelector('.act-slot'); if (aslot.dataset.html !== act) { aslot.innerHTML = act; aslot.dataset.html = act; }
       const wslot = el.querySelector('.who-slot'), who = st.done && st.doneBy ? `<div class="who-done">${I.check} ${esc(st.doneBy)} · ${when(st.doneAt)}</div>` : '';
@@ -734,6 +771,7 @@
       const typing = dbox.contains(document.activeElement) && document.activeElement.matches('input,textarea');
       if (dbox.dataset.key !== dKey && !typing) { dbox.innerHTML = g.forms.map((a) => docHTML(g, a, i)).join(''); dbox.dataset.key = dKey; }
       const d = el.querySelector('[data-do]'), dh = doHTML(g, i);
+      el.classList.toggle('bare', !g.task.note && !g.forms.length && !dh);   // hidden "See more" content takes no space
       if (d.dataset.html !== dh && !(d.contains(document.activeElement) && document.activeElement.matches('input,textarea'))) { d.innerHTML = dh; d.dataset.html = dh; }
     });
     $('activity').innerHTML = proc.activity.length ? proc.activity.map((a) => `<div class="act"><span class="av">${esc(initials(a.by))}</span><div><b>${esc(a.by)}</b> ${esc(a.text)}<small>${when(a.at)}</small></div></div>`).join('') : '<div class="act" style="color:var(--ink-3)">Nothing yet. Start with the first step.</div>';
