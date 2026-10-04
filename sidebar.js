@@ -71,7 +71,8 @@
     '</div>';
 
   var css = '' +
-    '.pts-host{--pts-soft:#F8FBFE;--pts-line:#E9F0F8;width:232px !important;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 12px 14px !important;overflow-y:auto;box-sizing:border-box;}' +
+    '.pts-host{--pts-soft:#F8FBFE;--pts-line:#E9F0F8;width:232px !important;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 12px 14px !important;overflow-y:auto;box-sizing:border-box;scrollbar-width:none;-ms-overflow-style:none;}' +
+    '.pts-host::-webkit-scrollbar{display:none;width:0;height:0;}' +
     'html[data-theme="dark"] .pts-host{--pts-soft:#1C2042;--pts-line:#22264A;}' +
     'aside.home-sidebar.pts-host{position:fixed;top:0;left:0;bottom:0;z-index:10;}' +
     'body.pts-on-home .app{margin-left:232px !important;}' +
