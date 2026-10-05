@@ -1658,6 +1658,20 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   function addDaysISO(iso, n){ const d = fromISO(iso); d.setDate(d.getDate() + n); return toISO(d); }
   function todayISO(){ return toISO(new Date()); }
   function hhmm(d){ return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+  // Only YOUR tasks: ones you created and ones assigned to you (the database refuses anyone else's).
+  // Two queries, merged into one list. watchMyTasks keeps it live; getMyTasks reads it once.
+  function myTaskQueries(db, wsId, uid, extra){ let base = db.collection('tasks').where('workspaceId', '==', wsId); if(extra) base = extra(base);
+    return [base.where('createdBy', '==', uid), base.where('assignees', 'array-contains', uid)]; }
+  function watchMyTasks(db, wsId, uid, onChange, onErr){
+    const parts = [new Map(), new Map()], emit = () => onChange([...new Map([...parts[0], ...parts[1]]).values()]);
+    const offs = myTaskQueries(db, wsId, uid).map((q, i) => q.onSnapshot(snap => { parts[i] = new Map(snap.docs.map(d => [d.id, {id: d.id, ...d.data()}])); emit(); }, onErr));
+    return () => offs.forEach(off => off());
+  }
+  function getMyTasks(db, wsId, uid, extra){
+    return Promise.all(myTaskQueries(db, wsId, uid, extra).map(q => q.get())).then(([a, b]) =>
+      [...new Map([...a.docs, ...b.docs].map(d => [d.id, {id: d.id, ...d.data()}])).values()]);
+  }
   function toMins(t){ if(!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); }
   function fromMins(m){ m = Math.max(0, Math.min(24 * 60 - 1, Math.round(m))); return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
   function fmtTime(t){ if(!t) return ''; const d = new Date(); d.setHours(...t.split(':').map(Number), 0, 0); return d.toLocaleTimeString(undefined, timeOpts({hour: 'numeric', minute: '2-digit'})); }
@@ -2858,7 +2872,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
         if(first){ first = false; const q = new URLSearchParams(location.search).get('event'); const ev = q && events.find(x=> x.id === q);
           if(ev){ cursor = fromISO(ev.date); render(); setTimeout(()=>{ const el = $view.querySelector(`[data-key="event:${CSS.escape(ev.id)}"]`); if(el) openDetail('event:' + ev.id, el); }, 80); history.replaceState(null, '', location.pathname); } }
       }, err=> console.warn('Could not load events', err));
-      db.collection('tasks').where('workspaceId', '==', wsId).onSnapshot(snap=>{ tasks = snap.docs.map(d=>({id: d.id, ...d.data()})); soon(); reveal(); },
+      watchMyTasks(db, wsId, myUid, list=>{ tasks = list; soon(); reveal(); },
         err=>{ console.error(err); showToast('Could not load tasks: ' + (err.message || ''), true); reveal(); });
       db.collection('linkedinPosts').where('createdBy', '==', myUid).onSnapshot(snap=>{ posts = snap.docs.map(d=>({id: d.id, ...d.data()})).filter(p=> p.status === 'scheduled' && p.workspaceId === wsId); soon(); }, ()=>{});
       db.doc(`calendarConnections/${myUid}`).onSnapshot(d=>{

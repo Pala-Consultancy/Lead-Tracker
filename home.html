@@ -3602,16 +3602,28 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
     }
   }
   function loadTodayTasks(){
+
+  // Only YOUR tasks: ones you created and ones assigned to you (the database refuses anyone else's).
+  // Two queries, merged into one list. watchMyTasks keeps it live; getMyTasks reads it once.
+  function myTaskQueries(db, wsId, uid, extra){ let base = db.collection('tasks').where('workspaceId', '==', wsId); if(extra) base = extra(base);
+    return [base.where('createdBy', '==', uid), base.where('assignees', 'array-contains', uid)]; }
+  function watchMyTasks(db, wsId, uid, onChange, onErr){
+    const parts = [new Map(), new Map()], emit = () => onChange([...new Map([...parts[0], ...parts[1]]).values()]);
+    const offs = myTaskQueries(db, wsId, uid).map((q, i) => q.onSnapshot(snap => { parts[i] = new Map(snap.docs.map(d => [d.id, {id: d.id, ...d.data()}])); emit(); }, onErr));
+    return () => offs.forEach(off => off());
+  }
+  function getMyTasks(db, wsId, uid, extra){
+    return Promise.all(myTaskQueries(db, wsId, uid, extra).map(q => q.get())).then(([a, b]) =>
+      [...new Map([...a.docs, ...b.docs].map(d => [d.id, {id: d.id, ...d.data()}])).values()]);
+  }
     const body = document.getElementById('todayTasksBody');
     const badge = document.getElementById('todayTasksCountBadge');
     if(!body || !db || !workspaceId || !auth.currentUser) return;
     const myUid = auth.currentUser.uid;
     const today = toLocalISO(new Date());
     // Your tasks for today: ones you created, and ones a teammate assigned to you.
-    db.collection('tasks')
-      .where('workspaceId', '==', workspaceId)
-      .get().then(snap=>{
-        const tasks = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(t=>
+    getMyTasks(db, workspaceId, myUid).then(list=>{
+        const tasks = list.filter(t=>
           t.dueDate === today && t.completed !== true && t.status !== 'done' &&
           (t.createdBy === myUid || (Array.isArray(t.assignees) && t.assignees.includes(myUid))));
         if(tasks.length === 0){

@@ -6963,12 +6963,26 @@ document.getElementById('palatrack-lead-form').addEventListener('submit', functi
       <button type="button" onclick="window.__leadActions.deleteDrawerTask('${task.id}')" style="background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;padding:2px 4px;flex-shrink:0;">✕</button>
     </div>`;
   }
+
+  // Only YOUR tasks: ones you created and ones assigned to you (the database refuses anyone else's).
+  // Two queries, merged into one list. watchMyTasks keeps it live; getMyTasks reads it once.
+  function myTaskQueries(db, wsId, uid, extra){ let base = db.collection('tasks').where('workspaceId', '==', wsId); if(extra) base = extra(base);
+    return [base.where('createdBy', '==', uid), base.where('assignees', 'array-contains', uid)]; }
+  function watchMyTasks(db, wsId, uid, onChange, onErr){
+    const parts = [new Map(), new Map()], emit = () => onChange([...new Map([...parts[0], ...parts[1]]).values()]);
+    const offs = myTaskQueries(db, wsId, uid).map((q, i) => q.onSnapshot(snap => { parts[i] = new Map(snap.docs.map(d => [d.id, {id: d.id, ...d.data()}])); emit(); }, onErr));
+    return () => offs.forEach(off => off());
+  }
+  function getMyTasks(db, wsId, uid, extra){
+    return Promise.all(myTaskQueries(db, wsId, uid, extra).map(q => q.get())).then(([a, b]) =>
+      [...new Map([...a.docs, ...b.docs].map(d => [d.id, {id: d.id, ...d.data()}])).values()]);
+  }
   function loadTasksForDrawer(l){
     const holder = document.getElementById('drawerTasksSection');
     if(!holder) return;
-    db.collection('tasks').where('workspaceId', '==', workspaceId).where('leadId', '==', l.id).get().then(snap=>{
+    getMyTasks(db, workspaceId, auth.currentUser.uid, q=> q.where('leadId', '==', l.id)).then(list=>{
       if(drawerLeadId !== l.id) return;
-      const tasks = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>{
+      const tasks = list.sort((a,b)=>{
         if(a.completed !== b.completed) return a.completed ? 1 : -1;
         return (a.dueDate||'9999').localeCompare(b.dueDate||'9999');
       });

@@ -1370,10 +1370,6 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
       <button type="button" data-view="kanban" role="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="4" height="13" rx="1.5"/></svg>Kanban</button>
       <button type="button" data-view="calendar" role="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</button>
     </div>
-    <div class="tk-seg" id="tkScopeSeg" aria-label="Whose tasks">
-      <button type="button" data-scope="mine">My work</button>
-      <button type="button" data-scope="team">Everyone</button>
-    </div>
     <div class="tk-search">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="search" id="tkSearch" placeholder="Search tasks" autocomplete="off" aria-label="Search tasks">
@@ -1570,7 +1566,7 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
   let myUid = null, myName = 'You', wsId = null;
   let tasks = [], members = {}, boards = [], leadsByBoard = {};
   let view = localStorage.getItem('ptTasksView') || 'table';
-  let scope = localStorage.getItem('ptTasksScope') || 'mine';
+  const scope = 'mine';   // tasks are private: you only see yours (created by you or assigned to you)
   let search = '';
   let collapsed = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('ptTasksCollapsed') || '["done"]')); }catch(e){ return new Set(['done']); } })();
   let calMonth = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d; })();
@@ -1590,6 +1586,20 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
   }
 
   // ---------- Writing ----------
+
+  // Only YOUR tasks: ones you created and ones assigned to you (the database refuses anyone else's).
+  // Two queries, merged into one list. watchMyTasks keeps it live; getMyTasks reads it once.
+  function myTaskQueries(db, wsId, uid, extra){ let base = db.collection('tasks').where('workspaceId', '==', wsId); if(extra) base = extra(base);
+    return [base.where('createdBy', '==', uid), base.where('assignees', 'array-contains', uid)]; }
+  function watchMyTasks(db, wsId, uid, onChange, onErr){
+    const parts = [new Map(), new Map()], emit = () => onChange([...new Map([...parts[0], ...parts[1]]).values()]);
+    const offs = myTaskQueries(db, wsId, uid).map((q, i) => q.onSnapshot(snap => { parts[i] = new Map(snap.docs.map(d => [d.id, {id: d.id, ...d.data()}])); emit(); }, onErr));
+    return () => offs.forEach(off => off());
+  }
+  function getMyTasks(db, wsId, uid, extra){
+    return Promise.all(myTaskQueries(db, wsId, uid, extra).map(q => q.get())).then(([a, b]) =>
+      [...new Map([...a.docs, ...b.docs].map(d => [d.id, {id: d.id, ...d.data()}])).values()]);
+  }
   function col(){ return db.collection('tasks'); }
   function save(id, data){ return col().doc(id).update(data).catch(err=>{ console.error(err); showToast('Could not save that: ' + (err.message || ''), true); }); }
   function setStatus(t, status){
@@ -2335,7 +2345,7 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
   // ---------- Toolbar ----------
   document.getElementById('tkNewBtn').addEventListener('click', ()=> openDrawer(null, {dueDate: todayISO()}));
   document.querySelectorAll('#tkViewSeg button').forEach(b=> b.addEventListener('click', ()=>{ view = b.dataset.view; localStorage.setItem('ptTasksView', view); render(); }));
-  document.querySelectorAll('#tkScopeSeg button').forEach(b=> b.addEventListener('click', ()=>{ scope = b.dataset.scope; localStorage.setItem('ptTasksScope', scope); render(); }));
+
   document.getElementById('tkSearch').addEventListener('input', e=>{ search = e.target.value; render(); });
 
   // ---------- Loading ----------
@@ -2360,8 +2370,8 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
         render();
       }).catch(()=>{});
       wsRef.collection('boards').get().then(snap=>{ boards = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(b=> b.deleted !== true).sort((a, b)=>(a.name || '').localeCompare(b.name || '')); if(drawerId || drawerDraft) renderDrawer(); }).catch(()=>{});
-      db.collection('tasks').where('workspaceId', '==', wsId).onSnapshot(snap=>{
-        tasks = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      watchMyTasks(db, wsId, myUid, list=>{
+        tasks = list;
         render(); reveal();
         const openId = new URLSearchParams(location.search).get('task');
         if(openId && tasks.some(t=>t.id === openId) && !drawerId){ openDrawer(openId); history.replaceState(null, '', location.pathname); }
