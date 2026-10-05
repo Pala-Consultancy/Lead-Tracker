@@ -354,9 +354,10 @@
   .cover{position:relative;overflow:hidden;background:var(--sunk);}
   .cover-img{position:absolute;inset:-6% 0;background:center/cover no-repeat;transform:scale(1.12);will-change:transform;}
   /* the shine runs along the whole bar */
-  .topline::after,.bar-prog .tr i::after{left:0;right:0;width:auto;transform:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent) no-repeat;
-    background-size:22% 100%;background-position:-30% 0;animation:shine-run 2.6s ease-in-out infinite;}
-  @keyframes shine-run{0%{background-position:-30% 0;}70%,100%{background-position:130% 0;}}
+  /* the shine runs along the whole bar; it's MOVED (graphics card), not repainted every frame */
+  .topline::after,.bar-prog .tr i::after{left:0;right:auto;width:22%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+    transform:translate3d(-100%,0,0);animation:shine-run 2.6s ease-in-out infinite;will-change:transform;}
+  @keyframes shine-run{0%{transform:translate3d(-100%,0,0);}70%,100%{transform:translate3d(460%,0,0);}}
   /* call to action ("Book your call") */
   .cta{display:flex;align-items:center;gap:14px;padding:16px 16px 16px 18px;border-radius:16px;text-decoration:none;color:var(--ink);
     background:linear-gradient(135deg,var(--accent-soft),transparent 70%),var(--surface);border:1px solid var(--accent-line);
@@ -371,7 +372,8 @@
   @media (max-width:560px){ .cta{flex-wrap:wrap;} .cta-go{width:100%;justify-content:center;} }
   /* =================== the redesign =================== */
   :root{--col:820px;}
-  body{background:radial-gradient(1200px 600px at 50% -200px,var(--accent-soft),transparent 70%),var(--bg);background-attachment:fixed;}
+  body{background:var(--bg);}
+  body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1200px 600px at 50% -200px,var(--accent-soft),transparent 70%);will-change:transform;}
   .wrap{padding-bottom:120px;}
   /* hero */
   .hero{position:relative;margin:28px 0 0;border-radius:30px;overflow:hidden;color:#fff;min-height:330px;display:flex;
@@ -449,7 +451,7 @@
   .sk-card{height:92px;border-radius:20px;margin-top:16px;}
   @keyframes skel{0%{background-position:100% 0;}100%{background-position:0 0;}}
   html[data-theme="dark"] .hero{box-shadow:0 30px 60px -34px rgba(0,0,0,.8);}
-  html[data-theme="dark"] body{background:radial-gradient(1200px 600px at 50% -200px,var(--accent-soft),transparent 70%),var(--bg);}
+
   @media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important;} html{scroll-behavior:auto;} }
 </style>
 </head>
@@ -820,6 +822,8 @@
 
   // ---------- Drawing ----------
   const nextGroup = () => groups.find((g) => !g.task.state.done);
+  // only touch the page when something actually changed (the page checks for updates every 8 seconds)
+  const setHTML = (el, html) => { if (el && el.__html !== html) { el.innerHTML = html; el.__html = html; } };
   function render() {
     applyBrand();
     document.title = proc.title + (proc.workspaceName ? ' · ' + proc.workspaceName : '');
@@ -839,7 +843,7 @@
     $('heroGo').firstChild.textContent = done ? 'Continue' : 'Start';
     // the roadmap: every step as a dot on one line that fills up
     const fillTo = groups.length > 1 ? Math.max(0, groups.reduce((m, g, i) => (g.task.state.done ? i : m), -1)) / (groups.length - 1) * 100 : 0;
-    $('roadmap').innerHTML = groups.length > 1 ? `<div class="rm-line"><i style="width:${fillTo}%"></i></div>${groups.map((g, i) => `<button type="button" class="rm-dot${g.task.state.done ? ' done' : ''}${next === g ? ' now' : ''}" data-goto="${esc(g.task.id)}" style="left:${groups.length > 1 ? i / (groups.length - 1) * 100 : 0}%" title="${esc(titleOf(g.task))}"><span>${g.task.state.done ? '✓' : i + 1}</span><em>${esc(titleOf(g.task))}</em></button>`).join('')}` : '';
+    setHTML($('roadmap'), groups.length > 1 ? `<div class="rm-line"><i style="width:${fillTo}%"></i></div>${groups.map((g, i) => `<button type="button" class="rm-dot${g.task.state.done ? ' done' : ''}${next === g ? ' now' : ''}" data-goto="${esc(g.task.id)}" style="left:${groups.length > 1 ? i / (groups.length - 1) * 100 : 0}%" title="${esc(titleOf(g.task))}"><span>${g.task.state.done ? '✓' : i + 1}</span><em>${esc(titleOf(g.task))}</em></button>`).join('')}` : '');
     $('stepsSub').textContent = groups.length ? `${groups.length} step${groups.length === 1 ? '' : 's'}${done ? ` · ${done} done` : ''}` : '';
     const wasHidden = $('doneNote').classList.contains('hidden');
     $('doneNote').classList.toggle('hidden', proc.status !== 'completed');
@@ -895,7 +899,7 @@
     });
     firstPaint = false;
     setTimeout(updateNextPill, 50);
-    $('activity').innerHTML = proc.activity.length ? proc.activity.map((a) => `<div class="act-i"><span class="av">${esc(initials(a.by))}</span><div><b>${esc(a.by)}</b> ${esc(a.text)}<small>${when(a.at)}</small></div></div>`).join('') : '<div class="act-i" style="color:var(--ink-3)">Nothing yet.</div>';
+    setHTML($('activity'), proc.activity.length ? proc.activity.map((a) => `<div class="act-i"><span class="av">${esc(initials(a.by))}</span><div><b>${esc(a.by)}</b> ${esc(a.text)}<small>${when(a.at)}</small></div></div>`).join('') : '<div class="act-i" style="color:var(--ink-3)">Nothing yet.</div>');
   }
   // steps glide into view as you scroll down (only the first time they appear)
   const motionOK = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
