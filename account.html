@@ -1193,6 +1193,43 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
     <a class="btn btn-primary" href="email-settings.html" style="flex-shrink:0;">Manage →</a>
   </div>
 
+  <!-- Halloween decorations: on by default in October, turned off here (saved in this browser) -->
+  <div class="password-card" id="halloweenCard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+    <div>
+      <h3 style="margin:0 0 4px;">🎃 Halloween decorations</h3>
+      <p style="margin:0;" id="hwText">Cobwebs, a spider, bats and a friendly ghost across the tracker. Switches itself off after Halloween.</p>
+    </div>
+    <label class="hw-switch" title="Halloween decorations">
+      <input type="checkbox" id="hwToggle" aria-label="Halloween decorations">
+      <span class="hw-track"><span class="hw-knob"></span></span>
+    </label>
+  </div>
+  <style>
+    .hw-switch{position:relative;display:inline-flex;flex-shrink:0;cursor:pointer;}
+    .hw-switch input{position:absolute;opacity:0;width:1px;height:1px;}
+    .hw-track{width:46px;height:26px;border-radius:999px;background:var(--border,#D8DEE8);transition:background .2s;position:relative;}
+    .hw-knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s;}
+    .hw-switch input:checked + .hw-track{background:linear-gradient(135deg,#FF8A1E,#8E4FE0);}
+    .hw-switch input:checked + .hw-track .hw-knob{transform:translateX(20px);}
+    .hw-switch input:focus-visible + .hw-track{outline:2px solid var(--teal,#3730B3);outline-offset:2px;}
+  </style>
+  <script>
+    (function(){
+      var t = document.getElementById('hwToggle'), txt = document.getElementById('hwText');
+      function sync(){
+        var on = true; try { on = localStorage.getItem('ptHalloween') !== 'off'; } catch(e) {}
+        t.checked = on;
+        if (window.ptHalloween && !window.ptHalloween.inSeason()) txt.textContent = 'Halloween is over for this year. The decorations come back next October' + (on ? '.' : ' if you turn this on.');
+      }
+      t.addEventListener('change', function(){
+        if (window.ptHalloween) window.ptHalloween.set(t.checked);
+        else try { localStorage.setItem('ptHalloween', t.checked ? 'on' : 'off'); } catch(e) {}
+      });
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
+      window.addEventListener('load', sync);
+    })();
+  </script>
+
   <div class="password-card" id="passwordCard">
     <h3>Change password</h3>
     <p>Update the password you use to sign in to PalaTrack.</p>
