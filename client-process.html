@@ -677,8 +677,9 @@
         let section = '';
         while (prev.length && HEAD.includes(prev[prev.length - 1].type)) { const h = prev.pop(); section = section || textOf(h.html); }
         const atts = b.attachments || [];
-        cur = {task: b, section, forms: atts.filter((a) => a.kind === 'form' && a.form), ctas: [],
-          content: atts.filter((a) => a.kind !== 'form').map((a) => ({id: a.id, type: a.kind, video: a.video, file: a.file, image: a.image, preview: a.preview}))};
+        cur = {task: b, section, forms: atts.filter((a) => a.kind === 'form' && a.form),
+          ctas: atts.filter((a) => a.kind === 'button' && a.url).map((a) => ({id: a.id, type: 'button', label: a.label, url: a.url})),
+          content: atts.filter((a) => a.kind !== 'form' && a.kind !== 'button').map((a) => ({id: a.id, type: a.kind, video: a.video, file: a.file, image: a.image, preview: a.preview}))};
         groups.push(cur);
       } else if (cur && b.type === 'button') cur.ctas.push(b);     // shown in the step itself, always visible
       else (cur ? cur.content : intro).push(b);
@@ -881,9 +882,14 @@
       let act;
       if (tickable) act = st.done ? `<button type="button" class="act done" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${ic('check')}</span><span class="d">Done</span><span class="u">Undo</span></button>`
         : `<button type="button" class="act" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving' : `<span class="c">${ic('check')}</span>Mark as done`}</button>`;
-      else if (g.forms.length && !st.done) { const f0 = g.forms[0], open = openDocs.has(f0.id), started = !!draftOf(f0.id) || Object.keys(st.forms || {}).length;
+      else if (g.forms.length && !st.done && !g.forms.every((a) => (st.forms || {})[a.id])) { const f0 = g.forms[0], open = openDocs.has(f0.id), started = !!draftOf(f0.id) || Object.keys(st.forms || {}).length;
         act = `<button type="button" class="act ${open ? 'ghost' : 'go'}" data-docopen="${esc(f0.id)}">${open ? 'Close' : `${started ? 'Continue' : 'Fill in'}${ic('arrow', 'sm')}`}</button>`; }
-      else act = st.done ? `<span class="act done" style="cursor:default"><span class="c">${ic('check')}</span>Done</span>` : `<span class="tag">${isNext ? 'You’re here' : ''}</span>`;
+      else if (st.done) act = `<button type="button" class="act done" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${ic('check')}</span><span class="d">Done</span><span class="u">Undo</span></button>`;
+      else {
+        // undone earlier, with its answer / file / document still there: it can be finished again in one click
+        const ready = (g.task.type === 'question' && (st.answer || '').trim()) || (g.task.type === 'upload' && (st.uploads || []).length) || (g.forms.length && g.forms.every((a) => (st.forms || {})[a.id]));
+        act = ready ? `<button type="button" class="act" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving' : `<span class="c">${ic('check')}</span>Mark as done`}</button>` : `<span class="tag">${isNext ? 'You’re here' : ''}</span>`;
+      }
       const as = el.querySelector('.s-act'); if (as.dataset.html !== act) { as.innerHTML = act; as.dataset.html = act; }
       const who = st.done && st.doneBy ? `<span class="who">${ic('check', 'sm')}${esc(st.doneBy)} · ${when(st.doneAt)}</span>` : '';
       const ws = el.querySelector('.who-slot'); if (ws.dataset.html !== who) { ws.innerHTML = who; ws.dataset.html = who; }

@@ -949,6 +949,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'image', ic: '🖼️', label: 'Image', hint: 'A picture or screenshot'},
     {k: 'button', ic: '🔘', label: 'Button', hint: 'A link, e.g. “Book your call”'},
     {k: 'todo', ic: '☑', label: 'To-do for the client', hint: 'They tick it off', client: true},
+    {k: 'callstep', ic: '📅', label: 'Book a call (step)', hint: 'A step with your booking link', client: true},
     {k: 'upload', ic: '📤', label: 'Upload request', hint: 'They send you a file', client: true},
     {k: 'question', ic: '✍️', label: 'Question', hint: 'They type an answer', client: true},
   ];
@@ -1127,18 +1128,22 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         inner = f ? `<div class="be-filecard"><span class="be-ext">${esc((f.name.split('.').pop() || 'file').slice(0, 4))}</span><span><b>${esc(f.name)}</b><small>${fsize(f.size || 0)}</small></span>
             <label class="req"><input type="checkbox" data-att="${esc(a.id)}" data-af="preview" ${a.preview !== false ? 'checked' : ''}> Preview</label></div>`
           : a._up ? upBar(a) : `<label class="be-drop sm">📄 <b>Choose a document</b><small>Word, PDF, Excel, PowerPoint or anything else · up to 50 MB</small><input type="file" class="hidden" data-attup="${esc(a.id)}" data-kind="file"></label>`;
+      } else if (a.kind === 'button') {
+        inner = `<div class="be-row"><input class="in" data-att="${esc(a.id)}" data-af="btnLabel" placeholder="Button text, e.g. Book your onboarding call" value="${esc(a.label || '')}">
+          <input class="in" data-att="${esc(a.id)}" data-af="btnUrl" placeholder="Your booking link, e.g. https://calendly.com/…" value="${esc(a.url || '')}"></div>
+          <div class="hint">Your client sees this as a big “Book now” card in this step.</div>`;
       } else if (a.kind === 'form') {
         inner = formBuilderHTML(a);
       } else if (a.kind === 'image') {
         inner = a.image ? `<img class="be-attimg" src="${esc(a.image.url)}" alt="">` : a._up ? upBar(a) : `<label class="be-drop sm">🖼️ <b>Choose an image</b><input type="file" accept="image/*" class="hidden" data-attup="${esc(a.id)}" data-kind="image"></label>`;
       }
-      return `<div class="be-att${a.kind === 'form' ? ' be-form' : ''}" data-attid="${esc(a.id)}"><div class="be-att-h">${({video: '🎬 Video', file: '📄 Document', image: '🖼️ Image', form: '📝 Fillable document · your client fills it in on the page'})[a.kind]}<button type="button" class="be-att-x" data-delatt="${esc(a.id)}" aria-label="Remove">×</button></div>${inner}</div>`;
+      return `<div class="be-att${a.kind === 'form' ? ' be-form' : ''}" data-attid="${esc(a.id)}"><div class="be-att-h">${({video: '🎬 Video', file: '📄 Document', image: '🖼️ Image', form: '📝 Fillable document · your client fills it in on the page', button: '📅 Booking link / button'})[a.kind]}<button type="button" class="be-att-x" data-delatt="${esc(a.id)}" aria-label="Remove">×</button></div>${inner}</div>`;
     }).join('');
     const hasNote = b.note != null;
     return `<div class="be-atts">
       ${hasNote ? `<div class="be-att"><div class="be-att-h">📝 Note (shown on the task)<button type="button" class="be-att-x" data-delnote aria-label="Remove note">×</button></div><textarea class="in" data-f="note" rows="2" placeholder="A short explanation, e.g. Takes about 5 minutes">${esc(b.note || '')}</textarea></div>` : ''}
       ${list}
-      <div class="be-addatt"><span>Attach to this task:</span><button type="button" data-addatt="video">＋ Video</button><button type="button" data-addatt="file">＋ Document</button><button type="button" data-addatt="image">＋ Image</button><button type="button" data-addatt="form">＋ Form to fill in</button>${hasNote ? '' : '<button type="button" data-addnote>＋ Note</button>'}</div>
+      <div class="be-addatt"><span>Attach to this task:</span><button type="button" data-addatt="video">＋ Video</button><button type="button" data-addatt="file">＋ Document</button><button type="button" data-addatt="image">＋ Image</button><button type="button" data-addatt="form">＋ Form to fill in</button><button type="button" data-addatt="button">＋ Booking link</button>${hasNote ? '' : '<button type="button" data-addnote>＋ Note</button>'}</div>
       ${(b.attachments || []).length ? '<div class="hint">Your client sees “See more” on this task to open these.</div>' : ''}</div>`;
   }
   // ---------- Fillable documents (forms) ----------
@@ -1191,6 +1196,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const s = getSelection(); s.removeAllRanges(); s.addRange(r);
   }
   function newBlock(k) {
+    if (k === 'callstep') return {id: uidGen(), type: 'todo', html: 'Book your onboarding call', required: true, note: 'Pick a time that suits you. We’ll go through everything together.',
+      attachments: [{id: uidGen(), kind: 'button', label: 'Book your onboarding call', url: ''}]};
     const b = {id: uidGen(), type: k};
     if (TEXTISH.includes(k) || k === 'todo') b.html = '';
     if (k === 'bullets' || k === 'numbers') b.html = '<li></li>';
@@ -1211,7 +1218,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function blocksForSave() {
     return (editing || {data: {blocks: []}}).data.blocks.map((b) => {
       const c = {...b}; delete c._up;
-      if (Array.isArray(c.attachments)) c.attachments = c.attachments.map((a) => { const x = {...a}; delete x._up; return x; }).filter((a) => a.video || a.file || a.image || a.form);
+      if (Array.isArray(c.attachments)) c.attachments = c.attachments.map((a) => { const x = {...a}; delete x._up; return x; }).filter((a) => a.video || a.file || a.image || a.form || (a.kind === 'button' && a.url));
       if ('html' in c) c.html = c.type === 'bullets' || c.type === 'numbers' ? cleanHTML(c.html).replace(/<(?!\/?(li|b|strong|i|em|u|s|code|a|br)\b)[^>]*>/gi, '') : cleanHTML(c.html);
       return c;
     });
@@ -1256,6 +1263,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     }
     if (e.target.dataset.att) {                      // an attachment's field
       const a = (b.attachments || []).find((x) => x.id === e.target.dataset.att); if (!a) return;
+      if (e.target.dataset.af === 'btnLabel' || e.target.dataset.af === 'btnUrl') { a[e.target.dataset.af === 'btnLabel' ? 'label' : 'url'] = e.target.value.trim(); changed(); return; }
       if (e.target.dataset.af === 'formTitle' || e.target.dataset.af === 'formIntro') { a.form = a.form || {title: '', intro: '', fields: []}; a.form[e.target.dataset.af === 'formTitle' ? 'title' : 'intro'] = e.target.value; changed(); return; }
       if (e.target.dataset.af === 'videoLink') { a.video = videoFromLink(e.target.value); changed(); clearTimeout(e.target._h); e.target._h = setTimeout(() => { const pos = e.target.selectionStart; renderPage(); const el = document.querySelector(`[data-att="${CSS.escape(a.id)}"][data-af=videoLink]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } }, 700); }
       return;
@@ -1329,6 +1337,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const b = editing.data.blocks[findB(blk.dataset.id)];
       const a = {id: uidGen(), kind: add.dataset.addatt}; if (a.kind === 'file') a.preview = true;
       if (a.kind === 'form') a.form = {title: '', intro: '', fields: [{id: uidGen(), type: 'text', label: '', help: '', required: true, options: []}]};
+      if (a.kind === 'button') a.label = 'Book your onboarding call';
       b.attachments = (b.attachments || []).concat([a]); changed(); renderPage();
       setTimeout(() => { const el = document.querySelector(`[data-attid="${CSS.escape(a.id)}"] input.in, [data-attid="${CSS.escape(a.id)}"] label.be-drop`); if (el && el.tagName === 'INPUT') el.focus(); else if (el && a.kind !== 'form') el.click(); }, 40);
       return;
