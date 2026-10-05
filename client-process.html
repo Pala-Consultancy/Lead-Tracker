@@ -368,6 +368,14 @@
   .cta-tx{flex:1;min-width:0;} .cta-tx b{display:block;font:600 16px var(--serif);letter-spacing:-.01em;} .cta-tx small{display:block;font-size:12.5px;color:var(--ink-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cta-go{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:11px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0;}
   .s-ctas{display:flex;flex-direction:column;gap:10px;margin:0 0 14px;}
+  /* locked until the other steps are done */
+  .cta.locked{cursor:default;background:var(--sunk);border-color:var(--line);box-shadow:none;}
+  .cta.locked:hover{transform:none;box-shadow:none;border-color:var(--line);}
+  .cta.locked .cta-ic{background:var(--line);color:var(--ink-3);}
+  .cta.locked .cta-tx b{color:var(--ink-2);}
+  .cta.locked .cta-go{background:transparent;color:var(--ink-3);border:1px dashed var(--line-hover);}
+  .cta.glow{animation:ctaGlow 1.6s var(--ease) 2;}
+  @keyframes ctaGlow{0%,100%{box-shadow:0 0 0 0 var(--accent-line);}50%{box-shadow:0 0 0 8px var(--accent-soft);}}
   .content .cta + *{margin-top:16px;}
   @media (max-width:560px){ .cta{flex-wrap:wrap;} .cta-go{width:100%;justify-content:center;} }
   /* =================== the redesign =================== */
@@ -439,6 +447,7 @@
   .s-main h3{font:700 17.5px/1.4 var(--serif);letter-spacing:-.01em;}
   .num{width:34px;height:34px;font:700 14px var(--serif);}
   .step.is-next .tag{color:var(--accent);font-weight:700;}
+  .tag svg{vertical-align:-2px;margin-right:2px;}
   @media (max-width:640px){ .s-head{padding:18px 16px;} .s-body{padding:0 16px 20px;} }
   /* the end */
   .done-note{border-radius:20px;padding:22px 24px;border-color:var(--accent-line);background:linear-gradient(135deg,var(--accent-soft),transparent 70%),var(--surface);}
@@ -538,6 +547,7 @@
     video: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>', file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
     form: '<path d="M9 4h6M9 3h6a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 4h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1M9 12h6M9 16h4"/>',
     upload: '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>', ask: '<path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"/>', link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     cal: '<rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18M8 14h3M8 17h6"/>',
     image: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>', bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
     send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>', alert: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>', pause: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>'};
@@ -678,7 +688,7 @@
         while (prev.length && HEAD.includes(prev[prev.length - 1].type)) { const h = prev.pop(); section = section || textOf(h.html); }
         const atts = b.attachments || [];
         cur = {task: b, section, forms: atts.filter((a) => a.kind === 'form' && a.form),
-          ctas: atts.filter((a) => a.kind === 'button' && a.url).map((a) => ({id: a.id, type: 'button', label: a.label, url: a.url})),
+          ctas: atts.filter((a) => a.kind === 'button' && (a.url || a.locked)).map((a) => ({id: a.id, type: 'button', label: a.label, url: a.url, locked: !!a.locked, left: a.left || 0})),
           content: atts.filter((a) => a.kind !== 'form' && a.kind !== 'button').map((a) => ({id: a.id, type: a.kind, video: a.video, file: a.file, image: a.image, preview: a.preview}))};
         groups.push(cur);
       } else if (cur && b.type === 'button') cur.ctas.push(b);     // shown in the step itself, always visible
@@ -732,8 +742,27 @@
     return '';
   }
   // a button (e.g. "Book your call") as a clear card: icon, text, where it goes, and a solid button
+
+  // A link as people paste it: "calendly.com/x" or "www.x.com" gets https:// in front, and a LinkedIn
+  // safety link (linkedin.com/safety/go/?url=…) is unwrapped to the real link inside.
+  function normUrl(u) {
+    u = String(u || '').trim(); if (!u) return '';
+    if (/^mailto:/i.test(u)) return u;
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) { if (/^[^\s\/]+\.[^\s\/]+/.test(u)) u = 'https://' + u.replace(/^\/+/, ''); else return ''; }
+    try {
+      const x = new URL(u);
+      if (/(^|\.)linkedin\.com$/i.test(x.hostname) && /^\/safety\/go/i.test(x.pathname) && x.searchParams.get('url')) return normUrl(x.searchParams.get('url'));
+      if (!/^https?:$/i.test(x.protocol)) return '';
+      return x.href;
+    } catch (e) { return ''; }
+  }
   function ctaHTML(b) {
-    if (!b.url || !/^(https?:|mailto:)/i.test(b.url)) return '';
+    // locked until the other steps are done (the server doesn't even send the link yet)
+    if (b.locked) return `<div class="cta locked" aria-disabled="true"><span class="cta-ic">${ic('lock')}</span>
+      <span class="cta-tx"><b>${esc(b.label || 'Book your call')}</b><small>Unlocks when you’ve finished the other step${b.left === 1 ? '' : 's'}</small></span>
+      <span class="cta-go">${ic('lock', 'sm')}${b.left} step${b.left === 1 ? '' : 's'} to go</span></div>`;
+    const url = normUrl(b.url); if (!url) return '';
+    b = Object.assign({}, b, {url});
     const label = b.label || 'Open', isCall = /call|book|meeting|meet|schedule|plan|calendly|gesprek|afspraak|bel/i.test(label + ' ' + b.url);
     let host = ''; try { host = b.url.startsWith('mailto:') ? b.url.slice(7) : new URL(b.url).hostname.replace(/^www\./, ''); } catch (e) { /* ignore */ }
     return `<a class="cta" href="${esc(b.url)}" target="_blank" rel="noopener"><span class="cta-ic">${ic(isCall ? 'cal' : 'link')}</span>
@@ -857,7 +886,7 @@
     if ($('intro').dataset.html !== introHTML) { $('intro').innerHTML = introHTML; $('intro').dataset.html = introHTML; loadMedia($('intro')); }
     // the steps (built once; afterwards only what changed is updated, so a playing video or a half-filled document stays)
     const host = $('tasks');
-    const sig = groups.map((g) => [g.task.id, g.ctas.map((b) => b.id + b.url + b.label).join(','), g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
+    const sig = groups.map((g) => [g.task.id, g.ctas.map((b) => b.id + b.url + b.label + (b.locked ? 'L' + b.left : '')).join(','), g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
     if (host.dataset.sig !== sig) {
       host.innerHTML = groups.map((g, i) => `${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
         <article class="step" id="step-${esc(g.task.id)}" data-id="${esc(g.task.id)}" aria-labelledby="st-${esc(g.task.id)}">
@@ -876,11 +905,13 @@
       el.dataset.here = isNext ? 'You’re here' : '';
       el.classList.toggle('done', !!st.done); el.classList.toggle('is-next', !!isNext); el.classList.toggle('open', isMore);
       el.classList.toggle('keep', g.forms.some((a) => openDocs.has(a.id)));
-      const tickable = g.task.type === 'todo' && !g.forms.length;
+      const tickable = g.task.type === 'todo' && !g.forms.length && !(!(g.task.state || {}).done && g.ctas.some((c) => c.locked));
       const numHTML = `<button type="button" class="num" ${tickable ? `data-tick="${i}" title="${st.done ? 'Completed · click to undo' : 'Mark as done'}"` : 'tabindex="-1"'} aria-label="${st.done ? 'Step completed' : 'Step ' + (i + 1)}"><span class="n">${i + 1}</span><span class="ck">${ic('check', 'sm')}</span></button>`;
       const ns = el.querySelector('.num-slot'); if (ns.dataset.html !== numHTML) { ns.innerHTML = numHTML; ns.dataset.html = numHTML; }
       let act;
-      if (tickable) act = st.done ? `<button type="button" class="act done" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${ic('check')}</span><span class="d">Done</span><span class="u">Undo</span></button>`
+      const lockedStep = !st.done && g.ctas.some((c) => c.locked);   // its booking isn't open yet, so it can't be ticked yet
+      if (lockedStep) act = `<span class="tag">${ic('lock', 'sm')} Locked</span>`;
+      else if (tickable) act = st.done ? `<button type="button" class="act done" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${ic('check')}</span><span class="d">Done</span><span class="u">Undo</span></button>`
         : `<button type="button" class="act" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving' : `<span class="c">${ic('check')}</span>Mark as done`}</button>`;
       else if (g.forms.length && !st.done && !g.forms.every((a) => (st.forms || {})[a.id])) { const f0 = g.forms[0], open = openDocs.has(f0.id), started = !!draftOf(f0.id) || Object.keys(st.forms || {}).length;
         act = `<button type="button" class="act ${open ? 'ghost' : 'go'}" data-docopen="${esc(f0.id)}">${open ? 'Close' : `${started ? 'Continue' : 'Fill in'}${ic('arrow', 'sm')}`}</button>`; }
@@ -903,6 +934,11 @@
       if (d.dataset.html !== dh && !(d.contains(document.activeElement) && document.activeElement.matches('input,textarea'))) { d.innerHTML = dh; d.dataset.html = dh; }
       el.classList.toggle('bare', !g.task.note && !g.forms.length && !dh && !g.ctas.length);
     });
+    // a booking button just unlocked: tell the client (not on first load)
+    const lockedNow = (proc.blocks || []).reduce((n, b) => n + (b.locked ? 1 : 0) + (b.attachments || []).filter((a) => a.locked).length, 0);
+    if (!firstPaint && render.locked > 0 && lockedNow === 0) { toast('Your call is unlocked. Book it now! 🎉'); chime('step');
+      setTimeout(() => { const c = document.querySelector('.cta:not(.locked)'); if (c) { c.scrollIntoView({behavior: 'smooth', block: 'center'}); c.classList.add('glow'); } }, 900); }
+    render.locked = lockedNow;
     firstPaint = false;
     setTimeout(updateNextPill, 50);
     setHTML($('activity'), proc.activity.length ? proc.activity.map((a) => `<div class="act-i"><span class="av">${esc(initials(a.by))}</span><div><b>${esc(a.by)}</b> ${esc(a.text)}<small>${when(a.at)}</small></div></div>`).join('') : '<div class="act-i" style="color:var(--ink-3)">Nothing yet.</div>');

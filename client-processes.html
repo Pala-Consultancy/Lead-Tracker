@@ -198,6 +198,8 @@
   .fmt-bar.open{display:flex;} .fmt-bar button{width:32px;height:30px;border:none;background:none;color:#fff;border-radius:7px;font-size:14px;} .fmt-bar button:hover{background:rgba(255,255,255,.14);}
   html[data-theme="dark"] .be-client{background:rgba(122,115,255,.08);border-color:rgba(122,115,255,.3);}
   html[data-theme="dark"] .be-ext{background:rgba(122,115,255,.18);}
+  .be-gate{display:inline-flex;margin-top:10px;font-size:12.5px;}
+  .be-warn{margin-top:8px;font-size:12.5px;color:var(--fail,#B42318);font-weight:600;}
   .be-task{border:1px solid #D6D2FA;background:#F7F6FF;border-radius:14px;padding:10px 12px;margin:6px 0;}
   .be-task .be-todo{margin-top:4px;}
   .be-atts{margin-top:8px;display:flex;flex-direction:column;gap:8px;}
@@ -1102,7 +1104,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       body = b.image ? `<div class="be-panel be-imgwrap"><img src="${esc(b.image.url)}" alt=""><label class="link">Replace<input type="file" accept="image/*" class="hidden" data-up="image"></label></div>`
         : `<div class="be-panel">${b._up ? upBar(b) : '<label class="be-drop">🖼️ <b>Upload an image</b><small>PNG, JPG, GIF or WebP</small><input type="file" accept="image/*" class="hidden" data-up="image"></label>'}</div>`;
     } else if (b.type === 'button') {
-      body = `<div class="be-panel be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" placeholder="https://…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>`;
+      body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" data-link="1" placeholder="https://calendly.com/…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>${linkNote(b.url)}${gateBox(b, 'data-f="gate"')}</div>`;
     } else if (b.type === 'upload') {
       body = `<div class="be-panel be-client"><div class="be-tag">📤 Your client uploads a file here</div><input class="in" data-f="label" placeholder="What should they send? e.g. The signed contract" value="${esc(b.label || '')}">
         <input class="in" data-f="help" placeholder="Extra explanation (optional)" value="${esc(b.help || '')}">${reqToggle(b)}${attHTML(b)}</div>`;
@@ -1130,7 +1132,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           : a._up ? upBar(a) : `<label class="be-drop sm">📄 <b>Choose a document</b><small>Word, PDF, Excel, PowerPoint or anything else · up to 50 MB</small><input type="file" class="hidden" data-attup="${esc(a.id)}" data-kind="file"></label>`;
       } else if (a.kind === 'button') {
         inner = `<div class="be-row"><input class="in" data-att="${esc(a.id)}" data-af="btnLabel" placeholder="Button text, e.g. Book your onboarding call" value="${esc(a.label || '')}">
-          <input class="in" data-att="${esc(a.id)}" data-af="btnUrl" placeholder="Your booking link, e.g. https://calendly.com/…" value="${esc(a.url || '')}"></div>
+          <input class="in" data-att="${esc(a.id)}" data-af="btnUrl" data-link="1" placeholder="Your booking link, e.g. https://calendly.com/…" value="${esc(a.url || '')}"></div>${linkNote(a.url)}${gateBox(a, `data-att="${esc(a.id)}" data-af="btnGate"`)}
           <div class="hint">Your client sees this as a big “Book now” card in this step.</div>`;
       } else if (a.kind === 'form') {
         inner = formBuilderHTML(a);
@@ -1170,6 +1172,25 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       <span class="hint">Your client fills this in on the page and clicks Submit. You see the answers on their page here.</span></div>`;
   }
   function formOf(blk, attId) { const b = editing.data.blocks[findB(blk.dataset.id)]; const a = (b.attachments || []).find((x) => x.id === attId); return a && a.form; }
+
+  // A link as people paste it: "calendly.com/x" or "www.x.com" gets https:// in front, and a LinkedIn
+  // safety link (linkedin.com/safety/go/?url=…) is unwrapped to the real link inside.
+  function normUrl(u) {
+    u = String(u || '').trim(); if (!u) return '';
+    if (/^mailto:/i.test(u)) return u;
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) { if (/^[^\s\/]+\.[^\s\/]+/.test(u)) u = 'https://' + u.replace(/^\/+/, ''); else return ''; }
+    try {
+      const x = new URL(u);
+      if (/(^|\.)linkedin\.com$/i.test(x.hostname) && /^\/safety\/go/i.test(x.pathname) && x.searchParams.get('url')) return normUrl(x.searchParams.get('url'));
+      if (!/^https?:$/i.test(x.protocol)) return '';
+      return x.href;
+    } catch (e) { return ''; }
+  }
+  // "Only after all other steps are done": on by default for booking buttons (Calendly, "Book…", "call"…)
+  const BOOKING = /call|book|meeting|meet|schedule|calendly|cal\.com|savvycal|tidycal|hubspot\.com\/meetings|gesprek|afspraak|bel/i;
+  const isGated = (x) => (x.gate === undefined ? BOOKING.test(`${x.label || ''} ${x.url || ''}`) : x.gate === true);
+  const gateBox = (x, attr) => `<label class="req be-gate"><input type="checkbox" ${attr} ${isGated(x) ? 'checked' : ''}> 🔒 Only after all other steps are done</label>`;
+  const linkNote = (u) => !u ? '' : normUrl(u) ? '' : '<div class="be-warn">This isn’t a link that can open. Paste the full link, e.g. https://calendly.com/your-name</div>';
   const reqToggle = (b) => `<label class="req be-req"><input type="checkbox" data-f="required" ${b.required !== false ? 'checked' : ''}> Required</label>`;
   const upBar = (b) => `<div class="hint">Uploading ${esc(b._up.name)}… <span data-pct>${b._up.pct}</span>%</div><div class="upbar"><i style="width:${b._up.pct}%"></i></div>`;
   const findB = (id) => editing.data.blocks.findIndex((b) => b.id === id);
@@ -1197,7 +1218,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   function newBlock(k) {
     if (k === 'callstep') return {id: uidGen(), type: 'todo', html: 'Book your onboarding call', required: true, note: 'Pick a time that suits you. We’ll go through everything together.',
-      attachments: [{id: uidGen(), kind: 'button', label: 'Book your onboarding call', url: ''}]};
+      attachments: [{id: uidGen(), kind: 'button', label: 'Book your onboarding call', url: '', gate: true}]};
     const b = {id: uidGen(), type: k};
     if (TEXTISH.includes(k) || k === 'todo') b.html = '';
     if (k === 'bullets' || k === 'numbers') b.html = '<li></li>';
@@ -1270,7 +1291,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     }
     const f = e.target.dataset.f;
     if (f === 'videoLink') { b.video = videoFromLink(e.target.value); changed(); clearTimeout(e.target._h); e.target._h = setTimeout(() => { const pos = e.target.selectionStart; renderPage(); const el = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"] [data-f=videoLink]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } }, 700); return; }
-    if (f && f !== 'required' && f !== 'preview') { b[f] = e.target.value; changed(); if (f === 'label' && b.type === 'button') { const pv = blk.querySelector('.be-btnprev'); if (pv) pv.textContent = e.target.value || 'Button'; } }
+    if (f && f !== 'required' && f !== 'preview' && f !== 'gate') { b[f] = e.target.value; changed(); if (f === 'label' && b.type === 'button') { const pv = blk.querySelector('.be-btnprev'); if (pv) pv.textContent = e.target.value || 'Button'; } }
+  });
+  pg.addEventListener('focusout', (e) => {
+    const el = e.target; if (!el.dataset || !el.dataset.link) return;
+    const blk = el.closest('.blk'); if (!blk) return;
+    const b = editing.data.blocks[findB(blk.dataset.id)], clean = normUrl(el.value);
+    if (clean && clean !== el.value.trim()) { el.value = clean; if (el.dataset.af === 'btnUrl') { const a = (b.attachments || []).find((x) => x.id === el.dataset.att); if (a) a.url = clean; } else b.url = clean; changed(); }
+    renderPage();
   });
   pg.addEventListener('change', (e) => {
     const blk = e.target.closest('.blk'); if (!blk) return;
@@ -1278,6 +1306,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (f === 'required') { b.required = e.target.checked; changed(); }
     if (f === 'preview') { b.preview = e.target.checked; changed(); renderPage(); }
     if (f === 'qtype') { b.qtype = e.target.value; changed(); }
+    if (f === 'gate') { b.gate = e.target.checked; changed(); }
+    if (e.target.dataset.af === 'btnGate') { const a = (b.attachments || []).find((x) => x.id === e.target.dataset.att); if (a) { a.gate = e.target.checked; changed(); } }
     if (e.target.dataset.att && e.target.dataset.af === 'preview') { const a = (b.attachments || []).find((x) => x.id === e.target.dataset.att); if (a) { a.preview = e.target.checked; changed(); } }
     if (e.target.dataset.ff) {
       const [aid, j, prop] = e.target.dataset.ff.split(':'); const form = formOf(blk, aid);
@@ -1337,7 +1367,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const b = editing.data.blocks[findB(blk.dataset.id)];
       const a = {id: uidGen(), kind: add.dataset.addatt}; if (a.kind === 'file') a.preview = true;
       if (a.kind === 'form') a.form = {title: '', intro: '', fields: [{id: uidGen(), type: 'text', label: '', help: '', required: true, options: []}]};
-      if (a.kind === 'button') a.label = 'Book your onboarding call';
+      if (a.kind === 'button') { a.label = 'Book your onboarding call'; a.gate = true; }
       b.attachments = (b.attachments || []).concat([a]); changed(); renderPage();
       setTimeout(() => { const el = document.querySelector(`[data-attid="${CSS.escape(a.id)}"] input.in, [data-attid="${CSS.escape(a.id)}"] label.be-drop`); if (el && el.tagName === 'INPUT') el.focus(); else if (el && a.kind !== 'form') el.click(); }, 40);
       return;
