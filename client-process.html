@@ -467,6 +467,7 @@
   <header class="bar"><div class="bar-in">
     <div class="brand" id="brand"></div><span class="sp"></span>
     <div class="bar-prog" aria-live="polite"><span class="lbl">Progress</span><span class="tr"><i id="barFill" style="width:0"></i></span><b id="barCount">0/0</b></div>
+    <button type="button" class="link hwb hidden" id="hwBtn" aria-pressed="true" title="Halloween decorations" aria-label="Halloween decorations"><span aria-hidden="true">🎃</span></button>
     <button type="button" class="link thm" id="themeBtn" aria-label="Dark mode" aria-pressed="false" title="Dark mode"><svg class="i sm sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="i sm moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
     <button type="button" class="link snd" id="sndBtn" aria-pressed="true" title="Sound on"><svg class="i sm" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w1" d="M16 9.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M18.5 7a7 7 0 0 1 0 10"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg><span class="sr">Sound</span></button>
     <button type="button" class="link" id="actBtn"><svg class="i sm" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Activity</span></button>
@@ -1042,6 +1043,104 @@
   load(true);
 })();
 </script>
+
+<!-- ===== Halloween (October 1 – November 2; the 🎃 button in the top bar turns it off) ===== -->
+<style>
+  #ptHalloween{position:fixed;inset:64px 0 0 0;pointer-events:none;z-index:15;overflow:hidden;--web:rgba(70,62,90,.24);--critter:#2B2233;}
+  html[data-theme="dark"] #ptHalloween{--web:rgba(235,225,255,.2);--critter:#D9CCF0;}
+  #ptHalloween .hw-web{position:absolute;top:0;right:0;width:190px;height:190px;color:var(--web);}
+  #ptHalloween .hw-spider{position:absolute;top:0;right:24px;width:30px;transform-origin:50% 0;animation:hwSwing 5.5s ease-in-out infinite;transition:transform 1.4s cubic-bezier(.5,0,.3,1);}
+  #ptHalloween .hw-spider .thread{display:block;margin:0 auto;width:1px;height:150px;background:var(--web);transition:height 1.2s cubic-bezier(.5,0,.3,1);}
+  #ptHalloween .hw-spider svg{display:block;width:30px;height:30px;pointer-events:auto;cursor:pointer;margin-top:-2px;color:var(--critter);}
+  #ptHalloween .hw-spider.up .thread{height:0;} #ptHalloween .hw-spider.up{animation:none;}
+  @keyframes hwSwing{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}
+  #ptHalloween .hw-bat{position:absolute;left:0;top:0;width:46px;height:24px;will-change:transform;}
+  #ptHalloween .hw-bat svg{width:100%;height:100%;color:var(--critter);animation:hwFlap .22s ease-in-out infinite alternate;transform-origin:50% 60%;}
+  @keyframes hwFlap{from{transform:scaleY(1);}to{transform:scaleY(.45);}}
+  #ptHalloween .hw-ghost{position:absolute;bottom:-90px;width:64px;height:84px;will-change:transform;opacity:.92;}
+  html.pt-hw .brand{position:relative;}
+  html.pt-hw .brand::after{content:"\1F383";position:absolute;left:-10px;top:-8px;font-size:16px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));pointer-events:none;}
+  .hw-pumpkins{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .hw-pumpkins i{position:absolute;font-style:normal;opacity:.55;animation:hwFloat 7s ease-in-out infinite;will-change:transform;}
+  @keyframes hwFloat{0%,100%{transform:translateY(0) rotate(-6deg);}50%{transform:translateY(-12px) rotate(6deg);}}
+  .hwb span{font-size:15px;line-height:1;} .hwb[aria-pressed="false"] span{filter:grayscale(1);opacity:.55;}
+  @media (prefers-reduced-motion: reduce){ #ptHalloween *,.hw-pumpkins i{animation:none !important;transition:none !important;} }
+</style>
+<script>
+(function () {
+  var KEY = 'ptCpHalloween';
+  function inSeason() { var d = new Date(), m = d.getMonth(); return m === 9 || (m === 10 && d.getDate() <= 2); }
+  function wanted() { var v = null; try { v = localStorage.getItem(KEY); } catch (e) {} return v !== 'off'; }
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var layer = null, timers = [];
+  var WEB = '<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M200 0 L60 0 M200 0 L0 60 M200 0 L60 200 M200 0 L130 200 M200 0 L0 140 M200 0 L200 140"/>' +
+    '<path d="M168 0 Q170 18 200 22 M130 0 Q140 40 200 50 M96 0 Q112 64 200 82 M64 0 Q86 94 200 116 M34 6 Q64 124 200 150" stroke-width="1"/></svg>';
+  var SPIDER = '<svg viewBox="0 0 40 40"><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"><path d="M14 18 L4 10 M14 21 L2 21 M14 24 L4 32 M15 27 L9 37 M26 18 L36 10 M26 21 L38 21 M26 24 L36 32 M25 27 L31 37"/></g>' +
+    '<ellipse cx="20" cy="23" rx="8" ry="9" fill="currentColor"/><circle cx="20" cy="13" r="5.5" fill="currentColor"/><circle cx="18" cy="12.5" r="1.4" fill="#FF8A1E"/><circle cx="22" cy="12.5" r="1.4" fill="#FF8A1E"/></svg>';
+  var BAT = '<svg viewBox="0 0 64 32"><path fill="currentColor" d="M32 10c2-3 5-3 6-1 4-4 10-6 16-5-4 2-6 6-5 10-3-2-7-1-9 2-2-2-5-2-6 0-1-2-4-2-6 0-2-3-6-4-9-2 1-4-1-8-5-10 6-1 12 1 16 5 1-2 4-2 6 1z"/><circle cx="29.5" cy="12" r="1" fill="#FF8A1E"/><circle cx="34.5" cy="12" r="1" fill="#FF8A1E"/></svg>';
+  var GHOST = '<svg viewBox="0 0 64 84"><path fill="#FFFFFF" stroke="rgba(60,50,80,.18)" stroke-width="1.5" d="M32 3C16 3 6 15 6 31v44l8-6 8 7 10-8 10 8 8-7 8 6V31C58 15 48 3 32 3z"/>' +
+    '<ellipse cx="24" cy="32" rx="4" ry="5.5" fill="#2B2233"/><ellipse cx="40" cy="32" rx="4" ry="5.5" fill="#2B2233"/><ellipse cx="32" cy="46" rx="4" ry="3" fill="#2B2233" opacity=".8"/></svg>';
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function bats() {
+    if (!layer || reduced || document.hidden) return later(bats, 20000);
+    var n = 2 + Math.floor(Math.random() * 2), W = innerWidth, H = innerHeight;
+    for (var i = 0; i < n; i++) (function (i) {
+      var b = document.createElement('div'); b.className = 'hw-bat'; b.innerHTML = BAT; layer.appendChild(b);
+      var y = 40 + Math.random() * H * 0.35, ltr = Math.random() < 0.5, dur = 6500 + Math.random() * 2500, s = 0.7 + Math.random() * 0.5, f = ltr ? s : -s;
+      var x0 = ltr ? -80 : W + 80, x1 = ltr ? W + 80 : -80;
+      b.animate([{transform: 'translate3d(' + x0 + 'px,' + y + 'px,0) scale(' + f + ',' + s + ')'},
+        {transform: 'translate3d(' + (x0 + (x1 - x0) * 0.35) + 'px,' + (y - 40) + 'px,0) scale(' + f + ',' + s + ')', offset: 0.35},
+        {transform: 'translate3d(' + (x0 + (x1 - x0) * 0.7) + 'px,' + (y + 30) + 'px,0) scale(' + f + ',' + s + ')', offset: 0.7},
+        {transform: 'translate3d(' + x1 + 'px,' + (y - 20) + 'px,0) scale(' + f + ',' + s + ')'}], {duration: dur, delay: i * 450, easing: 'ease-in-out'}).onfinish = function () { b.remove(); };
+    })(i);
+    later(bats, 24000 + Math.random() * 18000);
+  }
+  function ghost() {
+    if (!layer || reduced || document.hidden) return later(ghost, 30000);
+    var g = document.createElement('div'); g.className = 'hw-ghost'; g.innerHTML = GHOST;
+    g.style.left = (40 + Math.random() * Math.max(100, innerWidth - 140)) + 'px'; layer.appendChild(g);
+    g.animate([{transform: 'translate3d(0,0,0)'}, {transform: 'translate3d(0,-78px,0) rotate(-6deg)', offset: 0.3}, {transform: 'translate3d(0,-70px,0) rotate(5deg)', offset: 0.65}, {transform: 'translate3d(0,0,0)'}],
+      {duration: 4200, easing: 'ease-in-out'}).onfinish = function () { g.remove(); };
+    later(ghost, 45000 + Math.random() * 30000);
+  }
+  function pumpkins() {
+    var hero = document.querySelector('.hero'); if (!hero || hero.querySelector('.hw-pumpkins')) return;
+    var pk = document.createElement('div'); pk.className = 'hw-pumpkins'; pk.setAttribute('aria-hidden', 'true');
+    [[58, 14, 22, 0], [86, 22, 28, 1.6], [70, 64, 18, 3], [93, 72, 20, 2.2]].forEach(function (p) {
+      pk.insertAdjacentHTML('beforeend', '<i style="left:' + p[0] + '%;top:' + p[1] + '%;font-size:' + p[2] + 'px;animation-delay:-' + p[3] + 's">\uD83C\uDF83</i>'); });
+    var bg = hero.querySelector('.hero-bg'); if (bg) bg.insertAdjacentElement('afterend', pk); else hero.insertBefore(pk, hero.firstChild);
+  }
+  function on() {
+    if (layer) return;
+    document.documentElement.classList.add('pt-hw');
+    layer = document.createElement('div'); layer.id = 'ptHalloween'; layer.setAttribute('aria-hidden', 'true');
+    layer.innerHTML = '<div class="hw-web">' + WEB + '</div><div class="hw-spider"><span class="thread"></span>' + SPIDER + '</div>';
+    document.body.appendChild(layer);
+    var sp = layer.querySelector('.hw-spider');
+    sp.querySelector('svg').addEventListener('click', function () { if (sp.classList.contains('up')) return; sp.classList.add('up'); later(function () { sp.classList.remove('up'); }, 14000); });
+    pumpkins(); later(bats, 5000); later(ghost, 15000);
+  }
+  function off() {
+    timers.forEach(clearTimeout); timers = [];
+    if (layer) { layer.remove(); layer = null; }
+    document.documentElement.classList.remove('pt-hw');
+    var pk = document.querySelector('.hw-pumpkins'); if (pk) pk.remove();
+  }
+  function apply() {
+    var btn = document.getElementById('hwBtn');
+    if (!inSeason()) { off(); if (btn) btn.classList.add('hidden'); return; }
+    if (btn) { btn.classList.remove('hidden'); btn.setAttribute('aria-pressed', String(wanted())); btn.title = wanted() ? 'Turn off the Halloween decorations' : 'Turn on the Halloween decorations'; }
+    if (wanted()) on(); else off();
+  }
+  document.getElementById('hwBtn').addEventListener('click', function () { try { localStorage.setItem(KEY, wanted() ? 'off' : 'on'); } catch (e) {} apply(); });
+  // start once the page is shown (the hero exists then)
+  var started = false;
+  function maybeStart() { if (started) return; var page = document.getElementById('page'); if (page && !page.classList.contains('hidden')) { started = true; apply(); } }
+  new MutationObserver(maybeStart).observe(document.getElementById('page'), {attributes: true, attributeFilter: ['class']});
+  maybeStart();
+})();
+</script>
+
 <!-- theme switch effect, the same as in the tracker -->
 <style>
   /* The new theme flows out from the button as a soft, glowing wave: a round,
