@@ -186,7 +186,7 @@
 
 /* ---------------------------------------------------------------------------
    Halloween mode: decorations on every tracker page (this file is on all of them).
-   Cobwebs in the corners, a spider on its thread (click it and it scurries up),
+   A cobweb in the top-right corner, a spider on its thread (click it and it scurries up),
    bats now and then, a ghost peeking from the bottom, a pumpkin on the logo and a
    "Happy Halloween" greeting in the menu. Nothing blocks clicks (only the spider is
    clickable); only light animations; nothing moves for people who turned animations off.
@@ -208,8 +208,6 @@
     'html[data-theme="dark"] #ptHalloween .hw-glow{background:radial-gradient(60% 120% at 30% 0%,rgba(255,138,30,.16),transparent 70%),radial-gradient(50% 120% at 80% 0%,rgba(160,90,255,.16),transparent 70%);}',
     '#ptHalloween .hw-web{position:absolute;width:190px;height:190px;color:var(--web);}',
     '#ptHalloween .hw-web.tr{top:0;right:0;}',
-    '#ptHalloween .hw-web.bl{bottom:0;left:232px;transform:rotate(180deg) scaleX(-1);width:150px;height:150px;}',
-    '@media (max-width:900px){#ptHalloween .hw-web.bl{left:0;}}',
     '#ptHalloween .hw-spider{position:absolute;top:0;right:22px;width:30px;transform-origin:50% 0;animation:hwSwing 5.5s ease-in-out infinite;transition:transform 1.4s cubic-bezier(.5,0,.3,1);}',
     '#ptHalloween .hw-spider .thread{display:block;margin:0 auto;width:1px;height:150px;background:var(--web);transition:height 1.2s cubic-bezier(.5,0,.3,1);}',
     '#ptHalloween .hw-spider svg{display:block;width:30px;height:30px;pointer-events:auto;cursor:pointer;margin-top:-2px;}',
@@ -266,7 +264,7 @@
     if (layer) return;
     if (!document.getElementById('ptHalloweenCss')) { var st = document.createElement('style'); st.id = 'ptHalloweenCss'; st.textContent = CSS; document.head.appendChild(st); }
     layer = document.createElement('div'); layer.id = 'ptHalloween'; layer.setAttribute('aria-hidden', 'true');
-    layer.innerHTML = '<div class="hw-glow"></div><div class="hw-web tr">' + WEB + '</div><div class="hw-web bl">' + WEB + '</div>' +
+    layer.innerHTML = '<div class="hw-glow"></div><div class="hw-web tr">' + WEB + '</div>' +
       '<div class="hw-spider"><span class="thread"></span>' + SPIDER + '</div>';
     document.body.appendChild(layer);
     var sp = layer.querySelector('.hw-spider');
