@@ -29,7 +29,7 @@
       '<span class="icon">' + (I[id] || '') + '</span> <span class="pts-label">' + label + '</span></a>';
   }
   var html =
-    '<a class="seq-sidebar-logo pts-logo" href="home.html" aria-label="PalaTrack home"><img src="' + LOGO + '" alt="PalaTrack"></a>' +
+    '<a class="seq-sidebar-logo pts-logo" href="home.html" aria-label="PalaTrack home"><img id="sidebarLogoImg" src="' + LOGO + '" alt="PalaTrack"></a>' +
     '<div class="seq-sidebar-user pts-user" id="seqSidebarUser">' +
       '<div class="seq-sidebar-avatar" id="seqSidebarAvatar">?</div>' +
       '<div class="pts-user-text"><span id="seqSidebarUserName">…</span><small id="ptsUserSub"></small></div>' +
@@ -54,6 +54,7 @@
       link('navChat', 'chat.html', 'Team chat') +
       link('navLibrary', 'library.html', 'Library') +
       link('navTeam', 'team.html', 'Team') +
+      '<a id="navTrash" href="trash.html" hidden aria-hidden="true" tabindex="-1" style="display:none"></a>' +   // kept invisible: pages set its link on start
     '</nav>' +
     '<div class="seq-sidebar-bottom pts-bottom">' +
       '<div class="theme-toggle-row pts-theme">' +
