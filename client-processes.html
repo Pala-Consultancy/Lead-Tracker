@@ -198,7 +198,12 @@
   .fmt-bar.open{display:flex;} .fmt-bar button{width:32px;height:30px;border:none;background:none;color:#fff;border-radius:7px;font-size:14px;} .fmt-bar button:hover{background:rgba(255,255,255,.14);}
   html[data-theme="dark"] .be-client{background:rgba(122,115,255,.08);border-color:rgba(122,115,255,.3);}
   html[data-theme="dark"] .be-ext{background:rgba(122,115,255,.18);}
-  .be-gate{display:inline-flex;margin-top:10px;font-size:12.5px;}
+  .be-gate{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;}
+  .be-gate-l{color:var(--slate);font-weight:600;margin-right:2px;}
+  .be-gate button{border:1px solid var(--border);background:var(--panel);color:var(--slate);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .be-gate button:hover{border-color:var(--teal);color:var(--ink);}
+  .be-gate button[aria-checked="true"]{border-color:var(--teal);background:rgba(55,48,179,.08);color:var(--teal);}
+  html[data-theme="dark"] .be-gate button[aria-checked="true"]{background:rgba(122,115,255,.16);}
   .be-warn{margin-top:8px;font-size:12.5px;color:var(--fail,#B42318);font-weight:600;}
   .be-task{border:1px solid #D6D2FA;background:#F7F6FF;border-radius:14px;padding:10px 12px;margin:6px 0;}
   .be-task .be-todo{margin-top:4px;}
@@ -1104,7 +1109,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       body = b.image ? `<div class="be-panel be-imgwrap"><img src="${esc(b.image.url)}" alt=""><label class="link">Replace<input type="file" accept="image/*" class="hidden" data-up="image"></label></div>`
         : `<div class="be-panel">${b._up ? upBar(b) : '<label class="be-drop">🖼️ <b>Upload an image</b><small>PNG, JPG, GIF or WebP</small><input type="file" accept="image/*" class="hidden" data-up="image"></label>'}</div>`;
     } else if (b.type === 'button') {
-      body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" data-link="1" placeholder="https://calendly.com/…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>${linkNote(b.url)}${gateBox(b, 'data-f="gate"')}</div>`;
+      body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" data-link="1" placeholder="https://calendly.com/…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>${linkNote(b.url)}${gateBox(b, 'data-gate="block"')}</div>`;
     } else if (b.type === 'upload') {
       body = `<div class="be-panel be-client"><div class="be-tag">📤 Your client uploads a file here</div><input class="in" data-f="label" placeholder="What should they send? e.g. The signed contract" value="${esc(b.label || '')}">
         <input class="in" data-f="help" placeholder="Extra explanation (optional)" value="${esc(b.help || '')}">${reqToggle(b)}${attHTML(b)}</div>`;
@@ -1132,7 +1137,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           : a._up ? upBar(a) : `<label class="be-drop sm">📄 <b>Choose a document</b><small>Word, PDF, Excel, PowerPoint or anything else · up to 50 MB</small><input type="file" class="hidden" data-attup="${esc(a.id)}" data-kind="file"></label>`;
       } else if (a.kind === 'button') {
         inner = `<div class="be-row"><input class="in" data-att="${esc(a.id)}" data-af="btnLabel" placeholder="Button text, e.g. Book your onboarding call" value="${esc(a.label || '')}">
-          <input class="in" data-att="${esc(a.id)}" data-af="btnUrl" data-link="1" placeholder="Your booking link, e.g. https://calendly.com/…" value="${esc(a.url || '')}"></div>${linkNote(a.url)}${gateBox(a, `data-att="${esc(a.id)}" data-af="btnGate"`)}
+          <input class="in" data-att="${esc(a.id)}" data-af="btnUrl" data-link="1" placeholder="Your booking link, e.g. https://calendly.com/…" value="${esc(a.url || '')}"></div>${linkNote(a.url)}${gateBox(a, `data-gate="att" data-gatt="${esc(a.id)}"`)}
           <div class="hint">Your client sees this as a big “Book now” card in this step.</div>`;
       } else if (a.kind === 'form') {
         inner = formBuilderHTML(a);
@@ -1189,7 +1194,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // "Only after all other steps are done": on by default for booking buttons (Calendly, "Book…", "call"…)
   const BOOKING = /call|book|meeting|meet|schedule|calendly|cal\.com|savvycal|tidycal|hubspot\.com\/meetings|gesprek|afspraak|bel/i;
   const isGated = (x) => (x.gate === undefined ? BOOKING.test(`${x.label || ''} ${x.url || ''}`) : x.gate === true);
-  const gateBox = (x, attr) => `<label class="req be-gate"><input type="checkbox" ${attr} ${isGated(x) ? 'checked' : ''}> 🔒 Only after all other steps are done</label>`;
+  const gateBox = (x, attr) => { const g = isGated(x); return `<div class="be-gate" role="radiogroup" aria-label="When can your client click this button?"><span class="be-gate-l">Your client can click it:</span>
+      <button type="button" role="radio" aria-checked="${!g}" ${attr} data-gateval="0">🔓 Always</button>
+      <button type="button" role="radio" aria-checked="${g}" ${attr} data-gateval="1">🔒 After all other steps</button></div>`; };
   const linkNote = (u) => !u ? '' : normUrl(u) ? '' : '<div class="be-warn">This isn’t a link that can open. Paste the full link, e.g. https://calendly.com/your-name</div>';
   const reqToggle = (b) => `<label class="req be-req"><input type="checkbox" data-f="required" ${b.required !== false ? 'checked' : ''}> Required</label>`;
   const upBar = (b) => `<div class="hint">Uploading ${esc(b._up.name)}… <span data-pct>${b._up.pct}</span>%</div><div class="upbar"><i style="width:${b._up.pct}%"></i></div>`;
@@ -1362,6 +1369,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   pg.addEventListener('click', (e) => {
     const blk = e.target.closest('.blk'); if (!blk) return;
     if (e.target.closest('[data-gadd]')) { openSlash(blk, '', false); return; }
+    const gb = e.target.closest('[data-gateval]');
+    if (gb) {
+      const b = editing.data.blocks[findB(blk.dataset.id)], v = gb.dataset.gateval === '1';
+      if (gb.dataset.gate === 'att') { const a = (b.attachments || []).find((x) => x.id === gb.dataset.gatt); if (a) a.gate = v; } else b.gate = v;
+      changed(); renderPage(); return;
+    }
     const add = e.target.closest('[data-addatt]');
     if (add) {
       const b = editing.data.blocks[findB(blk.dataset.id)];
