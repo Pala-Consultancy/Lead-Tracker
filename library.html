@@ -1166,6 +1166,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 </div>
 <div class="lib-menu" id="libMoreMenu" role="menu" hidden>
   <button type="button" role="menuitem" data-more="copy">📋 Copy as text</button>
+  <button type="button" role="menuitem" data-more="pdf">📄 Download as PDF</button>
+  <button type="button" role="menuitem" data-more="word">📝 Download as Word</button>
+  <button type="button" role="menuitem" data-more="print">🖨 Print</button>
   <button type="button" role="menuitem" data-more="duplicate">⧉ Duplicate</button>
   <button type="button" role="menuitem" data-more="template">✨ Save as template</button>
   <button type="button" role="menuitem" data-more="delete" class="danger">🗑 Delete page</button>
@@ -1763,12 +1766,92 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   });
 
   // ================= more: copy, duplicate, delete =================
+
+  // ---------- Download as PDF / Word, and Print ----------
+  // Built from what's in the editor, cleaned up: no buttons or editing bits, placeholders as plain text,
+  // to-dos as ☐ / ☑ and Flows as neat boxes. The PDF library (html2pdf) only loads when it's needed.
+  const EXPORT_CSS = `
+    body{font-family:Inter,'Segoe UI',Arial,sans-serif;color:#16202C;font-size:11.5pt;line-height:1.6;margin:0;}
+    .doc{max-width:720px;margin:0 auto;}
+    .doc-title{font-family:Sora,Inter,Arial,sans-serif;font-size:24pt;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em;}
+    .doc-meta{color:#7A8699;font-size:9.5pt;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid #E3E8EF;}
+    h1{font-size:18pt;margin:18px 0 8px;} h2{font-size:15pt;margin:18px 0 6px;} h3{font-size:12.5pt;margin:14px 0 4px;}
+    p{margin:0 0 8px;} ul,ol{margin:0 0 10px;padding-left:22px;} li{margin:2px 0;}
+    blockquote{margin:10px 0;padding:6px 14px;border-left:3px solid #3730B3;color:#3B4757;background:#F5F7FB;}
+    a{color:#3730B3;}
+    .todo{margin:3px 0;} .todo.done{color:#7A8699;text-decoration:line-through;}
+    .ph{background:#EEF0FF;color:#3730B3;border-radius:4px;padding:0 4px;font-weight:600;}
+    .flow{margin:12px 0;padding:10px 14px;border:1px solid #DDE3EC;border-radius:10px;}
+    .fl-top{font-size:8.5pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7A8699;margin-bottom:6px;}
+    .fl-step{margin:6px 0;} .fl-head{font-size:8.5pt;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#3730B3;margin:0 0 3px;}
+    .fl-msg{border:1px solid #E3E8EF;border-radius:8px;padding:8px 10px;background:#F7F9FC;}
+    .fl-msg p{margin:0 0 4px;} .fl-branches{margin-left:12px;padding-left:16px;border-left:2px dashed #DDE3EC;}
+    img{max-width:100%;height:auto;} hr{border:0;border-top:1px solid #E3E8EF;margin:16px 0;}
+    @page{margin:18mm 16mm;}`;
+  function exportParts(p){
+    const ed = $('libEditor').cloneNode(true);
+    ed.querySelectorAll('button,[data-noexport],input,select,textarea,.lib-menu').forEach(el=> el.remove());
+    ed.querySelectorAll('.ph[data-ph]').forEach(el=>{ const s = document.createElement('span'); s.className = 'ph'; s.textContent = '{' + el.dataset.ph + '}'; el.replaceWith(s); });
+    ed.querySelectorAll('.todo').forEach(el=>{ const done = el.dataset.checked === 'true'; el.classList.toggle('done', done); el.insertBefore(document.createTextNode(done ? '☑ ' : '☐ '), el.firstChild); });
+    ed.querySelectorAll('[contenteditable]').forEach(el=> el.removeAttribute('contenteditable'));
+    ed.querySelectorAll('[data-placeholder]').forEach(el=> el.removeAttribute('data-placeholder'));
+    const title = (p.title || 'Untitled').trim();
+    const when = new Date().toLocaleDateString(undefined, {day: 'numeric', month: 'long', year: 'numeric'});
+    const folder = (folders.find(f=> f.id === folderIdOf(p)) || {}).name || '';
+    const body = `<div class="doc"><h1 class="doc-title">${esc(title)}</h1><div class="doc-meta">${folder ? esc(folder) + ' · ' : ''}${esc(when)}</div>${ed.innerHTML}</div>`;
+    const file = (title.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Page').slice(0, 80);
+    return {title, body, file};
+  }
+  function downloadBlob(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  function exportWord(p){
+    const {title, body, file} = exportParts(p);
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="utf-8"><title>${esc(title)}</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+      <style>${EXPORT_CSS}</style></head><body>${body}</body></html>`;
+    downloadBlob(new Blob(['\ufeff', html], {type: 'application/msword'}), file + '.doc');
+    showToast('Downloaded as a Word document.');
+  }
+  function exportPrint(p){
+    const {title, body} = exportParts(p);
+    const f = document.createElement('iframe'); f.setAttribute('aria-hidden', 'true');
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+    document.body.appendChild(f);
+    const d = f.contentDocument; d.open(); d.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${EXPORT_CSS}</style></head><body>${body}</body></html>`); d.close();
+    setTimeout(()=>{ try { f.contentWindow.focus(); f.contentWindow.print(); } catch(e){ console.error(e); } setTimeout(()=> f.remove(), 2000); }, 300);
+  }
+  let pdfLib = null;
+  function loadPdfLib(){
+    if(window.html2pdf) return Promise.resolve();
+    if(pdfLib) return pdfLib;
+    pdfLib = new Promise((res, rej)=>{ const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'; sc.onload = res; sc.onerror = ()=>{ pdfLib = null; rej(new Error('load')); }; document.head.appendChild(sc); });
+    return pdfLib;
+  }
+  async function exportPdf(p){
+    const {body, file} = exportParts(p);
+    showToast('Making your PDF…');
+    try { await loadPdfLib(); } catch(e){ showToast('The PDF tool couldn’t load. Check your connection, or use Print → Save as PDF.'); return; }
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-10000px;top:0;width:720px;background:#fff;';
+    box.innerHTML = `<style>${EXPORT_CSS.replace(/body\{/, '.pdf-root{background:#fff;').replace(/@page\{[^}]*\}/, '')} .pdf-root .doc,.pdf-root .doc *{background-color:transparent;} .pdf-root .fl-msg{background:#F7F9FC;} .pdf-root blockquote{background:#F5F7FB;} .pdf-root .ph{background:#EEF0FF;}</style><div class="pdf-root">${body}</div>`;
+    document.body.appendChild(box);
+    try {
+      await window.html2pdf().set({margin: [16, 14, 18, 14], filename: file + '.pdf', image: {type: 'jpeg', quality: 0.95},
+        html2canvas: {scale: 2, useCORS: true, backgroundColor: '#ffffff'}, jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'},
+        pagebreak: {mode: ['css', 'legacy'], avoid: ['.todo', '.fl-step', 'li', 'h1', 'h2', 'h3', 'blockquote', 'img']}}).from(box.querySelector('.pdf-root')).save();
+      showToast('Downloaded as PDF.');
+    } catch(e){ console.error(e); showToast('Couldn’t make the PDF. Try Print → Save as PDF instead.'); }
+    box.remove();
+  }
+
   $('libMore').addEventListener('click', e=>{ e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); openMenu($('libMoreMenu'), {left: r.right - 220, bottom: r.bottom}); });
   $('libMoreMenu').addEventListener('click', async e=>{
     const b = e.target.closest('[data-more]'); if(!b) return; closeMenus(); saveNow();
     const p = pages[curId]; if(!p) return;
     if(b.dataset.more === 'copy'){ navigator.clipboard.writeText((p.title ? p.title + '\n\n' : '') + PTLib.toText(p.content || '', 'library')).then(()=> showToast('Copied as text.')).catch(()=> showToast('Could not copy.', true)); }
     if(b.dataset.more === 'template'){ saveAsTemplate(p); return; }
+    if(b.dataset.more === 'pdf'){ exportPdf(p); return; }
+    if(b.dataset.more === 'word'){ exportWord(p); return; }
+    if(b.dataset.more === 'print'){ exportPrint(p); return; }
     if(b.dataset.more === 'duplicate'){ createPage({title: (p.title || 'Untitled') + ' (copy)', icon: p.icon, folderId: folderIdOf(p), content: p.content}).then(id=>{ if(id) showToast('Duplicated. The copy is private to you.'); }); }
     if(b.dataset.more === 'delete'){
       const ok = await showConfirmModal({title: 'Delete this page?', message: `"${p.title || 'Untitled'}" is deleted${p.visibility === 'team' ? ' for your whole team' : ''}.`, confirmLabel: 'Delete'});
