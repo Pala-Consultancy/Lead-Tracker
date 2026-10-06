@@ -1485,7 +1485,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div class="lib-items">${list.length ? list.map(item).join('') : '<div class="lib-none">No pages yet</div>'}</div></div>`;
     });
     if(q && !vis.length) html = `<div class="lib-none" style="padding:14px">No page matches "${esc(q)}".</div>`;
-    $('libTree').innerHTML = html;
+    if($('libTree').__html !== html){ $('libTree').innerHTML = html; $('libTree').__html = html; }   // unchanged list: leave it alone (no flicker while typing)
     document.querySelectorAll('.lib-scope [data-scope]').forEach(b=> b.classList.toggle('on', b.dataset.scope === scope));
   }
   $('libTree').addEventListener('click', e=>{
@@ -2185,10 +2185,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       foldersLoaded = true; onData(); ready();
     }, ()=>{ foldersLoaded = true; ready(); });
     db.collection('libraryPages').where('workspaceId', '==', wsId).where('visibility', '==', 'team').onSnapshot(snap=>{
-      teamPages = snap.docs.map(d=> ({id: d.id, ...d.data()})); onData(); ready();
+      teamPages = snap.docs.map(d=> ({id: d.id, ...d.data({serverTimestamps: 'estimate'})})); onData(); ready();
     }, err=>{ console.warn(err); ready(); });
     db.collection('libraryPages').where('createdBy', '==', myUid).onSnapshot(snap=>{
-      myPages = snap.docs.map(d=> ({id: d.id, ...d.data()})); onData(); ready();
+      myPages = snap.docs.map(d=> ({id: d.id, ...d.data({serverTimestamps: 'estimate'})})); onData(); ready();
     }, err=>{ console.warn(err); ready(); });
   });
 

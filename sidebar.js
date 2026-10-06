@@ -234,8 +234,20 @@
     '<ellipse cx="24" cy="32" rx="4" ry="5.5" fill="#2B2233"/><ellipse cx="40" cy="32" rx="4" ry="5.5" fill="#2B2233"/><ellipse cx="32" cy="46" rx="4" ry="3" fill="#2B2233" opacity=".8"/></svg>';
 
   function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
+
+  // bats and the ghost come by at most once every 20 minutes (remembered across pages, so moving
+  // around the app doesn't restart the clock); the first ones a few minutes after you start
+  var HW_EVERY = 20 * 60 * 1000;
+  function hwDue(k) {
+    var now = Date.now(), last = 0;
+    try { last = Number(localStorage.getItem('ptHwLast_' + k)) || 0; } catch (e) { return false; }
+    if (!last) { try { localStorage.setItem('ptHwLast_' + k, String(now - HW_EVERY + (k === 'bats' ? 3 : 8) * 60000)); } catch (e) {} return false; }
+    return now - last >= HW_EVERY;
+  }
+  function hwDone(k) { try { localStorage.setItem('ptHwLast_' + k, String(Date.now())); } catch (e) {} }
   function bats() {
     if (!layer || reduced || document.hidden) return later(bats, 20000);
+    if (!hwDue('bats')) return later(bats, 30000);
     var n = 2 + Math.floor(Math.random() * 2), W = innerWidth, H = innerHeight;
     for (var i = 0; i < n; i++) (function (i) {
       var b = document.createElement('div'); b.className = 'hw-bat'; b.innerHTML = BAT; layer.appendChild(b);
@@ -249,16 +261,17 @@
       ], {duration: dur, delay: i * 450, easing: 'ease-in-out'});
       a.onfinish = function () { b.remove(); };
     })(i);
-    later(bats, 22000 + Math.random() * 18000);
+    hwDone('bats'); later(bats, 30000);
   }
   function ghost() {
     if (!layer || reduced || document.hidden) return later(ghost, 30000);
+    if (!hwDue('ghost')) return later(ghost, 30000);
     var g = document.createElement('div'); g.className = 'hw-ghost'; g.innerHTML = GHOST;
     g.style.left = (260 + Math.random() * Math.max(100, innerWidth - 380)) + 'px'; layer.appendChild(g);
     var a = g.animate([{transform: 'translate3d(0,0,0)'}, {transform: 'translate3d(0,-78px,0) rotate(-6deg)', offset: 0.3}, {transform: 'translate3d(0,-70px,0) rotate(5deg)', offset: 0.65}, {transform: 'translate3d(0,0,0)'}],
       {duration: 4200, easing: 'ease-in-out'});
     a.onfinish = function () { g.remove(); };
-    later(ghost, 40000 + Math.random() * 30000);
+    hwDone('ghost'); later(ghost, 30000);
   }
   function on() {
     if (layer) return;
