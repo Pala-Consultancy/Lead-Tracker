@@ -536,6 +536,8 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const token = new URLSearchParams(location.search).get('t') || '';
+  // ?preview=1: the live preview inside the tracker's editor (content comes from the editor, nothing is saved)
+  const PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
   const PIN_KEY = 'ptCpPin:' + token, NAME_KEY = 'ptCpName:' + token, DRAFT_KEY = (fid) => 'ptCpDraft:' + token + ':' + fid;
   let pin = ''; try { pin = sessionStorage.getItem(PIN_KEY) || ''; } catch (e) { /* ignore */ }
   let name = ''; try { name = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* ignore */ }
@@ -656,6 +658,7 @@
 
   // ---------- Loading and checking the link ----------
   async function load(first) {
+    if (PREVIEW) return;            // the editor sends the content (see the message listener below)
     if (!token) { notice('link', 'This link isn\u2019t complete', 'Check that you copied the whole link, or ask for it again.'); return; }
     try {
       const r = (await getFn({token, pin})).data;
@@ -983,6 +986,7 @@
 
   // ---------- Who's working on this ----------
   function needName(then) {
+    if (PREVIEW) { then(); return; }
     if (name) { then(); return; }
     pendingAction = then; $('nameModal').classList.remove('hidden'); setTimeout(() => $('nameInput').focus(), 30);
   }
@@ -995,6 +999,7 @@
 
   // ---------- Doing things ----------
   async function act(key, taskId, fn, after) {
+    if (PREVIEW) { toast('This is a preview. Your client does this on their own page.'); return false; }
     const before = groups.find((g) => g.task.id === taskId), wasDone = !!(before && before.task.state.done);
     busy[key] = true; render();
     let ok = false;
@@ -1086,6 +1091,15 @@
   // ---------- Everyone on the link sees the same progress ----------
   setInterval(() => { if (proc && !document.hidden && !Object.values(busy).some(Boolean) && !document.activeElement.matches('input,textarea')) load(false); }, 8000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && proc) load(false); });
+  if (PREVIEW) {
+    window.addEventListener('message', (e) => {
+      if (!e.data || e.data.type !== 'pt-cp-preview' || !e.data.process) return;
+      const firstShow = $('page').classList.contains('hidden');
+      proc = e.data.process; build(); render(); show('page');
+      if (firstShow) requestAnimationFrame(() => updateNextPill());
+    });
+    try { window.parent.postMessage({type: 'pt-cp-preview-ready'}, '*'); } catch (e) { /* ignore */ }
+  }
   load(true);
 })();
 </script>

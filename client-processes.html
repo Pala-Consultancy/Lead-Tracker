@@ -257,6 +257,35 @@
   .sw.custom input{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);opacity:0;cursor:pointer;}
   .bb-colors code{font-size:12px;color:var(--slate);margin-left:4px;}
   @media (max-width:640px){ .bb-grid{grid-template-columns:1fr;} }
+  /* starter templates */
+  .st-pick{max-width:760px;}
+  .st-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px;}
+  .st-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:16px;border:1px solid var(--border-soft);border-radius:16px;background:var(--panel);cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;font:inherit;color:inherit;}
+  .st-card:hover,.st-card:focus-visible{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 14px 28px -20px rgba(55,48,179,.5);outline:none;}
+  .st-ic{font-size:22px;line-height:1;margin-bottom:6px;} .st-card b{font:700 15px Sora,sans-serif;} .st-card small{color:var(--slate);font-size:13px;line-height:1.45;}
+  .st-n{margin-top:8px;font-size:11.5px;font-weight:700;color:var(--teal);background:rgba(55,48,179,.08);border-radius:999px;padding:2px 9px;}
+  .st-card.blank{border-style:dashed;} .st-card.blank .st-ic{color:var(--slate);}
+  @media (max-width:640px){ .st-grid{grid-template-columns:1fr;} }
+  /* live preview next to the editor */
+  .ed-split{display:block;}
+  .ed-split.with-pv{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,44%);gap:20px;align-items:start;}
+  .ed-split.with-pv .pgcard,.ed-split.with-pv .brandbox{max-width:none;}
+  .ed-pv{display:none;}
+  .ed-split.with-pv .ed-pv{display:flex;flex-direction:column;position:sticky;top:12px;height:calc(100vh - 140px);min-height:520px;background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;}
+  .pv-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border-soft);}
+  .pv-head b{font-size:13.5px;}
+  .pv-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#13795B;background:#E3F6EE;border-radius:999px;padding:3px 9px;}
+  .pv-live i{width:6px;height:6px;border-radius:50%;background:#1E9E74;}
+  .pv-seg{margin-left:auto;display:flex;gap:2px;background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:10px;padding:2px;}
+  .pv-seg button{border:none;background:none;border-radius:8px;padding:5px 11px;font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer;}
+  .pv-seg button[aria-checked="true"]{background:var(--panel);color:var(--teal);box-shadow:0 1px 3px rgba(16,24,40,.12);}
+  .pv-stage{flex:1;position:relative;overflow:hidden;background:var(--panel-alt);display:flex;justify-content:center;align-items:flex-start;}
+  .pv-device{transform-origin:top center;flex-shrink:0;}
+  .pv-device iframe{display:block;border:0;background:#fff;}
+  .pv-device.phone{margin-top:6px;border-radius:34px;box-shadow:0 0 0 10px #111827,0 20px 40px -12px rgba(0,0,0,.35);overflow:hidden;}
+  .pv-note{margin:0;padding:8px 14px;font-size:11.5px;color:var(--slate-light);border-top:1px solid var(--border-soft);}
+  .pv-toggle{margin-left:10px;} .pv-toggle[aria-pressed="true"]{border-color:var(--teal);color:var(--teal);background:rgba(55,48,179,.06);}
+  @media (max-width:1100px){ .ed-split.with-pv{grid-template-columns:1fr;} .ed-split.with-pv .ed-pv{position:relative;height:640px;} }
   /* the app's own dialog */
   .ptd-ov{position:fixed;inset:0;z-index:1000;background:rgba(15,22,38,.42);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .16s;}
   .ptd-ov.in{opacity:1;} .ptd-ov.out{opacity:0;}
@@ -776,7 +805,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <!-- template / client page editor -->
 <div class="ov inpage" id="edOv" role="region" aria-labelledby="edTitle"><div class="dlg">
   <button class="back" data-close>← Back</button>
-  <div class="dlg-top"><div><h2 id="edTitle">New template</h2><p id="edSub"></p></div><span class="saved" id="edSaved" aria-live="polite"></span></div>
+  <div class="dlg-top"><div><h2 id="edTitle">New template</h2><p id="edSub"></p></div><span class="saved" id="edSaved" aria-live="polite"></span>
+    <button type="button" class="btn sm pv-toggle" id="pvToggle" aria-pressed="true">👁 Preview</button></div>
+  <div class="ed-split" id="edSplit"><div class="ed-main">
   <details class="brandbox" id="brandBox" open>
     <summary><span class="bb-t">Branding</span><span class="bb-s">Your logo, photo and color on your client’s page</span><span class="bb-prev" id="bbPrev"></span></summary>
     <div class="bb-grid">
@@ -794,6 +825,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div id="pgBlocks" class="pg-blocks"></div>
     <button class="pg-add" id="pgAdd">+ Add a block <span>or type “/” on an empty line</span></button>
   </div>
+  </div>
+  <aside class="ed-pv" aria-label="Live preview of your client’s page">
+    <div class="pv-head"><b>What your client sees</b><span class="pv-live"><i></i>Live</span>
+      <div class="pv-seg" role="radiogroup" aria-label="Device"><button type="button" role="radio" data-pvd="desktop" aria-checked="true">Computer</button><button type="button" role="radio" data-pvd="phone" aria-checked="false">Phone</button></div></div>
+    <div class="pv-stage" id="pvStage"><div class="pv-device" id="pvDevice"><iframe id="pvFrame" title="Preview of your client’s page" src="about:blank" loading="lazy"></iframe></div></div>
+    <p class="pv-note">A preview: nothing here can be ticked off or sent.</p>
+  </aside></div>
   <div class="foot"><span class="hint" style="margin-right:auto">Everything saves automatically.</span><button class="btn primary" data-close>Done</button></div>
 </div></div>
 <div class="slash-menu" id="slashMenu" role="listbox" aria-label="Add a block"></div>
@@ -1106,6 +1144,132 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const d = e.target.closest('[data-bdel]'); if (d) { delete editing.data.brand[d.dataset.bdel]; renderBrand(); changed(); }
   });
 
+
+  // ---------- Starter templates: a full onboarding to start from instead of an empty page ----------
+  const F = (type, label, extra) => Object.assign({id: uidGen(), type, label, help: '', required: true, options: []}, extra || {});
+  const T = (html, extra) => Object.assign({id: uidGen(), type: 'todo', html, required: true}, extra || {});
+  const form = (title, intro, fields) => ({id: uidGen(), kind: 'form', form: {title, intro, fields}});
+  const callStep = (label) => T(label, {note: 'Pick a time that suits you. We’ll go through everything together.', attachments: [{id: uidGen(), kind: 'button', label, url: '', gate: true}]});
+  const txt = (html) => ({id: uidGen(), type: 'text', html});
+  const STARTERS = [
+    {key: 'consultancy', ic: '🧭', name: 'Consultancy onboarding', desc: 'Welcome, a business intake, their goals and materials, then the kick-off call.', build: () => [
+      {id: uidGen(), type: 'h1', html: 'Welcome aboard!'},
+      txt('<p>We’re excited to start working together. This page walks you through everything we need from you, step by step. It takes about 20 minutes, and you can stop and come back anytime.</p>'),
+      {id: uidGen(), type: 'h2', html: 'Your first steps'},
+      T('Watch the welcome video', {note: 'A short introduction to how we work and what to expect in the first weeks.'}),
+      T('Fill in the business intake', {note: 'The more we know, the faster we can get results.', attachments: [form('Business intake', 'Tell us about your business.', [
+        F('text', 'Company name'), F('text', 'Website', {required: false}), F('choice', 'Team size', {options: ['Just me', '2–10', '11–50', '50+']}),
+        F('longtext', 'What do you sell, and to whom?'), F('longtext', 'What’s your main goal for the next 90 days?'), F('longtext', 'What’s your biggest challenge right now?')])]}),
+      {id: uidGen(), type: 'upload', label: 'Upload your logo and any brand materials', help: 'Logo, brand guidelines, a recent presentation: whatever helps us understand your brand.', required: false},
+      {id: uidGen(), type: 'question', label: 'What would make this a success for you?', qtype: 'text', required: true},
+      {id: uidGen(), type: 'h2', html: 'Last step'},
+      callStep('Book your onboarding call')]},
+    {key: 'agency', ic: '🚀', name: 'Agency kick-off', desc: 'A project brief, brand assets, access to accounts and the timeline, then the kick-off.', build: () => [
+      {id: uidGen(), type: 'h1', html: 'Let’s kick off your project'},
+      txt('<p>Thanks for choosing us! Before we start, we need a few things from you. Complete the steps below and we’ll hit the ground running.</p>'),
+      T('Fill in the project brief', {attachments: [form('Project brief', 'The more detail, the better the result.', [
+        F('text', 'Project name'), F('longtext', 'What do you want to achieve?'), F('longtext', 'Who is your target audience?'), F('date', 'Ideal launch date', {required: false}),
+        F('choice', 'Budget range', {options: ['Under €5k', '€5k–€15k', '€15k–€50k', '€50k+'], required: false}), F('longtext', 'Competitors or examples you like', {required: false})])]}),
+      {id: uidGen(), type: 'upload', label: 'Share your brand assets', help: 'Logo files, fonts, colours, photos and any brand guidelines.', required: true},
+      T('Give us access to your accounts', {note: 'For example your website, analytics and social media. We’ll send instructions on the call if you need help.'}),
+      T('Review the project timeline', {note: 'Have a look at the planning so you know what happens when.', required: false}),
+      callStep('Book your kick-off call')]},
+    {key: 'coaching', ic: '🌱', name: 'Coaching program', desc: 'Get to know them, set goals, the first module, then their first session.', build: () => [
+      {id: uidGen(), type: 'h1', html: 'Welcome to the program'},
+      txt('<p>I’m so glad you’re here. This is where your journey starts. Take your time with the steps below; they help me prepare our first session around you.</p>'),
+      T('Tell me about yourself', {attachments: [form('Getting to know you', 'Answer honestly: there are no wrong answers.', [
+        F('longtext', 'Where are you right now, professionally or personally?'), F('longtext', 'Where do you want to be in 3 months?'),
+        F('longtext', 'What has held you back so far?'), F('choice', 'How committed are you to making this change?', {options: ['Curious', 'Motivated', 'All in']})])]}),
+      T('Watch module 0: how the program works', {note: 'About 10 minutes. It explains how we’ll work together and how to get the most out of it.'}),
+      T('Join the community', {note: 'Meet the others in the program. Introduce yourself in one sentence.', required: false}),
+      callStep('Book your first session')]},
+    {key: 'freelance', ic: '🤝', name: 'Freelance project start', desc: 'Sign the agreement, share the materials, name a contact, then the start call.', build: () => [
+      {id: uidGen(), type: 'h1', html: 'Let’s get started'},
+      txt('<p>Thanks for working with me! A few quick steps and we’re ready to go.</p>'),
+      T('Sign the agreement', {attachments: [form('Agreement', 'Please confirm the agreement we discussed.', [
+        F('text', 'Full name'), F('text', 'Company', {required: false}), F('yesno', 'I agree to the terms of the proposal'), F('signature', 'Signature')])]}),
+      {id: uidGen(), type: 'upload', label: 'Upload the materials for the project', help: 'Texts, images, logins, anything I need to start.', required: true},
+      {id: uidGen(), type: 'question', label: 'Who is the main contact person for this project?', qtype: 'text', required: true},
+      callStep('Book the start call')]},
+  ];
+  function openStarterPicker() {
+    const ov = document.createElement('div'); ov.className = 'ptd-ov';
+    ov.innerHTML = `<div class="ptd st-pick" role="dialog" aria-modal="true" aria-labelledby="stT"><h3 id="stT">Start a new template</h3><p>Start from a ready-made onboarding and make it yours, or begin with an empty page.</p>
+      <div class="st-grid">${STARTERS.map((t) => `<button type="button" class="st-card" data-st="${t.key}"><span class="st-ic">${t.ic}</span><b>${esc(t.name)}</b><small>${esc(t.desc)}</small><span class="st-n">${t.build().filter((b) => INTERACTIVE.includes(b.type)).length} steps</span></button>`).join('')}
+        <button type="button" class="st-card blank" data-st="blank"><span class="st-ic">＋</span><b>Blank page</b><small>Start from scratch.</small></button></div>
+      <div class="ptd-b"><button type="button" class="btn" data-x>Cancel</button></div></div>`;
+    document.body.appendChild(ov);
+    const close = () => { ov.classList.remove('in'); setTimeout(() => ov.remove(), 160); document.removeEventListener('keydown', key, true); };
+    const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
+    document.addEventListener('keydown', key, true);
+    ov.addEventListener('mousedown', (e) => { if (e.target === ov) close(); });
+    ov.querySelector('[data-x]').addEventListener('click', close);
+    ov.querySelectorAll('[data-st]').forEach((b) => b.addEventListener('click', () => {
+      const t = STARTERS.find((x) => x.key === b.dataset.st); close(); setTab('tpl');
+      openEditor('template', t ? {name: t.name, blocks: t.build()} : null);
+      if (t) changed();   // a starter is saved straight away
+      if (t) showToast(`“${t.name}” is ready. Change anything you like; it saves automatically.`);
+    }));
+    requestAnimationFrame(() => { ov.classList.add('in'); ov.querySelector('.st-card').focus(); });
+  }
+
+  // ---------- Live preview: the real client page, fed with what's in the editor ----------
+  let pvDevice = (() => { try { return localStorage.getItem('ptCpPvDevice') || 'desktop'; } catch (e) { return 'desktop'; } })();
+  let pvOpen = (() => { try { const v = localStorage.getItem('ptCpPvOpen'); return v ? v === '1' : innerWidth >= 1200; } catch (e) { return true; } })();
+  let pvReady = false, pvTimer = null;
+  function previewData() {
+    if (!editing) return null;
+    const d = editing.data, prog = editing.kind === 'process' ? (d.progress || {}) : {};
+    const blocks = blocksForSave();
+    const isTask = (b) => INTERACTIVE.includes(b.type);
+    const doneOf = (id) => !!(prog[id] && prog[id].done);
+    const leftExcept = (id) => blocks.filter((x) => isTask(x) && x.required !== false && x.id !== id && !doneOf(x.id)).length;
+    const out = blocks.map((b) => {
+      const o = {...b};
+      if (b.type === 'video' && b.video) o.video = {kind: b.video.kind, url: b.video.url || '', embedUrl: b.video.embedUrl || '', name: b.video.name || ''};
+      if (b.type === 'button') { o.url = normUrl(b.url); if (o.url && isGated(b) && leftExcept(null) > 0) Object.assign(o, {url: '', locked: true, left: leftExcept(null)}); }
+      if (isTask(b)) {
+        const p = prog[b.id] || {};
+        o.required = b.required !== false;
+        o.state = {done: !!p.done, doneBy: p.doneBy || '', doneAt: null, answer: (p.answers && p.answers.value) || '', uploads: [], forms: {}};
+        o.attachments = (b.attachments || []).map((a) => {
+          const x = {id: a.id, kind: a.kind, preview: a.preview !== false, video: a.video || null, file: a.file || null, image: a.image || null, form: a.form || null, label: a.label, url: a.kind === 'button' ? normUrl(a.url) : undefined};
+          if (a.kind === 'button' && x.url && isGated(a)) { const left = leftExcept(b.id); if (left > 0) Object.assign(x, {url: 'locked', locked: true, left}); }
+          return x;
+        }).filter((a) => a.video || a.file || a.image || (a.form && (a.form.fields || []).length) || (a.kind === 'button' && a.url));
+      }
+      return o;
+    });
+    const br = d.brand || {};
+    return {title: $('edName').value.trim() || (editing.kind === 'template' ? 'Onboarding' : 'Onboarding'), clientName: editing.kind === 'process' ? (d.clientName || '') : 'your client',
+      workspaceName: ws.name || '', senderName: $('edSender').value.trim(), status: 'active', activity: [], blocks: out,
+      brand: {logo: (br.logo && br.logo.url) || '', photo: (br.photo && br.photo.url) || myProfile.photoURL || '', cover: (br.cover && br.cover.url) || '', color: br.color || '',
+        role: br.role || myProfile.role || '', company: br.company || myProfile.company || ws.name || ''}};
+  }
+  function sendPreview() {
+    clearTimeout(pvTimer);
+    pvTimer = setTimeout(() => {
+      const f = $('pvFrame'); if (!pvOpen || !editing || !f || !f.contentWindow || !pvReady) return;
+      try { f.contentWindow.postMessage({type: 'pt-cp-preview', process: JSON.parse(JSON.stringify(previewData()))}, '*'); } catch (e) { console.error(e); }
+    }, 300);
+  }
+  function layoutPreview() {
+    const stage = $('pvStage'), dev = $('pvDevice'), f = $('pvFrame'); if (!stage || !pvOpen) return;
+    const W = stage.clientWidth, H = stage.clientHeight;
+    if (pvDevice === 'phone') { const s = Math.min(1, (W - 8) / 390, (H - 8) / 780); f.style.width = '390px'; f.style.height = '780px'; dev.style.transform = `scale(${s})`; dev.style.width = '390px'; dev.style.height = '780px'; dev.className = 'pv-device phone'; }
+    else { const s = W / 1280; f.style.width = '1280px'; f.style.height = Math.round(H / s) + 'px'; dev.style.transform = `scale(${s})`; dev.style.width = '1280px'; dev.style.height = Math.round(H / s) + 'px'; dev.className = 'pv-device'; }
+    document.querySelectorAll('[data-pvd]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.pvd === pvDevice)));
+  }
+  function showPreview(open) {
+    pvOpen = open; try { localStorage.setItem('ptCpPvOpen', open ? '1' : '0'); } catch (e) { /* ignore */ }
+    $('edSplit').classList.toggle('with-pv', open); $('pvToggle').setAttribute('aria-pressed', String(open));
+    if (open) { const f = $('pvFrame'); if (f.src === 'about:blank' || !f.src) { pvReady = false; f.src = 'client-process.html?preview=1'; } requestAnimationFrame(layoutPreview); sendPreview(); }
+  }
+  window.addEventListener('message', (e) => { if (e.data && e.data.type === 'pt-cp-preview-ready') { pvReady = true; sendPreview(); } });
+  $('pvToggle').addEventListener('click', () => showPreview(!pvOpen));
+  document.querySelectorAll('[data-pvd]').forEach((b) => b.addEventListener('click', () => { pvDevice = b.dataset.pvd; try { localStorage.setItem('ptCpPvDevice', pvDevice); } catch (e) { /* ignore */ } layoutPreview(); }));
+  window.addEventListener('resize', () => { if (editing) layoutPreview(); });
+
   function openEditor(kind, data, id) {
     const isNew = !id;
     const col = db.collection(kind === 'template' ? 'clientProcessTemplates' : 'clientProcesses');
@@ -1122,6 +1286,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     $('edSaved').textContent = isNew ? '' : 'Saved';
     renderPage();
     $('edOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0;
+    showPreview(pvOpen);
     setTimeout(() => { if (isNew) $('edName').focus(); }, 40);
   }
 
@@ -1241,6 +1406,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const upBar = (b) => `<div class="hint">Uploading ${esc(b._up.name)}… <span data-pct>${b._up.pct}</span>%</div><div class="upbar"><i style="width:${b._up.pct}%"></i></div>`;
   const findB = (id) => editing.data.blocks.findIndex((b) => b.id === id);
   function renderPage(focusId, atEnd) {
+    sendPreview();
     $('pgBlocks').innerHTML = editing.data.blocks.map(blockHTML).join('');
     // what sits under a to-do / upload / question opens inside that task on the client's page: show it with a line
     let inTask = false;
@@ -1281,7 +1447,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   // ---------- Saving (automatically) ----------
   let saveTimer = null;
-  function changed() { editing.dirty = true; $('edSaved').textContent = 'Saving…'; clearTimeout(saveTimer); saveTimer = setTimeout(save, 900); }
+  function changed() { sendPreview(); editing.dirty = true; $('edSaved').textContent = 'Saving…'; clearTimeout(saveTimer); saveTimer = setTimeout(save, 900); }
   function blocksForSave() {
     return (editing || {data: {blocks: []}}).data.blocks.map((b) => {
       const c = {...b}; delete c._up;
@@ -1760,7 +1926,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.closest('#pgBlocks') || b.closest('#slashMenu') || b.closest('#fmtBar')) return;
-    if (b.dataset.newtpl !== undefined || b.id === 'newTplBtn') { setTab('tpl'); openEditor('template', null); }
+    if (b.dataset.newtpl !== undefined || b.id === 'newTplBtn') { openStarterPicker(); }
     else if (b.dataset.start !== undefined || b.id === 'startBtn') openStart();
     else if (b.dataset.starttpl) openStart(b.dataset.starttpl);
     else if (b.dataset.edittpl) { const t = templates.find((x) => x.id === b.dataset.edittpl); openEditor('template', t, t.id); }
