@@ -268,14 +268,17 @@
   @media (max-width:640px){ .st-grid{grid-template-columns:1fr;} }
   /* live preview next to the editor */
   .ed-split{display:block;}
-  .ed-split.with-pv{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,44%);gap:20px;align-items:start;}
+  body.cp-pv .shell{max-width:none;padding:26px 32px 90px;}   /* editing with the preview: use the whole width */
+  .ed-split.with-pv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start;}
   .ed-split.with-pv .pgcard,.ed-split.with-pv .brandbox{max-width:none;}
   .ed-pv{display:none;}
-  .ed-split.with-pv .ed-pv{display:flex;flex-direction:column;position:sticky;top:12px;height:calc(100vh - 140px);min-height:520px;background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;}
+  .ed-split.with-pv .ed-pv{display:flex;flex-direction:column;position:sticky;top:12px;height:calc(100vh - 120px);min-height:520px;background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;}
   .pv-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border-soft);}
   .pv-head b{font-size:13.5px;}
   .pv-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#13795B;background:#E3F6EE;border-radius:999px;padding:3px 9px;}
   .pv-live i{width:6px;height:6px;border-radius:50%;background:#1E9E74;}
+  .pv-x{width:30px;height:30px;border:none;background:none;border-radius:8px;color:var(--slate);font-size:18px;line-height:1;cursor:pointer;margin-left:2px;}
+  .pv-x:hover{background:var(--panel-alt);color:var(--ink);}
   .pv-seg{margin-left:auto;display:flex;gap:2px;background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:10px;padding:2px;}
   .pv-seg button{border:none;background:none;border-radius:8px;padding:5px 11px;font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer;}
   .pv-seg button[aria-checked="true"]{background:var(--panel);color:var(--teal);box-shadow:0 1px 3px rgba(16,24,40,.12);}
@@ -806,7 +809,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <div class="ov inpage" id="edOv" role="region" aria-labelledby="edTitle"><div class="dlg">
   <button class="back" data-close>← Back</button>
   <div class="dlg-top"><div><h2 id="edTitle">New template</h2><p id="edSub"></p></div><span class="saved" id="edSaved" aria-live="polite"></span>
-    <button type="button" class="btn sm pv-toggle" id="pvToggle" aria-pressed="true">👁 Preview</button></div>
+    <button type="button" class="btn sm pv-toggle" id="pvToggle" aria-pressed="true">👁 Hide preview</button></div>
   <div class="ed-split" id="edSplit"><div class="ed-main">
   <details class="brandbox" id="brandBox" open>
     <summary><span class="bb-t">Branding</span><span class="bb-s">Your logo, photo and color on your client’s page</span><span class="bb-prev" id="bbPrev"></span></summary>
@@ -828,7 +831,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   </div>
   <aside class="ed-pv" aria-label="Live preview of your client’s page">
     <div class="pv-head"><b>What your client sees</b><span class="pv-live"><i></i>Live</span>
-      <div class="pv-seg" role="radiogroup" aria-label="Device"><button type="button" role="radio" data-pvd="desktop" aria-checked="true">Computer</button><button type="button" role="radio" data-pvd="phone" aria-checked="false">Phone</button></div></div>
+      <div class="pv-seg" role="radiogroup" aria-label="Device"><button type="button" role="radio" data-pvd="desktop" aria-checked="true">Computer</button><button type="button" role="radio" data-pvd="phone" aria-checked="false">Phone</button></div>
+      <button type="button" class="pv-x" id="pvClose" title="Hide the preview" aria-label="Hide the preview">×</button></div>
     <div class="pv-stage" id="pvStage"><div class="pv-device" id="pvDevice"><iframe id="pvFrame" title="Preview of your client’s page" src="about:blank" loading="lazy"></iframe></div></div>
     <p class="pv-note">A preview: nothing here can be ticked off or sent.</p>
   </aside></div>
@@ -1257,16 +1261,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const stage = $('pvStage'), dev = $('pvDevice'), f = $('pvFrame'); if (!stage || !pvOpen) return;
     const W = stage.clientWidth, H = stage.clientHeight;
     if (pvDevice === 'phone') { const s = Math.min(1, (W - 8) / 390, (H - 8) / 780); f.style.width = '390px'; f.style.height = '780px'; dev.style.transform = `scale(${s})`; dev.style.width = '390px'; dev.style.height = '780px'; dev.className = 'pv-device phone'; }
-    else { const s = W / 1280; f.style.width = '1280px'; f.style.height = Math.round(H / s) + 'px'; dev.style.transform = `scale(${s})`; dev.style.width = '1280px'; dev.style.height = Math.round(H / s) + 'px'; dev.className = 'pv-device'; }
+    else { const VW = 1040, s = Math.min(1, W / VW); f.style.width = VW + 'px'; f.style.height = Math.round(H / s) + 'px'; dev.style.transform = `scale(${s})`; dev.style.width = VW + 'px'; dev.style.height = Math.round(H / s) + 'px'; dev.className = 'pv-device'; }
     document.querySelectorAll('[data-pvd]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.pvd === pvDevice)));
   }
   function showPreview(open) {
     pvOpen = open; try { localStorage.setItem('ptCpPvOpen', open ? '1' : '0'); } catch (e) { /* ignore */ }
     $('edSplit').classList.toggle('with-pv', open); $('pvToggle').setAttribute('aria-pressed', String(open));
+    $('pvToggle').textContent = open ? '👁 Hide preview' : '👁 Show preview';
+    document.body.classList.toggle('cp-pv', open && !!editing);
     if (open) { const f = $('pvFrame'); if (f.src === 'about:blank' || !f.src) { pvReady = false; f.src = 'client-process.html?preview=1'; } requestAnimationFrame(layoutPreview); sendPreview(); }
   }
   window.addEventListener('message', (e) => { if (e.data && e.data.type === 'pt-cp-preview-ready') { pvReady = true; sendPreview(); } });
   $('pvToggle').addEventListener('click', () => showPreview(!pvOpen));
+  $('pvClose').addEventListener('click', () => showPreview(false));
   document.querySelectorAll('[data-pvd]').forEach((b) => b.addEventListener('click', () => { pvDevice = b.dataset.pvd; try { localStorage.setItem('ptCpPvDevice', pvDevice); } catch (e) { /* ignore */ } layoutPreview(); }));
   window.addEventListener('resize', () => { if (editing) layoutPreview(); });
 
@@ -1940,6 +1947,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (id === 'edOv') closeSlash();
     $(id).classList.remove('open'); if (id === 'dtOv') current = null; if (id === 'edOv') editing = null;
     if (!document.querySelector('.ov.inpage.open')) document.body.classList.remove('cp-inpage');
+    if (!$('edOv').classList.contains('open')) document.body.classList.remove('cp-pv');
   }
   document.querySelectorAll('.ov').forEach((ov) => ov.addEventListener('click', (e) => { if (e.target === ov || e.target.closest('[data-close]')) closeOv(ov.id); }));
   document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; const open = [...document.querySelectorAll('.ov.open')].pop(); if (open) closeOv(open.id); });

@@ -208,7 +208,7 @@
     'html[data-theme="dark"] #ptHalloween .hw-glow{background:radial-gradient(60% 120% at 30% 0%,rgba(255,138,30,.16),transparent 70%),radial-gradient(50% 120% at 80% 0%,rgba(160,90,255,.16),transparent 70%);}',
     '#ptHalloween .hw-web{position:absolute;width:190px;height:190px;color:var(--web);}',
     '#ptHalloween .hw-web.tr{top:0;right:0;}',
-    '#ptHalloween .hw-spider{position:absolute;top:0;right:22px;width:30px;transform-origin:50% 0;animation:hwSwing 5.5s ease-in-out infinite;transition:transform 1.4s cubic-bezier(.5,0,.3,1);}',
+    '#ptHalloween .hw-spider{position:absolute;top:0;right:4px;width:30px;transform-origin:50% 0;animation:hwSwing 5.5s ease-in-out infinite;transition:transform 1.4s cubic-bezier(.5,0,.3,1);}',
     '#ptHalloween .hw-spider .thread{display:block;margin:0 auto;width:1px;height:150px;background:var(--web);transition:height 1.2s cubic-bezier(.5,0,.3,1);}',
     '#ptHalloween .hw-spider svg{display:block;width:30px;height:30px;pointer-events:auto;cursor:pointer;margin-top:-2px;}',
     '#ptHalloween .hw-spider.up .thread{height:0;}',
