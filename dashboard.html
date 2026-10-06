@@ -4978,6 +4978,8 @@ html[data-theme="dark"] .toast-undo:hover{background:rgba(22,25,52,0.28)}
     if(cb) cb();
   });
   confirmModalCancel.addEventListener('click', closeConfirmModal);
+  // the in-app dialog as a yes/no answer (instead of the browser's confirm pop-up); cancel simply never continues
+  function confirmInApp(message, okLabel){ return new Promise(resolve=> showConfirmModal(message, ()=>resolve(true), okLabel)); }
   confirmOverlay.addEventListener('click', closeConfirmModal);
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape' && confirmModal.classList.contains('open')) closeConfirmModal();
@@ -5061,9 +5063,9 @@ html[data-theme="dark"] .toast-undo:hover{background:rgba(22,25,52,0.28)}
       showToast(t('couldNotUndoDelete') + ' ' + friendlyErr(err), true);
     });
   }
-  function permanentlyDeleteLead(id){
+  async function permanentlyDeleteLead(id){
     const l = trashedLeads.find(x=>x.id===id);
-    if(!confirm(t('confirmPermanentDelete'))) return;
+    if(!(await confirmInApp(t('confirmPermanentDelete'), t('deleteWord')))) return;
     leadsCollection.doc(id).delete().then(()=>{
       showToast(`${t('permanentlyDeletedWord')} ${(l && l.name) || t('lead_singular')}`, true);
     }).catch(err=>{
@@ -5742,10 +5744,10 @@ html[data-theme="dark"] .toast-undo:hover{background:rgba(22,25,52,0.28)}
       bar.style.display = 'none';
     }
   }
-  function bulkDelete(){
+  async function bulkDelete(){
     const ids = Array.from(selectedIds);
     if(ids.length===0) return;
-    if(!confirm(`${t('deleteWord')} ${ids.length} ${t('selectedWord')} ${ids.length===1?t('lead_singular'):t('lead_plural')}?`)) return;
+    if(!(await confirmInApp(`${t('deleteWord')} ${ids.length} ${t('selectedWord')} ${ids.length===1?t('lead_singular'):t('lead_plural')}?`, t('deleteWord')))) return;
     const batch = db.batch();
     ids.forEach(id=>batch.update(leadsCollection.doc(id), {deleted:true, deletedAt: firebase.firestore.FieldValue.serverTimestamp()}));
     batch.commit().then(()=>{

@@ -257,6 +257,15 @@
   .sw.custom input{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);opacity:0;cursor:pointer;}
   .bb-colors code{font-size:12px;color:var(--slate);margin-left:4px;}
   @media (max-width:640px){ .bb-grid{grid-template-columns:1fr;} }
+  /* the app's own dialog */
+  .ptd-ov{position:fixed;inset:0;z-index:1000;background:rgba(15,22,38,.42);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .16s;}
+  .ptd-ov.in{opacity:1;} .ptd-ov.out{opacity:0;}
+  .ptd{width:100%;max-width:440px;background:var(--panel,#fff);color:var(--ink,#16202C);border-radius:20px;padding:24px 24px 20px;box-shadow:0 30px 80px -20px rgba(10,14,30,.45);transform:translateY(8px) scale(.98);transition:transform .2s cubic-bezier(.2,.8,.2,1);}
+  .ptd-ov.in .ptd{transform:none;}
+  .ptd h3{margin:0 0 8px;font:700 18px Sora,sans-serif;letter-spacing:-.01em;} .ptd p{margin:0;color:var(--slate,#5B6B7F);font-size:14.5px;line-height:1.55;}
+  .ptd-in{width:100%;margin-top:14px;} .ptd-err{min-height:18px;margin-top:6px;font-size:12.5px;color:var(--fail,#B42318);font-weight:600;}
+  .ptd-b{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+  .btn.danger-solid{background:var(--fail,#B42318);border-color:var(--fail,#B42318);color:#fff;} .btn.danger-solid:hover{filter:brightness(1.08);}
   /* live progress */
   .pc-prog{display:flex;align-items:center;gap:10px;margin:14px 0 7px;} .pc-prog .pbar{flex:1;margin:0;} .pc-prog b{font-size:12.5px;color:var(--ink);min-width:34px;text-align:right;}
   .live-now{display:inline-flex;align-items:center;gap:6px;color:var(--success);font-weight:700;}
@@ -936,6 +945,36 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('statusSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-s]'); if (!b) return; statusFilter = b.dataset.s; [...$('statusSeg').children].forEach((x) => x.setAttribute('aria-pressed', String(x === b))); renderAll(); });
   $('search').addEventListener('input', () => { query = $('search').value; renderAll(); });
 
+
+  // ---------- The app's own dialog (never the browser's confirm / prompt pop-ups) ----------
+  // ask(message, {title, ok, cancel, danger, input}) → Promise: true/false, or the typed text (null = cancelled)
+  function ask(message, o) {
+    o = o || {};
+    return new Promise((resolve) => {
+      const prevFocus = document.activeElement;
+      const ov = document.createElement('div'); ov.className = 'ptd-ov'; ov.setAttribute('role', 'presentation');
+      ov.innerHTML = `<div class="ptd" role="alertdialog" aria-modal="true" aria-labelledby="ptdT" aria-describedby="ptdM">
+        ${o.title ? `<h3 id="ptdT">${esc(o.title)}</h3>` : ''}<p id="ptdM">${esc(message)}</p>
+        ${o.input != null ? `<input class="in ptd-in" value="${esc(o.input)}" ${o.placeholder ? `placeholder="${esc(o.placeholder)}"` : ''} ${o.inputMode ? `inputmode="${o.inputMode}"` : ''}><div class="ptd-err" aria-live="polite"></div>` : ''}
+        <div class="ptd-b"><button type="button" class="btn" data-x>${esc(o.cancel || 'Cancel')}</button><button type="button" class="btn ${o.danger ? 'danger-solid' : 'primary'}" data-ok>${esc(o.ok || 'OK')}</button></div></div>`;
+      document.body.appendChild(ov);
+      const inp = ov.querySelector('.ptd-in'), err = ov.querySelector('.ptd-err');
+      const done = (v) => { ov.classList.add('out'); setTimeout(() => ov.remove(), 160); document.removeEventListener('keydown', key, true); if (prevFocus && prevFocus.focus) try { prevFocus.focus({preventScroll: true}); } catch (e) { /* ignore */ } resolve(v); };
+      const okay = () => {
+        if (!inp) return done(true);
+        const v = inp.value.trim(), bad = o.validate ? o.validate(v) : '';
+        if (bad) { err.textContent = bad; inp.focus(); return; }
+        done(v);
+      };
+      const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(inp ? null : false); } else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); okay(); } };
+      document.addEventListener('keydown', key, true);
+      ov.addEventListener('mousedown', (e) => { if (e.target === ov) done(inp ? null : false); });
+      ov.querySelector('[data-x]').addEventListener('click', () => done(inp ? null : false));
+      ov.querySelector('[data-ok]').addEventListener('click', okay);
+      requestAnimationFrame(() => { ov.classList.add('in'); if (inp) { inp.focus(); inp.select(); } else ov.querySelector('[data-ok]').focus(); });
+    });
+  }
+
   // ---------- The page editor (templates and a client's own page) ----------
   // A client process is ONE PAGE, built like a Library page: blocks one under the
   // other. Type "/" (or click +) for the menu. Text blocks are typed in place; the
@@ -1394,11 +1433,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (e.target.closest('[data-addnote]')) { const b = editing.data.blocks[findB(blk.dataset.id)]; b.note = ''; changed(); renderPage(); setTimeout(() => { const t = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"] [data-f=note]`); if (t) t.focus(); }, 30); return; }
     if (e.target.closest('[data-delnote]')) { const b = editing.data.blocks[findB(blk.dataset.id)]; delete b.note; changed(); renderPage(); return; }
     if (e.target.closest('[data-gdel]')) {
-      const i = findB(blk.dataset.id), b = editing.data.blocks[i];
-      if (INTERACTIVE.includes(b.type) && editing.kind === 'process' && (editing.data.progress || {})[b.id] && !confirm('Your client already did this. Remove it anyway?')) return;
-      editing.data.blocks.splice(i, 1);
-      if (!editing.data.blocks.length) editing.data.blocks.push(newBlock('text'));
-      changed(); renderPage(); return;
+      const b = editing.data.blocks[findB(blk.dataset.id)];
+      const remove = () => { const i = findB(b.id); if (i < 0) return; editing.data.blocks.splice(i, 1); if (!editing.data.blocks.length) editing.data.blocks.push(newBlock('text')); changed(); renderPage(); };
+      if (INTERACTIVE.includes(b.type) && editing.kind === 'process' && (editing.data.progress || {})[b.id]) {
+        ask('Your client already did this step. If you remove it, it disappears from their page.', {title: 'Remove this step?', ok: 'Remove', danger: true}).then((yes) => { if (yes) remove(); });
+      } else remove();
+      return;
     }
   });
   $('pgAdd').addEventListener('click', () => {
@@ -1449,7 +1489,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   document.addEventListener('mousedown', (e) => { if (slash.open && !e.target.closest('#slashMenu') && !e.target.closest('[data-gadd]') && !e.target.closest('#pgAdd')) closeSlash(); });
 
   // ---------- Bold, italic, underline, link (select text) ----------
-  function addLink() { const url = prompt('Link to:', 'https://'); if (url && /^(https?:\/\/|mailto:)/i.test(url)) document.execCommand('createLink', false, url); }
+  async function addLink() {
+    const sel = getSelection(), range = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    const url = await ask('Paste the link for the selected text.', {title: 'Add a link', input: 'https://', ok: 'Add link', validate: (v) => (normUrl(v) || /^mailto:/i.test(v) ? '' : 'That isn’t a link that can open.')});
+    if (!url || !range) return;
+    sel.removeAllRanges(); sel.addRange(range);
+    document.execCommand('createLink', false, normUrl(url) || url);
+    const ce = range.startContainer.parentElement && range.startContainer.parentElement.closest('[contenteditable]'); if (ce) ce.dispatchEvent(new Event('input', {bubbles: true}));
+  }
   document.addEventListener('selectionchange', () => {
     const bar = $('fmtBar'); if (!editing) { bar.classList.remove('open'); return; }
     const s = getSelection();
@@ -1668,8 +1715,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   async function newLink(pinChange) {
     const p = current, token = randToken(), now = firebase.firestore.FieldValue.serverTimestamp();
     let pin = null;
-    if (pinChange === 'set') { pin = prompt('New PIN (4 to 8 digits):', String(Math.floor(1000 + Math.random() * 9000))); if (pin == null) return; pin = pin.trim(); if (!/^\d{4,8}$/.test(pin)) { showToast('The PIN must be 4 to 8 digits.', true); return; } }
-    else if (!pinChange && !confirm('Make a new link? The current link stops working straight away, so send your client the new one.')) return;
+    if (pinChange === 'set') {
+      pin = await ask('Your client needs this PIN to open their page. You get a new link to send them, together with the PIN.', {title: 'Set a PIN', input: String(Math.floor(1000 + Math.random() * 9000)), inputMode: 'numeric', ok: 'Set PIN',
+        validate: (v) => (/^\d{4,8}$/.test(v) ? '' : 'Use 4 to 8 digits.')});
+      if (pin == null) return;
+    } else if (!pinChange && !(await ask('The current link stops working straight away, so send your client the new one.', {title: 'Make a new link?', ok: 'Make new link', danger: true}))) return;
     try {
       const oldRef = db.collection('clientProcessLinks').doc(p.shareToken);
       const old = (await oldRef.get()).data() || {};
@@ -1685,7 +1735,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   $('dtNewLink').addEventListener('click', () => newLink(null));
   $('dtPinChange').addEventListener('click', () => newLink('set'));
-  $('dtPinRemove').addEventListener('click', () => { if (confirm('Remove the PIN? Anyone with the new link can then open it.')) newLink('remove'); });
+  $('dtPinRemove').addEventListener('click', async () => { if (await ask('Anyone with the new link can then open the page, without a PIN.', {title: 'Remove the PIN?', ok: 'Remove PIN', danger: true})) newLink('remove'); });
   $('dtEdit').addEventListener('click', () => { const p = current; $('dtOv').classList.remove('open'); current = null; openEditor('process', p, p.id); });
   $('dtArchive').addEventListener('click', async () => {
     const p = current, steps = tasksOf(p), prog = p.progress || {};
@@ -1697,7 +1747,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   });
   $('dtDelete').addEventListener('click', async () => {
     const p = current;
-    if (!confirm(`Delete the onboarding for ${p.clientName}? Their progress, answers and uploaded files are removed, and the link stops working.`)) return;
+    if (!(await ask(`Their progress, answers and uploaded files are removed, and the link stops working.`, {title: `Delete the onboarding for ${p.clientName}?`, ok: 'Delete', danger: true}))) return;
     try {
       await db.collection('clientProcessLinks').doc(p.shareToken).update({revoked: true}).catch(() => {});
       for (const s of tasksOf(p)) for (const u of ((p.progress || {})[s.id] || {}).uploads || []) await storage.ref(u.path).delete().catch(() => {});
@@ -1716,7 +1766,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     else if (b.dataset.edittpl) { const t = templates.find((x) => x.id === b.dataset.edittpl); openEditor('template', t, t.id); }
     else if (b.dataset.duptpl) { const t = templates.find((x) => x.id === b.dataset.duptpl); const now = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection('clientProcessTemplates').add({workspaceId: wsId, createdBy: uid, name: t.name + ' (copy)', senderName: t.senderName || '', blocks: blocksOf(t), brand: t.brand || {}, createdAt: now, updatedAt: now}); showToast('Template duplicated.'); }
-    else if (b.dataset.deltpl) { const t = templates.find((x) => x.id === b.dataset.deltpl); if (confirm(`Delete the template “${t.name}”? Client processes you already started keep their steps.`)) { await db.collection('clientProcessTemplates').doc(t.id).delete(); showToast('Template deleted.'); } }
+    else if (b.dataset.deltpl) { const t = templates.find((x) => x.id === b.dataset.deltpl); if (await ask('Client processes you already started keep their steps.', {title: `Delete the template “${t.name}”?`, ok: 'Delete template', danger: true})) { await db.collection('clientProcessTemplates').doc(t.id).delete(); showToast('Template deleted.'); } }
     else if (b.dataset.open) openDetail(procs.find((p) => p.id === b.dataset.open));
   });
   function closeOv(id) {
