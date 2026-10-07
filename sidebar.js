@@ -481,6 +481,31 @@
     function loop() { songRound(ac, out, next); next += LOOP; musicTimer = setTimeout(loop, (next - ac.currentTime - 1.2) * 1000); }
     loop();
   }
+  function bassDrop(t) {
+    // the riser: noise sweeping up, getting louder
+    var rs = ac.createBufferSource(); rs.buffer = noise(0.6);
+    var hp = ac.createBiquadFilter(); hp.type = 'bandpass'; hp.Q.value = 1.2; hp.frequency.setValueAtTime(400, t); hp.frequency.exponentialRampToValueAtTime(6000, t + 0.5);
+    var rg = ac.createGain(); rg.gain.setValueAtTime(0.0001, t); rg.gain.exponentialRampToValueAtTime(0.35, t + 0.48); rg.gain.exponentialRampToValueAtTime(0.0001, t + 0.56);
+    rs.connect(hp); hp.connect(rg); rg.connect(master); rs.start(t); rs.stop(t + 0.6);
+    var d = t + 0.5;                                   // the drop
+    // squashed, so it hits hard without crackling
+    var comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 6; comp.ratio.value = 8; comp.attack.value = 0.002; comp.release.value = 0.25; comp.connect(master);
+    var shaper = ac.createWaveShaper(), curve = new Float32Array(1024);
+    for (var i = 0; i < 1024; i++) { var x = i / 512 - 1; curve[i] = Math.tanh(x * 3.2); }          // "bass boosted": a warm distortion
+    shaper.curve = curve; shaper.oversample = '4x';
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+    var bg = ac.createGain(); bg.gain.setValueAtTime(0.0001, d); bg.gain.exponentialRampToValueAtTime(0.9, d + 0.01); bg.gain.exponentialRampToValueAtTime(0.35, d + 0.6); bg.gain.exponentialRampToValueAtTime(0.0001, d + 1.9);
+    shaper.connect(lp); lp.connect(bg); bg.connect(comp);
+    var o = ac.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(150, d); o.frequency.exponentialRampToValueAtTime(48, d + 0.12); o.frequency.exponentialRampToValueAtTime(36, d + 1.8);
+    o.connect(shaper); o.start(d); o.stop(d + 2);
+    var sub = ac.createOscillator(), sg = ac.createGain(); sub.type = 'sine'; sub.frequency.setValueAtTime(55, d); sub.frequency.exponentialRampToValueAtTime(30, d + 1.6);
+    sg.gain.setValueAtTime(0.0001, d); sg.gain.exponentialRampToValueAtTime(0.7, d + 0.02); sg.gain.exponentialRampToValueAtTime(0.0001, d + 1.8); sub.connect(sg); sg.connect(comp); sub.start(d); sub.stop(d + 1.9);
+    // the impact: a short, deep burst of noise
+    var im = ac.createBufferSource(); im.buffer = noise(0.5); var il = ac.createBiquadFilter(); il.type = 'lowpass'; il.frequency.setValueAtTime(2400, d); il.frequency.exponentialRampToValueAtTime(180, d + 0.35);
+    var ig = ac.createGain(); ig.gain.setValueAtTime(0.0001, d); ig.gain.exponentialRampToValueAtTime(0.5, d + 0.005); ig.gain.exponentialRampToValueAtTime(0.0001, d + 0.45);
+    im.connect(il); il.connect(ig); ig.connect(comp); im.start(d); im.stop(d + 0.5);
+    return d;
+  }
   function stopMusic() {
     clearTimeout(musicTimer); musicTimer = null;
     if (musicBus && ac) { musicBus.gain.setTargetAtTime(0, ac.currentTime, 0.15); }
@@ -529,6 +554,9 @@
     '#hwIntro .hi-mute{position:absolute;right:14px;top:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#EDE4FF;font-size:16px;cursor:pointer;}',
     '#hwIntro .hi-small{margin-top:14px;font-size:12.5px;color:#A898C8;}',
     '#hwIntro.out{transition:opacity .45s ease;opacity:0;}',
+    '#hwIntro .hi-ring{position:absolute;width:640px;height:640px;margin:-320px 0 0 -320px;border-radius:50%;opacity:0;pointer-events:none;will-change:transform,opacity;',
+    '  background:radial-gradient(circle,transparent 56%,rgba(255,190,90,.95) 63%,rgba(255,120,20,.55) 68%,transparent 75%);}',
+    '.pts-host.pt-hw .pts-logo.hw-pop::after{animation:hwPop .6s cubic-bezier(.3,1.8,.5,1);} @keyframes hwPop{0%{transform:scale(.3);}60%{transform:scale(1.7) rotate(-12deg);}100%{transform:none;}}',
     '@media (max-width:560px){#hwIntro .hi-pumpkin{width:200px;margin-left:-100px;} #hwIntro .hi-card{padding-top:70px;} #hwIntro .hi-moon{width:80px;height:80px;}}'
   ].join('\n');
 
@@ -598,8 +626,57 @@
           {transform: 'translate3d(' + x1 + 'px,' + y + 'px,0) scaleX(' + dir + ')', opacity: 0}], {duration: 14000 + i * 3000, delay: i * 2500, iterations: Infinity, easing: 'ease-in-out'});
       });
     }
+    // "Keep the spooky vibes": the card shrinks into the pumpkin, a bass drop, the screen shakes, a shockwave,
+    // bats burst out, the night opens up from the pumpkin and the pumpkin flies into the logo
+    function finale() {
+      if (ov.classList.contains('out') || ov.dataset.fin) return;
+      ov.dataset.fin = '1'; document.removeEventListener('keydown', key, true);
+      // clear what's still moving under the pop-up, so the finale has the stage to itself
+      ov.querySelectorAll('.hi-ghost, .hi-bat').forEach(function (el) { el.getAnimations().forEach(function (x) { x.cancel(); }); el.remove(); });
+      var fog = ov.querySelector('.hi-fog'); if (fog) fog.style.animation = 'none';
+      if (musicBus && ac) musicBus.gain.setTargetAtTime(0, ac.currentTime, 0.08);
+      var drop = a ? bassDrop(ac.currentTime + 0.02) : 0, dropIn = 500;
+      // where the pumpkin is now
+      var pr = pumpkin.getBoundingClientRect(), pc = {x: pr.left + pr.width / 2, y: pr.top + pr.height / 2};
+      var m = new DOMMatrix(getComputedStyle(pumpkin).transform), base = {x: pc.x - m.e, y: pc.y - m.f}, sc = m.a || 1;
+      pumpkin.getAnimations().forEach(function (x) { x.cancel(); }); pumpkin.style.transform = 'translate3d(' + m.e + 'px,' + m.f + 'px,0) scale(' + sc + ')';
+      // 1. the card shrinks into the pumpkin; the pumpkin swells
+      card.style.transition = 'none';
+      card.animate([{transform: 'translate(-50%,-44%) scale(1)', opacity: 1}, {transform: 'translate(-50%,-44%) scale(1.04)', opacity: 1, offset: 0.25},
+        {transform: 'translate(-50%,' + (-44 - 20) + '%) scale(.05)', opacity: 0}], {duration: dropIn, easing: 'cubic-bezier(.6,0,.8,.4)', fill: 'forwards'});
+      pumpkin.animate([{transform: 'translate3d(' + m.e + 'px,' + m.f + 'px,0) scale(' + sc + ')'}, {transform: 'translate3d(' + m.e + 'px,' + (m.f + 30) + 'px,0) scale(' + (sc * 1.5) + ') rotate(-6deg)'}],
+        {duration: dropIn, easing: 'cubic-bezier(.5,0,.9,.5)', fill: 'forwards'});
+      ov.querySelector('.hi-glow').style.animation = 'none';
+      setTimeout(function () {
+        // 2. THE DROP: shake, shockwave, bats
+        ov.animate([{transform: 'translate(0,0)'}, {transform: 'translate(-14px,9px)'}, {transform: 'translate(12px,-10px)'}, {transform: 'translate(-9px,-6px)'},
+          {transform: 'translate(8px,7px)'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(0,0)'}], {duration: 460, easing: 'linear'});
+        var c = pumpkin.getBoundingClientRect(), cx = c.left + c.width / 2, cy = c.top + c.height / 2;
+        var ring = document.createElement('div'); ring.className = 'hi-ring'; ring.style.left = cx + 'px'; ring.style.top = cy + 'px'; ov.appendChild(ring);
+        ring.animate([{transform: 'scale(.08)', opacity: 1}, {transform: 'scale(3.2)', opacity: 0}], {duration: 850, easing: 'cubic-bezier(.1,.7,.3,1)', fill: 'forwards'});
+        for (var i = 0; i < 16; i++) (function (i) {
+          var b = document.createElement('div'); b.className = 'hi-bat'; b.innerHTML = BAT; b.style.left = cx + 'px'; b.style.top = cy + 'px'; ov.appendChild(b);
+          var ang = (i / 16) * Math.PI * 2 + Math.random() * 0.3, dist = Math.max(innerWidth, innerHeight) * (0.7 + Math.random() * 0.4), s = 0.7 + Math.random() * 0.8, f = Math.cos(ang) < 0 ? -1 : 1;
+          b.animate([{transform: 'translate3d(0,0,0) scale(' + (0.3 * f) + ',0.3)', opacity: 1},
+            {transform: 'translate3d(' + Math.cos(ang) * dist + 'px,' + Math.sin(ang) * dist + 'px,0) scale(' + (s * 1.4 * f) + ',' + (s * 1.4) + ')', opacity: 1}],
+            {duration: 900 + Math.random() * 400, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards'});
+        })(i);
+        // 3. the night opens up from the pumpkin, and the pumpkin flies into the logo
+        var night = ov.querySelector('.hi-night');
+        ['.hi-stars', '.hi-moon', '.hi-fog'].forEach(function (q) { var el = ov.querySelector(q); if (el) el.animate([{opacity: 1}, {opacity: 0}], {duration: 500, fill: 'forwards'}); });
+        night.animate([{opacity: 0.97}, {opacity: 0}], {duration: 750, delay: 100, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards'});
+        var logo = document.querySelector('.pts-host .pts-logo'), lr = logo ? logo.getBoundingClientRect() : null;
+        var tx = lr ? lr.right - 4 - base.x : innerWidth / 2 - base.x, ty = lr ? lr.bottom - 4 - base.y : -innerHeight - base.y;
+        pumpkin.getAnimations().forEach(function (x) { x.commitStyles && x.commitStyles(); x.cancel(); });
+        pumpkin.animate([{transform: pumpkin.style.transform}, {transform: 'translate3d(' + m.e + 'px,' + (m.f - 60) + 'px,0) scale(' + (sc * 1.2) + ') rotate(90deg)', offset: 0.3},
+          {transform: 'translate3d(' + tx + 'px,' + ty + 'px,0) scale(.08) rotate(720deg)'}], {duration: 900, delay: 80, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards'});
+        setTimeout(function () { if (logo) { logo.classList.remove('hw-pop'); void logo.offsetWidth; logo.classList.add('hw-pop'); } }, 960);
+        setTimeout(function () { stopMusic(); ov.remove(); }, 1150);
+      }, dropIn);
+    }
     function close(off) {
-      if (ov.classList.contains('out')) return;
+      if (ov.classList.contains('out') || ov.dataset.fin) return;
+      if (!off && !reduced) { finale(); return; }
       stopMusic(); ov.classList.add('out');
       if (off && window.ptHalloween) window.ptHalloween.set(false);
       setTimeout(function () { ov.remove(); }, 480);
@@ -617,5 +694,7 @@
     });
   }
   window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && decoOn() && !seen()) play(); });
-  window.ptHalloweenIntro = {play: play, _song: {round: songRound, bus: songBus, loop: LOOP}};      // to show it again; _song renders the music to a file
+  // render the bass drop into another audio context (used to make a preview file)
+  function renderDrop(ctx, dest) { var pa = ac, pm = master; ac = ctx; master = dest; try { bassDrop(0.05); } finally { ac = pa; master = pm; } }
+  window.ptHalloweenIntro = {play: play, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop}};      // to show it again; _song renders the music to a file
 })();
