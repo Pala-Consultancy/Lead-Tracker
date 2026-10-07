@@ -384,7 +384,11 @@
   // ---------- sound ----------
   var ac = null, master = null, musicTimer = null, musicOn = true, droneNodes = [];
   function audio() {
-    if (!ac) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ac = new C(); master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination); }
+    if (!ac) {
+      var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ac = new C();
+      var lim = ac.createDynamicsCompressor(); lim.threshold.value = -3; lim.knee.value = 2; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12; lim.connect(ac.destination);
+      master = ac.createGain(); master.gain.value = 0.9; master.connect(lim);
+    }
     if (ac.state === 'suspended') ac.resume();
     return ac;
   }
@@ -488,7 +492,9 @@
     function loop() { songRound(ac, out, next); next += LOOP; musicTimer = setTimeout(loop, (next - ac.currentTime - 1.2) * 1000); }
     loop();
   }
-  function bassDrop(t) {
+  // the drop: a riser, then a distorted 808 boom whose deep rumble stays under the laugh and slowly
+  // fades away, stopping when the laughter stops ("until" = when the laugh ends)
+  function bassDrop(t, until) {
     // the riser: noise sweeping up, getting louder
     var rs = ac.createBufferSource(); rs.buffer = noise(0.6);
     var hp = ac.createBiquadFilter(); hp.type = 'bandpass'; hp.Q.value = 1.2; hp.frequency.setValueAtTime(400, t); hp.frequency.exponentialRampToValueAtTime(6000, t + 0.5);
@@ -500,13 +506,18 @@
     var shaper = ac.createWaveShaper(), curve = new Float32Array(1024);
     for (var i = 0; i < 1024; i++) { var x = i / 512 - 1; curve[i] = Math.tanh(x * 3.2); }          // "bass boosted": a warm distortion
     shaper.curve = curve; shaper.oversample = '4x';
-    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
-    var bg = ac.createGain(); bg.gain.setValueAtTime(0.0001, d); bg.gain.exponentialRampToValueAtTime(0.9, d + 0.01); bg.gain.exponentialRampToValueAtTime(0.3, d + 0.25); bg.gain.exponentialRampToValueAtTime(0.06, d + 0.45); bg.gain.exponentialRampToValueAtTime(0.0001, d + 1.4);   // steps back for the laugh
+    var tail = Math.max(d + 1.6, until || (d + 2.6));
+    // after the hit only the deepest tones remain (below the voice), so the laugh stays clear
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, d); lp.frequency.exponentialRampToValueAtTime(240, d + 0.5);
+    var bg = ac.createGain(); bg.gain.setValueAtTime(0.0001, d); bg.gain.exponentialRampToValueAtTime(0.9, d + 0.01); bg.gain.exponentialRampToValueAtTime(0.38, d + 0.3);
+    bg.gain.exponentialRampToValueAtTime(0.2, d + 0.8); bg.gain.linearRampToValueAtTime(0.0001, tail);   // a long, slow fade, gone when the laugh ends
     shaper.connect(lp); lp.connect(bg); bg.connect(comp);
-    var o = ac.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(150, d); o.frequency.exponentialRampToValueAtTime(48, d + 0.12); o.frequency.exponentialRampToValueAtTime(36, d + 1.8);
-    o.connect(shaper); o.start(d); o.stop(d + 2);
-    var sub = ac.createOscillator(), sg = ac.createGain(); sub.type = 'sine'; sub.frequency.setValueAtTime(55, d); sub.frequency.exponentialRampToValueAtTime(30, d + 1.6);
-    sg.gain.setValueAtTime(0.0001, d); sg.gain.exponentialRampToValueAtTime(0.7, d + 0.02); sg.gain.exponentialRampToValueAtTime(0.08, d + 0.45); sg.gain.exponentialRampToValueAtTime(0.0001, d + 1.2); sub.connect(sg); sg.connect(comp); sub.start(d); sub.stop(d + 1.9);
+    var o = ac.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(150, d); o.frequency.exponentialRampToValueAtTime(48, d + 0.12); o.frequency.exponentialRampToValueAtTime(34, tail);
+    o.connect(shaper); o.start(d); o.stop(tail + 0.05);
+    var sub = ac.createOscillator(), sg = ac.createGain(); sub.type = 'sine'; sub.frequency.setValueAtTime(55, d);
+    sub.frequency.exponentialRampToValueAtTime(28, tail);
+    sg.gain.setValueAtTime(0.0001, d); sg.gain.exponentialRampToValueAtTime(0.7, d + 0.02); sg.gain.exponentialRampToValueAtTime(0.24, d + 0.5); sg.gain.linearRampToValueAtTime(0.0001, tail);
+    sub.connect(sg); sg.connect(comp); sub.start(d); sub.stop(tail + 0.05);
     // the impact: a short, deep burst of noise
     var im = ac.createBufferSource(); im.buffer = noise(0.5); var il = ac.createBiquadFilter(); il.type = 'lowpass'; il.frequency.setValueAtTime(2400, d); il.frequency.exponentialRampToValueAtTime(180, d + 0.35);
     var ig = ac.createGain(); ig.gain.setValueAtTime(0.0001, d); ig.gain.exponentialRampToValueAtTime(0.5, d + 0.005); ig.gain.exponentialRampToValueAtTime(0.0001, d + 0.45);
@@ -547,14 +558,14 @@
     src.playbackRate.setValueAtTime(1, t); src.playbackRate.linearRampToValueAtTime(0.93, end);
     var muffle = ac.createBiquadFilter(); muffle.type = 'lowpass'; muffle.Q.value = 0.5;
     muffle.frequency.setValueAtTime(14000, t); muffle.frequency.setValueAtTime(14000, away); muffle.frequency.exponentialRampToValueAtTime(700, end);
-    var near = ac.createGain(); near.gain.setValueAtTime(1.15, t); near.gain.setValueAtTime(1.15, away); near.gain.exponentialRampToValueAtTime(0.03, end);
+    var near = ac.createGain(); near.gain.setValueAtTime(0.9, t); near.gain.setValueAtTime(0.9, away); near.gain.exponentialRampToValueAtTime(0.03, end);
     var pan = ac.createStereoPanner ? ac.createStereoPanner() : null;
     if (pan) { pan.pan.setValueAtTime(0, t); pan.pan.setValueAtTime(0, away); pan.pan.linearRampToValueAtTime(-0.75, end); }
     // the echo of a far-off sound: it grows as the laugh moves away, then dies out softly
     var dl = ac.createDelay(1); dl.delayTime.value = 0.21; var fb = ac.createGain(); fb.gain.value = 0.38; var fl = ac.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 1800;
     var echo = ac.createGain(); echo.gain.setValueAtTime(0.0001, t); echo.gain.exponentialRampToValueAtTime(0.5, end - 0.2); echo.gain.exponentialRampToValueAtTime(0.0001, end + 0.9);
     src.connect(muffle); muffle.connect(near);
-    var outNode = pan || ac.destination; if (pan) pan.connect(ac.destination);
+    var outNode = pan || master; if (pan) pan.connect(master);
     near.connect(outNode);
     muffle.connect(echo); echo.connect(dl); dl.connect(fl); fl.connect(fb); fb.connect(dl); fl.connect(outNode);
     src.start(t);
@@ -690,7 +701,9 @@
       ov.querySelectorAll('.hi-ghost, .hi-bat').forEach(function (el) { el.getAnimations().forEach(function (x) { x.cancel(); }); el.remove(); });
       var fog = ov.querySelector('.hi-fog'); if (fog) fog.style.animation = 'none';
       if (musicBus && ac) musicBus.gain.setTargetAtTime(0, ac.currentTime, 0.08);
-      var drop = a ? bassDrop(ac.currentTime + 0.02) : 0, dropIn = 500;
+      // when the laugh will end (it starts 0.3 s after the drop and slows a little as it flies away)
+      var laughEnd = function (d) { return d + 0.3 + (laughBuf ? laughBuf.duration : LAUGH_LEN) / 0.93; };
+      var drop = a ? bassDrop(ac.currentTime + 0.02, laughEnd(ac.currentTime + 0.52)) : 0, dropIn = 500;
       // where the pumpkin is now
       var pr = pumpkin.getBoundingClientRect(), pc = {x: pr.left + pr.width / 2, y: pr.top + pr.height / 2};
       var m = new DOMMatrix(getComputedStyle(pumpkin).transform), base = {x: pc.x - m.e, y: pc.y - m.f}, sc = m.a || 1;
@@ -763,6 +776,10 @@
   window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && decoOn() && !seen()) play(); });
   // render the bass drop into another audio context (used to make a preview file)
   function renderLaugh(ctx, buf) { var pa = ac, pb = laughBuf; ac = ctx; laughBuf = buf; try { laugh(0.05); } finally { ac = pa; laughBuf = pb; } }
+  function renderFinale(ctx, dest, buf) {
+    var pa = ac, pm = master, pb = laughBuf; ac = ctx; master = dest; laughBuf = buf;
+    try { var d = bassDrop(0.05, 0.55 + 0.3 + buf.duration / 0.93); laugh(d + 0.3); } finally { ac = pa; master = pm; laughBuf = pb; }
+  }
   function renderDrop(ctx, dest) { var pa = ac, pm = master; ac = ctx; master = dest; try { bassDrop(0.05); } finally { ac = pa; master = pm; } }
-  window.ptHalloweenIntro = {play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Halloween surprise will show again for this account.'; }, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop, laugh: renderLaugh}};      // to show it again; _song renders the music to a file
+  window.ptHalloweenIntro = {play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Halloween surprise will show again for this account.'; }, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop, laugh: renderLaugh, finale: renderFinale}};      // to show it again; _song renders the music to a file
 })();
