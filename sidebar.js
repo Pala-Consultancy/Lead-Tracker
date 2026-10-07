@@ -222,7 +222,34 @@
     '.pts-host.pt-hw .pts-logo::after{content:"\\1F383";position:absolute;right:-9px;bottom:-7px;font-size:17px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));}',
     '.pt-hw-greet{margin:10px 6px 6px;padding:9px 12px;border-radius:12px;font-size:12.5px;font-weight:600;color:#9A4A06;background:linear-gradient(135deg,rgba(255,150,40,.16),rgba(150,80,230,.12));display:flex;align-items:center;gap:8px;}',
     'html[data-theme="dark"] .pt-hw-greet{color:#FFC27A;background:linear-gradient(135deg,rgba(255,150,40,.16),rgba(150,80,230,.18));}',
-    '@media (prefers-reduced-motion: reduce){#ptHalloween *{animation:none !important;transition:none !important;}}'
+    // ---- the side panel in Halloween colours ----
+    '.pts-host.pt-hw{background:radial-gradient(120% 34% at 0% 0%,rgba(255,138,30,.13),transparent 70%),radial-gradient(120% 30% at 100% 100%,rgba(140,70,220,.13),transparent 70%),var(--panel);border-right-color:rgba(255,138,30,.28);}',
+    '.pts-host.pt-hw .seq-sidebar-label{color:#C2540A;}',
+    'html[data-theme="dark"] .pts-host.pt-hw .seq-sidebar-label{color:#FFA552;}',
+    '.pts-host.pt-hw .seq-sidebar-link:hover{background:rgba(255,138,30,.09);color:#8A3A05;}',
+    'html[data-theme="dark"] .pts-host.pt-hw .seq-sidebar-link:hover{color:#FFC27A;}',
+    '.pts-host.pt-hw .seq-sidebar-link.active{background:linear-gradient(90deg,rgba(255,138,30,.18),rgba(140,70,220,.07));color:#B24C06;box-shadow:inset 3px 0 0 #FF8A1E;}',
+    'html[data-theme="dark"] .pts-host.pt-hw .seq-sidebar-link.active{color:#FFB25E;background:linear-gradient(90deg,rgba(255,138,30,.2),rgba(160,90,255,.1));}',
+    '.pts-host.pt-hw .seq-sidebar-link.active .icon{color:#FF7A1A;}',
+    '.pts-host.pt-hw .pts-user{background:linear-gradient(var(--panel-alt,var(--pts-soft)),var(--panel-alt,var(--pts-soft))) padding-box,linear-gradient(135deg,#FF8A1E,#9A4FE0) border-box;border:1px solid transparent;}',
+    '.pts-host.pt-hw .pt-li-badge,html.pt-hw-on .pt-li-badge{background:linear-gradient(135deg,#FF8A1E,#E2580B) !important;box-shadow:0 0 0 2px var(--panel,#fff),0 0 10px rgba(255,122,26,.55) !important;}',
+    '.pts-host.pt-hw .pts-theme .theme-toggle-btn.active{color:#B24C06;box-shadow:0 1px 2px rgba(16,24,40,.08),inset 0 -2px 0 #FF8A1E;}',
+    'html[data-theme="dark"] .pts-host.pt-hw .pts-theme .theme-toggle-btn.active{color:#FFB25E;}',
+    '.pt-hw-greet{margin:10px 6px 6px;padding:11px 12px;border-radius:14px;background:linear-gradient(135deg,#2B1646,#4A1F6B) !important;color:#FFC27A !important;display:flex;align-items:center;gap:9px;box-shadow:0 8px 20px -12px rgba(74,31,107,.8),inset 0 0 0 1px rgba(255,160,70,.25);font-weight:700;}',
+    '.pt-hw-greet .pk{font-size:18px;line-height:1;animation:hwCandle 2.4s infinite;filter:drop-shadow(0 0 6px rgba(255,150,40,.7));}',
+    '.pt-hw-greet b{display:block;font:700 12.5px Inter,sans-serif;} .pt-hw-greet small{display:block;font:500 11px Inter,sans-serif;color:#D9CCF0;margin-top:1px;}',
+    '@keyframes hwCandle{0%,100%{opacity:1;}45%{opacity:.78;}50%{opacity:1;}72%{opacity:.86;}}',
+    // ---- across the page: orange text selection, and a string of lights along the top ----
+    'html.pt-hw-on ::selection{background:rgba(255,138,30,.3);}',
+    '#ptHalloween .hw-lights{position:absolute;top:0;right:0;height:52px;}',
+    '#ptHalloween .hw-lights svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}',
+    '#ptHalloween .hw-bulb{position:absolute;width:10px;height:16px;margin-left:-5px;border-radius:50% 50% 45% 45%;will-change:opacity;animation:hwTwinkle 3.2s ease-in-out infinite;}',
+    '#ptHalloween .hw-bulb::before{content:"";position:absolute;left:2px;top:-4px;width:6px;height:5px;border-radius:2px;background:#3A3346;}',
+    '#ptHalloween .hw-bulb.o{background:radial-gradient(circle at 40% 35%,#FFE0A8,#FF8A1E 60%);box-shadow:0 0 10px 3px rgba(255,138,30,.55);}',
+    '#ptHalloween .hw-bulb.p{background:radial-gradient(circle at 40% 35%,#EBD6FF,#A35CF0 60%);box-shadow:0 0 10px 3px rgba(163,92,240,.5);}',
+    '#ptHalloween .hw-bulb.g{background:radial-gradient(circle at 40% 35%,#E6FFC9,#6CCB3B 60%);box-shadow:0 0 10px 3px rgba(108,203,59,.45);}',
+    '@keyframes hwTwinkle{0%,100%{opacity:1;}50%{opacity:.45;}}',
+    '@media (prefers-reduced-motion: reduce){#ptHalloween *,.pt-hw-greet .pk{animation:none !important;transition:none !important;}}'
   ].join('\n');
 
   var WEB = '<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M200 0 L60 0 M200 0 L0 60 M200 0 L60 200 M200 0 L130 200 M200 0 L0 140 M200 0 L200 140"/>' +
@@ -273,8 +300,27 @@
     a.onfinish = function () { g.remove(); };
     hwDone('ghost'); later(ghost, 30000);
   }
+  // a string of lights hanging along the top of the page (not over the side panel)
+  function lights() {
+    if (!layer) return;
+    var old = layer.querySelector('.hw-lights'); if (old) old.remove();
+    var side = document.querySelector('.pts-host'), left = side ? Math.round(side.getBoundingClientRect().right) : 0;
+    var W = Math.max(200, innerWidth - left - 6), n = Math.max(4, Math.round(W / 130)), seg = W / n, colours = ['o', 'p', 'o', 'g'];
+    var path = 'M0 6', bulbs = '';
+    for (var i = 0; i < n; i++) {
+      var x0 = i * seg, x1 = x0 + seg, sag = 18 + (i % 2) * 6;
+      path += ' Q' + (x0 + seg / 2).toFixed(1) + ' ' + (6 + sag * 2) + ' ' + x1.toFixed(1) + ' 6';
+      bulbs += '<i class="hw-bulb ' + colours[i % 4] + '" style="left:' + (x0 + seg / 2).toFixed(1) + 'px;top:' + (6 + sag - 1) + 'px;animation-delay:-' + ((i * 0.7) % 3.2).toFixed(1) + 's"></i>';
+    }
+    var box = document.createElement('div'); box.className = 'hw-lights'; box.style.left = left + 'px';
+    box.innerHTML = '<svg aria-hidden="true"><path d="' + path + '" fill="none" stroke="#3A3346" stroke-width="1.6" opacity=".55"/></svg>' + bulbs;
+    layer.insertBefore(box, layer.firstChild.nextSibling);
+  }
+  var lightsTimer = null;
+  window.addEventListener('resize', function () { clearTimeout(lightsTimer); lightsTimer = setTimeout(lights, 200); });
   function on() {
     if (layer) return;
+    document.documentElement.classList.add('pt-hw-on');
     if (!document.getElementById('ptHalloweenCss')) { var st = document.createElement('style'); st.id = 'ptHalloweenCss'; st.textContent = CSS; document.head.appendChild(st); }
     layer = document.createElement('div'); layer.id = 'ptHalloween'; layer.setAttribute('aria-hidden', 'true');
     layer.innerHTML = '<div class="hw-glow"></div><div class="hw-web tr">' + WEB + '</div>' +
@@ -289,13 +335,15 @@
     if (host) {
       host.classList.add('pt-hw');
       if (!host.querySelector('.pt-hw-greet')) {
-        var greet = document.createElement('div'); greet.className = 'pt-hw-greet'; greet.textContent = '\uD83C\uDF83 Happy Halloween';
+        var greet = document.createElement('div'); greet.className = 'pt-hw-greet'; greet.innerHTML = '<span class="pk">\uD83C\uDF83</span><span><b>Happy Halloween</b><small>Spooky season is here \uD83E\uDD87</small></span>';
         var bottom = host.querySelector('.pts-bottom'); if (bottom) host.insertBefore(greet, bottom); else host.appendChild(greet);
       }
     }
+    lights();
     later(bats, 4000); later(ghost, 15000);
   }
   function off() {
+    document.documentElement.classList.remove('pt-hw-on');
     timers.forEach(clearTimeout); timers = [];
     if (layer) { layer.remove(); layer = null; }
     var host = document.querySelector('.pts-host'); if (host) { host.classList.remove('pt-hw'); var g = host.querySelector('.pt-hw-greet'); if (g) g.remove(); }
