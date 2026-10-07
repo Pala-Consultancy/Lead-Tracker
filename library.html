@@ -1168,6 +1168,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <button type="button" role="menuitem" data-more="copy">📋 Copy as text</button>
   <button type="button" role="menuitem" data-more="pdf">📄 Download as PDF</button>
   <button type="button" role="menuitem" data-more="word">📝 Download as Word</button>
+  <button type="button" role="menuitem" data-more="gdoc">🟦 Open as Google Doc</button>
   <button type="button" role="menuitem" data-more="print">🖨 Print</button>
   <button type="button" role="menuitem" data-more="duplicate">⧉ Duplicate</button>
   <button type="button" role="menuitem" data-more="template">✨ Save as template</button>
@@ -1819,6 +1820,58 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const d = f.contentDocument; d.open(); d.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${EXPORT_CSS}</style></head><body>${body}</body></html>`); d.close();
     setTimeout(()=>{ try { f.contentWindow.focus(); f.contentWindow.print(); } catch(e){ console.error(e); } setTimeout(()=> f.remove(), 2000); }, 300);
   }
+
+  // ---------- Open as Google Doc: a Google Doc in your own Drive, with the page's content ----------
+  // Google asks permission once ("create files in your Drive"); PalaTrack only gets the files it makes
+  // itself (scope drive.file). The permission lasts this session, so the next export doesn't ask again.
+  const GOOGLE_CLIENT_ID = '720572896285-l8cp5dl9a5povsdogivo1tbicd3rl9ik.apps.googleusercontent.com';
+  let gis = null, gToken = null, gTokenUntil = 0;
+  function loadGis(){
+    if(window.google && window.google.accounts && window.google.accounts.oauth2) return Promise.resolve();
+    if(gis) return gis;
+    gis = new Promise((res, rej)=>{ const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = res; sc.onerror = ()=>{ gis = null; rej(new Error('load')); }; document.head.appendChild(sc); });
+    return gis;
+  }
+  function googleToken(){
+    return new Promise((resolve, reject)=>{
+      if(gToken && Date.now() < gTokenUntil) return resolve(gToken);
+      const client = google.accounts.oauth2.initTokenClient({client_id: GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (r)=>{ if(r && r.access_token){ gToken = r.access_token; gTokenUntil = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000; resolve(gToken); } else reject(new Error((r && r.error) || 'denied')); },
+        error_callback: (e)=> reject(new Error((e && e.type) || 'popup'))});
+      client.requestAccessToken({prompt: ''});      // must run straight from the click (Google opens its sign-in window)
+    });
+  }
+  async function exportGoogleDoc(p){
+    if(!(window.google && window.google.accounts && window.google.accounts.oauth2)){
+      showToast('Connecting to Google… click “Open as Google Doc” once more.'); loadGis().catch(()=> showToast('Google couldn’t load. Check your connection.')); return;
+    }
+    const {title, body} = exportParts(p);
+    let token;
+    try { token = await googleToken(); }
+    catch(e){
+      const m = String(e.message || '');
+      showToast(m === 'popup_closed' || m === 'access_denied' || m === 'denied' ? 'No problem: nothing was created in your Drive.' : 'Google sign-in didn’t work. See the setup note, or try again.');
+      return;
+    }
+    showToast('Creating your Google Doc…');
+    const html = `<html><head><meta charset="utf-8"><style>${EXPORT_CSS.replace(/@page\{[^}]*\}/, '')}</style></head><body>${body}</body></html>`;
+    const b = 'ptlib' + Date.now();
+    const payload = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name: title, mimeType: 'application/vnd.google-apps.document'})}\r\n--${b}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${b}--`;
+    try {
+      const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {method: 'POST', headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'multipart/related; boundary=' + b}, body: payload});
+      const j = await r.json().catch(()=> ({}));
+      if(!r.ok){
+        if(r.status === 401){ gToken = null; showToast('Google asked to sign in again. Click “Open as Google Doc” once more.'); return; }
+        const why = JSON.stringify(j);
+        showToast(/accessNotConfigured|SERVICE_DISABLED|has not been used/i.test(why) ? 'Google Drive isn’t switched on for PalaTrack yet (a one-time setup step).' : 'Couldn’t create the Google Doc. Please try again.');
+        console.error(j); return;
+      }
+      const url = j.webViewLink || `https://docs.google.com/document/d/${j.id}/edit`;
+      const open = await showConfirmModal({title: 'Your Google Doc is ready', message: `“${title}” is in your Google Drive now. You can edit and share it there.`, confirmLabel: 'Open in Google Docs'});
+      if(open) window.open(url, '_blank', 'noopener');
+    } catch(e){ console.error(e); showToast('Couldn’t reach Google. Check your connection and try again.'); }
+  }
+
   let pdfLib = null;
   function loadPdfLib(){
     if(window.html2pdf) return Promise.resolve();
@@ -1843,7 +1896,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     box.remove();
   }
 
-  $('libMore').addEventListener('click', e=>{ e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); openMenu($('libMoreMenu'), {left: r.right - 220, bottom: r.bottom}); });
+  $('libMore').addEventListener('click', e=>{ e.stopPropagation(); loadGis().catch(()=>{}); const r = e.currentTarget.getBoundingClientRect(); openMenu($('libMoreMenu'), {left: r.right - 220, bottom: r.bottom}); });
   $('libMoreMenu').addEventListener('click', async e=>{
     const b = e.target.closest('[data-more]'); if(!b) return; closeMenus(); saveNow();
     const p = pages[curId]; if(!p) return;
@@ -1851,6 +1904,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(b.dataset.more === 'template'){ saveAsTemplate(p); return; }
     if(b.dataset.more === 'pdf'){ exportPdf(p); return; }
     if(b.dataset.more === 'word'){ exportWord(p); return; }
+    if(b.dataset.more === 'gdoc'){ exportGoogleDoc(p); return; }
     if(b.dataset.more === 'print'){ exportPrint(p); return; }
     if(b.dataset.more === 'duplicate'){ createPage({title: (p.title || 'Untitled') + ' (copy)', icon: p.icon, folderId: folderIdOf(p), content: p.content}).then(id=>{ if(id) showToast('Duplicated. The copy is private to you.'); }); }
     if(b.dataset.more === 'delete'){
