@@ -309,3 +309,211 @@
   window.addEventListener('storage', function (e) { if (e.key === KEY) apply(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(apply, 50); }); else setTimeout(apply, 50);
 })();
+
+/* ---------------------------------------------------------------------------
+   Halloween surprise: once per person, the first time they close the "Welcome back"
+   screen during the season (home.html sends 'pt-welcome-dismissed').
+   1. A Halloween night falls: thunder and lightning, a big jack-o'-lantern rises with an
+      organ chord, and a swarm of bats bursts out with an eerie glide.
+   2. A pop-up explains the new Halloween theme and how to turn it off, while ghosts float,
+      bats circle, fog rolls and spooky music-box music plays (🔊 to mute; it stops on close).
+   All sound is made in the browser (no files). Seen: localStorage ptHwIntroSeen.
+   --------------------------------------------------------------------------- */
+(function () {
+  var SEEN = 'ptHwIntroSeen';
+  function inSeason() { var d = new Date(), m = d.getMonth(); return m === 9 || (m === 10 && d.getDate() <= 2); }
+  function decoOn() { try { return localStorage.getItem('ptHalloween') !== 'off'; } catch (e) { return true; } }
+  function seen() { try { return localStorage.getItem(SEEN) === '1'; } catch (e) { return true; } }
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- sound ----------
+  var ac = null, master = null, musicTimer = null, musicOn = true, droneNodes = [];
+  function audio() {
+    if (!ac) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ac = new C(); master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination); }
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function noise(len) { var b = ac.createBuffer(1, ac.sampleRate * len, ac.sampleRate), d = b.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
+  function thunder(t) {
+    var src = ac.createBufferSource(); src.buffer = noise(2.6);
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(120, t + 2.4);
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.04); g.gain.exponentialRampToValueAtTime(0.12, t + 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.5);
+    src.connect(lp); lp.connect(g); g.connect(master); src.start(t); src.stop(t + 2.6);
+  }
+  function organ(t, notes, len, vol) {
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.35); g.gain.setValueAtTime(vol, t + len - 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    lp.connect(g); g.connect(master);
+    notes.forEach(function (f) { [1, 2, 0.5].forEach(function (m, k) { var o = ac.createOscillator(), og = ac.createGain(); o.type = k ? 'sine' : 'sawtooth'; o.frequency.value = f * m; og.gain.value = [0.16, 0.08, 0.1][k]; o.connect(og); og.connect(lp); o.start(t); o.stop(t + len + 0.05); }); });
+  }
+  function ghostGlide(t) {                 // an eerie theremin-like glide, with vibrato
+    var o = ac.createOscillator(), v = ac.createOscillator(), vg = ac.createGain(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(880, t); o.frequency.exponentialRampToValueAtTime(330, t + 1.6); o.frequency.exponentialRampToValueAtTime(520, t + 2.4);
+    v.frequency.value = 6; vg.gain.value = 14; v.connect(vg); vg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.11, t + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.5);
+    o.connect(g); g.connect(master); o.start(t); v.start(t); o.stop(t + 2.6); v.stop(t + 2.6);
+  }
+  function boxNote(t, f, len, vol) {       // a music-box note
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    g.connect(musicBus);
+    [[1, 1, 'triangle'], [2, 0.25, 'sine'], [4.01, 0.06, 'sine']].forEach(function (p) { var o = ac.createOscillator(), og = ac.createGain(); o.type = p[2]; o.frequency.value = f * p[0]; og.gain.value = p[1]; o.connect(og); og.connect(g); o.start(t); o.stop(t + len + 0.05); });
+  }
+  var musicBus = null;
+  // D harmonic minor, a little waltz that loops
+  var MEL = [[587.3, 1], [698.5, 1], [880, 1], [1108.7, 2], [880, 1], [698.5, 1], [659.3, 1], [587.3, 2], [0, 1],
+             [523.3, 1], [587.3, 1], [698.5, 1], [880, 2], [698.5, 1], [659.3, 1], [554.4, 1], [587.3, 3]];
+  function startMusic() {
+    if (!audio()) return;
+    musicBus = ac.createGain(); musicBus.gain.value = musicOn ? 1 : 0; musicBus.connect(master);
+    // a low drone underneath
+    [73.4, 110].forEach(function (f, i) { var o = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
+      o.type = 'sawtooth'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, ac.currentTime); g.gain.exponentialRampToValueAtTime(i ? 0.025 : 0.04, ac.currentTime + 1.5);
+      o.connect(lp); lp.connect(g); g.connect(musicBus); o.start(); droneNodes.push(o); });
+    var beat = 0.32, next = ac.currentTime + 0.2;
+    function loop() {
+      var t = next;
+      MEL.forEach(function (n) { if (n[0]) boxNote(t, n[0], beat * n[1] + 0.6, 0.09); t += beat * n[1]; });
+      boxNote(next, 146.8, 1.6, 0.05);                                  // a soft bell on each round
+      next = t + beat;
+      musicTimer = setTimeout(loop, (next - ac.currentTime - 0.3) * 1000);
+    }
+    loop();
+  }
+  function stopMusic() {
+    clearTimeout(musicTimer); musicTimer = null;
+    if (musicBus && ac) { musicBus.gain.setTargetAtTime(0, ac.currentTime, 0.15); }
+    setTimeout(function () { droneNodes.forEach(function (o) { try { o.stop(); } catch (e) {} }); droneNodes = []; }, 900);
+  }
+
+  // ---------- the picture ----------
+  var PUMPKIN = '<svg viewBox="0 0 220 200" aria-hidden="true"><defs><radialGradient id="hiP" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#FFB347"/><stop offset=".6" stop-color="#F7801E"/><stop offset="1" stop-color="#C2530A"/></radialGradient>' +
+    '<radialGradient id="hiG" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF6B0"/><stop offset=".55" stop-color="#FFD23F"/><stop offset="1" stop-color="#FF9A1F"/></radialGradient></defs>' +
+    '<path d="M104 30c-2-14 4-24 16-28 3 6-1 14-6 18-2 4-3 7-3 10z" fill="#3F7A2A"/>' +
+    '<ellipse cx="62" cy="115" rx="52" ry="72" fill="url(#hiP)"/><ellipse cx="158" cy="115" rx="52" ry="72" fill="url(#hiP)"/><ellipse cx="110" cy="112" rx="58" ry="78" fill="url(#hiP)"/>' +
+    '<path d="M110 36v150M74 44c-14 30-14 110 0 140M146 44c14 30 14 110 0 140" stroke="#C2530A" stroke-width="3" fill="none" opacity=".45"/>' +
+    '<g class="hi-glow"><path d="M60 92l26-22 14 30z" fill="url(#hiG)"/><path d="M160 92l-26-22-14 30z" fill="url(#hiG)"/><path d="M103 118l7-14 7 14z" fill="url(#hiG)"/>' +
+    '<path d="M52 136c20 26 96 26 116 0l-12 4-8 10-10-8-10 10-8-10-10 10-10-10-8 8-10-10z" fill="url(#hiG)"/></g></svg>';
+  var BAT = '<svg viewBox="0 0 64 32"><path fill="#140C1C" d="M32 10c2-3 5-3 6-1 4-4 10-6 16-5-4 2-6 6-5 10-3-2-7-1-9 2-2-2-5-2-6 0-1-2-4-2-6 0-2-3-6-4-9-2 1-4-1-8-5-10 6-1 12 1 16 5 1-2 4-2 6 1z"/><circle cx="29.5" cy="12" r="1" fill="#FF8A1E"/><circle cx="34.5" cy="12" r="1" fill="#FF8A1E"/></svg>';
+  var GHOST = '<svg viewBox="0 0 64 84"><path fill="#F4F1FF" d="M32 3C16 3 6 15 6 31v44l8-6 8 7 10-8 10 8 8-7 8 6V31C58 15 48 3 32 3z"/><ellipse cx="24" cy="32" rx="4" ry="5.5" fill="#2B2233"/><ellipse cx="40" cy="32" rx="4" ry="5.5" fill="#2B2233"/><ellipse cx="32" cy="46" rx="4" ry="3" fill="#2B2233" opacity=".8"/></svg>';
+  var CSS = [
+    '#hwIntro{position:fixed;inset:0;z-index:5000;overflow:hidden;font-family:Inter,system-ui,sans-serif;}',
+    '#hwIntro .hi-night{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 20%,#3B1D5E 0%,#1A0E2E 55%,#0B0614 100%);opacity:0;transition:opacity .45s ease;}',
+    '#hwIntro.on .hi-night{opacity:.97;}',
+    '#hwIntro .hi-stars{position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 12% 18%,#fff8,transparent),radial-gradient(1px 1px at 28% 40%,#fff6,transparent),radial-gradient(1.5px 1.5px at 72% 12%,#fff9,transparent),radial-gradient(1px 1px at 86% 34%,#fff7,transparent),radial-gradient(1px 1px at 46% 8%,#fff8,transparent),radial-gradient(1.5px 1.5px at 60% 28%,#fff6,transparent);opacity:0;transition:opacity 1.2s ease .3s;}',
+    '#hwIntro.on .hi-stars{opacity:1;}',
+    '#hwIntro .hi-moon{position:absolute;right:9%;top:8%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#FFF8D6,#F5D98A 60%,#D9B25E);box-shadow:0 0 60px 20px rgba(255,220,140,.25),0 0 140px 40px rgba(255,190,90,.12);opacity:0;transform:scale(.6);transition:opacity .8s ease .2s,transform 1.2s cubic-bezier(.2,.8,.2,1) .2s;}',
+    '#hwIntro.on .hi-moon{opacity:1;transform:none;}',
+    '#hwIntro .hi-flash{position:absolute;inset:0;background:#E9E2FF;opacity:0;pointer-events:none;}',
+    '#hwIntro .hi-pumpkin{position:absolute;left:50%;top:50%;width:260px;margin-left:-130px;margin-top:-120px;will-change:transform;filter:drop-shadow(0 0 40px rgba(255,140,30,.55));}',
+    '#hwIntro .hi-glow{animation:hiFlicker 1.6s infinite;} @keyframes hiFlicker{0%,100%{opacity:1;}42%{opacity:.82;}46%{opacity:1;}61%{opacity:.7;}66%{opacity:.96;}}',
+    '#hwIntro .hi-bat{position:absolute;left:50%;top:50%;width:54px;height:28px;margin:-14px 0 0 -27px;will-change:transform;}',
+    '#hwIntro .hi-bat svg{width:100%;height:100%;animation:hiFlap .18s ease-in-out infinite alternate;transform-origin:50% 60%;}',
+    '@keyframes hiFlap{from{transform:scaleY(1);}to{transform:scaleY(.4);}}',
+    '#hwIntro .hi-fog{position:absolute;left:-20%;right:-20%;bottom:-40px;height:220px;opacity:0;transition:opacity 1.4s ease;pointer-events:none;',
+    '  background:radial-gradient(40% 60% at 20% 70%,rgba(200,190,255,.22),transparent 70%),radial-gradient(35% 55% at 60% 80%,rgba(200,190,255,.18),transparent 70%),radial-gradient(30% 50% at 90% 70%,rgba(200,190,255,.2),transparent 70%);animation:hiFog 14s ease-in-out infinite alternate;}',
+    '#hwIntro.card .hi-fog{opacity:1;} @keyframes hiFog{from{transform:translateX(-6%);}to{transform:translateX(6%);}}',
+    '#hwIntro .hi-ghost{position:absolute;width:70px;height:92px;opacity:0;will-change:transform;}',
+    '#hwIntro .hi-card{position:absolute;left:50%;top:50%;width:min(520px,calc(100vw - 32px));transform:translate(-50%,-38%) scale(.92);opacity:0;padding:78px 30px 26px;border-radius:26px;text-align:center;color:#F5EEFF;',
+    '  background:linear-gradient(180deg,rgba(43,22,70,.96),rgba(22,12,38,.97));border:1px solid rgba(255,160,70,.35);box-shadow:0 40px 100px -20px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset,0 0 80px -20px rgba(255,138,30,.35);transition:transform .6s cubic-bezier(.2,1.2,.3,1),opacity .4s ease;}',
+    '#hwIntro.card .hi-card{opacity:1;transform:translate(-50%,-44%) scale(1);}',
+    '#hwIntro .hi-card h2{margin:0 0 10px;font:800 26px/1.2 Sora,Inter,sans-serif;letter-spacing:-.02em;background:linear-gradient(90deg,#FFB347,#FF7A1A 40%,#C68BFF);-webkit-background-clip:text;background-clip:text;color:transparent;}',
+    '#hwIntro .hi-card p{margin:0 auto 8px;max-width:420px;color:#D9CCF0;font-size:15px;line-height:1.6;} #hwIntro .hi-card p b{color:#FFC27A;}',
+    '#hwIntro .hi-list{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px 0 20px;} #hwIntro .hi-list span{padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-size:13px;color:#EDE4FF;}',
+    '#hwIntro .hi-btns{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}',
+    '#hwIntro .hi-btn{height:46px;padding:0 20px;border-radius:14px;font:700 15px Inter,sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#EDE4FF;transition:transform .15s,background .15s;}',
+    '#hwIntro .hi-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12);}',
+    '#hwIntro .hi-btn.go{border:none;color:#2A1200;background:linear-gradient(135deg,#FFC14D,#FF7A1A);box-shadow:0 12px 30px -10px rgba(255,122,26,.7);}',
+    '#hwIntro .hi-btn.go:hover{background:linear-gradient(135deg,#FFD06E,#FF8A33);}',
+    '#hwIntro .hi-mute{position:absolute;right:14px;top:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#EDE4FF;font-size:16px;cursor:pointer;}',
+    '#hwIntro .hi-small{margin-top:14px;font-size:12.5px;color:#A898C8;}',
+    '#hwIntro.out{transition:opacity .45s ease;opacity:0;}',
+    '@media (max-width:560px){#hwIntro .hi-pumpkin{width:200px;margin-left:-100px;} #hwIntro .hi-card{padding-top:70px;} #hwIntro .hi-moon{width:80px;height:80px;}}'
+  ].join('\n');
+
+  function play() {
+    if (document.getElementById('hwIntro')) return;
+    try { localStorage.setItem(SEEN, '1'); } catch (e) {}
+    if (!document.getElementById('hwIntroCss')) { var st = document.createElement('style'); st.id = 'hwIntroCss'; st.textContent = CSS; document.head.appendChild(st); }
+    var ov = document.createElement('div'); ov.id = 'hwIntro'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'hiT');
+    ov.innerHTML = '<div class="hi-night"></div><div class="hi-stars"></div><div class="hi-moon"></div><div class="hi-fog"></div><div class="hi-flash"></div>' +
+      '<div class="hi-card"><button type="button" class="hi-mute" aria-pressed="true" title="Music on/off" aria-label="Music on or off">🔊</button>' +
+      '<h2 id="hiT">🎃 Halloween has arrived at PalaTrack!</h2>' +
+      '<p>For the spooky season, PalaTrack is dressed up: you’ll spot little surprises all over the app.</p>' +
+      '<div class="hi-list"><span>🕸️ Cobwebs</span><span>🕷️ A spider (click it!)</span><span>🦇 Bats now and then</span><span>👻 A friendly ghost</span></div>' +
+      '<p>Not your thing? Turn it off anytime in <b>Settings → Halloween decorations</b>. It switches itself off after Halloween.</p>' +
+      '<div class="hi-btns" style="margin-top:18px"><button type="button" class="hi-btn" data-hi="off">Turn it off</button><button type="button" class="hi-btn go" data-hi="keep">Keep the spooky vibes 🎃</button></div>' +
+      '<div class="hi-small">Happy Halloween from the PalaTrack team 🦇</div></div>' +
+      '<div class="hi-pumpkin">' + PUMPKIN + '</div>';
+    document.body.appendChild(ov);
+    var pumpkin = ov.querySelector('.hi-pumpkin'), card = ov.querySelector('.hi-card'), flash = ov.querySelector('.hi-flash');
+    var a = audio(), t0 = a ? a.currentTime + 0.05 : 0;
+
+    function showCard() {
+      ov.classList.add('card');
+      // the pumpkin settles on top of the card
+      // the card ends at translate(-50%,-44%): its top edge is 44% of its height above the middle of the screen
+      var targetY = -0.44 * card.offsetHeight - 6, s = innerWidth < 560 ? 0.62 : 0.58;
+      pumpkin.animate([{transform: pumpkin.style.transform || 'translate3d(0,0,0) scale(1)'}, {transform: 'translate3d(0,' + targetY + 'px,0) scale(' + s + ')'}], {duration: 700, easing: 'cubic-bezier(.2,.9,.2,1)', fill: 'forwards'});
+      ov.querySelector('[data-hi="keep"]').focus();
+      if (!reduced) { circleBats(); floatGhosts(); }
+      if (a) startMusic();
+    }
+    if (reduced) { ov.classList.add('on'); pumpkin.style.display = 'none'; card.style.paddingTop = '30px'; showCard(); }
+    else {
+      requestAnimationFrame(function () { ov.classList.add('on'); });
+      if (a) { thunder(t0 + 0.15); organ(t0 + 0.55, [146.8, 174.6, 220, 293.7], 2.4, 0.5); ghostGlide(t0 + 1.0); }
+      flash.animate([{opacity: 0}, {opacity: 0.85, offset: 0.08}, {opacity: 0.1, offset: 0.2}, {opacity: 0.6, offset: 0.3}, {opacity: 0}], {duration: 900, delay: 150, easing: 'ease-out'});
+      pumpkin.animate([{transform: 'translate3d(0,70vh,0) scale(.5) rotate(-10deg)'}, {transform: 'translate3d(0,-20px,0) scale(1.08) rotate(3deg)', offset: 0.7}, {transform: 'translate3d(0,0,0) scale(1) rotate(0)'}],
+        {duration: 1000, delay: 350, easing: 'cubic-bezier(.2,.9,.2,1)', fill: 'both'});
+      setTimeout(burstBats, 1150);
+      setTimeout(showCard, 2300);
+    }
+
+    function burstBats() {
+      for (var i = 0; i < 22; i++) (function (i) {
+        var b = document.createElement('div'); b.className = 'hi-bat'; b.innerHTML = BAT; ov.appendChild(b);
+        var ang = (i / 22) * Math.PI * 2 + Math.random() * 0.3, dist = Math.max(innerWidth, innerHeight) * (0.6 + Math.random() * 0.4), s = 0.6 + Math.random() * 0.9, f = Math.cos(ang) < 0 ? -1 : 1;
+        b.animate([{transform: 'translate3d(0,0,0) scale(' + (0.2 * f) + ',0.2)', opacity: 0}, {transform: 'translate3d(' + Math.cos(ang) * dist * 0.25 + 'px,' + Math.sin(ang) * dist * 0.25 + 'px,0) scale(' + (s * f) + ',' + s + ')', opacity: 1, offset: 0.2},
+          {transform: 'translate3d(' + Math.cos(ang) * dist + 'px,' + (Math.sin(ang) * dist - 60) + 'px,0) scale(' + (s * 1.3 * f) + ',' + (s * 1.3) + ')', opacity: 1}],
+          {duration: 1500 + Math.random() * 700, delay: i * 25, easing: 'cubic-bezier(.3,.6,.4,1)'}).onfinish = function () { b.remove(); };
+      })(i);
+    }
+    function circleBats() {
+      for (var i = 0; i < 6; i++) (function (i) {
+        var b = document.createElement('div'); b.className = 'hi-bat'; b.innerHTML = BAT; b.style.opacity = '.85'; ov.insertBefore(b, card);
+        var rx = Math.min(innerWidth * 0.42, 560), ry = Math.min(innerHeight * 0.36, 300), dur = 9000 + i * 1300, ph = i / 6, frames = [];
+        for (var k = 0; k <= 24; k++) { var t = (k / 24 + ph) * Math.PI * 2, f = Math.sin(t) > 0 ? -1 : 1, s = 0.55 + 0.25 * Math.sin(t * 2);
+          frames.push({transform: 'translate3d(' + Math.cos(t) * rx + 'px,' + Math.sin(t) * ry + 'px,0) scale(' + (s * f) + ',' + s + ')'}); }
+        b.animate(frames, {duration: dur, iterations: Infinity});
+      })(i);
+    }
+    function floatGhosts() {
+      [0, 1, 2].forEach(function (i) {
+        var g = document.createElement('div'); g.className = 'hi-ghost'; g.innerHTML = GHOST; ov.insertBefore(g, card);
+        var y = innerHeight * (0.2 + i * 0.25), dir = i % 2 ? -1 : 1, x0 = dir > 0 ? -100 : innerWidth + 40, x1 = dir > 0 ? innerWidth + 40 : -100;
+        g.animate([{transform: 'translate3d(' + x0 + 'px,' + y + 'px,0) scaleX(' + dir + ')', opacity: 0}, {opacity: 0.75, offset: 0.1},
+          {transform: 'translate3d(' + (x0 + (x1 - x0) * 0.5) + 'px,' + (y - 40) + 'px,0) scaleX(' + dir + ')', opacity: 0.75, offset: 0.5}, {opacity: 0.75, offset: 0.9},
+          {transform: 'translate3d(' + x1 + 'px,' + y + 'px,0) scaleX(' + dir + ')', opacity: 0}], {duration: 14000 + i * 3000, delay: i * 2500, iterations: Infinity, easing: 'ease-in-out'});
+      });
+    }
+    function close(off) {
+      if (ov.classList.contains('out')) return;
+      stopMusic(); ov.classList.add('out');
+      if (off && window.ptHalloween) window.ptHalloween.set(false);
+      setTimeout(function () { ov.remove(); }, 480);
+      document.removeEventListener('keydown', key, true);
+    }
+    function key(e) { if (e.key === 'Escape') { e.preventDefault(); close(false); } }
+    document.addEventListener('keydown', key, true);
+    ov.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-hi]');
+      if (b) { close(b.dataset.hi === 'off'); return; }
+      if (e.target.closest('.hi-mute')) {
+        musicOn = !musicOn; var m = e.target.closest('.hi-mute'); m.textContent = musicOn ? '🔊' : '🔇'; m.setAttribute('aria-pressed', String(musicOn));
+        if (musicBus && ac) musicBus.gain.setTargetAtTime(musicOn ? 1 : 0, ac.currentTime, 0.1);
+      }
+    });
+  }
+  window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && decoOn() && !seen()) play(); });
+  window.ptHalloweenIntro = {play: play};      // to show it again (e.g. from Settings)
+})();

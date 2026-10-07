@@ -4430,8 +4430,11 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
       playWelcomeChime();
       overlay.classList.add('open');
       function dismiss(){
+        if(!overlay.classList.contains('open')) return;
         overlay.classList.remove('open');
         setTimeout(()=>{ document.getElementById('welcomeConfetti').innerHTML = ''; }, 400);
+        // the welcome is gone: other parts can follow up (the Halloween surprise in sidebar.js)
+        setTimeout(()=> window.dispatchEvent(new CustomEvent('pt-welcome-dismissed')), 350);
       }
       if(!welcomeDismissHandlersBound){
         welcomeDismissHandlersBound = true;
