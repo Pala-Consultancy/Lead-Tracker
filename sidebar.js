@@ -506,6 +506,45 @@
     im.connect(il); il.connect(ig); ig.connect(comp); im.start(d); im.stop(d + 0.5);
     return d;
   }
+  // ---------- the pumpkin's laugh: "MWA-HA-HA-HA-HA-HAAAA" ----------
+  // A synthesized voice: a buzzing "voice" (sawtooth plus a deep undertone and a second, slightly
+  // detuned voice) shaped into an "a" vowel by three resonances (like a mouth), a breathy "h" before
+  // each HA, pitch that climbs and then drops, a trembling last HAAA, and a hollow echo.
+  function laugh(t) {
+    var out = ac.createGain(); out.gain.value = 0.85;
+    var comp = ac.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4; out.connect(comp); comp.connect(master);
+    var rv = reverb(ac, 1.8), wet = ac.createGain(); wet.gain.value = 0.35; out.connect(wet); wet.connect(rv); rv.connect(master);
+    // the "mouth": three vowel resonances for an open "a"
+    var mouth = ac.createGain(); mouth.gain.value = 1;
+    [[750, 6, 1], [1150, 7, 0.55], [2500, 9, 0.22]].forEach(function (fm) { var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = fm[0]; bp.Q.value = fm[1]; var g = ac.createGain(); g.gain.value = fm[2] * 3.2; mouth.connect(bp); bp.connect(g); g.connect(out); });
+    // the syllables: [start offset, length, pitch, loudness]; "MWA" first, then faster and lower
+    var syl = [[0, 0.24, 150, 0.9, 'm'], [0.30, 0.13, 205, 1], [0.48, 0.13, 220, 1], [0.65, 0.12, 205, 1], [0.81, 0.12, 188, 0.95], [0.96, 0.12, 172, 0.95], [1.11, 0.62, 158, 1]];
+    syl.forEach(function (sy, i) {
+      var s0 = t + sy[0], len = sy[1], f = sy[2], vol = sy[3] * 0.32, last = i === syl.length - 1;
+      // the breathy "h" (not for "MWA")
+      if (sy[4] !== 'm') {
+        var h = ac.createBufferSource(); h.buffer = noise(0.12); var hb = ac.createBiquadFilter(); hb.type = 'bandpass'; hb.frequency.value = 1600; hb.Q.value = 0.8;
+        var hg = ac.createGain(); hg.gain.setValueAtTime(0.0001, s0 - 0.05); hg.gain.exponentialRampToValueAtTime(vol * 0.5, s0 - 0.02); hg.gain.exponentialRampToValueAtTime(0.0001, s0 + 0.03);
+        h.connect(hb); hb.connect(hg); hg.connect(out); h.start(s0 - 0.06); h.stop(s0 + 0.06);
+      }
+      // the voiced "a": a voice, a detuned second voice and a deep undertone, all into the mouth
+      var g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(vol, s0 + (sy[4] === 'm' ? 0.08 : 0.018));
+      g.gain.setValueAtTime(vol, s0 + len * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, s0 + len);
+      g.connect(sy[4] === 'm' ? mouthM(s0, len) : mouth);
+      [[1, 'sawtooth', 0.6, 0], [1.012, 'sawtooth', 0.35, 0], [0.5, 'sine', 0.55, 0]].forEach(function (v) {
+        var o = ac.createOscillator(), og = ac.createGain(); o.type = v[1]; og.gain.value = v[2];
+        var f0 = f * v[0]; o.frequency.setValueAtTime(f0 * (last ? 1.08 : 1.06), s0); o.frequency.exponentialRampToValueAtTime(f0 * (last ? 0.62 : 0.9), s0 + len);   // each HA falls a little; the last one falls a lot
+        if (last) { var vb = ac.createOscillator(), vg = ac.createGain(); vb.frequency.value = 7; vg.gain.value = f0 * 0.05; vb.connect(vg); vg.connect(o.frequency); vb.start(s0); vb.stop(s0 + len + 0.05); }   // trembling
+        o.connect(og); og.connect(g); o.start(s0); o.stop(s0 + len + 0.05);
+      });
+    });
+    // "M": lips closed at first (muffled), then opening into the "a"
+    function mouthM(s0, len) {
+      var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(320, s0); lp.frequency.exponentialRampToValueAtTime(4000, s0 + 0.09); lp.connect(mouth); return lp;
+    }
+    return t + 1.75;
+  }
   function stopMusic() {
     clearTimeout(musicTimer); musicTimer = null;
     if (musicBus && ac) { musicBus.gain.setTargetAtTime(0, ac.currentTime, 0.15); }
@@ -668,10 +707,20 @@
         var logo = document.querySelector('.pts-host .pts-logo'), lr = logo ? logo.getBoundingClientRect() : null;
         var tx = lr ? lr.right - 4 - base.x : innerWidth / 2 - base.x, ty = lr ? lr.bottom - 4 - base.y : -innerHeight - base.y;
         pumpkin.getAnimations().forEach(function (x) { x.commitStyles && x.commitStyles(); x.cancel(); });
-        pumpkin.animate([{transform: pumpkin.style.transform}, {transform: 'translate3d(' + m.e + 'px,' + (m.f - 60) + 'px,0) scale(' + (sc * 1.2) + ') rotate(90deg)', offset: 0.3},
-          {transform: 'translate3d(' + tx + 'px,' + ty + 'px,0) scale(.08) rotate(720deg)'}], {duration: 900, delay: 80, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards'});
-        setTimeout(function () { if (logo) { logo.classList.remove('hw-pop'); void logo.offsetWidth; logo.classList.add('hw-pop'); } }, 960);
-        setTimeout(function () { stopMusic(); ov.remove(); }, 1150);
+        var LAUGH_AT = 0.3;   // just after the boom, so you hear both
+        if (a) laugh(ac.currentTime + LAUGH_AT);
+        // the pumpkin hovers and cackles first, then spins off into the logo
+        pumpkin.animate([{transform: pumpkin.style.transform},
+          {transform: 'translate3d(' + m.e + 'px,' + (m.f - 70) + 'px,0) scale(' + (sc * 1.25) + ') rotate(-8deg)', offset: 0.25},
+          {transform: 'translate3d(' + m.e + 'px,' + (m.f - 80) + 'px,0) scale(' + (sc * 1.3) + ') rotate(8deg)', offset: 0.55},
+          {transform: 'translate3d(' + tx + 'px,' + ty + 'px,0) scale(.08) rotate(720deg)'}], {duration: 1650, delay: 60, easing: 'cubic-bezier(.45,0,.35,1)', fill: 'forwards'});
+        // shaking with laughter: a bounce on every HA, eyes flaring
+        var svgEl = pumpkin.querySelector('svg'), beats = [0.30, 0.48, 0.65, 0.81, 0.96, 1.11];
+        svgEl.animate(beats.reduce(function (fr, b) { var o = (b + LAUGH_AT) / (1.75 + LAUGH_AT); fr.push({transform: 'translateY(0) scale(1,1)', offset: Math.max(0, o - 0.02)}, {transform: 'translateY(-7px) scale(1.06,.9)', offset: Math.min(1, o + 0.02)}); return fr; },
+          [{transform: 'translateY(0) scale(1,1)', offset: 0}]).concat([{transform: 'translateY(0) scale(1,1)', offset: 1}]), {duration: (1.75 + LAUGH_AT) * 1000, easing: 'ease-out'});
+        var glow = ov.querySelector('.hi-glow'); if (glow) glow.animate([{opacity: 1}, {opacity: 0.55}, {opacity: 1}], {duration: 170, delay: LAUGH_AT * 1000, iterations: 9});
+        setTimeout(function () { if (logo) { logo.classList.remove('hw-pop'); void logo.offsetWidth; logo.classList.add('hw-pop'); } }, 1720);
+        setTimeout(function () { stopMusic(); ov.remove(); }, 1880);
       }, dropIn);
     }
     function close(off) {
@@ -695,6 +744,6 @@
   }
   window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && decoOn() && !seen()) play(); });
   // render the bass drop into another audio context (used to make a preview file)
-  function renderDrop(ctx, dest) { var pa = ac, pm = master; ac = ctx; master = dest; try { bassDrop(0.05); } finally { ac = pa; master = pm; } }
+  function renderDrop(ctx, dest) { var pa = ac, pm = master; ac = ctx; master = dest; try { var d = bassDrop(0.05); laugh(d + 0.3); } finally { ac = pa; master = pm; } }
   window.ptHalloweenIntro = {play: play, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop}};      // to show it again; _song renders the music to a file
 })();
