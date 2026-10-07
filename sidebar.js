@@ -497,12 +497,12 @@
     for (var i = 0; i < 1024; i++) { var x = i / 512 - 1; curve[i] = Math.tanh(x * 3.2); }          // "bass boosted": a warm distortion
     shaper.curve = curve; shaper.oversample = '4x';
     var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
-    var bg = ac.createGain(); bg.gain.setValueAtTime(0.0001, d); bg.gain.exponentialRampToValueAtTime(0.9, d + 0.01); bg.gain.exponentialRampToValueAtTime(0.35, d + 0.6); bg.gain.exponentialRampToValueAtTime(0.0001, d + 1.9);
+    var bg = ac.createGain(); bg.gain.setValueAtTime(0.0001, d); bg.gain.exponentialRampToValueAtTime(0.9, d + 0.01); bg.gain.exponentialRampToValueAtTime(0.3, d + 0.25); bg.gain.exponentialRampToValueAtTime(0.06, d + 0.45); bg.gain.exponentialRampToValueAtTime(0.0001, d + 1.4);   // steps back for the laugh
     shaper.connect(lp); lp.connect(bg); bg.connect(comp);
     var o = ac.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(150, d); o.frequency.exponentialRampToValueAtTime(48, d + 0.12); o.frequency.exponentialRampToValueAtTime(36, d + 1.8);
     o.connect(shaper); o.start(d); o.stop(d + 2);
     var sub = ac.createOscillator(), sg = ac.createGain(); sub.type = 'sine'; sub.frequency.setValueAtTime(55, d); sub.frequency.exponentialRampToValueAtTime(30, d + 1.6);
-    sg.gain.setValueAtTime(0.0001, d); sg.gain.exponentialRampToValueAtTime(0.7, d + 0.02); sg.gain.exponentialRampToValueAtTime(0.0001, d + 1.8); sub.connect(sg); sg.connect(comp); sub.start(d); sub.stop(d + 1.9);
+    sg.gain.setValueAtTime(0.0001, d); sg.gain.exponentialRampToValueAtTime(0.7, d + 0.02); sg.gain.exponentialRampToValueAtTime(0.08, d + 0.45); sg.gain.exponentialRampToValueAtTime(0.0001, d + 1.2); sub.connect(sg); sg.connect(comp); sub.start(d); sub.stop(d + 1.9);
     // the impact: a short, deep burst of noise
     var im = ac.createBufferSource(); im.buffer = noise(0.5); var il = ac.createBiquadFilter(); il.type = 'lowpass'; il.frequency.setValueAtTime(2400, d); il.frequency.exponentialRampToValueAtTime(180, d + 0.35);
     var ig = ac.createGain(); ig.gain.setValueAtTime(0.0001, d); ig.gain.exponentialRampToValueAtTime(0.5, d + 0.005); ig.gain.exponentialRampToValueAtTime(0.0001, d + 0.45);
@@ -510,8 +510,13 @@
     return d;
   }
   // ---------- the pumpkin's laugh: a recording (halloween-laugh.mp3), loaded when the surprise starts ----------
-  var laughBuf = null, laughLoading = null;
+  var laughBuf = null, laughLoading = null, laughEl = null;
   function loadLaugh() {
+    if (!laughEl) {                                    // a plain audio clip as a second way to play it
+      laughEl = new Audio(LAUGH_FILE); laughEl.preload = 'auto'; laughEl.volume = 1;
+      laughEl.addEventListener('error', function () { console.warn('Halloween laugh: the file couldn’t be loaded from ' + LAUGH_FILE + ' (is halloween-laugh.mp3 next to sidebar.js?)'); });
+      try { laughEl.load(); } catch (e) {}
+    }
     if (laughBuf || laughLoading || !ac) return laughLoading;
     laughLoading = fetch(LAUGH_FILE).then(function (r) { if (!r.ok) throw new Error('laugh ' + r.status); return r.arrayBuffer(); })
       .then(function (b) { return new Promise(function (res, rej) { ac.decodeAudioData(b, res, rej); }); })
@@ -519,12 +524,37 @@
     return laughLoading;
   }
   function laugh(t) {
-    if (!laughBuf) return t;                           // not loaded (yet): the finale just goes on without it
+    if (!laughBuf) {                                   // not decoded (yet): play the plain audio clip instead
+      if (laughEl) setTimeout(function () {
+        try { laughEl.currentTime = 0; laughEl.volume = 1; laughEl.playbackRate = 1; } catch (e) {}
+        var pr = laughEl.play(); if (pr && pr.catch) pr.catch(function (e) { console.warn('Halloween laugh couldn’t play:', e); });
+        var t0 = performance.now(), fade = setInterval(function () {                  // fading into the distance
+          var k = Math.min(1, Math.max(0, (performance.now() - t0 - 350) / ((LAUGH_LEN - 0.35) * 1000)));
+          try { laughEl.volume = Math.max(0, Math.pow(1 - k, 2.2)); } catch (e) {}
+          if (k >= 1) clearInterval(fade);
+        }, 50);
+      }, Math.max(0, (t - ac.currentTime) * 1000));
+      return t + LAUGH_LEN;
+    }
+    // the laugh flies off into the distance with the pumpkin: quieter, more muffled, more echoey,
+    // drifting left (towards the logo) and dropping slightly in pitch, like something speeding away
+    var len = laughBuf.duration, away = t + 0.35, end = t + len / 0.93;
     var src = ac.createBufferSource(); src.buffer = laughBuf;
-    var g = ac.createGain(); g.gain.value = 1.0;
-    src.connect(g); g.connect(master);                 // just the laugh: nothing lingers after it
+    src.playbackRate.setValueAtTime(1, t); src.playbackRate.linearRampToValueAtTime(0.93, end);
+    var muffle = ac.createBiquadFilter(); muffle.type = 'lowpass'; muffle.Q.value = 0.5;
+    muffle.frequency.setValueAtTime(14000, t); muffle.frequency.setValueAtTime(14000, away); muffle.frequency.exponentialRampToValueAtTime(700, end);
+    var near = ac.createGain(); near.gain.setValueAtTime(1.15, t); near.gain.setValueAtTime(1.15, away); near.gain.exponentialRampToValueAtTime(0.03, end);
+    var pan = ac.createStereoPanner ? ac.createStereoPanner() : null;
+    if (pan) { pan.pan.setValueAtTime(0, t); pan.pan.setValueAtTime(0, away); pan.pan.linearRampToValueAtTime(-0.75, end); }
+    // the echo of a far-off sound: it grows as the laugh moves away, then dies out softly
+    var dl = ac.createDelay(1); dl.delayTime.value = 0.21; var fb = ac.createGain(); fb.gain.value = 0.38; var fl = ac.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 1800;
+    var echo = ac.createGain(); echo.gain.setValueAtTime(0.0001, t); echo.gain.exponentialRampToValueAtTime(0.5, end - 0.2); echo.gain.exponentialRampToValueAtTime(0.0001, end + 0.9);
+    src.connect(muffle); muffle.connect(near);
+    var outNode = pan || ac.destination; if (pan) pan.connect(ac.destination);
+    near.connect(outNode);
+    muffle.connect(echo); echo.connect(dl); dl.connect(fl); fl.connect(fb); fb.connect(dl); fl.connect(outNode);
     src.start(t);
-    return t + laughBuf.duration;
+    return end + 0.9;
   }
   function stopMusic() {
     clearTimeout(musicTimer); musicTimer = null;
@@ -728,6 +758,7 @@
   }
   window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && decoOn() && !seen()) play(); });
   // render the bass drop into another audio context (used to make a preview file)
+  function renderLaugh(ctx, buf) { var pa = ac, pb = laughBuf; ac = ctx; laughBuf = buf; try { laugh(0.05); } finally { ac = pa; laughBuf = pb; } }
   function renderDrop(ctx, dest) { var pa = ac, pm = master; ac = ctx; master = dest; try { bassDrop(0.05); } finally { ac = pa; master = pm; } }
-  window.ptHalloweenIntro = {play: play, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop}};      // to show it again; _song renders the music to a file
+  window.ptHalloweenIntro = {play: play, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop, laugh: renderLaugh}};      // to show it again; _song renders the music to a file
 })();
