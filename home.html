@@ -1153,6 +1153,8 @@
   .onboarding-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background .2s, width .2s;}
   .onboarding-dot.active{background:var(--teal);width:18px;border-radius:4px;}
   .onboarding-nav{display:flex;justify-content:space-between;gap:10px;}
+  .onboarding-nav.ob-final{justify-content:center;}            /* the last step: "Welcome aboard!" in the middle */
+  .onboarding-nav.ob-final #onboardingBackBtn{display:none;}
 
   /* ---------- Welcome-back modal ---------- */
   .welcome-overlay{
@@ -4347,6 +4349,7 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
       }
     }
     function showOnboardingTour(){
+      document.querySelector('.onboarding-nav').classList.remove('ob-final');
       onboardingIndex = 0;
       renderOnboardingSlides();
       updateOnboardingSlide();
@@ -4365,6 +4368,7 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
       } else {
         document.getElementById('onboardingNextBtn').disabled = true;
         document.getElementById('onboardingNextBtn').textContent = 'Welcome aboard! 🎉';
+        document.querySelector('.onboarding-nav').classList.add('ob-final');
         document.getElementById('onboardingSkipBtn').style.visibility = 'hidden';
         document.getElementById('onboardingBackBtn').style.visibility = 'hidden';
         onboardingConfettiBurst();
