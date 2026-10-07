@@ -374,7 +374,11 @@
   var LAUGH_BEATS = [0.3, 0.56, 0.7, 0.82, 0.96, 1.1, 1.24, 1.36, 1.52, 1.66, 1.8], LAUGH_LEN = 2.1;   // where the HAs are in it
   function inSeason() { var d = new Date(), m = d.getMonth(); return m === 9 || (m === 10 && d.getDate() <= 2); }
   function decoOn() { try { return localStorage.getItem('ptHalloween') !== 'off'; } catch (e) { return true; } }
-  function seen() { try { return localStorage.getItem(SEEN) === '1'; } catch (e) { return true; } }
+  // "seen" is remembered per account (not per browser): a new account always gets the surprise once,
+  // also in a browser where someone else already saw it
+  function uid() { try { var u = window.firebase && firebase.auth && firebase.auth().currentUser; return u ? u.uid : ''; } catch (e) { return ''; } }
+  function seenKey() { var id = uid(); return id ? SEEN + ':' + id : SEEN; }
+  function seen() { try { return localStorage.getItem(seenKey()) === '1'; } catch (e) { return true; } }
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------- sound ----------
@@ -612,7 +616,7 @@
 
   function play() {
     if (document.getElementById('hwIntro')) return;
-    try { localStorage.setItem(SEEN, '1'); } catch (e) {}
+    try { localStorage.setItem(seenKey(), '1'); } catch (e) {}
     if (!document.getElementById('hwIntroCss')) { var st = document.createElement('style'); st.id = 'hwIntroCss'; st.textContent = CSS; document.head.appendChild(st); }
     var ov = document.createElement('div'); ov.id = 'hwIntro'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'hiT');
     ov.innerHTML = '<div class="hi-night"></div><div class="hi-stars"></div><div class="hi-moon"></div><div class="hi-fog"></div><div class="hi-flash"></div>' +
@@ -760,5 +764,5 @@
   // render the bass drop into another audio context (used to make a preview file)
   function renderLaugh(ctx, buf) { var pa = ac, pb = laughBuf; ac = ctx; laughBuf = buf; try { laugh(0.05); } finally { ac = pa; laughBuf = pb; } }
   function renderDrop(ctx, dest) { var pa = ac, pm = master; ac = ctx; master = dest; try { bassDrop(0.05); } finally { ac = pa; master = pm; } }
-  window.ptHalloweenIntro = {play: play, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop, laugh: renderLaugh}};      // to show it again; _song renders the music to a file
+  window.ptHalloweenIntro = {play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Halloween surprise will show again for this account.'; }, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop, laugh: renderLaugh}};      // to show it again; _song renders the music to a file
 })();
