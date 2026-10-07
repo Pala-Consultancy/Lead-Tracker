@@ -4336,8 +4336,11 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
         setTimeout(()=>piece.remove(), 1500);
       }
     }
+    let onboardingClosed = false;
     function completeOnboarding(){
       document.getElementById('onboardingOverlay').style.display = 'none';
+      // a new account's first welcome is done: other parts can follow up (the Halloween surprise in sidebar.js), once
+      if(!onboardingClosed){ onboardingClosed = true; setTimeout(()=> window.dispatchEvent(new CustomEvent('pt-welcome-dismissed')), 450); }
       const user = auth.currentUser;
       if(user && membersCollection){
         membersCollection.doc(user.uid).set({ onboardingCompleted: true }, {merge:true}).catch(()=>{});
