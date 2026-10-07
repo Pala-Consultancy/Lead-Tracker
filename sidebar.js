@@ -371,7 +371,7 @@
   var SEEN = 'ptHwIntroSeen';
   var HERE = (document.currentScript && document.currentScript.src) ? document.currentScript.src.replace(/[^\/?#]*([?#].*)?$/, '') : '';
   var LAUGH_FILE = HERE + 'halloween-laugh.mp3';      // the pumpkin's laugh (a recording, next to sidebar.js)
-  var LAUGH_BEATS = [0.3, 0.56, 0.7, 0.82, 0.96, 1.1, 1.24, 1.36, 1.52, 1.66, 1.8], LAUGH_LEN = 2.9;   // where the HAs are in it
+  var LAUGH_BEATS = [0.3, 0.56, 0.7, 0.82, 0.96, 1.1, 1.24, 1.36, 1.52, 1.66, 1.8], LAUGH_LEN = 2.1;   // where the HAs are in it
   function inSeason() { var d = new Date(), m = d.getMonth(); return m === 9 || (m === 10 && d.getDate() <= 2); }
   function decoOn() { try { return localStorage.getItem('ptHalloween') !== 'off'; } catch (e) { return true; } }
   function seen() { try { return localStorage.getItem(SEEN) === '1'; } catch (e) { return true; } }
@@ -522,8 +522,7 @@
     if (!laughBuf) return t;                           // not loaded (yet): the finale just goes on without it
     var src = ac.createBufferSource(); src.buffer = laughBuf;
     var g = ac.createGain(); g.gain.value = 1.0;
-    var rv = reverb(ac, 1.6), wet = ac.createGain(); wet.gain.value = 0.18;   // a touch of echo, as if from inside the pumpkin
-    src.connect(g); g.connect(master); g.connect(wet); wet.connect(rv); rv.connect(master);
+    src.connect(g); g.connect(master);                 // just the laugh: nothing lingers after it
     src.start(t);
     return t + laughBuf.duration;
   }
