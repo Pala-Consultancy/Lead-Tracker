@@ -393,11 +393,11 @@
     return ac;
   }
   function noise(len) { var b = ac.createBuffer(1, ac.sampleRate * len, ac.sampleRate), d = b.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
-  function thunder(t) {
+  function thunder(t, vol, dest) {
     var src = ac.createBufferSource(); src.buffer = noise(2.6);
     var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(120, t + 2.4);
-    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.04); g.gain.exponentialRampToValueAtTime(0.12, t + 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.5);
-    src.connect(lp); lp.connect(g); g.connect(master); src.start(t); src.stop(t + 2.6);
+    var v = vol || 0.55, g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.04); g.gain.exponentialRampToValueAtTime(v * 0.22, t + 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.5);
+    src.connect(lp); lp.connect(g); g.connect(dest || master); src.start(t); src.stop(t + 2.6);
   }
   function organ(t, notes, len, vol) {
     var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
@@ -619,6 +619,9 @@
     '#hwIntro .hi-mute{position:absolute;right:14px;top:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#EDE4FF;font-size:16px;cursor:pointer;}',
     '#hwIntro .hi-small{margin-top:14px;font-size:12.5px;color:#A898C8;}',
     '#hwIntro.out{transition:opacity .45s ease;opacity:0;}',
+    '#hwIntro .hi-bolt{position:absolute;inset:0;pointer-events:none;opacity:0;will-change:opacity;}',
+    '#hwIntro .hi-bolt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}',
+    '#hwIntro .hi-sky{position:absolute;inset:0;pointer-events:none;opacity:0;will-change:opacity;}',
     '#hwIntro .hi-ring{position:absolute;width:640px;height:640px;margin:-320px 0 0 -320px;border-radius:50%;opacity:0;pointer-events:none;will-change:transform,opacity;',
     '  background:radial-gradient(circle,transparent 56%,rgba(255,190,90,.95) 63%,rgba(255,120,20,.55) 68%,transparent 75%);}',
     '.pts-host.pt-hw .pts-logo.hw-pop::after{animation:hwPop .6s cubic-bezier(.3,1.8,.5,1);} @keyframes hwPop{0%{transform:scale(.3);}60%{transform:scale(1.7) rotate(-12deg);}100%{transform:none;}}',
@@ -651,7 +654,7 @@
       var targetY = -0.44 * card.offsetHeight - 6, s = innerWidth < 560 ? 0.62 : 0.58;
       pumpkin.animate([{transform: pumpkin.style.transform || 'translate3d(0,0,0) scale(1)'}, {transform: 'translate3d(0,' + targetY + 'px,0) scale(' + s + ')'}], {duration: 700, easing: 'cubic-bezier(.2,.9,.2,1)', fill: 'forwards'});
       ov.querySelector('[data-hi="keep"]').focus();
-      if (!reduced) { circleBats(); floatGhosts(); }
+      if (!reduced) { circleBats(); floatGhosts(); boltTimer = setTimeout(strike, 1400); }
       if (a) startMusic();
     }
     if (reduced) { ov.classList.add('on'); pumpkin.style.display = 'none'; card.style.paddingTop = '30px'; showCard(); }
@@ -696,7 +699,7 @@
     // bats burst out, the night opens up from the pumpkin and the pumpkin flies into the logo
     function finale() {
       if (ov.classList.contains('out') || ov.dataset.fin) return;
-      ov.dataset.fin = '1'; document.removeEventListener('keydown', key, true);
+      ov.dataset.fin = '1'; document.removeEventListener('keydown', key, true); clearTimeout(boltTimer);
       // clear what's still moving under the pop-up, so the finale has the stage to itself
       ov.querySelectorAll('.hi-ghost, .hi-bat').forEach(function (el) { el.getAnimations().forEach(function (x) { x.cancel(); }); el.remove(); });
       var fog = ov.querySelector('.hi-fog'); if (fog) fog.style.animation = 'none';
@@ -754,10 +757,39 @@
         setTimeout(function () { stopMusic(); ov.remove(); }, FLY + 250);   // the laugh fades out by itself
       }, dropIn);
     }
+    // ---- lightning streaks in the background, now and then, with a distant rumble ----
+    var boltTimer = null;
+    function boltPath(x0, y1) {
+      var x = x0, y = -10, pts = [[x, y]], step = (y1 + 10) / 14;
+      for (var i = 0; i < 14; i++) { y += step * (0.7 + Math.random() * 0.6); x += (Math.random() - 0.5) * 70; pts.push([Math.round(x), Math.round(y)]); }
+      return pts;
+    }
+    function strike() {
+      if (!document.body.contains(ov) || ov.dataset.fin || ov.classList.contains('out')) return;
+      var W = innerWidth, H = innerHeight, left = Math.random() < 0.5;
+      var x0 = left ? W * (0.04 + Math.random() * 0.22) : W * (0.74 + Math.random() * 0.22), y1 = H * (0.55 + Math.random() * 0.3);
+      var main = boltPath(x0, y1), d = 'M' + main.map(function (p) { return p.join(' '); }).join(' L');
+      // sometimes a side branch
+      if (Math.random() < 0.7) { var from = main[5 + Math.floor(Math.random() * 4)], bx = from[0], by = from[1], dir = left ? 1 : -1, br = [[bx, by]];
+        for (var k = 0; k < 6; k++) { bx += dir * (14 + Math.random() * 26); by += 22 + Math.random() * 30; br.push([Math.round(bx), Math.round(by)]); }
+        d += ' M' + br.map(function (p) { return p.join(' '); }).join(' L'); }
+      var bolt = document.createElement('div'); bolt.className = 'hi-bolt';
+      bolt.innerHTML = '<svg aria-hidden="true"><path d="' + d + '" fill="none" stroke="rgba(190,160,255,.35)" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="' + d + '" fill="none" stroke="rgba(225,210,255,.75)" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="' + d + '" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+      var sky = document.createElement('div'); sky.className = 'hi-sky';
+      sky.style.background = 'radial-gradient(60% 70% at ' + Math.round(x0 / W * 100) + '% 20%, rgba(200,180,255,.55), transparent 70%)';
+      ov.insertBefore(sky, card); ov.insertBefore(bolt, card);
+      var flicker = [{opacity: 0}, {opacity: 1, offset: 0.06}, {opacity: 0.25, offset: 0.2}, {opacity: 1, offset: 0.3}, {opacity: 0.6, offset: 0.5}, {opacity: 0}];
+      bolt.animate(flicker, {duration: 650, easing: 'ease-out'}).onfinish = function () { bolt.remove(); };
+      sky.animate([{opacity: 0}, {opacity: 0.8, offset: 0.06}, {opacity: 0.15, offset: 0.2}, {opacity: 0.6, offset: 0.3}, {opacity: 0}], {duration: 700, easing: 'ease-out'}).onfinish = function () { sky.remove(); };
+      if (ac && musicBus) thunder(ac.currentTime + 0.35 + Math.random() * 0.5, 0.22, musicBus);   // the rumble arrives a moment later (it's far away)
+      boltTimer = setTimeout(strike, 4000 + Math.random() * 5000);
+    }
     function close(off) {
       if (ov.classList.contains('out') || ov.dataset.fin) return;
       if (!off && !reduced) { finale(); return; }
-      stopMusic(); ov.classList.add('out');
+      clearTimeout(boltTimer); stopMusic(); ov.classList.add('out');
       if (off && window.ptHalloween) window.ptHalloween.set(false);
       setTimeout(function () { ov.remove(); }, 480);
       document.removeEventListener('keydown', key, true);
