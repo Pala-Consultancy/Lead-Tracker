@@ -286,6 +286,10 @@
   .lib-used[hidden]{display:none;}
   .lib-item .tm.used{color:#B4531E;font-weight:700;font-size:11px;}
 
+  .gdoc-ov{position:fixed;inset:0;z-index:1000;background:rgba(15,22,38,.42);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .gdoc-box{width:100%;max-width:460px;background:var(--panel,#fff);color:var(--ink,#16202C);border-radius:20px;padding:24px;box-shadow:0 30px 80px -20px rgba(10,14,30,.45);}
+  .gdoc-box h3{margin:0 0 8px;font:700 18px Sora,sans-serif;} .gdoc-box p{margin:0;color:var(--slate,#5B6B7F);font-size:14.5px;line-height:1.55;}
+  .gdoc-b{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;} .gdoc-b:empty{display:none;}
 </style>
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
 <style>
@@ -1836,11 +1840,24 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     return new Promise((resolve, reject)=>{
       if(gToken && Date.now() < gTokenUntil) return resolve(gToken);
       const client = google.accounts.oauth2.initTokenClient({client_id: GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.file',
-        callback: (r)=>{ if(r && r.access_token){ gToken = r.access_token; gTokenUntil = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000; resolve(gToken); } else reject(new Error((r && r.error) || 'denied')); },
+        callback: (r)=>{
+          if(r && r.access_token && google.accounts.oauth2.hasGrantedAllScopes && !google.accounts.oauth2.hasGrantedAllScopes(r, 'https://www.googleapis.com/auth/drive.file')) return reject(new Error('Drive permission not given (the Google Drive box wasn’t ticked)'));
+          if(r && r.access_token){ gToken = r.access_token; gTokenUntil = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000; resolve(gToken); } else reject(new Error((r && r.error) || 'denied')); },
         error_callback: (e)=> reject(new Error((e && e.type) || 'popup'))});
       client.requestAccessToken({prompt: ''});      // must run straight from the click (Google opens its sign-in window)
     });
   }
+  // a dialog that stays visible while working, and shows the exact reason if something goes wrong
+  function gdocDialog(title, message, actions){
+    let ov = document.getElementById('gdocDlg');
+    if(!ov){ ov = document.createElement('div'); ov.id = 'gdocDlg'; ov.className = 'gdoc-ov'; document.body.appendChild(ov); }
+    ov.innerHTML = `<div class="gdoc-box" role="alertdialog" aria-modal="true" aria-labelledby="gdocT"><h3 id="gdocT">${esc(title)}</h3><p>${message}</p>
+      <div class="gdoc-b">${(actions || []).map((x, i)=> `<button type="button" class="btn${x.primary ? ' btn-primary' : ''}" data-i="${i}">${esc(x.label)}</button>`).join('')}</div></div>`;
+    ov.querySelectorAll('[data-i]').forEach(el=> el.addEventListener('click', ()=>{ const x = actions[Number(el.dataset.i)]; ov.remove(); if(x.fn) x.fn(); }));
+    const first = ov.querySelector('.btn-primary') || ov.querySelector('[data-i]'); if(first) first.focus();
+    return ov;
+  }
+  const closeGdoc = ()=>{ const ov = document.getElementById('gdocDlg'); if(ov) ov.remove(); };
   async function exportGoogleDoc(p){
     if(!(window.google && window.google.accounts && window.google.accounts.oauth2)){
       showToast('Connecting to Google… click “Open as Google Doc” once more.'); loadGis().catch(()=> showToast('Google couldn’t load. Check your connection.')); return;
@@ -1850,28 +1867,43 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     try { token = await googleToken(); }
     catch(e){
       const m = String(e.message || '');
-      showToast(m === 'popup_closed' || m === 'access_denied' || m === 'denied' ? 'No problem: nothing was created in your Drive.' : 'Google sign-in didn’t work. See the setup note, or try again.');
+      if(m === 'popup_closed' || m === 'access_denied' || m === 'denied') { showToast('No problem: nothing was created in your Drive.'); return; }
+      gdocDialog('Google sign-in didn’t work', `Google answered: <b>${esc(m || 'unknown')}</b>. Try again; if it keeps happening, check the setup in Google Cloud.`, [{label: 'OK', primary: true}]);
       return;
     }
-    showToast('Creating your Google Doc…');
+    gdocDialog('Creating your Google Doc…', 'This takes a few seconds.', []);
     const html = `<html><head><meta charset="utf-8"><style>${EXPORT_CSS.replace(/@page\{[^}]*\}/, '')}</style></head><body>${body}</body></html>`;
-    const b = 'ptlib' + Date.now();
-    const payload = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name: title, mimeType: 'application/vnd.google-apps.document'})}\r\n--${b}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${b}--`;
+    const bd = 'ptlib' + Date.now();
+    const payload = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name: title, mimeType: 'application/vnd.google-apps.document'})}\r\n--${bd}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${bd}--`;
+    const ctrl = new AbortController(), timer = setTimeout(()=> ctrl.abort(), 30000);
+    let r, j, raw = '';
     try {
-      const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {method: 'POST', headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'multipart/related; boundary=' + b}, body: payload});
-      const j = await r.json().catch(()=> ({}));
-      if(!r.ok){
-        if(r.status === 401){ gToken = null; showToast('Google asked to sign in again. Click “Open as Google Doc” once more.'); return; }
-        const why = JSON.stringify(j);
-        showToast(/accessNotConfigured|SERVICE_DISABLED|has not been used/i.test(why) ? 'Google Drive isn’t switched on for PalaTrack yet (a one-time setup step).' : 'Couldn’t create the Google Doc. Please try again.');
-        console.error(j); return;
+      r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {method: 'POST', signal: ctrl.signal, headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'multipart/related; boundary=' + bd}, body: payload});
+      raw = await r.text(); try { j = JSON.parse(raw); } catch(e){ j = {}; }
+    } catch(e){
+      clearTimeout(timer); console.error('Google Doc export:', e);
+      gdocDialog('Couldn’t reach Google', e.name === 'AbortError' ? 'Google didn’t answer within 30 seconds. Please try again in a moment.' : 'The connection to Google failed. Check your internet connection and try again.', [{label: 'OK', primary: true}]);
+      return;
+    }
+    clearTimeout(timer);
+    if(!r.ok){
+      console.error('Google Doc export:', r.status, raw);
+      const why = raw || '', msg = ((j.error && j.error.message) || '').slice(0, 220);
+      if(r.status === 401){ gToken = null; gdocDialog('Please sign in again', 'Google asked to sign in again. Click “Open as Google Doc” once more.', [{label: 'OK', primary: true}]); return; }
+      if(/accessNotConfigured|SERVICE_DISABLED|has not been used|is disabled/i.test(why)){
+        gdocDialog('Google Drive isn’t switched on yet', 'In Google Cloud Console: <b>APIs & Services → Library</b> → search <b>Google Drive API</b> → <b>Enable</b>. Wait a few minutes, then try again.', [{label: 'OK', primary: true}]); return;
       }
-      const url = j.webViewLink || `https://docs.google.com/document/d/${j.id}/edit`;
-      const open = await showConfirmModal({title: 'Your Google Doc is ready', message: `“${title}” is in your Google Drive now. You can edit and share it there.`, confirmLabel: 'Open in Google Docs'});
-      if(open) window.open(url, '_blank', 'noopener');
-    } catch(e){ console.error(e); showToast('Couldn’t reach Google. Check your connection and try again.'); }
+      if(/insufficient|scope|PERMISSION_DENIED/i.test(why)){
+        gToken = null;
+        gdocDialog('Google didn’t give permission for Drive', 'When Google asks, make sure the box for <b>Google Drive</b> (“create files”) is ticked. If you don’t see it: in Google Cloud, add the scope <b>…/auth/drive.file</b> on the OAuth consent screen (Data access).', [{label: 'Cancel'}, {label: 'Try again', primary: true, fn: ()=> exportGoogleDoc(p)}]); return;
+      }
+      gdocDialog('Couldn’t create the Google Doc', `Google answered (${r.status}): <b>${esc(msg || 'no details')}</b>`, [{label: 'OK', primary: true}]);
+      return;
+    }
+    const url = j.webViewLink || `https://docs.google.com/document/d/${j.id}/edit`;
+    gdocDialog('Your Google Doc is ready', `“${esc(title)}” is in your Google Drive now. You can edit and share it there.`,
+      [{label: 'Close'}, {label: 'Open in Google Docs', primary: true, fn: ()=> window.open(url, '_blank', 'noopener')}]);
   }
-
   let pdfLib = null;
   function loadPdfLib(){
     if(window.html2pdf) return Promise.resolve();
