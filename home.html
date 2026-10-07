@@ -4323,20 +4323,44 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
       const nextBtn = document.getElementById('onboardingNextBtn');
       nextBtn.textContent = onboardingIndex === ONBOARDING_SLIDES.length - 1 ? 'Get started' : 'Next →';
     }
+    // Confetti over the whole screen, above the tour and its blurred background:
+    // a burst from the "Welcome aboard!" button plus a shower from the top across the full width.
     function onboardingConfettiBurst(){
-      const card = document.querySelector('.onboarding-card');
-      if(!card) return;
-      const colors = ['#1B59A5','#7A4FB5','#FF9D00','#1F5C4F','#C0392B'];
-      for(let i=0;i<28;i++){
-        const piece = document.createElement('div');
-        piece.className = 'ob-confetti-piece';
-        piece.style.left = Math.random()*100 + '%';
-        piece.style.background = colors[Math.floor(Math.random()*colors.length)];
-        piece.style.animationDelay = (Math.random()*0.3) + 's';
-        piece.style.width = piece.style.height = (5 + Math.random()*5) + 'px';
-        card.appendChild(piece);
-        setTimeout(()=>piece.remove(), 1500);
+      if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const layer = document.createElement('div');
+      layer.setAttribute('aria-hidden', 'true');
+      layer.style.cssText = 'position:fixed;inset:0;z-index:2147483000;pointer-events:none;overflow:hidden;';
+      document.body.appendChild(layer);
+      const colors = ['#1B59A5','#7A4FB5','#FF9D00','#1F5C4F','#C0392B','#3730B3','#F5B700','#2EA36F'];
+      const W = innerWidth, H = innerHeight;
+      const btn = document.getElementById('onboardingNextBtn'), br = btn ? btn.getBoundingClientRect() : {left: W/2, top: H/2, width: 0, height: 0};
+      const bx = br.left + br.width/2, by = br.top + br.height/2;
+      const piece = ()=>{
+        const el = document.createElement('i'), shape = Math.random();
+        const w = shape < 0.45 ? 6 + Math.random()*4 : 7 + Math.random()*5, h = shape < 0.45 ? 12 + Math.random()*8 : w;
+        el.style.cssText = `position:absolute;left:0;top:0;width:${w}px;height:${h}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${shape > 0.8 ? '50%' : '2px'};will-change:transform,opacity;`;
+        layer.appendChild(el); return el;
+      };
+      // 1. a burst from the button: up and out, then falling
+      for(let i=0;i<60;i++){
+        const el = piece(), ang = -Math.PI/2 + (Math.random()-0.5)*Math.PI*1.25, v = 260 + Math.random()*360;
+        const dx = Math.cos(ang)*v, dy = Math.sin(ang)*v, fall = H - by + 80, rot = (Math.random()-0.5)*1080;
+        el.animate([
+          {transform:`translate3d(${bx}px,${by}px,0) rotate(0deg)`, opacity:1},
+          {transform:`translate3d(${bx+dx*0.8}px,${by+dy*0.8}px,0) rotate(${rot*0.4}deg)`, opacity:1, offset:0.3},
+          {transform:`translate3d(${bx+dx*1.1}px,${by+fall}px,0) rotate(${rot}deg)`, opacity:0.9}
+        ], {duration: 1800 + Math.random()*900, easing:'cubic-bezier(.2,.6,.4,1)', fill:'forwards'});
       }
+      // 2. a shower from the top, across the whole screen
+      for(let i=0;i<80;i++){
+        const el = piece(), x = Math.random()*W, drift = (Math.random()-0.5)*160, rot = (Math.random()-0.5)*900;
+        el.animate([
+          {transform:`translate3d(${x}px,-30px,0) rotate(0deg)`, opacity:1},
+          {transform:`translate3d(${x+drift*0.5}px,${H*0.5}px,0) rotate(${rot*0.5}deg)`, opacity:1, offset:0.5},
+          {transform:`translate3d(${x+drift}px,${H+40}px,0) rotate(${rot}deg)`, opacity:0.85}
+        ], {duration: 2200 + Math.random()*1400, delay: Math.random()*600, easing:'linear', fill:'forwards'});
+      }
+      setTimeout(()=> layer.remove(), 4800);
     }
     let onboardingClosed = false;
     function completeOnboarding(){
