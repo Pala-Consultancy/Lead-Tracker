@@ -241,6 +241,9 @@
     '@keyframes hwCandle{0%,100%{opacity:1;}45%{opacity:.78;}50%{opacity:1;}72%{opacity:.86;}}',
     // ---- across the page: orange text selection, and a string of lights along the top ----
     'html.pt-hw-on ::selection{background:rgba(255,138,30,.3);}',
+    // pages with their own logo at the top (Account, Billing): the pumpkin on that logo too
+    'html.pt-hw-on .logo-badge{position:relative;overflow:visible;}',
+    'html.pt-hw-on .logo-badge::after{content:"\\1F383";position:absolute;right:-9px;bottom:-7px;font-size:17px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));pointer-events:none;}',
     '#ptHalloween .hw-lights{position:absolute;top:0;right:0;height:52px;}',
     '#ptHalloween .hw-lights svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}',
     '#ptHalloween .hw-bulb{position:absolute;width:10px;height:16px;margin-left:-5px;border-radius:50% 50% 45% 45%;will-change:opacity;animation:hwTwinkle 3.2s ease-in-out infinite;}',
