@@ -219,7 +219,7 @@
     '@keyframes hwFlap{from{transform:scaleY(1);}to{transform:scaleY(.45);}}',
     '#ptHalloween .hw-ghost{position:absolute;bottom:-90px;width:64px;height:84px;will-change:transform;opacity:.92;}',
     '.pts-host.pt-hw .pts-logo{overflow:visible;position:relative;} .pts-host.pt-hw .pts-logo img{border-radius:10px;}',
-    '.pts-host.pt-hw .pts-logo::after{content:"\\1F383";position:absolute;right:-9px;bottom:-7px;font-size:17px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));}',
+    'html.pt-hw-pk .pts-host.pt-hw .pts-logo::after{content:"\\1F383";position:absolute;right:-9px;bottom:-7px;font-size:17px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));}',
     '.pt-hw-greet{margin:10px 6px 6px;padding:9px 12px;border-radius:12px;font-size:12.5px;font-weight:600;color:#9A4A06;background:linear-gradient(135deg,rgba(255,150,40,.16),rgba(150,80,230,.12));display:flex;align-items:center;gap:8px;}',
     'html[data-theme="dark"] .pt-hw-greet{color:#FFC27A;background:linear-gradient(135deg,rgba(255,150,40,.16),rgba(150,80,230,.18));}',
     // ---- the side panel in Halloween colours ----
@@ -243,7 +243,7 @@
     'html.pt-hw-on ::selection{background:rgba(255,138,30,.3);}',
     // pages with their own logo at the top (Account, Billing): the pumpkin on that logo too
     'html.pt-hw-on .logo-badge{position:relative;overflow:visible;}',
-    'html.pt-hw-on .logo-badge::after{content:"\\1F383";position:absolute;right:-9px;bottom:-7px;font-size:17px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));pointer-events:none;}',
+    'html.pt-hw-on.pt-hw-pk .logo-badge::after{content:"\\1F383";position:absolute;right:-9px;bottom:-7px;font-size:17px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));pointer-events:none;}',
     '#ptHalloween .hw-lights{position:absolute;top:0;right:0;height:52px;}',
     '#ptHalloween .hw-lights svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}',
     '#ptHalloween .hw-bulb{position:absolute;width:10px;height:16px;margin-left:-5px;border-radius:50% 50% 45% 45%;will-change:opacity;animation:hwTwinkle 3.2s ease-in-out infinite;}',
@@ -633,6 +633,7 @@
 
   function play() {
     if (document.getElementById('hwIntro')) return;
+    introRunning = true; document.documentElement.classList.remove('pt-hw-pk');      // the logo waits for the big pumpkin
     try { localStorage.setItem(seenKey(), '1'); } catch (e) {}
     if (!document.getElementById('hwIntroCss')) { var st = document.createElement('style'); st.id = 'hwIntroCss'; st.textContent = CSS; document.head.appendChild(st); }
     var ov = document.createElement('div'); ov.id = 'hwIntro'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'hiT');
@@ -756,7 +757,7 @@
         svgEl.animate(beats.reduce(function (fr, b) { var o = (b + LAUGH_AT) / TOTAL; fr.push({transform: 'translateY(0) scale(1,1)', offset: Math.max(0, o - 0.02)}, {transform: 'translateY(-7px) scale(1.06,.9)', offset: Math.min(1, o + 0.02)}); return fr; },
           [{transform: 'translateY(0) scale(1,1)', offset: 0}]).concat([{transform: 'translateY(0) scale(1,1)', offset: 1}]), {duration: TOTAL * 1000, easing: 'ease-out'});
         var glow = ov.querySelector('.hi-glow'); if (glow) glow.animate([{opacity: 1}, {opacity: 0.55}, {opacity: 1}], {duration: 160, delay: LAUGH_AT * 1000, iterations: 11});
-        setTimeout(function () { if (logo) { logo.classList.remove('hw-pop'); void logo.offsetWidth; logo.classList.add('hw-pop'); } }, FLY + 80);
+        setTimeout(function () { landPumpkin(); if (logo) { logo.classList.remove('hw-pop'); void logo.offsetWidth; logo.classList.add('hw-pop'); } }, FLY + 80);   // it lands: the little pumpkin appears
         setTimeout(function () { stopMusic(); ov.remove(); }, FLY + 250);   // the laugh fades out by itself
       }, dropIn);
     }
@@ -793,6 +794,7 @@
       if (ov.classList.contains('out') || ov.dataset.fin) return;
       if (!off && !reduced) { finale(); return; }
       clearTimeout(boltTimer); stopMusic(); ov.classList.add('out');
+      if (!off) landPumpkin(); else introRunning = false;     // no flight (animations off): it simply appears; turned off: no Halloween
       if (off && window.ptHalloween) window.ptHalloween.set(false);
       setTimeout(function () { ov.remove(); }, 480);
       document.removeEventListener('keydown', key, true);
@@ -809,6 +811,17 @@
     });
   }
   window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && decoOn() && !seen()) play(); });
+  // The little pumpkin on the logo: only after this account has seen the intro, so that the first time
+  // the big pumpkin flies to an empty logo and the little one appears when it lands (then it stays).
+  var introRunning = false;
+  function updateLogoPumpkin() { if (!introRunning) document.documentElement.classList.toggle('pt-hw-pk', seen()); }
+  function landPumpkin() { introRunning = false; document.documentElement.classList.add('pt-hw-pk'); }
+  updateLogoPumpkin();
+  // who is logged in is only known a moment after the page loads: check again then
+  (function waitForAuth(tries) {
+    try { if (window.firebase && firebase.auth) { firebase.auth().onAuthStateChanged(function () { updateLogoPumpkin(); }); return; } } catch (e) {}
+    if (tries < 40) setTimeout(function () { waitForAuth(tries + 1); }, 250);
+  })(0);
   // render the bass drop into another audio context (used to make a preview file)
   function renderLaugh(ctx, buf) { var pa = ac, pb = laughBuf; ac = ctx; laughBuf = buf; try { laugh(0.05); } finally { ac = pa; laughBuf = pb; } }
   function renderFinale(ctx, dest, buf) {
