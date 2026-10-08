@@ -43,12 +43,21 @@
         var c = n.classList.contains('todo') ? 'todo' : n.classList.contains('callout') ? 'callout' : null;
         FLOW_CLASSES.forEach(function(f){ if(n.classList.contains(f)) c = f; });
         TOGGLE_CLASSES.forEach(function(f){ if(n.classList.contains(f)) c = f; });
+        if(n.classList.contains('file')){                 // a document added to the page (a file card)
+          var url = n.getAttribute('data-url') || '';
+          if(/^https:\/\/firebasestorage\.googleapis\.com\//.test(url)){
+            c = 'file'; keep['data-url'] = url; keep['data-name'] = (n.getAttribute('data-name') || 'Document').slice(0, 200);
+            keep['data-size'] = String(parseInt(n.getAttribute('data-size'), 10) || 0); keep['data-kind'] = (n.getAttribute('data-kind') || 'file').replace(/[^a-z]/g, '').slice(0, 10);
+            keep['contenteditable'] = 'false';
+          }
+        }
         if(c === 'tg'){
           keep['data-open'] = n.getAttribute('data-open') === 'false' ? 'false' : 'true';
           var col = n.getAttribute('data-color'); if(TOGGLE_COLORS.indexOf(col) >= 0) keep['data-color'] = col;
         }
         if(c === 'fl-branch'){ var tone = BRANCH_TONES.filter(function(t){ return n.classList.contains(t); })[0] || 'other'; c = 'fl-branch ' + tone; }
         if(c) keep['class'] = c;
+      if(c === 'file'){ Array.prototype.slice.call(n.attributes).forEach(function(a){ n.removeAttribute(a.name); }); Object.keys(keep).forEach(function(a){ n.setAttribute(a, keep[a]); }); n.innerHTML = ''; return; }
         if(c === 'todo') keep['data-checked'] = n.getAttribute('data-checked') === 'true' ? 'true' : 'false';
       }
       if(tag === 'SPAN' && n.classList.contains('ph')){ var k = n.getAttribute('data-ph'); if(PH.some(function(p){ return p[0] === k; })){ keep['class'] = 'ph'; keep['data-ph'] = k; keep['contenteditable'] = 'false'; n.textContent = '{' + k + '}'; } }
@@ -81,6 +90,7 @@
   }
   function blockText(b, fmt){
     if(isFlow(b)) return flowText(b, fmt);
+    if(b && b.nodeType === 1 && b.classList && b.classList.contains('file')) return '📎 ' + (b.getAttribute('data-name') || 'Document');
     if(b && b.nodeType === 1 && b.classList && b.classList.contains('tg')){        // a toggle: its title, then what's inside
       var title = kids(b, 'tg-title')[0], body = kids(b, 'tg-body')[0], parts = [];
       if(title) parts.push(inlineText(title, fmt).replace(/\u00a0/g, ' ').trim());

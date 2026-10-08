@@ -225,6 +225,31 @@
   .lib-menu button:disabled{opacity:.4;cursor:default;background:none;}
 
   /* ---------- message flows ---------- */
+
+  /* documents added to a page: a file card */
+  .lib-editor .file{display:block;margin:10px 0;max-width:520px;}
+  .lib-editor .file .file-ui{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--panel);box-shadow:var(--shadow-sm);user-select:none;}
+  .lib-editor .file .fi-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:800 11px Inter,sans-serif;color:#fff;flex-shrink:0;letter-spacing:.02em;}
+  .lib-editor .file .fi-t{flex:1;min-width:0;} .lib-editor .file .fi-t b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);} .lib-editor .file .fi-t small{display:block;font-size:12px;color:var(--slate-light);}
+  .lib-editor .file .fi-open{flex-shrink:0;height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--panel-alt);color:var(--ink);font-weight:600;font-size:12.5px;display:flex;align-items:center;text-decoration:none;}
+  .lib-editor .file .fi-open:hover{border-color:var(--teal);color:var(--teal);}
+  .lib-editor .file .fi-rm{flex-shrink:0;width:28px;height:28px;border:none;background:none;border-radius:7px;color:var(--slate-light);cursor:pointer;font-size:14px;}
+  .lib-editor .file .fi-rm:hover{background:var(--panel-alt);color:var(--fail,#B43B32);}
+  .lib-editor.drop-on{outline:2px dashed var(--teal);outline-offset:8px;border-radius:10px;}
+  /* the "what should we do with this document?" pop-up */
+  .doc-dlg{position:fixed;inset:0;z-index:600;background:rgba(15,22,38,.42);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .doc-dlg .box{width:100%;max-width:520px;background:var(--panel);color:var(--ink);border-radius:20px;padding:24px;box-shadow:0 30px 80px -20px rgba(10,14,30,.45);}
+  .doc-dlg h3{margin:0 0 4px;font:700 18px Sora,sans-serif;} .doc-dlg .sub{margin:0 0 16px;color:var(--slate);font-size:13.5px;word-break:break-word;}
+  .doc-dlg .ch{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:1.5px solid var(--border);background:var(--panel);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;color:var(--ink);font:inherit;}
+  .doc-dlg .ch:hover:not(:disabled){border-color:var(--teal);background:var(--panel-alt);}
+  .doc-dlg .ch:disabled{opacity:.5;cursor:default;}
+  .doc-dlg .ch .e{font-size:24px;line-height:1;} .doc-dlg .ch b{display:block;font-size:14.5px;margin-bottom:3px;} .doc-dlg .ch small{display:block;font-size:13px;color:var(--slate);line-height:1.5;}
+  .doc-dlg label.keep{display:flex;align-items:center;gap:8px;margin:2px 0 6px 50px;font-size:13px;color:var(--slate);cursor:pointer;}
+  .doc-dlg .btns{display:flex;justify-content:flex-end;margin-top:6px;}
+  .doc-dlg .btns button{height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--ink);font-weight:600;cursor:pointer;}
+  .doc-dlg .busy{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--slate);padding:6px 0;}
+  .doc-dlg .busy i{width:20px;height:20px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);animation:docspin .8s linear infinite;}
+  @keyframes docspin{to{transform:rotate(360deg);}}
   /* toggles (Notion-style): an arrow, a title, and content you can fold in and out */
   .lib-editor .tg{margin:6px 0;border-radius:8px;}
   .lib-editor .tg-title{display:block;margin-left:26px;padding:3px 34px 3px 0;min-height:1.6em;font-weight:500;outline:none;}
@@ -1182,6 +1207,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <button type="button" data-tool="todo" title="To-do">☑</button>
           <button type="button" data-tool="quote" title="Quote">❝</button>
           <button type="button" data-tool="toggle" title="Toggle: a title you can fold open, with anything inside">▸ Toggle</button>
+          <button type="button" data-tool="file" title="Add a document (Word, PDF, PowerPoint, Excel…): as a file, or turned into text">📎 File</button>
           <button type="button" data-tool="flow" title="Message flow: a message with follow-ups if there's no reply">🔀 Flow</button>
           <span class="sep"></span>
           <button type="button" data-tool="ph" class="ph-btn" title="Insert a placeholder (or type { )">{ } Placeholder</button>
@@ -1212,6 +1238,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <button type="button" role="menuitem" data-more="delete" class="danger">🗑 Delete page</button>
 </div>
 <div class="lib-menu lib-emoji" id="libEmoji" role="dialog" aria-label="Choose an icon" hidden></div>
+<input type="file" id="libDocFile" multiple hidden>
 <input type="file" id="libIconFile" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden>
 <div class="lib-menu" id="libFolderMenu" role="menu" aria-label="Folder options" hidden>
   <button type="button" role="menuitem" data-fm="rename">✏️ Rename</button>
@@ -1249,6 +1276,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 <script src="library-picker.js"></script>
 <script>
   const firebaseConfig = {
@@ -1332,6 +1360,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'callout', label: 'Callout', hint: 'A highlighted tip', ic: '💡'},
     {k: 'hr', label: 'Divider', hint: 'A line between parts', ic: '—'},
     {k: 'toggle', label: 'Toggle', hint: 'A title you can fold open', ic: '▸'},
+    {k: 'file', label: 'File or document', hint: 'Word, PDF… as a file or as text', ic: '📎'},
     {k: 'flow', label: 'Message flow', hint: 'Message → if no reply → follow-up', ic: '🔀'},
     {k: 'ph', label: 'Placeholder', hint: '{firstName}, {company}…', ic: '{ }'}];
   // ---------- Starter templates ----------
@@ -1585,7 +1614,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>';
     lastLoadedStamp = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
     ed.contentEditable = canEdit(p) ? 'true' : 'false';
-    decorateFlows(); decorateToggles(); paintBlanks();
+    decorateFlows(); decorateToggles(); decorateFiles(); paintBlanks();
     $('libSaved').textContent = '';
     renderMeta(); renderTree();
     if(focusTitle) $('libTitle').focus();
@@ -1842,6 +1871,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ed.querySelectorAll('button,[data-noexport],input,select,textarea,.lib-menu').forEach(el=> el.remove());
     ed.querySelectorAll('.ph[data-ph]').forEach(el=>{ const s = document.createElement('span'); s.className = 'ph'; s.textContent = '{' + el.dataset.ph + '}'; el.replaceWith(s); });
     ed.querySelectorAll('.todo').forEach(el=>{ const done = el.dataset.checked === 'true'; el.classList.toggle('done', done); el.insertBefore(document.createTextNode(done ? '☑ ' : '☐ '), el.firstChild); });
+    ed.querySelectorAll('.file').forEach(f=>{ const p = document.createElement('p'); p.innerHTML = '📎 <a href="' + esc(f.getAttribute('data-url') || '') + '">' + esc(f.getAttribute('data-name') || 'Document') + '</a>'; f.replaceWith(p); });
     ed.querySelectorAll('[contenteditable]').forEach(el=> el.removeAttribute('contenteditable'));
     ed.querySelectorAll('[data-placeholder]').forEach(el=> el.removeAttribute('data-placeholder'));
     const title = (p.title || 'Untitled').trim();
@@ -2138,6 +2168,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(block && block.classList && block.classList.contains('flow')){ if(k === 'flow') return; block = null; }
     if(block && block.classList && block.classList.contains('tg') && inToggleTitle()) return;     // the title of a toggle stays a title
     if(k === 'toggle'){ insertToggle(block); return; }
+    if(k === 'file'){ docAt = block; $('libDocFile').click(); return; }
     if(!block){ block = document.createElement('p'); block.innerHTML = '<br>'; ed.appendChild(block); }
     if(k === 'flow'){ insertFlow(block); return; }
     if(k === 'hr'){
@@ -2186,6 +2217,252 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     walk([...flow.querySelectorAll(':scope > .fl-step')], 0);
   }
   function decorateFlows(){ ed.querySelectorAll(':scope > .flow').forEach(decorateFlow); }
+  // ================= documents: added as a file, or turned into text =================
+  const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/';
+  const DOC_KINDS = {pdf: ['PDF', '#E5484D'], docx: ['DOC', '#2B6CD6'], doc: ['DOC', '#2B6CD6'], pptx: ['PPT', '#E8742A'], ppt: ['PPT', '#E8742A'], xlsx: ['XLS', '#1F9D57'], xls: ['XLS', '#1F9D57'], csv: ['CSV', '#1F9D57'],
+    txt: ['TXT', '#6B7A8C'], md: ['MD', '#6B7A8C'], html: ['WEB', '#7A4FB5'], htm: ['WEB', '#7A4FB5'], zip: ['ZIP', '#8C7A5B'], png: ['IMG', '#C2410C'], jpg: ['IMG', '#C2410C'], jpeg: ['IMG', '#C2410C'],
+    gif: ['IMG', '#C2410C'], webp: ['IMG', '#C2410C'], mp4: ['VID', '#9333EA'], mov: ['VID', '#9333EA'], mp3: ['AUD', '#0E7490'], key: ['KEY', '#E8742A'], pages: ['DOC', '#2B6CD6']};
+  const CAN_READ = ['docx', 'pdf', 'pptx', 'xlsx', 'xls', 'csv', 'txt', 'md', 'markdown', 'html', 'htm'];
+  const extOf = (name)=> (String(name).split('.').pop() || '').toLowerCase();
+  const fmtSize = (n)=> n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
+  let docAt = null;                        // the line the document goes after
+
+  // ----- the file card on the page -----
+  function decorateFile(card){
+    card.querySelectorAll('.file-ui').forEach(x=> x.remove());
+    const name = card.getAttribute('data-name') || 'Document', kind = card.getAttribute('data-kind') || extOf(name), k = DOC_KINDS[kind] || [kind.slice(0, 4).toUpperCase() || 'FILE', '#5C6B7C'];
+    const ui = document.createElement('div'); ui.className = 'fl-ui file-ui'; ui.contentEditable = 'false';
+    ui.innerHTML = `<span class="fi-ic" style="background:${k[1]}">${esc(k[0])}</span><span class="fi-t"><b title="${esc(name)}">${esc(name)}</b><small>${esc(k[0])} · ${esc(fmtSize(parseInt(card.getAttribute('data-size'), 10) || 0))}</small></span>` +
+      `<a class="fi-open" href="${esc(card.getAttribute('data-url') || '#')}" target="_blank" rel="noopener">Open</a>` + (ed.contentEditable === 'true' ? '<button type="button" class="fi-rm" title="Remove from this page" aria-label="Remove this file from the page">✕</button>' : '');
+    card.contentEditable = 'false'; card.appendChild(ui);
+  }
+  function decorateFiles(){ ed.querySelectorAll('.file').forEach(decorateFile); }
+  ed.addEventListener('click', e=>{
+    const rm = e.target.closest('.fi-rm'); if(!rm || ed.contentEditable !== 'true') return;
+    e.preventDefault(); const card = rm.closest('.file'), p = document.createElement('p'); p.innerHTML = '<br>';
+    card.replaceWith(p); caretTo(p, true); markDirty();
+  });
+
+  // ----- putting something on the page, after the line you were on -----
+  function insertOnPage(html){
+    const t = document.createElement('template'); t.innerHTML = html;
+    const nodes = [...t.content.childNodes].filter(n=> n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
+    if(!nodes.length) return;
+    let at = docAt && ed.contains(docAt) ? docAt : null;
+    if(at && at.nodeName === 'P' && !at.textContent.trim() && !at.querySelector('.ph')){ const first = nodes[0]; at.replaceWith(first); at = first; nodes.slice(1).reduce((prev, n)=>{ prev.after(n); return n; }, first); at = nodes[nodes.length - 1]; }
+    else { nodes.forEach(n=>{ if(at){ at.after(n); at = n; } else { ed.appendChild(n); at = n; } }); }
+    if(!at.nextElementSibling){ const p = document.createElement('p'); p.innerHTML = '<br>'; at.after(p); }
+    docAt = at;
+    decorateFlows(); decorateToggles(); decorateFiles(); decorateFiles();
+    const nx = at.nextElementSibling; if(nx && nx.nodeName === 'P') caretTo(nx, true);
+    markDirty();
+  }
+  function cardHTML(info){ return `<div class="file" data-url="${esc(info.url)}" data-name="${esc(info.name)}" data-size="${info.size}" data-kind="${esc(info.kind)}" contenteditable="false"></div>`; }
+
+  // ----- uploading -----
+  async function uploadDoc(file){
+    if(file.size > 50 * 1024 * 1024) throw new Error('This file is bigger than 50 MB.');
+    const safe = file.name.replace(/[^\w.\- ]+/g, '_').slice(-80) || 'document';
+    const ref = firebase.storage().ref(`workspaces/${wsId}/libraryFiles/${myUid}/${curId}/${Date.now().toString(36)}-${safe}`);
+    await ref.put(file, file.type ? {contentType: file.type} : undefined);
+    return {url: await ref.getDownloadURL(), name: file.name, size: file.size, kind: extOf(file.name)};
+  }
+
+  // ----- reading a document into neat text -----
+  const libs = {};
+  function loadScript(url){ return libs[url] || (libs[url] = new Promise((res, rej)=>{ const sc = document.createElement('script'); sc.src = url; sc.onload = res; sc.onerror = ()=>{ delete libs[url]; rej(new Error('The document reader couldn’t load. Check your connection.')); }; document.head.appendChild(sc); })); }
+  const E = (s)=> esc(String(s == null ? '' : s));
+  function tablesToLines(root){                                           // tables become readable lines: "a · b · c"
+    root.querySelectorAll('table').forEach(tb=>{
+      const out = document.createElement('div');
+      [...tb.querySelectorAll('tr')].forEach((tr, i)=>{ const cells = [...tr.children].map(td=> td.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean); if(!cells.length) return;
+        const p = document.createElement('p'); p.innerHTML = (i === 0 && tr.querySelector('th') ? '<b>' + E(cells.join(' · ')) + '</b>' : E(cells.join(' · '))); out.appendChild(p); });
+      tb.replaceWith(...out.childNodes);
+    });
+    root.querySelectorAll('img').forEach(i=> i.remove());
+  }
+  async function readDocx(file){
+    await loadScript(CDN + 'mammoth/1.6.0/mammoth.browser.min.js');
+    const r = await window.mammoth.convertToHtml({arrayBuffer: await file.arrayBuffer()});
+    const t = document.createElement('template'); t.innerHTML = r.value; tablesToLines(t.content);
+    const d = document.createElement('div'); d.appendChild(t.content); return d.innerHTML;
+  }
+  async function readPdf(file){
+    await loadScript(CDN + 'pdf.js/3.11.174/pdf.min.js');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = CDN + 'pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await window.pdfjsLib.getDocument({data: new Uint8Array(await file.arrayBuffer())}).promise;
+    const lines = [];
+    for(let pn = 1; pn <= Math.min(pdf.numPages, 300); pn++){
+      const page = await pdf.getPage(pn), tc = await page.getTextContent();
+      const items = tc.items.filter(it=> it.str != null).map(it=> ({s: it.str, x: it.transform[4], y: it.transform[5], w: it.width, size: Math.hypot(it.transform[0], it.transform[1]) || it.height || 10}))
+        .sort((a, b)=> (b.y - a.y) || (a.x - b.x));
+      // 1. gather the pieces that sit on the same line (a bullet can sit a little lower than its text)
+      const groups = [];
+      items.forEach(it=>{ const g = groups.find(g=> Math.abs(it.y - g.y) <= Math.max(g.size, it.size) * 0.5); if(g){ g.items.push(it); g.size = Math.max(g.size, it.size); } else groups.push({y: it.y, size: it.size, items: [it]}); });
+      // 2. each line read left to right; its size is the size of most of its text (one big bullet doesn't make it a heading)
+      groups.sort((a, b)=> b.y - a.y).forEach(g=>{
+        g.items.sort((a, b)=> a.x - b.x);
+        let text = '', end = null, chars = 0, weighted = 0;
+        g.items.forEach(it=>{ const gap = end == null ? 0 : it.x - end; text += (end != null && gap > it.size * 0.15 && !/\s$/.test(text) && !/^\s/.test(it.s) ? ' ' : '') + it.s; end = it.x + it.w;
+          const n = it.s.replace(/[\s•●▪◦‣∙·*–—-]/g, '').length; chars += n; weighted += n * it.size; });
+        lines.push({y: g.y, x: g.items[0].x, size: chars ? weighted / chars : g.size, text, page: pn});
+      });
+    }
+    const real = lines.filter(l=> l.text.trim() && !/^\s*\d{1,4}\s*$/.test(l.text));      // leave out page numbers
+    if(real.map(l=> l.text).join('').replace(/\s/g, '').length < 20) throw new Error('This PDF has no text in it (it’s probably a scan). Add it as a file instead.');
+    const sizes = real.flatMap(l=> Array(Math.min(40, Math.max(1, Math.round(l.text.length / 10)))).fill(l.size)).sort((a, b)=> a - b), med = sizes[Math.floor(sizes.length / 2)] || 10;
+    const out = []; let para = null, list = null, prev = null;
+    const flushP = ()=>{ if(para){ out.push(`<p>${E(para.trim())}</p>`); para = null; } };
+    const flushL = ()=>{ if(list){ out.push(`<${list.tag}>${list.items.map(i=> `<li>${E(i.trim())}</li>`).join('')}</${list.tag}>`); list = null; } };
+    real.forEach(l=>{
+      const t = l.text.replace(/\s+/g, ' ').trim(), close = prev && prev.page === l.page && (prev.y - l.y) <= Math.max(prev.size, l.size) * 1.7;
+      const bul = /^([•●▪◦‣∙·*]|[-–—](?=\s))\s*/.exec(t), num = /^(\d{1,3})[.)]\s+/.exec(t);
+      if(l.size >= med * 1.18 && t.length < 140 && !bul){                    // bigger text: a heading
+        flushP(); flushL(); const h = l.size >= med * 1.7 ? 'h1' : l.size >= med * 1.35 ? 'h2' : 'h3';
+        if(prev && prev.isHead === h && close && out.length && out[out.length - 1].startsWith('<' + h)){ out[out.length - 1] = out[out.length - 1].replace(`</${h}>`, ' ' + E(t) + `</${h}>`); }
+        else out.push(`<${h}>${E(t)}</${h}>`);
+        prev = Object.assign({}, l, {isHead: h}); return;
+      }
+      if(bul || num){
+        flushP(); const tag = num ? 'ol' : 'ul';
+        const nearList = prev && prev.page === l.page && (prev.y - l.y) <= Math.max(prev.size, l.size) * 2.8;   // bullet points are often spaced a bit further apart
+        if(!list || list.tag !== tag || !nearList){ flushL(); list = {tag, items: []}; }
+        list.items.push(t.slice((bul || num)[0].length)); list.x = l.x; prev = l; return;
+      }
+      if(list && close && l.x > list.x + 2){ list.items[list.items.length - 1] += ' ' + t; prev = l; return; }   // a list item that continues on the next line
+      flushL();
+      if(para != null && close && !prev.isHead && Math.abs(l.size - prev.size) < 0.6){ para = /[a-z]-$/.test(para) && /^[a-z]/.test(t) ? para.slice(0, -1) + t : para + ' ' + t; }
+      else { flushP(); para = t; }
+      prev = l;
+    });
+    flushP(); flushL();
+    return out.join('');
+  }
+  async function readPptx(file){
+    await loadScript(CDN + 'jszip/3.10.1/jszip.min.js');
+    const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+    const names = Object.keys(zip.files).filter(n=> /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b)=> parseInt(a.match(/\d+/)[0], 10) - parseInt(b.match(/\d+/)[0], 10));
+    let html = '';
+    for(const [i, n] of names.entries()){
+      const xml = new DOMParser().parseFromString(await zip.file(n).async('string'), 'application/xml');
+      const paras = [...xml.getElementsByTagName('a:p')].map(p=> [...p.getElementsByTagName('a:t')].map(t=> t.textContent).join('').trim()).filter(Boolean);
+      if(!paras.length) continue;
+      html += `<h2>${E(paras[0])}</h2>` + (paras.length > 1 ? '<ul>' + paras.slice(1).map(x=> `<li>${E(x)}</li>`).join('') + '</ul>' : '');
+    }
+    if(!html) throw new Error('This presentation has no text in it.');
+    return html;
+  }
+  async function readSheet(file){
+    await loadScript(CDN + 'xlsx/0.18.5/xlsx.full.min.js');
+    const wb = window.XLSX.read(await file.arrayBuffer(), {type: 'array'});
+    let html = '';
+    wb.SheetNames.forEach(name=>{
+      const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[name], {header: 1, blankrows: false, defval: ''}).map(r=> r.map(c=> String(c).trim()).filter(Boolean)).filter(r=> r.length);
+      if(!rows.length) return;
+      if(wb.SheetNames.length > 1) html += `<h2>${E(name)}</h2>`;
+      html += `<p><b>${E(rows[0].join(' · '))}</b></p>` + rows.slice(1, 500).map(r=> `<p>${E(r.join(' · '))}</p>`).join('');
+      if(rows.length > 500) html += `<p><i>…and ${rows.length - 500} more rows.</i></p>`;
+    });
+    if(!html) throw new Error('This spreadsheet is empty.');
+    return html;
+  }
+  function inlineMd(t){ return E(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<i>$2</i>').replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2">$1</a>'); }
+  function readMd(text){
+    const out = []; let list = null;
+    const flushL = ()=>{ if(list){ out.push(`<${list.tag}>${list.items.join('')}</${list.tag}>`); list = null; } };
+    text.replace(/\r/g, '').split('\n\n').forEach(block=>{
+      block.split('\n').forEach(line=>{
+        let m;
+        if((m = /^(#{1,3})\s+(.*)/.exec(line))){ flushL(); out.push(`<h${m[1].length}>${inlineMd(m[2])}</h${m[1].length}>`); }
+        else if((m = /^\s*[-*]\s+\[( |x)\]\s+(.*)/i.exec(line))){ flushL(); out.push(`<div class="todo" data-checked="${m[1].toLowerCase() === 'x'}">${inlineMd(m[2])}</div>`); }
+        else if((m = /^\s*[-*•]\s+(.*)/.exec(line))){ if(!list || list.tag !== 'ul'){ flushL(); list = {tag: 'ul', items: []}; } list.items.push(`<li>${inlineMd(m[1])}</li>`); }
+        else if((m = /^\s*\d+[.)]\s+(.*)/.exec(line))){ if(!list || list.tag !== 'ol'){ flushL(); list = {tag: 'ol', items: []}; } list.items.push(`<li>${inlineMd(m[1])}</li>`); }
+        else if((m = /^>\s?(.*)/.exec(line))){ flushL(); out.push(`<blockquote>${inlineMd(m[1])}</blockquote>`); }
+        else if(/^\s*(-{3,}|\*{3,})\s*$/.test(line)){ flushL(); out.push('<hr>'); }
+        else if(line.trim()){ flushL(); out.push(`<p>${inlineMd(line.trim())}</p>`); }
+      });
+      flushL();
+    });
+    return out.join('');
+  }
+  function readTxt(text){ return text.replace(/\r/g, '').split(/\n\s*\n/).map(b=> b.trim()).filter(Boolean).map(b=> `<p>${E(b).replace(/\n/g, '<br>')}</p>`).join(''); }
+  async function readDoc(file){
+    const ext = extOf(file.name);
+    let html;
+    if(ext === 'docx') html = await readDocx(file);
+    else if(ext === 'pdf') html = await readPdf(file);
+    else if(ext === 'pptx') html = await readPptx(file);
+    else if(ext === 'xlsx' || ext === 'xls' || ext === 'csv') html = await readSheet(file);
+    else if(ext === 'md' || ext === 'markdown') html = readMd(await file.text());
+    else if(ext === 'txt') html = readTxt(await file.text());
+    else if(ext === 'html' || ext === 'htm'){ const d = new DOMParser().parseFromString(await file.text(), 'text/html'); tablesToLines(d.body); html = d.body.innerHTML; }
+    else throw new Error('This kind of file can’t be turned into text. Add it as a file instead.');
+    html = PTLib.clean(html);
+    if(!html.replace(/<[^>]+>/g, '').trim()) throw new Error('There’s no text in this document. Add it as a file instead.');
+    if(html.length > 600000){                                             // a page has a size limit: keep what fits
+      const cut = html.lastIndexOf('</p>', 600000); html = html.slice(0, cut > 0 ? cut + 4 : 600000) + '<p><i>(The rest of the document didn’t fit on one page. Add the original as a file to keep all of it.)</i></p>';
+    }
+    return html;
+  }
+
+  // ----- the pop-up: add it as a file, or turn it into text? -----
+  function askDoc(file){
+    return new Promise((resolve)=>{
+      const ext = extOf(file.name), readable = CAN_READ.includes(ext);
+      const ov = document.createElement('div'); ov.className = 'doc-dlg';
+      ov.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="docT"><h3 id="docT">What should we do with this document?</h3><p class="sub">${E(file.name)} · ${E(fmtSize(file.size))}</p>
+        <div class="opts"><button type="button" class="ch" data-m="file"><span class="e">📎</span><span><b>Add it as a file</b><small>Keep the document as it is. Anyone who can see this page can open it.</small></span></button>
+        <button type="button" class="ch" data-m="text" ${readable ? '' : 'disabled'}><span class="e">✨</span><span><b>Turn it into text</b><small>${readable ? 'We read the document and put its text, headings and lists neatly on this page. You can edit all of it.' : 'This kind of file can’t be turned into text. Word, PDF, PowerPoint, Excel, CSV, text and web pages can.'}</small></span></button>
+        ${readable ? '<label class="keep"><input type="checkbox" id="docKeep"> Also keep the original file on the page</label>' : ''}</div>
+        <div class="btns"><button type="button" data-x>Cancel</button></div></div>`;
+      document.body.appendChild(ov);
+      const close = (v)=>{ ov.remove(); document.removeEventListener('keydown', key, true); resolve(v); };
+      const key = (e)=>{ if(e.key === 'Escape' && !ov.dataset.busy){ e.preventDefault(); e.stopPropagation(); close(false); } };
+      document.addEventListener('keydown', key, true);
+      ov.querySelector('[data-x]').addEventListener('click', ()=> close(false));
+      ov.querySelector('[data-m="file"]').focus();
+      ov.addEventListener('click', async (e)=>{
+        const b = e.target.closest('[data-m]'); if(!b || b.disabled || ov.dataset.busy) return;
+        const mode = b.dataset.m, keep = mode === 'text' && ov.querySelector('#docKeep') && ov.querySelector('#docKeep').checked;
+        ov.dataset.busy = '1';
+        const box = ov.querySelector('.box'); box.innerHTML = `<h3>${mode === 'file' ? 'Adding the file…' : 'Reading the document…'}</h3><p class="sub">${E(file.name)}</p><div class="busy"><i></i><span id="docStep">${mode === 'file' ? 'Uploading' : 'Reading'}…</span></div>`;
+        try{
+          if(mode === 'file'){ const info = await uploadDoc(file); insertOnPage(cardHTML(info)); showToast(`“${file.name}” is on the page.`); }
+          else {
+            const html = await readDoc(file);
+            let card = '';
+            if(keep){ ov.querySelector('#docStep').textContent = 'Keeping the original…'; card = cardHTML(await uploadDoc(file)); }
+            const title = $('libTitle');
+            if(!title.value.trim() || /^untitled$/i.test(title.value.trim())){ title.value = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim(); autosizeTitle(); }
+            insertOnPage(card + html); showToast(`The text from “${file.name}” is on the page. You can edit all of it.`);
+          }
+          close(true);
+        } catch(err){
+          console.error(err); delete ov.dataset.busy;
+          box.innerHTML = `<h3>That didn’t work</h3><p class="sub">${E(err && err.message ? err.message : 'Something went wrong. Please try again.')}</p><div class="btns"><button type="button" data-x>OK</button></div>`;
+          box.querySelector('[data-x]').addEventListener('click', ()=> close(false)); box.querySelector('[data-x]').focus();
+        }
+      });
+    });
+  }
+  async function addDocs(files){
+    if(ed.contentEditable !== 'true' || !curId){ showToast('You can’t add documents to this page.', true); return; }
+    for(const f of [...files]) await askDoc(f);
+  }
+  function pickDocs(){ docAt = curBlock(); $('libDocFile').click(); }
+  $('libDocFile').addEventListener('change', e=>{ const fs = [...e.target.files]; e.target.value = ''; if(fs.length) addDocs(fs); });
+  // drag documents onto the page
+  ed.addEventListener('dragover', e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files') && ed.contentEditable === 'true'){ e.preventDefault(); ed.classList.add('drop-on'); } });
+  ed.addEventListener('dragleave', e=>{ if(!ed.contains(e.relatedTarget)) ed.classList.remove('drop-on'); });
+  ed.addEventListener('drop', e=>{
+    ed.classList.remove('drop-on');
+    if(!e.dataTransfer || !e.dataTransfer.files.length || ed.contentEditable !== 'true') return;
+    e.preventDefault();
+    const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null;
+    docAt = r && ed.contains(r.startContainer) ? topBlock(r.startContainer) : ed.lastElementChild;
+    addDocs(e.dataTransfer.files);
+  });
+
   // ================= toggles =================
   // <div class="tg" data-open="true|false" data-color="…"><div class="tg-title">…</div><div class="tg-body">…any blocks…</div></div>
   // The arrow and the color dot (class tg-ui) are drawn here and never saved.
@@ -2442,6 +2719,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(t === 'bold' || t === 'italic'){ document.execCommand(t); markDirty(); }
     else if(t === 'ph') openPhMenu(b.getBoundingClientRect());
     else if(t === 'flow'){ const cur = curBlock(); insertFlow(cur && !cur.closest('.flow') ? cur : null); }
+    else if(t === 'file'){ pickDocs(); }
     else if(t === 'toggle'){ const cur = curBlock(); if(cur && cur.classList && cur.classList.contains('tg') && inToggleTitle()) return; insertToggle(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'h2' || t === 'ul' || t === 'todo' || t === 'quote'){ const cur = curBlock(); const k = cur && ((t === 'h2' && cur.nodeName === 'H2') || (t === 'ul' && cur.nodeName === 'UL') || (t === 'quote' && cur.nodeName === 'BLOCKQUOTE') || (t === 'todo' && cur.classList && cur.classList.contains('todo'))) ? 'p' : t; convertBlock(k); }
   });
@@ -2471,7 +2749,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(p && !dirty && document.activeElement !== ed && document.activeElement !== $('libTitle')){
       const st = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
       if(st && lastLoadedStamp && st !== lastLoadedStamp && p.updatedBy !== myUid){
-        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; decorateFlows(); decorateToggles(); paintBlanks(); lastLoadedStamp = st;
+        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; decorateFlows(); decorateToggles(); decorateFiles(); paintBlanks(); lastLoadedStamp = st;
       }
     }
     if(curId) renderMeta();
