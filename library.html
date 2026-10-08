@@ -241,6 +241,17 @@
   .lib-editor .file .fi-open:hover{border-color:var(--teal);color:var(--teal);}
   .lib-editor .file .fi-rm{flex-shrink:0;width:28px;height:28px;border:none;background:none;border-radius:7px;color:var(--slate-light);cursor:pointer;font-size:14px;}
   .lib-editor .file .fi-rm:hover{background:var(--panel-alt);color:var(--fail,#B43B32);}
+  .lib-editor .file[data-view="image"]{max-width:100%;}
+  .lib-editor .file[data-w="m"]{max-width:60%;} .lib-editor .file[data-w="s"]{max-width:35%;}
+  .lib-editor .file .fi-imgwrap{position:relative;display:block;border-radius:12px;overflow:hidden;line-height:0;background:var(--panel-alt);}
+  .lib-editor .file .fi-img{width:100%;height:auto;display:block;}
+  .lib-editor .file .fi-bar{position:absolute;top:8px;right:8px;display:flex;align-items:center;gap:2px;padding:3px;border-radius:10px;background:rgba(16,22,34,.78);opacity:0;transition:opacity .15s;line-height:1;}
+  .lib-editor .file .fi-imgwrap:hover .fi-bar,.lib-editor .file .fi-imgwrap:focus-within .fi-bar{opacity:1;}
+  .lib-editor .file .fi-bar button,.lib-editor .file .fi-bar a{border:none;background:none;color:#fff;font:600 12px Inter,sans-serif;padding:6px 8px;border-radius:7px;cursor:pointer;text-decoration:none;}
+  .lib-editor .file .fi-bar button:hover,.lib-editor .file .fi-bar a:hover{background:rgba(255,255,255,.16);}
+  .lib-editor .file .fi-bar button[aria-pressed="true"]{background:rgba(255,255,255,.26);}
+  .lib-editor .file .fi-bar .fi-rm{color:#fff;width:auto;height:auto;font-size:12px;}
+  .lib-editor .file .fi-sep{width:1px;height:16px;background:rgba(255,255,255,.25);margin:0 3px;}
   .lib-editor.drop-on{outline:2px dashed var(--teal);outline-offset:8px;border-radius:10px;}
   /* the "what should we do with this document?" pop-up */
   .doc-dlg{position:fixed;inset:0;z-index:600;background:rgba(15,22,38,.42);display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -1888,6 +1899,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ed.querySelectorAll('button,[data-noexport],input,select,textarea,.lib-menu').forEach(el=> el.remove());
     ed.querySelectorAll('.ph[data-ph]').forEach(el=>{ const s = document.createElement('span'); s.className = 'ph'; s.textContent = '{' + el.dataset.ph + '}'; el.replaceWith(s); });
     ed.querySelectorAll('.todo').forEach(el=>{ const done = el.dataset.checked === 'true'; el.classList.toggle('done', done); el.insertBefore(document.createTextNode(done ? '☑ ' : '☐ '), el.firstChild); });
+    ed.querySelectorAll('.file[data-view="image"]').forEach(f=>{ const p = document.createElement('p'); const w = {s: 35, m: 60, l: 100}[f.getAttribute('data-w') || 'l'];
+      p.innerHTML = '<img src="' + esc(f.getAttribute('data-url') || '') + '" alt="' + esc(f.getAttribute('data-name') || '') + '" style="max-width:' + w + '%;height:auto;border-radius:8px" crossorigin="anonymous">'; f.replaceWith(p); });
     ed.querySelectorAll('.file').forEach(f=>{ const p = document.createElement('p'); p.innerHTML = '📎 <a href="' + esc(f.getAttribute('data-url') || '') + '">' + esc(f.getAttribute('data-name') || 'Document') + '</a>'; f.replaceWith(p); });
     ed.querySelectorAll('[contenteditable]').forEach(el=> el.removeAttribute('contenteditable'));
     ed.querySelectorAll('[data-placeholder]').forEach(el=> el.removeAttribute('data-placeholder'));
@@ -2247,16 +2260,34 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   let docAt = null;                        // the line the document goes after
 
   // ----- the file card on the page -----
+  const IMG_KINDS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'bmp'];
   function decorateFile(card){
     card.querySelectorAll('.file-ui').forEach(x=> x.remove());
     const name = card.getAttribute('data-name') || 'Document', kind = card.getAttribute('data-kind') || extOf(name), k = DOC_KINDS[kind] || [kind.slice(0, 4).toUpperCase() || 'FILE', '#5C6B7C'];
+    const editable = ed.contentEditable === 'true', isImg = IMG_KINDS.includes(kind), url = card.getAttribute('data-url') || '#';
+    if(isImg && card.getAttribute('data-view') === 'image'){          // the image itself, on the page
+      const w = card.getAttribute('data-w') || 'l';
+      const ui = document.createElement('div'); ui.className = 'fl-ui file-ui fi-imgwrap'; ui.contentEditable = 'false';
+      ui.innerHTML = `<img class="fi-img" src="${esc(url)}" alt="${esc(name)}" loading="lazy" draggable="false">` +
+        `<div class="fi-bar">${editable ? ['s', 'm', 'l'].map(x=> `<button type="button" data-fw="${x}" aria-pressed="${w === x}" title="${({s: 'Small', m: 'Medium', l: 'Full width'})[x]}">${x.toUpperCase()}</button>`).join('') + '<span class="fi-sep"></span>' : ''}` +
+        `<a href="${esc(url)}" target="_blank" rel="noopener" title="Open the full size">Open</a>${editable ? '<button type="button" data-fview="file" title="Show it as a file card instead">As file</button><button type="button" class="fi-rm" title="Remove from this page" aria-label="Remove this image from the page">✕</button>' : ''}</div>`;
+      card.contentEditable = 'false'; card.appendChild(ui); return;
+    }
     const ui = document.createElement('div'); ui.className = 'fl-ui file-ui'; ui.contentEditable = 'false';
     ui.innerHTML = `<span class="fi-ic" style="background:${k[1]}">${esc(k[0])}</span><span class="fi-t"><b title="${esc(name)}">${esc(name)}</b><small>${esc(k[0])} · ${esc(fmtSize(parseInt(card.getAttribute('data-size'), 10) || 0))}</small></span>` +
-      `<a class="fi-open" href="${esc(card.getAttribute('data-url') || '#')}" target="_blank" rel="noopener">Open</a>` + (ed.contentEditable === 'true' ? '<button type="button" class="fi-rm" title="Remove from this page" aria-label="Remove this file from the page">✕</button>' : '');
+      (isImg && editable ? '<button type="button" class="fi-open" data-fview="image" title="Show the image on the page">Show image</button>' : '') +
+      `<a class="fi-open" href="${esc(url)}" target="_blank" rel="noopener">Open</a>` + (editable ? '<button type="button" class="fi-rm" title="Remove from this page" aria-label="Remove this file from the page">✕</button>' : '');
     card.contentEditable = 'false'; card.appendChild(ui);
   }
   function decorateFiles(){ ed.querySelectorAll('.file').forEach(decorateFile); }
   ed.addEventListener('click', e=>{
+    if(ed.contentEditable === 'true'){
+      const v = e.target.closest('[data-fview]'), fw = e.target.closest('[data-fw]');
+      if(v || fw){ e.preventDefault(); const card = (v || fw).closest('.file');
+        if(v){ if(v.dataset.fview === 'image') card.setAttribute('data-view', 'image'); else card.removeAttribute('data-view'); }
+        if(fw) card.setAttribute('data-w', fw.dataset.fw);
+        decorateFile(card); markDirty(); return; }
+    }
     const rm = e.target.closest('.fi-rm'); if(!rm || ed.contentEditable !== 'true') return;
     e.preventDefault(); const card = rm.closest('.file'), p = document.createElement('p'); p.innerHTML = '<br>';
     card.replaceWith(p); caretTo(p, true); markDirty();
@@ -2276,7 +2307,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const nx = at.nextElementSibling; if(nx && nx.nodeName === 'P') caretTo(nx, true);
     markDirty();
   }
-  function cardHTML(info){ return `<div class="file" data-url="${esc(info.url)}" data-name="${esc(info.name)}" data-size="${info.size}" data-kind="${esc(info.kind)}" contenteditable="false"></div>`; }
+  function cardHTML(info, asImage){ return `<div class="file" data-url="${esc(info.url)}" data-name="${esc(info.name)}" data-size="${info.size}" data-kind="${esc(info.kind)}"${asImage ? ' data-view="image" data-w="l"' : ''} contenteditable="false"></div>`; }
 
   // ----- uploading -----
   async function uploadDoc(file){
@@ -2427,26 +2458,26 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // ----- the pop-up: add it as a file, or turn it into text? -----
   function askDoc(file){
     return new Promise((resolve)=>{
-      const ext = extOf(file.name), readable = CAN_READ.includes(ext);
+      const ext = extOf(file.name), readable = CAN_READ.includes(ext), isImg = IMG_KINDS.includes(ext);
       const ov = document.createElement('div'); ov.className = 'doc-dlg';
-      ov.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="docT"><h3 id="docT">What should we do with this document?</h3><p class="sub">${E(file.name)} · ${E(fmtSize(file.size))}</p>
-        <div class="opts"><button type="button" class="ch" data-m="file"><span class="e">📎</span><span><b>Add it as a file</b><small>Keep the document as it is. Anyone who can see this page can open it.</small></span></button>
-        <button type="button" class="ch" data-m="text" ${readable ? '' : 'disabled'}><span class="e">✨</span><span><b>Turn it into text</b><small>${readable ? 'We read the document and put its text, headings and lists neatly on this page. You can edit all of it.' : 'This kind of file can’t be turned into text. Word, PDF, PowerPoint, Excel, CSV, text and web pages can.'}</small></span></button>
-        ${readable ? '<label class="keep"><input type="checkbox" id="docKeep"> Also keep the original file on the page</label>' : ''}</div>
+      ov.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="docT"><h3 id="docT">What should we do with this ${isImg ? 'image' : 'document'}?</h3><p class="sub">${E(file.name)} · ${E(fmtSize(file.size))}</p>
+        <div class="opts">${isImg ? '<button type="button" class="ch" data-m="image"><span class="e">🖼</span><span><b>Show the image on the page</b><small>The image appears right here on the page. You can make it smaller or bigger.</small></span></button>' : ''}<button type="button" class="ch" data-m="file"><span class="e">📎</span><span><b>Add it as a file</b><small>Keep the document as it is. Anyone who can see this page can open it.</small></span></button>
+        ${isImg ? '' : `<button type="button" class="ch" data-m="text" ${readable ? '' : 'disabled'}><span class="e">✨</span><span><b>Turn it into text</b><small>${readable ? 'We read the document and put its text, headings and lists neatly on this page. You can edit all of it.' : 'This kind of file can’t be turned into text. Word, PDF, PowerPoint, Excel, CSV, text and web pages can.'}</small></span></button>`}
+        ${readable && !isImg ? '<label class="keep"><input type="checkbox" id="docKeep"> Also keep the original file on the page</label>' : ''}</div>
         <div class="btns"><button type="button" data-x>Cancel</button></div></div>`;
       document.body.appendChild(ov);
       const close = (v)=>{ ov.remove(); document.removeEventListener('keydown', key, true); resolve(v); };
       const key = (e)=>{ if(e.key === 'Escape' && !ov.dataset.busy){ e.preventDefault(); e.stopPropagation(); close(false); } };
       document.addEventListener('keydown', key, true);
       ov.querySelector('[data-x]').addEventListener('click', ()=> close(false));
-      ov.querySelector('[data-m="file"]').focus();
+      (ov.querySelector('[data-m="image"]') || ov.querySelector('[data-m="file"]')).focus();
       ov.addEventListener('click', async (e)=>{
         const b = e.target.closest('[data-m]'); if(!b || b.disabled || ov.dataset.busy) return;
         const mode = b.dataset.m, keep = mode === 'text' && ov.querySelector('#docKeep') && ov.querySelector('#docKeep').checked;
         ov.dataset.busy = '1';
-        const box = ov.querySelector('.box'); box.innerHTML = `<h3>${mode === 'file' ? 'Adding the file…' : 'Reading the document…'}</h3><p class="sub">${E(file.name)}</p><div class="busy"><i></i><span id="docStep">${mode === 'file' ? 'Uploading' : 'Reading'}…</span></div>`;
+        const box = ov.querySelector('.box'); box.innerHTML = `<h3>${mode === 'file' ? 'Adding the file…' : mode === 'image' ? 'Adding the image…' : 'Reading the document…'}</h3><p class="sub">${E(file.name)}</p><div class="busy"><i></i><span id="docStep">${mode === 'text' ? 'Reading' : 'Uploading'}…</span></div>`;
         try{
-          if(mode === 'file'){ const info = await uploadDoc(file); insertOnPage(cardHTML(info)); showToast(`“${file.name}” is on the page.`); }
+          if(mode === 'file' || mode === 'image'){ const info = await uploadDoc(file); insertOnPage(cardHTML(info, mode === 'image')); showToast(`“${file.name}” is on the page.`); }
           else {
             const html = await readDoc(file);
             let card = '';

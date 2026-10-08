@@ -49,6 +49,7 @@
             c = 'file'; keep['data-url'] = url; keep['data-name'] = (n.getAttribute('data-name') || 'Document').slice(0, 200);
             keep['data-size'] = String(parseInt(n.getAttribute('data-size'), 10) || 0); keep['data-kind'] = (n.getAttribute('data-kind') || 'file').replace(/[^a-z]/g, '').slice(0, 10);
             keep['contenteditable'] = 'false';
+            if(n.getAttribute('data-view') === 'image'){ keep['data-view'] = 'image'; var w = n.getAttribute('data-w'); if(['s', 'm', 'l'].indexOf(w) >= 0) keep['data-w'] = w; }   // shown as an image on the page
           }
         }
         if(c === 'tg'){
@@ -91,7 +92,7 @@
   }
   function blockText(b, fmt){
     if(isFlow(b)) return flowText(b, fmt);
-    if(b && b.nodeType === 1 && b.classList && b.classList.contains('file')) return '📎 ' + (b.getAttribute('data-name') || 'Document');
+    if(b && b.nodeType === 1 && b.classList && b.classList.contains('file')) return (b.getAttribute('data-view') === 'image' ? '🖼 ' : '📎 ') + (b.getAttribute('data-name') || 'Document');
     if(b && b.nodeType === 1 && b.classList && b.classList.contains('tg')){        // a toggle: its title, then what's inside
       var title = kids(b, 'tg-title')[0], body = kids(b, 'tg-body')[0], parts = [];
       if(title) parts.push(inlineText(title, fmt).replace(/\u00a0/g, ' ').trim());
