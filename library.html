@@ -220,6 +220,33 @@
   .lib-menu button:disabled{opacity:.4;cursor:default;background:none;}
 
   /* ---------- message flows ---------- */
+  /* toggles (Notion-style): an arrow, a title, and content you can fold in and out */
+  .lib-editor .tg{margin:6px 0;border-radius:8px;}
+  .lib-editor .tg-title{display:block;margin-left:26px;padding:3px 34px 3px 0;min-height:1.6em;font-weight:500;outline:none;}
+  .lib-editor .tg > .tg-ui.tg-arrow{float:left;width:22px;height:22px;margin:3px 0 0 1px;border:none;background:none;border-radius:5px;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:11px;transition:transform .15s;}
+  .lib-editor .tg > .tg-ui.tg-arrow:hover{background:rgba(127,127,127,.15);}
+  .lib-editor .tg[data-open="true"] > .tg-ui.tg-arrow{transform:rotate(90deg);}
+  .lib-editor .tg > .tg-ui.tg-dot{float:right;width:18px;height:18px;margin:5px 8px 0 0;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:pointer;padding:0;opacity:0;transition:opacity .15s;background:var(--tg-dot,#C7CEDA);}
+  .lib-editor .tg:hover > .tg-ui.tg-dot,.lib-editor .tg:focus-within > .tg-ui.tg-dot{opacity:1;}
+  .lib-editor .tg-title:empty::before{content:"Toggle";color:var(--slate-light);}
+  .lib-editor .tg-body{margin-left:26px;padding:0 0 4px;}
+  .lib-editor .tg[data-open="false"] > .tg-body{display:none;}
+  .lib-editor .tg-body > :first-child{margin-top:2px;}
+  .lib-editor .tg[data-color]{padding:4px 6px 4px 4px;}
+  .lib-editor .tg[data-color="gray"]{background:rgba(120,120,120,.13);--tg-dot:#9B9A97;} .lib-editor .tg[data-color="gray"] > .tg-title{color:#6B6A67;}
+  .lib-editor .tg[data-color="brown"]{background:rgba(160,110,70,.14);--tg-dot:#A27763;} .lib-editor .tg[data-color="brown"] > .tg-title{color:#8A5A3C;}
+  .lib-editor .tg[data-color="orange"]{background:rgba(235,130,40,.15);--tg-dot:#E8913A;} .lib-editor .tg[data-color="orange"] > .tg-title{color:#C46A12;}
+  .lib-editor .tg[data-color="yellow"]{background:rgba(230,190,40,.18);--tg-dot:#D9B21F;} .lib-editor .tg[data-color="yellow"] > .tg-title{color:#A07D00;}
+  .lib-editor .tg[data-color="green"]{background:rgba(70,160,110,.15);--tg-dot:#4DAB7A;} .lib-editor .tg[data-color="green"] > .tg-title{color:#2E8058;}
+  .lib-editor .tg[data-color="blue"]{background:rgba(60,130,220,.14);--tg-dot:#4A8FE0;} .lib-editor .tg[data-color="blue"] > .tg-title{color:#2364B4;}
+  .lib-editor .tg[data-color="purple"]{background:rgba(140,90,210,.15);--tg-dot:#9B6BDB;} .lib-editor .tg[data-color="purple"] > .tg-title{color:#7044B5;}
+  .lib-editor .tg[data-color="pink"]{background:rgba(220,80,150,.15);--tg-dot:#D85A9A;} .lib-editor .tg[data-color="pink"] > .tg-title{color:#B83B7B;}
+  .lib-editor .tg[data-color="red"]{background:rgba(220,70,60,.14);--tg-dot:#DB5A50;} .lib-editor .tg[data-color="red"] > .tg-title{color:#B8352C;}
+  html[data-theme="dark"] .lib-editor .tg[data-color] > .tg-title{filter:brightness(1.55) saturate(1.1);}
+  .tg-pal{position:fixed;z-index:300;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 16px 36px -14px rgba(16,24,40,.35);padding:8px;display:grid;grid-template-columns:repeat(5,26px);gap:6px;}
+  .tg-pal button{width:26px;height:26px;border-radius:7px;border:1px solid rgba(0,0,0,.1);cursor:pointer;padding:0;}
+  .tg-pal button[aria-pressed="true"]{outline:2px solid var(--teal);outline-offset:1px;}
+  .tg-pal .none{background:linear-gradient(135deg,transparent 45%,#E04848 45%,#E04848 55%,transparent 55%),var(--panel);}
   .lib-editor .flow{margin:14px 0;padding:14px 16px 16px;border:1px solid var(--border);border-radius:16px;background:var(--panel);box-shadow:var(--shadow-sm);}
   .lib-editor .fl-top{display:flex;align-items:center;justify-content:space-between;margin:-2px 0 10px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--slate);user-select:none;}
   .lib-editor .fl-top button,.lib-editor .fl-head button,.lib-editor .fl-rmb{border:0;background:none;color:var(--slate-light);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:12px;line-height:24px;padding:0;}
@@ -1149,6 +1176,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <button type="button" data-tool="ul" title="Bulleted list">•</button>
           <button type="button" data-tool="todo" title="To-do">☑</button>
           <button type="button" data-tool="quote" title="Quote">❝</button>
+          <button type="button" data-tool="toggle" title="Toggle: a title you can fold open, with anything inside">▸ Toggle</button>
           <button type="button" data-tool="flow" title="Message flow: a message with follow-ups if there's no reply">🔀 Flow</button>
           <span class="sep"></span>
           <button type="button" data-tool="ph" class="ph-btn" title="Insert a placeholder (or type { )">{ } Placeholder</button>
@@ -1293,6 +1321,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'quote', label: 'Quote', hint: 'Stand-out text', ic: '❝'},
     {k: 'callout', label: 'Callout', hint: 'A highlighted tip', ic: '💡'},
     {k: 'hr', label: 'Divider', hint: 'A line between parts', ic: '—'},
+    {k: 'toggle', label: 'Toggle', hint: 'A title you can fold open', ic: '▸'},
     {k: 'flow', label: 'Message flow', hint: 'Message → if no reply → follow-up', ic: '🔀'},
     {k: 'ph', label: 'Placeholder', hint: '{firstName}, {company}…', ic: '{ }'}];
   // ---------- Starter templates ----------
@@ -1546,7 +1575,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>';
     lastLoadedStamp = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
     ed.contentEditable = canEdit(p) ? 'true' : 'false';
-    decorateFlows(); paintBlanks();
+    decorateFlows(); decorateToggles(); paintBlanks();
     $('libSaved').textContent = '';
     renderMeta(); renderTree();
     if(focusTitle) $('libTitle').focus();
@@ -1787,6 +1816,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     .todo{margin:3px 0;} .todo.done{color:#7A8699;text-decoration:line-through;}
     .ph{background:#EEF0FF;color:#3730B3;border-radius:4px;padding:0 4px;font-weight:600;}
     .flow{margin:12px 0;padding:10px 14px;border:1px solid #DDE3EC;border-radius:10px;}
+    .tg{margin:10px 0;padding:6px 0 4px 12px;border-left:3px solid #C7CEDA;}
+    .tg-title{font-weight:700;margin:0 0 4px;}
+    .tg[data-color="gray"]{border-color:#9B9A97;} .tg[data-color="brown"]{border-color:#A27763;} .tg[data-color="orange"]{border-color:#E8913A;}
+    .tg[data-color="yellow"]{border-color:#D9B21F;} .tg[data-color="green"]{border-color:#4DAB7A;} .tg[data-color="blue"]{border-color:#4A8FE0;}
+    .tg[data-color="purple"]{border-color:#9B6BDB;} .tg[data-color="pink"]{border-color:#D85A9A;} .tg[data-color="red"]{border-color:#DB5A50;}
     .fl-top{font-size:8.5pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7A8699;margin-bottom:6px;}
     .fl-step{margin:6px 0;} .fl-head{font-size:8.5pt;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#3730B3;margin:0 0 3px;}
     .fl-msg{border:1px solid #E3E8EF;border-radius:8px;padding:8px 10px;background:#F7F9FC;}
@@ -2043,9 +2077,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   function topBlock(n){
     if(!n) return null; if(n === ed) return null;
-    while(n && n.parentNode !== ed) n = n.parentNode;
+    while(n && n.parentNode !== ed && !(n.parentNode && n.parentNode.classList && n.parentNode.classList.contains('tg-body'))) n = n.parentNode;
     return n;
   }
+  const inToggleTitle = ()=>{ const s = getSelection(); const n = s.rangeCount ? s.anchorNode : null; return !!(n && (n.nodeType === 1 ? n : n.parentElement) && (n.nodeType === 1 ? n : n.parentElement).closest('.tg-title')); };
   function curBlock(){ const s = getSelection(); return s.rangeCount && ed.contains(s.anchorNode) ? topBlock(s.anchorNode) : null; }
   function curLi(){ const s = getSelection(); let n = s.anchorNode; while(n && n !== ed){ if(n.nodeName === 'LI') return n; n = n.parentNode; } return null; }
   function caretTo(el, atStart){
@@ -2064,6 +2099,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ed.focus();
     let block = curBlock();
     if(block && block.classList && block.classList.contains('flow')){ if(k === 'flow') return; block = null; }
+    if(block && block.classList && block.classList.contains('tg') && inToggleTitle()) return;     // the title of a toggle stays a title
+    if(k === 'toggle'){ insertToggle(block); return; }
     if(!block){ block = document.createElement('p'); block.innerHTML = '<br>'; ed.appendChild(block); }
     if(k === 'flow'){ insertFlow(block); return; }
     if(k === 'hr'){
@@ -2112,6 +2149,85 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     walk([...flow.querySelectorAll(':scope > .fl-step')], 0);
   }
   function decorateFlows(){ ed.querySelectorAll(':scope > .flow').forEach(decorateFlow); }
+  // ================= toggles =================
+  // <div class="tg" data-open="true|false" data-color="…"><div class="tg-title">…</div><div class="tg-body">…any blocks…</div></div>
+  // The arrow and the color dot (class tg-ui) are drawn here and never saved.
+  const TG_COLORS = [['', 'No color'], ['gray', 'Gray'], ['brown', 'Brown'], ['orange', 'Orange'], ['yellow', 'Yellow'], ['green', 'Green'], ['blue', 'Blue'], ['purple', 'Purple'], ['pink', 'Pink'], ['red', 'Red']];
+  const TG_SWATCH = {gray: '#E3E2E0', brown: '#EEE0DA', orange: '#FADEC9', yellow: '#FBF3DB', green: '#DBEDDB', blue: '#D3E5EF', purple: '#E8DEEE', pink: '#F5E0E9', red: '#FFE2DD'};
+  function decorateToggle(tg){
+    [...tg.children].forEach(c=>{ if(c.classList.contains('tg-ui')) c.remove(); });
+    let title = tg.querySelector(':scope > .tg-title'), body = tg.querySelector(':scope > .tg-body');
+    if(!title){ title = document.createElement('div'); title.className = 'tg-title'; tg.prepend(title); }
+    if(!body){ body = document.createElement('div'); body.className = 'tg-body'; tg.appendChild(body); }
+    if(!body.firstChild || !body.textContent.trim() && !body.querySelector('hr,.flow,.tg,li,.todo')) { if(!body.querySelector('p,div,h1,h2,h3,ul,ol,blockquote')) body.innerHTML = '<p><br></p>'; }
+    if(!tg.hasAttribute('data-open')) tg.setAttribute('data-open', 'true');
+    const editable = ed.contentEditable === 'true';
+    const arrow = document.createElement('button'); arrow.type = 'button'; arrow.className = 'tg-ui tg-arrow'; arrow.contentEditable = 'false';
+    arrow.setAttribute('aria-label', 'Open or close this toggle'); arrow.setAttribute('aria-expanded', tg.getAttribute('data-open')); arrow.textContent = '▶';
+    tg.insertBefore(arrow, title);
+    if(editable){ const dot = document.createElement('button'); dot.type = 'button'; dot.className = 'tg-ui tg-dot'; dot.contentEditable = 'false'; dot.title = 'Color'; dot.setAttribute('aria-label', 'Choose a color for this toggle'); tg.insertBefore(dot, title); }
+  }
+  function decorateToggles(){ ed.querySelectorAll('.tg').forEach(decorateToggle); }
+  function insertToggle(block){
+    const tg = document.createElement('div'); tg.className = 'tg'; tg.setAttribute('data-open', 'true');
+    const title = document.createElement('div'); title.className = 'tg-title';
+    const body = document.createElement('div'); body.className = 'tg-body'; body.innerHTML = '<p><br></p>';
+    tg.append(title, body);
+    const isText = block && /^(P|H1|H2|H3|DIV)$/.test(block.nodeName) && !(block.classList && (block.classList.contains('tg') || block.classList.contains('flow')));
+    if(isText && block.textContent.trim()){ title.innerHTML = block.innerHTML; block.replaceWith(tg); }          // the line you're on becomes the title
+    else if(isText) block.replaceWith(tg);
+    else if(block) block.after(tg); else ed.appendChild(tg);
+    if(!tg.nextSibling && tg.parentNode === ed){ const p = document.createElement('p'); p.innerHTML = '<br>'; tg.after(p); }
+    decorateToggle(tg);
+    if(title.textContent.trim()) caretTo(body.firstChild, true); else { title.focus(); caretTo(title, true); }
+    markDirty();
+  }
+  function openPalette(tg, btn){
+    document.querySelectorAll('.tg-pal').forEach(x=> x.remove());
+    const pal = document.createElement('div'); pal.className = 'tg-pal'; pal.setAttribute('role', 'menu');
+    const cur = tg.getAttribute('data-color') || '';
+    pal.innerHTML = TG_COLORS.map(([k, l])=> `<button type="button" class="${k ? '' : 'none'}" data-c="${k}" title="${l}" aria-label="${l}" aria-pressed="${cur === k}" style="${k ? 'background:' + TG_SWATCH[k] : ''}"></button>`).join('');
+    document.body.appendChild(pal);
+    const r = btn.getBoundingClientRect(); pal.style.left = Math.min(innerWidth - pal.offsetWidth - 10, r.right - pal.offsetWidth + 12) + 'px'; pal.style.top = (r.bottom + 8) + 'px';
+    pal.addEventListener('mousedown', e=> e.preventDefault());
+    pal.addEventListener('click', e=>{ const b = e.target.closest('[data-c]'); if(!b) return; if(b.dataset.c) tg.setAttribute('data-color', b.dataset.c); else tg.removeAttribute('data-color'); pal.remove(); markDirty(); });
+    setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!pal.contains(ev.target)){ pal.remove(); document.removeEventListener('mousedown', off); } }), 0);
+  }
+  ed.addEventListener('mousedown', e=>{
+    const a = e.target.closest('.tg-ui'); if(!a) return;
+    e.preventDefault();
+    const tg = a.closest('.tg');
+    if(a.classList.contains('tg-arrow')){
+      const open = tg.getAttribute('data-open') !== 'true'; tg.setAttribute('data-open', String(open)); a.setAttribute('aria-expanded', String(open));
+      if(ed.contentEditable === 'true') markDirty();
+    } else if(a.classList.contains('tg-dot')) openPalette(tg, a);
+  });
+  ed.addEventListener('keydown', e=>{
+    if(ed.contentEditable !== 'true' || e.isComposing) return;
+    const s = getSelection(); if(!s.rangeCount) return;
+    const node = s.anchorNode, el = node && (node.nodeType === 1 ? node : node.parentElement);
+    const title = el && el.closest('.tg-title');
+    // Enter in a toggle's title: open it and continue inside
+    if(title && e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault(); const tg = title.parentElement; tg.setAttribute('data-open', 'true'); decorateToggle(tg);
+      const body = tg.querySelector(':scope > .tg-body'), first = body.firstElementChild || body; caretTo(first, true); markDirty(); return;
+    }
+    // Backspace at the start of an empty title: the toggle becomes normal text again (its contents stay)
+    if(title && e.key === 'Backspace' && !title.textContent.length){
+      e.preventDefault(); const tg = title.parentElement, body = tg.querySelector(':scope > .tg-body'), p = document.createElement('p'); p.innerHTML = '<br>';
+      tg.before(p); if(body) [...body.childNodes].forEach(n=> tg.before(n)); tg.remove(); caretTo(p, true); markDirty(); return;
+    }
+    // Enter on an empty last line inside a toggle: step out, below the toggle
+    if(e.key === 'Enter' && !e.shiftKey){
+      const b = curBlock(), body = b && b.parentElement && b.parentElement.classList.contains('tg-body') ? b.parentElement : null;
+      if(body && b.nodeName === 'P' && !b.textContent.trim() && !b.querySelector('.ph') && b === body.lastElementChild && body.children.length > 1){
+        e.preventDefault(); const tg = body.parentElement, p = document.createElement('p'); p.innerHTML = '<br>';
+        b.remove(); tg.after(p); caretTo(p, true); markDirty(); return;
+      }
+    }
+  }, true);
+  // keep every toggle whole while typing (a title, a body, never empty)
+  ed.addEventListener('input', ()=>{ ed.querySelectorAll('.tg').forEach(tg=>{ if(!tg.querySelector(':scope > .tg-title') || !tg.querySelector(':scope > .tg-body') || !tg.querySelector(':scope > .tg-arrow')) decorateToggle(tg); else { const body = tg.querySelector(':scope > .tg-body'); if(!body.firstChild) body.innerHTML = '<p><br></p>'; } }); });
   function insertFlow(block){
     const t = document.createElement('template');
     t.innerHTML = `<div class="flow">${stepHTML('')}</div>`;
@@ -2284,6 +2400,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(t === 'bold' || t === 'italic'){ document.execCommand(t); markDirty(); }
     else if(t === 'ph') openPhMenu(b.getBoundingClientRect());
     else if(t === 'flow'){ const cur = curBlock(); insertFlow(cur && !cur.closest('.flow') ? cur : null); }
+    else if(t === 'toggle'){ const cur = curBlock(); if(cur && cur.classList && cur.classList.contains('tg') && inToggleTitle()) return; insertToggle(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'h2' || t === 'ul' || t === 'todo' || t === 'quote'){ const cur = curBlock(); const k = cur && ((t === 'h2' && cur.nodeName === 'H2') || (t === 'ul' && cur.nodeName === 'UL') || (t === 'quote' && cur.nodeName === 'BLOCKQUOTE') || (t === 'todo' && cur.classList && cur.classList.contains('todo'))) ? 'p' : t; convertBlock(k); }
   });
 
@@ -2312,7 +2429,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(p && !dirty && document.activeElement !== ed && document.activeElement !== $('libTitle')){
       const st = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
       if(st && lastLoadedStamp && st !== lastLoadedStamp && p.updatedBy !== myUid){
-        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; decorateFlows(); paintBlanks(); lastLoadedStamp = st;
+        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; decorateFlows(); decorateToggles(); paintBlanks(); lastLoadedStamp = st;
       }
     }
     if(curId) renderMeta();

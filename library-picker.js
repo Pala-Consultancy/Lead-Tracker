@@ -28,6 +28,9 @@
   // message flows: a first message with branches ("If no reply after 3 days" → follow-up), as deep as you like
   var FLOW_CLASSES = ['flow', 'fl-step', 'fl-msg', 'fl-branches', 'fl-branch', 'fl-cond', 'fl-children'];
   var BRANCH_TONES = ['no', 'yes', 'other'];
+  // toggles (Notion-style): a title you can fold open, with any content inside (even more toggles)
+  var TOGGLE_CLASSES = ['tg', 'tg-title', 'tg-body'];
+  var TOGGLE_COLORS = ['gray', 'brown', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'red'];
   function cleanNode(node){
     Array.prototype.slice.call(node.childNodes).forEach(function(n){
       if(n.nodeType === 3) return;
@@ -39,6 +42,11 @@
       if(tag === 'DIV'){
         var c = n.classList.contains('todo') ? 'todo' : n.classList.contains('callout') ? 'callout' : null;
         FLOW_CLASSES.forEach(function(f){ if(n.classList.contains(f)) c = f; });
+        TOGGLE_CLASSES.forEach(function(f){ if(n.classList.contains(f)) c = f; });
+        if(c === 'tg'){
+          keep['data-open'] = n.getAttribute('data-open') === 'false' ? 'false' : 'true';
+          var col = n.getAttribute('data-color'); if(TOGGLE_COLORS.indexOf(col) >= 0) keep['data-color'] = col;
+        }
         if(c === 'fl-branch'){ var tone = BRANCH_TONES.filter(function(t){ return n.classList.contains(t); })[0] || 'other'; c = 'fl-branch ' + tone; }
         if(c) keep['class'] = c;
         if(c === 'todo') keep['data-checked'] = n.getAttribute('data-checked') === 'true' ? 'true' : 'false';
@@ -73,6 +81,12 @@
   }
   function blockText(b, fmt){
     if(isFlow(b)) return flowText(b, fmt);
+    if(b && b.nodeType === 1 && b.classList && b.classList.contains('tg')){        // a toggle: its title, then what's inside
+      var title = kids(b, 'tg-title')[0], body = kids(b, 'tg-body')[0], parts = [];
+      if(title) parts.push(inlineText(title, fmt).replace(/\u00a0/g, ' ').trim());
+      if(body) Array.prototype.forEach.call(body.childNodes, function(n){ var t = blockText(n, fmt); if(t) parts.push(t); });
+      return parts.filter(Boolean).join('\n');
+    }
     var tag = b.nodeType === 1 ? b.tagName : '#text';
     if(tag === '#text') return b.textContent.trim();
     if(tag === 'HR') return '—';
