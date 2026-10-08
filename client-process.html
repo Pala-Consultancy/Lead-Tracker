@@ -234,6 +234,77 @@
   .doc-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:20px;margin-top:6px;border-top:1px solid var(--line-2);}
   .doc-foot small{font-size:12.5px;color:var(--ink-3);}
 
+  /* ---------- the document: it should feel like filling in a real document ---------- */
+  :root{--paper:#FFFEFA;--paper-edge:#ECE6DA;--rule:#E6DFD1;--rule-strong:#CFC6B4;--pen:#1E3A8A;--hl:rgba(255,212,84,.16);}
+  html[data-theme="dark"]{--paper:#1B1F2C;--paper-edge:#2B3145;--rule:#2C3246;--rule-strong:#414A64;--pen:#AFC4FF;--hl:rgba(255,212,84,.07);}
+  .doc .doc-b > div{padding:0;}
+  .doc .sheets{position:relative;margin:20px 20px 34px;}
+  .doc .sheets::before,.doc .sheets::after{content:"";position:absolute;left:8px;right:8px;bottom:-8px;height:40px;background:var(--paper);border:1px solid var(--paper-edge);border-radius:4px;box-shadow:0 6px 14px -8px rgba(30,30,50,.25);}
+  .doc .sheets::after{left:18px;right:18px;bottom:-15px;opacity:.75;}
+  .doc .paper{position:relative;z-index:1;margin:0;padding:38px 48px 30px;background:var(--paper);border:1px solid var(--paper-edge);border-radius:4px;
+    box-shadow:0 1px 2px rgba(30,30,50,.06),0 22px 44px -26px rgba(30,30,50,.4);counter-reset:q;}
+  .doc .paper .lh{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+    padding-bottom:12px;margin-bottom:26px;border-bottom:1px solid var(--rule);box-shadow:0 3px 0 -1px var(--paper),0 3px 0 0 var(--accent);}
+  .doc .paper .lh-co{color:var(--accent);}
+  .doc .paper .p-title{font:500 30px/1.2 var(--serif);letter-spacing:-.02em;margin:0 0 6px;}
+  .doc .paper .p-for{font-size:13.5px;color:var(--ink-3);margin:0 0 22px;} .doc .paper .p-for b{color:var(--ink-2);font-weight:600;}
+  .doc .paper .p-intro{font-size:15px;line-height:1.75;margin:0 0 30px;padding-bottom:24px;border-bottom:1px dashed var(--rule-strong);}
+  /* numbered questions, answered on the lines */
+  .doc .paper .fq{counter-increment:q;position:relative;padding:10px 12px 12px 46px;margin:0 -12px 14px;border-radius:8px;transition:background .2s;}
+  .doc .paper .fq::before{content:counter(q);position:absolute;left:10px;top:10px;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--rule-strong);display:flex;align-items:center;justify-content:center;
+    font:700 12px var(--sans);color:var(--ink-2);background:var(--paper);transition:all .2s;}
+  .doc .paper .fq:focus-within{background:var(--hl);}
+  .doc .paper .fq:focus-within::before{border-color:var(--accent);color:var(--accent);}
+  .doc .paper .fq > label,.doc .paper .fq > legend,.doc .paper .fq > .fl{font-size:15px;margin-bottom:6px;float:none;}
+  .doc .paper .fq > legend{float:left;width:100%;} .doc .paper fieldset.fq > legend + *{clear:both;}
+  .doc .paper .field{width:100%;border:0;border-bottom:1.5px solid var(--rule-strong);border-radius:0;background:transparent;box-shadow:none;padding:7px 2px 6px;
+    font:500 16px/1.5 var(--sans);color:var(--pen);outline:none;transition:border-color .2s;}
+  .doc .paper .field:focus{border-bottom-color:var(--accent);}
+  .doc .paper .field::placeholder{color:var(--ink-3);font-weight:400;}
+  /* long answers: lined paper */
+  .doc .paper textarea.field{border-bottom:0;line-height:32px;padding:0 2px;min-height:128px;resize:vertical;background-color:transparent;
+    background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,var(--rule-strong) 31px,var(--rule-strong) 32px);background-attachment:local;}
+  .doc .paper .field.bad{border-bottom-color:var(--bad);}
+  /* choices: boxes on paper */
+  .doc .paper .opts{gap:2px;} .doc .paper .yn{gap:18px;}
+  .doc .paper .opt{border:0;background:transparent;padding:7px 4px;border-radius:6px;font-size:15px;}
+  .doc .paper .opt:hover{background:rgba(127,127,127,.06);}
+  .doc .paper .opt .mk{width:19px;height:19px;border:1.5px solid var(--ink-2);border-radius:4px;background:var(--paper);}
+  .doc .paper .opt:not(.multi) .mk{border-radius:50%;}
+  .doc .paper .opt.on{background:transparent;color:var(--pen);font-weight:600;}
+  .doc .paper .opt.on .mk{border-color:var(--pen);background:var(--pen);box-shadow:inset 0 0 0 3px var(--paper);}
+  .doc .paper .opt.multi.on .mk{box-shadow:none;}
+  .doc .paper .yn .opt{flex:0 0 auto;}
+  /* the signature line */
+  .doc .paper .sign{border:0;padding:0;}
+  .doc .paper .sign .sig{position:relative;padding:4px 2px 2px 34px;border-bottom:1.5px solid var(--ink);color:var(--pen);}
+  .doc .paper .sign .sig::after{content:"✕";position:absolute;left:6px;bottom:8px;font:600 17px var(--sans);color:var(--ink-3);}
+  .doc .paper .sign .sig:empty::before{font:italic 400 13px var(--sans);}
+  .doc .paper .sign .agree{font-size:13.5px;}
+  /* the bottom of the page */
+  .doc .paper .doc-foot{border-top:1px dashed var(--rule-strong);margin-top:18px;padding-top:20px;}
+  .doc .paper .doc-foot .pg{font-size:13px;font-weight:600;color:var(--ink-2);margin-right:auto;}
+  .doc .paper .doc-foot small{flex-basis:100%;}
+  /* submitted: a stamp on the page */
+  .doc .paper .stamp{position:absolute;top:84px;right:40px;transform:rotate(-9deg);border:3px solid var(--ok);color:var(--ok);border-radius:8px;padding:6px 12px 5px;
+    font:800 15px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;text-align:center;opacity:.82;pointer-events:none;}
+  .doc .paper .stamp small{display:block;margin-top:4px;font-size:9.5px;letter-spacing:.08em;font-weight:700;}
+  .doc .paper .stamp ~ .p-title,.doc .paper .stamp ~ .p-for{padding-right:160px;}
+  @media (max-width:560px){ .doc .sheets{margin:12px 10px 26px;} .doc .paper{padding:26px 18px 22px;} .doc .paper .p-title{font-size:24px;} .doc .paper .stamp{top:62px;right:14px;font-size:12px;} .doc .paper .stamp ~ .p-title,.doc .paper .stamp ~ .p-for{padding-right:110px;} }
+
+  /* a video preview: the real player only loads when the client presses play */
+  .vf-play{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;cursor:pointer;background:#0E1222;display:block;}
+  .vf-play img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .vf-bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 30% 20%,var(--accent),#0E1222 70%);opacity:.9;}
+  .vf-btn{position:absolute;left:50%;top:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;background:rgba(255,255,255,.94);color:var(--accent);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 12px 30px -8px rgba(0,0,0,.45);transition:transform .2s var(--ease);}
+  .vf-btn svg{width:30px;height:30px;margin-left:4px;}
+  .vf-play:hover .vf-btn{transform:scale(1.08);}
+  .vf-t{position:absolute;left:16px;bottom:14px;right:16px;color:#fff;font-weight:600;font-size:14px;text-align:left;text-shadow:0 1px 6px rgba(0,0,0,.6);}
+
+  /* steps that are off screen aren't drawn until you scroll to them (a long page stays smooth) */
+  .step{content-visibility:auto;contain-intrinsic-size:auto 180px;}
+
   /* doing a step (question, upload) */
   .do > * + *{margin-top:12px;}
   .do label.lbl{display:block;font-size:14.5px;font-weight:600;margin-bottom:8px;}
@@ -732,7 +803,12 @@
       case 'video': {
         const v = b.video; if (!v) return '';
         if (v.kind === 'file' && isSafeUrl(v.url)) return `<div class="video"><video controls preload="metadata" playsinline src="${esc(v.url)}"></video></div>`;
-        if (isSafeUrl(v.embedUrl)) return `<div class="video"><iframe data-src="${esc(v.embedUrl)}" title="Video" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe></div>`;
+        if (isSafeUrl(v.embedUrl)) {
+          // a light preview instead of the full player: the YouTube/Vimeo/Loom player (heavy) only loads on play
+          const yt = /(?:youtube(?:-nocookie)?\.com\/embed\/|youtu\.be\/)([\w-]{11})/.exec(v.embedUrl);
+          const thumb = yt ? `https://i.ytimg.com/vi/${yt[1]}/hqdefault.jpg` : '';
+          return `<div class="video vf" data-embed="${esc(v.embedUrl)}"><button type="button" class="vf-play" aria-label="Play the video">${thumb ? `<img src="${thumb}" alt="" loading="lazy" decoding="async">` : '<span class="vf-bg"></span>'}<span class="vf-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span>${v.name ? `<span class="vf-t">${esc(v.name)}</span>` : ''}</button></div>`;
+        }
         return isSafeUrl(v.url) ? `<p><a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener">${ic('video', 'sm')}Watch the video</a></p>` : '';
       }
       case 'file': {
@@ -820,12 +896,14 @@
       <button type="button" class="doc-h" data-docopen="${esc(a.id)}" aria-expanded="${isOpen}"><span class="di">${ic(sent ? 'check' : 'form')}</span>
         <span class="dt"><b>${esc(f.title || 'Document to fill in')}</b><small>${sent ? `Submitted by ${esc(sub.by)} · ${when(sub.at)}` : `<span class="meter"><i style="width:${inputs.length ? n / inputs.length * 100 : 0}%"></i></span>${n} of ${inputs.length} answered${draft ? ' · draft saved' : ''}`}</small></span>
         <span class="chev">${ic('chev', 'sm')}</span></button>
-      <div class="doc-b"><div><form class="paper" data-form="${esc(a.id)}" novalidate>
-        <h3 class="p-title">${esc(f.title || 'Document to fill in')}</h3>${f.intro ? `<p class="p-intro">${esc(f.intro)}</p>` : ''}
+      <div class="doc-b"><div><div class="sheets"><form class="paper" data-form="${esc(a.id)}" novalidate>
+        ${sent ? `<div class="stamp" aria-label="Submitted">Submitted<small>${esc(when(sub.at))}</small></div>` : ''}
+        <div class="lh"><span class="lh-co">${esc(proc.workspaceName || (proc.brand && proc.brand.company) || '')}</span><span>Document · ${new Date().toLocaleDateString(undefined, {day: 'numeric', month: 'long', year: 'numeric'})}</span></div>
+        <h3 class="p-title">${esc(f.title || 'Document to fill in')}</h3>${proc.clientName ? `<div class="p-for">Prepared for <b>${esc(proc.clientName)}</b></div>` : ''}${f.intro ? `<p class="p-intro">${esc(f.intro)}</p>` : ''}
         ${f.fields.map((fd) => fieldHTML(fd, vals[fd.id], key)).join('')}
-        <div class="doc-foot"><button type="submit" class="btn solid" ${busy['f:' + a.id] ? 'disabled' : ''}>${busy['f:' + a.id] ? '<span class="spin"></span>Submitting' : `${sub ? 'Submit changes' : 'Submit'}`}</button>
+        <div class="doc-foot"><span class="pg">${n} of ${inputs.length} answered</span><button type="submit" class="btn solid" ${busy['f:' + a.id] ? 'disabled' : ''}>${busy['f:' + a.id] ? '<span class="spin"></span>Submitting' : `${sub ? 'Submit changes' : 'Submit document'}`}</button>
           <small data-draftnote>${draft ? 'Your answers are saved on this device until you submit.' : ''}</small></div>
-      </form></div></div></div>`;
+      </form></div></div></div></div>`;
   }
   function readForm(formEl, a) {
     const vals = {};
@@ -981,6 +1059,14 @@
   }); }, {passive: true});
   window.addEventListener('resize', updateNextPill);
 
+  // play a video preview: swap in the real player, starting right away
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.vf-play'); if (!b) return;
+    const box = b.closest('.vf'), src = box.dataset.embed; if (!src) return;
+    const f = document.createElement('iframe'); f.title = 'Video'; f.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media'; f.allowFullscreen = true;
+    f.src = src + (src.includes('?') ? '&' : '?') + 'autoplay=1';
+    box.classList.remove('vf'); box.innerHTML = ''; box.appendChild(f);
+  });
   function loadMedia(el) { el.querySelectorAll('iframe[data-src]').forEach((f) => { f.src = f.dataset.src; f.removeAttribute('data-src'); }); }
   function goTo(id) { const el = document.querySelector(`.step[data-id="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
 
@@ -1047,6 +1133,7 @@
     const inputs = a.form.fields.filter((x) => INPUTS.includes(x.type)), n = inputs.filter((x) => filled(vals[x.id])).length;
     const meter = box.querySelector('.meter i'), sm = box.querySelector('.doc-h small'), note = form.querySelector('[data-draftnote]');
     if (meter) { meter.style.width = (inputs.length ? n / inputs.length * 100 : 0) + '%'; sm.lastChild.textContent = `${n} of ${inputs.length} answered · draft saved`; }
+    const pgEl = form.querySelector('.pg'); if (pgEl) pgEl.textContent = `${n} of ${inputs.length} answered`;
     if (note) note.textContent = 'Your answers are saved on this device until you submit.';
   });
   document.addEventListener('change', (e) => { if (e.target.closest('[data-form]') && (e.target.type === 'radio' || e.target.type === 'checkbox')) e.target.dispatchEvent(new Event('input', {bubbles: true})); });
