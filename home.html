@@ -4375,8 +4375,18 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
     function showOnboardingTour(){
       // New accounts get the spotlight tour of the side panel (sidebar.js). Where the side panel is folded
       // away (small screens) the slides below are used instead.
-      if(window.ptSidebarTour && window.ptSidebarTour.available()){
-        if(window.ptSidebarTour.start({ onFinish: ()=> completeOnboarding() })) return;
+      // (the page may still be loading: wait up to 5 seconds for the side panel before using the slides)
+      if(window.ptSidebarTour && !showOnboardingTour.waited){
+        if(window.ptSidebarTour.available() && window.ptSidebarTour.start({ onFinish: ()=> completeOnboarding() })) return;
+        if(innerWidth >= 900){
+          let tries = 0;
+          const wait = setInterval(()=>{
+            tries++;
+            if(window.ptSidebarTour.available()){ clearInterval(wait); if(window.ptSidebarTour.start({ onFinish: ()=> completeOnboarding() })) return; }
+            if(tries >= 25){ clearInterval(wait); showOnboardingTour.waited = true; showOnboardingTour(); }
+          }, 200);
+          return;
+        }
       }
       document.querySelector('.onboarding-nav').classList.remove('ob-final');
       onboardingIndex = 0;

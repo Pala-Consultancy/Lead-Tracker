@@ -4082,6 +4082,9 @@ html[data-theme="dark"] .ob-ai-reply-text{background:var(--c-blue-bg, rgba(91,15
       }
     }
     function showOnboardingTour(){
+      // New accounts get the spotlight tour of the side panel, which lives on Home: go there for it.
+      // (Home starts the tour because the welcome isn't marked as done yet.)
+      if(!/home\.html/.test(location.pathname)){ location.replace('home.html'); return; }
       onboardingIndex = 0;
       renderOnboardingSlides();
       updateOnboardingSlide();

@@ -843,38 +843,58 @@
    --------------------------------------------------------------------------- */
 (function () {
   var STEPS = [
-    {center: true, emoji: '👋', title: 'Welcome to PalaTrack{name}!', text: 'Let me show you around in about a minute. Everything you need is in the side panel on the left.', next: 'Show me around'},
-    {sel: ['#seqSidebarUser'], title: 'This is you', text: 'Your photo, name and role, as your team sees them. You can change them anytime in Settings.'},
-    {sel: ['#navHome'], title: 'Home', text: 'Your daily overview: today’s tasks, the leads that need your attention, and what your team has been doing.'},
-    {sel: ['#navDashboard'], title: 'Boards', text: 'Your pipeline. Every lead is a card that moves from first contact to closed deal, live for your whole team.'},
-    {sel: ['#navTasks'], title: 'Tasks', text: 'Your to-dos and reminders, and the tasks your team gives you. Only you see your own tasks.'},
-    {sel: ['#navCalendar'], title: 'Calendar', text: 'Your tasks and meetings by day or week, so you always know what’s coming. It can sync with Google Calendar.'},
-    {sel: ['#navSequences', '#navCampaigns', '#navScheduled'], label: 'Email', title: 'Email', text: '<b>Sequences</b> send follow-up emails automatically. <b>Email campaigns</b> reach many leads at once. <b>Scheduled</b> shows the emails waiting to go out.'},
-    {sel: ['#navLinkedinSeq', '#navLinkedinPost'], label: 'LinkedIn', title: 'LinkedIn', text: '<b>LinkedIn Sequences</b> plan your connection requests and messages step by step. <b>LinkedIn Post</b> is where you write, schedule and publish your posts.'},
-    {sel: ['#navClients'], label: 'Clients', title: 'Client processes', text: 'Beautiful onboarding pages for your clients: videos, documents, forms and steps they tick off, with their progress live in here.'},
-    {sel: ['#navChat', '#navLibrary', '#navTeam'], label: 'Workspace', title: 'Your workspace', text: '<b>Team chat</b> to talk with your team, the <b>Library</b> for your scripts, templates and ideas, and <b>Team</b> to invite colleagues.'},
-    {sel: ['.pts-theme'], title: 'Light, dark and sound', text: 'Switch between light and dark mode, and turn the sounds on or off, whatever you prefer.'},
-    {sel: ['#navSettings', '#navBilling'], title: 'Settings and your plan', text: '<b>Settings</b> for your profile, notifications and email. <b>Billing &amp; plans</b> for your subscription.'},
-    {sel: ['#helpMenuToggle'], title: 'Help is always here', text: 'The Help center, a place to send feedback, and this tour again whenever you want to see it.'},
-    {center: true, emoji: '🎉', title: 'You’re all set!', text: 'That’s the tour. Start with a board and add your first lead; PalaTrack does the rest.', next: 'Let’s go', last: true}
+    {center: true, emoji: '👋', title: 'Welcome to PalaTrack{name}!', text: 'Let me show you around. In about a minute you’ll know what everything in the side panel on the left does, and what it’s for.', next: 'Show me around'},
+    {sel: ['#seqSidebarUser'], title: 'This is you', text: 'Your photo, name and role, the way your team sees you everywhere in PalaTrack. You can change them anytime in <b>Settings</b>.'},
+    {label: '', title: 'Your daily work', items: [
+      {sel: '#navHome', name: 'Home', text: 'Your start screen every day: today’s tasks, the leads that need a follow-up, and what your team has been doing.'},
+      {sel: '#navDashboard', name: 'Boards', text: 'Your sales pipeline. Every lead is a card you move from first contact to closed deal, with notes, files and tasks. Your team sees every change live.'},
+      {sel: '#navTasks', name: 'Tasks', text: 'Your to-do list: calls, follow-ups and reminders, linked to a lead if you like. Only you see your own tasks; teammates can give you one.'},
+      {sel: '#navCalendar', name: 'Calendar', text: 'Your tasks and meetings by day, week or month, so you can plan ahead. Connect Google Calendar to see everything in one place.'}]},
+    {label: 'Email', title: 'Email', items: [
+      {sel: '#navSequences', name: 'Sequences', text: 'Automatic follow-up emails. Write the steps once, and PalaTrack sends them on schedule until the lead replies.'},
+      {sel: '#navCampaigns', name: 'Email campaigns', text: 'One email to many leads at once, personalised with their name and company. See who opens and who replies.'},
+      {sel: '#navScheduled', name: 'Scheduled', text: 'Every email that’s waiting to go out. Change it, move it to another time, or cancel it.'}]},
+    {label: 'LinkedIn', title: 'LinkedIn', items: [
+      {sel: '#navLinkedinSeq', name: 'LinkedIn Sequences', text: 'Plan your LinkedIn outreach step by step: the connection request, then your messages. PalaTrack tells you when each step is due.'},
+      {sel: '#navLinkedinPost', name: 'LinkedIn Post', text: 'Write your posts with hooks, AI help and a live preview, then schedule them or publish them straight to LinkedIn.'}]},
+    {label: 'Clients', title: 'Clients', items: [
+      {sel: '#navClients', name: 'Client processes', text: 'A personal onboarding page for every new client: a welcome video, documents, forms, uploads and a call to book. They tick off the steps, and you follow their progress live.'}]},
+    {label: 'Workspace', title: 'Your workspace', items: [
+      {sel: '#navChat', name: 'Team chat', text: 'Message your teammates directly. Share photos and files, react to messages, and see who’s online.'},
+      {sel: '#navLibrary', name: 'Library', text: 'Your team’s knowledge in one place: DM scripts, icebreakers, answers to objections and templates, ready to copy into your messages.'},
+      {sel: '#navTeam', name: 'Team', text: 'Invite colleagues, decide what they’re allowed to do, and see everyone in your workspace.'}]},
+    {sel: ['.pts-theme'], title: 'Light, dark and sound', items: [
+      {sel: '#themeLightBtn', name: 'Light and Dark', text: 'Choose the look that’s easiest on your eyes. PalaTrack remembers it.'},
+      {sel: '#ptSoundBtn', name: 'Sound', text: 'Turns the little sounds on or off, like the ones you’re hearing now.'}]},
+    {title: 'Settings and help', items: [
+      {sel: '#navSettings', name: 'Settings', text: 'Your profile, photo, password and notifications, and the connection with your email and calendar.'},
+      {sel: '#navBilling', name: 'Billing & plans', text: 'Your subscription: see your plan, upgrade, or change how you pay.'},
+      {sel: '#helpMenuToggle', name: 'Help', text: 'The help center, a place to send us feedback, and this tour again whenever you want it.'}]},
+    {center: true, emoji: '🎉', title: 'You’re all set!', text: 'That’s everything. A good first step: open <b>Boards</b> and add your first lead.', next: 'Let’s go', last: true}
   ];
   var CSS = [
     '#ptTour{position:fixed;inset:0;z-index:9000;font-family:Inter,system-ui,sans-serif;}',
     '#ptTour .tt-shade{position:absolute;inset:0;background:rgba(10,14,30,.62);opacity:0;transition:opacity .35s ease;}',
     '#ptTour.center .tt-shade{opacity:1;}',
-    '#ptTour .tt-hole{position:absolute;border-radius:14px;box-shadow:0 0 0 200vmax rgba(10,14,30,.62),0 0 0 2px rgba(130,115,255,.95),0 0 26px 6px rgba(124,104,255,.55);',
+    '#ptTour .tt-hole{position:absolute;border-radius:14px;box-shadow:0 0 0 200vmax rgba(8,12,20,.58),0 0 0 4px #FFFFFF,0 0 0 7px rgba(169,148,247,.95),0 0 30px 8px rgba(124,104,255,.35);',
     '  transition:top .45s cubic-bezier(.4,0,.2,1),left .45s cubic-bezier(.4,0,.2,1),width .45s cubic-bezier(.4,0,.2,1),height .45s cubic-bezier(.4,0,.2,1),opacity .3s ease;pointer-events:none;}',
-    '#ptTour .tt-hole::after{content:"";position:absolute;inset:-6px;border-radius:18px;border:2px solid rgba(160,145,255,.7);animation:ttPulse 1.8s ease-out infinite;}',
+    '#ptTour .tt-hole::after{content:"";position:absolute;inset:-10px;border-radius:20px;border:2px solid rgba(169,148,247,.7);animation:ttPulse 1.8s ease-out infinite;}',
     '@keyframes ttPulse{0%{opacity:.9;transform:scale(1);}100%{opacity:0;transform:scale(1.06);}}',
     '#ptTour.center .tt-hole{opacity:0;}',
-    '#ptTour .tt-bubble{position:absolute;width:340px;max-width:calc(100vw - 32px);background:var(--panel,#fff);color:var(--ink,#16202C);border-radius:18px;padding:20px 20px 16px;',
+    '#ptTour .tt-bubble{position:absolute;width:340px;max-width:calc(100vw - 32px);background:var(--panel,#fff);color:var(--ink,#16202C);border-radius:18px;padding:18px 20px 16px;',
     '  box-shadow:0 30px 70px -20px rgba(0,0,0,.55);transition:top .45s cubic-bezier(.4,0,.2,1),left .45s cubic-bezier(.4,0,.2,1),opacity .25s ease;}',
+    '#ptTour .tt-bubble.wide{width:400px;}',
+    '#ptTour .tt-list{display:flex;flex-direction:column;gap:11px;margin-top:4px;}',
+    '#ptTour .tt-item{display:grid;grid-template-columns:22px 1fr;column-gap:9px;align-items:start;}',
+    '#ptTour .tt-ic{width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:#5B4BE6;margin-top:1px;} #ptTour .tt-ic svg{width:18px;height:18px;}',
+    'html[data-theme="dark"] #ptTour .tt-ic{color:#B9AEFF;}',
+    '#ptTour .tt-item b{display:block;font-size:14.5px;color:var(--ink,#16202C);margin-bottom:2px;} #ptTour .tt-item span{display:block;font-size:13.5px;line-height:1.55;color:var(--slate,#5B6B7F);}',
     '#ptTour .tt-bubble::before{content:"";position:absolute;left:-8px;top:var(--ay,28px);width:16px;height:16px;background:inherit;transform:rotate(45deg);border-radius:3px;}',
     '#ptTour.center .tt-bubble{width:420px;text-align:center;padding:30px 28px 22px;} #ptTour.center .tt-bubble::before{display:none;}',
     '#ptTour .tt-emoji{font-size:40px;line-height:1;margin-bottom:10px;display:block;}',
-    '#ptTour .tt-count{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.04em;color:#5B4BE6;background:rgba(91,75,230,.1);border-radius:999px;padding:3px 10px;margin-bottom:10px;}',
+    '#ptTour .tt-count{display:inline-block;font-size:12px;font-weight:800;color:#4B3FCF;background:rgba(91,75,230,.1);border-radius:7px;padding:3px 9px;margin-bottom:8px;}',
     'html[data-theme="dark"] #ptTour .tt-count{color:#B9AEFF;background:rgba(160,145,255,.16);}',
-    '#ptTour h3{margin:0 0 6px;font:800 18px/1.3 Sora,Inter,sans-serif;letter-spacing:-.01em;} #ptTour.center h3{font-size:22px;}',
+    '#ptTour h3{margin:0 0 8px;font:800 18px/1.3 Sora,Inter,sans-serif;letter-spacing:-.01em;} #ptTour.center h3{font-size:22px;}',
     '#ptTour p{margin:0;font-size:14px;line-height:1.6;color:var(--slate,#5B6B7F);} #ptTour p b{color:var(--ink,#16202C);font-weight:700;}',
     '#ptTour .tt-btns{display:flex;align-items:center;gap:8px;margin-top:18px;} #ptTour.center .tt-btns{justify-content:center;}',
     '#ptTour .tt-skip{margin-right:auto;border:none;background:none;color:var(--slate-light,#8A97A8);font-size:13px;font-weight:600;cursor:pointer;padding:6px 2px;}',
@@ -928,8 +948,9 @@
   var root = null, idx = 0, opts = {}, steps = [];
   function host() { return document.querySelector('.pts-host'); }
   function available() { var h = host(); if (!h) return false; var r = h.getBoundingClientRect(); return r.width > 120 && r.right > 0 && getComputedStyle(h).display !== 'none'; }
+  function targets(step) { return step.sel || (step.items || []).map(function (it) { return it.sel; }); }
   function rectOf(step) {
-    var els = step.sel.map(function (s) { return document.querySelector(s); }).filter(function (e) { return e && e.offsetParent !== null; });
+    var els = targets(step).map(function (s) { return document.querySelector(s); }).filter(function (e) { return e && e.offsetParent !== null; });
     if (!els.length) return null;
     if (step.label) {                                                  // the section title (EMAIL, LINKEDIN…) belongs to the group
       var lab = [].slice.call(document.querySelectorAll('.pts-host .seq-sidebar-label')).filter(function (l) { return l.textContent.trim().toLowerCase() === step.label.toLowerCase(); })[0];
@@ -943,8 +964,13 @@
     var s = steps[idx], hole = root.querySelector('.tt-hole'), bub = root.querySelector('.tt-bubble');
     var name = ''; try { var n = (document.getElementById('seqSidebarUserName') || {}).textContent || ''; n = n.trim().split(/\s+/)[0]; if (n && n !== '…') name = ', ' + n; } catch (e) {}
     var spot = steps.filter(function (x) { return !x.center; }), pos = spot.indexOf(s);
+    var body = s.items ? '<div class="tt-list">' + s.items.map(function (it) {
+        var el = document.querySelector(it.sel), ic = el && el.querySelector('svg');
+        return '<div class="tt-item"><span class="tt-ic">' + (ic ? ic.outerHTML : '') + '</span><div><b>' + it.name + '</b><span>' + it.text + '</span></div></div>';
+      }).join('') + '</div>' : '<p>' + s.text + '</p>';
+    bub.classList.toggle('wide', !!s.items);
     bub.innerHTML = (s.center ? '<span class="tt-emoji">' + s.emoji + '</span>' : '<span class="tt-count">' + (pos + 1) + ' of ' + spot.length + '</span>') +
-      '<h3 id="ttT">' + s.title.replace('{name}', name.replace(/[<>&]/g, '')) + '</h3><p>' + s.text + '</p>' +
+      '<h3 id="ttT">' + s.title.replace('{name}', name.replace(/[<>&]/g, '')) + '</h3>' + body +
       '<div class="tt-btns">' + (s.last ? '' : '<button type="button" class="tt-skip" data-tt="skip">Skip tour</button>') +
       (idx > 0 && !s.last ? '<button type="button" class="tt-btn" data-tt="back">Back</button>' : '') +
       '<button type="button" class="tt-btn go" data-tt="next">' + (s.next || 'Next') + '</button></div>' +
