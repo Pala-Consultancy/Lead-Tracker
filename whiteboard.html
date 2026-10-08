@@ -88,6 +88,19 @@
   .wb-zoom{min-width:54px;border:none;background:none;font:600 12.5px Inter,sans-serif;color:var(--ink);border-radius:9px;height:36px;}
   .wb-zoom:hover{background:var(--panel-alt);}
 
+  /* the Draw and Shapes buttons, and their menus */
+  .fbtn.group .more{position:absolute;right:3px;top:3px;width:0;height:0;border-left:4px solid transparent;border-top:4px solid var(--slate-light);transform:rotate(-45deg) translate(1px,-1px);}
+  .wb-fly{position:absolute;left:70px;z-index:8;background:var(--panel);border:1px solid var(--border-soft);border-radius:14px;box-shadow:0 18px 40px -16px rgba(16,24,40,.35);padding:10px;width:250px;animation:flyIn .14s ease-out;}
+  @keyframes flyIn{from{opacity:0;transform:translateX(-4px);}to{opacity:1;transform:none;}}
+  .wb-fly h4{margin:2px 4px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-light);}
+  .fly-opt{display:flex;align-items:center;gap:11px;width:100%;border:none;background:none;border-radius:10px;padding:7px 8px;text-align:left;color:var(--ink);}
+  .fly-opt:hover{background:var(--panel-alt);} .fly-opt.on{background:rgba(91,75,230,.12);color:var(--wb-sel);}
+  .fly-opt svg{width:22px;height:22px;flex-shrink:0;} .fly-opt b{display:block;font-size:13.5px;} .fly-opt small{display:block;font-size:11.5px;color:var(--slate-light);}
+  .fly-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;}
+  .fly-sq{display:flex;flex-direction:column;align-items:center;gap:4px;border:none;background:none;border-radius:10px;padding:9px 2px 7px;color:var(--ink);}
+  .fly-sq:hover{background:var(--panel-alt);} .fly-sq.on{background:rgba(91,75,230,.12);color:var(--wb-sel);}
+  .fly-sq svg{width:24px;height:24px;} .fly-sq span{font-size:11px;font-weight:600;line-height:1.2;text-align:center;}
+  .opt.ico{flex:0 0 auto;width:30px;height:30px;padding:0;} .opt.ico svg{width:17px;height:17px;}
   /* the style panel */
   .wb-style{position:absolute;left:70px;top:76px;z-index:5;width:212px;background:var(--panel);border:1px solid var(--border-soft);border-radius:14px;box-shadow:var(--shadow);padding:12px;max-height:calc(100% - 160px);overflow:auto;}
   .wb-style h4{margin:10px 0 6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-light);}
@@ -659,7 +672,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const FILLS = ['none', '#FFC9C9', '#B2F2BB', '#A5D8FF', '#FFEC99', '#E5DBFF', '#E9ECEF', 'ink'];
   const NOTES = ['#FFE58A', '#FFC7D7', '#B9F1C8', '#BFE3FF', '#E2D4FF', '#FFD3A8'];
   const FONTS = {hand: '"Caveat", "Comic Sans MS", cursive', sans: 'Inter, system-ui, sans-serif'};
-  const BOX = ['rect', 'ellipse', 'diamond', 'text', 'note', 'image'];
+  const SHAPES = ['rect', 'ellipse', 'diamond', 'triangle', 'star', 'hexagon', 'bubble', 'barrow', 'parallel', 'cylinder'];
+  const BOX = SHAPES.concat(['text', 'note', 'image']);
+  const isShape = (t) => SHAPES.includes(t);
   const colorOf = (c, forExport) => c === 'ink' ? (forExport ? '#1E1E1E' : 'var(--wb-ink)') : c;
   const fontPx = (el) => el.fs || 24;
 
@@ -732,6 +747,20 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       }
       case 'ellipse': { const rx = w / 2, ry = h / 2, cx = x + rx, cy = y + ry; return `M${cx - rx} ${cy}A${rx} ${ry} 0 1 0 ${cx + rx} ${cy}A${rx} ${ry} 0 1 0 ${cx - rx} ${cy}Z`; }
       case 'diamond': return `M${x + w / 2} ${y}L${x + w} ${y + h / 2}L${x + w / 2} ${y + h}L${x} ${y + h / 2}Z`;
+      case 'triangle': return `M${x + w / 2} ${y}L${x + w} ${y + h}L${x} ${y + h}Z`;
+      case 'hexagon': return `M${x + w * 0.25} ${y}L${x + w * 0.75} ${y}L${x + w} ${y + h / 2}L${x + w * 0.75} ${y + h}L${x + w * 0.25} ${y + h}L${x} ${y + h / 2}Z`;
+      case 'parallel': { const k = Math.min(w * 0.25, h * 0.6); return `M${x + k} ${y}L${x + w} ${y}L${x + w - k} ${y + h}L${x} ${y + h}Z`; }
+      case 'star': {
+        let d = ''; const cx = x + w / 2, cy = y + h / 2 + h * 0.04;
+        for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 0.4 : 1; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * w / 2 * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * h / 2 * rr * 1.05).toFixed(1); }
+        return d + 'Z';
+      }
+      case 'bubble': {
+        const bh = h * 0.8, r = Math.min(16, w / 5, bh / 4), tx = x + w * 0.22;
+        return `M${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + bh - r}Q${x + w} ${y + bh} ${x + w - r} ${y + bh}H${tx + w * 0.16}L${tx - w * 0.04} ${y + h}L${tx + w * 0.02} ${y + bh}H${x + r}Q${x} ${y + bh} ${x} ${y + bh - r}V${y + r}Q${x} ${y} ${x + r} ${y}Z`;
+      }
+      case 'barrow': { const t = y + h * 0.25, b = y + h * 0.75, hx = x + w - Math.min(w * 0.4, h * 0.9); return `M${x} ${t}H${hx}V${y}L${x + w} ${y + h / 2}L${hx} ${y + h}V${b}H${x}Z`; }
+      case 'cylinder': { const ry = Math.min(h * 0.18, w * 0.25); return `M${x} ${y + ry}A${w / 2} ${ry} 0 0 1 ${x + w} ${y + ry}V${y + h - ry}A${w / 2} ${ry} 0 0 1 ${x} ${y + h - ry}Z M${x} ${y + ry}A${w / 2} ${ry} 0 0 0 ${x + w} ${y + ry}`; }
       case 'line': return `M${el.pts[0]} ${el.pts[1]}L${el.pts[2]} ${el.pts[3]}`;
       case 'arrow': {
         const [x1, y1, x2, y2] = el.pts, a = Math.atan2(y2 - y1, x2 - x1), L = Math.max(10, (el.sw || 2) * 4.5), s = 0.45;
@@ -740,6 +769,41 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       case 'pen': case 'hl': return smoothPath(el.pts, el.x, el.y);
     }
     return '';
+  }
+  // A freehand line drawn with a brush or a calligraphy nib is a filled outline that's wider in some places:
+  // brush: by the speed (or pen pressure) stored per point, with pointed ends; calligraphy: by the direction.
+  function outlinePath(el) {
+    const p = el.pts, n = p.length / 2, ox = el.x, oy = el.y, sw = el.sw || 2;
+    if (n < 2) { const r = sw * 1.2; return `M${ox + p[0] - r} ${oy + p[1]}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0`; }
+    const L = [], R = [];
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1);
+      let dx = p[b * 2] - p[a * 2], dy = p[b * 2 + 1] - p[a * 2 + 1]; const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
+      let w;
+      if (el.brush === 'calli') w = sw * 2.6 * (0.18 + 0.82 * Math.abs(Math.sin(Math.atan2(dy, dx) - Math.PI / 4)));
+      else {
+        const base = (el.wd && el.wd[i] != null ? el.wd[i] : 1) * sw * 2.4, ends = Math.min(1, (i + 0.6) / 5, (n - i - 0.4) / 5);
+        w = base * (0.25 + 0.75 * Math.max(0, ends));
+      }
+      const nx = -dy * w / 2, ny = dx * w / 2, x = ox + p[i * 2], y = oy + p[i * 2 + 1];
+      L.push([x + nx, y + ny]); R.push([x - nx, y - ny]);
+    }
+    const line = (pts, first) => { let d = (first ? 'M' : 'L') + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+      for (let i = 1; i < pts.length - 1; i++) d += `Q${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)} ${((pts[i][0] + pts[i + 1][0]) / 2).toFixed(1)} ${((pts[i][1] + pts[i + 1][1]) / 2).toFixed(1)}`;
+      const z = pts[pts.length - 1]; return d + `L${z[0].toFixed(1)} ${z[1].toFixed(1)}`; };
+    return line(L, true) + line(R.reverse(), false) + 'Z';
+  }
+  // how a freehand line is drawn: [{d, fill|stroke, width, opacity, cap, dash}, …]
+  function strokeLooks(el) {
+    const sw = el.sw || 2, d = smoothPath(el.pts, el.x, el.y), br = el.t === 'hl' ? 'hl' : (el.brush || 'pen');
+    switch (br) {
+      case 'hl': return [{d, stroke: true, width: sw * 6, opacity: 0.35, cap: 'round'}];
+      case 'pencil': return [{d, stroke: true, width: Math.max(1, sw * 0.7), opacity: 0.78, cap: 'round'},
+                             {d, stroke: true, width: Math.max(0.6, sw * 0.45), opacity: 0.45, cap: 'butt', dash: `${Math.max(1.4, sw)} ${Math.max(1, sw * 0.7)}`, shift: 0.6}];
+      case 'marker': return [{d, stroke: true, width: sw * 3, opacity: 0.82, cap: 'square', join: 'bevel'}];
+      case 'brush': case 'calli': return [{d: outlinePath(el), fill: true, opacity: 1}];
+      default: return [{d, stroke: true, width: sw, opacity: 1, cap: 'round'}];
+    }
   }
   const dashArray = (el) => el.dash === 'dashed' ? `${(el.sw || 2) * 4} ${(el.sw || 2) * 3}` : el.dash === 'dotted' ? `0.1 ${(el.sw || 2) * 2.6}` : '';
 
@@ -772,10 +836,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     }
     const d = pathD(el);
     if (el.t === 'pen' || el.t === 'hl') {
-      g.appendChild(svgEl('path', {d, fill: 'none', style: `stroke:${stroke}`, 'stroke-width': el.t === 'hl' ? sw * 6 : sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: el.t === 'hl' ? 0.35 : null}));
+      strokeLooks(el).forEach((L) => g.appendChild(L.fill
+        ? svgEl('path', {d: L.d, style: `fill:${stroke}`, opacity: L.opacity})
+        : svgEl('path', {d: L.d, fill: 'none', style: `stroke:${stroke}`, 'stroke-width': L.width, 'stroke-linecap': L.cap, 'stroke-linejoin': L.join || 'round', opacity: L.opacity, 'stroke-dasharray': L.dash || null, transform: L.shift ? `translate(${L.shift} ${L.shift})` : null})));
       return;
     }
     const filled = el.fillStyle && el.fillStyle !== 'none' && el.fill && el.fill !== 'none' && el.t !== 'line' && el.t !== 'arrow';
+    if (el.t === 'cylinder' && filled) g.appendChild(svgEl('path', {d, style: `fill:${colorOf(el.fill)};stroke:none`, 'fill-opacity': el.fillStyle === 'soft' ? 0.35 : 1}));
     g.appendChild(svgEl('path', {d, style: `stroke:${stroke};fill:${filled ? colorOf(el.fill) : 'transparent'}`, 'fill-opacity': filled ? (el.fillStyle === 'soft' ? 0.35 : 1) : null,
       'stroke-width': sw, 'stroke-dasharray': dashArray(el), 'stroke-linecap': 'round', 'stroke-linejoin': 'round'}));
     if (el.text && BOX.includes(el.t) && !(S.editing && S.editing.id === el.id)) textNodes(g, el, textLayout(el), el.stroke || 'ink');
@@ -844,17 +911,34 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   // ---------- the tools ----------
   const IC = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const BRUSHES = [
+    ['pen', 'Pen', 'Smooth and even', IC('<path d="M4 20c4 0 4-4 8-4s4 4 8 4"/><path d="M14 4l6 6-8 8-6-6z"/>')],
+    ['pencil', 'Pencil', 'Thin and sketchy', IC('<path d="M4 20l2-6L16 4l4 4L10 18z"/><path d="M14 6l4 4"/><path d="M4 20l2.5-.8"/>')],
+    ['marker', 'Marker', 'Thick felt tip', IC('<path d="M9 15l-3 5h5l2-3"/><rect x="9" y="3" width="8" height="12" rx="2" transform="rotate(30 13 9)"/>')],
+    ['brush', 'Brush', 'Thinner when you go faster', IC('<path d="M9.5 14.5C7 14 4 15.5 4 20c3.5 0 6-1.5 6-4z"/><path d="M10 14L20 4"/>')],
+    ['calli', 'Calligraphy', 'Thick and thin strokes', IC('<path d="M12 3l5 9-5 9-5-9z"/><path d="M12 12v9"/>')],
+    ['hl', 'Highlighter', 'See-through color', IC('<path d="M9 11l-4 4v4h4l4-4"/><path d="M13 7l4 4-4 4-4-4z" fill="currentColor" fill-opacity=".25"/><path d="M15 5l4 4"/>')],
+  ];
+  const SHAPE_LIST = [
+    ['rect', 'Rectangle', IC('<rect x="4" y="5" width="16" height="14" rx="2"/>')],
+    ['ellipse', 'Ellipse', IC('<ellipse cx="12" cy="12" rx="9" ry="7"/>')],
+    ['diamond', 'Diamond', IC('<path d="M12 3l9 9-9 9-9-9z"/>')],
+    ['triangle', 'Triangle', IC('<path d="M12 4l9 16H3z"/>')],
+    ['star', 'Star', IC('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>')],
+    ['hexagon', 'Hexagon', IC('<path d="M7 4h10l5 8-5 8H7l-5-8z"/>')],
+    ['bubble', 'Speech bubble', IC('<path d="M4 5h16v11H10l-4 4v-4H4z"/>')],
+    ['barrow', 'Block arrow', IC('<path d="M3 9h11V5l7 7-7 7v-4H3z"/>')],
+    ['parallel', 'Parallelogram', IC('<path d="M7 5h14l-4 14H3z"/>')],
+    ['cylinder', 'Cylinder', IC('<ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"/>')],
+  ];
   const TOOLS = [
     ['select', 'V', 'Select', IC('<path d="M5 3l14 8-6 2-2 6z"/>')],
     ['hand', 'H', 'Move around', IC('<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V12M14 11.5V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7L3 13.5a1.5 1.5 0 0 1 2.4-1.8L8 14"/>')],
     '|',
-    ['pen', 'P', 'Pen', IC('<path d="M4 20c4 0 4-4 8-4s4 4 8 4"/><path d="M14 4l6 6-8 8-6-6z"/>')],
-    ['hl', 'M', 'Highlighter', IC('<path d="M9 11l-4 4v4h4l4-4"/><path d="M13 7l4 4-4 4-4-4z" fill="currentColor" fill-opacity=".25"/><path d="M15 5l4 4"/>')],
+    ['@draw', 'P', 'Draw: pen, pencil, marker, brush…', null],
     ['eraser', 'E', 'Eraser', IC('<path d="M7 20h11"/><path d="M5.5 14.5l8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 18H8z"/>')],
     '|',
-    ['rect', 'R', 'Rectangle', IC('<rect x="4" y="5" width="16" height="14" rx="2"/>')],
-    ['ellipse', 'O', 'Ellipse', IC('<ellipse cx="12" cy="12" rx="9" ry="7"/>')],
-    ['diamond', 'D', 'Diamond', IC('<path d="M12 3l9 9-9 9-9-9z"/>')],
+    ['@shapes', 'R', 'Shapes: rectangle, ellipse, star…', null],
     ['line', 'L', 'Line', IC('<path d="M5 19L19 5"/>')],
     ['arrow', 'A', 'Arrow', IC('<path d="M5 19L19 5M11 5h8v8"/>')],
     '|',
@@ -862,15 +946,42 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ['note', 'N', 'Sticky note', IC('<path d="M5 4h14v10l-6 6H5z"/><path d="M13 20v-6h6"/>')],
     ['image', 'I', 'Image', IC('<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/>')],
   ];
+  const isDraw = (t) => t === 'pen' || t === 'hl';
   function renderTools() {
-    $('wbTools').innerHTML = TOOLS.map((t) => t === '|' ? '<span class="fsep"></span>' :
-      `<button type="button" class="fbtn" data-tool="${t[0]}" aria-pressed="${S.tool === t[0]}" title="${t[2]} (${t[1]})" aria-label="${t[2]}">${t[3]}<kbd>${t[1]}</kbd></button>`).join('');
+    const brush = BRUSHES.find((b) => b[0] === (S.tool === 'hl' ? 'hl' : S.style.brush)) || BRUSHES[0];
+    const shape = SHAPE_LIST.find((x) => x[0] === (isShape(S.tool) ? S.tool : S.style.shape)) || SHAPE_LIST[0];
+    $('wbTools').innerHTML = TOOLS.map((t) => {
+      if (t === '|') return '<span class="fsep"></span>';
+      if (t[0] === '@draw') return `<button type="button" class="fbtn group" data-group="draw" aria-pressed="${isDraw(S.tool)}" title="${brush[1]} (P) · click for more pencils" aria-label="Draw with ${brush[1]}">${brush[3]}<kbd>P</kbd><i class="more"></i></button>`;
+      if (t[0] === '@shapes') return `<button type="button" class="fbtn group" data-group="shapes" aria-pressed="${isShape(S.tool)}" title="${shape[1]} (R) · click for more shapes" aria-label="Shape: ${shape[1]}">${shape[2]}<kbd>R</kbd><i class="more"></i></button>`;
+      return `<button type="button" class="fbtn" data-tool="${t[0]}" aria-pressed="${S.tool === t[0]}" title="${t[2]} (${t[1]})" aria-label="${t[2]}">${t[3]}<kbd>${t[1]}</kbd></button>`;
+    }).join('');
   }
+  // the menu next to the toolbar for the pencils or the shapes
+  function openFly(kind, btn) {
+    closeFly();
+    const fly = document.createElement('div'); fly.className = 'wb-fly'; fly.id = 'wbFly'; fly.setAttribute('role', 'menu');
+    fly.innerHTML = kind === 'draw'
+      ? '<h4>Draw with</h4>' + BRUSHES.map((b) => `<button type="button" role="menuitem" class="fly-opt${(S.tool === 'hl' ? 'hl' : S.style.brush) === b[0] && isDraw(S.tool) ? ' on' : ''}" data-brush="${b[0]}">${b[3]}<span><b>${b[1]}</b><small>${b[2]}</small></span></button>`).join('')
+      : '<h4>Shapes</h4><div class="fly-grid">' + SHAPE_LIST.map((x) => `<button type="button" role="menuitem" class="fly-sq${S.tool === x[0] ? ' on' : ''}" data-shape="${x[0]}" title="${x[1]}" aria-label="${x[1]}">${x[2]}<span>${x[1]}</span></button>`).join('') + '</div>';
+    stage().appendChild(fly);
+    const r = btn.getBoundingClientRect(), sr = stage().getBoundingClientRect();
+    fly.style.top = Math.max(8, Math.min(sr.height - fly.offsetHeight - 8, r.top - sr.top - 8)) + 'px';
+    fly.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-brush]'), sh = e.target.closest('[data-shape]');
+      if (b) { if (b.dataset.brush !== 'hl') S.style.brush = b.dataset.brush; saveStyle(); setTool(b.dataset.brush === 'hl' ? 'hl' : 'pen'); }
+      if (sh) { S.style.shape = sh.dataset.shape; saveStyle(); setTool(sh.dataset.shape); }
+      closeFly();
+    });
+  }
+  function closeFly() { const f = $('wbFly'); if (f) f.remove(); }
+  function saveStyle() { try { localStorage.setItem('ptWbStyle', JSON.stringify(S.style)); } catch (e) {} }
   function setTool(t) {
     if (t === 'image') { $('wbFile').click(); return; }
     commitEdit(); S.tool = t;
     if (t !== 'select') { S.sel.clear(); renderSel(); }
-    $('wbStage').className = 'wb-stage t-' + t;
+    $('wbStage').className = 'wb-stage t-' + (isShape(t) ? 'rect' : t);
+    if (isShape(t)) S.style.shape = t;
     renderTools(); renderStyle();
   }
 
@@ -878,7 +989,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function styleTarget() {
     const list = selList();
     if (list.length) return {list, kinds: new Set(list.map((e) => e.t))};
-    if (['pen', 'hl', 'rect', 'ellipse', 'diamond', 'line', 'arrow', 'text', 'note'].includes(S.tool)) return {list: [], kinds: new Set([S.tool])};
+    if (['pen', 'hl', 'line', 'arrow', 'text', 'note'].includes(S.tool) || isShape(S.tool)) return {list: [], kinds: new Set([S.tool])};
     return null;
   }
   function renderStyle() {
@@ -887,25 +998,34 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const k = T.kinds, cur = T.list[0] || S.style, has = (...a) => a.some((x) => k.has(x));
     const pick = (key, val) => (T.list.length ? T.list.every((e) => e[key] === val) : S.style[key] === val);
     let h = '';
+    const shapesOnly = [...k].every(isShape), drawOnly = [...k].every(isDraw);
+    if (drawOnly) {
+      const curB = T.list.length ? (T.list[0].t === 'hl' ? 'hl' : (T.list[0].brush || 'pen')) : (S.tool === 'hl' ? 'hl' : S.style.brush);
+      h += '<h4>Pencil</h4><div class="sw-row">' + BRUSHES.map((b) => `<button type="button" class="opt ico" data-set="brush" data-v="${b[0]}" aria-pressed="${curB === b[0]}" title="${b[1]}" aria-label="${b[1]}">${b[3]}</button>`).join('') + '</div>';
+    }
+    if (shapesOnly) {
+      const curS = T.list.length ? T.list[0].t : S.tool;
+      h += '<h4>Shape</h4><div class="sw-row">' + SHAPE_LIST.map((x) => `<button type="button" class="opt ico" data-set="shape" data-v="${x[0]}" aria-pressed="${T.list.length ? T.list.every((e) => e.t === x[0]) : curS === x[0]}" title="${x[1]}" aria-label="${x[1]}">${x[2]}</button>`).join('') + '</div>';
+    }
     if (has('note') && k.size === 1) {
       h += '<h4>Note color</h4><div class="sw-row">' + NOTES.map((c) => `<button type="button" class="sw" data-set="fill" data-v="${c}" style="background:${c}" aria-pressed="${T.list.length ? pick('fill', c) : S.style.note === c}" aria-label="Note color"></button>`).join('') + '</div>';
     } else if (!has('image') || k.size > 1) {
       h += '<h4>Color</h4><div class="sw-row">' + COLORS.map((c) => `<button type="button" class="sw" data-set="stroke" data-v="${c}" style="background:${c === 'ink' ? 'var(--wb-ink)' : c}" aria-pressed="${pick('stroke', c)}" aria-label="Color"></button>`).join('') +
         `<label class="sw" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)" title="Any color"><input type="color" data-setc="stroke" aria-label="Any color"></label></div>`;
     }
-    if (has('rect', 'ellipse', 'diamond')) {
+    if ([...k].some(isShape)) {
       h += '<h4>Fill</h4><div class="sw-row">' + FILLS.map((c) => `<button type="button" class="sw${c === 'none' ? ' none' : ''}" data-set="fill" data-v="${c}" style="${c === 'none' ? '' : 'background:' + (c === 'ink' ? 'var(--wb-ink)' : c)}" aria-pressed="${pick('fill', c)}" aria-label="Fill"></button>`).join('') + '</div>';
       h += '<div class="opt-row" style="margin-top:6px">' + [['soft', 'Light'], ['solid', 'Solid']].map(([v, l]) => `<button type="button" class="opt" data-set="fillStyle" data-v="${v}" aria-pressed="${pick('fillStyle', v)}">${l}</button>`).join('') + '</div>';
     }
-    if (has('pen', 'hl', 'rect', 'ellipse', 'diamond', 'line', 'arrow')) {
+    if ([...k].some((t) => isDraw(t) || isShape(t) || t === 'line' || t === 'arrow')) {
       h += '<h4>Thickness</h4><div class="opt-row">' + [[1, 'S'], [2, 'M'], [4, 'L'], [8, 'XL']].map(([v, l]) => `<button type="button" class="opt" data-set="sw" data-v="${v}" aria-pressed="${pick('sw', v)}">${l}</button>`).join('') + '</div>';
     }
-    if (has('rect', 'ellipse', 'diamond', 'line', 'arrow')) {
+    if ([...k].some((t) => isShape(t) || t === 'line' || t === 'arrow')) {
       h += '<h4>Line</h4><div class="opt-row">' + [['solid', '<path d="M2 7h20"/>'], ['dashed', '<path d="M2 7h5M10 7h5M18 7h4"/>'], ['dotted', '<path d="M2 7h1M7 7h1M12 7h1M17 7h1M22 7h0"/>']].map(([v, p]) =>
         `<button type="button" class="opt" data-set="dash" data-v="${v}" aria-pressed="${pick('dash', v)}" aria-label="${v}"><svg viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">${p}</svg></button>`).join('') + '</div>';
     }
     if (has('rect')) h += '<h4>Corners</h4><div class="opt-row">' + [[false, 'Sharp'], [true, 'Round']].map(([v, l]) => `<button type="button" class="opt" data-set="round" data-v="${v}" aria-pressed="${pick('round', v)}">${l}</button>`).join('') + '</div>';
-    if (has('text', 'note', 'rect', 'ellipse', 'diamond')) {
+    if ([...k].some((t) => t === 'text' || t === 'note' || isShape(t))) {
       h += '<h4>Text size</h4><div class="opt-row">' + [[16, 'S'], [24, 'M'], [36, 'L'], [56, 'XL']].map(([v, l]) => `<button type="button" class="opt" data-set="fs" data-v="${v}" aria-pressed="${pick('fs', v)}">${l}</button>`).join('') + '</div>';
       h += '<h4>Font</h4><div class="opt-row">' + [['hand', '<span style="font-family:Caveat,cursive;font-size:17px">Hand</span>'], ['sans', 'Normal']].map(([v, l]) => `<button type="button" class="opt" data-set="font" data-v="${v}" aria-pressed="${pick('font', v)}">${l}</button>`).join('') + '</div>';
     }
@@ -921,11 +1041,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   function setStyle(key, val) {
     const list = selList();
+    if (key === 'brush') {
+      if (list.length) { list.forEach((e) => { if (!isDraw(e.t)) return; if (val === 'hl') e.t = 'hl'; else { e.t = 'pen'; e.brush = val; } renderEl(e.id); dirty(e.id); }); commit(); renderSel(); return; }
+      if (val !== 'hl') S.style.brush = val; saveStyle(); setTool(val === 'hl' ? 'hl' : 'pen'); return;
+    }
+    if (key === 'shape') {
+      if (list.length) { list.forEach((e) => { if (isShape(e.t)) { e.t = val; renderEl(e.id); dirty(e.id); } }); S.style.shape = val; saveStyle(); commit(); renderSel(); return; }
+      setTool(val); return;
+    }
     if (key === 'fill' && list.length && list.every((e) => e.t === 'note')) { list.forEach((e) => { e.fill = val; }); }
     else if (list.length) {
       list.forEach((e) => {
-        if (key === 'fill') { if (['rect', 'ellipse', 'diamond'].includes(e.t)) { e.fill = val; if (val !== 'none' && (!e.fillStyle || e.fillStyle === 'none')) e.fillStyle = 'soft'; if (val === 'none') e.fillStyle = 'none'; } }
-        else if (key === 'fillStyle') { if (['rect', 'ellipse', 'diamond'].includes(e.t)) { e.fillStyle = val; if (!e.fill || e.fill === 'none') e.fill = e.stroke === 'ink' ? '#A5D8FF' : e.stroke; } }
+        if (key === 'fill') { if (isShape(e.t)) { e.fill = val; if (val !== 'none' && (!e.fillStyle || e.fillStyle === 'none')) e.fillStyle = 'soft'; if (val === 'none') e.fillStyle = 'none'; } }
+        else if (key === 'fillStyle') { if (isShape(e.t)) { e.fillStyle = val; if (!e.fill || e.fill === 'none') e.fill = e.stroke === 'ink' ? '#A5D8FF' : e.stroke; } }
         else e[key] = val;
       });
     }
@@ -946,7 +1074,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function hits(el, x, y, tol) {
     if (el.t === 'line' || el.t === 'arrow') return distSeg(x, y, el.pts[0], el.pts[1], el.pts[2], el.pts[3]) <= (el.sw || 2) / 2 + tol;
     if (el.t === 'pen' || el.t === 'hl') {
-      const w = (el.t === 'hl' ? (el.sw || 2) * 6 : (el.sw || 2)) / 2 + tol, p = el.pts;
+      const f = el.t === 'hl' ? 6 : ({marker: 3, brush: 3.1, calli: 2.6}[el.brush] || 1), w = (el.sw || 2) * f / 2 + tol, p = el.pts;
       const b = bbox(el); if (x < b.x - w || x > b.x + b.w + w || y < b.y - w || y > b.y + b.h + w) return false;
       if (p.length < 4) return Math.hypot(x - el.x - p[0], y - el.y - p[1]) <= w;
       for (let i = 0; i < p.length - 2; i += 2) if (distSeg(x, y, el.x + p[i], el.y + p[i + 1], el.x + p[i + 2], el.y + p[i + 3]) <= w) return true;
@@ -961,7 +1089,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function nextZ() { zTop = Math.max(zTop, ...[...S.els.values()].map((e) => e.z || 0)) + 1; return zTop; }
   function newEl(t, x, y) {
     const st = S.style, el = {id: uid(), t, z: nextZ(), op: st.op};
-    if (t === 'pen' || t === 'hl') Object.assign(el, {x, y, pts: [0, 0], stroke: t === 'hl' && st.stroke === 'ink' ? '#F08C00' : st.stroke, sw: st.sw});
+    if (t === 'pen' || t === 'hl') { Object.assign(el, {x, y, pts: [0, 0], stroke: t === 'hl' && st.stroke === 'ink' ? '#F08C00' : st.stroke, sw: st.sw}); if (t === 'pen') { el.brush = st.brush || 'pen'; if (el.brush === 'brush') el.wd = [1]; } }
     else if (t === 'line' || t === 'arrow') Object.assign(el, {pts: [x, y, x, y], stroke: st.stroke, sw: st.sw, dash: st.dash});
     else if (t === 'text') Object.assign(el, {x, y, text: '', stroke: st.stroke, fs: st.fs, font: st.font});
     else if (t === 'note') Object.assign(el, {x: x - 100, y: y - 100, w: 200, h: 200, text: '', fill: st.note, fs: Math.min(st.fs, 28), font: st.font});
@@ -974,7 +1102,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function onDown(e) {
     if (!S.board || e.button === 2) return;
     // the buttons and panels on top of the board are not the board: leave their clicks alone
-    if (e.target.closest && e.target.closest('.fbar, .wb-top, .wb-style, .wb-none, #wbText')) return;
+    if (e.target.closest && e.target.closest('.fbar, .wb-top, .wb-style, .wb-fly, .wb-none, #wbText')) return;
     if (S.editing && e.target !== $('wbText')) commitEdit();
     const p = toWorld(e.clientX, e.clientY);
     stage().setPointerCapture(e.pointerId);
@@ -1013,7 +1141,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const el = S.els.get(d.id); if (!el) return;
       if (el.t === 'pen' || el.t === 'hl') {
         (evs.length ? evs : [e]).forEach((ev) => { const q = toWorld(ev.clientX, ev.clientY), n = el.pts.length, lx = el.pts[n - 2], ly = el.pts[n - 1];
-          const nx = q.x - el.x, ny = q.y - el.y; if (Math.hypot(nx - lx, ny - ly) * S.view.z > 1.5) el.pts.push(+nx.toFixed(1), +ny.toFixed(1)); });
+          const nx = q.x - el.x, ny = q.y - el.y, dist = Math.hypot(nx - lx, ny - ly) * S.view.z;
+          if (dist > 1.5) {
+            el.pts.push(+nx.toFixed(1), +ny.toFixed(1));
+            if (el.wd) {                                       // the brush: pen pressure if there is any, otherwise slower = wider
+              const prev = el.wd[el.wd.length - 1], want = ev.pointerType === 'pen' && ev.pressure > 0 ? 0.3 + ev.pressure * 1.1 : clamp(1.35 - dist / 28, 0.35, 1.35);
+              el.wd.push(+(prev * 0.65 + want * 0.35).toFixed(2));
+            }
+          } });
       } else if (el.t === 'line' || el.t === 'arrow') {
         let x = p.x, y = p.y;
         if (e.shiftKey) { const a = Math.round(Math.atan2(y - d.sy, x - d.sx) / (Math.PI / 4)) * (Math.PI / 4), L = Math.hypot(x - d.sx, y - d.sy); x = d.sx + L * Math.cos(a); y = d.sy + L * Math.sin(a); }
@@ -1049,7 +1184,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const el = S.els.get(d.id); if (!el) return;
       if (BOX.includes(el.t) && el.w < 4 && el.h < 4) { el.w = el.t === 'diamond' ? 150 : 160; el.h = el.t === 'diamond' ? 120 : 100; el.x -= el.w / 2; el.y -= el.h / 2; renderEl(el.id); }
       if ((el.t === 'line' || el.t === 'arrow') && Math.hypot(el.pts[2] - el.pts[0], el.pts[3] - el.pts[1]) < 4) { el.pts[2] = el.pts[0] + 140; renderEl(el.id); }
-      if (el.t === 'pen' || el.t === 'hl') el.pts = simplify(el.pts, 0.6 / S.view.z);
+      if (el.t === 'pen' || el.t === 'hl') simplifyEl(el, 0.6 / S.view.z);
       dirty(el.id); commit();
       if (el.t !== 'pen' && el.t !== 'hl') { setTool('select'); S.sel = new Set([el.id]); renderSel(); }
       return;
@@ -1069,16 +1204,20 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     updateHint();
   }
   // fewer points for a freehand line, same shape (keeps boards small)
-  function simplify(pts, eps) {
-    const n = pts.length / 2; if (n < 3) return pts;
+  function simplifyEl(el, eps) {
+    const keep = simplifyMask(el.pts, el.brush === 'brush' || el.brush === 'calli' ? eps * 0.5 : eps); if (!keep) return;
+    const pts = [], wd = []; keep.forEach((k, i) => { if (k) { pts.push(el.pts[i * 2], el.pts[i * 2 + 1]); if (el.wd) wd.push(el.wd[i]); } });
+    el.pts = pts; if (el.wd) el.wd = wd;
+  }
+  function simplifyMask(pts, eps) {
+    const n = pts.length / 2; if (n < 3) return null;
     const keep = new Uint8Array(n); keep[0] = keep[n - 1] = 1;
     (function rdp(a, b) {
       let md = 0, mi = -1;
       for (let i = a + 1; i < b; i++) { const dd = distSeg(pts[i * 2], pts[i * 2 + 1], pts[a * 2], pts[a * 2 + 1], pts[b * 2], pts[b * 2 + 1]); if (dd > md) { md = dd; mi = i; } }
       if (md > eps && mi > 0) { keep[mi] = 1; rdp(a, mi); rdp(mi, b); }
     })(0, n - 1);
-    const out = []; for (let i = 0; i < n; i++) if (keep[i]) out.push(pts[i * 2], pts[i * 2 + 1]);
-    return out;
+    return keep;
   }
 
   // ---------- resizing ----------
@@ -1115,7 +1254,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   // ---------- typing on the board ----------
   function startEdit(id) {
-    const el = S.els.get(id); if (!el || !['text', 'note', 'rect', 'ellipse', 'diamond'].includes(el.t)) return;
+    const el = S.els.get(id); if (!el || !(el.t === 'text' || el.t === 'note' || isShape(el.t))) return;
     S.editing = {id, before: el.text || ''};
     const ta = $('wbText'); ta.value = el.text || ''; ta.classList.remove('hidden'); ta.classList.toggle('center', el.t !== 'text');
     renderEl(id); placeEditor(); setTimeout(() => { ta.focus(); ta.select(); }, 0);
@@ -1347,7 +1486,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       else if (el.t === 'note') { c.fillStyle = 'rgba(0,0,0,.12)'; c.fill(new Path2D(pathD({...el, x: el.x + 3, y: el.y + 5}))); c.fillStyle = el.fill || '#FFE58A'; c.fill(new Path2D(pathD(el))); drawText(el, textLayout(el), '#1E1E1E'); }
       else {
         const p = new Path2D(pathD(el)), sw = el.sw || 2; c.lineCap = 'round'; c.lineJoin = 'round';
-        if (el.t === 'pen' || el.t === 'hl') { c.strokeStyle = col(el.stroke); c.lineWidth = el.t === 'hl' ? sw * 6 : sw; if (el.t === 'hl') c.globalAlpha *= 0.35; c.stroke(p); }
+        if (el.t === 'pen' || el.t === 'hl') {
+          strokeLooks(el).forEach((L) => {
+            c.save(); c.globalAlpha *= L.opacity == null ? 1 : L.opacity; const P = new Path2D(L.d);
+            if (L.fill) { c.fillStyle = col(el.stroke); c.fill(P); }
+            else { c.strokeStyle = col(el.stroke); c.lineWidth = L.width; c.lineCap = L.cap || 'round'; c.lineJoin = L.join || 'round'; c.setLineDash(L.dash ? L.dash.split(' ').map(Number) : []); if (L.shift) c.translate(L.shift, L.shift); c.stroke(P); }
+            c.restore();
+          });
+        }
         else {
           if (el.fillStyle && el.fillStyle !== 'none' && el.fill && el.fill !== 'none' && el.t !== 'line' && el.t !== 'arrow') { c.save(); c.globalAlpha *= el.fillStyle === 'soft' ? 0.35 : 1; c.fillStyle = col(el.fill); c.fill(p); c.restore(); }
           c.strokeStyle = col(el.stroke); c.lineWidth = sw; const da = dashArray(el); c.setLineDash(da ? da.split(' ').map(Number) : []); c.stroke(p); c.setLineDash([]);
@@ -1361,7 +1507,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
 
   // ---------- keyboard ----------
-  const KEYS = {v: 'select', h: 'hand', p: 'pen', m: 'hl', e: 'eraser', r: 'rect', o: 'ellipse', d: 'diamond', l: 'line', a: 'arrow', t: 'text', n: 'note', i: 'image'};
+  const KEYS = {v: 'select', h: 'hand', p: 'pen', m: 'hl', e: 'eraser', r: 'rect', o: 'ellipse', d: 'diamond', l: 'line', a: 'arrow', t: 'text', n: 'note', i: 'image', s: '@shape'};
   function onKey(e) {
     if (!S.board || document.querySelector('.wb-dlg') || document.getElementById('ptTour')) return;
     const typing = e.target.closest && e.target.closest('input,textarea,[contenteditable]');
@@ -1383,13 +1529,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (mod && e.key === '[') { e.preventDefault(); arrange(false); return; }
     if (mod) return;
     if (e.key === 'Delete' || e.key === 'Backspace') { if (S.sel.size) { e.preventDefault(); deleteSel(); } return; }
-    if (e.key === 'Escape') { S.sel.clear(); renderSel(); setTool('select'); return; }
+    if (e.key === 'Escape') { if ($('wbFly')) { closeFly(); return; } S.sel.clear(); renderSel(); setTool('select'); return; }
     if (e.key === 'Enter' && S.sel.size === 1) { e.preventDefault(); startEdit([...S.sel][0]); return; }
     if (e.key.startsWith('Arrow') && S.sel.size) {
       e.preventDefault(); const st = e.shiftKey ? 10 : 1, dx = e.key === 'ArrowLeft' ? -st : e.key === 'ArrowRight' ? st : 0, dy = e.key === 'ArrowUp' ? -st : e.key === 'ArrowDown' ? st : 0;
       selList().forEach((el) => { moveEl(el, JSON.parse(JSON.stringify(el)), dx, dy); renderEl(el.id); dirty(el.id); }); renderSel(); clearTimeout(onKey.t); onKey.t = setTimeout(commit, 400); return;
     }
-    if (KEYS[k] && !e.altKey) { e.preventDefault(); setTool(KEYS[k]); }
+    if (KEYS[k] && !e.altKey) { e.preventDefault(); setTool(KEYS[k] === '@shape' ? (S.style.shape || 'rect') : KEYS[k]); }
   }
   function help() {
     const row = (a, b) => `<span>${a}</span><span>${b}</span>`;
@@ -1415,7 +1561,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     st.addEventListener('dblclick', (e) => {
       if (!S.board || e.target === $('wbText')) return;
       const p = toWorld(e.clientX, e.clientY), hit = topAt(p.x, p.y);
-      if (hit && ['text', 'note', 'rect', 'ellipse', 'diamond'].includes(hit.t)) { S.sel = new Set([hit.id]); renderSel(); startEdit(hit.id); return; }
+      if (hit && (hit.t === 'text' || hit.t === 'note' || isShape(hit.t))) { S.sel = new Set([hit.id]); renderSel(); startEdit(hit.id); return; }
       if (!hit) { const el = newEl('text', p.x, p.y - S.style.fs * 0.6); S.els.set(el.id, el); renderEl(el.id); setTool('select'); S.sel = new Set([el.id]); startEdit(el.id); }
     });
     st.addEventListener('wheel', (e) => {
@@ -1437,7 +1583,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     document.addEventListener('keyup', (e) => { if (e.key === ' ') { S.space = false; stage().classList.remove('panning'); } });
     $('wbText').addEventListener('input', placeEditor);
     $('wbText').addEventListener('blur', () => setTimeout(() => { if (S.editing && document.activeElement !== $('wbText')) commitEdit(); }, 120));
-    $('wbTools').addEventListener('click', (e) => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
+    $('wbTools').addEventListener('click', (e) => {
+      const g = e.target.closest('[data-group]');
+      if (g) {
+        const open = $('wbFly') && $('wbFly').dataset.kind === g.dataset.group;
+        if (g.dataset.group === 'draw' && !isDraw(S.tool)) setTool(S.style.brush === 'hl' ? 'hl' : 'pen');
+        if (g.dataset.group === 'shapes' && !isShape(S.tool)) setTool(S.style.shape || 'rect');
+        if (open) closeFly(); else { openFly(g.dataset.group, $('wbTools').querySelector(`[data-group="${g.dataset.group}"]`)); $('wbFly').dataset.kind = g.dataset.group; }
+        return;
+      }
+      const b = e.target.closest('[data-tool]'); if (b) { closeFly(); setTool(b.dataset.tool); }
+    });
+    document.addEventListener('pointerdown', (e) => { if ($('wbFly') && !e.target.closest('#wbFly, [data-group]')) closeFly(); }, true);
     $('wbStyle').addEventListener('click', (e) => {
       const s = e.target.closest('[data-set]'); if (s) { let v = s.dataset.v; if (s.dataset.set === 'sw' || s.dataset.set === 'fs') v = Number(v); if (s.dataset.set === 'round') v = v === 'true'; setStyle(s.dataset.set, v); return; }
       const a = e.target.closest('[data-do]'); if (!a) return;
