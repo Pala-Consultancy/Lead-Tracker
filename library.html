@@ -166,6 +166,12 @@
   .lib-tools .ph-btn{color:var(--teal);}
   .lib-tip{margin-left:auto;font-size:11.5px;color:var(--slate-light);padding-right:6px;}
   .lib-tip kbd{border:1px solid var(--border);border-radius:5px;padding:0 5px;font:600 11px 'Inter',sans-serif;background:var(--panel-alt);}
+  .lib-editor .fs-s{font-size:.82em;} .lib-editor .fs-l{font-size:1.25em;} .lib-editor .fs-xl{font-size:1.6em;line-height:1.35;} .lib-editor .fs-xxl{font-size:2.1em;line-height:1.25;}
+  .tg-pal.fs-menu{display:flex;flex-direction:column;gap:2px;padding:6px;min-width:190px;}
+  .tg-pal.fs-menu button{width:auto;height:auto;border:none;background:none;text-align:left;padding:6px 10px;border-radius:8px;color:var(--ink);font-family:Inter,sans-serif;font-weight:600;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .tg-pal.fs-menu button:hover,.tg-pal.fs-menu button[aria-pressed="true"]{background:var(--panel-alt);outline:none;}
+  .tg-pal.fs-menu button[aria-pressed="true"]{color:var(--teal);}
+  .tg-pal.fs-menu small{font-size:11px;color:var(--slate-light);font-weight:500;}
   .lib-editor{min-height:50vh;outline:none;font:400 15.5px/1.7 'Inter',sans-serif;color:var(--ink);padding:4px 2px;}
   .lib-editor:empty::before,.lib-editor > p:only-child:has(> br:only-child)::before{content:attr(data-placeholder);color:var(--slate-light);pointer-events:none;}
   .lib-editor > p:only-child:has(> br:only-child)::before{content:"Write something, or type / for headings, lists, to-dos…";}
@@ -259,6 +265,13 @@
   .lib-editor .tg > .tg-ui.tg-dot{float:right;width:18px;height:18px;margin:5px 8px 0 0;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:pointer;padding:0;opacity:0;transition:opacity .15s;background:var(--tg-dot,#C7CEDA);}
   .lib-editor .tg:hover > .tg-ui.tg-dot,.lib-editor .tg:focus-within > .tg-ui.tg-dot{opacity:1;}
   .lib-editor .tg-title:empty::before{content:"Toggle";color:var(--slate-light);}
+  .lib-editor .tg > .tg-ui.tg-exp{float:right;width:24px;height:24px;margin:2px 4px 0 0;border:none;background:none;border-radius:6px;color:var(--slate);cursor:pointer;padding:3px;opacity:0;transition:opacity .15s;display:flex;align-items:center;justify-content:center;}
+  .lib-editor .tg > .tg-ui.tg-exp svg{width:16px;height:16px;}
+  .lib-editor .tg > .tg-ui.tg-exp:hover{background:rgba(127,127,127,.15);color:var(--ink);}
+  .lib-editor .tg:hover > .tg-ui.tg-exp,.lib-editor .tg:focus-within > .tg-ui.tg-exp{opacity:1;}
+  .tg-pal.tg-exm{display:flex;flex-direction:column;gap:2px;padding:6px;min-width:200px;}
+  .tg-pal.tg-exm button{width:auto;height:auto;border:none;background:none;text-align:left;padding:8px 10px;border-radius:8px;font:600 13.5px Inter,sans-serif;color:var(--ink);}
+  .tg-pal.tg-exm button:hover{background:var(--panel-alt);}
   .lib-editor .tg-body{margin-left:26px;padding:0 0 4px;}
   .lib-editor .tg[data-open="false"] > .tg-body{display:none;}
   .lib-editor .tg-body > :first-child{margin-top:2px;}
@@ -1201,6 +1214,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div class="lib-tools" role="toolbar" aria-label="Formatting">
           <button type="button" data-tool="bold" title="Bold (Ctrl+B)"><b>B</b></button>
           <button type="button" data-tool="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button type="button" data-tool="size" title="Text size (Ctrl+Shift+> bigger, Ctrl+Shift+< smaller)" aria-label="Text size"><span style="font-size:11px">A</span><span style="font-size:15px">A</span></button>
           <span class="sep"></span>
           <button type="button" data-tool="h2" title="Heading">H</button>
           <button type="button" data-tool="ul" title="Bulleted list">•</button>
@@ -1855,6 +1869,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     .todo{margin:3px 0;} .todo.done{color:#7A8699;text-decoration:line-through;}
     .ph{background:#EEF0FF;color:#3730B3;border-radius:4px;padding:0 4px;font-weight:600;}
     .flow{margin:12px 0;padding:10px 14px;border:1px solid #DDE3EC;border-radius:10px;}
+    .fs-s{font-size:.82em;} .fs-l{font-size:1.25em;} .fs-xl{font-size:1.6em;} .fs-xxl{font-size:2.1em;}
     .tg{margin:10px 0;padding:6px 0 4px 12px;border-left:3px solid #C7CEDA;}
     .tg-title{font-weight:700;margin:0 0 4px;}
     .tg[data-color="gray"]{border-color:#9B9A97;} .tg[data-color="brown"]{border-color:#A27763;} .tg[data-color="orange"]{border-color:#E8913A;}
@@ -1866,18 +1881,22 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     .fl-msg p{margin:0 0 4px;} .fl-branches{margin-left:12px;padding-left:16px;border-left:2px dashed #DDE3EC;}
     img{max-width:100%;height:auto;} hr{border:0;border-top:1px solid #E3E8EF;margin:16px 0;}
     @page{margin:18mm 16mm;}`;
+  let exportScope = null;                    // a toggle: export only that box
   function exportParts(p){
-    const ed = $('libEditor').cloneNode(true);
+    const scope = exportScope && $('libEditor').contains(exportScope) ? exportScope : null;
+    const ed = scope ? (scope.querySelector(':scope > .tg-body') || document.createElement('div')).cloneNode(true) : $('libEditor').cloneNode(true);
     ed.querySelectorAll('button,[data-noexport],input,select,textarea,.lib-menu').forEach(el=> el.remove());
     ed.querySelectorAll('.ph[data-ph]').forEach(el=>{ const s = document.createElement('span'); s.className = 'ph'; s.textContent = '{' + el.dataset.ph + '}'; el.replaceWith(s); });
     ed.querySelectorAll('.todo').forEach(el=>{ const done = el.dataset.checked === 'true'; el.classList.toggle('done', done); el.insertBefore(document.createTextNode(done ? '☑ ' : '☐ '), el.firstChild); });
     ed.querySelectorAll('.file').forEach(f=>{ const p = document.createElement('p'); p.innerHTML = '📎 <a href="' + esc(f.getAttribute('data-url') || '') + '">' + esc(f.getAttribute('data-name') || 'Document') + '</a>'; f.replaceWith(p); });
     ed.querySelectorAll('[contenteditable]').forEach(el=> el.removeAttribute('contenteditable'));
     ed.querySelectorAll('[data-placeholder]').forEach(el=> el.removeAttribute('data-placeholder'));
-    const title = (p.title || 'Untitled').trim();
+    const boxTitle = scope ? ((scope.querySelector(':scope > .tg-title') || {}).textContent || '').trim() : '';
+    const title = (scope ? (boxTitle || 'Untitled section') : (p.title || 'Untitled')).trim();
     const when = new Date().toLocaleDateString(undefined, {day: 'numeric', month: 'long', year: 'numeric'});
     const folder = (folders.find(f=> f.id === folderIdOf(p)) || {}).name || '';
-    const body = `<div class="doc"><h1 class="doc-title">${esc(title)}</h1><div class="doc-meta">${folder ? esc(folder) + ' · ' : ''}${esc(when)}</div>${ed.innerHTML}</div>`;
+    const from = scope ? (p.title || 'Untitled') + ' · ' : '';
+    const body = `<div class="doc"><h1 class="doc-title">${esc(title)}</h1><div class="doc-meta">${esc(from)}${folder ? esc(folder) + ' · ' : ''}${esc(when)}</div>${ed.innerHTML}</div>`;
     const file = (title.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Page').slice(0, 80);
     return {title, body, file};
   }
@@ -2479,6 +2498,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const arrow = document.createElement('button'); arrow.type = 'button'; arrow.className = 'tg-ui tg-arrow'; arrow.contentEditable = 'false';
     arrow.setAttribute('aria-label', 'Open or close this toggle'); arrow.setAttribute('aria-expanded', tg.getAttribute('data-open')); arrow.textContent = '▶';
     tg.insertBefore(arrow, title);
+    const exp = document.createElement('button'); exp.type = 'button'; exp.className = 'tg-ui tg-exp'; exp.contentEditable = 'false'; exp.title = 'Download or copy this box'; exp.setAttribute('aria-label', 'Download or copy this box');
+    exp.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
+    tg.insertBefore(exp, title);
     if(editable){ const dot = document.createElement('button'); dot.type = 'button'; dot.className = 'tg-ui tg-dot'; dot.contentEditable = 'false'; dot.title = 'Color'; dot.setAttribute('aria-label', 'Choose a color for this toggle'); tg.insertBefore(dot, title); }
   }
   function lineAfter(tg){                 // an empty line after a toggle, so you can always click below it
@@ -2499,6 +2521,84 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const host = tg.parentElement; if(host && host.classList.contains('tg-body')) lineAfter(host.parentElement);
     if(title.textContent.trim()) caretTo(body.firstChild, true); else { title.focus(); caretTo(title, true); }
     markDirty();
+  }
+  // ================= text size =================
+  const SIZES = [['fs-s', 'Small'], ['', 'Normal'], ['fs-l', 'Large'], ['fs-xl', 'Extra large'], ['fs-xxl', 'Huge']];
+  function sizeAtCaret(){ const s = getSelection(); const n = s.rangeCount ? s.anchorNode : null; const el = n && (n.nodeType === 1 ? n : n.parentElement); const sp = el && el.closest('span.fs-s, span.fs-l, span.fs-xl, span.fs-xxl'); return sp && ed.contains(sp) ? sp.className : ''; }
+  function applySize(cls){
+    ed.focus(); const s = getSelection(); if(!s.rangeCount || !ed.contains(s.anchorNode)) return;
+    if(s.isCollapsed){                                       // nothing selected: the whole line you're on
+      let b = curBlock(); if(!b) return;
+      if(b.classList && b.classList.contains('tg')) b = b.querySelector(':scope > .tg-title') || b;
+      if(b.classList && (b.classList.contains('flow') || b.classList.contains('file'))) return;
+      const li = curLi(); const r = document.createRange(); r.selectNodeContents(li || b); s.removeAllRanges(); s.addRange(r);
+    }
+    document.execCommand('styleWithCSS', false, false);
+    document.execCommand('fontSize', false, '7');
+    const FS = 'span.fs-s, span.fs-l, span.fs-xl, span.fs-xxl', touched = [];
+    ed.querySelectorAll('font[size="7"]').forEach(f=>{
+      // an older size around exactly this text: the new size replaces it (instead of stacking on top)
+      let up = f.parentElement;
+      while(up && up !== ed && up.matches(FS) && up.textContent.trim() === f.textContent.trim()){ const next = up.parentElement; up.replaceWith(...up.childNodes); up = next; }
+      f.querySelectorAll(FS).forEach(x=> x.replaceWith(...x.childNodes));    // and it replaces any size inside
+      if(cls){ const sp = document.createElement('span'); sp.className = cls; sp.append(...f.childNodes); f.replaceWith(sp); touched.push(sp); }
+      else { const kids = [...f.childNodes]; f.replaceWith(...kids); touched.push(...kids); }
+    });
+    ed.querySelectorAll('font').forEach(f=> f.replaceWith(...f.childNodes));
+    ed.querySelectorAll('span.fs-s:empty, span.fs-l:empty, span.fs-xl:empty, span.fs-xxl:empty').forEach(x=> x.remove());
+    // keep the changed text selected, so you can change it again straight away
+    const live = touched.filter(n=> ed.contains(n));
+    if(live.length){ const r = document.createRange(); r.setStartBefore(live[0]); r.setEndAfter(live[live.length - 1]);
+      if(live.length === 1 && live[0].nodeType === 1) r.selectNodeContents(live[0]);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+    markDirty();
+  }
+  function openSizeMenu(btn){
+    document.querySelectorAll('.tg-pal').forEach(x=> x.remove());
+    const cur = sizeAtCaret(), m = document.createElement('div'); m.className = 'tg-pal fs-menu'; m.setAttribute('role', 'menu');
+    const px = {'fs-s': 12.5, '': 15, 'fs-l': 18.5, 'fs-xl': 23, 'fs-xxl': 28};
+    m.innerHTML = SIZES.map(([c, l])=> `<button type="button" role="menuitemradio" data-fs="${c}" aria-pressed="${cur === c}"><span style="font-size:${px[c]}px">${l}</span>${c === 'fs-l' ? '<small>Ctrl+Shift+&gt;</small>' : c === 'fs-s' ? '<small>Ctrl+Shift+&lt;</small>' : ''}</button>`).join('');
+    document.body.appendChild(m);
+    const r = btn.getBoundingClientRect(); m.style.left = Math.max(10, Math.min(innerWidth - m.offsetWidth - 10, r.left)) + 'px'; m.style.top = (r.bottom + 8) + 'px';
+    m.addEventListener('mousedown', e=> e.preventDefault());
+    m.addEventListener('click', e=>{ const b = e.target.closest('[data-fs]'); if(!b) return; m.remove(); applySize(b.dataset.fs); });
+    setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target)){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
+  }
+  // Ctrl+Shift+> bigger, Ctrl+Shift+< smaller (like Google Docs)
+  ed.addEventListener('keydown', e=>{
+    if(ed.contentEditable !== 'true' || !(e.ctrlKey || e.metaKey) || !e.shiftKey) return;
+    const up = e.key === '>' || e.key === '.' || e.code === 'Period', down = e.key === '<' || e.key === ',' || e.code === 'Comma';
+    if(!up && !down) return;
+    e.preventDefault();
+    const order = SIZES.map(x=> x[0]), i = order.indexOf(sizeAtCaret()), n = Math.max(0, Math.min(order.length - 1, (i < 0 ? 1 : i) + (up ? 1 : -1)));
+    applySize(order[n]);
+  });
+
+  // download / copy only this box
+  function openBoxExport(tg, btn){
+    document.querySelectorAll('.tg-pal').forEach(x=> x.remove());
+    const m = document.createElement('div'); m.className = 'tg-pal tg-exm'; m.setAttribute('role', 'menu');
+    m.innerHTML = [['pdf', '📄 Download as PDF'], ['word', '📝 Download as Word'], ['gdoc', '🟦 Open as Google Doc'], ['print', '🖨 Print'], ['copy', '📋 Copy as text']]
+      .map(([k, l])=> `<button type="button" role="menuitem" data-bx="${k}">${l}</button>`).join('');
+    document.body.appendChild(m);
+    const r = btn.getBoundingClientRect(); m.style.left = Math.max(10, Math.min(innerWidth - m.offsetWidth - 10, r.right - m.offsetWidth + 12)) + 'px'; m.style.top = (r.bottom + 8) + 'px';
+    m.addEventListener('mousedown', e=> e.preventDefault());
+    m.addEventListener('click', e=>{
+      const b = e.target.closest('[data-bx]'); if(!b) return; m.remove();
+      const p = pages[curId]; if(!p) return; saveNow();
+      if(b.dataset.bx === 'copy'){
+        const t = document.createElement('div'); t.innerHTML = PTLib.clean((tg.querySelector(':scope > .tg-body') || {}).innerHTML || '');
+        const title = ((tg.querySelector(':scope > .tg-title') || {}).textContent || '').trim();
+        navigator.clipboard.writeText((title ? title + '\n\n' : '') + PTLib.toText(t.innerHTML, 'library')).then(()=> showToast('This box is copied as text.')).catch(()=> showToast('Couldn’t copy. Select the text and press Ctrl+C.', true));
+        return;
+      }
+      exportScope = tg;
+      try {
+        const run = {pdf: ()=> exportPdf(p), word: ()=> exportWord(p), gdoc: ()=> exportGoogleDoc(p), print: ()=> exportPrint(p)}[b.dataset.bx]();
+        if(run && run.catch) run.catch(err=> console.error(err));
+      } finally { exportScope = null; }          // each export reads what it needs straight away
+    });
+    setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target)){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
   }
   function openPalette(tg, btn){
     document.querySelectorAll('.tg-pal').forEach(x=> x.remove());
@@ -2527,6 +2627,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const open = tg.getAttribute('data-open') !== 'true'; tg.setAttribute('data-open', String(open)); a.setAttribute('aria-expanded', String(open));
       if(ed.contentEditable === 'true') markDirty();
     } else if(a.classList.contains('tg-dot')) openPalette(tg, a);
+    else if(a.classList.contains('tg-exp')) openBoxExport(tg, a);
   });
   ed.addEventListener('keydown', e=>{
     if(ed.contentEditable !== 'true' || e.isComposing) return;
@@ -2720,6 +2821,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     else if(t === 'ph') openPhMenu(b.getBoundingClientRect());
     else if(t === 'flow'){ const cur = curBlock(); insertFlow(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'file'){ pickDocs(); }
+    else if(t === 'size'){ openSizeMenu(b); }
     else if(t === 'toggle'){ const cur = curBlock(); if(cur && cur.classList && cur.classList.contains('tg') && inToggleTitle()) return; insertToggle(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'h2' || t === 'ul' || t === 'todo' || t === 'quote'){ const cur = curBlock(); const k = cur && ((t === 'h2' && cur.nodeName === 'H2') || (t === 'ul' && cur.nodeName === 'UL') || (t === 'quote' && cur.nodeName === 'BLOCKQUOTE') || (t === 'todo' && cur.classList && cur.classList.contains('todo'))) ? 'p' : t; convertBlock(k); }
   });
