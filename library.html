@@ -121,6 +121,11 @@
   .lib-item:hover{background:var(--panel-alt);}
   .lib-item.on{background:rgba(55,48,179,.09);color:var(--teal);font-weight:600;}
   .lib-item .ic{flex-shrink:0;width:18px;text-align:center;}
+  .lib-item .ic img.pic{width:18px;height:18px;object-fit:contain;vertical-align:-3px;border-radius:4px;}
+  .lib-icon img.pic{width:52px;height:52px;object-fit:contain;display:block;border-radius:10px;}
+  .lib-emoji .ic-up{grid-column:1 / -1;display:flex;gap:6px;margin-bottom:6px;}
+  .lib-emoji .ic-up button{flex:1;width:auto;height:34px;font-size:13px;font-weight:600;border:1px dashed var(--border);border-radius:9px;color:var(--ink);background:var(--panel-alt);}
+  .lib-emoji .ic-up button[data-rmicon]{flex:0 0 auto;padding:0 10px;color:var(--slate);}
   .lib-item .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .lib-item .tm{font-size:11px;flex-shrink:0;opacity:.75;}
   .lib-item .snip{display:block;font-size:11.5px;color:var(--slate);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -1207,6 +1212,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <button type="button" role="menuitem" data-more="delete" class="danger">🗑 Delete page</button>
 </div>
 <div class="lib-menu lib-emoji" id="libEmoji" role="dialog" aria-label="Choose an icon" hidden></div>
+<input type="file" id="libIconFile" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden>
 <div class="lib-menu" id="libFolderMenu" role="menu" aria-label="Folder options" hidden>
   <button type="button" role="menuitem" data-fm="rename">✏️ Rename</button>
   <button type="button" role="menuitem" data-fm="add">＋ New page here</button>
@@ -1309,7 +1315,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const FV = firebase.firestore.FieldValue;
   const DEFAULT_FOLDERS = [{id: 'icebreakers', name: 'Icebreakers'}, {id: 'follow-ups', name: 'Follow-ups'}, {id: 'call-scripts', name: 'Call scripts'},
     {id: 'objections', name: 'Objections'}, {id: 'ideas', name: 'Ideas'}];
-  const EMOJIS = ['📝','💡','👋','🧊','🔥','🚀','🎯','💬','📞','✉️','🔁','🤝','📈','💰','⭐','✅','📌','🧠','🗂️','📚','🛠️','❓','🙌','⚡','🌱','🏆','🎁','🧭','📣','🔑','🗓️','😊'];
+  const EMOJIS = ['📝','💡','👋','🧊','🔥','🚀','🎯','💬','📞','✉️','🔁','🤝','📈','💰','⭐','✅','📌','🧠','🗂️','📚','🛠️','❓','🙌','⚡','🌱','🏆','🎁','🧭','📣','🔑','🗓️','😊',
+    '▶️','🎥','📷','🔍','🎵','📱','🌐','✍️'];
+  // a page icon: your own image if you uploaded one, otherwise the emoji
+  const okImg = (v)=> typeof v === 'string' && /^data:image\/(png|jpeg|webp|gif);base64,/.test(v) && v.length < 140000;
+  function iconHTML(p){ return p && okImg(p.iconImg) ? `<img class="pic" src="${p.iconImg}" alt="">` : esc((p && p.icon) || '📝'); }
   const SLASH = [
     {k: 'p', label: 'Text', hint: 'Plain writing', ic: 'Aa'},
     {k: 'h1', label: 'Heading 1', hint: 'Big section title', ic: 'H1'},
@@ -1504,7 +1514,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const item = p=>{
       let snip = '';
       if(q && !(p.title || '').toLowerCase().includes(q)){ const t = p.text || '', i = t.toLowerCase().indexOf(q); snip = (i > 20 ? '…' : '') + t.slice(Math.max(0, i - 20), i + 60); }
-      return `<button type="button" class="lib-item${p.id === curId ? ' on' : ''}" data-open="${esc(p.id)}"><span class="ic">${esc(p.icon || '📝')}</span>
+      return `<button type="button" class="lib-item${p.id === curId ? ' on' : ''}" data-open="${esc(p.id)}"><span class="ic">${iconHTML(p)}</span>
         <span class="t">${esc(p.title || 'Untitled')}${snip ? `<span class="snip">${esc(snip)}</span>` : ''}</span>${PTLib.usesOf(p) ? `<span class="tm used" title="Used ${PTLib.usesOf(p)}× in messages">🔥${PTLib.usesOf(p)}</span>` : ''}${p.visibility === 'team' ? '<span class="tm" title="Shared with your team">👥</span>' : ''}</button>`;
     };
     let html = '';
@@ -1555,7 +1565,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     sh.classList.toggle('team', p.visibility === 'team');
     sh.textContent = p.visibility === 'team' ? (mine ? '👥 Shared with team' : `👥 Team page · by ${p.createdByName || 'a teammate'}`) : '🔒 Only me · Share';
     sh.disabled = !mine; sh.title = mine ? (p.visibility === 'team' ? 'Make it private again' : 'Share with your team') : 'Only its author can change who sees it';
-    $('libIcon').textContent = p.icon || '📝';
+    $('libIcon').innerHTML = iconHTML(p);
     const inId = folderIdOf(p);
     $('libFolder').innerHTML = folderList().map(f=> `<option value="${esc(f.id)}" ${f.id === inId ? 'selected' : ''}>${esc(f.name)}</option>`).join('')
       + (inId === '__other' ? '<option value="__other" selected>Other</option>' : '') + '<option value="__new">＋ New folder…</option>';
@@ -1631,11 +1641,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
     saveFolders([...folders, {id, name}], `Folder "${name}" added.`); return id;
   }
-  function createPage({title = '', icon = '📝', folderId, content = '<p><br></p>', visibility = 'private'} = {}){
+  function createPage({title = '', icon = '📝', iconImg = '', folderId, content = '<p><br></p>', visibility = 'private'} = {}){
     const cur = pages[curId];
     let fid = folderId && folderById(folderId) ? folderId : (cur && folderIdOf(cur) !== '__other' ? folderIdOf(cur) : null);
     if(!fid) fid = (folderById('ideas') || folders[0] || {id: 'ideas'}).id;
-    const data = {workspaceId: wsId, title, icon, folderId: fid, folder: folderName(fid), content: PTLib.clean(content), text: PTLib.toText(content, 'library'),
+    const data = {workspaceId: wsId, title, icon, ...(okImg(iconImg) ? {iconImg} : {}), folderId: fid, folder: folderName(fid), content: PTLib.clean(content), text: PTLib.toText(content, 'library'),
       visibility, createdBy: myUid, createdByName: myName, createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp(), updatedBy: myUid, updatedByName: myName, favorites: []};
     return db.collection('libraryPages').add(data).then(ref=>{
       pages[ref.id] = {id: ref.id, ...data, updatedAt: {toMillis: ()=> Date.now(), toDate: ()=> new Date()}}; justMade[ref.id] = Date.now();
@@ -1664,13 +1674,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(String(key).startsWith('team:')){
       const t = teamTemplates.find(x=> x.id === key.slice(5)); if(!t) return;
       closeTemplates();
-      createPage({title: t.title, icon: t.icon, folderId: t.folderId, content: t.content}).then(id=>{ if(id) showToast('Page created from your team’s template.'); });
+      createPage({title: t.title, icon: t.icon, iconImg: t.iconImg, folderId: t.folderId, content: t.content}).then(id=>{ if(id) showToast('Page created from your team’s template.'); });
       return;
     }
     const t = TEMPLATES[+key]; if(!t) return;
     closeTemplates();
     const make = prof=>{ const html = expandTpl(t.html, prof);
-      return createPage({title: t.title, icon: t.icon, folderId: t.folderId, content: html}).then(id=>{
+      return createPage({title: t.title, icon: t.icon, iconImg: t.iconImg, folderId: t.folderId, content: html}).then(id=>{
         if(!id) return; const left = (PTLib.toText(html, 'library').match(/\[[^\]\n]{2,40}\]/g) || []).length;
         showToast(left ? `Page created. Fill in the ${left} part${left === 1 ? '' : 's'} in [brackets] and it’s ready.` : 'Page created and filled in with your company. Ready to use!');
       }); };
@@ -1730,7 +1740,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     saveNow();
     const desc = await askText('Save as a template for your team', 'What is it for? (optional)', 'Save template');
     if(desc === undefined) return;
-    db.collection('libraryTemplates').add({workspaceId: wsId, title: p.title || 'Untitled', icon: p.icon || '📝', folderId: folderIdOf(p) === '__other' ? 'ideas' : folderIdOf(p),
+    db.collection('libraryTemplates').add({workspaceId: wsId, title: p.title || 'Untitled', icon: p.icon || '📝', ...(okImg(p.iconImg) ? {iconImg: p.iconImg} : {}), folderId: folderIdOf(p) === '__other' ? 'ideas' : folderIdOf(p),
       desc: desc || '', content: PTLib.clean(p.content || ''), createdBy: myUid, createdByName: myName, createdAt: FV.serverTimestamp()})
       .then(()=> showToast('Saved as a template. Your team finds it under ＋ New → From a template.')).catch(err=> showToast('Could not save the template: ' + (err.message || ''), true));
   }
@@ -1972,7 +1982,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(b.dataset.more === 'word'){ exportWord(p); return; }
     if(b.dataset.more === 'gdoc'){ exportGoogleDoc(p); return; }
     if(b.dataset.more === 'print'){ exportPrint(p); return; }
-    if(b.dataset.more === 'duplicate'){ createPage({title: (p.title || 'Untitled') + ' (copy)', icon: p.icon, folderId: folderIdOf(p), content: p.content}).then(id=>{ if(id) showToast('Duplicated. The copy is private to you.'); }); }
+    if(b.dataset.more === 'duplicate'){ createPage({title: (p.title || 'Untitled') + ' (copy)', icon: p.icon, iconImg: p.iconImg, folderId: folderIdOf(p), content: p.content}).then(id=>{ if(id) showToast('Duplicated. The copy is private to you.'); }); }
     if(b.dataset.more === 'delete'){
       const ok = await showConfirmModal({title: 'Delete this page?', message: `"${p.title || 'Untitled'}" is deleted${p.visibility === 'team' ? ' for your whole team' : ''}.`, confirmLabel: 'Delete'});
       if(!ok) return;
@@ -1993,10 +2003,37 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // ================= icon =================
   $('libIcon').addEventListener('click', e=>{
     const p = pages[curId]; if(!canEdit(p)) return;
-    $('libEmoji').innerHTML = EMOJIS.map(x=> `<button type="button" data-emoji="${x}" aria-label="${x}">${x}</button>`).join('');
+    $('libEmoji').innerHTML = `<div class="ic-up"><button type="button" data-upicon="1">🖼️ Upload your own icon</button>${okImg(p.iconImg) ? '<button type="button" data-rmicon="1">Remove image</button>' : ''}</div>` +
+      EMOJIS.map(x=> `<button type="button" data-emoji="${x}" aria-label="${x}">${x}</button>`).join('');
     const r = e.currentTarget.getBoundingClientRect(); openMenu($('libEmoji'), r); e.stopPropagation();
   });
-  $('libEmoji').addEventListener('click', e=>{ const b = e.target.closest('[data-emoji]'); if(!b) return; closeMenus(); updateField({icon: b.dataset.emoji}); });
+  $('libEmoji').addEventListener('click', e=>{
+    if(e.target.closest('[data-upicon]')){ closeMenus(); $('libIconFile').click(); return; }
+    if(e.target.closest('[data-rmicon]')){ closeMenus(); updateField({iconImg: FV.delete()}); delete pages[curId].iconImg; renderMeta(); renderTree(); return; }
+    const b = e.target.closest('[data-emoji]'); if(!b) return; closeMenus();
+    updateField(okImg(pages[curId] && pages[curId].iconImg) ? {icon: b.dataset.emoji, iconImg: FV.delete()} : {icon: b.dataset.emoji});
+    if(pages[curId]) { delete pages[curId].iconImg; renderMeta(); renderTree(); }
+  });
+  // your own icon: made into a small square image (128×128) in the browser and saved with the page
+  $('libIconFile').addEventListener('change', e=>{
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if(!f) return;
+    if(!/^image\//.test(f.type)){ showToast('Please choose an image file.', true); return; }
+    const rd = new FileReader();
+    rd.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const S = 128, cv = document.createElement('canvas'); cv.width = S; cv.height = S; const c = cv.getContext('2d');
+        const sc = Math.min(S / img.width, S / img.height), w = img.width * sc, h = img.height * sc;     // the whole image, fitted in the square
+        c.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+        let data = cv.toDataURL('image/png'); if(data.length > 120000) data = cv.toDataURL('image/webp', 0.9);
+        if(!okImg(data)){ showToast('That image couldn’t be used as an icon.', true); return; }
+        updateField({iconImg: data}); showToast('Your icon is set.');
+      };
+      img.onerror = ()=> showToast('That image couldn’t be opened.', true);
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  });
 
   // ================= menus =================
   let openMenuEl = null, menuItems = [], menuPick = 0, menuOnPick = null;
@@ -2167,7 +2204,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     tg.insertBefore(arrow, title);
     if(editable){ const dot = document.createElement('button'); dot.type = 'button'; dot.className = 'tg-ui tg-dot'; dot.contentEditable = 'false'; dot.title = 'Color'; dot.setAttribute('aria-label', 'Choose a color for this toggle'); tg.insertBefore(dot, title); }
   }
-  function decorateToggles(){ ed.querySelectorAll('.tg').forEach(decorateToggle); }
+  function lineAfter(tg){                 // an empty line after a toggle, so you can always click below it
+    const nx = tg.nextElementSibling;
+    if(!nx || nx.classList.contains('tg') || nx.classList.contains('flow')){ const p = document.createElement('p'); p.innerHTML = '<br>'; tg.after(p); }
+  }
+  function decorateToggles(){ ed.querySelectorAll('.tg').forEach(tg=>{ decorateToggle(tg); lineAfter(tg); }); }
   function insertToggle(block){
     const tg = document.createElement('div'); tg.className = 'tg'; tg.setAttribute('data-open', 'true');
     const title = document.createElement('div'); title.className = 'tg-title';
@@ -2177,8 +2218,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(isText && block.textContent.trim()){ title.innerHTML = block.innerHTML; block.replaceWith(tg); }          // the line you're on becomes the title
     else if(isText) block.replaceWith(tg);
     else if(block) block.after(tg); else ed.appendChild(tg);
-    if(!tg.nextSibling && tg.parentNode === ed){ const p = document.createElement('p'); p.innerHTML = '<br>'; tg.after(p); }
-    decorateToggle(tg);
+    decorateToggle(tg); lineAfter(tg);
+    const host = tg.parentElement; if(host && host.classList.contains('tg-body')) lineAfter(host.parentElement);
     if(title.textContent.trim()) caretTo(body.firstChild, true); else { title.focus(); caretTo(title, true); }
     markDirty();
   }
@@ -2194,6 +2235,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!pal.contains(ev.target)){ pal.remove(); document.removeEventListener('mousedown', off); } }), 0);
   }
   ed.addEventListener('mousedown', e=>{
+    if(e.target === ed && ed.contentEditable === 'true'){
+      const last = ed.lastElementChild;
+      if(last && e.clientY > last.getBoundingClientRect().bottom){
+        e.preventDefault(); let p = last;
+        if(!(last.nodeName === 'P')){ p = document.createElement('p'); p.innerHTML = '<br>'; ed.appendChild(p); markDirty(); }
+        caretTo(p, false); return;
+      }
+    }
     const a = e.target.closest('.tg-ui'); if(!a) return;
     e.preventDefault();
     const tg = a.closest('.tg');
@@ -2217,17 +2266,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       e.preventDefault(); const tg = title.parentElement, body = tg.querySelector(':scope > .tg-body'), p = document.createElement('p'); p.innerHTML = '<br>';
       tg.before(p); if(body) [...body.childNodes].forEach(n=> tg.before(n)); tg.remove(); caretTo(p, true); markDirty(); return;
     }
-    // Enter on an empty last line inside a toggle: step out, below the toggle
-    if(e.key === 'Enter' && !e.shiftKey){
-      const b = curBlock(), body = b && b.parentElement && b.parentElement.classList.contains('tg-body') ? b.parentElement : null;
-      if(body && b.nodeName === 'P' && !b.textContent.trim() && !b.querySelector('.ph') && b === body.lastElementChild && body.children.length > 1){
-        e.preventDefault(); const tg = body.parentElement, p = document.createElement('p'); p.innerHTML = '<br>';
-        b.remove(); tg.after(p); caretTo(p, true); markDirty(); return;
-      }
-    }
+    // (Enter inside a toggle simply adds a line inside it; you leave the toggle by clicking outside the box)
   }, true);
   // keep every toggle whole while typing (a title, a body, never empty)
-  ed.addEventListener('input', ()=>{ ed.querySelectorAll('.tg').forEach(tg=>{ if(!tg.querySelector(':scope > .tg-title') || !tg.querySelector(':scope > .tg-body') || !tg.querySelector(':scope > .tg-arrow')) decorateToggle(tg); else { const body = tg.querySelector(':scope > .tg-body'); if(!body.firstChild) body.innerHTML = '<p><br></p>'; } }); });
+  ed.addEventListener('input', ()=>{ ed.querySelectorAll('.tg').forEach(tg=>{ if(tg.nextElementSibling == null) lineAfter(tg); if(!tg.querySelector(':scope > .tg-title') || !tg.querySelector(':scope > .tg-body') || !tg.querySelector(':scope > .tg-arrow')) decorateToggle(tg); else { const body = tg.querySelector(':scope > .tg-body'); if(!body.firstChild) body.innerHTML = '<p><br></p>'; } }); });
   function insertFlow(block){
     const t = document.createElement('template');
     t.innerHTML = `<div class="flow">${stepHTML('')}</div>`;
