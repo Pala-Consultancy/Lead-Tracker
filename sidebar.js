@@ -831,3 +831,171 @@
   function renderDrop(ctx, dest) { var pa = ac, pm = master; ac = ctx; master = dest; try { bassDrop(0.05); } finally { ac = pa; master = pm; } }
   window.ptHalloweenIntro = {play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Halloween surprise will show again for this account.'; }, _song: {round: songRound, bus: songBus, loop: LOOP, drop: renderDrop, laugh: renderLaugh, finale: renderFinale}};      // to show it again; _song renders the music to a file
 })();
+
+/* ---------------------------------------------------------------------------
+   The tour of the side panel (for new accounts, and again via Help → Take the tour).
+   The screen darkens and one part of the side panel at a time is lit up with a rounded
+   rectangle; a bubble next to it explains it. The spotlight glides from item to item with a
+   soft swoosh and a bell that climbs a little higher every step; at the end a fanfare and
+   confetti. Keys: → / Enter next, ← back, Esc skip. Sound follows the 🔊 button (ptThemeSound).
+   window.ptSidebarTour.start({onFinish}) starts it; available() says whether the side panel is
+   on screen (on small screens it's folded away).
+   --------------------------------------------------------------------------- */
+(function () {
+  var STEPS = [
+    {center: true, emoji: '👋', title: 'Welcome to PalaTrack{name}!', text: 'Let me show you around in about a minute. Everything you need is in the side panel on the left.', next: 'Show me around'},
+    {sel: ['#seqSidebarUser'], title: 'This is you', text: 'Your photo, name and role, as your team sees them. You can change them anytime in Settings.'},
+    {sel: ['#navHome'], title: 'Home', text: 'Your daily overview: today’s tasks, the leads that need your attention, and what your team has been doing.'},
+    {sel: ['#navDashboard'], title: 'Boards', text: 'Your pipeline. Every lead is a card that moves from first contact to closed deal, live for your whole team.'},
+    {sel: ['#navTasks'], title: 'Tasks', text: 'Your to-dos and reminders, and the tasks your team gives you. Only you see your own tasks.'},
+    {sel: ['#navCalendar'], title: 'Calendar', text: 'Your tasks and meetings by day or week, so you always know what’s coming. It can sync with Google Calendar.'},
+    {sel: ['#navSequences', '#navCampaigns', '#navScheduled'], label: 'Email', title: 'Email', text: '<b>Sequences</b> send follow-up emails automatically. <b>Email campaigns</b> reach many leads at once. <b>Scheduled</b> shows the emails waiting to go out.'},
+    {sel: ['#navLinkedinSeq', '#navLinkedinPost'], label: 'LinkedIn', title: 'LinkedIn', text: '<b>LinkedIn Sequences</b> plan your connection requests and messages step by step. <b>LinkedIn Post</b> is where you write, schedule and publish your posts.'},
+    {sel: ['#navClients'], label: 'Clients', title: 'Client processes', text: 'Beautiful onboarding pages for your clients: videos, documents, forms and steps they tick off, with their progress live in here.'},
+    {sel: ['#navChat', '#navLibrary', '#navTeam'], label: 'Workspace', title: 'Your workspace', text: '<b>Team chat</b> to talk with your team, the <b>Library</b> for your scripts, templates and ideas, and <b>Team</b> to invite colleagues.'},
+    {sel: ['.pts-theme'], title: 'Light, dark and sound', text: 'Switch between light and dark mode, and turn the sounds on or off, whatever you prefer.'},
+    {sel: ['#navSettings', '#navBilling'], title: 'Settings and your plan', text: '<b>Settings</b> for your profile, notifications and email. <b>Billing &amp; plans</b> for your subscription.'},
+    {sel: ['#helpMenuToggle'], title: 'Help is always here', text: 'The Help center, a place to send feedback, and this tour again whenever you want to see it.'},
+    {center: true, emoji: '🎉', title: 'You’re all set!', text: 'That’s the tour. Start with a board and add your first lead; PalaTrack does the rest.', next: 'Let’s go', last: true}
+  ];
+  var CSS = [
+    '#ptTour{position:fixed;inset:0;z-index:9000;font-family:Inter,system-ui,sans-serif;}',
+    '#ptTour .tt-shade{position:absolute;inset:0;background:rgba(10,14,30,.62);opacity:0;transition:opacity .35s ease;}',
+    '#ptTour.center .tt-shade{opacity:1;}',
+    '#ptTour .tt-hole{position:absolute;border-radius:14px;box-shadow:0 0 0 200vmax rgba(10,14,30,.62),0 0 0 2px rgba(130,115,255,.95),0 0 26px 6px rgba(124,104,255,.55);',
+    '  transition:top .45s cubic-bezier(.4,0,.2,1),left .45s cubic-bezier(.4,0,.2,1),width .45s cubic-bezier(.4,0,.2,1),height .45s cubic-bezier(.4,0,.2,1),opacity .3s ease;pointer-events:none;}',
+    '#ptTour .tt-hole::after{content:"";position:absolute;inset:-6px;border-radius:18px;border:2px solid rgba(160,145,255,.7);animation:ttPulse 1.8s ease-out infinite;}',
+    '@keyframes ttPulse{0%{opacity:.9;transform:scale(1);}100%{opacity:0;transform:scale(1.06);}}',
+    '#ptTour.center .tt-hole{opacity:0;}',
+    '#ptTour .tt-bubble{position:absolute;width:340px;max-width:calc(100vw - 32px);background:var(--panel,#fff);color:var(--ink,#16202C);border-radius:18px;padding:20px 20px 16px;',
+    '  box-shadow:0 30px 70px -20px rgba(0,0,0,.55);transition:top .45s cubic-bezier(.4,0,.2,1),left .45s cubic-bezier(.4,0,.2,1),opacity .25s ease;}',
+    '#ptTour .tt-bubble::before{content:"";position:absolute;left:-8px;top:var(--ay,28px);width:16px;height:16px;background:inherit;transform:rotate(45deg);border-radius:3px;}',
+    '#ptTour.center .tt-bubble{width:420px;text-align:center;padding:30px 28px 22px;} #ptTour.center .tt-bubble::before{display:none;}',
+    '#ptTour .tt-emoji{font-size:40px;line-height:1;margin-bottom:10px;display:block;}',
+    '#ptTour .tt-count{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.04em;color:#5B4BE6;background:rgba(91,75,230,.1);border-radius:999px;padding:3px 10px;margin-bottom:10px;}',
+    'html[data-theme="dark"] #ptTour .tt-count{color:#B9AEFF;background:rgba(160,145,255,.16);}',
+    '#ptTour h3{margin:0 0 6px;font:800 18px/1.3 Sora,Inter,sans-serif;letter-spacing:-.01em;} #ptTour.center h3{font-size:22px;}',
+    '#ptTour p{margin:0;font-size:14px;line-height:1.6;color:var(--slate,#5B6B7F);} #ptTour p b{color:var(--ink,#16202C);font-weight:700;}',
+    '#ptTour .tt-btns{display:flex;align-items:center;gap:8px;margin-top:18px;} #ptTour.center .tt-btns{justify-content:center;}',
+    '#ptTour .tt-skip{margin-right:auto;border:none;background:none;color:var(--slate-light,#8A97A8);font-size:13px;font-weight:600;cursor:pointer;padding:6px 2px;}',
+    '#ptTour.center .tt-skip{margin-right:0;}',
+    '#ptTour .tt-btn{height:38px;padding:0 16px;border-radius:11px;font:700 13.5px Inter,sans-serif;cursor:pointer;border:1px solid var(--border,#D8DEE8);background:var(--panel,#fff);color:var(--ink,#16202C);}',
+    '#ptTour .tt-btn.go{border:none;color:#fff;background:linear-gradient(135deg,#3730B3,#6A4EC4);box-shadow:0 8px 20px -10px rgba(55,48,179,.8);}',
+    '#ptTour .tt-btn.go:hover{filter:brightness(1.08);}',
+    '#ptTour .tt-dots{display:flex;gap:5px;justify-content:center;margin-top:16px;} #ptTour .tt-dots i{width:6px;height:6px;border-radius:50%;background:var(--border,#D8DEE8);transition:all .3s;} #ptTour .tt-dots i.on{width:18px;border-radius:3px;background:#5B4BE6;}',
+    '.tt-confetti{position:fixed;inset:0;z-index:9100;pointer-events:none;overflow:hidden;}',
+    '@media (prefers-reduced-motion: reduce){#ptTour *,#ptTour{transition:none !important;animation:none !important;}}'
+  ].join('\n');
+
+  // ---------- sound (follows the 🔊 button next to Light/Dark) ----------
+  var ac = null;
+  function soundOn() { try { return localStorage.getItem('ptThemeSound') !== 'off'; } catch (e) { return true; } }
+  function audio() { if (!soundOn()) return null; try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); return ac; } catch (e) { return null; } }
+  function bell(f, t, vol, len) {
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + len); g.connect(ac.destination);
+    [[1, 1, 'sine'], [2.76, 0.28, 'sine'], [5.4, 0.08, 'sine'], [1, 0.4, 'triangle']].forEach(function (p) { var o = ac.createOscillator(), h = ac.createGain(); o.type = p[2]; o.frequency.value = f * p[0]; h.gain.value = p[1]; o.connect(h); h.connect(g); o.start(t); o.stop(t + len + 0.05); });
+  }
+  function swoosh(t) {
+    var len = ac.sampleRate * 0.3, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0); for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var n = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain(); n.buffer = b; bp.type = 'bandpass'; bp.Q.value = 1.2;
+    bp.frequency.setValueAtTime(500, t); bp.frequency.exponentialRampToValueAtTime(2200, t + 0.25);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    n.connect(bp); bp.connect(g); g.connect(ac.destination); n.start(t); n.stop(t + 0.32);
+  }
+  var SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5, 1567.98, 1760, 2093, 2349.3, 2637, 3136];   // a pentatonic climb
+  function stepSound(i) { var a = audio(); if (!a) return; var t = a.currentTime + 0.02; swoosh(t); bell(SCALE[Math.min(i, SCALE.length - 1)] / 2, t + 0.12, 0.09, 1.1); }
+  function startSound() { var a = audio(); if (!a) return; var t = a.currentTime + 0.02; [261.63, 329.63, 392, 523.25].forEach(function (f, k) { bell(f, t + k * 0.09, 0.07, 1.6); }); }
+  function fanfare() {
+    var a = audio(); if (!a) return; var t = a.currentTime + 0.02;
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach(function (f, k) { bell(f, t + k * 0.08, 0.11, 1.4); });
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (f) { bell(f, t + 0.5, 0.06, 2.2); });     // the chord ringing out
+  }
+  function confetti() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var layer = document.createElement('div'); layer.className = 'tt-confetti'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer);
+    var colors = ['#1B59A5', '#7A4FB5', '#FF9D00', '#1F5C4F', '#C0392B', '#3730B3', '#F5B700', '#2EA36F'], W = innerWidth, H = innerHeight;
+    for (var i = 0; i < 130; i++) {
+      var el = document.createElement('i'), w = 6 + Math.random() * 6, h = Math.random() < 0.5 ? 12 + Math.random() * 8 : w, x = Math.random() * W, drift = (Math.random() - 0.5) * 160, rot = (Math.random() - 0.5) * 900;
+      el.style.cssText = 'position:absolute;left:0;top:0;width:' + w + 'px;height:' + h + 'px;background:' + colors[i % colors.length] + ';border-radius:' + (Math.random() < 0.25 ? '50%' : '2px') + ';will-change:transform;';
+      layer.appendChild(el);
+      el.animate([{transform: 'translate3d(' + x + 'px,-30px,0) rotate(0)'}, {transform: 'translate3d(' + (x + drift) + 'px,' + (H + 40) + 'px,0) rotate(' + rot + 'deg)'}],
+        {duration: 2400 + Math.random() * 1400, delay: Math.random() * 500, easing: 'linear', fill: 'forwards'});
+    }
+    setTimeout(function () { layer.remove(); }, 4600);
+  }
+
+  // ---------- the tour ----------
+  var root = null, idx = 0, opts = {}, steps = [];
+  function host() { return document.querySelector('.pts-host'); }
+  function available() { var h = host(); if (!h) return false; var r = h.getBoundingClientRect(); return r.width > 120 && r.right > 0 && getComputedStyle(h).display !== 'none'; }
+  function rectOf(step) {
+    var els = step.sel.map(function (s) { return document.querySelector(s); }).filter(function (e) { return e && e.offsetParent !== null; });
+    if (!els.length) return null;
+    if (step.label) {                                                  // the section title (EMAIL, LINKEDIN…) belongs to the group
+      var lab = [].slice.call(document.querySelectorAll('.pts-host .seq-sidebar-label')).filter(function (l) { return l.textContent.trim().toLowerCase() === step.label.toLowerCase(); })[0];
+      if (lab) els.unshift(lab);
+    }
+    els[0].scrollIntoView({block: 'nearest'}); els[els.length - 1].scrollIntoView({block: 'nearest'});
+    var r = els.reduce(function (a, e) { var b = e.getBoundingClientRect(); return a ? {left: Math.min(a.left, b.left), top: Math.min(a.top, b.top), right: Math.max(a.right, b.right), bottom: Math.max(a.bottom, b.bottom)} : {left: b.left, top: b.top, right: b.right, bottom: b.bottom}; }, null);
+    return {left: r.left - 6, top: r.top - 6, width: r.right - r.left + 12, height: r.bottom - r.top + 12};
+  }
+  function render(withSound) {
+    var s = steps[idx], hole = root.querySelector('.tt-hole'), bub = root.querySelector('.tt-bubble');
+    var name = ''; try { var n = (document.getElementById('seqSidebarUserName') || {}).textContent || ''; n = n.trim().split(/\s+/)[0]; if (n && n !== '…') name = ', ' + n; } catch (e) {}
+    var spot = steps.filter(function (x) { return !x.center; }), pos = spot.indexOf(s);
+    bub.innerHTML = (s.center ? '<span class="tt-emoji">' + s.emoji + '</span>' : '<span class="tt-count">' + (pos + 1) + ' of ' + spot.length + '</span>') +
+      '<h3 id="ttT">' + s.title.replace('{name}', name.replace(/[<>&]/g, '')) + '</h3><p>' + s.text + '</p>' +
+      '<div class="tt-btns">' + (s.last ? '' : '<button type="button" class="tt-skip" data-tt="skip">Skip tour</button>') +
+      (idx > 0 && !s.last ? '<button type="button" class="tt-btn" data-tt="back">Back</button>' : '') +
+      '<button type="button" class="tt-btn go" data-tt="next">' + (s.next || 'Next') + '</button></div>' +
+      (s.center ? '' : '<div class="tt-dots">' + spot.map(function (x, k) { return '<i class="' + (k === pos ? 'on' : '') + '"></i>'; }).join('') + '</div>');
+    root.classList.toggle('center', !!s.center);
+    if (s.center) {
+      bub.style.left = Math.round((innerWidth - Math.min(420, innerWidth - 32)) / 2) + 'px';
+      bub.style.top = Math.round(innerHeight / 2 - bub.offsetHeight / 2) + 'px';
+    } else {
+      var r = rectOf(s); if (!r) { go(1); return; }
+      hole.style.left = r.left + 'px'; hole.style.top = r.top + 'px'; hole.style.width = r.width + 'px'; hole.style.height = r.height + 'px';
+      var bh = bub.offsetHeight, top = Math.max(16, Math.min(innerHeight - bh - 16, r.top + r.height / 2 - 34));
+      bub.style.left = Math.round(r.left + r.width + 18) + 'px'; bub.style.top = Math.round(top) + 'px';
+      bub.style.setProperty('--ay', Math.max(14, Math.min(bh - 30, r.top + r.height / 2 - top - 8)) + 'px');
+    }
+    var go1 = bub.querySelector('[data-tt="next"]'); if (go1) go1.focus({preventScroll: true});
+    if (withSound) { if (s.last) { fanfare(); confetti(); } else if (idx === 0) startSound(); else stepSound(pos); }
+  }
+  function go(d) { var n = idx + d; if (n < 0) return; if (n >= steps.length) { end(true); return; } idx = n; render(true); }
+  function end(done) {
+    if (!root) return;
+    document.removeEventListener('keydown', key, true); window.removeEventListener('resize', onResize);
+    var r = root; root = null; r.style.transition = 'opacity .3s ease'; r.style.opacity = '0'; setTimeout(function () { r.remove(); }, 320);
+    if (opts.onFinish) try { opts.onFinish(!!done); } catch (e) {}
+  }
+  function key(e) {
+    if (!root) return;
+    if (e.key === 'Escape') { e.preventDefault(); end(false); }
+    else if (e.key === 'ArrowRight' || (e.key === 'Enter' && !(e.target.closest && e.target.closest('[data-tt="skip"],[data-tt="back"]')))) { e.preventDefault(); go(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  }
+  var rt = null; function onResize() { clearTimeout(rt); rt = setTimeout(function () { if (root) render(false); }, 120); }
+  function start(o) {
+    if (root || !available()) return false;
+    opts = o || {}; idx = 0; steps = STEPS.slice();
+    if (!document.getElementById('ptTourCss')) { var st = document.createElement('style'); st.id = 'ptTourCss'; st.textContent = CSS; document.head.appendChild(st); }
+    root = document.createElement('div'); root.id = 'ptTour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'ttT');
+    root.innerHTML = '<div class="tt-shade"></div><div class="tt-hole"></div><div class="tt-bubble"></div>';
+    document.body.appendChild(root);
+    root.addEventListener('click', function (e) { var b = e.target.closest('[data-tt]'); if (!b) return; var a = b.dataset.tt; if (a === 'next') go(1); else if (a === 'back') go(-1); else end(false); });
+    document.addEventListener('keydown', key, true); window.addEventListener('resize', onResize);
+    render(true);
+    return true;
+  }
+  window.ptSidebarTour = {start: start, available: available};
+  // "🧭 Take the tour" under Help, on every page
+  function addHelpItem() {
+    var sub = document.getElementById('helpSubmenu'); if (!sub || sub.querySelector('[data-tour]')) return;
+    var a = document.createElement('a'); a.href = '#'; a.setAttribute('data-tour', '1'); a.textContent = '🧭 Take the tour';
+    a.addEventListener('click', function (e) { e.preventDefault(); var t = document.getElementById('helpMenuToggle'); if (t && t.getAttribute('aria-expanded') === 'true') t.click(); start({}); });
+    sub.insertBefore(a, sub.firstChild);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addHelpItem); else addHelpItem();
+})();

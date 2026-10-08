@@ -4373,6 +4373,11 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
       }
     }
     function showOnboardingTour(){
+      // New accounts get the spotlight tour of the side panel (sidebar.js). Where the side panel is folded
+      // away (small screens) the slides below are used instead.
+      if(window.ptSidebarTour && window.ptSidebarTour.available()){
+        if(window.ptSidebarTour.start({ onFinish: ()=> completeOnboarding() })) return;
+      }
       document.querySelector('.onboarding-nav').classList.remove('ob-final');
       onboardingIndex = 0;
       renderOnboardingSlides();
