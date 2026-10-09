@@ -232,6 +232,31 @@
 
   /* ---------- message flows ---------- */
 
+
+  /* shapes and text boxes on the page (like Word): placed anywhere, on top of the text */
+  .lib-shapes{position:absolute;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:5;}
+  .ov-item{position:absolute;pointer-events:auto;cursor:move;touch-action:none;}
+  .ov-item svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+  .ov-item.ov-line svg path.hit{pointer-events:stroke;}
+  .ov-item.ov-line{pointer-events:none;} .ov-item.ov-line svg{pointer-events:none;}
+  .ov-text{white-space:pre-wrap;word-break:break-word;line-height:1.35;padding:6px 8px;border:1px dashed transparent;border-radius:6px;min-height:1.4em;outline:none;font-family:Inter,sans-serif;}
+  .ov-item:hover .ov-text{border-color:var(--border);} .ov-item.sel .ov-text{border-color:transparent;}
+  .ov-text[contenteditable="true"]{cursor:text;background:var(--panel);box-shadow:0 0 0 2px var(--teal);}
+  .ov-text:empty::before{content:"Text";color:var(--slate-light);}
+  .ov-item.sel::after{content:"";position:absolute;inset:-4px;border:1.5px solid var(--teal);border-radius:4px;pointer-events:none;}
+  .ov-item.ov-line.sel::after{display:none;}
+  .ov-h{position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;background:var(--panel);border:2px solid var(--teal);border-radius:3px;pointer-events:auto;z-index:2;}
+  .ov-h.round{border-radius:50%;}
+  .ov-bar{position:absolute;pointer-events:auto;display:flex;align-items:center;gap:3px;padding:4px;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 26px -12px rgba(16,24,40,.35);z-index:6;white-space:nowrap;transform:translateY(-100%);margin-top:-10px;}
+  .ov-bar button{border:none;background:none;border-radius:7px;height:26px;min-width:26px;padding:0 6px;font:600 12px Inter,sans-serif;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .ov-bar button:hover{background:var(--panel-alt);} .ov-bar button[aria-pressed="true"]{background:rgba(55,48,179,.12);color:var(--teal);}
+  .ov-bar .c{width:16px;height:16px;min-width:16px;padding:0;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);}
+  .ov-bar .c[aria-pressed="true"]{box-shadow:0 0 0 2px var(--teal);}
+  .ov-bar .sep{width:1px;height:18px;background:var(--border);margin:0 3px;}
+  .shp-menu{display:grid !important;grid-template-columns:repeat(3,1fr) !important;gap:4px;padding:8px;width:300px;}
+  .shp-menu button{width:auto !important;height:auto !important;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px !important;border:none !important;background:none;border-radius:9px;font:600 11.5px Inter,sans-serif;color:var(--ink);cursor:pointer;}
+  .shp-menu button:hover{background:var(--panel-alt);}
+  .shp-menu svg{width:30px;height:30px;}
   /* documents added to a page: a file card */
   .lib-editor .file{display:block;margin:10px 0;max-width:520px;}
   .lib-editor .file .file-ui{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--panel);box-shadow:var(--shadow-sm);user-select:none;}
@@ -1233,12 +1258,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <button type="button" data-tool="quote" title="Quote">❝</button>
           <button type="button" data-tool="toggle" title="Toggle: a title you can fold open, with anything inside">▸ Toggle</button>
           <button type="button" data-tool="file" title="Add a document (Word, PDF, PowerPoint, Excel…): as a file, or turned into text">📎 File</button>
+          <button type="button" data-tool="shapes" title="Shapes and text boxes you can place anywhere on the page (like in Word)">◇ Shapes</button>
           <button type="button" data-tool="flow" title="Message flow: a message with follow-ups if there's no reply">🔀 Flow</button>
           <span class="sep"></span>
           <button type="button" data-tool="ph" class="ph-btn" title="Insert a placeholder (or type { )">{ } Placeholder</button>
           <span class="lib-tip">Type <kbd>/</kbd> for more</span>
         </div>
         <div class="lib-editor" id="libEditor" contenteditable="true" spellcheck="true" aria-label="Page content" data-placeholder="Write something, or type / for headings, lists, to-dos…"></div>
+        <div class="lib-shapes" id="libOv" aria-label="Shapes and text boxes"></div>
       </div>
     </div>
   </section>
@@ -1639,7 +1666,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>';
     lastLoadedStamp = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
     ed.contentEditable = canEdit(p) ? 'true' : 'false';
-    decorateFlows(); decorateToggles(); decorateFiles(); paintBlanks();
+    decorateFlows(); decorateToggles(); decorateFiles(); loadOverlay(pages[curId]); paintBlanks();
     $('libSaved').textContent = '';
     renderMeta(); renderTree();
     if(focusTitle) $('libTitle').focus();
@@ -1654,8 +1681,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(!dirty || !curId) return;
     const id = curId, p = pages[id]; if(!p) return;
     const content = PTLib.clean(ed.innerHTML), title = $('libTitle').value.trim();
-    const upd = {title, content, text: PTLib.toText(content, 'library').slice(0, 20000), updatedAt: FV.serverTimestamp(), updatedBy: myUid, updatedByName: myName};
-    Object.assign(p, {title, content, text: upd.text}); dirty = false;
+    const overlay = OV.slice(0, 200).map(it=> JSON.parse(JSON.stringify(it)));
+    const upd = {title, content, overlay, text: PTLib.toText(content, 'library').slice(0, 20000), updatedAt: FV.serverTimestamp(), updatedBy: myUid, updatedByName: myName};
+    Object.assign(p, {title, content, overlay, text: upd.text}); dirty = false;
     db.collection('libraryPages').doc(id).update(upd).then(()=>{ if(curId === id && !dirty) $('libSaved').textContent = 'Saved'; renderTree(); })
       .catch(err=>{ dirty = true; $('libSaved').textContent = 'Not saved'; showToast('Could not save: ' + (err.message || ''), true); });
   }
@@ -1909,13 +1937,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const when = new Date().toLocaleDateString(undefined, {day: 'numeric', month: 'long', year: 'numeric'});
     const folder = (folders.find(f=> f.id === folderIdOf(p)) || {}).name || '';
     const from = scope ? (p.title || 'Untitled') + ' · ' : '';
-    const body = `<div class="doc"><h1 class="doc-title">${esc(title)}</h1><div class="doc-meta">${esc(from)}${folder ? esc(folder) + ' · ' : ''}${esc(when)}</div>${ed.innerHTML}</div>`;
+    const body = `<div class="doc"><h1 class="doc-title">${esc(title)}</h1><div class="doc-meta">${esc(from)}${folder ? esc(folder) + ' · ' : ''}${esc(when)}</div><div style="position:relative">${scope ? '' : overlayExportHTML(720)}${ed.innerHTML}</div></div>`;
     const file = (title.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Page').slice(0, 80);
     return {title, body, file};
   }
   function downloadBlob(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  const noShapes = (html)=> html.replace(/<!--ov-->[\s\S]*?<!--\/ov-->/g, '');      // Word and Google Docs: without the free-floating shapes
   function exportWord(p){
-    const {title, body, file} = exportParts(p);
+    const {title} = exportParts(p), file = exportParts(p).file, body = noShapes(exportParts(p).body);
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
       <head><meta charset="utf-8"><title>${esc(title)}</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
       <style>${EXPORT_CSS}</style></head><body>${body}</body></html>`;
@@ -1968,7 +1997,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(!(window.google && window.google.accounts && window.google.accounts.oauth2)){
       showToast('Connecting to Google… click “Open as Google Doc” once more.'); loadGis().catch(()=> showToast('Google couldn’t load. Check your connection.')); return;
     }
-    const {title, body} = exportParts(p);
+    const {title} = exportParts(p), body = noShapes(exportParts(p).body);
     let token;
     try { token = await googleToken(); }
     catch(e){
@@ -2303,7 +2332,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     else { nodes.forEach(n=>{ if(at){ at.after(n); at = n; } else { ed.appendChild(n); at = n; } }); }
     if(!at.nextElementSibling){ const p = document.createElement('p'); p.innerHTML = '<br>'; at.after(p); }
     docAt = at;
-    decorateFlows(); decorateToggles(); decorateFiles(); decorateFiles();
+    decorateFlows(); decorateToggles(); decorateFiles(); loadOverlay(pages[curId]); decorateFiles();
     const nx = at.nextElementSibling; if(nx && nx.nodeName === 'P') caretTo(nx, true);
     markDirty();
   }
@@ -2553,6 +2582,177 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(title.textContent.trim()) caretTo(body.firstChild, true); else { title.focus(); caretTo(title, true); }
     markDirty();
   }
+  // ================= shapes and text boxes on the page (like Word) =================
+  // Stored with the page as `overlay`: [{id, t, x, y, w, h | x1, y1, x2, y2, color, sw, text, fs}], in pixels
+  // from the top-left of the page text. They stay where you put them, on top of the text.
+  const OV_SHAPES = {
+    text: ['Text box', '<rect x="4" y="7" width="22" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2"/><path d="M10 12h10M15 12v7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
+    braceL: ['Brace {', '<path d="M19 4c-4 0-5 2-5 5v3c0 2-1 3-4 3 3 0 4 1 4 3v3c0 3 1 5 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
+    braceR: ['Brace }', '<path d="M11 4c4 0 5 2 5 5v3c0 2 1 3 4 3-3 0-4 1-4 3v3c0 3-1 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
+    bracketL: ['Bracket [', '<path d="M19 4h-6v22h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'],
+    bracketR: ['Bracket ]', '<path d="M11 4h6v22h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'],
+    line: ['Line', '<path d="M5 25L25 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
+    arrow: ['Arrow', '<path d="M5 25L25 5M17 5h8v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'],
+    darrow: ['Double arrow', '<path d="M5 25L25 5M17 5h8v8M13 25H5v-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'],
+    rect: ['Rectangle', '<rect x="4" y="7" width="22" height="16" fill="none" stroke="currentColor" stroke-width="1.8"/>'],
+    rrect: ['Rounded', '<rect x="4" y="7" width="22" height="16" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>'],
+    ellipse: ['Ellipse', '<ellipse cx="15" cy="15" rx="11" ry="8" fill="none" stroke="currentColor" stroke-width="1.8"/>'],
+  };
+  const OV_COLORS = ['ink', '#E03131', '#1971C2', '#2F9E44', '#F08C00', '#9C36B5'];
+  const OV_PATH = {           // in a 100×100 box, stretched to the item's size
+    braceL: 'M78 0C52 0 50 5 50 18V38C50 46 46 50 22 50C46 50 50 54 50 62V82C50 95 52 100 78 100',
+    braceR: 'M22 0C48 0 50 5 50 18V38C50 46 54 50 78 50C54 50 50 54 50 62V82C50 95 48 100 22 100',
+    bracketL: 'M75 0H30V100H75', bracketR: 'M25 0H70V100H25',
+  };
+  let OV = [], ovSel = null, ovDrag = null;
+  const ovEditable = ()=> ed.contentEditable === 'true';
+  const ovCol = (c)=> c === 'ink' || !c ? 'var(--ink)' : c;
+  const isLine = (t)=> t === 'line' || t === 'arrow' || t === 'darrow';
+  function ovLayer(){
+    const L = $('libOv'), host = ed.parentElement;
+    if(getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    L.style.left = ed.offsetLeft + 'px'; L.style.top = ed.offsetTop + 'px'; L.style.width = ed.offsetWidth + 'px';
+    const bottom = OV.reduce((m, it)=> Math.max(m, isLine(it.t) ? Math.max(it.y1, it.y2) : it.y + it.h), 0);
+    ed.style.minHeight = bottom ? (bottom + 60) + 'px' : '';            // the page grows to hold what's on it
+    return L;
+  }
+  function lineSvg(it, forExport){
+    const pad = 14, x0 = Math.min(it.x1, it.x2) - pad, y0 = Math.min(it.y1, it.y2) - pad;
+    const a = [it.x1 - x0, it.y1 - y0], b = [it.x2 - x0, it.y2 - y0], col = forExport ? (it.color === 'ink' ? '#1E1E1E' : it.color) : ovCol(it.color), sw = it.sw || 2;
+    const head = (p, q)=>{ const ang = Math.atan2(p[1] - q[1], p[0] - q[0]), L = Math.max(10, sw * 4.5); return `M${p[0] - L * Math.cos(ang - .45)} ${p[1] - L * Math.sin(ang - .45)}L${p[0]} ${p[1]}L${p[0] - L * Math.cos(ang + .45)} ${p[1] - L * Math.sin(ang + .45)}`; };
+    const d = `M${a[0]} ${a[1]}L${b[0]} ${b[1]}` + (it.t !== 'line' ? head(b, a) : '') + (it.t === 'darrow' ? head(a, b) : '');
+    return {x0, y0, w: Math.abs(it.x2 - it.x1) + pad * 2, h: Math.abs(it.y2 - it.y1) + pad * 2,
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.abs(it.x2 - it.x1) + pad * 2}" height="${Math.abs(it.y2 - it.y1) + pad * 2}"><path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>${forExport ? '' : `<path class="hit" d="M${a[0]} ${a[1]}L${b[0]} ${b[1]}" stroke="transparent" stroke-width="16" style="pointer-events:${ovEditable() ? 'stroke' : 'none'};cursor:move"/>`}</svg>`};
+  }
+  function shapeSvg(it, forExport){
+    const col = forExport ? (it.color === 'ink' ? '#1E1E1E' : it.color) : ovCol(it.color), sw = it.sw || 2;
+    const body = it.t === 'rect' ? `<rect x="0" y="0" width="100" height="100"/>` : it.t === 'rrect' ? `<rect x="0" y="0" width="100" height="100" rx="12" ry="${12 * (it.w / Math.max(1, it.h))}"/>` : it.t === 'ellipse' ? `<ellipse cx="50" cy="50" rx="50" ry="50"/>` : `<path d="${OV_PATH[it.t] || ''}"/>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="${it.w}" height="${it.h}"><g fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" style="vector-effect:non-scaling-stroke">${body.replace('/>', ' vector-effect="non-scaling-stroke"/>')}</g></svg>`;
+  }
+  function renderOv(){
+    const L = ovLayer(); L.innerHTML = '';
+    OV.forEach(it=>{
+      const el = document.createElement('div'); el.className = 'ov-item' + (isLine(it.t) ? ' ov-line' : '') + (ovSel === it.id ? ' sel' : ''); el.dataset.id = it.id;
+      if(isLine(it.t)){ const g = lineSvg(it); Object.assign(el.style, {left: g.x0 + 'px', top: g.y0 + 'px', width: g.w + 'px', height: g.h + 'px'}); el.innerHTML = g.svg; }
+      else {
+        Object.assign(el.style, {left: it.x + 'px', top: it.y + 'px', width: it.w + 'px', height: it.t === 'text' ? 'auto' : it.h + 'px'});
+        if(it.t === 'text'){ const tx = document.createElement('div'); tx.className = 'ov-text'; tx.textContent = it.text || ''; tx.style.fontSize = (it.fs || 16) + 'px'; tx.style.color = ovCol(it.color); el.appendChild(tx); }
+        else el.innerHTML = shapeSvg(it);
+      }
+      if(!ovEditable()) el.style.cursor = 'default';
+      L.appendChild(el);
+    });
+    if(ovSel && ovEditable()) drawSel();
+  }
+  function ovItem(id){ return OV.find(x=> x.id === id); }
+  function drawSel(){
+    const it = ovItem(ovSel), L = $('libOv'); if(!it) return;
+    const hs = isLine(it.t) ? [['p1', it.x1, it.y1], ['p2', it.x2, it.y2]]
+      : (it.t === 'text' ? [['w', it.x, it.y + 14], ['e', it.x + it.w, it.y + 14]] : [['nw', it.x, it.y], ['n', it.x + it.w / 2, it.y], ['ne', it.x + it.w, it.y], ['e', it.x + it.w, it.y + it.h / 2], ['se', it.x + it.w, it.y + it.h], ['s', it.x + it.w / 2, it.y + it.h], ['sw', it.x, it.y + it.h], ['w', it.x, it.y + it.h / 2]]);
+    hs.forEach(([k, x, y])=>{ const h = document.createElement('div'); h.className = 'ov-h' + (isLine(it.t) ? ' round' : ''); h.dataset.h = k; h.style.left = x + 'px'; h.style.top = y + 'px'; h.style.cursor = isLine(it.t) ? 'move' : k + '-resize'; L.appendChild(h); });
+    // the small bar above it
+    const bar = document.createElement('div'); bar.className = 'ov-bar';
+    const top = isLine(it.t) ? Math.min(it.y1, it.y2) : it.y, left = isLine(it.t) ? Math.min(it.x1, it.x2) : it.x;
+    bar.style.left = Math.max(0, left) + 'px'; bar.style.top = top + 'px';
+    bar.innerHTML = OV_COLORS.map(c=> `<button type="button" class="c" data-oc="${c}" style="background:${ovCol(c)}" aria-pressed="${(it.color || 'ink') === c}" title="Color"></button>`).join('') + '<span class="sep"></span>' +
+      (it.t === 'text' ? [[13, 'S'], [16, 'M'], [22, 'L'], [30, 'XL']].map(([v, l])=> `<button type="button" data-ofs="${v}" aria-pressed="${(it.fs || 16) === v}" title="Text size">${l}</button>`).join('')
+        : [[1, 'Thin'], [2, 'Medium'], [4, 'Thick']].map(([v, l])=> `<button type="button" data-osw="${v}" aria-pressed="${(it.sw || 2) === v}" title="${l}"><svg width="16" height="10"><path d="M1 5h14" stroke="currentColor" stroke-width="${v}"/></svg></button>`).join('')) +
+      '<span class="sep"></span>' + (/^(brace|bracket)/.test(it.t) ? '<button type="button" data-oflip="1" title="Flip left/right">⇆</button>' : '') +
+      (it.t === 'text' ? '<button type="button" data-oedit="1" title="Type (or double-click)">✎</button>' : '') +
+      '<button type="button" data-odup="1" title="Duplicate">⧉</button><button type="button" data-odel="1" title="Delete (Del)">🗑</button>';
+    L.appendChild(bar);
+  }
+  function ovSelect(id){ ovSel = id; renderOv(); }
+  function loadOverlay(p){ OV = Array.isArray(p && p.overlay) ? JSON.parse(JSON.stringify(p.overlay)).slice(0, 200) : []; ovSel = null; renderOv(); }
+  function addShape(t){
+    if(!ovEditable() || !curId) return;
+    const L = ovLayer(), r = L.getBoundingClientRect(), vh = innerHeight;
+    const cx = Math.min(ed.offsetWidth - 160, Math.max(40, ed.offsetWidth / 2 - 60)), cy = Math.max(30, Math.min(vh * 0.45 - r.top, (ed.offsetHeight || 400) - 40));
+    const id = 'o' + Math.random().toString(36).slice(2, 9), base = {id, t, color: 'ink', sw: 2};
+    let it;
+    if(isLine(t)) it = {...base, x1: cx - 80, y1: cy, x2: cx + 120, y2: cy};
+    else if(t === 'text') it = {...base, x: cx - 60, y: cy, w: 240, h: 40, text: '', fs: 16};
+    else if(/^brace|^bracket/.test(t)) it = {...base, x: cx, y: cy - 90, w: t.startsWith('brace') ? 46 : 34, h: 200};
+    else it = {...base, x: cx - 80, y: cy - 50, w: 200, h: 120};
+    OV.push(it); ovSel = id; renderOv(); markDirty();
+    if(t === 'text') setTimeout(()=> ovEditText(id), 30);
+  }
+  function ovEditText(id){
+    const el = $('libOv').querySelector(`.ov-item[data-id="${id}"] .ov-text`); if(!el) return;
+    el.contentEditable = 'true'; el.focus();
+    const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    el.addEventListener('input', ()=>{ const it = ovItem(id); if(it){ it.text = el.innerText.replace(/\n$/, ''); markDirty(); } });
+    el.addEventListener('blur', ()=>{ el.contentEditable = 'false'; const it = ovItem(id); if(it && !it.text.trim()){ OV = OV.filter(x=> x.id !== id); ovSel = null; renderOv(); markDirty(); } }, {once: true});
+  }
+  function openShapeMenu(btn){
+    document.querySelectorAll('.tg-pal').forEach(x=> x.remove());
+    const m = document.createElement('div'); m.className = 'tg-pal shp-menu'; m.setAttribute('role', 'menu');
+    m.innerHTML = Object.entries(OV_SHAPES).map(([k, [l, ic]])=> `<button type="button" role="menuitem" data-shp="${k}"><svg viewBox="0 0 30 30">${ic}</svg>${l}</button>`).join('');
+    document.body.appendChild(m);
+    const r = btn.getBoundingClientRect(); m.style.left = Math.max(10, Math.min(innerWidth - m.offsetWidth - 10, r.left)) + 'px'; m.style.top = (r.bottom + 8) + 'px';
+    m.addEventListener('mousedown', e=> e.preventDefault());
+    m.addEventListener('click', e=>{ const b = e.target.closest('[data-shp]'); if(!b) return; m.remove(); addShape(b.dataset.shp); });
+    setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target)){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
+  }
+  // moving, resizing and the bar
+  $('libOv').addEventListener('pointerdown', e=>{
+    if(!ovEditable()) return;
+    const L = $('libOv'), bar = e.target.closest('.ov-bar');
+    if(bar){ e.preventDefault(); const it = ovItem(ovSel); if(!it) return; const b = e.target.closest('button'); if(!b) return;
+      if(b.dataset.oc){ it.color = b.dataset.oc; } else if(b.dataset.osw){ it.sw = +b.dataset.osw; } else if(b.dataset.ofs){ it.fs = +b.dataset.ofs; }
+      else if(b.dataset.oflip){ it.t = it.t.endsWith('L') ? it.t.slice(0, -1) + 'R' : it.t.slice(0, -1) + 'L'; }
+      else if(b.dataset.oedit){ renderOv(); setTimeout(()=> ovEditText(it.id), 0); return; }
+      else if(b.dataset.odup){ const c = JSON.parse(JSON.stringify(it)); c.id = 'o' + Math.random().toString(36).slice(2, 9); if(isLine(c.t)){ c.x1 += 20; c.y1 += 20; c.x2 += 20; c.y2 += 20; } else { c.x += 20; c.y += 20; } OV.push(c); ovSel = c.id; }
+      else if(b.dataset.odel){ OV = OV.filter(x=> x.id !== it.id); ovSel = null; }
+      renderOv(); markDirty(); return; }
+    const h = e.target.closest('.ov-h'), item = e.target.closest('.ov-item');
+    if(!h && !item) return;
+    if(item && item.querySelector('.ov-text[contenteditable="true"]')) return;      // typing in a text box
+    e.preventDefault(); if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    const id = h ? ovSel : item.dataset.id; if(!h && ovSel !== id) ovSelect(id);
+    const it = ovItem(id); if(!it) return;
+    ovDrag = {h: h ? h.dataset.h : null, sx: e.clientX, sy: e.clientY, o: JSON.parse(JSON.stringify(it)), moved: false};
+    L.setPointerCapture(e.pointerId);
+  });
+  $('libOv').addEventListener('pointermove', e=>{
+    const d = ovDrag; if(!d) return; const it = ovItem(ovSel); if(!it) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy, o = d.o; if(Math.abs(dx) + Math.abs(dy) > 1) d.moved = true;
+    if(!d.h){ if(isLine(it.t)){ it.x1 = o.x1 + dx; it.y1 = o.y1 + dy; it.x2 = o.x2 + dx; it.y2 = o.y2 + dy; } else { it.x = Math.max(-20, o.x + dx); it.y = Math.max(-20, o.y + dy); } }
+    else if(d.h === 'p1'){ it.x1 = o.x1 + dx; it.y1 = o.y1 + dy; } else if(d.h === 'p2'){ it.x2 = o.x2 + dx; it.y2 = o.y2 + dy; }
+    else {
+      let x0 = o.x, y0 = o.y, x1 = o.x + o.w, y1 = o.y + o.h;
+      if(d.h.includes('w')) x0 = Math.min(x1 - 16, o.x + dx); if(d.h.includes('e')) x1 = Math.max(x0 + 16, o.x + o.w + dx);
+      if(d.h.includes('n')) y0 = Math.min(y1 - 16, o.y + dy); if(d.h.includes('s')) y1 = Math.max(y0 + 16, o.y + o.h + dy);
+      if(e.shiftKey && d.h.length === 2){ const sc = Math.max((x1 - x0) / o.w, (y1 - y0) / o.h); if(d.h.includes('w')) x0 = x1 - o.w * sc; else x1 = x0 + o.w * sc; if(d.h.includes('n')) y0 = y1 - o.h * sc; else y1 = y0 + o.h * sc; }
+      it.x = x0; it.y = y0; it.w = x1 - x0; it.h = y1 - y0;
+    }
+    renderOv();
+  });
+  $('libOv').addEventListener('pointerup', ()=>{ if(ovDrag && ovDrag.moved) markDirty(); ovDrag = null; });
+  $('libOv').addEventListener('dblclick', e=>{ const item = e.target.closest('.ov-item'); if(!item || !ovEditable()) return; const it = ovItem(item.dataset.id); if(it && it.t === 'text') ovEditText(it.id); });
+  document.addEventListener('pointerdown', e=>{ if(ovSel && !e.target.closest('#libOv, .tg-pal')) { ovSel = null; renderOv(); } }, true);
+  document.addEventListener('keydown', e=>{
+    if(!ovSel || !ovEditable()) return;
+    const ae = document.activeElement; if(ae && (ae.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))) return;
+    const it = ovItem(ovSel); if(!it) return;
+    if(e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); OV = OV.filter(x=> x.id !== ovSel); ovSel = null; renderOv(); markDirty(); }
+    else if(e.key === 'Escape'){ ovSel = null; renderOv(); }
+    else if(e.key.startsWith('Arrow')){ e.preventDefault(); const st = e.shiftKey ? 10 : 1, dx = e.key === 'ArrowLeft' ? -st : e.key === 'ArrowRight' ? st : 0, dy = e.key === 'ArrowUp' ? -st : e.key === 'ArrowDown' ? st : 0;
+      if(isLine(it.t)){ it.x1 += dx; it.x2 += dx; it.y1 += dy; it.y2 += dy; } else { it.x += dx; it.y += dy; } renderOv(); markDirty(); }
+    else if(e.key === 'Enter' && it.t === 'text'){ e.preventDefault(); ovEditText(it.id); }
+  });
+  window.addEventListener('resize', ()=> ovLayer());
+  // for the PDF / Print download: the shapes at the same spot (scaled to the page width)
+  function overlayExportHTML(width){
+    if(!OV.length) return '';
+    const k = width / Math.max(1, ed.offsetWidth);
+    return '<!--ov--><div style="position:absolute;left:0;top:0;width:100%;height:0;overflow:visible">' + OV.map(it=>{
+      if(isLine(it.t)){ const g = lineSvg(it, true); return `<div style="position:absolute;left:${g.x0 * k}px;top:${g.y0 * k}px;width:${g.w * k}px;height:${g.h * k}px">${g.svg.replace('<svg ', `<svg viewBox="0 0 ${g.w} ${g.h}" style="width:100%;height:100%" `)}</div>`; }
+      if(it.t === 'text') return `<div style="position:absolute;left:${it.x * k}px;top:${it.y * k}px;width:${it.w * k}px;font-size:${(it.fs || 16) * k}px;line-height:1.35;padding:${6 * k}px ${8 * k}px;white-space:pre-wrap;color:${it.color === 'ink' ? '#1E1E1E' : it.color}">${esc(it.text || '')}</div>`;
+      return `<div style="position:absolute;left:${it.x * k}px;top:${it.y * k}px;width:${it.w * k}px;height:${it.h * k}px">${shapeSvg(it, true).replace(/width="[\d.]+" height="[\d.]+"/, 'style="width:100%;height:100%"')}</div>`;
+    }).join('') + '</div><!--/ov-->';
+  }
+
   // ================= text size =================
   const SIZES = [['fs-s', 'Small'], ['', 'Normal'], ['fs-l', 'Large'], ['fs-xl', 'Extra large'], ['fs-xxl', 'Huge']];
   function sizeAtCaret(){ const s = getSelection(); const n = s.rangeCount ? s.anchorNode : null; const el = n && (n.nodeType === 1 ? n : n.parentElement); const sp = el && el.closest('span.fs-s, span.fs-l, span.fs-xl, span.fs-xxl'); return sp && ed.contains(sp) ? sp.className : ''; }
@@ -2853,6 +3053,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     else if(t === 'flow'){ const cur = curBlock(); insertFlow(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'file'){ pickDocs(); }
     else if(t === 'size'){ openSizeMenu(b); }
+    else if(t === 'shapes'){ openShapeMenu(b); }
     else if(t === 'toggle'){ const cur = curBlock(); if(cur && cur.classList && cur.classList.contains('tg') && inToggleTitle()) return; insertToggle(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'h2' || t === 'ul' || t === 'todo' || t === 'quote'){ const cur = curBlock(); const k = cur && ((t === 'h2' && cur.nodeName === 'H2') || (t === 'ul' && cur.nodeName === 'UL') || (t === 'quote' && cur.nodeName === 'BLOCKQUOTE') || (t === 'todo' && cur.classList && cur.classList.contains('todo'))) ? 'p' : t; convertBlock(k); }
   });
@@ -2882,7 +3083,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(p && !dirty && document.activeElement !== ed && document.activeElement !== $('libTitle')){
       const st = p.updatedAt && p.updatedAt.toMillis ? p.updatedAt.toMillis() : null;
       if(st && lastLoadedStamp && st !== lastLoadedStamp && p.updatedBy !== myUid){
-        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; decorateFlows(); decorateToggles(); decorateFiles(); paintBlanks(); lastLoadedStamp = st;
+        $('libTitle').value = p.title || ''; autosizeTitle(); ed.innerHTML = PTLib.clean(p.content || '') || '<p><br></p>'; decorateFlows(); decorateToggles(); decorateFiles(); loadOverlay(pages[curId]); paintBlanks(); lastLoadedStamp = st;
       }
     }
     if(curId) renderMeta();
