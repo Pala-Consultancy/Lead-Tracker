@@ -1945,7 +1945,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const when = new Date().toLocaleDateString(undefined, {day: 'numeric', month: 'long', year: 'numeric'});
     const folder = (folders.find(f=> f.id === folderIdOf(p)) || {}).name || '';
     const from = scope ? (p.title || 'Untitled') + ' · ' : '';
-    const body = `<div class="doc"><h1 class="doc-title">${esc(title)}</h1><div class="doc-meta">${esc(from)}${folder ? esc(folder) + ' · ' : ''}${esc(when)}</div><div style="position:relative">${scope ? '' : overlayExportHTML(720)}${ed.innerHTML}</div></div>`;
+    const body = `<div class="doc"><h1 class="doc-title">${esc(title)}</h1><div class="doc-meta">${esc(from)}${folder ? esc(folder) + ' · ' : ''}${esc(when)}</div><div style="position:relative">${overlayExportHTML(720, scope)}${ed.innerHTML}</div></div>`;
     const file = (title.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim() || 'Page').slice(0, 80);
     return {title, body, file};
   }
@@ -2562,6 +2562,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(!body){ body = document.createElement('div'); body.className = 'tg-body'; tg.appendChild(body); }
     if(!body.firstChild || !body.textContent.trim() && !body.querySelector('hr,.flow,.tg,li,.todo')) { if(!body.querySelector('p,div,h1,h2,h3,ul,ol,blockquote')) body.innerHTML = '<p><br></p>'; }
     if(!tg.hasAttribute('data-open')) tg.setAttribute('data-open', 'true');
+    if(!/^[a-z0-9]{4,16}$/.test(tg.getAttribute('data-tid') || '') || ed.querySelectorAll(`.tg[data-tid="${tg.getAttribute('data-tid')}"]`).length > 1) tg.setAttribute('data-tid', Math.random().toString(36).slice(2, 10));
     const editable = ed.contentEditable === 'true';
     const arrow = document.createElement('button'); arrow.type = 'button'; arrow.className = 'tg-ui tg-arrow'; arrow.contentEditable = 'false';
     arrow.setAttribute('aria-label', 'Open or close this toggle'); arrow.setAttribute('aria-expanded', tg.getAttribute('data-open')); arrow.textContent = '▶';
@@ -2673,7 +2674,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const L = $('libOv'), host = ed.parentElement;
     if(getComputedStyle(host).position === 'static') host.style.position = 'relative';
     L.style.left = ed.offsetLeft + 'px'; L.style.top = ed.offsetTop + 'px'; L.style.width = ed.offsetWidth + 'px';
-    const bottom = OV.reduce((m, it)=> Math.max(m, isLine(it.t) ? Math.max(it.y1, it.y2) : it.y + it.h), 0);
+    const bottom = OV.reduce((m, it)=>{ const pl = ovPlace(it); if(pl.hidden) return m; return Math.max(m, (isLine(it.t) ? Math.max(it.y1, it.y2) : it.y + it.h) + pl.dy); }, 0);
     ed.style.minHeight = bottom ? (bottom + 60) + 'px' : '';            // the page grows to hold what's on it
     return L;
   }
@@ -2692,7 +2693,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   function renderOv(){
     const L = ovLayer(); L.innerHTML = '';
-    OV.forEach(it=>{
+    OV.forEach(orig=>{
+      const pl = ovPlace(orig); if(pl.hidden){ if(ovSel === orig.id) ovSel = null; return; }
+      const it = pl.dy ? (isLine(orig.t) ? {...orig, y1: orig.y1 + pl.dy, y2: orig.y2 + pl.dy} : {...orig, y: orig.y + pl.dy}) : orig;
       const el = document.createElement('div'); el.className = 'ov-item' + (isLine(it.t) ? ' ov-line' : '') + (ovSel === it.id ? ' sel' : ''); el.dataset.id = it.id;
       if(isLine(it.t)){ const g = lineSvg(it); Object.assign(el.style, {left: g.x0 + 'px', top: g.y0 + 'px', width: g.w + 'px', height: g.h + 'px'}); el.innerHTML = g.svg; }
       else {
@@ -2707,8 +2710,37 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(ovSel && ovEditable()) drawSel();
   }
   function ovItem(id){ return OV.find(x=> x.id === id); }
+  // A shape on top of a box (toggle) belongs to it: it.tg = the box's name, it.ty = where the box's top was.
+  // It moves along with the box, and is hidden while the box (or a box around it) is closed.
+  const tgTop = (tg)=> tg.getBoundingClientRect().top - ed.getBoundingClientRect().top;
+  function ovPlace(it){                                   // {dy, hidden} for where the item is now
+    if(!it.tg) return {dy: 0, hidden: false};
+    const tg = ed.querySelector(`.tg[data-tid="${it.tg}"]`);
+    if(!tg) return {dy: 0, hidden: false};
+    const body = tg.querySelector(':scope > .tg-body');
+    if(!body || body.offsetParent === null) return {dy: 0, hidden: true};
+    return {dy: tgTop(tg) - (it.ty || 0), hidden: false};
+  }
+  function ovBake(it){                                    // write the current position into the item
+    const {dy} = ovPlace(it); if(!dy) return;
+    if(isLine(it.t)){ it.y1 += dy; it.y2 += dy; } else it.y += dy;
+    if(it.tg){ const tg = ed.querySelector(`.tg[data-tid="${it.tg}"]`); if(tg) it.ty = tgTop(tg); }
+  }
+  function ovAnchor(it){                                  // which box is it on? (the innermost open one)
+    const y = isLine(it.t) ? Math.min(it.y1, it.y2) : it.y, er = ed.getBoundingClientRect();
+    let best = null;
+    ed.querySelectorAll('.tg').forEach(tg=>{
+      const body = tg.querySelector(':scope > .tg-body'); if(!body || body.offsetParent === null) return;
+      const r = tg.getBoundingClientRect(), top = r.top - er.top, bottom = r.bottom - er.top;
+      if(y >= top && y <= bottom && (!best || best.contains(tg))) best = tg;
+    });
+    if(best){ decorateToggle(best); it.tg = best.getAttribute('data-tid'); it.ty = tgTop(best); delete it.free; }
+    else { delete it.tg; delete it.ty; it.free = true; }
+  }
   function drawSel(){
-    const it = ovItem(ovSel), L = $('libOv'); if(!it) return;
+    const orig = ovItem(ovSel), L = $('libOv'); if(!orig) return;
+    const pl = ovPlace(orig); if(pl.hidden) return;
+    const it = pl.dy ? (isLine(orig.t) ? {...orig, y1: orig.y1 + pl.dy, y2: orig.y2 + pl.dy} : {...orig, y: orig.y + pl.dy}) : orig;
     const hs = isLine(it.t) ? [['p1', it.x1, it.y1], ['p2', it.x2, it.y2]]
       : (it.t === 'text' ? [['w', it.x, it.y + 14], ['e', it.x + it.w, it.y + 14]] : [['nw', it.x, it.y], ['n', it.x + it.w / 2, it.y], ['ne', it.x + it.w, it.y], ['e', it.x + it.w, it.y + it.h / 2], ['se', it.x + it.w, it.y + it.h], ['s', it.x + it.w / 2, it.y + it.h], ['sw', it.x, it.y + it.h], ['w', it.x, it.y + it.h / 2]]);
     hs.forEach(([k, x, y])=>{ const h = document.createElement('div'); h.className = 'ov-h' + (isLine(it.t) ? ' round' : ''); h.dataset.h = k; h.style.left = x + 'px'; h.style.top = y + 'px'; h.style.cursor = isLine(it.t) ? 'move' : k + '-resize'; L.appendChild(h); });
@@ -2725,7 +2757,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     L.appendChild(bar);
   }
   function ovSelect(id){ ovSel = id; renderOv(); }
-  function loadOverlay(p){ OV = Array.isArray(p && p.overlay) ? JSON.parse(JSON.stringify(p.overlay)).slice(0, 200) : []; ovSel = null; renderOv(); }
+  function loadOverlay(p){
+    OV = Array.isArray(p && p.overlay) ? JSON.parse(JSON.stringify(p.overlay)).slice(0, 200) : []; ovSel = null;
+    let changed = false;
+    if(ovEditable()) OV.forEach(it=>{ if(!('tg' in it) && !it.free){ ovAnchor(it); if(it.tg) changed = true; else it.free = true; } });
+    renderOv(); if(changed) markDirty();
+  }
   function addShape(t){
     if(!ovEditable() || !curId) return;
     const L = ovLayer(), r = L.getBoundingClientRect(), vh = innerHeight;
@@ -2736,7 +2773,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     else if(t === 'text' || t === 'textbox') it = {...base, t: 'text', box: t === 'textbox', x: cx - 60, y: cy, w: 240, h: 40, text: '', html: '', fs: 16};
     else if(/^brace|^bracket/.test(t)) it = {...base, x: cx, y: cy - 90, w: t.startsWith('brace') ? 46 : 34, h: 200};
     else it = {...base, x: cx - 80, y: cy - 50, w: 200, h: 120};
-    OV.push(it); ovSel = id; renderOv(); markDirty();
+    ovAnchor(it); OV.push(it); ovSel = id; renderOv(); markDirty();
     if(t === 'text' || t === 'textbox') setTimeout(()=> ovEditText(id), 30);
   }
   function ovEditText(id, cx, cy){
@@ -2772,7 +2809,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       if(b.dataset.oc){ it.color = b.dataset.oc; } else if(b.dataset.osw){ it.sw = +b.dataset.osw; } else if(b.dataset.ofs){ it.fs = +b.dataset.ofs; }
       else if(b.dataset.oflip){ it.t = it.t.endsWith('L') ? it.t.slice(0, -1) + 'R' : it.t.slice(0, -1) + 'L'; }
       else if(b.dataset.oedit){ renderOv(); setTimeout(()=> ovEditText(it.id), 0); return; }
-      else if(b.dataset.odup){ const c = JSON.parse(JSON.stringify(it)); c.id = 'o' + Math.random().toString(36).slice(2, 9); if(isLine(c.t)){ c.x1 += 20; c.y1 += 20; c.x2 += 20; c.y2 += 20; } else { c.x += 20; c.y += 20; } OV.push(c); ovSel = c.id; }
+      else if(b.dataset.odup){ ovBake(it); const c = JSON.parse(JSON.stringify(it)); c.id = 'o' + Math.random().toString(36).slice(2, 9); if(isLine(c.t)){ c.x1 += 20; c.y1 += 20; c.x2 += 20; c.y2 += 20; } else { c.x += 20; c.y += 20; } OV.push(c); ovSel = c.id; }
       else if(b.dataset.odel){ OV = OV.filter(x=> x.id !== it.id); ovSel = null; }
       renderOv(); markDirty(); return; }
     const h = e.target.closest('.ov-h'), item = e.target.closest('.ov-item');
@@ -2780,7 +2817,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(item && item.querySelector('.ov-text[contenteditable="true"]')) return;      // typing in a text box
     e.preventDefault(); if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     const id = h ? ovSel : item.dataset.id, wasSel = ovSel === id; if(!h && !wasSel) ovSelect(id);
-    const it = ovItem(id); if(!it) return;
+    const it = ovItem(id); if(!it) return; ovBake(it);
     ovDrag = {id, wasSel, h: h ? h.dataset.h : null, sx: e.clientX, sy: e.clientY, o: JSON.parse(JSON.stringify(it)), moved: false};
     L.setPointerCapture(e.pointerId);
   });
@@ -2801,8 +2838,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('libOv').addEventListener('pointerup', e=>{
     const d = ovDrag; ovDrag = null; if(!d) return;
     try { $('libOv').releasePointerCapture(e.pointerId); } catch(err){ /* fine */ }
-    if(d.moved){ markDirty(); return; }
     const it = ovItem(d.id);
+    if(d.moved){ if(it){ ovAnchor(it); renderOv(); } markDirty(); return; }
     if(it && it.t === 'text' && !d.h && d.wasSel) ovEditText(it.id, e.clientX, e.clientY);       // second click (or a double-click): type
   });
   $('libOv').addEventListener('dblclick', e=>{ const item = e.target.closest('.ov-item'); if(!item || !ovEditable()) return; const it = ovItem(item.dataset.id); if(it && it.t === 'text') ovEditText(it.id); });
@@ -2813,16 +2850,22 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const it = ovItem(ovSel); if(!it) return;
     if(e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); OV = OV.filter(x=> x.id !== ovSel); ovSel = null; renderOv(); markDirty(); }
     else if(e.key === 'Escape'){ ovSel = null; renderOv(); }
-    else if(e.key.startsWith('Arrow')){ e.preventDefault(); const st = e.shiftKey ? 10 : 1, dx = e.key === 'ArrowLeft' ? -st : e.key === 'ArrowRight' ? st : 0, dy = e.key === 'ArrowUp' ? -st : e.key === 'ArrowDown' ? st : 0;
+    else if(e.key.startsWith('Arrow')){ e.preventDefault(); ovBake(it); const st = e.shiftKey ? 10 : 1, dx = e.key === 'ArrowLeft' ? -st : e.key === 'ArrowRight' ? st : 0, dy = e.key === 'ArrowUp' ? -st : e.key === 'ArrowDown' ? st : 0;
       if(isLine(it.t)){ it.x1 += dx; it.x2 += dx; it.y1 += dy; it.y2 += dy; } else { it.x += dx; it.y += dy; } renderOv(); markDirty(); }
     else if(e.key === 'Enter' && it.t === 'text'){ e.preventDefault(); ovEditText(it.id); }
   });
-  window.addEventListener('resize', ()=> ovLayer());
+  window.addEventListener('resize', ()=> renderOv());
+  let ovRaf = 0; ed.addEventListener('input', ()=>{ if(!OV.length) return; cancelAnimationFrame(ovRaf); ovRaf = requestAnimationFrame(()=> renderOv()); });
   // for the PDF / Print download: the shapes at the same spot (scaled to the page width)
-  function overlayExportHTML(width){
-    if(!OV.length) return '';
-    const k = width / Math.max(1, ed.offsetWidth);
-    return '<!--ov--><div style="position:absolute;left:0;top:0;width:100%;height:0;overflow:visible">' + OV.map(it=>{
+  function overlayExportHTML(width, scope){
+    const body = scope && scope.querySelector(':scope > .tg-body');
+    const inScope = (it)=>{ if(!scope) return true; if(!it.tg) return false; const tg = ed.querySelector(`.tg[data-tid="${it.tg}"]`); return !!tg && scope.contains(tg); };
+    const list = OV.filter(it=> inScope(it) && !ovPlace(it).hidden).map(o=>{ const pl = ovPlace(o), it = pl.dy ? (isLine(o.t) ? {...o, y1: o.y1 + pl.dy, y2: o.y2 + pl.dy} : {...o, y: o.y + pl.dy}) : {...o};
+      if(body){ const er = ed.getBoundingClientRect(), br = body.getBoundingClientRect(), ox = br.left - er.left, oy = br.top - er.top; if(isLine(it.t)){ it.x1 -= ox; it.x2 -= ox; it.y1 -= oy; it.y2 -= oy; } else { it.x -= ox; it.y -= oy; } }
+      return it; });
+    if(!list.length) return '';
+    const k = width / Math.max(1, body ? body.offsetWidth : ed.offsetWidth);
+    return '<!--ov--><div style="position:absolute;left:0;top:0;width:100%;height:0;overflow:visible">' + list.map(it=>{
       if(isLine(it.t)){ const g = lineSvg(it, true); return `<div style="position:absolute;left:${g.x0 * k}px;top:${g.y0 * k}px;width:${g.w * k}px;height:${g.h * k}px">${g.svg.replace('<svg ', `<svg viewBox="0 0 ${g.w} ${g.h}" style="width:100%;height:100%" `)}</div>`; }
       if(it.t === 'text') return `<div style="position:absolute;left:${it.x * k}px;top:${it.y * k}px;width:${it.w * k}px;font-size:${(it.fs || 16) * k}px;line-height:1.35;padding:${6 * k}px ${8 * k}px;white-space:pre-wrap;color:${it.color === 'ink' ? '#1E1E1E' : it.color};${it.box ? `border:${1.5 * k}px solid ${it.color === 'ink' ? '#1E1E1E' : it.color};border-radius:${4 * k}px;` : ''}">${it.html ? boxHTML(it.html) : esc(it.text || '')}</div>`;
       return `<div style="position:absolute;left:${it.x * k}px;top:${it.y * k}px;width:${it.w * k}px;height:${it.h * k}px">${shapeSvg(it, true).replace(/width="[\d.]+" height="[\d.]+"/, 'style="width:100%;height:100%"')}</div>`;
@@ -2932,6 +2975,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const tg = a.closest('.tg');
     if(a.classList.contains('tg-arrow')){
       const open = tg.getAttribute('data-open') !== 'true'; tg.setAttribute('data-open', String(open)); a.setAttribute('aria-expanded', String(open));
+      renderOv();
       if(ed.contentEditable === 'true') markDirty();
     } else if(a.classList.contains('tg-dot')) openPalette(tg, a);
     else if(a.classList.contains('tg-exp')) openBoxExport(tg, a);

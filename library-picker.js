@@ -55,6 +55,7 @@
         }
         if(c === 'tg'){
           keep['data-open'] = n.getAttribute('data-open') === 'false' ? 'false' : 'true';
+          var tid = n.getAttribute('data-tid'); if(/^[a-z0-9]{4,16}$/.test(tid || '')) keep['data-tid'] = tid;      // a stable name, so shapes can belong to this box
           var col = n.getAttribute('data-color'); if(TOGGLE_COLORS.indexOf(col) >= 0) keep['data-color'] = col;
         }
         if(c === 'fl-branch'){ var tone = BRANCH_TONES.filter(function(t){ return n.classList.contains(t); })[0] || 'other'; c = 'fl-branch ' + tone; }
