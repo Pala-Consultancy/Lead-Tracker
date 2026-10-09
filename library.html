@@ -2739,10 +2739,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     OV.push(it); ovSel = id; renderOv(); markDirty();
     if(t === 'text' || t === 'textbox') setTimeout(()=> ovEditText(id), 30);
   }
-  function ovEditText(id){
-    const el = $('libOv').querySelector(`.ov-item[data-id="${id}"] .ov-text`); if(!el) return;
+  function ovEditText(id, cx, cy){
+    const el = $('libOv').querySelector(`.ov-item[data-id="${id}"] .ov-text`); if(!el || el.contentEditable === 'true') return;
     el.contentEditable = 'true'; el.focus();
-    const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    let r = cx != null && document.caretRangeFromPoint ? document.caretRangeFromPoint(cx, cy) : null;
+    if(!r || !el.contains(r.startContainer)){ r = document.createRange(); r.selectNodeContents(el); r.collapse(false); }
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
     el.addEventListener('input', ()=>{ const it = ovItem(id); if(it){ it.text = el.innerText.replace(/\n$/, ''); it.html = boxHTML(el.innerHTML); markDirty(); } });
     el.addEventListener('blur', ()=>{ el.contentEditable = 'false'; const it = ovItem(id); if(it && !it.text.trim()){ OV = OV.filter(x=> x.id !== id); ovSel = null; renderOv(); markDirty(); } }, {once: true});
   }
@@ -2777,9 +2779,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(!h && !item) return;
     if(item && item.querySelector('.ov-text[contenteditable="true"]')) return;      // typing in a text box
     e.preventDefault(); if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    const id = h ? ovSel : item.dataset.id; if(!h && ovSel !== id) ovSelect(id);
+    const id = h ? ovSel : item.dataset.id, wasSel = ovSel === id; if(!h && !wasSel) ovSelect(id);
     const it = ovItem(id); if(!it) return;
-    ovDrag = {h: h ? h.dataset.h : null, sx: e.clientX, sy: e.clientY, o: JSON.parse(JSON.stringify(it)), moved: false};
+    ovDrag = {id, wasSel, h: h ? h.dataset.h : null, sx: e.clientX, sy: e.clientY, o: JSON.parse(JSON.stringify(it)), moved: false};
     L.setPointerCapture(e.pointerId);
   });
   $('libOv').addEventListener('pointermove', e=>{
@@ -2796,7 +2798,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     }
     renderOv();
   });
-  $('libOv').addEventListener('pointerup', ()=>{ if(ovDrag && ovDrag.moved) markDirty(); ovDrag = null; });
+  $('libOv').addEventListener('pointerup', e=>{
+    const d = ovDrag; ovDrag = null; if(!d) return;
+    try { $('libOv').releasePointerCapture(e.pointerId); } catch(err){ /* fine */ }
+    if(d.moved){ markDirty(); return; }
+    const it = ovItem(d.id);
+    if(it && it.t === 'text' && !d.h && d.wasSel) ovEditText(it.id, e.clientX, e.clientY);       // second click (or a double-click): type
+  });
   $('libOv').addEventListener('dblclick', e=>{ const item = e.target.closest('.ov-item'); if(!item || !ovEditable()) return; const it = ovItem(item.dataset.id); if(it && it.t === 'text') ovEditText(it.id); });
   document.addEventListener('pointerdown', e=>{ if(ovSel && !e.target.closest('#libOv, .tg-pal')) { ovSel = null; renderOv(); } }, true);
   document.addEventListener('keydown', e=>{
