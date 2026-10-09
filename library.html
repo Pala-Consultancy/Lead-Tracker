@@ -243,6 +243,12 @@
   .ov-item:hover .ov-text{border-color:var(--border);} .ov-item.sel .ov-text{border-color:transparent;}
   .ov-text[contenteditable="true"]{cursor:text;background:var(--panel);box-shadow:0 0 0 2px var(--teal);}
   .ov-text:empty::before{content:"Text";color:var(--slate-light);}
+  .ov-text.boxed{border:1.5px solid currentColor !important;border-radius:4px;}
+  mark.hl-yellow,mark.hl-green,mark.hl-blue,mark.hl-pink,mark.hl-orange,mark.hl-purple{color:inherit;padding:0 2px;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;}
+  mark.hl-yellow{background:#FFE066;} mark.hl-green{background:#B2F2BB;} mark.hl-blue{background:#A5D8FF;} mark.hl-pink{background:#FCC2D7;} mark.hl-orange{background:#FFD8A8;} mark.hl-purple{background:#D0BFFF;}
+  html[data-theme="dark"] mark.hl-yellow{background:rgba(255,224,102,.38);} html[data-theme="dark"] mark.hl-green{background:rgba(178,242,187,.32);} html[data-theme="dark"] mark.hl-blue{background:rgba(165,216,255,.32);}
+  html[data-theme="dark"] mark.hl-pink{background:rgba(252,194,215,.32);} html[data-theme="dark"] mark.hl-orange{background:rgba(255,216,168,.32);} html[data-theme="dark"] mark.hl-purple{background:rgba(208,191,255,.32);}
+  .tg-pal.hl-menu{grid-template-columns:repeat(7,26px);}
   .ov-item.sel::after{content:"";position:absolute;inset:-4px;border:1.5px solid var(--teal);border-radius:4px;pointer-events:none;}
   .ov-item.ov-line.sel::after{display:none;}
   .ov-h{position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;background:var(--panel);border:2px solid var(--teal);border-radius:3px;pointer-events:auto;z-index:2;}
@@ -1250,6 +1256,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div class="lib-tools" role="toolbar" aria-label="Formatting">
           <button type="button" data-tool="bold" title="Bold (Ctrl+B)"><b>B</b></button>
           <button type="button" data-tool="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button type="button" data-tool="hl" title="Highlight the selected text" aria-label="Highlight">🖍</button>
           <button type="button" data-tool="size" title="Text size (Ctrl+Shift+> bigger, Ctrl+Shift+< smaller)" aria-label="Text size"><span style="font-size:11px">A</span><span style="font-size:15px">A</span></button>
           <span class="sep"></span>
           <button type="button" data-tool="h2" title="Heading">H</button>
@@ -1909,6 +1916,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     .ph{background:#EEF0FF;color:#3730B3;border-radius:4px;padding:0 4px;font-weight:600;}
     .flow{margin:12px 0;padding:10px 14px;border:1px solid #DDE3EC;border-radius:10px;}
     .fs-s{font-size:.82em;} .fs-l{font-size:1.25em;} .fs-xl{font-size:1.6em;} .fs-xxl{font-size:2.1em;}
+    mark{color:inherit;padding:0 2px;border-radius:3px;} mark.hl-yellow{background:#FFE066;} mark.hl-green{background:#B2F2BB;} mark.hl-blue{background:#A5D8FF;} mark.hl-pink{background:#FCC2D7;} mark.hl-orange{background:#FFD8A8;} mark.hl-purple{background:#D0BFFF;}
     .tg{margin:10px 0;padding:6px 0 4px 12px;border-left:3px solid #C7CEDA;}
     .tg-title{font-weight:700;margin:0 0 4px;}
     .tg[data-color="gray"]{border-color:#9B9A97;} .tg[data-color="brown"]{border-color:#A27763;} .tg[data-color="orange"]{border-color:#E8913A;}
@@ -2582,10 +2590,63 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(title.textContent.trim()) caretTo(body.firstChild, true); else { title.focus(); caretTo(title, true); }
     markDirty();
   }
+  // ================= highlighting (a marker over the text) =================
+  const HL_COLORS = [['hl-yellow', '#FFE066'], ['hl-green', '#B2F2BB'], ['hl-blue', '#A5D8FF'], ['hl-pink', '#FCC2D7'], ['hl-orange', '#FFD8A8'], ['hl-purple', '#D0BFFF'], ['', 'None']];
+  const MARKS = 'mark.hl-yellow, mark.hl-green, mark.hl-blue, mark.hl-pink, mark.hl-orange, mark.hl-purple, mark';
+  // highlights the selected text inside `root` (the page, or a text box)
+  function applyHighlight(cls, root){
+    const s = getSelection(); if(!s.rangeCount || s.isCollapsed || !root.contains(s.anchorNode)){ showToast('Select the text you want to highlight first.'); return false; }
+    document.execCommand('styleWithCSS', false, false);
+    document.execCommand('fontName', false, 'pt-hl');
+    const touched = [];
+    root.querySelectorAll('font[face="pt-hl"]').forEach(f=>{
+      let up = f.parentElement;                                          // an older highlight around exactly this text: replaced
+      while(up && up !== root && up.tagName === 'MARK' && up.textContent.trim() === f.textContent.trim()){ const nx = up.parentElement; up.replaceWith(...up.childNodes); up = nx; }
+      f.querySelectorAll('mark').forEach(m=> m.replaceWith(...m.childNodes));
+      if(cls){ const m = document.createElement('mark'); m.className = cls; m.append(...f.childNodes); f.replaceWith(m); touched.push(m); }
+      else { const kids = [...f.childNodes]; f.replaceWith(...kids); touched.push(...kids); }
+    });
+    root.querySelectorAll('font').forEach(f=> f.replaceWith(...f.childNodes));
+    root.querySelectorAll('mark:empty').forEach(m=> m.remove());
+    const live = touched.filter(n=> root.contains(n));
+    if(live.length){ const r = document.createRange(); r.setStartBefore(live[0]); r.setEndAfter(live[live.length - 1]); s.removeAllRanges(); s.addRange(r); }
+    return true;
+  }
+  function openHighlightMenu(btn, onPick){
+    document.querySelectorAll('.tg-pal').forEach(x=> x.remove());
+    const m = document.createElement('div'); m.className = 'tg-pal hl-menu'; m.setAttribute('role', 'menu');
+    m.innerHTML = HL_COLORS.map(([c, col])=> `<button type="button" data-hl="${c}" title="${c ? c.slice(3) : 'No highlight'}" aria-label="${c ? 'Highlight ' + c.slice(3) : 'Remove highlight'}" class="${c ? '' : 'none'}" style="${c ? 'background:' + col : ''}"></button>`).join('');
+    document.body.appendChild(m);
+    const r = btn.getBoundingClientRect(); m.style.left = Math.max(10, Math.min(innerWidth - m.offsetWidth - 10, r.left)) + 'px'; m.style.top = (r.bottom + 8) + 'px';
+    m.addEventListener('mousedown', e=> e.preventDefault());
+    m.addEventListener('click', e=>{ const b = e.target.closest('[data-hl]'); if(!b) return; m.remove(); onPick(b.dataset.hl); });
+    setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target)){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
+  }
+  // a text box keeps a little formatting: bold, italic, highlights and line breaks
+  function boxHTML(html){
+    const t = document.createElement('template'); t.innerHTML = String(html || '');
+    const walk = (n)=>{
+      [...n.childNodes].forEach(c=>{
+        if(c.nodeType === 3) return;
+        if(c.nodeType !== 1){ c.remove(); return; }
+        walk(c);
+        const tag = c.tagName;
+        if(tag === 'BR') { [...c.attributes].forEach(a=> c.removeAttribute(a.name)); return; }
+        if(tag === 'B' || tag === 'STRONG' || tag === 'I' || tag === 'EM'){ [...c.attributes].forEach(a=> c.removeAttribute(a.name)); return; }
+        if(tag === 'MARK'){ const hc = HL_COLORS.map(x=> x[0]).filter(Boolean).find(x=> c.classList.contains(x)) || 'hl-yellow'; [...c.attributes].forEach(a=> c.removeAttribute(a.name)); c.className = hc; return; }
+        if(tag === 'DIV' || tag === 'P'){ const br = document.createElement('br'); c.before(br); c.replaceWith(...c.childNodes); return; }
+        c.replaceWith(...c.childNodes);
+      });
+    };
+    walk(t.content); const d = document.createElement('div'); d.appendChild(t.content);
+    return d.innerHTML.replace(/^(<br>)+/, '').slice(0, 20000);
+  }
+
   // ================= shapes and text boxes on the page (like Word) =================
   // Stored with the page as `overlay`: [{id, t, x, y, w, h | x1, y1, x2, y2, color, sw, text, fs}], in pixels
   // from the top-left of the page text. They stay where you put them, on top of the text.
   const OV_SHAPES = {
+    textbox: ['Text in a box', '<rect x="3" y="6" width="24" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 12h10M15 12v7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
     text: ['Text box', '<rect x="4" y="7" width="22" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2"/><path d="M10 12h10M15 12v7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
     braceL: ['Brace {', '<path d="M19 4c-4 0-5 2-5 5v3c0 2-1 3-4 3 3 0 4 1 4 3v3c0 3 1 5 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
     braceR: ['Brace }', '<path d="M11 4c4 0 5 2 5 5v3c0 2 1 3 4 3-3 0-4 1-4 3v3c0 3-1 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'],
@@ -2636,7 +2697,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       if(isLine(it.t)){ const g = lineSvg(it); Object.assign(el.style, {left: g.x0 + 'px', top: g.y0 + 'px', width: g.w + 'px', height: g.h + 'px'}); el.innerHTML = g.svg; }
       else {
         Object.assign(el.style, {left: it.x + 'px', top: it.y + 'px', width: it.w + 'px', height: it.t === 'text' ? 'auto' : it.h + 'px'});
-        if(it.t === 'text'){ const tx = document.createElement('div'); tx.className = 'ov-text'; tx.textContent = it.text || ''; tx.style.fontSize = (it.fs || 16) + 'px'; tx.style.color = ovCol(it.color); el.appendChild(tx); }
+        if(it.t === 'text'){ const tx = document.createElement('div'); tx.className = 'ov-text' + (it.box ? ' boxed' : ''); if(it.html) tx.innerHTML = boxHTML(it.html); else tx.textContent = it.text || '';
+          tx.style.fontSize = (it.fs || 16) + 'px'; tx.style.color = ovCol(it.color); el.appendChild(tx); }
         else el.innerHTML = shapeSvg(it);
       }
       if(!ovEditable()) el.style.cursor = 'default';
@@ -2658,7 +2720,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       (it.t === 'text' ? [[13, 'S'], [16, 'M'], [22, 'L'], [30, 'XL']].map(([v, l])=> `<button type="button" data-ofs="${v}" aria-pressed="${(it.fs || 16) === v}" title="Text size">${l}</button>`).join('')
         : [[1, 'Thin'], [2, 'Medium'], [4, 'Thick']].map(([v, l])=> `<button type="button" data-osw="${v}" aria-pressed="${(it.sw || 2) === v}" title="${l}"><svg width="16" height="10"><path d="M1 5h14" stroke="currentColor" stroke-width="${v}"/></svg></button>`).join('')) +
       '<span class="sep"></span>' + (/^(brace|bracket)/.test(it.t) ? '<button type="button" data-oflip="1" title="Flip left/right">⇆</button>' : '') +
-      (it.t === 'text' ? '<button type="button" data-oedit="1" title="Type (or double-click)">✎</button>' : '') +
+      (it.t === 'text' ? `<button type="button" data-ohl="1" title="Highlight the selected text">🖍</button><button type="button" data-obox="1" aria-pressed="${!!it.box}" title="A rectangle around the text">▭</button><button type="button" data-oedit="1" title="Type (or double-click)">✎</button>` : '') +
       '<button type="button" data-odup="1" title="Duplicate">⧉</button><button type="button" data-odel="1" title="Delete (Del)">🗑</button>';
     L.appendChild(bar);
   }
@@ -2671,17 +2733,17 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const id = 'o' + Math.random().toString(36).slice(2, 9), base = {id, t, color: 'ink', sw: 2};
     let it;
     if(isLine(t)) it = {...base, x1: cx - 80, y1: cy, x2: cx + 120, y2: cy};
-    else if(t === 'text') it = {...base, x: cx - 60, y: cy, w: 240, h: 40, text: '', fs: 16};
+    else if(t === 'text' || t === 'textbox') it = {...base, t: 'text', box: t === 'textbox', x: cx - 60, y: cy, w: 240, h: 40, text: '', html: '', fs: 16};
     else if(/^brace|^bracket/.test(t)) it = {...base, x: cx, y: cy - 90, w: t.startsWith('brace') ? 46 : 34, h: 200};
     else it = {...base, x: cx - 80, y: cy - 50, w: 200, h: 120};
     OV.push(it); ovSel = id; renderOv(); markDirty();
-    if(t === 'text') setTimeout(()=> ovEditText(id), 30);
+    if(t === 'text' || t === 'textbox') setTimeout(()=> ovEditText(id), 30);
   }
   function ovEditText(id){
     const el = $('libOv').querySelector(`.ov-item[data-id="${id}"] .ov-text`); if(!el) return;
     el.contentEditable = 'true'; el.focus();
     const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-    el.addEventListener('input', ()=>{ const it = ovItem(id); if(it){ it.text = el.innerText.replace(/\n$/, ''); markDirty(); } });
+    el.addEventListener('input', ()=>{ const it = ovItem(id); if(it){ it.text = el.innerText.replace(/\n$/, ''); it.html = boxHTML(el.innerHTML); markDirty(); } });
     el.addEventListener('blur', ()=>{ el.contentEditable = 'false'; const it = ovItem(id); if(it && !it.text.trim()){ OV = OV.filter(x=> x.id !== id); ovSel = null; renderOv(); markDirty(); } }, {once: true});
   }
   function openShapeMenu(btn){
@@ -2699,6 +2761,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(!ovEditable()) return;
     const L = $('libOv'), bar = e.target.closest('.ov-bar');
     if(bar){ e.preventDefault(); const it = ovItem(ovSel); if(!it) return; const b = e.target.closest('button'); if(!b) return;
+      if(b.dataset.ohl){                                                   // highlight inside the text box: keep typing state
+        const tx = $('libOv').querySelector(`.ov-item[data-id="${it.id}"] .ov-text`);
+        if(!tx || tx.contentEditable !== 'true'){ showToast('Double-click the text box, select some text, then highlight it.'); return; }
+        openHighlightMenu(b, (c)=>{ if(applyHighlight(c, tx)){ it.html = boxHTML(tx.innerHTML); it.text = tx.innerText; markDirty(); } }); return;
+      }
+      if(b.dataset.obox){ it.box = !it.box; renderOv(); markDirty(); return; }
       if(b.dataset.oc){ it.color = b.dataset.oc; } else if(b.dataset.osw){ it.sw = +b.dataset.osw; } else if(b.dataset.ofs){ it.fs = +b.dataset.ofs; }
       else if(b.dataset.oflip){ it.t = it.t.endsWith('L') ? it.t.slice(0, -1) + 'R' : it.t.slice(0, -1) + 'L'; }
       else if(b.dataset.oedit){ renderOv(); setTimeout(()=> ovEditText(it.id), 0); return; }
@@ -2748,7 +2816,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const k = width / Math.max(1, ed.offsetWidth);
     return '<!--ov--><div style="position:absolute;left:0;top:0;width:100%;height:0;overflow:visible">' + OV.map(it=>{
       if(isLine(it.t)){ const g = lineSvg(it, true); return `<div style="position:absolute;left:${g.x0 * k}px;top:${g.y0 * k}px;width:${g.w * k}px;height:${g.h * k}px">${g.svg.replace('<svg ', `<svg viewBox="0 0 ${g.w} ${g.h}" style="width:100%;height:100%" `)}</div>`; }
-      if(it.t === 'text') return `<div style="position:absolute;left:${it.x * k}px;top:${it.y * k}px;width:${it.w * k}px;font-size:${(it.fs || 16) * k}px;line-height:1.35;padding:${6 * k}px ${8 * k}px;white-space:pre-wrap;color:${it.color === 'ink' ? '#1E1E1E' : it.color}">${esc(it.text || '')}</div>`;
+      if(it.t === 'text') return `<div style="position:absolute;left:${it.x * k}px;top:${it.y * k}px;width:${it.w * k}px;font-size:${(it.fs || 16) * k}px;line-height:1.35;padding:${6 * k}px ${8 * k}px;white-space:pre-wrap;color:${it.color === 'ink' ? '#1E1E1E' : it.color};${it.box ? `border:${1.5 * k}px solid ${it.color === 'ink' ? '#1E1E1E' : it.color};border-radius:${4 * k}px;` : ''}">${it.html ? boxHTML(it.html) : esc(it.text || '')}</div>`;
       return `<div style="position:absolute;left:${it.x * k}px;top:${it.y * k}px;width:${it.w * k}px;height:${it.h * k}px">${shapeSvg(it, true).replace(/width="[\d.]+" height="[\d.]+"/, 'style="width:100%;height:100%"')}</div>`;
     }).join('') + '</div><!--/ov-->';
   }
@@ -3054,6 +3122,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     else if(t === 'file'){ pickDocs(); }
     else if(t === 'size'){ openSizeMenu(b); }
     else if(t === 'shapes'){ openShapeMenu(b); }
+    else if(t === 'hl'){ openHighlightMenu(b, (c)=>{ ed.focus(); if(applyHighlight(c, ed)) markDirty(); }); }
     else if(t === 'toggle'){ const cur = curBlock(); if(cur && cur.classList && cur.classList.contains('tg') && inToggleTitle()) return; insertToggle(cur && !cur.closest('.flow') ? cur : null); }
     else if(t === 'h2' || t === 'ul' || t === 'todo' || t === 'quote'){ const cur = curBlock(); const k = cur && ((t === 'h2' && cur.nodeName === 'H2') || (t === 'ul' && cur.nodeName === 'UL') || (t === 'quote' && cur.nodeName === 'BLOCKQUOTE') || (t === 'todo' && cur.classList && cur.classList.contains('todo'))) ? 'p' : t; convertBlock(k); }
   });

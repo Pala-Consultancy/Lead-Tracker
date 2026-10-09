@@ -23,7 +23,8 @@
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
 
   // ----- keep only the Library's own formatting -----
-  var ALLOWED = {P: 1, H1: 1, H2: 1, H3: 1, UL: 1, OL: 1, LI: 1, BLOCKQUOTE: 1, HR: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, BR: 1, DIV: 1, SPAN: 1, A: 1};
+  var ALLOWED = {P: 1, H1: 1, H2: 1, H3: 1, UL: 1, OL: 1, LI: 1, BLOCKQUOTE: 1, HR: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, BR: 1, DIV: 1, SPAN: 1, A: 1, MARK: 1};
+  var HL = ['hl-yellow', 'hl-green', 'hl-blue', 'hl-pink', 'hl-orange', 'hl-purple'];     // highlighter colors
   var DROP = {SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, TEMPLATE: 1, META: 1, LINK: 1, BUTTON: 1, INPUT: 1, SELECT: 1, TEXTAREA: 1};
   // message flows: a first message with branches ("If no reply after 3 days" → follow-up), as deep as you like
   var FLOW_CLASSES = ['flow', 'fl-step', 'fl-msg', 'fl-branches', 'fl-branch', 'fl-cond', 'fl-children'];
@@ -63,6 +64,7 @@
       }
       if(tag === 'SPAN' && !n.classList.contains('ph')){ var fs = ['fs-s', 'fs-l', 'fs-xl', 'fs-xxl'].filter(function(c){ return n.classList.contains(c); })[0]; if(fs) keep['class'] = fs; }   // text size
       if(tag === 'SPAN' && n.classList.contains('ph')){ var k = n.getAttribute('data-ph'); if(PH.some(function(p){ return p[0] === k; })){ keep['class'] = 'ph'; keep['data-ph'] = k; keep['contenteditable'] = 'false'; n.textContent = '{' + k + '}'; } }
+      if(tag === 'MARK'){ var hc = HL.filter(function(c){ return n.classList.contains(c); })[0]; keep['class'] = hc || 'hl-yellow'; }
       if(tag === 'A'){ var h = n.getAttribute('href') || ''; if(/^(https?:|mailto:)/i.test(h)){ keep.href = h; keep.target = '_blank'; keep.rel = 'noopener'; } }
       Array.prototype.slice.call(n.attributes).forEach(function(a){ n.removeAttribute(a.name); });
       Object.keys(keep).forEach(function(a){ n.setAttribute(a, keep[a]); });
