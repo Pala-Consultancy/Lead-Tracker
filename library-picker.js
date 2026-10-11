@@ -66,6 +66,11 @@
       if(tag === 'SPAN' && !n.classList.contains('ph')){ var fs = ['fs-s', 'fs-l', 'fs-xl', 'fs-xxl'].filter(function(c){ return n.classList.contains(c); })[0]; if(fs) keep['class'] = fs; }   // text size
       if(tag === 'SPAN' && n.classList.contains('ph')){ var k = n.getAttribute('data-ph'); if(PH.some(function(p){ return p[0] === k; })){ keep['class'] = 'ph'; keep['data-ph'] = k; keep['contenteditable'] = 'false'; n.textContent = '{' + k + '}'; } }
       if(tag === 'MARK'){ var hc = HL.filter(function(c){ return n.classList.contains(c); })[0]; keep['class'] = hc || 'hl-yellow'; }
+      // text alignment (center, right, justify) on lines, headings, quotes, list items, to-dos and toggle titles
+      if(/^(P|H1|H2|H3|BLOCKQUOTE|LI|DIV)$/.test(tag) && (tag !== 'DIV' || /^(todo|tg-title|callout)$/.test(keep['class'] || ''))){
+        var al = ['al-c', 'al-r', 'al-j'].filter(function(c){ return n.classList.contains(c); })[0];
+        if(al) keep['class'] = (keep['class'] ? keep['class'] + ' ' : '') + al;
+      }
       if(tag === 'A'){ var h = n.getAttribute('href') || ''; if(/^(https?:|mailto:)/i.test(h)){ keep.href = h; keep.target = '_blank'; keep.rel = 'noopener'; } }
       Array.prototype.slice.call(n.attributes).forEach(function(a){ n.removeAttribute(a.name); });
       Object.keys(keep).forEach(function(a){ n.setAttribute(a, keep[a]); });
