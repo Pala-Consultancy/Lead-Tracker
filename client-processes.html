@@ -333,6 +333,27 @@
   .acts-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
   .act-item{font-size:13px;padding:7px 0;border-top:1px solid var(--border-soft);} .act-item:first-child{border-top:none;} .act-item small{display:block;font-size:11.5px;color:var(--slate-light);}
   .detail-grid{display:grid;grid-template-columns:1fr 260px;gap:12px;} @media (max-width:820px){ .detail-grid{grid-template-columns:1fr;} }
+
+  /* uploaded videos: thumbnail, chapters, subtitles */
+  .vt-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .vt-btn{height:30px;padding:0 11px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--ink);font:600 12.5px Inter,sans-serif;cursor:pointer;}
+  .vt-btn:hover{border-color:var(--teal);color:var(--teal);} .vt-btn.set{border-color:color-mix(in srgb,var(--teal) 40%,var(--border));background:color-mix(in srgb,var(--teal) 7%,var(--panel));color:var(--teal);}
+  .vt-ov{position:fixed;inset:0;z-index:700;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .vt-box{width:100%;max-width:560px;max-height:calc(100vh - 40px);overflow:auto;background:var(--panel);color:var(--ink);border-radius:18px;padding:20px 22px;box-shadow:0 30px 80px -20px rgba(10,14,30,.45);}
+  .vt-h{display:flex;align-items:center;justify-content:space-between;} .vt-h h3{margin:0;font:800 18px Sora,Inter,sans-serif;}
+  .vt-x{border:none;background:none;width:30px;height:30px;border-radius:8px;cursor:pointer;color:var(--slate);font-size:15px;} .vt-x:hover{background:var(--panel-alt);}
+  .vt-p{margin:8px 0 12px;font-size:13.5px;line-height:1.55;color:var(--slate);}
+  .vt-vid{position:relative;aspect-ratio:16/9;background:#0B0F19;border-radius:12px;overflow:hidden;} .vt-vid video{position:absolute;inset:0;width:100%;height:100%;}
+  .vt-vid.sm{max-width:440px;margin:0 auto;}
+  .vt-cur{display:flex;align-items:center;gap:10px;margin:12px 0 0;font-size:13px;color:var(--slate);} .vt-cur img{width:96px;height:54px;object-fit:cover;border-radius:7px;border:1px solid var(--border);}
+  .vt-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;} .vt-grow{flex:1;}
+  .vt-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:260px;overflow:auto;}
+  .vt-ch{display:flex;gap:6px;align-items:center;} .vt-ch .in{height:36px;} .vt-ch .vt-time{width:76px;flex-shrink:0;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;}
+  .vt-ch .vt-time.bad{border-color:#C0392B;} .vt-ch .in:not(.vt-time){flex:1;min-width:0;}
+  .vt-jump,.vt-del{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);background:var(--panel);border-radius:8px;cursor:pointer;color:var(--slate);}
+  .vt-jump:hover{color:var(--teal);border-color:var(--teal);} .vt-del:hover{color:#C0392B;border-color:#C0392B;}
+  .vt-empty{font-size:13px;color:var(--slate-light);padding:8px 2px;}
+  .vt-lab{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13.5px;font-weight:600;} .vt-lab select{height:36px;max-width:220px;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -944,7 +965,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (/^https:\/\//i.test(u)) return {kind: 'link', url: u, embedUrl: ''};
     return null;
   }
-  const videoTag = (v) => !v ? '' : v.kind === 'file' ? `<video controls preload="metadata" src="${esc(v.url)}"></video>` : v.embedUrl ? `<iframe src="${esc(v.embedUrl)}" allow="fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>` : '';
+  const videoTag = (v) => !v ? '' : v.kind === 'file' ? `<video controls preload="metadata" src="${esc(v.url + (!v.poster && v.posterAt > 0 ? '#t=' + v.posterAt : ''))}"${v.poster ? ` poster="${esc(v.poster)}"` : ''}></video>` : v.embedUrl ? `<iframe src="${esc(v.embedUrl)}" allow="fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>` : '';
 
   // ---------- Lists ----------
   function renderAll() {
@@ -1309,7 +1330,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const v = b.video;
       body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="videoLink" placeholder="Paste a video link (most video sites work)" value="${esc(v && !v.path ? v.url : '')}"><span class="or">or</span>
         <label class="btn sm">${v && v.path ? 'Replace video' : 'Upload a video'}<input type="file" accept="video/*" class="hidden" data-up="video"></label></div>
-        ${b._up ? upBar(b) : ''}${v && (v.embedUrl || v.kind === 'file') ? `<div class="be-video">${videoTag(v)}</div>` : v && v.url ? '<div class="hint">This link can’t play in the page; your client gets a button to open it.</div>' : '<div class="be-empty">🎬 The video plays here, right on your client’s page.</div>'}</div>`;
+        ${b._up ? upBar(b) : ''}${v && (v.embedUrl || v.kind === 'file') ? `<div class="be-video">${videoTag(v)}</div>${vtools('b:' + b.id, v)}` : v && v.url ? '<div class="hint">This link can’t play in the page; your client gets a button to open it.</div>' : '<div class="be-empty">🎬 The video plays here, right on your client’s page.</div>'}</div>`;
     } else if (b.type === 'file') {
       const f = b.file;
       body = f ? `<div class="be-panel"><div class="be-filecard"><span class="be-ext">${esc((f.name.split('.').pop() || 'file').slice(0, 4))}</span><span><b>${esc(f.name)}</b><small>${fsize(f.size || 0)}</small></span>
@@ -1340,7 +1361,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         const v = a.video;
         inner = `<div class="be-row"><input class="in" data-att="${esc(a.id)}" data-af="videoLink" placeholder="Paste a video link (most video sites work)" value="${esc(v && !v.path ? v.url : '')}"><span class="or">or</span>
           <label class="btn sm">${v && v.path ? 'Replace' : 'Upload'}<input type="file" accept="video/*" class="hidden" data-attup="${esc(a.id)}" data-kind="video"></label></div>
-          ${a._up ? upBar(a) : v && (v.embedUrl || v.kind === 'file') ? `<div class="be-video sm">${videoTag(v)}</div>` : ''}`;
+          ${a._up ? upBar(a) : v && (v.embedUrl || v.kind === 'file') ? `<div class="be-video sm">${videoTag(v)}</div>${vtools('a:' + b.id + ':' + a.id, v)}` : ''}`;
       } else if (a.kind === 'file') {
         const f = a.file;
         inner = f ? `<div class="be-filecard"><span class="be-ext">${esc((f.name.split('.').pop() || 'file').slice(0, 4))}</span><span><b>${esc(f.name)}</b><small>${fsize(f.size || 0)}</small></span>
@@ -1719,7 +1740,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       await task;
       const url = await storage.ref(path).getDownloadURL();
       const rec = {name: f.name, path, url, size: f.size, contentType: f.type || ''};
-      if (kind === 'video') a.video = {kind: 'file', url, embedUrl: '', path, name: f.name, size: f.size};
+      if (kind === 'video') { a.video = {kind: 'file', url, embedUrl: '', path, name: f.name, size: f.size}; localVid[path] = URL.createObjectURL(f); }
       else if (kind === 'image') a.image = rec; else a.file = rec;
     } catch (err) { console.error(err); showToast(`Couldn’t upload ${f.name}.`, true); }
     a._up = null; changed(); renderPage();
@@ -1738,12 +1759,136 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       await task;
       const url = await storage.ref(path).getDownloadURL();
       const rec = {name: f.name, path, url, size: f.size, contentType: f.type || ''};
-      if (kind === 'video') b.video = {kind: 'file', url, embedUrl: '', path, name: f.name, size: f.size};
+      if (kind === 'video') { b.video = {kind: 'file', url, embedUrl: '', path, name: f.name, size: f.size}; localVid[path] = URL.createObjectURL(f); }
       else if (kind === 'image') b.image = rec;
       else b.file = rec;
     } catch (err) { console.error(err); showToast(`Couldn’t upload ${f.name}.`, true); }
     b._up = null; changed(); renderPage();
   }
+
+  // ================= uploaded videos: thumbnail, chapters, subtitles =================
+  const localVid = {};                         // videos you uploaded in this session (for taking a frame)
+  const fmtT = (t)=>{ t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = String(t % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`; };
+  const parseT = (s)=>{ const p = String(s || '').trim().split(':').map(Number); if (!p.length || p.some((x)=> !isFinite(x) || x < 0)) return null; return p.reduce((a, x)=> a * 60 + x, 0); };
+  function vtools(owner, v) {
+    if (!v || v.kind !== 'file') return '';
+    const nc = (v.chapters || []).length;
+    return `<div class="vt-row" data-vowner="${esc(owner)}">
+      <button type="button" class="vt-btn${v.poster || v.posterAt != null ? ' set' : ''}" data-vtool="thumb">🖼 Thumbnail${v.poster || v.posterAt != null ? ' ✓' : ''}</button>
+      <button type="button" class="vt-btn${nc ? ' set' : ''}" data-vtool="chapters">📑 Chapters${nc ? ' · ' + nc : ''}</button>
+      <button type="button" class="vt-btn${v.subs ? ' set' : ''}" data-vtool="subs">CC Subtitles${v.subs ? ' ✓' : ''}</button></div>`;
+  }
+  function videoOf(owner) {
+    const [kind, bid, aid] = owner.split(':'); const i = findB(bid); if (i < 0) return null;
+    const b = editing.data.blocks[i]; if (kind === 'b') return b.video || null;
+    const a = (b.attachments || []).find((x)=> x.id === aid); return a ? a.video : null;
+  }
+  function vtDialog(title, html) {
+    const ov = document.createElement('div'); ov.className = 'vt-ov';
+    ov.innerHTML = `<div class="vt-box" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="vt-h"><h3>${esc(title)}</h3><button type="button" class="vt-x" data-vt-close aria-label="Close">✕</button></div>${html}</div>`;
+    document.body.appendChild(ov);
+    const close = ()=> ov.remove();
+    ov.addEventListener('mousedown', (e)=>{ if (e.target === ov) close(); });
+    ov.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') close(); });
+    ov.querySelectorAll('[data-vt-close]').forEach((b)=> b.addEventListener('click', close));
+    return {ov, close};
+  }
+  async function vtUpload(blob, name) {
+    const folder = (editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id;
+    const path = `workspaces/${wsId}/clientProcessFiles/${folder}/${Date.now()}-${name}`;
+    await storage.ref(path).put(blob, {contentType: blob.type || 'image/jpeg'});
+    return storage.ref(path).getDownloadURL();
+  }
+  // --- 🖼 thumbnail: a frame from the video, or your own image ---
+  function openThumb(v) {
+    const local = v.path && localVid[v.path];
+    const {ov, close} = vtDialog('Thumbnail', `<p class="vt-p">Pause the video on the moment you want, then click <b>Use this frame</b>. Or upload your own image.</p>
+      <div class="vt-vid"><video controls preload="auto" playsinline muted src="${esc(local || v.url)}"></video></div>
+      <div class="vt-cur">${v.poster ? `<img src="${esc(v.poster)}" alt=""><span>Your current thumbnail</span>` : v.posterAt != null ? `<span>Current thumbnail: the frame at <b>${fmtT(v.posterAt)}</b></span>` : '<span>No thumbnail chosen yet: the first frame shows.</span>'}</div>
+      <div class="vt-actions"><button type="button" class="btn sm primary" data-vt="frame">Use this frame</button>
+        <label class="btn sm">Upload an image<input type="file" accept="image/*" class="hidden" data-vt="img"></label>
+        ${v.poster || v.posterAt != null ? '<button type="button" class="btn sm" data-vt="none">Remove thumbnail</button>' : ''}</div>`);
+    const vid = ov.querySelector('video');
+    if (v.posterAt != null) vid.addEventListener('loadedmetadata', ()=>{ vid.currentTime = v.posterAt; }, {once: true});
+    const done = (msg)=>{ changed(); renderPage(); close(); showToast(msg); };
+    ov.querySelector('[data-vt="frame"]').addEventListener('click', async (e)=>{
+      const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Saving…';
+      const t = vid.currentTime || 0;
+      try {
+        const w = Math.min(1280, vid.videoWidth || 1280), h = Math.round(w * (vid.videoHeight || 720) / (vid.videoWidth || 1280));
+        const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(vid, 0, 0, w, h);
+        const blob = await new Promise((res, rej)=>{ try { c.toBlob((b)=> b ? res(b) : rej(new Error('no image')), 'image/jpeg', 0.86); } catch (err) { rej(err); } });
+        v.poster = await vtUpload(blob, 'thumbnail.jpg'); delete v.posterAt;
+        done('Thumbnail saved.');
+      } catch (err) {
+        // the video comes from storage the browser won't let us take a picture of: remember the moment instead
+        v.posterAt = Math.round(t * 10) / 10; delete v.poster;
+        done(`Thumbnail saved: the frame at ${fmtT(t)}.`);
+      }
+    });
+    ov.querySelector('[data-vt="img"]').addEventListener('change', async (e)=>{
+      const f = e.target.files[0]; if (!f) return; if (!/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
+      try { v.poster = await vtUpload(f, 'thumbnail-' + f.name.replace(/[^\w.-]+/g, '_').slice(-60)); delete v.posterAt; done('Thumbnail saved.'); }
+      catch (err) { showToast('Couldn’t upload the image.', true); }
+    });
+    const none = ov.querySelector('[data-vt="none"]'); if (none) none.addEventListener('click', ()=>{ delete v.poster; delete v.posterAt; done('Thumbnail removed.'); });
+  }
+  // --- 📑 chapters: start time + a name ---
+  function openChapters(v) {
+    const rows = (v.chapters && v.chapters.length ? v.chapters : [{t: 0, title: 'Introduction'}]).map((c)=> ({...c}));
+    const {ov, close} = vtDialog('Chapters', `<p class="vt-p">Split the video into parts so your client sees what each part is about and can jump straight to it. Play the video and click <b>Add chapter here</b> at the start of each part.</p>
+      <div class="vt-vid sm"><video controls preload="metadata" playsinline src="${esc((v.path && localVid[v.path]) || v.url)}"></video></div>
+      <div class="vt-list" id="vtList"></div>
+      <div class="vt-actions"><button type="button" class="btn sm" data-vt="add">＋ Add chapter here</button><span class="vt-grow"></span><button type="button" class="btn sm" data-vt-close>Cancel</button><button type="button" class="btn sm primary" data-vt="save">Save chapters</button></div>`);
+    const vid = ov.querySelector('video'), list = ov.querySelector('#vtList');
+    const paint = ()=>{ list.innerHTML = rows.map((r, i)=> `<div class="vt-ch"><input class="in vt-time" data-i="${i}" data-k="t" value="${fmtT(r.t)}" aria-label="Start time" title="Start time (m:ss)"><input class="in" data-i="${i}" data-k="title" value="${esc(r.title || '')}" placeholder="What this part is about" aria-label="Chapter name" maxlength="80"><button type="button" class="vt-jump" data-jump="${i}" title="Play from here">▶</button><button type="button" class="vt-del" data-del="${i}" aria-label="Remove chapter">✕</button></div>`).join('') || '<div class="vt-empty">No chapters yet.</div>'; };
+    paint();
+    list.addEventListener('input', (e)=>{ const i = +e.target.dataset.i; if (isNaN(i)) return; if (e.target.dataset.k === 'title') rows[i].title = e.target.value; });
+    list.addEventListener('change', (e)=>{ const i = +e.target.dataset.i; if (e.target.dataset.k !== 't') return; const t = parseT(e.target.value); if (t == null) { e.target.classList.add('bad'); return; } e.target.classList.remove('bad'); rows[i].t = t; e.target.value = fmtT(t); });
+    list.addEventListener('click', (e)=>{
+      const d = e.target.closest('[data-del]'); if (d) { rows.splice(+d.dataset.del, 1); paint(); return; }
+      const j = e.target.closest('[data-jump]'); if (j) { vid.currentTime = rows[+j.dataset.jump].t; vid.play().catch(()=>{}); }
+    });
+    ov.querySelector('[data-vt="add"]').addEventListener('click', ()=>{ rows.push({t: Math.floor(vid.currentTime || 0), title: ''}); rows.sort((a, b)=> a.t - b.t); paint(); const inputs = list.querySelectorAll('input[data-k="title"]'); const k = rows.findIndex((r)=> !r.title); if (inputs[k]) inputs[k].focus(); });
+    ov.querySelector('[data-vt="save"]').addEventListener('click', ()=>{
+      if (list.querySelector('.bad')) { showToast('One of the times isn’t right. Use minutes:seconds, like 1:30.', true); return; }
+      const clean = rows.filter((r)=> typeof r.t === 'number').map((r)=> ({t: r.t, title: (r.title || '').trim().slice(0, 80)})).sort((a, b)=> a.t - b.t).slice(0, 40);
+      if (clean.length) v.chapters = clean; else delete v.chapters;
+      changed(); renderPage(); close(); showToast(clean.length ? `Saved ${clean.length} chapter${clean.length === 1 ? '' : 's'}.` : 'Chapters removed.');
+    });
+  }
+  // --- CC subtitles: an .srt or .vtt file ---
+  const LANGS = [['en', 'English'], ['nl', 'Dutch'], ['de', 'German'], ['fr', 'French'], ['es', 'Spanish'], ['it', 'Italian'], ['pt', 'Portuguese']];
+  function toVtt(text, name) {
+    text = String(text).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim();
+    if (/^WEBVTT/.test(text)) return text;
+    if (!/\d{1,2}:\d{2}:\d{2}[,.]\d{3}\s*-->/.test(text)) return null;
+    return 'WEBVTT\n\n' + text.replace(/(\d{1,2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+  }
+  function openSubs(v) {
+    const cur = v.subs;
+    const {ov, close} = vtDialog('Subtitles', `<p class="vt-p">Upload a subtitle file (<b>.srt</b> or <b>.vtt</b>). Most video editors and transcription tools can export one. Your client turns subtitles on with the <b>CC</b> button.</p>
+      ${cur ? `<div class="vt-cur"><span>Current: <b>${esc(cur.name || 'subtitles')}</b> · ${esc((LANGS.find((l)=> l[0] === cur.lang) || ['', cur.label || 'Subtitles'])[1])}</span></div>` : ''}
+      <label class="vt-lab">Language <select class="in" data-vt="lang">${LANGS.map(([k, l])=> `<option value="${k}"${(cur ? cur.lang : 'en') === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="vt-actions"><label class="btn sm primary">${cur ? 'Replace the file' : 'Choose a subtitle file'}<input type="file" accept=".srt,.vtt,text/vtt" class="hidden" data-vt="file"></label>
+        ${cur ? '<button type="button" class="btn sm" data-vt="save">Save language</button><button type="button" class="btn sm" data-vt="none">Remove subtitles</button>' : ''}</div>`);
+    const lang = ()=> ov.querySelector('[data-vt="lang"]').value, label = ()=> (LANGS.find((l)=> l[0] === lang()) || ['', 'Subtitles'])[1];
+    const done = (msg)=>{ changed(); renderPage(); close(); showToast(msg); };
+    ov.querySelector('[data-vt="file"]').addEventListener('change', async (e)=>{
+      const f = e.target.files[0]; if (!f) return;
+      if (f.size > 150000) { showToast('That subtitle file is too big (max 150 KB).', true); return; }
+      const vtt = toVtt(await f.text(), f.name);
+      if (!vtt) { showToast('That doesn’t look like an .srt or .vtt subtitle file.', true); return; }
+      v.subs = {name: f.name, lang: lang(), label: label(), vtt}; done('Subtitles added.');
+    });
+    const save = ov.querySelector('[data-vt="save"]'); if (save) save.addEventListener('click', ()=>{ v.subs.lang = lang(); v.subs.label = label(); done('Saved.'); });
+    const none = ov.querySelector('[data-vt="none"]'); if (none) none.addEventListener('click', ()=>{ delete v.subs; done('Subtitles removed.'); });
+  }
+  document.addEventListener('click', (e)=>{
+    const b = e.target.closest('[data-vtool]'); if (!b) return;
+    const v = videoOf(b.closest('[data-vowner]').dataset.vowner); if (!v) return;
+    ({thumb: openThumb, chapters: openChapters, subs: openSubs})[b.dataset.vtool](v);
+  });
 
   // ---------- Start for a client ----------
   let boardsLoaded = false;
