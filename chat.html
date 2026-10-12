@@ -962,6 +962,30 @@
   .ext-result{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;border-radius:11px;padding:8px;text-align:left;cursor:pointer;color:inherit;font:inherit;}
   .ext-result:hover{background:var(--panel-alt,#F4F7FB);}
   .ext-r-t{min-width:0;} .ext-r-t b{display:block;font-size:14px;} .ext-r-t small{display:block;font-size:12px;color:var(--slate,#5B6B7F);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  .hdr-btns{display:flex;gap:8px;align-items:center;}
+  .nw-btn{position:relative;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+  .nw-badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#7A4FB5;color:#fff;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
+  .nw-badge[hidden]{display:none;}
+  .ext-dlg-box.nw-box{max-width:600px;}
+  .nw-head{display:flex;align-items:center;justify-content:space-between;gap:10px;} .nw-head h3{margin:0;}
+  .nw-box > p{margin-top:6px;}
+  .nw-tabs{display:flex;gap:4px;background:var(--panel-alt,#F4F7FB);border-radius:11px;padding:3px;margin-bottom:10px;}
+  .nw-tabs button{flex:1;border:none;background:none;border-radius:9px;padding:8px;font:600 13px inherit;color:var(--slate,#5B6B7F);cursor:pointer;}
+  .nw-tabs button[aria-selected="true"]{background:var(--panel,#fff);color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.12);}
+  .nw-tabs button span{display:inline-block;min-width:18px;padding:0 5px;border-radius:999px;background:rgba(122,79,181,.14);color:#7A4FB5;font-size:11px;font-weight:800;margin-left:3px;}
+  .nw-list{max-height:min(420px,55vh);overflow:auto;display:flex;flex-direction:column;gap:8px;}
+  .nw-item{display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid var(--border,#DCE6F2);border-radius:14px;background:var(--panel,#fff);}
+  .nw-item .chat-member-avatar{flex-shrink:0;}
+  .nw-t{flex:1;min-width:0;} .nw-t b{display:block;font-size:14.5px;} .nw-t small{display:block;font-size:12.5px;color:var(--slate,#5B6B7F);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .nw-msg{margin-top:6px;font-size:13px;line-height:1.45;color:var(--ink);background:var(--panel-alt,#F4F7FB);border-radius:10px;padding:7px 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .nw-msg[data-nw-act]{cursor:pointer;} .nw-msg span{color:var(--slate-light,#8A97A8);font-size:11.5px;}
+  .nw-btns{display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:stretch;}
+  .nw-btns .ext-btn{height:32px;padding:0 12px;font-size:12.5px;}
+  .nw-btns .ext-btn.danger{background:var(--panel,#fff);border-color:var(--border,#D8DEE8);color:#C0392B;} .nw-btns .ext-btn.danger:hover{border-color:#C0392B;}
+  .nw-wait{font-size:12px;font-weight:700;color:#B7791F;text-align:center;padding:4px 0;}
+  .nw-empty{padding:26px 10px;text-align:center;font-size:13.5px;line-height:1.55;color:var(--slate,#5B6B7F);}
+  @media (max-width:560px){ .nw-item{flex-wrap:wrap;} .nw-btns{flex-direction:row;width:100%;} .nw-btns .ext-btn{flex:1;} }
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1500,7 +1524,8 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
         </div>
       </div>
     </div>
-    <a class="btn" id="chatBackLink" href="dashboard.html" onclick="if(history.length>1){history.back();return false;}">← Back</a>
+    <div class="hdr-btns"><button type="button" class="btn nw-btn" id="networkBtn" title="Your network: message requests and people outside your organization">👥 Network<span class="nw-badge" id="networkBadge" hidden></span></button>
+    <a class="btn" id="chatBackLink" href="dashboard.html" onclick="if(history.length>1){history.back();return false;}">← Back</a></div>
   </header>
 
   <div class="chat-page">
@@ -2971,6 +2996,7 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
   document.getElementById('chatBackBtn').addEventListener('click', closeChatThread);
   document.getElementById('extBanner').addEventListener('click', (e)=>{ const b = e.target.closest('[data-ext-act]'); if(b) extAct(b.dataset.extAct); });
   document.getElementById('extNewBtn').addEventListener('click', openExtSearch);
+  document.getElementById('networkBtn').addEventListener('click', openNetwork);
   document.getElementById('extMenuBtn').addEventListener('click', (e)=>{
     e.stopPropagation(); const old = document.getElementById('extMenu'); if(old){ old.remove(); return; }
     const m = document.createElement('div'); m.id = 'extMenu'; m.className = 'ext-menu';
@@ -3112,14 +3138,14 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
   function extLoadProfile(uid){
     if(!uid || extProfiles[uid]) return Promise.resolve(extProfiles[uid]);
     extProfiles[uid] = {uid, name: '', username: ''};
-    return db.collection('profiles').doc(uid).get().then(d=>{ extProfiles[uid] = d.exists ? {uid, ...d.data()} : {uid, name: '', username: ''}; renderChatMemberList(); if(chatActiveExt && chatActiveExt.other === uid) extPaintHeader(); return extProfiles[uid]; }).catch(()=> extProfiles[uid]);
+    return db.collection('profiles').doc(uid).get().then(d=>{ extProfiles[uid] = d.exists ? {uid, ...d.data()} : {uid, name: '', username: ''}; renderChatMemberList(); paintNetworkBadge(); if(chatActiveExt && chatActiveExt.other === uid) extPaintHeader(); return extProfiles[uid]; }).catch(()=> extProfiles[uid]);
   }
   function initExtSync(){
     if(!currentUid || unsubExtList) return;
     unsubExtList = db.collection('extChats').where('participants', 'array-contains', currentUid).onSnapshot(snap=>{
       extChatsMap = {};
       snap.docs.forEach(d=>{ const c = {id: d.id, ...d.data()}; extChatsMap[d.id] = c; extLoadProfile(extOther(c)); });
-      renderChatMemberList();
+      renderChatMemberList(); paintNetworkBadge();
       if(chatActiveExt){ extPaintBanner(); updateTypingStatusLine(); if(lastRenderedMessages) renderChatMessages(lastRenderedMessages); }
     }, ()=>{});
   }
@@ -3267,6 +3293,73 @@ html[data-theme="dark"] .chat-search-row input{background:var(--c-blue-tint2, rg
     ov.querySelector('[data-ok]').addEventListener('click', ()=>{ const t = ov.querySelector('textarea'); close(); onOk(t ? t.value.trim() : ''); });
     ov.querySelector('[data-ok]').focus();
   }
+  // ---- Network: who asked to chat with you, who you're chatting with, and requests you sent ----
+  let networkTab = 'requests';
+  function paintNetworkBadge(){
+    const n = extRequests().length, b = document.getElementById('networkBadge'); if(!b) return;
+    b.hidden = !n; b.textContent = n > 9 ? '9+' : String(n);
+    document.getElementById('networkBtn').setAttribute('aria-label', n ? `Network, ${n} message request${n === 1 ? '' : 's'}` : 'Network');
+    const ov = document.getElementById('networkOv'); if(ov) renderNetwork(ov);
+  }
+  function netLists(){
+    const all = Object.values(extChatsMap), t = (c)=> (c.lastMessage && c.lastMessage.createdAt && c.lastMessage.createdAt.toMillis ? c.lastMessage.createdAt.toMillis() : 0);
+    return {
+      requests: all.filter(c=> c.status === 'pending' && c.requestedBy !== currentUid).sort((a, b)=> t(b) - t(a)),
+      connections: all.filter(c=> c.status === 'accepted').sort((a, b)=> t(b) - t(a)),
+      sent: all.filter(c=> c.status === 'pending' && c.requestedBy === currentUid).sort((a, b)=> t(b) - t(a)),
+    };
+  }
+  function renderNetwork(ov){
+    const L = netLists(), list = L[networkTab] || [];
+    ov.querySelector('.nw-tabs').innerHTML = [['requests', 'Requests'], ['connections', 'Connections'], ['sent', 'Sent']].map(([k, l])=>
+      `<button type="button" role="tab" data-nw-tab="${k}" aria-selected="${networkTab === k}">${l}${L[k].length ? ` <span>${L[k].length}</span>` : ''}</button>`).join('');
+    const empty = {requests: 'No message requests right now. When someone outside your organization wants to chat, they show up here.',
+      connections: 'No connections yet. Use <b>Search people</b> to message someone outside your organization.', sent: 'No requests waiting for an answer.'}[networkTab];
+    ov.querySelector('.nw-list').innerHTML = list.length ? list.map(c=>{
+      const other = extOther(c), p = extProfiles[other] || {}, msg = c.lastMessage && c.lastMessage.text;
+      const when = c.lastMessage && c.lastMessage.createdAt && c.lastMessage.createdAt.toDate ? formatChatTime(c.lastMessage.createdAt.toDate()) : '';
+      const btns = networkTab === 'requests'
+        ? `<button type="button" class="ext-btn go" data-nw-act="accept">Accept</button><button type="button" class="ext-btn" data-nw-act="decline">Decline</button><button type="button" class="ext-btn danger" data-nw-act="block">Block</button>`
+        : networkTab === 'connections' ? `<button type="button" class="ext-btn go" data-nw-act="open">Message</button>` : `<span class="nw-wait">Waiting</span><button type="button" class="ext-btn" data-nw-act="open">Open</button>`;
+      return `<div class="nw-item" data-nw-id="${c.id}">${extAvatar(other)}
+        <div class="nw-t"><b>${esc(p.name || '@' + (p.username || ''))}</b><small>${p.username ? '@' + esc(p.username) : ''}${p.headline ? ' · ' + esc(p.headline) : ''}</small>
+          ${msg ? `<div class="nw-msg" ${networkTab === 'requests' ? 'data-nw-act="open" title="Open the conversation"' : ''}>“${esc(msg)}”${when ? ` <span>${esc(when)}</span>` : ''}</div>` : ''}</div>
+        <div class="nw-btns">${btns}</div></div>`;
+    }).join('') : `<div class="nw-empty">${empty}</div>`;
+  }
+  function openNetwork(){
+    if(document.getElementById('networkOv')) return;
+    networkTab = extRequests().length ? 'requests' : (netLists().connections.length ? 'connections' : 'requests');
+    const ov = document.createElement('div'); ov.className = 'ext-dlg'; ov.id = 'networkOv';
+    ov.innerHTML = `<div class="ext-dlg-box nw-box" role="dialog" aria-modal="true" aria-labelledby="nwT">
+      <div class="nw-head"><h3 id="nwT">👥 Your network</h3><button type="button" class="ext-btn" data-nw-search>🔍 Search people</button></div>
+      <p>People outside your organization: who wants to chat with you, who you’re chatting with, and the requests you sent.</p>
+      <div class="nw-tabs" role="tablist"></div><div class="nw-list"></div>
+      <div class="ext-dlg-btns"><button type="button" class="ext-btn" data-x>Close</button></div></div>`;
+    document.body.appendChild(ov);
+    const close = ()=> ov.remove();
+    ov.addEventListener('mousedown', e=>{ if(e.target === ov) close(); });
+    ov.addEventListener('keydown', e=>{ if(e.key === 'Escape') close(); });
+    ov.querySelector('[data-x]').addEventListener('click', close);
+    ov.querySelector('[data-nw-search]').addEventListener('click', ()=>{ close(); openExtSearch(); });
+    ov.addEventListener('click', e=>{
+      const tab = e.target.closest('[data-nw-tab]'); if(tab){ networkTab = tab.dataset.nwTab; renderNetwork(ov); return; }
+      const a = e.target.closest('[data-nw-act]'); if(!a) return;
+      const id = a.closest('[data-nw-id]').dataset.nwId, c = extChatsMap[id]; if(!c) return;
+      const other = extOther(c), act = a.dataset.nwAct;
+      if(act === 'open'){ close(); if(c.status === 'pending' && c.requestedBy !== currentUid){ extShowRequests = true; renderChatMemberList(); } openExtThread(id); return; }
+      const ref = db.collection('extChats').doc(id);
+      if(act === 'accept') ref.update({status: 'accepted', acceptedAt: firebase.firestore.FieldValue.serverTimestamp()}).then(()=> showToast(`You can chat with ${extName(other)} now.`)).catch(err=> showToast('Couldn’t accept. ' + friendlyErr(err), true));
+      if(act === 'decline') ref.update({status: 'declined'}).then(()=> showToast('Request declined.')).catch(err=> showToast('Couldn’t decline. ' + friendlyErr(err), true));
+      if(act === 'block') extConfirm(`Block ${extName(other)}?`, 'They can’t send you message requests or messages anymore. They won’t be told.', 'Block', ()=>{
+        db.collection('blocks').doc(currentUid).collection('blocked').doc(other).set({at: firebase.firestore.FieldValue.serverTimestamp()})
+          .then(()=> ref.update({status: 'declined'})).then(()=> showToast(`${extName(other)} is blocked.`)).catch(err=> showToast('Couldn’t block. ' + friendlyErr(err), true));
+      });
+    });
+    renderNetwork(ov);
+    setTimeout(()=> ov.querySelector('[aria-selected="true"]').focus(), 20);
+  }
+
   // ---- finding someone: by @username or by name ----
   function openExtSearch(){
     const ov = document.createElement('div'); ov.className = 'ext-dlg';
