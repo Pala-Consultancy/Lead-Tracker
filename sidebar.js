@@ -1027,3 +1027,120 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addHelpItem); else addHelpItem();
 })();
+
+/* ---------------------------------------------------------------------------
+   Usernames: everyone has a unique @username, so people outside their organization can find
+   and message them. Stored in usernames/{name} (who owns it) and profiles/{uid} (the only thing
+   people outside your organization see: name, photo, job title and username).
+   Anyone without a username is asked to pick one (once per visit; "Later" is allowed).
+   window.ptUsername.open() opens the dialog (e.g. "Change" in Settings); .get() → the profile.
+   --------------------------------------------------------------------------- */
+(function () {
+  var RE = /^[a-z0-9](?:[a-z0-9._]{1,22})[a-z0-9]$/;
+  var profile = null, me = null, member = null, ready = [];
+  function fb() { return window.firebase && firebase.apps && firebase.apps.length && firebase.auth && firebase.firestore ? firebase : null; }
+  function clean(v) { return String(v || '').toLowerCase().replace(/^@+/, '').replace(/[^a-z0-9._]/g, ''); }
+  function css() {
+    if (document.getElementById('ptUnCss')) return;
+    var st = document.createElement('style'); st.id = 'ptUnCss';
+    st.textContent = '.ptun-ov{position:fixed;inset:0;z-index:9500;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,sans-serif;}' +
+      '.ptun{width:100%;max-width:440px;background:var(--panel,#fff);color:var(--ink,#16202C);border-radius:20px;padding:26px;box-shadow:0 30px 80px -20px rgba(10,14,30,.5);}' +
+      '.ptun h3{margin:0 0 6px;font:800 20px Sora,Inter,sans-serif;} .ptun p{margin:0 0 16px;font-size:14px;line-height:1.55;color:var(--slate,#5B6B7F);}' +
+      '.ptun-in{display:flex;align-items:center;border:1.5px solid var(--border,#D8DEE8);border-radius:12px;padding:0 12px;background:var(--panel-alt,#F8FBFE);transition:border-color .15s;}' +
+      '.ptun-in:focus-within{border-color:#3730B3;} .ptun-in span{font-weight:700;color:var(--slate-light,#8A97A8);font-size:16px;}' +
+      '.ptun-in input{flex:1;border:none;background:none;outline:none;padding:12px 6px;font:600 16px Inter,sans-serif;color:var(--ink,#16202C);min-width:0;}' +
+      '.ptun-st{min-height:20px;margin:8px 2px 0;font-size:13px;font-weight:600;} .ptun-st.ok{color:#1E9E74;} .ptun-st.bad{color:#C0392B;} .ptun-st.wait{color:var(--slate-light,#8A97A8);}' +
+      '.ptun-sug{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0;} .ptun-sug button{border:1px solid var(--border,#D8DEE8);background:var(--panel,#fff);border-radius:999px;padding:5px 11px;font:600 12.5px Inter,sans-serif;color:var(--ink,#16202C);cursor:pointer;}' +
+      '.ptun-sug button:hover{border-color:#3730B3;color:#3730B3;}' +
+      '.ptun-hint{margin:12px 2px 0;font-size:12px;color:var(--slate-light,#8A97A8);line-height:1.5;}' +
+      '.ptun-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}' +
+      '.ptun-btns button{height:40px;padding:0 18px;border-radius:11px;font:700 14px Inter,sans-serif;cursor:pointer;border:1px solid var(--border,#D8DEE8);background:var(--panel,#fff);color:var(--ink,#16202C);}' +
+      '.ptun-btns .go{background:#3730B3;border-color:#3730B3;color:#fff;} .ptun-btns .go:disabled{opacity:.45;cursor:default;}';
+    document.head.appendChild(st);
+  }
+  function suggestions() {
+    var n = clean(((member && member.name) || '').trim().replace(/\s+/g, '.')).replace(/\.{2,}/g, '.').replace(/^\.|\.$/g, '');
+    var first = n.split('.')[0] || 'user', out = [];
+    if (n.length >= 3) out.push(n.slice(0, 24));
+    if (first.length >= 3 && first !== n) out.push(first);
+    out.push((first + '.' + (Math.floor(Math.random() * 90) + 10)).slice(0, 24));
+    return out.filter(function (v, i, a) { return RE.test(v) && a.indexOf(v) === i; }).slice(0, 3);
+  }
+  function open(opts) {
+    opts = opts || {};
+    var F = fb(); if (!F || !me || document.getElementById('ptUnOv')) return;
+    css();
+    var ov = document.createElement('div'); ov.className = 'ptun-ov'; ov.id = 'ptUnOv';
+    var cur = profile && profile.username;
+    ov.innerHTML = '<div class="ptun" role="dialog" aria-modal="true" aria-labelledby="ptUnT"><h3 id="ptUnT">' + (cur ? 'Change your username' : 'Choose your username') + '</h3>' +
+      '<p>' + (opts.why || 'Your username lets people outside your organization find you and send you a message request.') + '</p>' +
+      '<label class="ptun-in"><span>@</span><input id="ptUnIn" maxlength="24" autocomplete="off" spellcheck="false" placeholder="yourname" value="' + (cur || '') + '"></label>' +
+      '<div class="ptun-st" id="ptUnSt" aria-live="polite"></div><div class="ptun-sug" id="ptUnSug"></div>' +
+      '<div class="ptun-hint">3–24 characters: lowercase letters, numbers, dots and underscores.</div>' +
+      '<div class="ptun-btns"><button type="button" data-x>' + (cur ? 'Cancel' : 'Later') + '</button><button type="button" class="go" id="ptUnGo" disabled>Save</button></div></div>';
+    document.body.appendChild(ov);
+    var inp = ov.querySelector('#ptUnIn'), st = ov.querySelector('#ptUnSt'), go = ov.querySelector('#ptUnGo'), t = null, okName = null;
+    ov.querySelector('#ptUnSug').innerHTML = cur ? '' : suggestions().map(function (s) { return '<button type="button" data-s="' + s + '">@' + s + '</button>'; }).join('');
+    function close() { ov.remove(); if (!cur) try { sessionStorage.setItem('ptUnLater', '1'); } catch (e) {} }
+    function check() {
+      var v = clean(inp.value); if (inp.value !== v) inp.value = v; okName = null; go.disabled = true; clearTimeout(t);
+      if (!v) { st.className = 'ptun-st'; st.textContent = ''; return; }
+      if (v === cur) { st.className = 'ptun-st ok'; st.textContent = 'That’s your current username.'; return; }
+      if (!RE.test(v)) { st.className = 'ptun-st bad'; st.textContent = v.length < 3 ? 'At least 3 characters.' : 'Start and end with a letter or number.'; return; }
+      st.className = 'ptun-st wait'; st.textContent = 'Checking…';
+      t = setTimeout(function () {
+        F.firestore().doc('usernames/' + v).get().then(function (d) {
+          if (clean(inp.value) !== v) return;
+          if (d.exists && d.data().uid !== me) { st.className = 'ptun-st bad'; st.textContent = '@' + v + ' is taken. Try another one.'; }
+          else { st.className = 'ptun-st ok'; st.textContent = '@' + v + ' is available.'; okName = v; go.disabled = false; }
+        }).catch(function () { st.className = 'ptun-st bad'; st.textContent = 'Couldn’t check right now. Try again.'; });
+      }, 350);
+    }
+    inp.addEventListener('input', check);
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !go.disabled) go.click(); if (e.key === 'Escape') close(); });
+    ov.querySelector('#ptUnSug').addEventListener('click', function (e) { var b = e.target.closest('[data-s]'); if (b) { inp.value = b.dataset.s; check(); inp.focus(); } });
+    ov.querySelector('[data-x]').addEventListener('click', close);
+    go.addEventListener('click', function () {
+      var v = okName; if (!v) return; go.disabled = true; st.className = 'ptun-st wait'; st.textContent = 'Saving…';
+      var db = F.firestore(), b = db.batch(), now = F.firestore.FieldValue.serverTimestamp();
+      b.set(db.doc('usernames/' + v), {uid: me, createdAt: now});
+      b.set(db.doc('profiles/' + me), Object.assign(baseProfile(), {username: v, updatedAt: now}), {merge: true});
+      if (cur && cur !== v) b.delete(db.doc('usernames/' + cur));
+      b.commit().then(function () {
+        profile = Object.assign({}, profile || {}, {username: v}); ov.remove();
+        document.dispatchEvent(new CustomEvent('pt-username', {detail: v}));
+        if (opts.onDone) opts.onDone(v);
+      }).catch(function () { st.className = 'ptun-st bad'; st.textContent = '@' + v + ' was just taken. Try another one.'; });
+    });
+    setTimeout(function () { inp.focus(); if (cur) inp.select(); else check(); }, 30);
+  }
+  function baseProfile() {
+    var m = member || {}, name = (m.name || '').trim();
+    return {uid: me, name: name, nameLower: name.toLowerCase(), photoURL: m.photoURL || '', headline: [m.role || m.title || '', m.company || ''].filter(Boolean).join(' · ').slice(0, 120)};
+  }
+  function blocked() { return !!document.querySelector('#ptTour, #ptHwIntro, .pt-hw-intro, .onboarding-overlay[style*="flex"], #onboardingOverlay[style*="flex"], .welcome-overlay.open'); }
+  function start() {
+    var F = fb(); if (!F) { setTimeout(start, 400); return; }
+    F.auth().onAuthStateChanged(function (u) {
+      if (!u) return; me = u.uid;
+      var db = F.firestore();
+      db.doc('userDirectory/' + me).get().then(function (d) {
+        var ws = d.exists && d.data().workspaceId; if (!ws) return null;
+        return db.doc('workspaces/' + ws + '/members/' + me).get();
+      }).then(function (m) {
+        member = m && m.exists ? m.data() : {};
+        return db.doc('profiles/' + me).get();
+      }).then(function (p) {
+        profile = p.exists ? p.data() : null;
+        var base = baseProfile(), stale = !profile || ['name', 'photoURL', 'headline'].some(function (k) { return (profile[k] || '') !== base[k]; });
+        if (stale) db.doc('profiles/' + me).set(Object.assign(base, {updatedAt: F.firestore.FieldValue.serverTimestamp()}), {merge: true}).catch(function () {});
+        profile = Object.assign({}, profile || {}, base);
+        ready.splice(0).forEach(function (f) { f(profile); });
+        var later = false; try { later = sessionStorage.getItem('ptUnLater') === '1'; } catch (e) {}
+        if (!profile.username && !later) (function wait(n) { if (blocked() && n < 120) return setTimeout(function () { wait(n + 1); }, 2000); setTimeout(function () { if (!profile.username) open(); }, 1200); })(0);
+      }).catch(function () {});
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  window.ptUsername = {open: open, get: function () { return profile; }, whenReady: function (f) { if (profile) f(profile); else ready.push(f); }};
+})();

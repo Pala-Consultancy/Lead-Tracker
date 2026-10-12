@@ -569,6 +569,10 @@
   ::-webkit-scrollbar-thumb{background:var(--c-border-alt, var(--border));border-radius:6px;border:2px solid transparent;background-clip:padding-box;}
   ::-webkit-scrollbar-thumb:hover{background:var(--slate-light);background-clip:padding-box;}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .un-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border,#D8DEE8);border-radius:10px;background:var(--panel-alt,#F8FBFE);}
+  .un-val{flex:1;font-weight:700;font-size:15px;color:var(--ink);} .un-val.none{color:var(--slate-light,#8A97A8);font-weight:500;}
+  .un-btn{border:1px solid var(--border,#D8DEE8);background:var(--panel,#fff);border-radius:9px;padding:6px 14px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink);}
+  .un-btn:hover{border-color:#3730B3;color:#3730B3;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1104,6 +1108,11 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
       <div class="field span-full">
         <label for="fullName" data-i18n="fullName">Full name</label>
         <input id="fullName" type="text" placeholder="e.g. Gabriele Oizaz">
+      </div>
+      <div class="field span-full">
+        <label>Username</label>
+        <div class="un-row"><span class="un-val" id="unVal">…</span><button type="button" class="un-btn" id="unChange">Change</button></div>
+        <div class="field-hint">People outside your organization can find you by this name and send you a message request in Team chat.</div>
       </div>
       <div class="field">
         <label for="emailField" data-i18n="emailAddress">Email address</label>
@@ -2697,5 +2706,14 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
 </script>
 <!-- The Halloween theme (and other shared extras); this page has no side menu, so none is drawn -->
 <script src="sidebar.js"></script>
+<script>
+  // the username row: shows your @username, "Change" opens the username dialog (sidebar.js)
+  (function(){
+    function paint(){ const el = document.getElementById('unVal'); if(!el || !window.ptUsername) return; const p = window.ptUsername.get(); el.className = 'un-val' + (p && p.username ? '' : ' none'); el.textContent = p && p.username ? '@' + p.username : 'Not chosen yet'; document.getElementById('unChange').textContent = p && p.username ? 'Change' : 'Choose'; }
+    function start(){ if(!window.ptUsername){ setTimeout(start, 300); return; } window.ptUsername.whenReady(paint); document.addEventListener('pt-username', paint);
+      document.getElementById('unChange').addEventListener('click', ()=> window.ptUsername.open()); }
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  })();
+</script>
 </body>
 </html>
