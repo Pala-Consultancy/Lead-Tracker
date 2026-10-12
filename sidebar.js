@@ -1144,3 +1144,117 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   window.ptUsername = {open: open, get: function () { return profile; }, whenReady: function (f) { if (profile) f(profile); else ready.push(f); }};
 })();
+
+/* ---------------------------------------------------------------------------
+   Message notifications on every page (except Team chat itself): when someone sends you a message
+   while you're in the app, a card slides in at the top right for 5 seconds (with a ding if sounds
+   are on). Clicking it opens that conversation in Team chat. Team chats, group chats, and chats
+   with people outside your organization (a new request shows as "wants to message you").
+   --------------------------------------------------------------------------- */
+(function () {
+  if (/(^|\/)chat\.html$/.test(location.pathname)) return;
+  var SHOW_MS = 5000, since = Date.now(), seen = {}, names = {}, me = null, ws = null;
+  function fb() { return window.firebase && firebase.apps && firebase.apps.length && firebase.auth && firebase.firestore ? firebase : null; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
+  function ms(t) { return t && typeof t.toMillis === 'function' ? t.toMillis() : 0; }
+  function css() {
+    if (document.getElementById('ptPingCss')) return;
+    var st = document.createElement('style'); st.id = 'ptPingCss';
+    st.textContent = '#ptPings{position:fixed;top:16px;right:16px;z-index:9400;display:flex;flex-direction:column;gap:10px;width:340px;max-width:calc(100vw - 32px);pointer-events:none;}' +
+      '.ptping{pointer-events:auto;position:relative;display:flex;gap:11px;align-items:flex-start;padding:13px 38px 15px 13px;border-radius:16px;background:var(--panel,#fff);color:var(--ink,#16202C);' +
+      'border:1px solid var(--border,#DCE6F2);box-shadow:0 18px 44px -14px rgba(16,24,40,.38);cursor:pointer;overflow:hidden;font-family:Inter,system-ui,sans-serif;animation:ptPingIn .32s cubic-bezier(.2,.9,.3,1.2);}' +
+      '.ptping.out{animation:ptPingOut .28s ease-in forwards;}' +
+      '@keyframes ptPingIn{from{opacity:0;transform:translateX(30px) scale(.97);}to{opacity:1;transform:none;}}' +
+      '@keyframes ptPingOut{to{opacity:0;transform:translateX(30px);}}' +
+      '.ptping:hover{border-color:#3730B3;}' +
+      '.ptping .av{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:800 14px Inter,sans-serif;color:#fff;background:linear-gradient(135deg,#3730B3,#7A4FB5);overflow:hidden;}' +
+      '.ptping .av img{width:100%;height:100%;object-fit:cover;}' +
+      '.ptping .tx{min-width:0;flex:1;} .ptping .who{font-weight:700;font-size:14px;line-height:1.3;} .ptping .where{font-weight:500;color:var(--slate,#5B6B7F);}' +
+      '.ptping .msg{font-size:13.5px;line-height:1.45;color:var(--slate,#5B6B7F);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}' +
+      '.ptping .tag{display:inline-block;margin-top:6px;font-size:11px;font-weight:700;color:#3730B3;letter-spacing:.02em;}' +
+      '.ptping .x{position:absolute;top:8px;right:8px;width:24px;height:24px;border:none;background:none;border-radius:7px;color:var(--slate-light,#8A97A8);cursor:pointer;font-size:13px;}' +
+      '.ptping .x:hover{background:rgba(127,127,127,.12);color:var(--ink,#16202C);}' +
+      '.ptping .bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,#3730B3,#7A4FB5);transform-origin:left;animation:ptPingBar linear forwards;}' +
+      '@keyframes ptPingBar{from{transform:scaleX(1);}to{transform:scaleX(0);}}' +
+      '@media (prefers-reduced-motion: reduce){.ptping,.ptping.out{animation:none;}}';
+    document.head.appendChild(st);
+  }
+  function ding() {
+    try {
+      if (localStorage.getItem('ptThemeSound') === 'off') return;
+      var A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+      var ac = ding.ac || (ding.ac = new A()); if (ac.state === 'suspended') ac.resume();
+      var t = ac.currentTime + 0.02;
+      [[880, 0], [1318.5, 0.11]].forEach(function (n) {
+        var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, t + n[1]); g.gain.exponentialRampToValueAtTime(0.09, t + n[1] + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + 0.45);
+        o.connect(g); g.connect(ac.destination); o.start(t + n[1]); o.stop(t + n[1] + 0.5);
+      });
+    } catch (e) {}
+  }
+  function show(n) {
+    css();
+    var box = document.getElementById('ptPings'); if (!box) { box = document.createElement('div'); box.id = 'ptPings'; box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
+    while (box.children.length >= 3) box.firstChild.remove();
+    var el = document.createElement('div'); el.className = 'ptping'; el.setAttribute('role', 'status');
+    var ini = (n.name || '?').trim().split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
+    el.innerHTML = '<div class="av">' + (n.photo ? '<img src="' + esc(n.photo) + '" alt="">' : esc(ini)) + '</div>' +
+      '<div class="tx"><div class="who">' + esc(n.name || 'Someone') + (n.where ? ' <span class="where">in ' + esc(n.where) + '</span>' : '') + '</div>' +
+      '<div class="msg">' + esc(n.text || '') + '</div><span class="tag">' + esc(n.tag || 'New message') + ' · Open in Team chat →</span></div>' +
+      '<button type="button" class="x" aria-label="Close">✕</button><i class="bar" style="animation-duration:' + SHOW_MS + 'ms"></i>';
+    box.appendChild(el);
+    var gone = false, timer = setTimeout(close, SHOW_MS);
+    function close() { if (gone) return; gone = true; clearTimeout(timer); el.classList.add('out'); setTimeout(function () { el.remove(); }, 300); }
+    el.querySelector('.x').addEventListener('click', function (e) { e.stopPropagation(); close(); });
+    el.addEventListener('click', function () { location.href = 'chat.html?' + n.link; });
+    ding();
+  }
+  function fresh(key, lm, readAt) {
+    if (!lm || lm.senderId === me) return false;
+    var t = ms(lm.createdAt); if (!t || t <= since || (seen[key] || 0) >= t || ms(readAt) >= t) return false;
+    seen[key] = t; return true;
+  }
+  function start() {
+    var F = fb(); if (!F) { setTimeout(start, 500); return; }
+    F.auth().onAuthStateChanged(function (u) {
+      if (!u || me) return; me = u.uid;
+      var db = F.firestore();
+      db.doc('userDirectory/' + me).get().then(function (d) {
+        ws = d.exists && d.data().workspaceId; if (!ws) return;
+        db.collection('workspaces/' + ws + '/members').get().then(function (s) { s.docs.forEach(function (m) { names[m.id] = m.data(); }); }).catch(function () {});
+        // team chats (one teammate)
+        db.collection('workspaces/' + ws + '/directMessages').where('participants', 'array-contains', me).onSnapshot(function (s) {
+          s.docs.forEach(function (doc) {
+            var c = doc.data(), lm = c.lastMessage; if (!fresh('dm:' + doc.id, lm, c.lastReadAt && c.lastReadAt[me])) return;
+            var p = names[lm.senderId] || {};
+            show({name: p.name || p.email || 'A teammate', photo: p.photoURL, text: lm.text || '📷 Photo or video', link: 'dm=' + encodeURIComponent(lm.senderId)});
+          });
+        }, function () {});
+        // group chats
+        db.collection('workspaces/' + ws + '/groupChats').where('participants', 'array-contains', me).onSnapshot(function (s) {
+          s.docs.forEach(function (doc) {
+            if (doc.id === '_teamFeed') return;
+            var g = doc.data(), lm = g.lastMessage; if (!fresh('g:' + doc.id, lm, g.lastReadAt && g.lastReadAt[me])) return;
+            var p = names[lm.senderId] || {};
+            show({name: lm.senderName || p.name || 'A teammate', photo: p.photoURL, where: g.name || 'a group', text: lm.text || '📷 Photo or video', link: 'group=' + encodeURIComponent(doc.id)});
+          });
+        }, function () {});
+      }).catch(function () {});
+      // chats with people outside your organization (and new message requests)
+      db.collection('extChats').where('participants', 'array-contains', me).onSnapshot(function (s) {
+        s.docs.forEach(function (doc) {
+          var c = doc.data(), lm = c.lastMessage; if (c.status === 'declined') return;
+          if (!fresh('x:' + doc.id, lm, c.lastReadAt && c.lastReadAt[me])) return;
+          var request = c.status === 'pending' && c.requestedBy !== me;
+          db.doc('profiles/' + lm.senderId).get().then(function (pd) {
+            var p = pd.exists ? pd.data() : {};
+            show({name: p.name || ('@' + (p.username || 'someone')), photo: p.photoURL, text: request ? 'Wants to message you: “' + (lm.text || '') + '”' : lm.text,
+              tag: request ? 'Message request' : 'New message', link: 'ext=' + encodeURIComponent(doc.id)});
+          }).catch(function () {});
+        });
+      }, function () {});
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  window.ptPing = {show: show};          // (for testing: ptPing.show({name:'Emma', text:'Hi!', link:''}))
+})();
