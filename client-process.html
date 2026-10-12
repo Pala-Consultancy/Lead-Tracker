@@ -563,6 +563,37 @@
   .vchap button.now{background:color-mix(in srgb,var(--accent) 9%,transparent);}
   .vchap button.now .vn{font-weight:700;}
   .vchap button.now .vt::before{content:"▶ ";font-size:10px;}
+
+  /* the player with chapters in its bar (like YouTube) */
+  .video.yt{position:relative;outline:none;user-select:none;-webkit-user-select:none;}
+  .video.yt video{cursor:pointer;}
+  .video.yt.fs{border-radius:0;}
+  .yt-big{position:absolute;left:50%;top:50%;width:68px;height:68px;margin:-34px 0 0 -34px;border:none;border-radius:50%;background:rgba(15,18,30,.62);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .2s,transform .2s;}
+  .yt-big svg{width:30px;height:30px;margin-left:3px;} .yt-big:hover{transform:scale(1.07);background:var(--accent);}
+  .video.yt.started .yt-big{opacity:0;pointer-events:none;}
+  .yt-ui{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 6px;background:linear-gradient(transparent,rgba(0,0,0,.72));opacity:0;transition:opacity .25s;}
+  .video.yt:not(.started) .yt-ui,.video.yt.awake .yt-ui,.video.yt:not(.playing) .yt-ui,.video.yt:focus-within .yt-ui{opacity:1;}
+  .video.yt.playing:not(.awake) video{cursor:none;}
+  .yt-bar{position:relative;height:16px;display:flex;align-items:center;cursor:pointer;touch-action:none;}
+  .yt-segs{display:flex;gap:3px;width:100%;height:4px;transition:height .12s;}
+  .yt-bar:hover .yt-segs{height:6px;}
+  .yt-seg{position:relative;height:100%;background:rgba(255,255,255,.28);overflow:hidden;border-radius:1px;transition:transform .12s;}
+  .yt-seg.hover{transform:scaleY(1.6);}
+  .yt-seg i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);}
+  .yt-seg .yt-buf{background:rgba(255,255,255,.35);} .yt-seg .yt-fill{background:var(--accent);}
+  .yt-knob{position:absolute;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px rgba(255,255,255,.9);transform:scale(0);transition:transform .12s;pointer-events:none;}
+  .yt-bar:hover .yt-knob{transform:scale(1);}
+  .yt-tip{position:absolute;bottom:22px;transform:translateX(-50%);background:rgba(15,18,30,.92);color:#fff;border-radius:8px;padding:6px 10px;text-align:center;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;font-family:var(--sans);}
+  .yt-tip.on{opacity:1;} .yt-tip b{display:block;font-size:12.5px;font-weight:700;max-width:240px;overflow:hidden;text-overflow:ellipsis;} .yt-tip b:empty{display:none;} .yt-tip span{font-size:12px;opacity:.85;font-variant-numeric:tabular-nums;}
+  .yt-row{display:flex;align-items:center;gap:4px;margin-top:2px;color:#fff;}
+  .yt-b{height:36px;min-width:36px;padding:0 6px;border:none;background:none;color:#fff;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 12.5px var(--sans);}
+  .yt-b svg{width:22px;height:22px;} .yt-b:hover{background:rgba(255,255,255,.14);}
+  .yt-cc.on{background:#fff;color:#111;}
+  .yt-time{font:600 13px var(--sans);font-variant-numeric:tabular-nums;margin:0 6px;white-space:nowrap;}
+  .yt-chap{border:none;background:none;color:#fff;font:600 13px var(--sans);cursor:pointer;padding:4px 6px;border-radius:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42%;}
+  .yt-chap:hover{background:rgba(255,255,255,.14);} .yt-chap span{opacity:.75;}
+  .yt-grow{flex:1;}
+  @media (max-width:560px){ .yt-chap{display:none;} .yt-speed{display:none;} }
 </style>
 </head>
 <body>
@@ -1126,14 +1157,111 @@
   });
   // ---------- an uploaded video: your thumbnail, chapters and subtitles ----------
   const fmtT = (t)=>{ t = Math.max(0, Math.floor(t)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = String(t % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`; };
+  // ---------- a player with chapters in the progress bar (like YouTube) ----------
+  const YT_IC = {
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>',
+    pause: '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>',
+    vol: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    mute: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    fs: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    fsx: '<svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  };
+  function playerHTML(src, poster, subs) {
+    return `<div class="video yt" tabindex="0" aria-label="Video player">
+      <video playsinline preload="metadata" src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ''}${subs ? ` data-vtt="${esc(subs.vtt)}" data-lang="${esc(subs.lang || 'en')}" data-label="${esc(subs.label || 'Subtitles')}"` : ''}></video>
+      <button type="button" class="yt-big" aria-label="Play">${YT_IC.play}</button>
+      <div class="yt-ui">
+        <div class="yt-bar" role="slider" aria-label="Seek" tabindex="-1"><div class="yt-segs"></div><span class="yt-knob"></span><div class="yt-tip"><b></b><span></span></div></div>
+        <div class="yt-row">
+          <button type="button" class="yt-b yt-play" aria-label="Play">${YT_IC.play}</button>
+          <button type="button" class="yt-b yt-vol" aria-label="Mute">${YT_IC.vol}</button>
+          <span class="yt-time">0:00 / 0:00</span>
+          <button type="button" class="yt-chap" title="Chapters"></button>
+          <span class="yt-grow"></span>
+          ${subs ? '<button type="button" class="yt-b yt-cc" aria-label="Subtitles" aria-pressed="false">CC</button>' : ''}
+          <button type="button" class="yt-b yt-speed" aria-label="Playback speed">1×</button>
+          <button type="button" class="yt-b yt-fs" aria-label="Full screen">${YT_IC.fs}</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  function setupPlayer(w, chapters) {
+    const box = w.querySelector('.video.yt'), vid = box.querySelector('video'), bar = box.querySelector('.yt-bar'), segs = box.querySelector('.yt-segs');
+    const tip = box.querySelector('.yt-tip'), knob = box.querySelector('.yt-knob'), playB = box.querySelector('.yt-play'), big = box.querySelector('.yt-big');
+    const timeEl = box.querySelector('.yt-time'), chapB = box.querySelector('.yt-chap'), volB = box.querySelector('.yt-vol'), cc = box.querySelector('.yt-cc');
+    const speedB = box.querySelector('.yt-speed'), fsB = box.querySelector('.yt-fs');
+    let parts = [], dragging = false, hideT = null;
+    const dur = () => vid.duration && isFinite(vid.duration) ? vid.duration : 0;
+    const chapterAt = (t) => { let i = 0; parts.forEach((p, k) => { if (t >= p.s) i = k; }); return i; };
+    function build() {
+      const d = dur(); if (!d) return;
+      const starts = chapters.map((c) => c.t).filter((t) => t < d);
+      if (!starts.length || starts[0] > 0) starts.unshift(0);
+      parts = starts.map((s, i) => ({s, e: i + 1 < starts.length ? starts[i + 1] : d, title: (chapters.find((c) => c.t === s) || {}).title || (i === 0 ? 'Introduction' : 'Chapter ' + (i + 1))}));
+      segs.innerHTML = parts.map((p) => `<div class="yt-seg" style="flex:${Math.max(0.0001, p.e - p.s)} 1 0"><i class="yt-buf"></i><i class="yt-fill"></i></div>`).join('');
+      paint();
+    }
+    function paint() {
+      const d = dur(), t = vid.currentTime || 0;
+      playB.innerHTML = vid.paused ? YT_IC.play : YT_IC.pause; playB.setAttribute('aria-label', vid.paused ? 'Play' : 'Pause');
+      box.classList.toggle('playing', !vid.paused); box.classList.toggle('started', box.classList.contains('started') || t > 0 || !vid.paused);
+      timeEl.textContent = `${fmtT(t)} / ${fmtT(d)}`;
+      if (!d || !parts.length) return;
+      const bufEnd = vid.buffered.length ? vid.buffered.end(vid.buffered.length - 1) : 0;
+      [...segs.children].forEach((el, i) => { const p = parts[i], len = p.e - p.s;
+        el.querySelector('.yt-fill').style.transform = `scaleX(${Math.max(0, Math.min(1, (t - p.s) / len))})`;
+        el.querySelector('.yt-buf').style.transform = `scaleX(${Math.max(0, Math.min(1, (bufEnd - p.s) / len))})`; });
+      knob.style.left = (t / d * 100) + '%';
+      const i = chapterAt(t); chapB.innerHTML = parts.length > 1 ? `· ${esc(parts[i].title)} <span>›</span>` : '';
+      w.querySelectorAll('.vchap button').forEach((b, k) => b.classList.toggle('now', k === i && box.classList.contains('started')));
+    }
+    const timeAtX = (x) => { const r = bar.getBoundingClientRect(); return Math.max(0, Math.min(1, (x - r.left) / r.width)) * dur(); };
+    bar.addEventListener('pointermove', (e) => {
+      const d = dur(); if (!d) return; const t = timeAtX(e.clientX), r = bar.getBoundingClientRect(), i = chapterAt(t);
+      tip.querySelector('b').textContent = parts.length > 1 ? parts[i].title : ''; tip.querySelector('span').textContent = fmtT(t);
+      tip.style.left = Math.max(60, Math.min(r.width - 60, e.clientX - r.left)) + 'px'; tip.classList.add('on');
+      [...segs.children].forEach((el, k) => el.classList.toggle('hover', k === i));
+      if (dragging) { vid.currentTime = t; paint(); }
+    });
+    bar.addEventListener('pointerleave', () => { tip.classList.remove('on'); [...segs.children].forEach((el) => el.classList.remove('hover')); });
+    bar.addEventListener('pointerdown', (e) => { dragging = true; bar.setPointerCapture(e.pointerId); box.dataset.jumped = '1'; vid.currentTime = timeAtX(e.clientX); paint(); });
+    bar.addEventListener('pointerup', () => { dragging = false; });
+    const toggle = () => { box.dataset.jumped = box.dataset.jumped || ''; if (vid.paused) vid.play().catch(() => {}); else vid.pause(); };
+    playB.addEventListener('click', toggle); big.addEventListener('click', toggle);
+    vid.addEventListener('click', toggle);
+    vid.addEventListener('dblclick', () => fsB.click());
+    volB.addEventListener('click', () => { vid.muted = !vid.muted; volB.innerHTML = vid.muted ? YT_IC.mute : YT_IC.vol; volB.setAttribute('aria-label', vid.muted ? 'Unmute' : 'Mute'); });
+    const SPEEDS = [1, 1.25, 1.5, 1.75, 2, 0.75];
+    speedB.addEventListener('click', () => { const i = (SPEEDS.indexOf(vid.playbackRate) + 1) % SPEEDS.length; vid.playbackRate = SPEEDS[i]; speedB.textContent = SPEEDS[i] + '×'; });
+    fsB.addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else if (box.requestFullscreen) box.requestFullscreen().catch(() => {}); });
+    document.addEventListener('fullscreenchange', () => { const on = document.fullscreenElement === box; fsB.innerHTML = on ? YT_IC.fsx : YT_IC.fs; box.classList.toggle('fs', on); });
+    chapB.addEventListener('click', () => { const l = w.querySelector('.vchap'); if (document.fullscreenElement) document.exitFullscreen(); if (l) l.scrollIntoView({behavior: 'smooth', block: 'nearest'}); });
+    if (cc) cc.addEventListener('click', () => { const t = vid.textTracks[0]; if (!t) return; t.mode = t.mode === 'showing' ? 'hidden' : 'showing'; cc.setAttribute('aria-pressed', String(t.mode === 'showing')); cc.classList.toggle('on', t.mode === 'showing'); });
+    // controls fade out while playing, and come back when you move the mouse
+    const wake = () => { box.classList.add('awake'); clearTimeout(hideT); hideT = setTimeout(() => { if (!vid.paused && !dragging) box.classList.remove('awake'); }, 2600); };
+    box.addEventListener('pointermove', wake); box.addEventListener('pointerdown', wake); vid.addEventListener('pause', wake);
+    box.addEventListener('keydown', (e) => {
+      if (e.target.closest('input,textarea')) return;
+      const k = e.key.toLowerCase();
+      if (k === ' ' || k === 'k') { e.preventDefault(); toggle(); }
+      else if (k === 'arrowleft' || k === 'arrowright') { e.preventDefault(); vid.currentTime = Math.max(0, Math.min(dur(), vid.currentTime + (k === 'arrowleft' ? -5 : 5))); }
+      else if (k === 'f') fsB.click(); else if (k === 'm') volB.click(); else if (k === 'c' && cc) cc.click();
+      wake();
+    });
+    ['loadedmetadata', 'durationchange'].forEach((ev) => vid.addEventListener(ev, build));
+    ['timeupdate', 'play', 'pause', 'progress', 'seeked'].forEach((ev) => vid.addEventListener(ev, paint));
+    if (vid.readyState >= 1) build(); else paint();
+    wake();
+    return {seek: (t) => { box.dataset.jumped = '1'; vid.currentTime = t; vid.play().catch(() => {}); paint(); }};
+  }
   function videoFileHTML(v) {
     const chapters = Array.isArray(v.chapters) ? v.chapters.filter((c) => typeof c.t === 'number') : [];
     const poster = v.poster && isSafeUrl(v.poster) ? v.poster : '';
     const src = v.url + (!poster && typeof v.posterAt === 'number' && v.posterAt > 0 ? '#t=' + v.posterAt : '');
     const subs = v.subs && v.subs.vtt ? v.subs : null;
-    return `<div class="vwrap" ${typeof v.posterAt === 'number' && !poster ? `data-poster-at="${v.posterAt}"` : ''}>
-      <div class="video"><video controls preload="metadata" playsinline src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ''}${subs ? ` data-vtt="${esc(subs.vtt)}" data-lang="${esc(subs.lang || 'en')}" data-label="${esc(subs.label || 'Subtitles')}"` : ''}></video></div>
-      ${subs || chapters.length ? `<div class="vbar">${subs ? `<button type="button" class="vcc" aria-pressed="false" title="Subtitles on or off">CC <span>Subtitles</span></button>` : ''}${chapters.length ? `<span class="vbar-t">${chapters.length} chapter${chapters.length === 1 ? '' : 's'}</span>` : ''}</div>` : ''}
+    return `<div class="vwrap" ${typeof v.posterAt === 'number' && !poster ? `data-poster-at="${v.posterAt}"` : ''} data-chapters="${esc(JSON.stringify(chapters))}">
+      ${chapters.length ? playerHTML(src, poster, subs) : `<div class="video"><video controls preload="metadata" playsinline src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ''}${subs ? ` data-vtt="${esc(subs.vtt)}" data-lang="${esc(subs.lang || 'en')}" data-label="${esc(subs.label || 'Subtitles')}"` : ''}></video></div>`}
+      ${chapters.length ? `<div class="vbar"><span class="vbar-t">${chapters.length} chapter${chapters.length === 1 ? '' : 's'}</span></div>` : subs ? `<div class="vbar"><button type="button" class="vcc" aria-pressed="false" title="Subtitles on or off">CC <span>Subtitles</span></button></div>` : ''}
       ${chapters.length ? `<ol class="vchap">${chapters.map((c, i) => `<li><button type="button" data-t="${c.t}" data-i="${i}"><span class="vt">${fmtT(c.t)}</span><span class="vn">${esc(c.title || 'Chapter ' + (i + 1))}</span></button></li>`).join('')}</ol>` : ''}
     </div>`;
   }
@@ -1145,13 +1273,23 @@
       if (vid.dataset.vtt) {
         const tr = document.createElement('track'); tr.kind = 'subtitles'; tr.srclang = vid.dataset.lang || 'en'; tr.label = vid.dataset.label || 'Subtitles';
         tr.src = URL.createObjectURL(new Blob([vid.dataset.vtt], {type: 'text/vtt'})); vid.appendChild(tr);
+        // in the player with chapters: subtitles a few lines up, so they stay readable above the controls
+        if (w.querySelector('.video.yt')) tr.addEventListener('load', () => { const cues = tr.track && tr.track.cues; if (cues) for (let i = 0; i < cues.length; i++) { cues[i].snapToLines = true; cues[i].line = -4; } });
         const sync = () => { const t = vid.textTracks[0]; const b = w.querySelector('.vcc'); if (t && b) { const on = t.mode === 'showing'; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('on', on); } };
         setTimeout(() => { if (vid.textTracks[0]) { vid.textTracks[0].mode = 'hidden'; vid.textTracks.addEventListener('change', sync); } }, 0);
         const b = w.querySelector('.vcc'); if (b) b.addEventListener('click', () => { const t = vid.textTracks[0]; if (!t) return; t.mode = t.mode === 'showing' ? 'hidden' : 'showing'; sync(); });
       }
       // a thumbnail chosen as a moment in the video: start from the beginning when they press play
       const at = parseFloat(w.dataset.posterAt || ''); let jumped = false;
-      if (at > 0) vid.addEventListener('play', () => { if (!jumped && Math.abs(vid.currentTime - at) < 1.5) vid.currentTime = 0; jumped = true; }, {once: true});
+      if (at > 0 && !w.querySelector('.video.yt')) vid.addEventListener('play', () => { if (!jumped && Math.abs(vid.currentTime - at) < 1.5) vid.currentTime = 0; jumped = true; }, {once: true});
+      // with chapters: the player with chapters in its bar (the list below jumps through it)
+      if (w.querySelector('.video.yt')) {
+        let ch = []; try { ch = JSON.parse(w.dataset.chapters || '[]'); } catch (e) {}
+        const pl = setupPlayer(w, ch);
+        if (at > 0) vid.addEventListener('play', () => { if (!jumped && !w.querySelector('.video.yt').dataset.jumped && Math.abs(vid.currentTime - at) < 1.5) vid.currentTime = 0; jumped = true; }, {once: true});
+        w.querySelectorAll('.vchap button').forEach((b) => b.addEventListener('click', () => { jumped = true; pl.seek(parseFloat(b.dataset.t) || 0); w.querySelector('.video.yt').focus({preventScroll: true}); }));
+        return;
+      }
       // chapters: click to jump there; the one that's playing is highlighted
       const items = [...w.querySelectorAll('.vchap button')];
       const mark = (force) => {
