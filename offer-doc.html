@@ -465,6 +465,30 @@
   @media (max-height:700px){ .pr-tip{display:none;} }
   @media (prefers-reduced-motion: reduce){ .pr-aura,.pr-grain,.pr-beam,.pr-floor{animation:none !important;} .pr-beam{height:50%;} }
   .od-head h1 .od-h1sub{font-weight:700;color:var(--slate);}
+
+  /* the anonymous-learning switch, 👍/👎, and the admin's lessons */
+  .od-share{display:flex;align-items:center;gap:18px;padding:16px 20px;margin-bottom:18px;}
+  .od-share-t{flex:1;min-width:0;} .od-share-t b{display:block;font-size:14.5px;} .od-share-t b em{font-style:normal;font-size:11px;font-weight:700;color:var(--ok);background:rgba(30,158,116,.1);padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:1px;}
+  .od-share-t small{display:block;margin-top:4px;font-size:13px;line-height:1.55;color:var(--slate);} .od-share-t small b{display:inline;font-size:inherit;}
+  .od-switch{position:relative;flex-shrink:0;width:46px;height:26px;cursor:pointer;} .od-switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+  .od-switch i{position:absolute;inset:0;border-radius:999px;background:var(--border);transition:background .2s;pointer-events:none;}
+  .od-switch i::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s;}
+  .od-switch input:checked + i{background:#3730B3;} .od-switch input:checked + i::after{transform:translateX(20px);} .od-switch input:focus-visible + i{box-shadow:0 0 0 3px rgba(55,48,179,.3);}
+  .od-rate{display:inline-flex;align-items:center;gap:4px;padding:0 6px 0 10px;height:34px;border:1px solid var(--border);border-radius:10px;background:var(--panel);font-size:12.5px;font-weight:600;color:var(--slate);}
+  .od-rate button{border:none;background:none;width:28px;height:28px;border-radius:8px;font-size:15px;cursor:pointer;opacity:.6;transition:opacity .15s,background .15s;}
+  .od-rate button:hover{opacity:1;background:var(--panel-alt);} .od-rate button.on{opacity:1;background:rgba(55,48,179,.1);}
+  .od-ls{width:100%;max-width:640px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;padding:22px;}
+  .od-ls-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;} .od-ls-h h3{margin:0;font:800 20px Sora,sans-serif;} .od-ls-h p{margin:4px 0 0;font-size:13px;color:var(--slate);}
+  .od-ls-tabs{display:flex;gap:4px;background:var(--panel-alt);border-radius:11px;padding:3px;margin:16px 0 12px;}
+  .od-ls-tabs button{flex:1;border:none;background:none;border-radius:9px;padding:8px;font-weight:600;font-size:13px;color:var(--slate);cursor:pointer;}
+  .od-ls-tabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.12);}
+  .od-ls-tabs button span{display:inline-block;min-width:18px;padding:0 5px;border-radius:999px;background:rgba(55,48,179,.12);color:#3730B3;font-size:11px;font-weight:800;}
+  .od-ls-list{overflow:auto;display:flex;flex-direction:column;gap:10px;min-height:120px;}
+  .od-ls-i{border:1px solid var(--border-soft);border-radius:14px;padding:12px;background:var(--panel);}
+  .od-ls-i textarea{width:100%;box-sizing:border-box;min-height:58px;border:1px solid var(--border);border-radius:10px;padding:9px 11px;font:500 14px/1.5 Inter,sans-serif;resize:vertical;background:var(--panel-alt);color:var(--ink);}
+  .od-ls-i small{display:block;margin-top:7px;font-size:12.5px;color:var(--slate);}
+  .od-ls-b{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .od-ls-f{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft);} .od-ls-f small{flex:1;font-size:12.5px;line-height:1.5;color:var(--slate);}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -925,10 +949,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <div class="seq-main"><div class="od">
     <div class="od-head">
       <div><h1>📄 Offer Doc <span class="od-h1sub">– Your unique mechanism explained</span></h1><p id="odSub">Your AI writes your offer document with you: upload your template, answer its questions, and get a document that sells for you after the call.</p></div>
-      <div style="display:flex;gap:8px"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div>
+      <div style="display:flex;gap:8px"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div>
     </div>
 
-    <section id="vHome"><div class="od-list" id="odList"></div></section>
+    <section id="vHome">
+      <div class="card od-share"><div class="od-share-t"><b>🧠 Help improve Offer Doc <em>anonymous</em></b>
+        <small>Let the AI learn from how you use Offer Doc, so it gets smarter for everyone. Only patterns are kept (like “people often ask for a stronger guarantee”), <b>never</b> your text, names, numbers or prices, and never who you are.</small></div>
+        <label class="od-switch"><input type="checkbox" id="odShare"><i></i></label></div>
+      <div class="od-list" id="odList"></div></section>
     <section id="vTrash" class="hidden"><div class="od-trash-h"><h2>🗑 Trash</h2><p>Deleted offer docs stay here for 30 days. After that they’re removed for good, with their photos and videos.</p></div><div class="od-tbar hidden" id="odTrashBar">
       <label class="od-tall"><input type="checkbox" id="odTrashAll"> <span>Select all</span></label><span class="od-tcount" id="odTrashCount"></span><span class="grow"></span>
       <button type="button" class="btn sm" id="odTrashRestore" disabled>↩ Restore selected</button><button type="button" class="btn sm danger" id="odTrashDelete" disabled>Delete selected forever</button></div>
@@ -965,6 +993,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <button type="button" class="btn sm" id="odRewrite" title="Write the whole document again from your answers">↻ Write again</button>
         <button type="button" class="btn sm hidden" id="odUndo">↶ Undo AI change</button>
         <span class="grow"></span>
+        <span class="od-rate" role="group" aria-label="How good is this document?"><span>How good is it?</span><button type="button" data-rate="1" title="Good">👍</button><button type="button" data-rate="-1" title="Not good">👎</button></span>
         <button type="button" class="btn sm" id="odCheck">✅ Final check</button>
         <button type="button" class="btn sm" id="odWord">📝 Word</button>
         <button type="button" class="btn sm" id="odPdf">📄 PDF</button>
@@ -1000,10 +1029,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const langName = (l)=> (LANGS.find((x)=> x[0] === l || x[1] === l) || [l, l])[1];
   const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(Object.assign({language: langName(data.language || langOf()), who: myName}, data)).then((r)=> r.data);
   const aiErr = (e)=> (e && e.message) || 'The AI couldn’t answer right now. Please try again.';
+  const ADMIN_EMAILS = ['gabriele.oizaz@pala-consultancy.com'];       // who sees “🧠 Lessons” (the server checks it too)
+  let amAdmin = false;
   let me = null, myName = '', myCompany = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
   // ---------- views ----------
-  function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); window.scrollTo(0, 0); }
+  function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); $('odLessonsBtn').classList.toggle('hidden', v !== 'vHome' || !amAdmin); window.scrollTo(0, 0); }
   const allQ = (s)=> (s.questions || []).concat(s.followups || []);
   function progress(d){ if(!d || !d.plan) return 0; let n = 0, a = 0; d.plan.sections.forEach((s)=> allQ(s).forEach((q)=>{ n++; if((d.answers || {})[q.id] != null) a++; })); return n ? a / n : 0; }
   // a cover per offer doc: a finished cover when it's written, a sketched "not written yet" cover when it isn't
@@ -1032,7 +1063,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // ---------- saving ----------
   let saveT = null;
   function save(fields){ if(!D) return; Object.assign(D, fields || {}); clearTimeout(saveT); $('odSaved').textContent = 'Saving…';
-    saveT = setTimeout(()=>{ const {id, prevDoc, ...rest} = D; db.collection('offerDocs').doc(id).set(Object.assign(rest, {updatedAt: FV.serverTimestamp()}), {merge: true})
+    const target = D;                                     // the document being saved, even if you go back before it's done
+    saveT = setTimeout(()=>{ if(!target) return; const {id, prevDoc, ...rest} = target; db.collection('offerDocs').doc(id).set(Object.assign(rest, {updatedAt: FV.serverTimestamp()}), {merge: true})
       .then(()=>{ $('odSaved').textContent = 'Saved'; }).catch((e)=>{ console.error(e); $('odSaved').textContent = 'Not saved yet'; toast('Couldn’t save. Check your connection.', true); }); }, 500); }
 
   // ---------- the waiting screen: steps, progress, tips you can click through ----------
@@ -1468,14 +1500,16 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       else if(t) out.blocks.push({type: 'p', text: t}); });
     return out;
   }
-  function openDocView(){ show('vDoc'); $('odDoc').innerHTML = docHTML(D.doc); $('odCheckBox').classList.add('hidden'); $('odSaved').textContent = 'Saved'; $('odUndo').classList.toggle('hidden', !D.prevDoc); }
+  function paintRate(){ document.querySelectorAll('.od-rate [data-rate]').forEach((b)=> b.classList.toggle('on', +b.dataset.rate === (D && D.rating))); }
+  function openDocView(){ setTimeout(paintRate, 0); show('vDoc'); $('odDoc').innerHTML = docHTML(D.doc); $('odCheckBox').classList.add('hidden'); $('odSaved').textContent = 'Saved'; $('odUndo').classList.toggle('hidden', !D.prevDoc); }
   async function write(){
     show('vSetup'); $('setupPick').classList.add('hidden'); $('setupBusy').classList.remove('hidden');
     const nAns = Object.values(D.answers || {}).filter((v)=> v && v !== '__skip').length, nWords = Object.values(D.answers || {}).join(' ').split(/\s+/).filter((w)=> w && w !== '__skip').length;
     const ld = busy('write', D.plan.sections.map((x)=> x.title), {title: D.title, who: myName, words: nWords, answers: nAns, secs: D.plan.sections.length, code: D.id.slice(0, 4).toUpperCase()});
     try {
       const answers = {}; Object.entries(D.answers).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
-      const {doc} = await AI({mode: 'write', template: D.template, plan: D.plan, answers, extra: $('odExtra').value.trim(), media: mediaForAI()});
+      const skipped = []; D.plan.sections.forEach((x)=> allQ(x).forEach((q)=>{ if(D.answers[q.id] === '__skip') skipped.push(q.q); }));
+      const {doc} = await AI({mode: 'write', template: D.template, plan: D.plan, answers, extra: $('odExtra').value.trim(), media: mediaForAI(), skipped});
       await ld.done(); fs.exit();
       save({doc, stage: 'done', title: doc.title || D.title}); openDocView(); toast('Your offer document is ready. Read it through and adjust anything you like.');
     } catch(e){ ld.stop(); fs.exit(); console.error(e); toast(aiErr(e), true); show(D.stage === 'done' && D.doc ? 'vDoc' : 'vReady'); }
@@ -1543,6 +1577,45 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // ---------- wiring ----------
   $('odNew').addEventListener('click', newDoc);
   $('odBack').addEventListener('click', ()=>{ D = null; renderHome(); show('vHome'); });
+  // the anonymous-learning switch
+  $('odShare').addEventListener('change', (e)=>{ const on = e.target.checked;
+    AI({mode: 'share', share: on}).then(()=> toast(on ? 'Thanks! Offer Doc learns from how you use it, anonymously.' : 'Off. Nothing is kept from your offer docs anymore.')).catch((err)=>{ e.target.checked = !on; toast(aiErr(err), true); }); });
+  // 👍/👎
+  document.querySelector('.od-rate').addEventListener('click', (e)=>{ const b = e.target.closest('[data-rate]'); if(!b || !D) return; const r = +b.dataset.rate; save({rating: r}); paintRate();
+    AI({mode: 'rate', rating: r, doc: docFromDOM()}).catch(()=>{}); toast(r > 0 ? 'Thanks for the 👍' : 'Thanks, noted. Tell the AI what to change, above.'); });
+  // the admin: lessons to approve
+  async function openLessons(){
+    const ov = document.createElement('div'); ov.className = 'ext-dlg od-ls-ov'; ov.style.cssText = 'position:fixed;inset:0;z-index:800;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = `<div class="card od-ls" role="dialog" aria-modal="true" aria-labelledby="lsT"><div class="od-ls-h"><div><h3 id="lsT">🧠 Lessons</h3><p id="lsSub">Loading…</p></div><button type="button" class="btn sm" data-x>Close</button></div>
+      <div class="od-ls-tabs" role="tablist"><button type="button" data-tab="proposed" aria-selected="true">To approve</button><button type="button" data-tab="approved">Approved</button><button type="button" data-tab="rejected">Rejected</button></div>
+      <div class="od-ls-list" id="lsList"></div>
+      <div class="od-ls-f"><small>Proposed once a week from anonymous patterns of accounts that switched “Help improve Offer Doc” on. Only <b>approved</b> lessons are used by the AI.</small><button type="button" class="btn sm primary" id="lsPropose">✨ Propose new lessons now</button></div></div>`;
+    document.body.appendChild(ov); const close = ()=> ov.remove();
+    ov.addEventListener('mousedown', (e)=>{ if(e.target === ov) close(); }); ov.querySelector('[data-x]').addEventListener('click', close);
+    let data = {lessons: []}, tab = 'proposed';
+    const paint = ()=>{
+      const n = (st)=> data.lessons.filter((l)=> l.status === st).length;
+      ov.querySelectorAll('[data-tab]').forEach((b)=>{ b.setAttribute('aria-selected', String(b.dataset.tab === tab)); const k = n(b.dataset.tab); b.innerHTML = ({proposed: 'To approve', approved: 'Approved', rejected: 'Rejected'})[b.dataset.tab] + (k ? ` <span>${k}</span>` : ''); });
+      $('lsSub').textContent = `${data.signals || 0} anonymous signals from ${data.accounts || 0} account${data.accounts === 1 ? '' : 's'} in the last 60 days.`;
+      const list = data.lessons.filter((l)=> l.status === tab);
+      $('lsList').innerHTML = list.length ? list.map((l)=> `<div class="od-ls-i" data-id="${esc(l.id)}"><textarea maxlength="400" aria-label="Lesson">${esc(l.text)}</textarea>${l.why ? `<small>📊 ${esc(l.why)}</small>` : ''}
+          <div class="od-ls-b">${tab !== 'approved' ? '<button type="button" class="btn sm primary" data-act="approved">✓ Approve</button>' : '<button type="button" class="btn sm" data-act="proposed">Switch off</button>'}
+          ${tab !== 'rejected' ? '<button type="button" class="btn sm" data-act="rejected">Reject</button>' : ''}<button type="button" class="btn sm" data-act="save">Save edit</button><button type="button" class="btn sm danger" data-act="delete">Delete</button></div></div>`).join('')
+        : `<div class="od-empty" style="padding:30px 10px"><p>${tab === 'proposed' ? 'Nothing to approve right now. New lessons are proposed every Monday, or click “Propose new lessons now”.' : tab === 'approved' ? 'No approved lessons yet.' : 'No rejected lessons.'}</p></div>`;
+    };
+    const load = ()=> AI({mode: 'lessons'}).then((r)=>{ data = r; paint(); }).catch((e)=>{ $('lsSub').textContent = aiErr(e); });
+    ov.addEventListener('click', (e)=>{
+      const t = e.target.closest('[data-tab]'); if(t){ tab = t.dataset.tab; paint(); return; }
+      const a = e.target.closest('[data-act]'); if(!a) return; const it = a.closest('[data-id]'), id = it.dataset.id, text = it.querySelector('textarea').value, act = a.dataset.act;
+      const req = act === 'delete' ? {mode: 'lessonUpdate', id, action: 'delete'} : act === 'save' ? {mode: 'lessonUpdate', id, text} : {mode: 'lessonUpdate', id, status: act, text};
+      AI(req).then(()=>{ toast(act === 'approved' ? 'Approved: the AI uses this lesson from now on.' : act === 'rejected' ? 'Rejected.' : act === 'delete' ? 'Deleted.' : act === 'proposed' ? 'Switched off: back to “To approve”.' : 'Saved.'); load(); }).catch((err)=> toast(aiErr(err), true));
+    });
+    $('lsPropose').addEventListener('click', (e)=>{ const b = e.currentTarget; b.disabled = true; b.textContent = 'Looking at the patterns…';
+      AI({mode: 'propose'}).then((r)=>{ toast(r.made ? `${r.made} new lesson${r.made === 1 ? '' : 's'} to approve.` : (r.note || 'No new lessons this time.')); tab = 'proposed'; return load(); })
+        .catch((err)=> toast(aiErr(err), true)).finally(()=>{ b.disabled = false; b.textContent = '✨ Propose new lessons now'; }); });
+    load();
+  }
+  $('odLessonsBtn').addEventListener('click', openLessons);
   $('odUsePala').addEventListener('click', ()=>{ scanSnd.prime(); fs.enter(); startFrom(PALA_TEMPLATE, 'PALA template'); });
   const drop = $('odDrop');
   drop.addEventListener('click', ()=>{ scanSnd.prime(); $('odFile').click(); }); drop.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('odFile').click(); } });
@@ -1607,7 +1680,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   try { Promise.resolve(firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)).catch(()=>{}); } catch(e){}
   firebase.auth().onAuthStateChanged(async (u)=>{
     if(!u){ location.href = 'home.html'; return; }
-    me = u.uid;
+    me = u.uid; amAdmin = ADMIN_EMAILS.includes(String(u.email || '').toLowerCase());
+    db.doc(`offerDocPrefs/${me}`).get().then((d)=>{ $('odShare').checked = !!(d.exists && d.data().share === true); }).catch(()=>{});
     try { const dir = await db.doc(`userDirectory/${me}`).get(); wsId = dir.exists ? dir.data().workspaceId : null;
       if(!wsId){ location.href = 'home.html'; return; }
       const [m, w] = await Promise.all([db.doc(`workspaces/${wsId}/members/${me}`).get(), db.doc(`workspaces/${wsId}`).get().catch(()=> null)]);
