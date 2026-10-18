@@ -1862,7 +1862,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     holCountries = list; holSaved = true; render();
     db.doc(`workspaces/${wsId}/members/${myUid}`).update({holidayCountries: list}).catch(()=>{});
   }
-  let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gEvents = {}, gLoading = {};
+  let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gEvents = {}, gLoading = {}, gStale = {};
   let byKey = {};
   const templateOwners = {};
 
@@ -2819,14 +2819,19 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
       if(ok) firebase.functions().httpsCallable('disconnectGoogleCalendar')().then(()=>{ gEvents = {}; showToast('Google Calendar disconnected.'); }).catch(err=> showToast('Could not disconnect: ' + (err.message || ''), true));
     }
   });
+  // Google events: what you already have stays on screen while a fresh list is fetched in the background,
+  // and is swapped in one go when it arrives (no flashing). If Google fails for a moment, they stay.
   function loadGoogle(){
     if(!gcalConn || !gcalShow) return;
-    const key = rangeKey(); if(gEvents[key] || gLoading[key]) return;
+    const key = rangeKey(); if((gEvents[key] && !gStale[key]) || gLoading[key]) return;
     gLoading[key] = true; const r = range();
     firebase.functions().httpsCallable('listGoogleCalendarEvents')({timeMin: r.start.toISOString(), timeMax: r.end.toISOString()}).then(res=>{
-      gEvents[key] = (res.data && res.data.events) || []; gLoading[key] = false; render();
-    }).catch(err=>{ gLoading[key] = false; console.warn('Could not load Google events', err); });
+      const fresh = (res.data && res.data.events) || [], before = JSON.stringify(gEvents[key] || null);
+      gEvents[key] = fresh; gLoading[key] = false; delete gStale[key];
+      if(JSON.stringify(fresh) !== before) render();              // redraw only when something changed
+    }).catch(err=>{ gLoading[key] = false; console.warn('Could not load Google events (keeping the ones we have)', err); });
   }
+  function refreshGoogle(){ Object.keys(gEvents).forEach(k=>{ gStale[k] = true; }); loadGoogle(); }
 
   // ---------- Loading ----------
   function reveal(){ $('pageLoader').style.display = 'none'; const root = $('appRoot'); root.style.display = 'flex'; root.classList.add('reveal'); }
@@ -2884,7 +2889,8 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
       db.collection('outOfOffice').where('workspaceId', '==', wsId).onSnapshot(snap=>{ awayList = snap.docs.map(d=>({id: d.id, ...d.data()})); if(editState) renderGuests(); }, ()=>{});
       db.collection('linkedinSequenceTemplates').where('workspaceId', '==', wsId).get().then(snap=>{ snap.docs.forEach(d=>{ templateOwners[d.id] = d.data().createdBy || null; }); soon(); }).catch(()=>{});
       loadCalls(); loadRuns();
-      setInterval(()=>{ loadCalls(); loadRuns(); gEvents = {}; soon(); }, 5 * 60 * 1000);
+      setInterval(()=>{ loadCalls(); loadRuns(); refreshGoogle(); }, 5 * 60 * 1000);
+      document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') refreshGoogle(); });
       const r = new URLSearchParams(location.search).get('calendarConnect');
       if(r){
         showToast(r === 'success' ? '🗓 Google Calendar connected. Everything here is in the "PalaTrack" calendar in Google now.' : r === 'denied' ? 'Google Calendar was not connected.' : r === 'expired' ? 'That sign-in link expired. Please try again.' : 'Could not connect Google Calendar. Please try again.', r !== 'success' && r !== 'denied');
