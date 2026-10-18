@@ -246,6 +246,11 @@
   .od-party i{position:absolute;left:0;top:0;width:8px;height:12px;border-radius:2px;opacity:0;animation:odConf 1.2s cubic-bezier(.2,.8,.3,1) .1s forwards;}
   @keyframes odConf{0%{opacity:1;transform:translate(0,0) rotate(0);}100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 80px)) rotate(var(--r));}}
   @media (prefers-reduced-motion: reduce){ .od-blobs,.od-words span,.od-q.in-r,.od-q.in-l,.od-party i{animation:none !important;opacity:1;transform:none;} }
+
+  .od-langpick{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px;font-size:13.5px;font-weight:600;color:var(--slate);}
+  .od-langpick select,.od-lang select{height:36px;border:1px solid var(--border);border-radius:10px;padding:0 10px;background:var(--panel);color:var(--ink);font-weight:600;font-size:13px;}
+  .od-lang{display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 6px 2px;border-top:1px solid var(--border-soft);font-size:14px;}
+  .od-lang select{flex:1;}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -719,12 +724,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         </div>
         <div class="od-or">or</div>
         <div style="text-align:center"><button type="button" class="btn" id="odUsePala">✨ Use the PALA template</button></div>
+        <label class="od-langpick">🌐 Language of your questions and document <select id="odLang"></select></label>
       </div>
       <div class="od-busy hidden" id="setupBusy"></div>
     </div></section>
 
     <section id="vInterview" class="hidden"><div class="od-blobs" aria-hidden="true"><i></i><i></i><i></i></div><div class="od-iv">
-      <aside class="card od-steps"><h4>Your sections</h4><div id="odSteps"></div><button type="button" class="btn primary sm write hidden" id="odGoWrite">✍️ Write my offer doc</button></aside>
+      <aside class="card od-steps"><h4>Your sections</h4><div id="odSteps"></div><button type="button" class="btn primary sm write hidden" id="odGoWrite">✍️ Write my offer doc</button>
+        <label class="od-lang">🌐 <select id="odLangSwitch" aria-label="Language of the questions and the document"></select></label></aside>
       <div class="card od-q" id="odQ"></div>
     </div></section>
 
@@ -770,7 +777,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   firebase.initializeApp({apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM", authDomain: "lead-tracker-c5c3a.firebaseapp.com", projectId: "lead-tracker-c5c3a",
     storageBucket: "lead-tracker-c5c3a.firebasestorage.app", messagingSenderId: "720572896285", appId: "1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"});
   const db = firebase.firestore(), FV = firebase.firestore.FieldValue;
-  const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(data).then((r)=> r.data);
+  // every AI request goes with the chosen language (the AI never switches) and your name
+  const LANGS = [['English', 'English'], ['Nederlands', 'Dutch'], ['Français', 'French'], ['Deutsch', 'German'], ['Español', 'Spanish'], ['Italiano', 'Italian'], ['Português', 'Portuguese']];
+  const langOf = ()=> (D && (D.lang || (D.plan && D.plan.language))) || localStorage.getItem('ptOdLang') || 'English';
+  const langName = (l)=> (LANGS.find((x)=> x[0] === l || x[1] === l) || [l, l])[1];
+  const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(Object.assign({language: langName(data.language || langOf()), who: myName}, data)).then((r)=> r.data);
   const aiErr = (e)=> (e && e.message) || 'The AI couldn’t answer right now. Please try again.';
   let me = null, myName = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
@@ -855,7 +866,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
 
   // ---------- step 1: the template ----------
-  function newDoc(){ D = null; $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); show('vSetup'); }
+  function newDoc(){ D = null; const sel = $('odLang'), saved = localStorage.getItem('ptOdLang') || 'English';
+    sel.innerHTML = LANGS.map(([k, en])=> `<option value="${esc(k)}"${k === saved ? ' selected' : ''}>${esc(k)}${k !== en ? ' · ' + en : ''}</option>`).join(''); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); show('vSetup'); }
   const libs = {};
   function loadScript(u){ return libs[u] || (libs[u] = new Promise((res, rej)=>{ const s = document.createElement('script'); s.src = u; s.onload = res; s.onerror = ()=>{ delete libs[u]; rej(new Error('Couldn’t load the file reader. Check your connection.')); }; document.head.appendChild(s); })); }
   const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/';
@@ -886,10 +898,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     $('setupPick').classList.add('hidden'); $('setupBusy').classList.remove('hidden');
     const ld = busy('plan');
     try {
-      const {plan} = await AI({mode: 'plan', template: text.slice(0, 40000)});
+      const lang = $('odLang').value || 'English'; try { localStorage.setItem('ptOdLang', lang); } catch(e){}
+      const {plan} = await AI({mode: 'plan', template: text.slice(0, 40000), language: lang});
       await ld.done();
       const ref = db.collection('offerDocs').doc();
-      D = {id: ref.id, createdBy: me, workspaceId: wsId, title: plan.title || 'Offer document', templateName: name, template: text.slice(0, 40000), plan, answers: {}, pos: {s: 0, q: 0}, stage: 'interview'};
+      D = {id: ref.id, createdBy: me, workspaceId: wsId, lang, title: plan.title || 'Offer document', templateName: name, template: text.slice(0, 40000), plan, answers: {}, pos: {s: 0, q: 0}, stage: 'interview'};
       const {id, ...rest} = D; await ref.set(Object.assign(rest, {createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}));
       cur = {s: 0, q: 0}; await playIntro(plan); openInterview();
     } catch(e){ ld.stop(); console.error(e); toast(aiErr(e), true); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); }
@@ -930,7 +943,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
 
   // ---------- step 2: the interview ----------
-  function openInterview(){ show('vInterview'); renderSteps(); renderQ(); }
+  function openInterview(){ show('vInterview'); paintLang(); renderSteps(); renderQ(); }
+  function paintLang(){ const l = langOf(); $('odLangSwitch').innerHTML = LANGS.map(([k])=> `<option value="${esc(k)}"${k === l || langName(k) === l ? ' selected' : ''}>${esc(k)}</option>`).join(''); }
+  $('odLangSwitch').addEventListener('change', async (e)=>{
+    const to = e.target.value, from = langOf(); if(langName(to) === langName(from)) return;
+    const card = $('odQ'); card.innerHTML = `<div class="od-busy"><div class="spin"></div><b>Translating your questions into ${esc(to)}…</b><small>Your answers stay exactly as they are.</small></div>`;
+    try { const {plan} = await AI({mode: 'translate', plan: D.plan, language: to}); D.plan = plan; save({plan, lang: to}); D.lang = to; try { localStorage.setItem('ptOdLang', to); } catch(_){} toast(`Questions are now in ${to}. Your document will be too.`); }
+    catch(err){ toast(aiErr(err), true); paintLang(); }
+    renderSteps(); renderQ();
+  });
   function sectionDone(s){ return allQ(s).every((q)=> (D.answers || {})[q.id] != null); }
   function renderSteps(){
     let all = 0, got = 0;
@@ -1054,7 +1075,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(!s.checked){
       $('odQ').innerHTML = `<div class="od-busy"><div class="spin"></div><b>Checking your answers…</b><small>The AI looks whether it has enough to write “${esc(s.title)}” well.</small></div>`;
       try {
-        const r = await AI({mode: 'followup', template: D.template, section: {id: s.id, title: s.title, purpose: s.purpose, questions: allQ(s)}, answers: D.answers, media: mediaForAI()});
+        const answersNow = {}; Object.entries(D.answers).forEach(([k, v])=>{ answersNow[k] = v === '__skip' ? '' : v; });
+        const r = await AI({mode: 'followup', template: D.template, plan: D.plan, section: {id: s.id, title: s.title, purpose: s.purpose, questions: allQ(s)}, answers: answersNow, media: mediaForAI()});
         s.checked = true;
         if(!r.ok && r.followups && r.followups.length){ s.followups = (s.followups || []).concat(r.followups); save({plan: D.plan}); cur.q++; renderQ(); return; }
       } catch(e){ console.warn(e); s.checked = true; }
