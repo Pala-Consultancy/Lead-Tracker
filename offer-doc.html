@@ -497,6 +497,29 @@
   .ob-stage.pro.wait{opacity:0;}
   .ob-stage.pro.wait .pr > *{animation:none !important;}
   .ob-stage.pro.leaving{transition:none;}
+
+  /* the booking button in the document */
+  .od-doc .od-cta{position:relative;margin:20px 0 6px;}
+  .od-doc .od-cta a{display:inline-flex;align-items:center;gap:8px;padding:14px 24px;border-radius:12px;background:linear-gradient(135deg,#3730B3,#5B4BE6);color:#fff;font-weight:700;font-size:15.5px;text-decoration:none;box-shadow:0 12px 26px -12px rgba(55,48,179,.8);}
+  .od-doc .od-cta a span{transition:transform .2s;} .od-doc .od-cta a:hover span{transform:translateX(3px);}
+  .od-cta-edit{margin-left:8px;width:32px;height:32px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--slate);cursor:pointer;vertical-align:middle;opacity:0;transition:opacity .15s;}
+  .od-cta:hover .od-cta-edit,.od-cta-edit:focus{opacity:1;}
+  .od-fl{display:block;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--slate);} .od-fl input{display:block;width:100%;box-sizing:border-box;margin-top:5px;height:40px;border:1.5px solid var(--border);border-radius:10px;padding:0 12px;font:500 14px Inter,sans-serif;color:var(--ink);background:var(--panel-alt);outline:none;} .od-fl input:focus{border-color:var(--teal);}
+  /* the offer strength card */
+  .od-score{padding:20px 22px;margin-bottom:14px;}
+  .sc-top{display:flex;align-items:center;gap:16px;}
+  .sc-ring{position:relative;width:80px;height:80px;flex-shrink:0;} .sc-ring svg{width:80px;height:80px;transform:rotate(-90deg);} .sc-ring circle{fill:none;stroke-width:7;} .sc-ring .bg{stroke:var(--panel-alt);} .sc-ring .fg{stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1);}
+  .sc-ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 24px Sora,sans-serif;padding-bottom:8px;} .sc-ring small{position:absolute;left:0;right:0;bottom:19px;text-align:center;font-size:10.5px;font-weight:700;color:var(--slate-light);}
+  .sc-t{flex:1;min-width:0;} .sc-t h4{margin:0;font:800 17px Sora,sans-serif;} .sc-t p{margin:4px 0 0;font-size:13.5px;line-height:1.5;color:var(--slate);}
+  .sc-levers{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px;margin-top:18px;}
+  .sc-lh{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;} .sc-lh em{font-style:normal;color:var(--slate-light);font-size:12px;margin-left:2px;} .sc-n{font-weight:800;font-variant-numeric:tabular-nums;}
+  .sc-bar{height:6px;border-radius:999px;background:var(--panel-alt);margin:7px 0 6px;overflow:hidden;} .sc-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#3730B3,#7A6CF0);}
+  .sc-l p{margin:0;font-size:12.5px;line-height:1.5;color:var(--slate);}
+  .sc-claims{margin-top:18px;padding-top:16px;border-top:1px solid var(--border-soft);} .sc-claims h5{margin:0 0 10px;font-size:14px;color:#B45309;}
+  .sc-c{border:1px solid rgba(217,119,6,.3);background:rgba(217,119,6,.05);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+  .sc-c .q{margin:0;font-style:italic;font-size:14px;} .sc-c .why{margin:6px 0 0;font-size:12.5px;color:var(--slate);} .sc-c .sug{margin:8px 0 0;font-size:14px;} .sc-c .sug span{font-weight:700;color:var(--ok);}
+  .sc-cb{display:flex;gap:6px;margin-top:10px;}
+  @media (max-width:700px){ .sc-levers{grid-template-columns:1fr;} }
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -1002,6 +1025,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <button type="button" class="btn sm hidden" id="odUndo">↶ Undo AI change</button>
         <span class="grow"></span>
         <span class="od-rate" role="group" aria-label="How good is this document?"><span>How good is it?</span><button type="button" data-rate="1" title="Good">👍</button><button type="button" data-rate="-1" title="Not good">👎</button></span>
+        <button type="button" class="btn sm" id="odScoreBtn">📈 Offer strength</button>
         <button type="button" class="btn sm" id="odCheck">✅ Final check</button>
         <button type="button" class="btn sm" id="odWord">📝 Word</button>
         <button type="button" class="btn sm" id="odPdf">📄 PDF</button>
@@ -1009,6 +1033,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       </div>
       <div class="card od-ask"><input id="odAskIn" placeholder="Ask the AI to change something: “make the guarantee stronger”, “shorter”, “use Emma’s name”…" maxlength="1000"><button type="button" class="btn primary sm" id="odAskGo">✨ Change it</button></div>
       <div class="card od-check hidden" id="odCheckBox"></div>
+      <div class="card od-score hidden" id="odScore"></div>
       <article class="card od-doc" id="odDoc" contenteditable="true" spellcheck="true" aria-label="Your offer document"></article>
       <p class="od-saved" id="odSaved" style="text-align:center;margin-top:10px"></p>
     </section>
@@ -1506,12 +1531,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function docHTML(d){
     return `<h1>${esc(d.title)}</h1>${d.subtitle ? `<p class="sub">${esc(d.subtitle)}</p>` : ''}` + (d.blocks || []).map((b)=> b.type === 'ul' ? `<ul>${(b.items || []).map((x)=> `<li>${inline(x)}</li>`).join('')}</ul>`
       : b.type === 'callout' ? `<div class="callout">${inline(b.text)}</div>`
+      : b.type === 'cta' ? `<div class="od-cta" data-url="${esc(b.url || '')}" contenteditable="false"><a href="${esc(b.url || '#')}" target="_blank" rel="noopener">${esc(b.text || 'Book your call')} <span>→</span></a><button type="button" class="od-cta-edit" title="Change the button">✎</button></div>`
       : b.type === 'media' ? (()=>{ const m = mediaById(b.ref); if(!m) return ''; return `<figure class="od-fig" data-ref="${esc(m.id)}" contenteditable="false">${m.kind === 'image' ? `<img src="${esc(m.url)}" alt="${esc(b.caption || m.name)}">` : `<video src="${esc(m.url)}" controls preload="metadata" playsinline></video>`}${b.caption ? `<figcaption>${esc(b.caption)}</figcaption>` : ''}<button type="button" class="od-figx" data-figx title="Remove from the document">✕</button></figure>`; })()
       : `<${b.type}>${inline(b.text)}</${b.type}>`).join('');
   }
   function docFromDOM(){                                   // your own edits, back into the document's parts
     const el = $('odDoc'), out = {title: '', subtitle: '', blocks: []};
     [...el.children].forEach((n)=>{ const t = n.innerHTML.replace(/<b>(.*?)<\/b>/g, '**$1**').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+      if(n.classList && n.classList.contains('od-cta')){ const a = n.querySelector('a'); out.blocks.push({type: 'cta', text: a ? a.childNodes[0].textContent.trim() : 'Book your call', url: n.dataset.url || ''}); return; }
       if(n.tagName === 'FIGURE' && n.dataset.ref){ const cap = n.querySelector('figcaption'); out.blocks.push({type: 'media', ref: n.dataset.ref, caption: cap ? cap.textContent.trim() : ''}); return; }
       if(n.tagName === 'H1') out.title = t; else if(n.classList.contains('sub')) out.subtitle = t;
       else if(n.tagName === 'UL' || n.tagName === 'OL') out.blocks.push({type: 'ul', items: [...n.querySelectorAll('li')].map((li)=> li.textContent.trim()).filter(Boolean)});
@@ -1521,7 +1548,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     return out;
   }
   function paintRate(){ document.querySelectorAll('.od-rate [data-rate]').forEach((b)=> b.classList.toggle('on', +b.dataset.rate === (D && D.rating))); }
-  function openDocView(){ setTimeout(paintRate, 0); show('vDoc'); $('odDoc').innerHTML = docHTML(D.doc); $('odCheckBox').classList.add('hidden'); $('odSaved').textContent = 'Saved'; $('odUndo').classList.toggle('hidden', !D.prevDoc); }
+  function openDocView(){ setTimeout(()=>{ paintRate(); paintScore(); }, 0); show('vDoc'); $('odDoc').innerHTML = docHTML(D.doc); $('odCheckBox').classList.add('hidden'); $('odSaved').textContent = 'Saved'; $('odUndo').classList.toggle('hidden', !D.prevDoc); }
   async function write(){
     show('vSetup'); $('setupPick').classList.add('hidden'); $('setupBusy').classList.remove('hidden');
     const nAns = Object.values(D.answers || {}).filter((v)=> v && v !== '__skip').length, nWords = Object.values(D.answers || {}).join(' ').split(/\s+/).filter((w)=> w && w !== '__skip').length;
@@ -1531,10 +1558,24 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const skipped = []; D.plan.sections.forEach((x)=> allQ(x).forEach((q)=>{ if(D.answers[q.id] === '__skip') skipped.push(q.q); }));
       const {doc} = await AI({mode: 'write', template: D.template, plan: D.plan, answers, extra: $('odExtra').value.trim(), media: mediaForAI(), skipped});
       await ld.done(); fs.exit();
-      save({doc, stage: 'done', title: doc.title || D.title}); openDocView(); toast('Your offer document is ready. Read it through and adjust anything you like.');
+      D.review = null; save({doc, stage: 'done', title: doc.title || D.title, review: null}); openDocView(); toast('Your offer document is ready. Read it through and adjust anything you like.');
+      runReview();
     } catch(e){ ld.stop(); fs.exit(); console.error(e); toast(aiErr(e), true); show(D.stage === 'done' && D.doc ? 'vDoc' : 'vReady'); }
   }
   $('odDoc').addEventListener('input', ()=>{ D.doc = docFromDOM(); save({doc: D.doc}); });
+  $('odDoc').addEventListener('click', (e)=>{
+    const ed = e.target.closest('.od-cta-edit'); if(!ed) return; e.preventDefault();
+    const box = ed.closest('.od-cta'), a = box.querySelector('a');
+    const ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:800;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = `<div class="card" role="dialog" aria-modal="true" style="max-width:440px;width:100%;padding:22px"><h3 style="margin:0 0 12px;font:800 18px Sora,sans-serif">The booking button</h3>
+      <label class="od-fl">Button text<input id="ctaT" value="${esc(a.childNodes[0].textContent.trim())}" maxlength="60"></label>
+      <label class="od-fl">Booking link<input id="ctaU" value="${esc(box.dataset.url || '')}" placeholder="https://calendly.com/you/30min"></label>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" class="btn sm" data-x>Cancel</button><button type="button" class="btn sm primary" data-ok>Save</button></div></div>`;
+    document.body.appendChild(ov); const close = ()=> ov.remove(); ov.addEventListener('mousedown', (ev)=>{ if(ev.target === ov) close(); }); ov.querySelector('[data-x]').addEventListener('click', close);
+    ov.querySelector('[data-ok]').addEventListener('click', ()=>{ let u = ov.querySelector('#ctaU').value.trim(); if(u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
+      if(u && !/^https:\/\/[^\s]+\.[^\s]+/i.test(u)){ toast('That doesn’t look like a link.', true); return; }
+      box.dataset.url = u; a.href = u || '#'; a.childNodes[0].textContent = (ov.querySelector('#ctaT').value.trim() || 'Book your call') + ' '; D.doc = docFromDOM(); save({doc: D.doc}); close(); toast('Button saved.'); });
+  });
   $('odDoc').addEventListener('click', (e)=>{ const x = e.target.closest('[data-figx]'); if(!x) return; x.closest('figure').remove(); D.doc = docFromDOM(); save({doc: D.doc}); });
   $('odAskGo').addEventListener('click', async ()=>{
     const ins = $('odAskIn').value.trim(); if(!ins){ $('odAskIn').focus(); return; }
@@ -1550,11 +1591,48 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       box.innerHTML = `<h4>✅ Final check</h4><ul>${(r.items || []).map((x)=> `<li><span class="k ${x.ok ? 'y' : 'n'}">${x.ok ? '✓' : '!'}</span><span>${esc(x.item)}${!x.ok && x.note ? `<small>${esc(x.note)}</small>` : ''}</span></li>`).join('')}</ul>${r.summary ? `<p style="margin:10px 0 0;color:var(--slate);font-size:13.5px">${esc(r.summary)}</p>` : ''}`; }
     catch(e){ box.classList.add('hidden'); toast(aiErr(e), true); }
   });
+  // ---------- the offer strength: a score out of 100, four levers with tips, and claims bigger than the proof ----------
+  const LEVERS = {dream: ['🎯', 'Dream outcome', 'How big and desirable the result is'], likelihood: ['🧾', 'Believability', 'How sure they are it will work for them'],
+    time: ['⚡', 'Speed', 'How fast they see results'], effort: ['🪶', 'Ease', 'How little effort it costs them']};
+  function paintScore(){
+    const box = $('odScore'), R = D && D.review; if(!R){ box.classList.add('hidden'); return; }
+    const C = 2 * Math.PI * 34, col = R.score >= 80 ? '#10B981' : R.score >= 60 ? '#5B4BE6' : '#D97706';
+    const claims = (R.claims || []).filter((c)=> !c.done);
+    box.classList.remove('hidden');
+    box.innerHTML = `<div class="sc-top"><div class="sc-ring"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" class="bg"/><circle cx="40" cy="40" r="34" class="fg" style="stroke:${col};stroke-dasharray:${C};stroke-dashoffset:${C * (1 - R.score / 100)}"/></svg><b>${R.score}</b><small>/100</small></div>
+        <div class="sc-t"><h4>Offer strength</h4><p>${esc(R.summary || '')}</p></div><button type="button" class="btn sm" id="scAgain" title="Score again after your changes">↻ Score again</button></div>
+      <div class="sc-levers">${(R.levers || []).map((l)=>{ const L = LEVERS[l.key] || ['•', l.key, '']; return `<div class="sc-l"><div class="sc-lh"><span>${L[0]} <b>${L[1]}</b> <em>${L[2]}</em></span><span class="sc-n">${l.score}/25</span></div><div class="sc-bar"><i style="width:${l.score * 4}%"></i></div>${l.tip ? `<p>💡 ${esc(l.tip)}</p>` : ''}</div>`; }).join('')}</div>
+      ${claims.length ? `<div class="sc-claims"><h5>⚠️ ${claims.length === 1 ? 'This promise is' : 'These promises are'} bigger than your proof</h5>${(R.claims || []).map((c, i)=> c.done ? '' : `<div class="sc-c" data-ci="${i}"><p class="q">“${esc(c.quote)}”</p><p class="why">${esc(c.issue)}</p>
+          <p class="sug"><span>More believable:</span> ${esc(c.suggestion)}</p><div class="sc-cb"><button type="button" class="btn sm primary" data-use="${i}">Use this version</button><button type="button" class="btn sm" data-keep="${i}">Keep mine</button></div></div>`).join('')}</div>` : ''}`;
+  }
+  async function runReview(){
+    const box = $('odScore'); box.classList.remove('hidden'); box.innerHTML = '<div class="od-busy" style="padding:18px"><div class="spin"></div><b>Scoring your offer…</b><small>How big, believable, fast and easy your offer feels to the reader.</small></div>';
+    try { const answers = {}; Object.entries(D.answers || {}).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
+      const r = await AI({mode: 'review', doc: docFromDOM(), plan: D.plan, answers}); save({review: r}); paintScore(); }
+    catch(e){ box.classList.add('hidden'); toast(aiErr(e), true); }
+  }
+  $('odScoreBtn').addEventListener('click', runReview);
+  $('odScore').addEventListener('click', async (e)=>{
+    if(e.target.closest('#scAgain')){ runReview(); return; }
+    const u = e.target.closest('[data-use]'), k = e.target.closest('[data-keep]'); if(!u && !k) return;
+    const i = +(u || k).dataset[u ? 'use' : 'keep'], c = D.review.claims[i];
+    if(k){ c.done = 'kept'; save({review: D.review}); paintScore(); return; }
+    // replace the sentence in the document, keeping everything else as it is
+    const plain = (t)=> t.replace(/\*\*/g, ''); let hit = false;
+    const doc = docFromDOM(); doc.blocks.forEach((b)=>{ if(hit) return;
+      if(b.text && plain(b.text).includes(plain(c.quote))){ b.text = plain(b.text).replace(plain(c.quote), c.suggestion); hit = true; }
+      else if(b.items){ b.items = b.items.map((x)=>{ if(!hit && x.includes(plain(c.quote))){ hit = true; return x.replace(plain(c.quote), c.suggestion); } return x; }); } });
+    if(!hit){ toast('That sentence has changed since. Ask the AI to change it, above.', true); return; }
+    D.prevDoc = docFromDOM(); c.done = 'used'; save({doc, review: D.review}); D.doc = doc; $('odDoc').innerHTML = docHTML(doc); $('odUndo').classList.remove('hidden'); paintScore();
+    toast('Done: the more believable version is in. “Undo AI change” brings yours back.');
+  });
+
   // downloads and the Library
   const EXPORT_CSS = `body{font-family:Inter,Arial,sans-serif;color:#16202C;font-size:11.5pt;line-height:1.6;} h1{font-size:24pt;margin:0 0 4px;} .sub{color:#5C6B7C;margin:0 0 18px;padding-bottom:10px;border-bottom:1px solid #E5EAF1;} h2{font-size:15pt;margin:20px 0 6px;} h3{font-size:12pt;margin:14px 0 4px;} p{margin:0 0 8px;} ul{margin:0 0 10px;} .callout{margin:12px 0;padding:10px 14px;border-left:4px solid #3730B3;background:#F1F0FB;font-weight:600;} mark{background:#FFE58A;}`;
   function exportHTML(d){                                // photos as images, videos as a link
     const t = document.createElement('div'); t.innerHTML = docHTML(d);
-    t.querySelectorAll('.od-figx').forEach((x)=> x.remove());
+    t.querySelectorAll('.od-figx, .od-cta-edit').forEach((x)=> x.remove());
+    t.querySelectorAll('.od-cta').forEach((c)=>{ const a = c.querySelector('a'); c.outerHTML = `<p style="margin:18px 0"><a href="${esc(c.dataset.url || '#')}" style="display:inline-block;background:#3730B3;color:#ffffff;padding:12px 22px;border-radius:10px;font-weight:700;text-decoration:none">${esc(a ? a.textContent.trim() : 'Book your call')}</a></p>`; });
     t.querySelectorAll('figure').forEach((f)=>{ const v = f.querySelector('video'); if(!v) return; const m = mediaById(f.dataset.ref); const cap = f.querySelector('figcaption');
       f.outerHTML = `<p>▶ <a href="${esc(m ? m.url : v.src)}">Watch the video${cap ? ': ' + esc(cap.textContent) : ''}</a></p>`; });
     t.querySelectorAll('figure img').forEach((i)=>{ i.setAttribute('style', 'max-width:100%;height:auto;border-radius:8px'); i.setAttribute('crossorigin', 'anonymous'); });
@@ -1573,7 +1651,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     } catch(e){ toast('Couldn’t make the PDF. Try Word instead.', true); } finally { b.disabled = false; b.textContent = '📄 PDF'; }
   });
   $('odLib').addEventListener('click', ()=>{
-    const d = docFromDOM(), body = docHTML(d).replace(/<figure class="od-fig" data-ref="([^"]+)"[\s\S]*?<\/figure>/g, (all, id)=>{ const m = mediaById(id); if(!m) return '';
+    const d = docFromDOM(), body = docHTML(d).replace(/<div class="od-cta" data-url="([^"]*)"[\s\S]*?<\/div>/g, (all, u)=> `<p><b><a href="${u}">${esc((d.blocks.find((b)=> b.type === 'cta') || {}).text || 'Book your call')} →</a></b></p>`).replace(/<figure class="od-fig" data-ref="([^"]+)"[\s\S]*?<\/figure>/g, (all, id)=>{ const m = mediaById(id); if(!m) return '';
         const ext = (m.name.split('.').pop() || (m.kind === 'image' ? 'jpg' : 'mp4')).toLowerCase();
         return `<div class="file" data-url="${esc(m.url)}" data-name="${esc(m.name)}" data-size="0" data-kind="${esc(ext)}"${m.kind === 'image' ? ' data-view="image" data-w="l"' : ''} contenteditable="false"></div>`; }).replace(/^<h1>.*?<\/h1>/, '').replace(/<p class="sub">(.*?)<\/p>/, '<p><i>$1</i></p>').replace(/<mark>(.*?)<\/mark>/g, '<b>$1</b>');
     db.collection('libraryPages').add({workspaceId: wsId, createdBy: me, createdByName: myName, title: d.title || 'Offer document', icon: '📄', content: body, text: d.blocks.map((x)=> x.text || (x.items || []).join('\n')).join('\n\n').slice(0, 20000),
