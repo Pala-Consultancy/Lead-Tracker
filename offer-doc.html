@@ -389,7 +389,7 @@
   .od-item.has-cover .od-del{top:20px;right:20px;background:rgba(255,255,255,.85);z-index:2;}
 
   /* the smooth way in and out of full screen */
-  .ob-curtain{position:fixed;inset:0;z-index:935;pointer-events:none;opacity:0;transition:opacity .45s ease;background:radial-gradient(120% 90% at 50% 30%,#2A2470 0%,#16124A 45%,#08061F 100%);}
+  .ob-curtain{position:fixed;inset:0;z-index:935;pointer-events:none;opacity:0;transition:opacity .5s ease;background:radial-gradient(70% 60% at 50% 40%,rgba(67,56,202,.35) 0%,transparent 70%),#07070F;}
   .ob-curtain.on{opacity:1;pointer-events:auto;}
   .ob-cmsg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#EEF0FF;text-align:center;padding:24px;animation:obRise .7s ease-out both;}
   .ob-cmsg b{font:800 24px Sora,sans-serif;} .ob-cmsg small{max-width:440px;font-size:14.5px;line-height:1.6;color:#BCBAF0;}
@@ -402,6 +402,68 @@
   @keyframes obRiseScan{from{opacity:0;filter:blur(10px);}to{opacity:1;filter:none;}}
   .ob.full .ob-scanner{transition:transform .6s cubic-bezier(.2,.8,.2,1),margin .6s cubic-bezier(.2,.8,.2,1);}
   @media (prefers-reduced-motion: reduce){ .ob-curtain{transition-duration:.01s;} .ob.full > *{animation:none !important;} }
+
+  /* ===== the premium scene ===== */
+  .ob-stage.pro{background:#07070F;color:#F2F2F7;}
+  .ob-stage.pro::after{background:radial-gradient(ellipse at 50% 42%,transparent 50%,rgba(0,0,0,.55) 100%);}
+  .pr-bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;}
+  .pr-aura{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;mix-blend-mode:screen;}
+  .pr-aura.a1{width:62vmax;height:62vmax;left:50%;top:38%;margin:-31vmax 0 0 -31vmax;background:radial-gradient(circle,#4338CA 0%,transparent 62%);animation:prA1 18s ease-in-out infinite alternate;}
+  .pr-aura.a2{width:46vmax;height:46vmax;left:18%;top:62%;margin:-23vmax 0 0 -23vmax;background:radial-gradient(circle,#0EA5E9 0%,transparent 60%);opacity:.28;animation:prA2 22s ease-in-out infinite alternate;}
+  .pr-aura.a3{width:40vmax;height:40vmax;left:82%;top:30%;margin:-20vmax 0 0 -20vmax;background:radial-gradient(circle,#A855F7 0%,transparent 60%);opacity:.24;animation:prA3 26s ease-in-out infinite alternate;}
+  @keyframes prA1{to{transform:translate(4vmax,-3vmax) scale(1.08);}} @keyframes prA2{to{transform:translate(8vmax,-6vmax) scale(1.15);}} @keyframes prA3{to{transform:translate(-7vmax,5vmax) scale(.92);}}
+  .pr-grain{position:absolute;inset:-50%;opacity:.07;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:prGrain 1.2s steps(6) infinite;}
+  @keyframes prGrain{0%{transform:translate(0,0);}20%{transform:translate(-3%,2%);}40%{transform:translate(2%,-3%);}60%{transform:translate(-2%,-1%);}80%{transform:translate(3%,3%);}100%{transform:translate(0,0);}}
+  .pr{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(22px,4.5vh,48px);padding:4vh 24px;box-sizing:border-box;}
+  .pr > *{animation:obRise 1s cubic-bezier(.2,.8,.2,1) both;} .pr > .pr-info{animation-delay:.2s;}
+  .pr-stage{position:relative;--h:clamp(250px,48vh,500px);height:var(--h);width:calc(var(--h) * .78);perspective:1400px;}
+  .pr-frame{position:absolute;inset:calc(var(--h) * -.06);border-radius:22px;border:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));}
+  .pr-frame .c{position:absolute;width:18px;height:18px;border:1.5px solid rgba(255,255,255,.5);}
+  .pr-frame .tl{left:-1px;top:-1px;border-right:0;border-bottom:0;border-radius:22px 0 0 0;} .pr-frame .tr{right:-1px;top:-1px;border-left:0;border-bottom:0;border-radius:0 22px 0 0;}
+  .pr-frame .bl{left:-1px;bottom:-1px;border-right:0;border-top:0;border-radius:0 0 0 22px;} .pr-frame .br{right:-1px;bottom:-1px;border-left:0;border-top:0;border-radius:0 0 22px 0;}
+  .pr-doc{--rx:0deg;--ry:0deg;position:absolute;inset:0;border-radius:calc(var(--h) * .03);overflow:hidden;background:#FDFDFE;
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 30px 60px -20px rgba(0,0,0,.65),0 60px 120px -40px rgba(67,56,202,.55);
+    transform:rotateX(var(--rx)) rotateY(var(--ry));transition:transform .9s cubic-bezier(.2,.8,.2,1);}
+  .pr-cover{padding:calc(var(--h) * .07) calc(var(--h) * .065) calc(var(--h) * .055);background:linear-gradient(150deg,#13123A 0%,#272285 60%,#3F37C9 100%);color:#fff;position:relative;overflow:hidden;}
+  .pr-cover::after{content:"";position:absolute;right:-30%;top:-60%;width:80%;height:160%;background:radial-gradient(circle,rgba(129,140,248,.35),transparent 60%);}
+  .pr-cover small{display:block;font:600 calc(var(--h) * .022)/1 Inter,sans-serif;letter-spacing:.24em;color:rgba(255,255,255,.62);margin-bottom:calc(var(--h) * .03);}
+  .pr-cover b{display:block;font:600 calc(var(--h) * .052)/1.18 Sora,sans-serif;letter-spacing:-.01em;max-height:2.4em;overflow:hidden;}
+  .pr-cover span{display:block;font-size:calc(var(--h) * .026);color:rgba(255,255,255,.62);margin-top:calc(var(--h) * .022);}
+  .pr-lines{padding:calc(var(--h) * .06) calc(var(--h) * .065);}
+  .pr-lines i{display:block;height:calc(var(--h) * .014);border-radius:999px;background:#E7E8F0;margin-bottom:calc(var(--h) * .031);}
+  .pr-lines i:nth-child(4),.pr-lines i:nth-child(8){margin-bottom:calc(var(--h) * .06);}
+  /* the scan: one element that grows down the page. Above the line: subtly "read"; just above it: a soft band of light; at its edge: one crisp line */
+  .pr-beam{position:absolute;left:0;right:0;top:0;height:0;animation:prScan 2.2s cubic-bezier(.45,.05,.55,.95) infinite;pointer-events:none;
+    background:linear-gradient(180deg,rgba(99,102,241,.05) 0%,rgba(99,102,241,.09) calc(100% - var(--h) * .2),rgba(129,140,248,.26) calc(100% - 2px),transparent 100%);}
+  .pr-beam i{position:absolute;left:-2%;right:-2%;bottom:0;height:2px;background:linear-gradient(90deg,transparent,#818CF8 18%,#E0E7FF 50%,#818CF8 82%,transparent);box-shadow:0 0 14px 2px rgba(129,140,248,.75),0 0 40px 6px rgba(99,102,241,.35);}
+  @keyframes prScan{0%{height:0;opacity:0;}6%{opacity:1;}90%{opacity:1;}100%{height:100%;opacity:0;}}
+  .pr-done{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .5s ease .25s;background:radial-gradient(circle at 50% 55%,rgba(16,185,129,.12),transparent 60%);}
+  .pr-done svg{width:calc(var(--h) * .2);height:calc(var(--h) * .2);filter:drop-shadow(0 10px 24px rgba(16,185,129,.45));}
+  .pr-done circle{fill:#10B981;} .pr-done path{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;transition:stroke-dashoffset .55s cubic-bezier(.6,0,.2,1) .5s;}
+  .pr-floor{position:absolute;left:8%;right:8%;bottom:calc(var(--h) * -.12);height:calc(var(--h) * .1);border-radius:50%;background:radial-gradient(ellipse,rgba(99,102,241,.45),transparent 70%);filter:blur(14px);animation:prFloat 5s ease-in-out infinite;}
+  @keyframes prFloat{0%,100%{opacity:.7;transform:scaleX(1);}50%{opacity:1;transform:scaleX(1.06);}}
+  .pr-info{width:min(520px,92vw);text-align:center;}
+  .pr-eye{font:600 11px/1 Inter,sans-serif;letter-spacing:.28em;color:#A5B4FC;margin-bottom:14px;}
+  .pr-info h2{margin:0;font:600 clamp(24px,3.2vh,32px)/1.2 Sora,sans-serif;letter-spacing:-.02em;color:#fff;}
+  .pr-step{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px;font-size:14.5px;color:rgba(242,242,247,.62);min-height:22px;}
+  .pr-step.in{animation:prStep .6s ease both;} @keyframes prStep{from{opacity:0;transform:translateY(6px);filter:blur(4px);}to{opacity:1;transform:none;filter:none;}}
+  .pr-step #prT{color:#F2F2F7;font-weight:500;} .pr-sep{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.35);}
+  .pr-bar{height:2px;margin:26px 0 10px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+  .pr-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6366F1,#A5B4FC);box-shadow:0 0 10px rgba(129,140,248,.8);transition:width .5s ease-out;}
+  .pr-meta{display:flex;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;font-variant-numeric:tabular-nums;color:rgba(242,242,247,.45);}
+  .pr-tip{display:grid;grid-template-columns:28px 1fr 28px;align-items:center;gap:10px;margin-top:clamp(18px,3.5vh,34px);}
+  .pr-tip p{margin:0;min-height:44px;font-size:13.5px;line-height:1.6;color:rgba(242,242,247,.55);} .pr-tip p b{color:rgba(242,242,247,.9);font-weight:600;}
+  .pr-tip p.in{animation:prTip .7s ease both;} @keyframes prTip{from{opacity:0;}to{opacity:1;}}
+  .pr-nav{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.55);font-size:16px;line-height:1;cursor:pointer;transition:border-color .2s,color .2s;}
+  .pr-nav:hover{border-color:rgba(255,255,255,.4);color:#fff;}
+  /* done: the light stops, the page is read, the document lifts, a check appears */
+  .pr.finish .pr-beam{animation:none;height:100%;opacity:1;transition:opacity .4s;background:rgba(99,102,241,.08);} .pr.finish .pr-beam i{opacity:0;transition:opacity .3s;}
+  .pr.finish .pr-doc{transform:translateY(-8px) scale(1.015);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 40px 70px -24px rgba(0,0,0,.7),0 70px 140px -40px rgba(16,185,129,.45);}
+  .pr.finish .pr-done{opacity:1;} .pr.finish .pr-done path{stroke-dashoffset:0;}
+  .pr.finish .pr-eye{color:#6EE7B7;} .pr.finish .pr-bar i{background:linear-gradient(90deg,#10B981,#6EE7B7);box-shadow:0 0 10px rgba(52,211,153,.8);}
+  .pr.finish .pr-floor{background:radial-gradient(ellipse,rgba(16,185,129,.45),transparent 70%);}
+  @media (max-height:700px){ .pr-tip{display:none;} }
+  @media (prefers-reduced-motion: reduce){ .pr-aura,.pr-grain,.pr-beam,.pr-floor{animation:none !important;} .pr-beam{height:50%;} }
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -937,7 +999,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const langName = (l)=> (LANGS.find((x)=> x[0] === l || x[1] === l) || [l, l])[1];
   const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(Object.assign({language: langName(data.language || langOf()), who: myName}, data)).then((r)=> r.data);
   const aiErr = (e)=> (e && e.message) || 'The AI couldn’t answer right now. Please try again.';
-  let me = null, myName = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
+  let me = null, myName = '', myCompany = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
   // ---------- views ----------
   function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); window.scrollTo(0, 0); }
@@ -948,7 +1010,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(d.stage === 'done' && d.doc){
       const t = (d.doc.title || d.title || 'Offer document'), sub = d.doc.subtitle || '', when = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate().toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'}) : '';
       return `<div class="od-cover done" aria-hidden="true"><i class="cv-ln"></i><small>OFFER DOCUMENT</small><b>${esc(t.slice(0, 70))}</b>${sub ? `<em>${esc(sub.slice(0, 80))}</em>` : ''}
-        <span class="cv-ft"><span>${esc(myName || '')}</span><span>${esc(when)}</span></span><i class="cv-glow"></i></div>`;
+        <span class="cv-ft"><span>${esc([d.authorName || myName, d.authorCompany || myCompany].filter(Boolean).join(' · '))}</span><span>${esc(when)}</span></span><i class="cv-glow"></i></div>`;
     }
     const pct = Math.round((p || 0) * 100), C = 2 * Math.PI * 15;
     return `<div class="od-cover draft" aria-hidden="true"><span class="cv-rib">Not written yet</span>
@@ -1079,87 +1141,62 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     info = info || {};
     scanSnd.play();
     const old = document.getElementById('obStage'); if(old) old.remove();
-    const box = document.createElement('div'); box.className = 'ob-stage'; box.id = 'obStage'; box.setAttribute('role', 'status'); document.body.appendChild(box);
+    const box = document.createElement('div'); box.className = 'ob-stage pro'; box.id = 'obStage'; box.setAttribute('role', 'status'); document.body.appendChild(box);
     const expected = kind === 'write' ? 90 : 35, t0 = Date.now();
     const steps = kind === 'write'
       ? ['Reading all your answers'].concat((sections || []).slice(0, 8).map((x)=> 'Writing: ' + x)).concat(['Checking the numbers', 'Final polish'])
       : ['Reading your template', 'Finding every section', 'Working out what it needs from you', 'Writing your questions', 'Putting them in the right order'];
-    let tip = Math.floor(Math.random() * TIPS.length), finished = false;
-    box.innerHTML = `<div class="obs-bg" aria-hidden="true"><i class="obs-stars"></i><i class="obs-stars s2"></i><i class="obs-grid"></i><i class="obs-glow"></i></div><div class="ob full">
-      <div class="ob-scanner" aria-hidden="true"><span class="ob-cross h"></span><span class="ob-cross v"></span>
-        <svg class="ob-ticks" viewBox="0 0 360 360">${Array.from({length: 90}, (x, i)=>{ const a = i * 4 * Math.PI / 180, r1 = i % 15 === 0 ? 162 : (i % 5 === 0 ? 168 : 172), r2 = 176;
-          return `<line x1="${(180 + r1 * Math.sin(a)).toFixed(1)}" y1="${(180 - r1 * Math.cos(a)).toFixed(1)}" x2="${(180 + r2 * Math.sin(a)).toFixed(1)}" y2="${(180 - r2 * Math.cos(a)).toFixed(1)}"/>`; }).join('')}</svg>
-        <span class="ob-orbit o1"></span><span class="ob-orbit o2"></span>
-        <div class="ob-ro l"><span><em>DOC</em> ${esc(String(info.code || '01'))}</span><span><em>WORDS</em> <b id="obWords">0</b></span><span><em>${kind === 'write' ? 'ANSWERS' : 'MODE'}</em> ${kind === 'write' ? esc(String(info.answers || 0)) : 'READ'}</span></div>
-        <div class="ob-ro r"><span><em>SECTIONS</em> <b id="obSecs">0</b>/${info.secs || (sections || []).length || 7}</span><span><em>SIGNAL</em> <i class="ob-sig"><i></i><i></i><i></i><i></i><i></i></i></span><span><em>LINK</em> SECURE</span></div>
-        <span class="ob-c tl"></span><span class="ob-c tr"></span><span class="ob-c bl"></span><span class="ob-c br"></span>
-        <div class="ob-doc"><div class="ob-cv"><small>OFFER DOCUMENT</small><b>${esc((info.title || 'Your offer').slice(0, 42))}</b><span>${esc(info.who ? 'by ' + info.who : '')}</span></div><i class="ob-h" style="--d:0.10s"></i>${[0.26, 0.40, 0.54, 0.68, 0.82, 0.96, 1.10].map((d)=> `<i class="ob-l" style="--d:${(d * 2.2 / 1.3).toFixed(2)}s"></i>`).join('')}
-          <span class="ob-trail"></span><span class="ob-beam"></span><b class="ob-stamp">✓</b></div>
-        <div class="ob-bits"></div>
-        <div class="ob-tag"><i></i><span id="obTag">SCANNING</span></div>
-      </div>
-      <div class="ob-main">
-        <div class="ob-top"><span class="ob-pct" id="obPct">0%</span><span class="ob-tt"><b id="obTitle">${kind === 'write' ? 'Writing your offer document' : 'Reading your template'}</b><span class="ob-time" id="obTime">0:00</span></span></div>
-        <div class="ob-bar"><i id="obFill"></i></div>
-        <ol class="ob-steps" id="obSteps">${steps.map((x, i)=> `<li data-i="${i}"><span class="ob-k"></span>${esc(x)}</li>`).join('')}</ol>
-      </div>
-      <div class="ob-tip" role="region" aria-label="Tips while you wait">
-        <button type="button" class="ob-nav" data-tip="-1" aria-label="Previous tip">‹</button>
-        <div class="ob-card" id="obCard" aria-live="polite"></div>
-        <button type="button" class="ob-nav" data-tip="1" aria-label="Next tip">›</button>
-        <div class="ob-dots" id="obDots">${TIPS.map((x, i)=> `<button type="button" data-dot="${i}" aria-label="Tip ${i + 1}"></button>`).join('')}</div>
-      </div></div>`;
-    const fitScanner = ()=>{                            // as big as fits (up to 1.6×): measured, so the orbit rings are never cut off
-      const sc = box.querySelector('.ob-scanner'), wrap = box.querySelector('.ob.full'), orbit = box.querySelector('.ob-orbit.o2'); if(!sc || !wrap) return;
-      let k = Math.min(1.6, (innerWidth - 40) / 330);
-      for(let i = 0; i < 20; i++){ sc.style.setProperty('--sc', k.toFixed(3));
-        const o = orbit.getBoundingClientRect(), top = (o.top + o.bottom) / 2 - 176 * k;          // the real circle of the outer tick ring (the rings rotate, so their boxes are bigger)
-        const dots = box.querySelector('.ob-dots').getBoundingClientRect(), fits = top >= 8 && dots.bottom <= innerHeight - 8;
-        if(fits || k <= 0.8) break; k = Math.max(0.8, k - 0.05); } };
-    addEventListener('resize', fitScanner); box.__unfit = ()=> removeEventListener('resize', fitScanner);
+    let tip = Math.floor(Math.random() * TIPS.length), finished = false, stepAt = -1;
+    const lines = [94, 86, 97, 62, 90, 78, 95, 54, 84, 70].map((w)=> `<i style="width:${w}%"></i>`).join('');
+    box.innerHTML = `<div class="pr-bg" aria-hidden="true"><i class="pr-aura a1"></i><i class="pr-aura a2"></i><i class="pr-aura a3"></i><i class="pr-grain"></i></div>
+      <div class="pr">
+        <div class="pr-stage" aria-hidden="true">
+          <div class="pr-frame"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+          <div class="pr-doc" id="prDoc">
+            <div class="pr-cover"><small>OFFER DOCUMENT</small><b>${esc((info.title || 'Your offer').slice(0, 48))}</b><span>${esc(info.who ? (info.who + (myCompany ? ' · ' + myCompany : '')) : '')}</span></div>
+            <div class="pr-lines">${lines}</div>
+            <div class="pr-beam"><i></i></div>
+            <div class="pr-done"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l7.5 7.5L37.5 19"/></svg></div>
+          </div>
+          <div class="pr-floor"></div>
+        </div>
+        <div class="pr-info">
+          <div class="pr-eye" id="prEye">${kind === 'write' ? 'WRITING YOUR DOCUMENT' : 'ANALYZING TEMPLATE'}</div>
+          <h2 id="obTitle">${kind === 'write' ? 'Writing your offer document' : 'Reading your template'}</h2>
+          <div class="pr-step"><span id="prN"></span><span class="pr-sep"></span><span id="prT"></span></div>
+          <div class="pr-bar"><i id="obFill"></i></div>
+          <div class="pr-meta"><span id="obTime">0:00</span><span id="obPct">0%</span></div>
+          <div class="pr-tip"><button type="button" class="pr-nav" data-tip="-1" aria-label="Previous tip">‹</button><p id="obCard" aria-live="polite"></p><button type="button" class="pr-nav" data-tip="1" aria-label="Next tip">›</button></div>
+        </div>
+      </div>`;
+    // a subtle tilt that follows the mouse
+    const doc = box.querySelector('#prDoc');
+    box.addEventListener('pointermove', (e)=>{ const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5; doc.style.setProperty('--ry', (x * 7).toFixed(2) + 'deg'); doc.style.setProperty('--rx', (-y * 6).toFixed(2) + 'deg'); });
+    // the tip: one line that fades in and out
     const card = $('obCard');
-    const paintTip = (dir)=>{ const [ic, h, t] = TIPS[tip]; card.classList.remove('in', 'l', 'r'); void card.offsetWidth;
-      card.innerHTML = `<span class="ob-ic">${ic}</span><span><b>${esc(h)}</b><small>${esc(t)}</small></span>`; card.classList.add('in', dir < 0 ? 'l' : 'r');
-      box.querySelectorAll('[data-dot]').forEach((d, i)=> d.classList.toggle('on', i === tip)); };
-    let tipTimer = setInterval(()=>{ tip = (tip + 1) % TIPS.length; paintTip(1); }, 7000);
-    box.querySelector('.ob-tip').addEventListener('click', (e)=>{
-      const n = e.target.closest('[data-tip]'), d = e.target.closest('[data-dot]'); if(!n && !d) return;
-      const was = tip; tip = n ? (tip + (+n.dataset.tip) + TIPS.length) % TIPS.length : +d.dataset.dot;
-      clearInterval(tipTimer); tipTimer = setInterval(()=>{ tip = (tip + 1) % TIPS.length; paintTip(1); }, 9000);
-      paintTip(n ? +n.dataset.tip : (tip >= was ? 1 : -1));
-    });
-    paintTip(1);
-    fitScanner(); setTimeout(fitScanner, 350);                      // once the tip is filled in (and the fonts are loaded)
-    const lis = [...box.querySelectorAll('#obSteps li')];
-    requestAnimationFrame(()=>{ const l = $('obSteps'); if(l) l.classList.toggle('more', l.scrollHeight > l.clientHeight + 2); });
+    const paintTip = ()=>{ const [ic, h, t] = TIPS[tip]; card.classList.remove('in'); void card.offsetWidth; card.innerHTML = `<b>${esc(h)}.</b> ${esc(t)}`; card.classList.add('in'); };
+    let tipTimer = setInterval(()=>{ tip = (tip + 1) % TIPS.length; paintTip(); }, 7000);
+    box.querySelector('.pr-tip').addEventListener('click', (e)=>{ const n = e.target.closest('[data-tip]'); if(!n) return; tip = (tip + (+n.dataset.tip) + TIPS.length) % TIPS.length;
+      clearInterval(tipTimer); tipTimer = setInterval(()=>{ tip = (tip + 1) % TIPS.length; paintTip(); }, 9000); paintTip(); });
+    paintTip();
+    // progress, the step that's running, the time
     const tick = ()=>{
       if(finished) return;
       const sec = (Date.now() - t0) / 1000, pct = 94 * (1 - Math.exp(-sec / (expected / 2.3)));
-      $('obFill').style.width = pct + '%'; $('obPct').textContent = Math.round(pct) + '%';
-      const W = $('obWords'), S = $('obSecs'), nS = info.secs || (sections || []).length || 7;
-      if(W) W.textContent = Math.round((info.words || 900) * Math.min(1, pct / 70)).toLocaleString('en-US'); if(S) S.textContent = Math.min(nS, Math.floor(pct / 94 * (nS + 0.6))); $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
-      const at = Math.min(lis.length - 1, Math.floor(pct / 94 * lis.length));
-      lis.forEach((li, i)=>{ li.classList.toggle('done', i < at); li.classList.toggle('now', i === at); });
-      const list = $('obSteps'), rowH = lis.length > 1 ? lis[1].offsetTop - lis[0].offsetTop : 30;          // scroll by whole steps, so no circle is ever cut off at the top
-      list.scrollTo({top: Math.max(0, Math.min(at - 1, lis.length - 5)) * rowH, behavior: 'smooth'});
-      list.classList.toggle('more', list.scrollTop + list.clientHeight < list.scrollHeight - 2);
-      if(sec > expected * 1.8) $('obTitle').textContent = 'Almost there… the AI is taking a bit longer than usual';
+      $('obFill').style.width = pct + '%'; $('obPct').textContent = Math.round(pct) + '%'; $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+      const at = Math.min(steps.length - 1, Math.floor(pct / 94 * steps.length));
+      if(at !== stepAt){ stepAt = at; const st = box.querySelector('.pr-step'); st.classList.remove('in'); void st.offsetWidth;
+        $('prN').textContent = `Step ${at + 1} of ${steps.length}`; $('prT').textContent = steps[at]; st.classList.add('in'); }
+      if(sec > expected * 1.8) $('obTitle').textContent = 'Almost there…';
     };
     const iv = setInterval(tick, 250); tick();
-    const bits = box.querySelector('.ob-bits'), t1 = performance.now(), reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const spark = reduced ? 0 : setInterval(()=>{
-      const y = ((performance.now() - t1) % 2200) / 2200;                    // where the beam is now (0 = top, 1 = bottom)
-      const p = document.createElement('i'); p.style.top = (20 + y * 186) + 'px'; p.style.left = (20 + Math.random() * 150) + 'px';
-      p.style.setProperty('--x', (60 + Math.random() * 70) + 'px'); p.style.setProperty('--y', (Math.random() * 30 - 15) + 'px');
-      if(Math.random() < 0.35) p.className = 'sq'; bits.appendChild(p); setTimeout(()=> p.remove(), 1000);
-    }, 90);
-    const tagIv = setInterval(()=>{ const el = $('obTag'); if(el && !finished) el.textContent = (kind === 'write' ? 'WRITING ' : 'SCANNING ') + Math.round(parseFloat($('obFill').style.width) || 0) + '%'; }, 250);
-    return {done: ()=> new Promise((res)=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); clearInterval(spark); clearInterval(tagIv); scanSnd.fade(850, true); const tg = $('obTag'); if(tg) tg.textContent = 'COMPLETE';
-      $('obFill').style.width = '100%'; lis.forEach((li)=>{ li.classList.add('done'); li.classList.remove('now'); });
-      $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready' : 'Your interview is ready'; $('obPct').textContent = '100%';
-      const W = $('obWords'), S = $('obSecs'); if(W) W.textContent = (info.words || 900).toLocaleString('en-US'); if(S) S.textContent = info.secs || (sections || []).length || 7; box.querySelector('.ob').classList.add('finish');
-      setTimeout(()=>{ box.__unfit(); box.classList.add('leaving'); setTimeout(()=> box.remove(), 600); res(); }, 1100); }),
-      stop: ()=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); clearInterval(spark); clearInterval(tagIv); scanSnd.fade(400); box.__unfit(); box.classList.add('leaving'); setTimeout(()=> box.remove(), 500); }};
+    const end = ()=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); };
+    return {done: ()=> new Promise((res)=>{ end(); scanSnd.fade(850, true);
+      $('obFill').style.width = '100%'; $('obPct').textContent = '100%'; $('prN').textContent = `${steps.length} of ${steps.length} steps`; $('prT').textContent = 'Done';
+      $('prEye').textContent = 'COMPLETE'; $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready' : 'Your interview is ready';
+      box.querySelector('.pr').classList.add('finish');
+      setTimeout(()=>{ box.classList.add('leaving'); setTimeout(()=> box.remove(), 600); res(); }, 1300); }),
+      stop: ()=>{ end(); scanSnd.fade(400); box.classList.add('leaving'); setTimeout(()=> box.remove(), 500); }};
   }
 
   // ---------- step 1: the template ----------
@@ -1211,7 +1248,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const {plan} = await AI({mode: 'plan', template: text.slice(0, 40000), language: lang});
       await ld.done();
       const ref = db.collection('offerDocs').doc();
-      D = {id: ref.id, createdBy: me, workspaceId: wsId, lang, title: plan.title || 'Offer document', templateName: name, template: text.slice(0, 40000), plan, answers: {}, pos: {s: 0, q: 0}, stage: 'interview'};
+      D = {id: ref.id, createdBy: me, workspaceId: wsId, authorName: myName, authorCompany: myCompany, lang, title: plan.title || 'Offer document', templateName: name, template: text.slice(0, 40000), plan, answers: {}, pos: {s: 0, q: 0}, stage: 'interview'};
       const {id, ...rest} = D; await ref.set(Object.assign(rest, {createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}));
       cur = {s: 0, q: 0}; await playIntro(plan); fs.exit(); openInterview();
     } catch(e){ ld.stop(); fs.exit(); console.error(e); toast(aiErr(e), true); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); }
@@ -1572,7 +1609,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     me = u.uid;
     try { const dir = await db.doc(`userDirectory/${me}`).get(); wsId = dir.exists ? dir.data().workspaceId : null;
       if(!wsId){ location.href = 'home.html'; return; }
-      const m = await db.doc(`workspaces/${wsId}/members/${me}`).get(); myName = (m.exists && m.data().name) || u.displayName || u.email || '';
+      const [m, w] = await Promise.all([db.doc(`workspaces/${wsId}/members/${me}`).get(), db.doc(`workspaces/${wsId}`).get().catch(()=> null)]);
+      myName = (m.exists && m.data().name) || u.displayName || u.email || '';                    // the signed-in account's own name
+      myCompany = (w && w.exists && w.data().name) || (m.exists && m.data().company) || '';      // and its company (the workspace)
     } catch(e){ toast('Could not load your workspace.', true); return; }
     let purged = false;
     db.collection('offerDocs').where('createdBy', '==', me).where('workspaceId', '==', wsId).onSnapshot((s)=>{
