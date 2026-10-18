@@ -520,6 +520,13 @@
   .sc-c .q{margin:0;font-style:italic;font-size:14px;} .sc-c .why{margin:6px 0 0;font-size:12.5px;color:var(--slate);} .sc-c .sug{margin:8px 0 0;font-size:14px;} .sc-c .sug span{font-weight:700;color:var(--ok);}
   .sc-cb{display:flex;gap:6px;margin-top:10px;}
   @media (max-width:700px){ .sc-levers{grid-template-columns:1fr;} }
+
+  /* the one-sentence pitch, at the top of the document */
+  .od-doc .od-pitch{margin:0 0 26px;padding:16px 18px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(55,48,179,.07),rgba(122,79,181,.07));border:1px solid rgba(55,48,179,.18);}
+  .od-doc .od-pitch small{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 10.5px/1 Inter,sans-serif;letter-spacing:.16em;color:#5B4BE6;user-select:none;}
+  .od-doc .od-pitch p{margin:8px 0 0;font:700 18px/1.45 Sora,sans-serif;letter-spacing:-.01em;color:var(--ink);}
+  .od-pcopy{border:1px solid rgba(55,48,179,.3);background:var(--panel);color:#3730B3;border-radius:8px;padding:5px 10px;font:700 11.5px Inter,sans-serif;letter-spacing:0;cursor:pointer;}
+  .od-pcopy:hover{background:#3730B3;color:#fff;}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -1531,6 +1538,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function docHTML(d){
     return `<h1>${esc(d.title)}</h1>${d.subtitle ? `<p class="sub">${esc(d.subtitle)}</p>` : ''}` + (d.blocks || []).map((b)=> b.type === 'ul' ? `<ul>${(b.items || []).map((x)=> `<li>${inline(x)}</li>`).join('')}</ul>`
       : b.type === 'callout' ? `<div class="callout">${inline(b.text)}</div>`
+      : b.type === 'pitch' ? `<div class="od-pitch"><small contenteditable="false">YOUR ONE-SENTENCE PITCH <button type="button" class="od-pcopy" title="Copy the pitch">Copy</button></small><p>${inline(b.text)}</p></div>`
       : b.type === 'cta' ? `<div class="od-cta" data-url="${esc(b.url || '')}" contenteditable="false"><a href="${esc(b.url || '#')}" target="_blank" rel="noopener">${esc(b.text || 'Book your call')} <span>→</span></a><button type="button" class="od-cta-edit" title="Change the button">✎</button></div>`
       : b.type === 'media' ? (()=>{ const m = mediaById(b.ref); if(!m) return ''; return `<figure class="od-fig" data-ref="${esc(m.id)}" contenteditable="false">${m.kind === 'image' ? `<img src="${esc(m.url)}" alt="${esc(b.caption || m.name)}">` : `<video src="${esc(m.url)}" controls preload="metadata" playsinline></video>`}${b.caption ? `<figcaption>${esc(b.caption)}</figcaption>` : ''}<button type="button" class="od-figx" data-figx title="Remove from the document">✕</button></figure>`; })()
       : `<${b.type}>${inline(b.text)}</${b.type}>`).join('');
@@ -1538,6 +1546,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function docFromDOM(){                                   // your own edits, back into the document's parts
     const el = $('odDoc'), out = {title: '', subtitle: '', blocks: []};
     [...el.children].forEach((n)=>{ const t = n.innerHTML.replace(/<b>(.*?)<\/b>/g, '**$1**').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+      if(n.classList && n.classList.contains('od-pitch')){ const q = n.querySelector('p'); out.blocks.push({type: 'pitch', text: q ? q.textContent.trim() : ''}); return; }
       if(n.classList && n.classList.contains('od-cta')){ const a = n.querySelector('a'); out.blocks.push({type: 'cta', text: a ? a.childNodes[0].textContent.trim() : 'Book your call', url: n.dataset.url || ''}); return; }
       if(n.tagName === 'FIGURE' && n.dataset.ref){ const cap = n.querySelector('figcaption'); out.blocks.push({type: 'media', ref: n.dataset.ref, caption: cap ? cap.textContent.trim() : ''}); return; }
       if(n.tagName === 'H1') out.title = t; else if(n.classList.contains('sub')) out.subtitle = t;
@@ -1563,6 +1572,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     } catch(e){ ld.stop(); fs.exit(); console.error(e); toast(aiErr(e), true); show(D.stage === 'done' && D.doc ? 'vDoc' : 'vReady'); }
   }
   $('odDoc').addEventListener('input', ()=>{ D.doc = docFromDOM(); save({doc: D.doc}); });
+  $('odDoc').addEventListener('click', (e)=>{
+    const cp = e.target.closest('.od-pcopy'); if(!cp) return; e.preventDefault();
+    const t = cp.closest('.od-pitch').querySelector('p').textContent.trim();
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>{ cp.textContent = 'Copied ✓'; setTimeout(()=>{ cp.textContent = 'Copy'; }, 1600); }).catch(()=> toast('Couldn’t copy. Select the sentence and press Ctrl+C.', true));
+  });
   $('odDoc').addEventListener('click', (e)=>{
     const ed = e.target.closest('.od-cta-edit'); if(!ed) return; e.preventDefault();
     const box = ed.closest('.od-cta'), a = box.querySelector('a');
@@ -1631,7 +1645,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const EXPORT_CSS = `body{font-family:Inter,Arial,sans-serif;color:#16202C;font-size:11.5pt;line-height:1.6;} h1{font-size:24pt;margin:0 0 4px;} .sub{color:#5C6B7C;margin:0 0 18px;padding-bottom:10px;border-bottom:1px solid #E5EAF1;} h2{font-size:15pt;margin:20px 0 6px;} h3{font-size:12pt;margin:14px 0 4px;} p{margin:0 0 8px;} ul{margin:0 0 10px;} .callout{margin:12px 0;padding:10px 14px;border-left:4px solid #3730B3;background:#F1F0FB;font-weight:600;} mark{background:#FFE58A;}`;
   function exportHTML(d){                                // photos as images, videos as a link
     const t = document.createElement('div'); t.innerHTML = docHTML(d);
-    t.querySelectorAll('.od-figx, .od-cta-edit').forEach((x)=> x.remove());
+    t.querySelectorAll('.od-figx, .od-cta-edit, .od-pcopy').forEach((x)=> x.remove());
+    t.querySelectorAll('.od-pitch').forEach((x)=>{ const q = x.querySelector('p'); x.outerHTML = `<div style="margin:0 0 22px;padding:14px 18px;border:1px solid #D9D6F7;border-left:4px solid #3730B3;border-radius:10px;background:#F6F5FE"><div style="font-size:9pt;letter-spacing:.14em;font-weight:700;color:#5B4BE6">YOUR ONE-SENTENCE PITCH</div><div style="font-size:13pt;font-weight:700;margin-top:4px">${q ? q.innerHTML : ''}</div></div>`; });
     t.querySelectorAll('.od-cta').forEach((c)=>{ const a = c.querySelector('a'); c.outerHTML = `<p style="margin:18px 0"><a href="${esc(c.dataset.url || '#')}" style="display:inline-block;background:#3730B3;color:#ffffff;padding:12px 22px;border-radius:10px;font-weight:700;text-decoration:none">${esc(a ? a.textContent.trim() : 'Book your call')}</a></p>`; });
     t.querySelectorAll('figure').forEach((f)=>{ const v = f.querySelector('video'); if(!v) return; const m = mediaById(f.dataset.ref); const cap = f.querySelector('figcaption');
       f.outerHTML = `<p>▶ <a href="${esc(m ? m.url : v.src)}">Watch the video${cap ? ': ' + esc(cap.textContent) : ''}</a></p>`; });
@@ -1651,7 +1666,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     } catch(e){ toast('Couldn’t make the PDF. Try Word instead.', true); } finally { b.disabled = false; b.textContent = '📄 PDF'; }
   });
   $('odLib').addEventListener('click', ()=>{
-    const d = docFromDOM(), body = docHTML(d).replace(/<div class="od-cta" data-url="([^"]*)"[\s\S]*?<\/div>/g, (all, u)=> `<p><b><a href="${u}">${esc((d.blocks.find((b)=> b.type === 'cta') || {}).text || 'Book your call')} →</a></b></p>`).replace(/<figure class="od-fig" data-ref="([^"]+)"[\s\S]*?<\/figure>/g, (all, id)=>{ const m = mediaById(id); if(!m) return '';
+    const d = docFromDOM(), body = docHTML(d).replace(/<div class="od-pitch">[\s\S]*?<p>([\s\S]*?)<\/p><\/div>/g, (all, t)=> `<div class="callout"><b>One-sentence pitch:</b> ${t}</div>`).replace(/<div class="od-cta" data-url="([^"]*)"[\s\S]*?<\/div>/g, (all, u)=> `<p><b><a href="${u}">${esc((d.blocks.find((b)=> b.type === 'cta') || {}).text || 'Book your call')} →</a></b></p>`).replace(/<figure class="od-fig" data-ref="([^"]+)"[\s\S]*?<\/figure>/g, (all, id)=>{ const m = mediaById(id); if(!m) return '';
         const ext = (m.name.split('.').pop() || (m.kind === 'image' ? 'jpg' : 'mp4')).toLowerCase();
         return `<div class="file" data-url="${esc(m.url)}" data-name="${esc(m.name)}" data-size="0" data-kind="${esc(ext)}"${m.kind === 'image' ? ' data-view="image" data-w="l"' : ''} contenteditable="false"></div>`; }).replace(/^<h1>.*?<\/h1>/, '').replace(/<p class="sub">(.*?)<\/p>/, '<p><i>$1</i></p>').replace(/<mark>(.*?)<\/mark>/g, '<b>$1</b>');
     db.collection('libraryPages').add({workspaceId: wsId, createdBy: me, createdByName: myName, title: d.title || 'Offer document', icon: '📄', content: body, text: d.blocks.map((x)=> x.text || (x.items || []).join('\n')).join('\n\n').slice(0, 20000),
