@@ -25,8 +25,10 @@
   #pageLoader{min-height:100vh;display:flex;align-items:center;justify-content:center;}
   .spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--teal);animation:odspin .8s linear infinite;}
   @keyframes odspin{to{transform:rotate(360deg);}}
-  #appRoot{display:none;min-height:100vh;}
-  .seq-main{flex:1;min-width:0;}
+  /* the page is one screen high: the content scrolls on its own, and so does the side panel */
+  #appRoot{display:none;height:100vh;overflow:hidden;}
+  .seq-main{flex:1;min-width:0;height:100%;overflow-y:auto;overscroll-behavior:contain;}
+  #appRoot > .seq-sidebar{height:100%;overflow-y:auto;overscroll-behavior:contain;flex-shrink:0;}
   .od{max-width:1040px;margin:0 auto;padding:30px 36px 80px;}
   .od-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;}
   .od-head h1{margin:0;font:800 26px Sora,sans-serif;letter-spacing:-.02em;}
@@ -1034,7 +1036,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   let me = null, myName = '', myCompany = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
   // ---------- views ----------
-  function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); $('odLessonsBtn').classList.toggle('hidden', v !== 'vHome' || !amAdmin); window.scrollTo(0, 0); }
+  function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); $('odLessonsBtn').classList.toggle('hidden', v !== 'vHome' || !amAdmin); const m = document.querySelector('.seq-main'); if(m) m.scrollTop = 0; window.scrollTo(0, 0); }
   const allQ = (s)=> (s.questions || []).concat(s.followups || []);
   function progress(d){ if(!d || !d.plan) return 0; let n = 0, a = 0; d.plan.sections.forEach((s)=> allQ(s).forEach((q)=>{ n++; if((d.answers || {})[q.id] != null) a++; })); return n ? a / n : 0; }
   // a cover per offer doc: a finished cover when it's written, a sketched "not written yet" cover when it isn't
