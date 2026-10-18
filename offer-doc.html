@@ -391,7 +391,7 @@
   .od-item.has-cover .od-del{top:20px;right:20px;background:rgba(255,255,255,.85);z-index:2;}
 
   /* the smooth way in and out of full screen */
-  .ob-curtain{position:fixed;inset:0;z-index:935;pointer-events:none;opacity:0;transition:opacity .5s ease;background:radial-gradient(70% 60% at 50% 40%,rgba(67,56,202,.35) 0%,transparent 70%),#07070F;}
+  .ob-curtain{position:fixed;inset:0;z-index:935;pointer-events:none;opacity:0;transition:opacity .5s ease;background:#07070F;}
   .ob-curtain.on{opacity:1;pointer-events:auto;}
   .ob-cmsg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#EEF0FF;text-align:center;padding:24px;animation:obRise .7s ease-out both;}
   .ob-cmsg b{font:800 24px Sora,sans-serif;} .ob-cmsg small{max-width:440px;font-size:14.5px;line-height:1.6;color:#BCBAF0;}
@@ -491,6 +491,12 @@
   .od-ls-i small{display:block;margin-top:7px;font-size:12.5px;color:var(--slate);}
   .od-ls-b{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
   .od-ls-f{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft);} .od-ls-f small{flex:1;font-size:12.5px;line-height:1.5;color:var(--slate);}
+
+  /* the scene waits (invisible) until full screen is done, then fades in at its final size */
+  .ob-stage.pro{animation:none;transition:opacity .8s ease;}
+  .ob-stage.pro.wait{opacity:0;}
+  .ob-stage.pro.wait .pr > *{animation:none !important;}
+  .ob-stage.pro.leaving{transition:none;}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -1156,27 +1162,37 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // switch, everything is already dark), and on the way back the same in reverse
   const fs = {
     mine: false, curtain: null,
+    ready: null,
     enter(){
       document.documentElement.classList.add('ob-lock');
       let c = document.getElementById('obCurtain'); if(!c){ c = document.createElement('div'); c.id = 'obCurtain'; c.className = 'ob-curtain'; document.body.appendChild(c); }
       this.curtain = c; void c.offsetWidth; c.classList.add('on');
-      if(document.fullscreenElement || !document.documentElement.requestFullscreen) return;
-      setTimeout(()=>{ document.documentElement.requestFullscreen({navigationUI: 'hide'}).then(()=>{ fs.mine = true; }).catch(()=>{}); }, 420);
+      // the scene only appears once the switch is completely done and the screen is still (see busy)
+      this.ready = new Promise((res)=>{
+        const settle = ()=> setTimeout(res, 220);
+        if(document.fullscreenElement || !document.documentElement.requestFullscreen){ setTimeout(res, 520); return; }
+        setTimeout(()=>{
+          let done = false; const go = ()=>{ if(done) return; done = true; document.removeEventListener('fullscreenchange', go); settle(); };
+          document.addEventListener('fullscreenchange', go);
+          document.documentElement.requestFullscreen({navigationUI: 'hide'}).then(()=>{ fs.mine = true; }).catch(go);
+          setTimeout(go, 1400);
+        }, 520);                                        // once the page is fully dark
+      });
     },
     exit(){
       const c = this.curtain || document.getElementById('obCurtain'), wasMine = this.mine && document.fullscreenElement; this.mine = false;
       const reveal = ()=>{ document.documentElement.classList.remove('ob-lock'); if(c){ c.classList.remove('on'); setTimeout(()=> c.remove(), 700); } this.curtain = null; };
       if(c) c.classList.add('on');
-      if(wasMine){ let done = false; const go = ()=>{ if(done) return; done = true; document.removeEventListener('fullscreenchange', go); setTimeout(reveal, 120); };
-        document.addEventListener('fullscreenchange', go); document.exitFullscreen().catch(go); setTimeout(go, 900); }
+      this.ready = null;
+      if(wasMine){ let done = false; const go = ()=>{ if(done) return; done = true; document.removeEventListener('fullscreenchange', go); setTimeout(reveal, 260); };
+        document.addEventListener('fullscreenchange', go); document.exitFullscreen().catch(go); setTimeout(go, 1400); }
       else reveal();
     }
   };
   function busy(kind, sections, info){
     info = info || {};
-    scanSnd.play();
     const old = document.getElementById('obStage'); if(old) old.remove();
-    const box = document.createElement('div'); box.className = 'ob-stage pro'; box.id = 'obStage'; box.setAttribute('role', 'status'); document.body.appendChild(box);
+    const box = document.createElement('div'); box.className = 'ob-stage pro wait'; box.id = 'obStage'; box.setAttribute('role', 'status'); document.body.appendChild(box);
     const expected = kind === 'write' ? 90 : 35, t0 = Date.now();
     const steps = kind === 'write'
       ? ['Reading all your answers'].concat((sections || []).slice(0, 8).map((x)=> 'Writing: ' + x)).concat(['Checking the numbers', 'Final polish'])
@@ -1225,13 +1241,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       if(sec > expected * 1.8) $('obTitle').textContent = 'Almost there…';
     };
     const iv = setInterval(tick, 250); tick();
+    let shown = false;
+    (fs.ready || Promise.resolve()).then(()=> requestAnimationFrame(()=>{ if(finished && !box.isConnected) return; shown = true; box.classList.remove('wait'); box.classList.add('go'); scanSnd.play(); }));
     const end = ()=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); };
-    return {done: ()=> new Promise((res)=>{ end(); scanSnd.fade(850, true);
+    return {done: ()=> (fs.ready || Promise.resolve()).then(()=> new Promise((r)=> setTimeout(r, shown ? 0 : 900))).then(()=> new Promise((res)=>{ end(); scanSnd.fade(850, true);
       $('obFill').style.width = '100%'; $('obPct').textContent = '100%'; $('prN').textContent = `${steps.length} of ${steps.length} steps`; $('prT').textContent = 'Done';
       $('prEye').textContent = 'COMPLETE'; $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready' : 'Your interview is ready';
       box.querySelector('.pr').classList.add('finish');
-      setTimeout(()=>{ box.classList.add('leaving'); setTimeout(()=> box.remove(), 600); res(); }, 1300); }),
-      stop: ()=>{ end(); scanSnd.fade(400); box.classList.add('leaving'); setTimeout(()=> box.remove(), 500); }};
+      setTimeout(()=>{ box.classList.add('leaving'); setTimeout(()=> box.remove(), 600); res(); }, 1300); })),
+      stop: ()=>{ end(); if(shown) scanSnd.fade(400); box.classList.add('leaving'); setTimeout(()=> box.remove(), 500); }};
   }
 
   // ---------- step 1: the template ----------
