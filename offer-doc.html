@@ -310,7 +310,7 @@
   @keyframes obsGrid{to{background-position:0 64px,0 0;}}
   .obs-glow{position:absolute;left:50%;top:34%;width:760px;height:760px;margin:-380px 0 0 -380px;border-radius:50%;background:radial-gradient(circle,rgba(124,104,255,.38),transparent 62%);filter:blur(8px);animation:oiPulse 3.2s ease-in-out infinite;}
   .ob.full{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;min-height:100vh;padding:40px 28px 40px;box-sizing:border-box;}
-  .ob.full .ob-scanner{--sc:1.6;transform:scale(var(--sc));transform-origin:50% 45%;margin:calc(153px * var(--sc) - 106px) 0 calc(144px * var(--sc) - 134px);flex-shrink:0;}
+  .ob.full .ob-scanner{--sc:1.6;transform:scale(var(--sc));transform-origin:50% 45%;margin:calc(179px * var(--sc) - 106px) 0 calc(173px * var(--sc) - 134px);flex-shrink:0;}
   .ob.full .ob-doc{background:#FFFFFF;}
   .ob-orbit{position:absolute;left:50%;top:44%;border-radius:50%;pointer-events:none;}
   .ob-orbit.o1{width:250px;height:250px;margin:-125px 0 0 -125px;border:1.5px dashed rgba(125,230,255,.45);animation:obOrbit 14s linear infinite;}
@@ -340,6 +340,53 @@
   @media (max-height:820px){ .ob.full{gap:16px;padding:24px 24px;} .ob-pct{font-size:52px;} }
   @media (max-height:700px){ .ob.full{gap:10px;padding:14px 20px;} .ob-pct{font-size:42px;} .ob.full .ob-top b{font-size:19px;} .ob.full .ob-bar{margin:12px 0;}
     .ob.full .ob-steps li{padding:5px 10px 5px 7px;font-size:12.5px;} .ob.full .ob-tip{padding-top:12px;} .ob.full .ob-card{height:64px;padding:9px 12px;} .ob.full .ob-card small{font-size:12.5px;} }
+
+  /* full screen: no scrollbar while the scene runs */
+  html.ob-lock,html.ob-lock body{overflow:hidden !important;}
+  .ob-stage{overflow:hidden;}
+  .ob-stage::after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(3,2,15,.55) 100%);}
+  /* the scanner, in detail: a precision ring, crosshairs, live readouts and a cover */
+  .ob-ticks{position:absolute;left:50%;top:44%;width:360px;height:360px;margin:-180px 0 0 -180px;animation:obOrbit 60s linear infinite;pointer-events:none;}
+  .ob-ticks line{stroke:rgba(190,200,255,.32);stroke-width:1;} .ob-ticks line:nth-child(15n+1){stroke:rgba(125,230,255,.75);stroke-width:1.4;}
+  .ob-cross{position:absolute;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(125,230,255,.25) 30%,rgba(125,230,255,.25) 70%,transparent);}
+  .ob-cross.h{left:-120px;right:-120px;top:44%;height:1px;} .ob-cross.v{top:-70px;bottom:-40px;left:50%;width:1px;background:linear-gradient(180deg,transparent,rgba(125,230,255,.22) 30%,rgba(125,230,255,.22) 70%,transparent);}
+  .ob-ro{position:absolute;top:36%;display:flex;flex-direction:column;gap:7px;font:600 7px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;color:#C9D2FF;white-space:nowrap;pointer-events:none;}
+  .ob-ro.l{right:calc(100% + 34px);text-align:right;align-items:flex-end;} .ob-ro.r{left:calc(100% + 34px);}
+  .ob-ro em{font-style:normal;color:#7E7BC4;margin-right:5px;} .ob-ro b{color:#9DEBFF;font-weight:700;font-variant-numeric:tabular-nums;}
+  .ob-ro span{padding:4px 7px;border:1px solid rgba(125,230,255,.18);border-radius:4px;background:rgba(10,8,40,.45);}
+  .ob-sig{display:inline-flex;gap:1.5px;vertical-align:-1px;} .ob-sig i{width:2px;background:#7DE6FF;border-radius:1px;animation:obSig 1.6s ease-in-out infinite;}
+  .ob-sig i:nth-child(1){height:3px;} .ob-sig i:nth-child(2){height:4px;animation-delay:.15s;} .ob-sig i:nth-child(3){height:5px;animation-delay:.3s;} .ob-sig i:nth-child(4){height:6px;animation-delay:.45s;} .ob-sig i:nth-child(5){height:7px;animation-delay:.6s;opacity:.35;}
+  @keyframes obSig{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .ob.full .ob-doc{padding:0 0 14px;}
+  .ob-cv{padding:13px 14px 11px;margin-bottom:10px;background:linear-gradient(135deg,#1E1A5C,#3730B3 60%,#5B4BE6);color:#fff;position:relative;overflow:hidden;}
+  .ob-cv::after{content:"";position:absolute;right:-20px;top:-20px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,rgba(125,230,255,.45),transparent 65%);}
+  .ob-cv small{display:block;font:700 5.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:#9DEBFF;margin-bottom:5px;}
+  .ob-cv b{display:block;font:800 10px/1.2 Sora,sans-serif;max-height:24px;overflow:hidden;} .ob-cv span{display:block;font-size:6.5px;color:#C9C6FF;margin-top:4px;}
+  .ob.full .ob-doc .ob-h{display:none;} .ob.full .ob-doc .ob-l{margin:9px 16px;}
+  .ob.full .ob-doc .ob-l:nth-of-type(2){width:auto;margin-right:22px;} .ob.full .ob-doc .ob-l:nth-of-type(5){margin-right:60px;} .ob.full .ob-doc .ob-l:nth-of-type(8){margin-right:80px;}
+  .ob.full.finish .ob-ticks line{stroke:rgba(110,231,183,.4);} .ob.full.finish .ob-ro b{color:#6EE7B7;}
+  @media (max-width:1100px){ .ob-ro{display:none;} }
+  /* covers on the offer docs in the list */
+  .od-item.has-cover{padding:12px 12px 16px;}
+  .od-cover{position:relative;height:150px;border-radius:12px;margin-bottom:14px;overflow:hidden;}
+  .od-cover.done{background:linear-gradient(140deg,#16124A 0%,#2C2585 55%,#5B4BE6 100%);color:#fff;padding:18px 18px 14px;display:flex;flex-direction:column;box-shadow:0 14px 30px -18px rgba(55,48,179,.9);}
+  .od-cover.done .cv-ln{display:block;width:26px;height:3px;border-radius:2px;background:#7DE6FF;margin-bottom:12px;}
+  .od-cover.done small{font:700 9.5px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.2em;color:#9DEBFF;}
+  .od-cover.done b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:800 17px/1.25 Sora,sans-serif;margin:6px 0 4px;padding:0;}
+  .od-cover.done em{font-style:normal;font-size:12px;color:#C9C6FF;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+  .od-cover.done .cv-ft{margin-top:auto;display:flex;justify-content:space-between;font-size:11px;color:#B7B3F2;border-top:1px solid rgba(255,255,255,.14);padding-top:8px;}
+  .od-cover.done .cv-glow{position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(125,230,255,.35),transparent 65%);pointer-events:none;}
+  .od-cover.draft{background:repeating-linear-gradient(-45deg,var(--panel-alt) 0 10px,color-mix(in srgb,var(--panel-alt) 70%,var(--border-soft)) 10px 11px);border:1.5px dashed var(--border);padding:18px 18px 14px;}
+  .od-cover.draft .cv-sk{display:block;height:7px;border-radius:4px;background:var(--border);margin:9px 0;width:78%;opacity:.8;}
+  .od-cover.draft .cv-sk.t{height:12px;width:42%;margin-top:4px;background:color-mix(in srgb,#3730B3 30%,var(--border));} .od-cover.draft .cv-sk.s{width:64%;} .od-cover.draft .cv-sk.m{width:44%;}
+  .od-cover.draft .cv-rib{position:absolute;top:12px;right:12px;display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:var(--panel);border:1px solid color-mix(in srgb,#B7791F 40%,var(--border));
+    color:#B7791F;font:800 9.5px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 4px 12px -8px rgba(0,0,0,.3);}
+  .od-cover.draft .cv-rib::before{content:"";width:6px;height:6px;border-radius:50%;background:#D69E2E;}
+  .od-cover.draft .cv-prog{position:absolute;right:14px;bottom:12px;width:40px;height:40px;}
+  .od-cover.draft .cv-prog svg{width:40px;height:40px;transform:rotate(-90deg);} .od-cover.draft .cv-prog circle{fill:none;stroke-width:4;} .od-cover.draft .cv-prog .bg{stroke:var(--border);} .od-cover.draft .cv-prog .fg{stroke:#3730B3;stroke-linecap:round;}
+  .od-cover.draft .cv-prog b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;padding:0;margin:0;color:var(--ink);}
+  .od-cover.draft .cv-note{position:absolute;left:18px;bottom:16px;font-size:11.5px;font-weight:700;color:var(--slate);}
+  .od-item.has-cover .od-del{top:20px;right:20px;background:rgba(255,255,255,.85);z-index:2;}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -881,12 +928,25 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); window.scrollTo(0, 0); }
   const allQ = (s)=> (s.questions || []).concat(s.followups || []);
   function progress(d){ if(!d || !d.plan) return 0; let n = 0, a = 0; d.plan.sections.forEach((s)=> allQ(s).forEach((q)=>{ n++; if((d.answers || {})[q.id] != null) a++; })); return n ? a / n : 0; }
+  // a cover per offer doc: a finished cover when it's written, a sketched "not written yet" cover when it isn't
+  function coverHTML(d, p){
+    if(d.stage === 'done' && d.doc){
+      const t = (d.doc.title || d.title || 'Offer document'), sub = d.doc.subtitle || '', when = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate().toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'}) : '';
+      return `<div class="od-cover done" aria-hidden="true"><i class="cv-ln"></i><small>OFFER DOCUMENT</small><b>${esc(t.slice(0, 70))}</b>${sub ? `<em>${esc(sub.slice(0, 80))}</em>` : ''}
+        <span class="cv-ft"><span>${esc(myName || '')}</span><span>${esc(when)}</span></span><i class="cv-glow"></i></div>`;
+    }
+    const pct = Math.round((p || 0) * 100), C = 2 * Math.PI * 15;
+    return `<div class="od-cover draft" aria-hidden="true"><span class="cv-rib">Not written yet</span>
+      <i class="cv-sk t"></i><i class="cv-sk"></i><i class="cv-sk s"></i><i class="cv-sk"></i><i class="cv-sk m"></i>
+      <span class="cv-prog"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="bg"/><circle cx="18" cy="18" r="15" class="fg" style="stroke-dasharray:${C};stroke-dashoffset:${C * (1 - pct / 100)}"/></svg><b>${pct}%</b></span>
+      <span class="cv-note">${pct ? 'Interview in progress' : 'Interview not started'}</span></div>`;
+  }
   function renderHome(){
     const trashed = docs.filter((d)=> d.deleted);
     $('odTrashBtn').innerHTML = '🗑 Trash' + (trashed.length ? ` <span class="od-tn">${trashed.length}</span>` : '');
     const list = docs.filter((d)=> !d.deleted).sort((a, b)=> ((b.updatedAt && b.updatedAt.toMillis ? b.updatedAt.toMillis() : 0) - (a.updatedAt && a.updatedAt.toMillis ? a.updatedAt.toMillis() : 0)));
     $('odList').innerHTML = list.length ? list.map((d)=>{ const p = d.stage === 'done' ? 1 : progress(d);
-      return `<button type="button" class="od-item" data-open="${esc(d.id)}"><span class="od-del" data-del="${esc(d.id)}" role="button" tabindex="0" title="Move to the trash" aria-label="Move to the trash">🗑</span><b>${esc(d.title || 'Offer document')}</b><small>${d.stage === 'done' ? '✅ Written' : '📝 Interview: ' + Math.round(p * 100) + '% answered'} · ${esc(d.templateName || 'template')}</small><div class="bar"><i style="width:${Math.round(p * 100)}%"></i></div></button>`; }).join('')
+      return `<button type="button" class="od-item has-cover" data-open="${esc(d.id)}"><span class="od-del" data-del="${esc(d.id)}" role="button" tabindex="0" title="Move to the trash" aria-label="Move to the trash">🗑</span>${coverHTML(d, p)}<b>${esc(d.title || 'Offer document')}</b><small>${d.stage === 'done' ? '✅ Written' : '📝 Interview: ' + Math.round(p * 100) + '% answered'} · ${esc(d.templateName || 'template')}</small><div class="bar"><i style="width:${Math.round(p * 100)}%"></i></div></button>`; }).join('')
       : `<div class="card od-empty" style="grid-column:1/-1"><div class="big">📄</div><h3>Your first offer document</h3><p>Upload your offer document template (or use the PALA template). The AI asks you everything it needs, then writes the document that sells for you after the call.</p><button type="button" class="btn primary" id="odEmptyNew">＋ New offer doc</button></div>`;
     const b = $('odEmptyNew'); if(b) b.addEventListener('click', newDoc);
   }
@@ -979,7 +1039,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       }
     }
   };
-  function busy(kind, sections){
+  // full screen while the AI works: no browser tabs, no address bar, no scrollbar
+  const fs = {
+    mine: false,
+    enter(){ document.documentElement.classList.add('ob-lock'); if(document.fullscreenElement || !document.documentElement.requestFullscreen) return;
+      document.documentElement.requestFullscreen({navigationUI: 'hide'}).then(()=>{ fs.mine = true; }).catch(()=>{}); },
+    exit(){ document.documentElement.classList.remove('ob-lock'); if(fs.mine && document.fullscreenElement){ document.exitFullscreen().catch(()=>{}); } fs.mine = false; }
+  };
+  function busy(kind, sections, info){
+    info = info || {};
     scanSnd.play();
     const old = document.getElementById('obStage'); if(old) old.remove();
     const box = document.createElement('div'); box.className = 'ob-stage'; box.id = 'obStage'; box.setAttribute('role', 'status'); document.body.appendChild(box);
@@ -989,9 +1057,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       : ['Reading your template', 'Finding every section', 'Working out what it needs from you', 'Writing your questions', 'Putting them in the right order'];
     let tip = Math.floor(Math.random() * TIPS.length), finished = false;
     box.innerHTML = `<div class="obs-bg" aria-hidden="true"><i class="obs-stars"></i><i class="obs-stars s2"></i><i class="obs-grid"></i><i class="obs-glow"></i></div><div class="ob full">
-      <div class="ob-scanner" aria-hidden="true"><span class="ob-orbit o1"></span><span class="ob-orbit o2"></span>
+      <div class="ob-scanner" aria-hidden="true"><span class="ob-cross h"></span><span class="ob-cross v"></span>
+        <svg class="ob-ticks" viewBox="0 0 360 360">${Array.from({length: 90}, (x, i)=>{ const a = i * 4 * Math.PI / 180, r1 = i % 15 === 0 ? 162 : (i % 5 === 0 ? 168 : 172), r2 = 176;
+          return `<line x1="${(180 + r1 * Math.sin(a)).toFixed(1)}" y1="${(180 - r1 * Math.cos(a)).toFixed(1)}" x2="${(180 + r2 * Math.sin(a)).toFixed(1)}" y2="${(180 - r2 * Math.cos(a)).toFixed(1)}"/>`; }).join('')}</svg>
+        <span class="ob-orbit o1"></span><span class="ob-orbit o2"></span>
+        <div class="ob-ro l"><span><em>DOC</em> ${esc(String(info.code || '01'))}</span><span><em>WORDS</em> <b id="obWords">0</b></span><span><em>${kind === 'write' ? 'ANSWERS' : 'MODE'}</em> ${kind === 'write' ? esc(String(info.answers || 0)) : 'READ'}</span></div>
+        <div class="ob-ro r"><span><em>SECTIONS</em> <b id="obSecs">0</b>/${info.secs || (sections || []).length || 7}</span><span><em>SIGNAL</em> <i class="ob-sig"><i></i><i></i><i></i><i></i><i></i></i></span><span><em>LINK</em> SECURE</span></div>
         <span class="ob-c tl"></span><span class="ob-c tr"></span><span class="ob-c bl"></span><span class="ob-c br"></span>
-        <div class="ob-doc"><i class="ob-h" style="--d:0.10s"></i>${[0.26, 0.40, 0.54, 0.68, 0.82, 0.96, 1.10].map((d)=> `<i class="ob-l" style="--d:${(d * 2.2 / 1.3).toFixed(2)}s"></i>`).join('')}
+        <div class="ob-doc"><div class="ob-cv"><small>OFFER DOCUMENT</small><b>${esc((info.title || 'Your offer').slice(0, 42))}</b><span>${esc(info.who ? 'by ' + info.who : '')}</span></div><i class="ob-h" style="--d:0.10s"></i>${[0.26, 0.40, 0.54, 0.68, 0.82, 0.96, 1.10].map((d)=> `<i class="ob-l" style="--d:${(d * 2.2 / 1.3).toFixed(2)}s"></i>`).join('')}
           <span class="ob-trail"></span><span class="ob-beam"></span><b class="ob-stamp">✓</b></div>
         <div class="ob-bits"></div>
         <div class="ob-tag"><i></i><span id="obTag">SCANNING</span></div>
@@ -1011,7 +1084,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const sc = box.querySelector('.ob-scanner'), wrap = box.querySelector('.ob.full'), orbit = box.querySelector('.ob-orbit.o2'); if(!sc || !wrap) return;
       let k = Math.min(1.6, (innerWidth - 40) / 330);
       for(let i = 0; i < 20; i++){ sc.style.setProperty('--sc', k.toFixed(3));
-        const o = orbit.getBoundingClientRect(), top = (o.top + o.bottom) / 2 - 150 * k;          // the real circle (the ring rotates, so its box is bigger)
+        const o = orbit.getBoundingClientRect(), top = (o.top + o.bottom) / 2 - 176 * k;          // the real circle of the outer tick ring (the rings rotate, so their boxes are bigger)
         const dots = box.querySelector('.ob-dots').getBoundingClientRect(), fits = top >= 8 && dots.bottom <= innerHeight - 8;
         if(fits || k <= 0.8) break; k = Math.max(0.8, k - 0.05); } };
     addEventListener('resize', fitScanner); box.__unfit = ()=> removeEventListener('resize', fitScanner);
@@ -1033,7 +1106,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const tick = ()=>{
       if(finished) return;
       const sec = (Date.now() - t0) / 1000, pct = 94 * (1 - Math.exp(-sec / (expected / 2.3)));
-      $('obFill').style.width = pct + '%'; $('obPct').textContent = Math.round(pct) + '%'; $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+      $('obFill').style.width = pct + '%'; $('obPct').textContent = Math.round(pct) + '%';
+      const W = $('obWords'), S = $('obSecs'), nS = info.secs || (sections || []).length || 7;
+      if(W) W.textContent = Math.round((info.words || 900) * Math.min(1, pct / 70)).toLocaleString('en-US'); if(S) S.textContent = Math.min(nS, Math.floor(pct / 94 * (nS + 0.6))); $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
       const at = Math.min(lis.length - 1, Math.floor(pct / 94 * lis.length));
       lis.forEach((li, i)=>{ li.classList.toggle('done', i < at); li.classList.toggle('now', i === at); });
       const list = $('obSteps'), rowH = lis.length > 1 ? lis[1].offsetTop - lis[0].offsetTop : 30;          // scroll by whole steps, so no circle is ever cut off at the top
@@ -1052,7 +1127,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const tagIv = setInterval(()=>{ const el = $('obTag'); if(el && !finished) el.textContent = (kind === 'write' ? 'WRITING ' : 'SCANNING ') + Math.round(parseFloat($('obFill').style.width) || 0) + '%'; }, 250);
     return {done: ()=> new Promise((res)=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); clearInterval(spark); clearInterval(tagIv); scanSnd.fade(850, true); const tg = $('obTag'); if(tg) tg.textContent = 'COMPLETE';
       $('obFill').style.width = '100%'; lis.forEach((li)=>{ li.classList.add('done'); li.classList.remove('now'); });
-      $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready' : 'Your interview is ready'; $('obPct').textContent = '100%'; box.querySelector('.ob').classList.add('finish');
+      $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready' : 'Your interview is ready'; $('obPct').textContent = '100%';
+      const W = $('obWords'), S = $('obSecs'); if(W) W.textContent = (info.words || 900).toLocaleString('en-US'); if(S) S.textContent = info.secs || (sections || []).length || 7; box.querySelector('.ob').classList.add('finish');
       setTimeout(()=>{ box.__unfit(); box.classList.add('leaving'); setTimeout(()=> box.remove(), 600); res(); }, 1100); }),
       stop: ()=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); clearInterval(spark); clearInterval(tagIv); scanSnd.fade(400); box.__unfit(); box.classList.add('leaving'); setTimeout(()=> box.remove(), 500); }};
   }
@@ -1086,9 +1162,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   async function startFrom(text, name){
     text = String(text || '').trim();
-    if(text.length < 80){ toast('That template looks empty. Try another file.', true); return; }
+    if(text.length < 80){ fs.exit(); toast('That template looks empty. Try another file.', true); return; }
     $('setupPick').classList.add('hidden'); $('setupBusy').classList.remove('hidden');
-    const ld = busy('plan');
+    const ld = busy('plan', null, {title: name.replace(/\.(docx|pdf|txt|md)$/i, '').replace(/[_-]+/g, ' ').slice(0, 42), who: myName, words: text.split(/\s+/).filter(Boolean).length, secs: (text.match(/\bSECTION\s+\d+/gi) || []).length || 7, code: String(docs.length + 1).padStart(2, '0')});
     try {
       const lang = $('odLang').value || 'English'; try { localStorage.setItem('ptOdLang', lang); } catch(e){}
       const {plan} = await AI({mode: 'plan', template: text.slice(0, 40000), language: lang});
@@ -1096,10 +1172,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const ref = db.collection('offerDocs').doc();
       D = {id: ref.id, createdBy: me, workspaceId: wsId, lang, title: plan.title || 'Offer document', templateName: name, template: text.slice(0, 40000), plan, answers: {}, pos: {s: 0, q: 0}, stage: 'interview'};
       const {id, ...rest} = D; await ref.set(Object.assign(rest, {createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}));
-      cur = {s: 0, q: 0}; await playIntro(plan); openInterview();
-    } catch(e){ ld.stop(); console.error(e); toast(aiErr(e), true); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); }
+      cur = {s: 0, q: 0}; await playIntro(plan); fs.exit(); openInterview();
+    } catch(e){ ld.stop(); fs.exit(); console.error(e); toast(aiErr(e), true); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); }
   }
-  async function pickFile(f){ if(!f) return; try { await startFrom(await readTemplate(f), f.name); } catch(e){ console.error(e); toast(e.message || 'Couldn’t read that file.', true); } }
+  async function pickFile(f){ if(!f) return; try { await startFrom(await readTemplate(f), f.name); } catch(e){ fs.exit(); console.error(e); toast(e.message || 'Couldn’t read that file.', true); } }
 
   // ---------- the intro: your offer document comes together ----------
   function introSound(){
@@ -1310,13 +1386,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function openDocView(){ show('vDoc'); $('odDoc').innerHTML = docHTML(D.doc); $('odCheckBox').classList.add('hidden'); $('odSaved').textContent = 'Saved'; $('odUndo').classList.toggle('hidden', !D.prevDoc); }
   async function write(){
     show('vSetup'); $('setupPick').classList.add('hidden'); $('setupBusy').classList.remove('hidden');
-    const ld = busy('write', D.plan.sections.map((x)=> x.title));
+    const nAns = Object.values(D.answers || {}).filter((v)=> v && v !== '__skip').length, nWords = Object.values(D.answers || {}).join(' ').split(/\s+/).filter((w)=> w && w !== '__skip').length;
+    const ld = busy('write', D.plan.sections.map((x)=> x.title), {title: D.title, who: myName, words: nWords, answers: nAns, secs: D.plan.sections.length, code: D.id.slice(0, 4).toUpperCase()});
     try {
       const answers = {}; Object.entries(D.answers).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
       const {doc} = await AI({mode: 'write', template: D.template, plan: D.plan, answers, extra: $('odExtra').value.trim(), media: mediaForAI()});
-      await ld.done();
+      await ld.done(); fs.exit();
       save({doc, stage: 'done', title: doc.title || D.title}); openDocView(); toast('Your offer document is ready. Read it through and adjust anything you like.');
-    } catch(e){ ld.stop(); console.error(e); toast(aiErr(e), true); show(D.stage === 'done' && D.doc ? 'vDoc' : 'vReady'); }
+    } catch(e){ ld.stop(); fs.exit(); console.error(e); toast(aiErr(e), true); show(D.stage === 'done' && D.doc ? 'vDoc' : 'vReady'); }
   }
   $('odDoc').addEventListener('input', ()=>{ D.doc = docFromDOM(); save({doc: D.doc}); });
   $('odDoc').addEventListener('click', (e)=>{ const x = e.target.closest('[data-figx]'); if(!x) return; x.closest('figure').remove(); D.doc = docFromDOM(); save({doc: D.doc}); });
@@ -1371,22 +1448,22 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ov.addEventListener('mousedown', (e)=>{ if(e.target === ov) close(); }); ov.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') close(); });
     ov.querySelector('[data-x]').addEventListener('click', close); ov.querySelector('[data-ok]').addEventListener('click', ()=>{ close(); onOk(); }); ov.querySelector('[data-ok]').focus();
   }
-  $('odRewrite').addEventListener('click', ()=> ask('Write it again?', 'The AI writes the whole document again from your answers. Your own edits in the text are replaced.', 'Write again', ()=>{ $('odExtra').value = ''; write(); }));
+  $('odRewrite').addEventListener('click', ()=> ask('Write it again?', 'The AI writes the whole document again from your answers. Your own edits in the text are replaced.', 'Write again', ()=>{ $('odExtra').value = ''; scanSnd.prime(); fs.enter(); write(); }));
   $('odUndo').addEventListener('click', ()=>{ if(!D.prevDoc) return; const now = D.doc; save({doc: D.prevDoc}); D.prevDoc = now; openDocView(); toast('Back to the version before the AI change.'); });
   $('odEditAnswers').addEventListener('click', ()=>{ cur = {s: 0, q: 0}; openInterview(); });
   $('odGoWrite').addEventListener('click', ()=> show('vReady'));
   $('odBackToQ').addEventListener('click', ()=>{ cur = {s: 0, q: 0}; openInterview(); });
-  $('odWrite').addEventListener('click', ()=>{ scanSnd.prime(); write(); });
+  $('odWrite').addEventListener('click', ()=>{ scanSnd.prime(); fs.enter(); write(); });
 
   // ---------- wiring ----------
   $('odNew').addEventListener('click', newDoc);
   $('odBack').addEventListener('click', ()=>{ D = null; renderHome(); show('vHome'); });
-  $('odUsePala').addEventListener('click', ()=>{ scanSnd.prime(); startFrom(PALA_TEMPLATE, 'PALA template'); });
+  $('odUsePala').addEventListener('click', ()=>{ scanSnd.prime(); fs.enter(); startFrom(PALA_TEMPLATE, 'PALA template'); });
   const drop = $('odDrop');
   drop.addEventListener('click', ()=>{ scanSnd.prime(); $('odFile').click(); }); drop.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('odFile').click(); } });
   drop.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.classList.add('on'); }); drop.addEventListener('dragleave', ()=> drop.classList.remove('on'));
-  drop.addEventListener('drop', (e)=>{ e.preventDefault(); drop.classList.remove('on'); scanSnd.prime(); pickFile(e.dataTransfer.files[0]); });
-  $('odFile').addEventListener('change', (e)=>{ const f = e.target.files[0]; e.target.value = ''; pickFile(f); });
+  drop.addEventListener('drop', (e)=>{ e.preventDefault(); drop.classList.remove('on'); scanSnd.prime(); fs.enter(); pickFile(e.dataTransfer.files[0]); });
+  $('odFile').addEventListener('change', (e)=>{ const f = e.target.files[0]; e.target.value = ''; if(f) fs.enter(); pickFile(f); });
   // ---------- trash ----------
   const daysLeft = (d)=> { const t = d.deletedAt && d.deletedAt.toMillis ? d.deletedAt.toMillis() : Date.now(); return Math.max(0, 30 - Math.floor((Date.now() - t) / 864e5)); };
   const picked = new Set();
