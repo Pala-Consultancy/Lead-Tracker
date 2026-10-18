@@ -163,6 +163,89 @@
   .od-item.trash{cursor:default;} .od-item.trash:hover{border-color:var(--border-soft);}
   .od-trash-btns{display:flex;gap:8px;margin-top:14px;}
   .btn.danger{color:var(--fail);} .btn.danger:hover{border-color:var(--fail);color:var(--fail);}
+
+  /* the waiting screen */
+  .od-busy:has(.ob){padding:0;display:block;text-align:left;}
+  .ob{display:grid;grid-template-columns:150px 1fr;gap:26px 30px;align-items:center;padding:30px 34px 26px;}
+  .ob-doc{position:relative;width:150px;height:186px;border-radius:14px;background:var(--panel);border:1px solid var(--border);box-shadow:0 18px 40px -22px rgba(55,48,179,.55);padding:18px 16px;overflow:hidden;animation:obFloat 3.2s ease-in-out infinite;}
+  @keyframes obFloat{0%,100%{transform:translateY(0) rotate(-1.5deg);}50%{transform:translateY(-6px) rotate(1deg);}}
+  .ob-h{display:block;height:10px;width:68%;border-radius:5px;background:linear-gradient(90deg,#3730B3,#7A4FB5);margin-bottom:14px;}
+  .ob-l{display:block;height:6px;border-radius:4px;background:#DCD9F5;margin:9px 0;transform-origin:left;animation:obWrite 2.8s ease-in-out infinite;}
+  .ob-l:nth-of-type(2){width:92%;animation-delay:.1s;} .ob-l:nth-of-type(3){width:80%;animation-delay:.35s;} .ob-l:nth-of-type(4){width:96%;animation-delay:.6s;}
+  .ob-l:nth-of-type(5){width:60%;animation-delay:.85s;} .ob-l:nth-of-type(6){width:88%;animation-delay:1.1s;} .ob-l:nth-of-type(7){width:74%;animation-delay:1.35s;} .ob-l:nth-of-type(8){width:50%;animation-delay:1.6s;}
+  @keyframes obWrite{0%{transform:scaleX(0);opacity:.4;}35%,80%{transform:scaleX(1);opacity:1;}100%{transform:scaleX(1);opacity:.4;}}
+  .ob-scan{position:absolute;left:0;right:0;height:38px;top:-40px;background:linear-gradient(180deg,transparent,rgba(124,104,255,.28),transparent);animation:obScan 2.2s linear infinite;}
+  @keyframes obScan{to{top:190px;}}
+  .ob.finish .ob-doc{animation:none;} .ob.finish .ob-scan{display:none;}
+  .ob-main{min-width:0;}
+  .ob-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;} .ob-top b{font:800 18px Sora,sans-serif;}
+  .ob-time{font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:var(--slate-light);}
+  .ob-bar{height:8px;border-radius:999px;background:var(--panel-alt);margin:12px 0 14px;overflow:hidden;}
+  .ob-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#3730B3,#7A4FB5,#3730B3);background-size:200% 100%;animation:obShine 1.6s linear infinite;transition:width .4s ease-out;}
+  @keyframes obShine{to{background-position:-200% 0;}}
+  .ob.finish .ob-bar i{background:var(--ok);animation:none;}
+  .ob-steps{list-style:none;margin:0;padding:0;max-height:132px;overflow:hidden;}
+  .ob-steps li{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px;color:var(--slate-light);transition:color .25s;}
+  .ob-steps li .ob-k{flex-shrink:0;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:background .25s,border-color .25s;}
+  .ob-steps li.done{color:var(--ink);} .ob-steps li.done .ob-k{background:var(--ok);border-color:var(--ok);} .ob-steps li.done .ob-k::before{content:"✓";font-weight:800;}
+  .ob-steps li.now{color:var(--ink);font-weight:700;} .ob-steps li.now .ob-k{border-color:var(--teal);border-top-color:transparent;animation:odspin .8s linear infinite;}
+  .ob-tip{grid-column:1/-1;display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:10px;padding-top:20px;border-top:1px solid var(--border-soft);}
+  .ob-nav{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--panel);color:var(--slate);font-size:20px;line-height:1;}
+  .ob-nav:hover{border-color:var(--teal);color:var(--teal);}
+  .ob-card{display:flex;align-items:flex-start;gap:12px;min-height:64px;padding:12px 14px;border-radius:14px;background:var(--panel-alt);}
+  .ob-card.in.r{animation:obInR .35s ease-out;} .ob-card.in.l{animation:obInL .35s ease-out;}
+  @keyframes obInR{from{opacity:0;transform:translateX(18px);}to{opacity:1;transform:none;}} @keyframes obInL{from{opacity:0;transform:translateX(-18px);}to{opacity:1;transform:none;}}
+  .ob-ic{font-size:24px;line-height:1.1;} .ob-card b{display:block;font-size:14.5px;margin-bottom:2px;} .ob-card small{display:block;font-size:13.5px;line-height:1.5;color:var(--slate);}
+  .ob-dots{grid-column:2;display:flex;justify-content:center;gap:6px;}
+  .ob-dots button{width:7px;height:7px;padding:0;border:none;border-radius:50%;background:var(--border);transition:width .2s,background .2s;}
+  .ob-dots button.on{width:20px;border-radius:999px;background:var(--teal);}
+  @media (max-width:640px){ .ob{grid-template-columns:1fr;padding:22px 18px;} .ob-doc{margin:0 auto;width:120px;height:150px;} }
+  @media (prefers-reduced-motion: reduce){ .ob-doc,.ob-l,.ob-scan,.ob-bar i{animation:none !important;} }
+
+  /* a cooler interview */
+  #vInterview{position:relative;}
+  .od-blobs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+  .od-blobs i{position:absolute;width:520px;height:520px;border-radius:50%;filter:blur(70px);opacity:.33;animation:odBlob 18s ease-in-out infinite alternate;}
+  .od-blobs i:nth-child(1){background:#8B7CF6;left:12%;top:8%;} .od-blobs i:nth-child(2){background:#5EC8F2;right:4%;top:30%;animation-delay:-6s;} .od-blobs i:nth-child(3){background:#F5A3D6;left:35%;bottom:-18%;animation-delay:-12s;}
+  @keyframes odBlob{0%{transform:translate(0,0) scale(1);}50%{transform:translate(60px,-40px) scale(1.12);}100%{transform:translate(-50px,40px) scale(.95);}}
+  html[data-theme="dark"] .od-blobs i{opacity:.16;}
+  .od-iv{position:relative;z-index:1;}
+  .od-steps,.od-q{backdrop-filter:blur(6px);}
+  .od-ring{display:flex;align-items:center;gap:12px;padding:6px 6px 14px;margin-bottom:6px;border-bottom:1px solid var(--border-soft);}
+  .od-ring svg{width:56px;height:56px;transform:rotate(-90deg);flex-shrink:0;}
+  .od-ring circle{fill:none;stroke-width:7;} .od-ring .bg{stroke:var(--panel-alt);} .od-ring .fg{stroke:url(#none);stroke:#5B4BE6;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1);}
+  .od-ring b{display:block;font:800 20px Sora,sans-serif;} .od-ring small{display:block;font-size:12px;color:var(--slate);}
+  .od-step{position:relative;} .od-step .t{flex:1;min-width:0;}
+  .od-step .sb{display:block;height:3px;border-radius:999px;background:var(--panel-alt);margin-top:5px;overflow:hidden;} .od-step .sb b{display:block;height:100%;background:linear-gradient(90deg,#3730B3,#7A4FB5);border-radius:999px;transition:width .5s;}
+  .od-step.done .sb b{background:var(--ok);}
+  .od-step small{font-size:11.5px;font-weight:700;color:var(--slate-light);font-variant-numeric:tabular-nums;}
+  .od-step.on i{animation:odPulse 1.8s ease-in-out infinite;}
+  @keyframes odPulse{0%,100%{box-shadow:0 0 0 0 rgba(55,48,179,.35);}50%{box-shadow:0 0 0 6px rgba(55,48,179,0);}}
+  .od-step:hover .t{color:var(--teal);}
+  .od-q{position:relative;overflow:hidden;} .od-q.in-r{animation:odInR .38s cubic-bezier(.2,.9,.3,1);} .od-q.in-l{animation:odInL .38s cubic-bezier(.2,.9,.3,1);}
+  @keyframes odInR{from{opacity:0;transform:translateX(34px);}to{opacity:1;transform:none;}} @keyframes odInL{from{opacity:0;transform:translateX(-34px);}to{opacity:1;transform:none;}}
+  .od-words span{display:inline-block;opacity:0;transform:translateY(8px);animation:odWord .4s ease-out forwards;}
+  @keyframes odWord{to{opacity:1;transform:none;}}
+  .od-prog i{position:relative;box-shadow:0 0 12px rgba(91,75,230,.55);}
+  .od-ans{position:relative;} .od-ans textarea{padding-right:56px;}
+  .od-mic{position:absolute;right:12px;bottom:12px;width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--panel);color:var(--slate);display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;}
+  .od-mic:hover{color:var(--teal);border-color:var(--teal);}
+  .od-mic.rec{background:#E5484D;border-color:#E5484D;color:#fff;animation:odRec 1.2s ease-in-out infinite;}
+  @keyframes odRec{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.45);}50%{box-shadow:0 0 0 10px rgba(229,72,77,0);}}
+  .od-meter{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .od-meter .lv{font-size:12.5px;font-weight:700;margin-right:4px;color:var(--slate-light);} .od-meter .lv.l1{color:#B7791F;} .od-meter .lv.l2{color:var(--teal);} .od-meter .lv.l3{color:var(--ok);}
+  .od-meter .ck{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--panel-alt);color:var(--slate-light);border:1px solid var(--border-soft);transition:all .25s;}
+  .od-meter .ck.ok{background:rgba(30,158,116,.1);border-color:rgba(30,158,116,.35);color:var(--ok);transform:scale(1.04);}
+  .od-cheer{position:absolute;right:30px;bottom:86px;padding:8px 14px;border-radius:999px;background:linear-gradient(135deg,#3730B3,#7A4FB5);color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 12px 28px -12px rgba(55,48,179,.8);animation:odCheer 1.7s ease-out forwards;pointer-events:none;}
+  @keyframes odCheer{0%{opacity:0;transform:translateY(10px) scale(.9);}15%{opacity:1;transform:none;}80%{opacity:1;}100%{opacity:0;transform:translateY(-14px);}}
+  .od-party{position:fixed;left:50%;top:38%;z-index:960;pointer-events:none;}
+  .od-party .pb{position:relative;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:18px;background:var(--panel);color:var(--ink);box-shadow:0 26px 60px -20px rgba(16,24,40,.45);border:1px solid var(--border-soft);animation:odPop 1.9s cubic-bezier(.3,1.5,.5,1) forwards;white-space:nowrap;}
+  .od-party .ck{width:38px;height:38px;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;}
+  .od-party b{display:block;font:800 16px Sora,sans-serif;} .od-party small{display:block;font-size:12.5px;color:var(--slate);}
+  @keyframes odPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6);}14%{opacity:1;transform:translate(-50%,-50%) scale(1);}82%{opacity:1;}100%{opacity:0;transform:translate(-50%,-62%) scale(.96);}}
+  .od-party i{position:absolute;left:0;top:0;width:8px;height:12px;border-radius:2px;opacity:0;animation:odConf 1.2s cubic-bezier(.2,.8,.3,1) .1s forwards;}
+  @keyframes odConf{0%{opacity:1;transform:translate(0,0) rotate(0);}100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 80px)) rotate(var(--r));}}
+  @media (prefers-reduced-motion: reduce){ .od-blobs,.od-words span,.od-q.in-r,.od-q.in-l,.od-party i{animation:none !important;opacity:1;transform:none;} }
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -637,10 +720,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div class="od-or">or</div>
         <div style="text-align:center"><button type="button" class="btn" id="odUsePala">✨ Use the PALA template</button></div>
       </div>
-      <div class="od-busy hidden" id="setupBusy"><div class="spin"></div><b id="busyT">Reading your template…</b><small id="busyS">The AI goes through every section and prepares the questions it needs to write your document.</small></div>
+      <div class="od-busy hidden" id="setupBusy"></div>
     </div></section>
 
-    <section id="vInterview" class="hidden"><div class="od-iv">
+    <section id="vInterview" class="hidden"><div class="od-blobs" aria-hidden="true"><i></i><i></i><i></i></div><div class="od-iv">
       <aside class="card od-steps"><h4>Your sections</h4><div id="odSteps"></div><button type="button" class="btn primary sm write hidden" id="odGoWrite">✍️ Write my offer doc</button></aside>
       <div class="card od-q" id="odQ"></div>
     </div></section>
@@ -711,6 +794,66 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     saveT = setTimeout(()=>{ const {id, prevDoc, ...rest} = D; db.collection('offerDocs').doc(id).set(Object.assign(rest, {updatedAt: FV.serverTimestamp()}), {merge: true})
       .then(()=>{ $('odSaved').textContent = 'Saved'; }).catch((e)=>{ console.error(e); $('odSaved').textContent = 'Not saved yet'; toast('Couldn’t save. Check your connection.', true); }); }, 500); }
 
+  // ---------- the waiting screen: steps, progress, tips you can click through ----------
+  const TIPS = [
+    ['✍️', 'Write to one person', 'Use their name, their numbers and their words from the call. It should feel written for them, because it is.'],
+    ['🔢', 'Numbers beat adjectives', '“10 booked calls in 30 days” sells. “Massive growth” gets skimmed.'],
+    ['🧾', 'Every claim needs proof', 'A screenshot, a client, a number. If you can’t back it up, leave it out: one doubt spreads to everything else.'],
+    ['📄', 'Short gets read', 'Three pages max. A long document gets skimmed, a short one gets read, twice.'],
+    ['🎯', 'Promise first', 'If they only read your first two sentences, they should still know what you’ll get them, by when, and how.'],
+    ['🛡️', 'A guarantee you can keep', 'Only promise what you can actually deliver. A strong guarantee is conviction, not a gamble.'],
+    ['💳', 'Make saying yes easy', 'Two tiers max, payment plans that add up, and one good reason to pay in full today.'],
+    ['👉', 'One clear next step', 'Tell them exactly what to do, and what happens right after. “Reply ‘I’m in’ and I’ll send the agreement today.”'],
+  ];
+  function busy(kind, sections){
+    const box = $('setupBusy'), expected = kind === 'write' ? 70 : 35, t0 = Date.now();
+    const steps = kind === 'write'
+      ? ['Reading all your answers'].concat((sections || []).slice(0, 8).map((x)=> 'Writing: ' + x)).concat(['Checking the numbers', 'Final polish'])
+      : ['Reading your template', 'Finding every section', 'Working out what it needs from you', 'Writing your questions', 'Putting them in the right order'];
+    let tip = Math.floor(Math.random() * TIPS.length), finished = false;
+    box.innerHTML = `<div class="ob">
+      <div class="ob-doc" aria-hidden="true"><i class="ob-h"></i>${'<i class="ob-l"></i>'.repeat(7)}<span class="ob-scan"></span></div>
+      <div class="ob-main">
+        <div class="ob-top"><b id="obTitle">${kind === 'write' ? 'Writing your offer document' : 'Reading your template'}</b><span class="ob-time" id="obTime">0:00</span></div>
+        <div class="ob-bar"><i id="obFill"></i></div>
+        <ol class="ob-steps" id="obSteps">${steps.map((x, i)=> `<li data-i="${i}"><span class="ob-k"></span>${esc(x)}</li>`).join('')}</ol>
+      </div>
+      <div class="ob-tip" role="region" aria-label="Tips while you wait">
+        <button type="button" class="ob-nav" data-tip="-1" aria-label="Previous tip">‹</button>
+        <div class="ob-card" id="obCard" aria-live="polite"></div>
+        <button type="button" class="ob-nav" data-tip="1" aria-label="Next tip">›</button>
+        <div class="ob-dots" id="obDots">${TIPS.map((x, i)=> `<button type="button" data-dot="${i}" aria-label="Tip ${i + 1}"></button>`).join('')}</div>
+      </div></div>`;
+    const card = $('obCard');
+    const paintTip = (dir)=>{ const [ic, h, t] = TIPS[tip]; card.classList.remove('in', 'l', 'r'); void card.offsetWidth;
+      card.innerHTML = `<span class="ob-ic">${ic}</span><span><b>${esc(h)}</b><small>${esc(t)}</small></span>`; card.classList.add('in', dir < 0 ? 'l' : 'r');
+      box.querySelectorAll('[data-dot]').forEach((d, i)=> d.classList.toggle('on', i === tip)); };
+    let tipTimer = setInterval(()=>{ tip = (tip + 1) % TIPS.length; paintTip(1); }, 7000);
+    box.querySelector('.ob-tip').addEventListener('click', (e)=>{
+      const n = e.target.closest('[data-tip]'), d = e.target.closest('[data-dot]'); if(!n && !d) return;
+      const was = tip; tip = n ? (tip + (+n.dataset.tip) + TIPS.length) % TIPS.length : +d.dataset.dot;
+      clearInterval(tipTimer); tipTimer = setInterval(()=>{ tip = (tip + 1) % TIPS.length; paintTip(1); }, 9000);
+      paintTip(n ? +n.dataset.tip : (tip >= was ? 1 : -1));
+    });
+    paintTip(1);
+    const lis = [...box.querySelectorAll('#obSteps li')];
+    const tick = ()=>{
+      if(finished) return;
+      const sec = (Date.now() - t0) / 1000, pct = 94 * (1 - Math.exp(-sec / (expected / 2.3)));
+      $('obFill').style.width = pct + '%'; $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+      const at = Math.min(lis.length - 1, Math.floor(pct / 94 * lis.length));
+      lis.forEach((li, i)=>{ li.classList.toggle('done', i < at); li.classList.toggle('now', i === at); });
+      const now = lis[at]; if(now && now.offsetTop) $('obSteps').scrollTo({top: Math.max(0, now.offsetTop - 70), behavior: 'smooth'});
+      if(sec > expected * 1.8) $('obTitle').textContent = 'Almost there… the AI is taking a bit longer than usual';
+    };
+    const iv = setInterval(tick, 250); tick();
+    return {done: ()=> new Promise((res)=>{ finished = true; clearInterval(iv); clearInterval(tipTimer);
+      $('obFill').style.width = '100%'; lis.forEach((li)=>{ li.classList.add('done'); li.classList.remove('now'); });
+      $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready ✓' : 'Your interview is ready ✓'; box.querySelector('.ob').classList.add('finish');
+      setTimeout(res, 900); }),
+      stop: ()=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); }};
+  }
+
   // ---------- step 1: the template ----------
   function newDoc(){ D = null; $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); show('vSetup'); }
   const libs = {};
@@ -741,14 +884,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     text = String(text || '').trim();
     if(text.length < 80){ toast('That template looks empty. Try another file.', true); return; }
     $('setupPick').classList.add('hidden'); $('setupBusy').classList.remove('hidden');
-    $('busyT').textContent = 'Reading your template…'; $('busyS').textContent = 'The AI goes through every section and prepares the questions it needs to write your document. This takes about half a minute.';
+    const ld = busy('plan');
     try {
       const {plan} = await AI({mode: 'plan', template: text.slice(0, 40000)});
+      await ld.done();
       const ref = db.collection('offerDocs').doc();
       D = {id: ref.id, createdBy: me, workspaceId: wsId, title: plan.title || 'Offer document', templateName: name, template: text.slice(0, 40000), plan, answers: {}, pos: {s: 0, q: 0}, stage: 'interview'};
       const {id, ...rest} = D; await ref.set(Object.assign(rest, {createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}));
       cur = {s: 0, q: 0}; await playIntro(plan); openInterview();
-    } catch(e){ console.error(e); toast(aiErr(e), true); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); }
+    } catch(e){ ld.stop(); console.error(e); toast(aiErr(e), true); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); }
   }
   async function pickFile(f){ if(!f) return; try { await startFrom(await readTemplate(f), f.name); } catch(e){ console.error(e); toast(e.message || 'Couldn’t read that file.', true); } }
 
@@ -789,24 +933,40 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function openInterview(){ show('vInterview'); renderSteps(); renderQ(); }
   function sectionDone(s){ return allQ(s).every((q)=> (D.answers || {})[q.id] != null); }
   function renderSteps(){
-    $('odSteps').innerHTML = D.plan.sections.map((s, i)=> `<button type="button" class="od-step${i === cur.s ? ' on' : ''}${sectionDone(s) ? ' done' : ''}" data-sec="${i}"><i>${sectionDone(s) ? '✓' : i + 1}</i><span>${esc(s.title)}</span></button>`).join('');
+    let all = 0, got = 0;
+    const rows = D.plan.sections.map((s, i)=>{ const qs = allQ(s), a = qs.filter((q)=> (D.answers || {})[q.id] != null).length; all += qs.length; got += a;
+      return `<button type="button" class="od-step${i === cur.s ? ' on' : ''}${sectionDone(s) ? ' done' : ''}" data-sec="${i}" title="Go to ${esc(s.title)}"><i>${sectionDone(s) ? '✓' : i + 1}</i><span class="t">${esc(s.title)}<em class="sb"><b style="width:${qs.length ? Math.round(a / qs.length * 100) : 0}%"></b></em></span><small>${a}/${qs.length}</small></button>`; }).join('');
+    const pct = all ? Math.round(got / all * 100) : 0, C = 2 * Math.PI * 26;
+    $('odSteps').innerHTML = `<div class="od-ring"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" class="bg"/><circle cx="32" cy="32" r="26" class="fg" style="stroke-dasharray:${C};stroke-dashoffset:${C * (1 - pct / 100)}"/></svg><span><b>${pct}%</b><small>${got} of ${all} answered</small></span></div>` + rows;
     $('odGoWrite').classList.toggle('hidden', !D.plan.sections.every(sectionDone));
   }
+  $('odSteps').addEventListener('click', (e)=>{
+    const b = e.target.closest('[data-sec]'); if(!b || !D) return; const i = +b.dataset.sec, qs = allQ(D.plan.sections[i]);
+    dir = i < cur.s ? -1 : 1; cur = {s: i, q: Math.max(0, qs.findIndex((q)=> D.answers[q.id] == null))}; save({pos: cur}); renderQ();
+  });
+  let dir = 1;
   function counts(){ let n = 0, k = 0; D.plan.sections.forEach((s, i)=> allQ(s).forEach((q, j)=>{ n++; if(i < cur.s || (i === cur.s && j < cur.q)) k++; })); return {n, k}; }
   function renderQ(){
     const s = D.plan.sections[cur.s], qs = allQ(s), q = qs[cur.q]; if(!q){ nextSection(); return; }
     curQid = q.id;
     const {n, k} = counts(), isFu = (s.followups || []).some((f)=> f.id === q.id), a = (D.answers || {})[q.id];
     $('odQ').innerHTML = `<div class="meta"><span>${esc(s.title)}</span><span>Question ${k + 1} of ${n}</span></div><div class="od-prog"><i style="width:${Math.round(k / n * 100)}%"></i></div>
-      ${isFu ? '<span class="fu">Follow-up question</span>' : ''}<h2>${esc(q.q)}</h2>${q.why ? `<p class="why">${esc(q.why)}</p>` : ''}${q.tip ? `<div class="tip"><span>💡</span><span>${esc(q.tip)}</span></div>` : ''}
-      <textarea id="odA" class="${q.kind === 'short' ? 'short' : ''}" placeholder="Your answer…">${esc(a && a !== '__skip' ? a : '')}</textarea>
+      ${isFu ? '<span class="fu">Follow-up question</span>' : ''}<h2 class="od-words">${esc(q.q).split(' ').map((w, i)=> `<span style="animation-delay:${Math.min(i, 30) * 28}ms">${w}</span>`).join(' ')}</h2>${q.why ? `<p class="why">${esc(q.why)}</p>` : ''}${q.tip ? `<div class="tip"><span>💡</span><span>${esc(q.tip)}</span></div>` : ''}
+      <div class="od-ans"><textarea id="odA" class="${q.kind === 'short' ? 'short' : ''}" placeholder="Your answer…">${esc(a && a !== '__skip' ? a : '')}</textarea>
+        ${speech ? '<button type="button" class="od-mic" id="odMic" title="Speak your answer" aria-label="Speak your answer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>' : ''}</div>
+      ${q.kind === 'short' ? '' : '<div class="od-meter" id="odMeter" aria-live="polite"></div>'}
       <div class="od-media" id="odMedia">${mediaRow(q.id)}</div>
       <div class="btns"><button type="button" class="btn sm" id="odPrev" ${cur.s === 0 && cur.q === 0 ? 'disabled' : ''}>← Back</button><span class="grow"></span>
         <button type="button" class="od-skip" id="odSkip">I don’t know yet</button><button type="button" class="btn primary" id="odNext">Next →</button></div>
       <div class="hint" style="margin-top:8px">Tip: Ctrl+Enter for Next. Your answers save automatically.</div>`;
-    const ta = $('odA'); ta.focus(); ta.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); $('odNext').click(); } });
+    const card = $('odQ'); card.classList.remove('in-l', 'in-r'); void card.offsetWidth; card.classList.add(dir < 0 ? 'in-l' : 'in-r'); dir = 1;
+    const ta = $('odA'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    meter(ta.value); ta.addEventListener('input', ()=> meter(ta.value));
+    if(speech) $('odMic').addEventListener('click', ()=> dictate(ta)); ta.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); $('odNext').click(); } });
     ta.addEventListener('input', ()=>{ D.answers[q.id] = ta.value; save({answers: D.answers}); });
-    $('odNext').addEventListener('click', ()=>{ D.answers[q.id] = ta.value.trim() || '__skip'; next(); });
+    $('odNext').addEventListener('click', ()=>{ if(rec) rec.stop(); D.answers[q.id] = ta.value.trim() || '__skip';
+      const sc = +(($('odMeter') || {}).dataset || {}).score || 0; if(sc >= 3) cheer(['That’s specific, great! 🔥', 'Strong answer 💪', 'Love the numbers ✨'][Math.floor(Math.random() * 3)]);
+      chime([660, 990], 0.045); setTimeout(next, sc >= 3 ? 450 : 0); });
     $('odSkip').addEventListener('click', ()=>{ D.answers[q.id] = '__skip'; next(); });
     $('odPrev').addEventListener('click', prev);
     $('odMedia').addEventListener('click', (e)=>{
@@ -849,7 +1009,43 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     }
   }
   $('odMediaFile').addEventListener('change', (e)=>{ const fs = [...e.target.files]; e.target.value = ''; if(fs.length && mediaFor) addMedia(fs, mediaFor); });
-  function prev(){ if(cur.q > 0) cur.q--; else if(cur.s > 0){ cur.s--; cur.q = allQ(D.plan.sections[cur.s]).length - 1; } save({pos: cur}); renderQ(); }
+  // the answer meter: the template's rules, live while you type
+  function meter(v){
+    const m = $('odMeter'); if(!m) return; v = (v || '').trim();
+    const checks = [['🔢', 'A number', /\d/.test(v)], ['⏱', 'A timeframe', /\b(\d+\s*)?(days?|weeks?|months?|years?|dag(en)?|weken|maand(en)?|jaar|jaren|q[1-4]|quarter)\b/i.test(v)], ['📝', 'Specific', v.split(/\s+/).filter(Boolean).length >= 12]];
+    const n = checks.filter((c)=> c[2]).length, label = !v ? 'Type your answer: these light up as it gets stronger' : ['Getting started', 'Good start', 'Strong 💪', 'Excellent 🔥'][n];
+    m.innerHTML = `<span class="lv l${v ? n : 0}">${label}</span>` + checks.map(([ic, t, ok])=> `<span class="ck${ok ? ' ok' : ''}">${ic} ${t}</span>`).join('');
+    m.dataset.score = n;
+  }
+  // 🎤 speak your answer (Chrome and Edge)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, speech = !!SR; let rec = null;
+  function dictate(ta){
+    const b = $('odMic'); if(rec){ rec.stop(); return; }
+    rec = new SR(); rec.lang = document.documentElement.lang === 'nl' ? 'nl-NL' : (navigator.language || 'en-US'); rec.interimResults = true; rec.continuous = true;
+    const base = ta.value ? ta.value.replace(/\s*$/, ' ') : ''; let finalText = '';
+    rec.onresult = (e)=>{ let interim = ''; for(let i = e.resultIndex; i < e.results.length; i++){ const r = e.results[i]; if(r.isFinal) finalText += r[0].transcript + ' '; else interim += r[0].transcript; }
+      ta.value = (base + finalText + interim).replace(/\s+$/, ' '); ta.dispatchEvent(new Event('input')); };
+    rec.onend = ()=>{ rec = null; b.classList.remove('rec'); b.title = 'Speak your answer'; ta.value = ta.value.trim(); ta.dispatchEvent(new Event('input')); ta.focus(); };
+    rec.onerror = (e)=>{ if(e.error === 'not-allowed') toast('Allow the microphone in your browser to speak your answer.', true); };
+    try { rec.start(); b.classList.add('rec'); b.title = 'Stop'; toast('Listening… speak your answer, click the microphone again to stop.'); } catch(e){ rec = null; }
+  }
+  // little sounds and the "section complete" moment
+  function chime(notes, vol){
+    try { if(localStorage.getItem('ptThemeSound') === 'off') return; const A = window.AudioContext || window.webkitAudioContext; if(!A) return;
+      const ac = chime.ac || (chime.ac = new A()); if(ac.state === 'suspended') ac.resume(); const t = ac.currentTime + 0.02;
+      notes.forEach((f, k)=>{ const o = ac.createOscillator(), g = ac.createGain(), s0 = t + k * 0.085; o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(vol || 0.07, s0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s0 + 0.5); o.connect(g); g.connect(ac.destination); o.start(s0); o.stop(s0 + 0.55); });
+    } catch(e){}
+  }
+  function cheer(msg){ const c = document.createElement('div'); c.className = 'od-cheer'; c.textContent = msg; $('odQ').appendChild(c); setTimeout(()=> c.remove(), 1700); }
+  function sectionParty(s, i){
+    const n = D.plan.sections.length, el = document.createElement('div'); el.className = 'od-party';
+    el.innerHTML = `<div class="pb"><span class="ck">✓</span><span><b>${esc(s.title)} done</b><small>${i + 1} of ${n} sections</small></span></div>`;
+    for(let k = 0; k < 26; k++){ const c = document.createElement('i'); const a = Math.random() * Math.PI * 2, r = 70 + Math.random() * 120;
+      c.style.cssText = `--x:${Math.cos(a) * r}px;--y:${Math.sin(a) * r - 40}px;--r:${Math.random() * 360}deg;background:${['#FFC94D', '#7A6CF0', '#3BC48E', '#F472B6', '#60A5FA'][k % 5]}`; el.appendChild(c); }
+    document.body.appendChild(el); chime([523.25, 659.25, 783.99, 1046.5], 0.08); setTimeout(()=> el.remove(), 1900);
+  }
+  function prev(){ dir = -1; if(cur.q > 0) cur.q--; else if(cur.s > 0){ cur.s--; cur.q = allQ(D.plan.sections[cur.s]).length - 1; } save({pos: cur}); renderQ(); }
   async function next(){
     const s = D.plan.sections[cur.s];
     save({answers: D.answers, pos: cur});
@@ -867,6 +1063,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     nextSection();
   }
   function nextSection(){
+    const done = D.plan.sections[cur.s]; if(done && sectionDone(done) && !done.partied){ done.partied = true; sectionParty(done, cur.s); }
     const i = D.plan.sections.findIndex((s, k)=> k > cur.s && !sectionDone(s)), j = i >= 0 ? i : D.plan.sections.findIndex((s)=> !sectionDone(s));
     if(j >= 0){ cur = {s: j, q: Math.max(0, allQ(D.plan.sections[j]).findIndex((q)=> D.answers[q.id] == null))}; save({pos: cur}); renderQ(); return; }
     save({stage: 'ready', pos: cur}); renderSteps(); show('vReady');
@@ -896,12 +1093,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function openDocView(){ show('vDoc'); $('odDoc').innerHTML = docHTML(D.doc); $('odCheckBox').classList.add('hidden'); $('odSaved').textContent = 'Saved'; $('odUndo').classList.toggle('hidden', !D.prevDoc); }
   async function write(){
     show('vSetup'); $('setupPick').classList.add('hidden'); $('setupBusy').classList.remove('hidden');
-    $('busyT').textContent = 'Writing your offer document…'; $('busyS').textContent = 'The AI turns your answers into a short, specific document that sells for you. This takes about a minute.';
+    const ld = busy('write', D.plan.sections.map((x)=> x.title));
     try {
       const answers = {}; Object.entries(D.answers).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
       const {doc} = await AI({mode: 'write', template: D.template, plan: D.plan, answers, extra: $('odExtra').value.trim(), media: mediaForAI()});
+      await ld.done();
       save({doc, stage: 'done', title: doc.title || D.title}); openDocView(); toast('Your offer document is ready. Read it through and adjust anything you like.');
-    } catch(e){ console.error(e); toast(aiErr(e), true); show(D.stage === 'done' && D.doc ? 'vDoc' : 'vReady'); }
+    } catch(e){ ld.stop(); console.error(e); toast(aiErr(e), true); show(D.stage === 'done' && D.doc ? 'vDoc' : 'vReady'); }
   }
   $('odDoc').addEventListener('input', ()=>{ D.doc = docFromDOM(); save({doc: D.doc}); });
   $('odDoc').addEventListener('click', (e)=>{ const x = e.target.closest('[data-figx]'); if(!x) return; x.closest('figure').remove(); D.doc = docFromDOM(); save({doc: D.doc}); });
