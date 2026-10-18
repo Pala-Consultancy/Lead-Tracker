@@ -184,9 +184,10 @@
   .ob-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#3730B3,#7A4FB5,#3730B3);background-size:200% 100%;animation:obShine 1.6s linear infinite;transition:width .4s ease-out;}
   @keyframes obShine{to{background-position:-200% 0;}}
   .ob.finish .ob-bar i{background:var(--ok);animation:none;}
-  .ob-steps{list-style:none;margin:0;padding:0;max-height:132px;overflow:hidden;}
-  .ob-steps li{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px;color:var(--slate-light);transition:color .25s;}
-  .ob-steps li .ob-k{flex-shrink:0;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:background .25s,border-color .25s;}
+  .ob-steps{list-style:none;margin:0 -4px;padding:4px;max-height:158px;overflow:hidden;}   /* room around the circles, so they're never cut off: 5 full steps */
+  .ob-steps.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 26px),transparent);mask-image:linear-gradient(#000 calc(100% - 26px),transparent);}
+  .ob-steps li{display:flex;align-items:center;gap:10px;height:30px;box-sizing:border-box;padding:5px 0;font-size:14px;color:var(--slate-light);transition:color .25s;}
+  .ob-steps li .ob-k{box-sizing:border-box;flex:0 0 20px;width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#fff;transition:background .25s,border-color .25s;}
   .ob-steps li.done{color:var(--ink);} .ob-steps li.done .ob-k{background:var(--ok);border-color:var(--ok);} .ob-steps li.done .ob-k::before{content:"✓";font-weight:800;}
   .ob-steps li.now{color:var(--ink);font-weight:700;} .ob-steps li.now .ob-k{border-color:var(--teal);border-top-color:transparent;animation:odspin .8s linear infinite;}
   .ob-tip{grid-column:1/-1;display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:10px;padding-top:20px;border-top:1px solid var(--border-soft);}
@@ -848,13 +849,16 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     });
     paintTip(1);
     const lis = [...box.querySelectorAll('#obSteps li')];
+    requestAnimationFrame(()=>{ const l = $('obSteps'); if(l) l.classList.toggle('more', l.scrollHeight > l.clientHeight + 2); });
     const tick = ()=>{
       if(finished) return;
       const sec = (Date.now() - t0) / 1000, pct = 94 * (1 - Math.exp(-sec / (expected / 2.3)));
       $('obFill').style.width = pct + '%'; $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
       const at = Math.min(lis.length - 1, Math.floor(pct / 94 * lis.length));
       lis.forEach((li, i)=>{ li.classList.toggle('done', i < at); li.classList.toggle('now', i === at); });
-      const now = lis[at]; if(now && now.offsetTop) $('obSteps').scrollTo({top: Math.max(0, now.offsetTop - 70), behavior: 'smooth'});
+      const list = $('obSteps'), rowH = lis.length > 1 ? lis[1].offsetTop - lis[0].offsetTop : 30;          // scroll by whole steps, so no circle is ever cut off at the top
+      list.scrollTo({top: Math.max(0, Math.min(at - 1, lis.length - 5)) * rowH, behavior: 'smooth'});
+      list.classList.toggle('more', list.scrollTop + list.clientHeight < list.scrollHeight - 2);
       if(sec > expected * 1.8) $('obTitle').textContent = 'Almost there… the AI is taking a bit longer than usual';
     };
     const iv = setInterval(tick, 250); tick();
