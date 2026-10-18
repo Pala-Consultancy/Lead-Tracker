@@ -124,7 +124,7 @@
   .od-doc figure.od-fig:hover .od-figx{opacity:1;}
 
   /* the intro: pages fly in, the document comes together */
-  .od-intro{position:fixed;inset:0;z-index:950;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;cursor:pointer;
+  .od-intro{position:fixed;inset:0;z-index:950;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;cursor:default;
     background:radial-gradient(120% 90% at 50% 40%,#2A2470 0%,#14113F 55%,#090720 100%);color:#fff;animation:oiIn .45s ease-out;overflow:hidden;}
   .od-intro.out{animation:oiOut .45s ease-in forwards;}
   @keyframes oiIn{from{opacity:0;}to{opacity:1;}} @keyframes oiOut{to{opacity:0;transform:scale(1.04);}}
@@ -294,6 +294,52 @@
   .od-trash-btns .btn.danger{background:var(--panel);color:var(--fail);border-color:var(--border);} .od-trash-btns .btn.danger:hover{border-color:var(--fail);}
   .od-item.trash{cursor:pointer;padding-left:50px;} .od-pick{position:absolute;left:16px;top:19px;display:flex;}
   .od-item.trash.picked{border-color:#3730B3;background:color-mix(in srgb,#3730B3 6%,var(--panel));box-shadow:0 0 0 1px #3730B3 inset,var(--shadow);}
+
+  /* the full-screen waiting scene */
+  .ob-stage{position:fixed;inset:0;z-index:940;overflow:auto;color:#EEF0FF;background:radial-gradient(120% 90% at 50% 30%,#2A2470 0%,#16124A 45%,#08061F 100%);animation:obsIn .5s ease-out;}
+  .ob-stage.leaving{animation:obsOut .55s ease-in forwards;}
+  @keyframes obsIn{from{opacity:0;}to{opacity:1;}} @keyframes obsOut{to{opacity:0;}}
+  .obs-bg{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+  .obs-stars{position:absolute;inset:-50%;background-image:radial-gradient(1.5px 1.5px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 20%,#cfd6ff,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff,transparent),
+    radial-gradient(1px 1px at 85% 60%,#a5b4fc,transparent),radial-gradient(1px 1px at 10% 70%,#fff,transparent),radial-gradient(1.2px 1.2px at 55% 45%,#c7d2fe,transparent);background-size:340px 340px;opacity:.55;animation:obsDrift 60s linear infinite;}
+  .obs-stars.s2{background-size:520px 520px;opacity:.35;animation-duration:110s;animation-direction:reverse;}
+  @keyframes obsDrift{to{transform:translate(170px,120px);}}
+  .obs-grid{position:absolute;left:-60%;right:-60%;bottom:0;height:46%;transform:perspective(380px) rotateX(58deg);transform-origin:50% 100%;
+    background-image:linear-gradient(rgba(125,230,255,.5) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(124,108,245,.45) 1.5px,transparent 1.5px);background-size:64px 64px;
+    -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.6) 40%,transparent 95%);mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.6) 40%,transparent 95%);animation:obsGrid 2.2s linear infinite;}
+  @keyframes obsGrid{to{background-position:0 64px,0 0;}}
+  .obs-glow{position:absolute;left:50%;top:34%;width:760px;height:760px;margin:-380px 0 0 -380px;border-radius:50%;background:radial-gradient(circle,rgba(124,104,255,.38),transparent 62%);filter:blur(8px);animation:oiPulse 3.2s ease-in-out infinite;}
+  .ob.full{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;min-height:100vh;padding:40px 28px 40px;box-sizing:border-box;}
+  .ob.full .ob-scanner{--sc:1.6;transform:scale(var(--sc));transform-origin:50% 45%;margin:calc(153px * var(--sc) - 106px) 0 calc(144px * var(--sc) - 134px);flex-shrink:0;}
+  .ob.full .ob-doc{background:#FFFFFF;}
+  .ob-orbit{position:absolute;left:50%;top:44%;border-radius:50%;pointer-events:none;}
+  .ob-orbit.o1{width:250px;height:250px;margin:-125px 0 0 -125px;border:1.5px dashed rgba(125,230,255,.45);animation:obOrbit 14s linear infinite;}
+  .ob-orbit.o2{width:300px;height:300px;margin:-150px 0 0 -150px;border:1px solid rgba(124,108,245,.35);border-top-color:rgba(125,230,255,.9);border-right-color:transparent;animation:obOrbit 5s linear infinite reverse;filter:drop-shadow(0 0 6px rgba(125,230,255,.6));}
+  @keyframes obOrbit{to{transform:rotate(360deg);}}
+  .ob.full .ob-tag{background:rgba(125,230,255,.12);color:#9DEBFF;box-shadow:0 0 0 1px rgba(125,230,255,.25) inset;}
+  .ob.full .ob-main{width:min(760px,100%);text-align:left;}
+  .ob.full .ob-top{display:flex;align-items:flex-end;justify-content:flex-start;gap:18px;}
+  .ob-pct{font:800 64px/0.9 Sora,sans-serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#FFFFFF,#9DEBFF 60%,#A99DFF);-webkit-background-clip:text;background-clip:text;color:transparent;min-width:2.6em;}
+  .ob-tt{display:flex;flex-direction:column;gap:4px;padding-bottom:6px;} .ob.full .ob-top b{font:800 24px Sora,sans-serif;color:#fff;} .ob.full .ob-time{color:#A8A6E6;font-size:13px;}
+  .ob.full .ob-bar{height:10px;background:rgba(255,255,255,.1);margin:18px 0 18px;box-shadow:0 0 0 1px rgba(255,255,255,.06) inset;}
+  .ob.full .ob-bar i{background:linear-gradient(90deg,#7C6CF5,#7DE6FF,#7C6CF5);background-size:200% 100%;box-shadow:0 0 18px rgba(125,230,255,.7);}
+  .ob.full .ob-steps{display:flex;flex-wrap:wrap;gap:8px;max-height:none;overflow:visible;margin:0;padding:0;-webkit-mask-image:none;mask-image:none;}
+  .ob.full .ob-steps li{height:auto;padding:7px 12px 7px 9px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#9D9BD6;font-size:13px;}
+  .ob.full .ob-steps li.done{color:#E6FFF5;background:rgba(30,158,116,.18);border-color:rgba(30,158,116,.45);}
+  .ob.full .ob-steps li.now{color:#fff;background:rgba(125,230,255,.12);border-color:rgba(125,230,255,.55);box-shadow:0 0 16px rgba(125,230,255,.25);}
+  .ob.full .ob-steps li .ob-k{flex:0 0 18px;width:18px;height:18px;border-color:rgba(255,255,255,.3);}
+  .ob.full .ob-steps li.now .ob-k{border-color:#7DE6FF;border-top-color:transparent;}
+  .ob.full .ob-tip{width:min(760px,100%);border-top:1px solid rgba(255,255,255,.1);}
+  .ob.full .ob-card{height:72px;box-sizing:border-box;overflow:hidden;background:rgba(255,255,255,.07);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);} .ob.full .ob-card b{color:#fff;} .ob.full .ob-card small{color:#BCBAF0;}
+  .ob.full .ob-nav{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#D9D7FF;} .ob.full .ob-nav:hover{border-color:#7DE6FF;color:#7DE6FF;}
+  .ob.full .ob-dots button{background:rgba(255,255,255,.2);} .ob.full .ob-dots button.on{background:#7DE6FF;}
+  .ob.full.finish .ob-pct{background:linear-gradient(135deg,#FFFFFF,#6EE7B7);-webkit-background-clip:text;background-clip:text;}
+  .ob.full.finish .ob-bar i{background:#34D399;box-shadow:0 0 18px rgba(52,211,153,.8);}
+  .ob.full.finish .ob-orbit{border-color:rgba(52,211,153,.5);animation-duration:1.2s;}
+  @media (max-width:700px){ .ob-pct{font-size:46px;} .ob.full .ob-top b{font-size:19px;} }
+  @media (max-height:820px){ .ob.full{gap:16px;padding:24px 24px;} .ob-pct{font-size:52px;} }
+  @media (max-height:700px){ .ob.full{gap:10px;padding:14px 20px;} .ob-pct{font-size:42px;} .ob.full .ob-top b{font-size:19px;} .ob.full .ob-bar{margin:12px 0;}
+    .ob.full .ob-steps li{padding:5px 10px 5px 7px;font-size:12.5px;} .ob.full .ob-tip{padding-top:12px;} .ob.full .ob-card{height:64px;padding:9px 12px;} .ob.full .ob-card small{font-size:12.5px;} }
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -862,62 +908,88 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ['💳', 'Make saying yes easy', 'Two tiers max, payment plans that add up, and one good reason to pay in full today.'],
     ['👉', 'One clear next step', 'Tell them exactly what to do, and what happens right after. “Reply ‘I’m in’ and I’ll send the agreement today.”'],
   ];
-  // the scanning sound: made live in the browser (no audio file). A deep engine drone that slowly rises,
-  // a whoosh with each pass of the scan line (every 2.2 s, like the animation), soft data blips, and a
-  // short confirmation tone when the AI is done. Follows the sound switch (🔊 next to Light/Dark).
+  // the scanning sound, made live in the browser: a heavy, bass-boosted sub drone, a bass thump at the start
+  // of every scan pass (every 2.2 s, with the laser beam), and a "zoom" that swells up and drops away again
+  // while moving from left to right. Boosted bass + soft saturation, with a limiter so it never distorts.
+  // Ends with a deep boom and a short confirmation tone. Follows the sound switch (🔊 next to Light/Dark).
   const scanSnd = {
     ac: null, live: null,
     off: ()=> { try { return localStorage.getItem('ptThemeSound') === 'off'; } catch(e){ return false; } },
     prime(){ if(this.off()) return; const A = window.AudioContext || window.webkitAudioContext; if(!A) return; if(!this.ac) this.ac = new A(); if(this.ac.state === 'suspended') this.ac.resume(); },
+    chain(ac){                                          // out → bass boost → saturation → limiter → speakers
+      const out = ac.createGain(), shelf = ac.createBiquadFilter(), sat = ac.createWaveShaper(), lim = ac.createDynamicsCompressor(), vol = ac.createGain();
+      shelf.type = 'lowshelf'; shelf.frequency.value = 110; shelf.gain.value = 11;
+      const k = 2.2, n = 1024, c = new Float32Array(n); for(let i = 0; i < n; i++){ const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x) / Math.tanh(k); } sat.curve = c; sat.oversample = '2x';
+      lim.threshold.value = -14; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.2; vol.gain.value = 0.75;
+      out.connect(shelf); shelf.connect(sat); sat.connect(lim); lim.connect(vol); vol.connect(ac.destination);
+      // the zoom gets its own clean path (no saturation), so it stays crisp and moves fully from left to right
+      const zoom = ac.createGain(); zoom.connect(lim); out.zoom = zoom; return out;
+    },
     play(){
       if(this.off()) return; this.prime(); const ac = this.ac; if(!ac) return; this.stopNow();
-      const t = ac.currentTime + 0.05, out = ac.createGain(), comp = ac.createDynamicsCompressor();
-      out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.9, t + 1.6);
-      out.connect(comp); comp.connect(ac.destination);
-      const nodes = [], timers = [];
-      // 1. the engine drone: two low, slightly detuned tones through a filter that opens up slowly
-      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 6; lp.frequency.setValueAtTime(140, t); lp.frequency.exponentialRampToValueAtTime(900, t + 16);
-      const wob = ac.createOscillator(), wobG = ac.createGain(); wob.frequency.value = 0.35; wobG.gain.value = 60; wob.connect(wobG); wobG.connect(lp.frequency); wob.start(t); nodes.push(wob);
-      const dG = ac.createGain(); dG.gain.value = 0.07; lp.connect(dG); dG.connect(out);
-      [[49, 'sawtooth'], [49.6, 'sawtooth'], [98.2, 'triangle']].forEach(([f, ty])=>{ const o = ac.createOscillator(); o.type = ty; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.5, t + 20); o.connect(lp); o.start(t); nodes.push(o); });
-      // a high, soft shimmer that rises with it
-      const sh = ac.createOscillator(), shG = ac.createGain(); sh.type = 'sine'; sh.frequency.setValueAtTime(660, t); sh.frequency.exponentialRampToValueAtTime(990, t + 20);
-      shG.gain.setValueAtTime(0.0001, t); shG.gain.exponentialRampToValueAtTime(0.012, t + 6); sh.connect(shG); shG.connect(out); sh.start(t); nodes.push(sh);
-      // 2. a whoosh with each pass of the scan line
-      const noise = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), nd = noise.getChannelData(0); for(let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-      const sweep = ()=>{ const s0 = ac.currentTime + 0.02, src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
-        src.buffer = noise; bp.type = 'bandpass'; bp.Q.value = 3.5; bp.frequency.setValueAtTime(380, s0); bp.frequency.exponentialRampToValueAtTime(4200, s0 + 1.5);
-        g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(0.05, s0 + 0.5); g.gain.exponentialRampToValueAtTime(0.0001, s0 + 1.7);
-        src.connect(bp); bp.connect(g); g.connect(out); src.start(s0); src.stop(s0 + 1.8); };
-      sweep(); timers.push(setInterval(sweep, 2200));
-      // 3. soft data blips, as if it's reading
-      const blip = ()=>{ const s0 = ac.currentTime + 0.01, o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
-        o.frequency.value = [1320, 1567.98, 1760, 2093, 2349.3][Math.floor(Math.random() * 5)];
-        g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(0.018, s0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, s0 + 0.12);
-        o.connect(g); g.connect(out); o.start(s0); o.stop(s0 + 0.14);
-        timers.push(setTimeout(blip, 260 + Math.random() * 620)); };
-      timers.push(setTimeout(blip, 900));
+      const t = ac.currentTime + 0.05, out = this.chain(ac), nodes = [], timers = [];
+      out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(1, t + 1.2);
+      out.zoom.gain.setValueAtTime(0.0001, t); out.zoom.gain.exponentialRampToValueAtTime(1, t + 1.2);
+      // the sub drone: felt more than heard, pulsing gently with the scan
+      const sub = ac.createOscillator(), subG = ac.createGain(), pulse = ac.createOscillator(), pulseG = ac.createGain();
+      sub.type = 'sine'; sub.frequency.setValueAtTime(41, t); sub.frequency.exponentialRampToValueAtTime(52, t + 30); subG.gain.value = 0.16;
+      pulse.frequency.value = 1 / 2.2; pulseG.gain.value = 0.07; pulse.connect(pulseG); pulseG.connect(subG.gain);
+      sub.connect(subG); subG.connect(out); sub.start(t); pulse.start(t); nodes.push(sub, pulse);
+      const grit = ac.createOscillator(), gritF = ac.createBiquadFilter(), gritG = ac.createGain(); grit.type = 'sawtooth'; grit.frequency.setValueAtTime(41.3, t); grit.frequency.exponentialRampToValueAtTime(52.4, t + 30);
+      gritF.type = 'lowpass'; gritF.frequency.value = 160; gritG.gain.value = 0.05; grit.connect(gritF); gritF.connect(gritG); gritG.connect(out); grit.start(t); nodes.push(grit);
+      const noise = ac.createBuffer(1, ac.sampleRate * 2.4, ac.sampleRate), nd = noise.getChannelData(0); for(let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      // one scan pass: a bass thump, then the zoom swells up (higher, louder, left → right) and drops away
+      const pass = ()=>{
+        const s0 = ac.currentTime + 0.02, up = 1.0, down = 1.1, end = s0 + up + down;
+        const kick = ac.createOscillator(), kg = ac.createGain(); kick.type = 'sine'; kick.frequency.setValueAtTime(95, s0); kick.frequency.exponentialRampToValueAtTime(34, s0 + 0.32);
+        kg.gain.setValueAtTime(0.0001, s0); kg.gain.exponentialRampToValueAtTime(0.55, s0 + 0.008); kg.gain.exponentialRampToValueAtTime(0.0001, s0 + 0.5); kick.connect(kg); kg.connect(out); kick.start(s0); kick.stop(s0 + 0.55);
+        const pan = ac.createStereoPanner ? ac.createStereoPanner() : null, zg = ac.createGain(), lp = ac.createBiquadFilter();
+        lp.type = 'lowpass'; lp.Q.value = 9; lp.frequency.setValueAtTime(110, s0); lp.frequency.exponentialRampToValueAtTime(420, s0 + up); lp.frequency.exponentialRampToValueAtTime(90, end);
+        zg.gain.setValueAtTime(0.0001, s0); zg.gain.exponentialRampToValueAtTime(0.42, s0 + up); zg.gain.exponentialRampToValueAtTime(0.0001, end);
+        if(pan){ pan.pan.setValueAtTime(-1, s0); pan.pan.setValueCurveAtTime(new Float32Array([-1, -0.9, -0.6, 0, 0.6, 0.9, 1]), s0, up + down); lp.connect(zg); zg.connect(pan); pan.connect(out.zoom); } else { lp.connect(zg); zg.connect(out.zoom); }
+        [[50, 'sawtooth'], [50.6, 'sawtooth'], [100.4, 'triangle']].forEach(([f, ty])=>{ const o = ac.createOscillator(); o.type = ty;     // low: about 50 → 95 Hz and back
+          o.frequency.setValueAtTime(f, s0); o.frequency.exponentialRampToValueAtTime(f * 1.9, s0 + up); o.frequency.exponentialRampToValueAtTime(f * 0.85, end);
+          o.connect(lp); o.start(s0); o.stop(end + 0.05); });
+        const ns = ac.createBufferSource(), nb = ac.createBiquadFilter(), ng = ac.createGain(); ns.buffer = noise; nb.type = 'bandpass'; nb.Q.value = 2.5;
+        nb.type = 'lowpass'; nb.Q.value = 4; nb.frequency.setValueAtTime(120, s0); nb.frequency.exponentialRampToValueAtTime(380, s0 + up); nb.frequency.exponentialRampToValueAtTime(100, end);   // a low rumble, not a hiss
+        ng.gain.setValueAtTime(0.0001, s0); ng.gain.exponentialRampToValueAtTime(0.3, s0 + up); ng.gain.exponentialRampToValueAtTime(0.0001, end);
+        ns.connect(nb); nb.connect(ng); ng.connect(pan || out.zoom); ns.start(s0); ns.stop(end + 0.05);
+      };
+      pass(); timers.push(setInterval(pass, 2200));
       this.live = {out, nodes, timers};
     },
-    stopNow(){ const L = this.live; if(!L) return; L.timers.forEach((x)=>{ clearInterval(x); clearTimeout(x); }); L.nodes.forEach((n)=>{ try { n.stop(); } catch(e){} }); try { L.out.disconnect(); } catch(e){} this.live = null; },
+    stopNow(){ const L = this.live; if(!L) return; L.timers.forEach((x)=>{ clearInterval(x); clearTimeout(x); }); L.nodes.forEach((n)=>{ try { n.stop(); } catch(e){} }); try { L.out.disconnect(); L.out.zoom.disconnect(); } catch(e){} this.live = null; },
     fade(ms, ding){
       const L = this.live, ac = this.ac; if(!L || !ac) return; this.live = null;
       L.timers.forEach((x)=>{ clearInterval(x); clearTimeout(x); });
-      const t = ac.currentTime, d = (ms || 800) / 1000; L.out.gain.cancelScheduledValues(t); L.out.gain.setValueAtTime(Math.max(0.0001, L.out.gain.value), t); L.out.gain.exponentialRampToValueAtTime(0.0001, t + d);
-      setTimeout(()=>{ L.nodes.forEach((n)=>{ try { n.stop(); } catch(e){} }); try { L.out.disconnect(); } catch(e){} }, ms + 100);
-      if(ding){ [[880, 0], [1318.5, 0.12]].forEach(([f, k])=>{ const s0 = t + d * 0.6 + k, o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(0.09, s0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s0 + 0.6); o.connect(g); g.connect(ac.destination); o.start(s0); o.stop(s0 + 0.65); }); }
+      const t = ac.currentTime, d = (ms || 800) / 1000;
+      [L.out.gain, L.out.zoom.gain].forEach((g)=>{ g.cancelScheduledValues(t); g.setValueAtTime(Math.max(0.0001, g.value), t); g.exponentialRampToValueAtTime(0.0001, t + d); });
+      setTimeout(()=>{ L.nodes.forEach((n)=>{ try { n.stop(); } catch(e){} }); try { L.out.disconnect(); L.out.zoom.disconnect(); } catch(e){} }, ms + 1600);
+      if(ding){
+        const fin = this.chain(ac), s0 = t + d * 0.55;                  // a deep boom, and the confirmation tone
+        const LONG = 3.2;                                                  // a long bass: about 3 seconds
+        const boom = ac.createOscillator(), bg = ac.createGain(); boom.type = 'sine'; boom.frequency.setValueAtTime(115, s0); boom.frequency.exponentialRampToValueAtTime(42, s0 + 0.6); boom.frequency.exponentialRampToValueAtTime(28, s0 + LONG);
+        bg.gain.setValueAtTime(0.0001, s0); bg.gain.exponentialRampToValueAtTime(0.62, s0 + 0.012); bg.gain.setTargetAtTime(0.32, s0 + 0.05, 0.35); bg.gain.setTargetAtTime(0.0001, s0 + 1.4, 0.55);
+        boom.connect(bg); bg.connect(fin); boom.start(s0); boom.stop(s0 + LONG + 0.3);
+        const tail = ac.createOscillator(), tf = ac.createBiquadFilter(), tg = ac.createGain(); tail.type = 'sawtooth'; tail.frequency.setValueAtTime(44, s0); tail.frequency.exponentialRampToValueAtTime(30, s0 + LONG);
+        tf.type = 'lowpass'; tf.frequency.setValueAtTime(260, s0); tf.frequency.exponentialRampToValueAtTime(70, s0 + LONG); tg.gain.setValueAtTime(0.0001, s0); tg.gain.exponentialRampToValueAtTime(0.12, s0 + 0.1); tg.gain.setTargetAtTime(0.0001, s0 + 1.2, 0.6);
+        tail.connect(tf); tf.connect(tg); tg.connect(fin); tail.start(s0); tail.stop(s0 + LONG + 0.3);
+        [[880, 0.08], [1318.5, 0.2]].forEach(([f, k])=>{ const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, s0 + k); g.gain.exponentialRampToValueAtTime(0.08, s0 + k + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s0 + k + 0.7); o.connect(g); g.connect(ac.destination); o.start(s0 + k); o.stop(s0 + k + 0.75); });
+      }
     }
   };
   function busy(kind, sections){
     scanSnd.play();
-    const box = $('setupBusy'), expected = kind === 'write' ? 70 : 35, t0 = Date.now();
+    const old = document.getElementById('obStage'); if(old) old.remove();
+    const box = document.createElement('div'); box.className = 'ob-stage'; box.id = 'obStage'; box.setAttribute('role', 'status'); document.body.appendChild(box);
+    const expected = kind === 'write' ? 90 : 35, t0 = Date.now();
     const steps = kind === 'write'
       ? ['Reading all your answers'].concat((sections || []).slice(0, 8).map((x)=> 'Writing: ' + x)).concat(['Checking the numbers', 'Final polish'])
       : ['Reading your template', 'Finding every section', 'Working out what it needs from you', 'Writing your questions', 'Putting them in the right order'];
     let tip = Math.floor(Math.random() * TIPS.length), finished = false;
-    box.innerHTML = `<div class="ob">
-      <div class="ob-scanner" aria-hidden="true">
+    box.innerHTML = `<div class="obs-bg" aria-hidden="true"><i class="obs-stars"></i><i class="obs-stars s2"></i><i class="obs-grid"></i><i class="obs-glow"></i></div><div class="ob full">
+      <div class="ob-scanner" aria-hidden="true"><span class="ob-orbit o1"></span><span class="ob-orbit o2"></span>
         <span class="ob-c tl"></span><span class="ob-c tr"></span><span class="ob-c bl"></span><span class="ob-c br"></span>
         <div class="ob-doc"><i class="ob-h" style="--d:0.10s"></i>${[0.26, 0.40, 0.54, 0.68, 0.82, 0.96, 1.10].map((d)=> `<i class="ob-l" style="--d:${(d * 2.2 / 1.3).toFixed(2)}s"></i>`).join('')}
           <span class="ob-trail"></span><span class="ob-beam"></span><b class="ob-stamp">✓</b></div>
@@ -925,7 +997,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div class="ob-tag"><i></i><span id="obTag">SCANNING</span></div>
       </div>
       <div class="ob-main">
-        <div class="ob-top"><b id="obTitle">${kind === 'write' ? 'Writing your offer document' : 'Reading your template'}</b><span class="ob-time" id="obTime">0:00</span></div>
+        <div class="ob-top"><span class="ob-pct" id="obPct">0%</span><span class="ob-tt"><b id="obTitle">${kind === 'write' ? 'Writing your offer document' : 'Reading your template'}</b><span class="ob-time" id="obTime">0:00</span></span></div>
         <div class="ob-bar"><i id="obFill"></i></div>
         <ol class="ob-steps" id="obSteps">${steps.map((x, i)=> `<li data-i="${i}"><span class="ob-k"></span>${esc(x)}</li>`).join('')}</ol>
       </div>
@@ -935,6 +1007,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <button type="button" class="ob-nav" data-tip="1" aria-label="Next tip">›</button>
         <div class="ob-dots" id="obDots">${TIPS.map((x, i)=> `<button type="button" data-dot="${i}" aria-label="Tip ${i + 1}"></button>`).join('')}</div>
       </div></div>`;
+    const fitScanner = ()=>{                            // as big as fits (up to 1.6×): measured, so the orbit rings are never cut off
+      const sc = box.querySelector('.ob-scanner'), wrap = box.querySelector('.ob.full'), orbit = box.querySelector('.ob-orbit.o2'); if(!sc || !wrap) return;
+      let k = Math.min(1.6, (innerWidth - 40) / 330);
+      for(let i = 0; i < 20; i++){ sc.style.setProperty('--sc', k.toFixed(3));
+        const o = orbit.getBoundingClientRect(), top = (o.top + o.bottom) / 2 - 150 * k;          // the real circle (the ring rotates, so its box is bigger)
+        const dots = box.querySelector('.ob-dots').getBoundingClientRect(), fits = top >= 8 && dots.bottom <= innerHeight - 8;
+        if(fits || k <= 0.8) break; k = Math.max(0.8, k - 0.05); } };
+    addEventListener('resize', fitScanner); box.__unfit = ()=> removeEventListener('resize', fitScanner);
     const card = $('obCard');
     const paintTip = (dir)=>{ const [ic, h, t] = TIPS[tip]; card.classList.remove('in', 'l', 'r'); void card.offsetWidth;
       card.innerHTML = `<span class="ob-ic">${ic}</span><span><b>${esc(h)}</b><small>${esc(t)}</small></span>`; card.classList.add('in', dir < 0 ? 'l' : 'r');
@@ -947,12 +1027,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       paintTip(n ? +n.dataset.tip : (tip >= was ? 1 : -1));
     });
     paintTip(1);
+    fitScanner(); setTimeout(fitScanner, 350);                      // once the tip is filled in (and the fonts are loaded)
     const lis = [...box.querySelectorAll('#obSteps li')];
     requestAnimationFrame(()=>{ const l = $('obSteps'); if(l) l.classList.toggle('more', l.scrollHeight > l.clientHeight + 2); });
     const tick = ()=>{
       if(finished) return;
       const sec = (Date.now() - t0) / 1000, pct = 94 * (1 - Math.exp(-sec / (expected / 2.3)));
-      $('obFill').style.width = pct + '%'; $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+      $('obFill').style.width = pct + '%'; $('obPct').textContent = Math.round(pct) + '%'; $('obTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
       const at = Math.min(lis.length - 1, Math.floor(pct / 94 * lis.length));
       lis.forEach((li, i)=>{ li.classList.toggle('done', i < at); li.classList.toggle('now', i === at); });
       const list = $('obSteps'), rowH = lis.length > 1 ? lis[1].offsetTop - lis[0].offsetTop : 30;          // scroll by whole steps, so no circle is ever cut off at the top
@@ -971,9 +1052,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const tagIv = setInterval(()=>{ const el = $('obTag'); if(el && !finished) el.textContent = (kind === 'write' ? 'WRITING ' : 'SCANNING ') + Math.round(parseFloat($('obFill').style.width) || 0) + '%'; }, 250);
     return {done: ()=> new Promise((res)=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); clearInterval(spark); clearInterval(tagIv); scanSnd.fade(850, true); const tg = $('obTag'); if(tg) tg.textContent = 'COMPLETE';
       $('obFill').style.width = '100%'; lis.forEach((li)=>{ li.classList.add('done'); li.classList.remove('now'); });
-      $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready ✓' : 'Your interview is ready ✓'; box.querySelector('.ob').classList.add('finish');
-      setTimeout(res, 900); }),
-      stop: ()=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); clearInterval(spark); clearInterval(tagIv); scanSnd.fade(400); }};
+      $('obTitle').textContent = kind === 'write' ? 'Your offer document is ready' : 'Your interview is ready'; $('obPct').textContent = '100%'; box.querySelector('.ob').classList.add('finish');
+      setTimeout(()=>{ box.__unfit(); box.classList.add('leaving'); setTimeout(()=> box.remove(), 600); res(); }, 1100); }),
+      stop: ()=>{ finished = true; clearInterval(iv); clearInterval(tipTimer); clearInterval(spark); clearInterval(tagIv); scanSnd.fade(400); box.__unfit(); box.classList.add('leaving'); setTimeout(()=> box.remove(), 500); }};
   }
 
   // ---------- step 1: the template ----------
@@ -1040,16 +1121,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <div class="oi-sheet s3"></div><div class="oi-sheet s2"></div>
           <div class="oi-sheet s1"><i class="oi-h"></i><i class="oi-l l1"></i><i class="oi-l l2"></i><i class="oi-l l3"></i><i class="oi-l l4"></i><i class="oi-l l5"></i><b class="oi-seal">✓</b></div>
         </div>
-        <div class="oi-text"><h2>Let’s build your offer</h2><p>${ns} sections · ${nq} questions · about ${Math.max(5, Math.round(nq * 0.7))} minutes</p><small>Click anywhere to start</small></div>`;
+        <div class="oi-text"><h2>Let’s build your offer</h2><p>${ns} sections · ${nq} questions · about ${Math.max(5, Math.round(nq * 0.7))} minutes</p></div>`;
       document.body.appendChild(ov);
       if(!reduced){ const st = ov.querySelector('.oi-stage');
         for(let i = 0; i < 40; i++){ const sp = document.createElement('i'); sp.className = 'oi-spark'; const a = Math.random() * Math.PI * 2, r = 120 + Math.random() * 220;
           sp.style.setProperty('--x', Math.cos(a) * r + 'px'); sp.style.setProperty('--y', Math.sin(a) * r * 0.75 + 'px'); sp.style.setProperty('--d', (1.25 + Math.random() * 0.35) + 's');
           sp.style.background = ['#FFE58A', '#A5B4FC', '#F9A8D4', '#86EFAC', '#FFFFFF'][i % 5]; st.appendChild(sp); } }
       introSound();
-      let gone = false; const end = ()=>{ if(gone) return; gone = true; ov.classList.add('out'); setTimeout(()=>{ ov.remove(); done(); }, 450); };
-      ov.addEventListener('click', end); document.addEventListener('keydown', function k(e){ if(e.key === 'Escape' || e.key === 'Enter'){ document.removeEventListener('keydown', k); end(); } });
-      setTimeout(end, reduced ? 1600 : 4200);
+      let gone = false; let end = ()=>{ if(gone) return; gone = true; ov.classList.add('out'); setTimeout(()=>{ ov.remove(); done(); }, 450); };
+      // it plays out fully: clicks and keys don't skip it
+      const block = (e)=>{ e.preventDefault(); e.stopPropagation(); }; ov.addEventListener('mousedown', block); ov.addEventListener('click', block);
+      const keys = (e)=>{ if(['Escape', 'Enter', ' ', 'Tab'].includes(e.key)) block(e); }; document.addEventListener('keydown', keys, true);
+      const end0 = end; end = ()=>{ document.removeEventListener('keydown', keys, true); end0(); };
+      setTimeout(()=> end(), reduced ? 1600 : 4200);
     });
   }
 
