@@ -30,9 +30,12 @@
   .seq-main{flex:1;min-width:0;height:100%;overflow-y:auto;overscroll-behavior:contain;}
   #appRoot > .seq-sidebar{height:100%;overflow-y:auto;overscroll-behavior:contain;flex-shrink:0;}
   .od{max-width:1040px;margin:0 auto;padding:30px 36px 80px;}
-  .od-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;}
+  .od-head{margin-bottom:22px;}
   .od-head h1{margin:0;font:800 26px Sora,sans-serif;letter-spacing:-.02em;}
-  .od-head p{margin:6px 0 0;color:var(--slate);font-size:14.5px;line-height:1.55;max-width:620px;}
+  /* the description on the left, the buttons right next to it */
+  .od-head-row{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:8px;}
+  .od-head p{margin:0;flex:1;min-width:240px;color:var(--slate);font-size:14.5px;line-height:1.55;max-width:620px;}
+  .od-head-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;}
   .btn{height:40px;padding:0 16px;border-radius:11px;border:1px solid var(--border);background:var(--panel);color:var(--ink);font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
   .btn:hover{border-color:var(--teal);color:var(--teal);}
   .btn.primary{background:linear-gradient(135deg,#3730B3,#6A4EC4);border:none;color:#fff;box-shadow:0 10px 22px -12px rgba(55,48,179,.8);}
@@ -105,7 +108,7 @@
   .od-check h4{margin:0 0 10px;font-size:14px;} .od-check li{list-style:none;display:flex;gap:9px;margin:7px 0;font-size:13.5px;line-height:1.45;}
   .od-check ul{margin:0;padding:0;} .od-check .k{flex-shrink:0;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;}
   .od-check .k.y{background:var(--ok);} .od-check .k.n{background:#D9822B;} .od-check small{display:block;color:var(--slate);}
-  @media (max-width:860px){ .od{padding:20px 16px 60px;} .od-iv{grid-template-columns:1fr;} .od-steps{position:static;} .od-doc{padding:28px 20px;} .od-head{flex-direction:column;} }
+  @media (max-width:860px){ .od{padding:20px 16px 60px;} .od-iv{grid-template-columns:1fr;} .od-steps{position:static;} .od-doc{padding:28px 20px;} .od-head-row{flex-direction:column;align-items:flex-start;} .od-head-btns{justify-content:flex-start;} }
 
   /* photos and videos with an answer, and in the document */
   .od-media{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;}
@@ -1022,13 +1025,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <script src="sidebar.js"></script>
   <div class="seq-main"><div class="od">
     <div class="od-head">
-      <div><h1>📄 Offer Doc – Your unique mechanism explained</h1><p id="odSub">Your AI writes your offer document with you: upload your template, answer its questions, and get a clear overview of how you help your clients.</p></div>
-      <div style="display:flex;gap:8px"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odAccessBtn">⚙️ AI access</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div>
+      <h1>📄 Offer Doc – Your unique mechanism explained</h1>
+      <div class="od-head-row"><p id="odSub">Your AI writes your offer document with you: upload your template, answer its questions, and get a clear overview of how you help your clients.</p>
+      <div class="od-head-btns"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odAccessBtn">⚙️ AI access</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div></div>
     </div>
 
     <section id="vHome">
-      <div class="card od-share"><div class="od-share-t"><b>🧠 Help improve Offer Doc <em>anonymous</em></b>
-        <small>Let the AI learn from how you use Offer Doc, so it gets smarter for everyone. Only patterns are kept (like “people often ask for a stronger guarantee”), <b>never</b> your text, names, numbers or prices, and never who you are.</small></div>
+      <div class="card od-share"><div class="od-share-t"><b>🧠 Get the most out of your offer doc <em>anonymous</em></b>
+        <small>Let it learn from you and from others, so the AI keeps getting smarter. Only patterns are kept (like “people often ask for a stronger guarantee”), <b>never</b> your text, names, numbers or prices, and never who you are.</small></div>
         <label class="od-switch"><input type="checkbox" id="odShare"><i></i></label></div>
       <div class="od-list" id="odList"></div></section>
     <section id="vTrash" class="hidden"><div class="od-trash-h"><h2>🗑 Trash</h2><p>Deleted offer docs stay here for 30 days. After that they’re removed for good, with their photos and videos.</p></div><div class="od-tbar hidden" id="odTrashBar">
