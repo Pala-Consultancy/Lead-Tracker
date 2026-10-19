@@ -466,7 +466,6 @@
   .pr.finish .pr-floor{background:radial-gradient(ellipse,rgba(16,185,129,.45),transparent 70%);}
   @media (max-height:700px){ .pr-tip{display:none;} }
   @media (prefers-reduced-motion: reduce){ .pr-aura,.pr-grain,.pr-beam,.pr-floor{animation:none !important;} .pr-beam{height:50%;} }
-  .od-head h1 .od-h1sub{font-weight:700;color:var(--slate);}
 
   /* the anonymous-learning switch, 👍/👎, and the admin's lessons */
   .od-share{display:flex;align-items:center;gap:18px;padding:16px 20px;margin-bottom:18px;}
@@ -1023,7 +1022,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <script src="sidebar.js"></script>
   <div class="seq-main"><div class="od">
     <div class="od-head">
-      <div><h1>📄 Offer Doc <span class="od-h1sub">– Your unique mechanism explained</span></h1><p id="odSub">Your AI writes your offer document with you: upload your template, answer its questions, and get a document that sells for you after the call.</p></div>
+      <div><h1>📄 Offer Doc – Your unique mechanism explained</h1><p id="odSub">Your AI writes your offer document with you: upload your template, answer its questions, and get a clear overview of how you help your clients.</p></div>
       <div style="display:flex;gap:8px"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odAccessBtn">⚙️ AI access</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div>
     </div>
 
@@ -1110,6 +1109,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const aiErr = (e)=> (e && e.message) || 'The AI couldn’t answer right now. Please try again.';
   const ADMIN_EMAILS = ['gabriele.oizaz@pala-consultancy.com'];       // who sees “🧠 Lessons” (the server checks it too)
   let amAdmin = false;
+  const BRAND = 'PalaTrack';                                     // shown on the covers next to the person's name
   let me = null, myName = '', myCompany = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
   // ---------- views ----------
@@ -1121,7 +1121,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(d.stage === 'done' && d.doc){
       const t = (d.doc.title || d.title || 'Offer document'), sub = d.doc.subtitle || '', when = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate().toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'}) : '';
       return `<div class="od-cover done" aria-hidden="true"><i class="cv-ln"></i><small>OFFER DOCUMENT</small><b>${esc(t.slice(0, 70))}</b>${sub ? `<em>${esc(sub.slice(0, 80))}</em>` : ''}
-        <span class="cv-ft"><span>${esc([d.authorName || myName, d.authorCompany || myCompany].filter(Boolean).join(' · '))}</span><span>${esc(when)}</span></span><i class="cv-glow"></i></div>`;
+        <span class="cv-ft"><span>${esc([d.authorName || myName, BRAND].filter(Boolean).join(' · '))}</span><span>${esc(when)}</span></span><i class="cv-glow"></i></div>`;
     }
     const pct = Math.round((p || 0) * 100), C = 2 * Math.PI * 15;
     return `<div class="od-cover draft" aria-hidden="true"><span class="cv-rib">Not written yet</span>
@@ -1275,7 +1275,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div class="pr-stage" aria-hidden="true">
           <div class="pr-frame"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
           <div class="pr-doc" id="prDoc">
-            <div class="pr-cover"><small>OFFER DOCUMENT</small><b>${esc((info.title || 'Your offer').slice(0, 48))}</b><span>${esc(info.who ? (info.who + (myCompany ? ' · ' + myCompany : '')) : '')}</span></div>
+            <div class="pr-cover"><small>OFFER DOCUMENT</small><b>${esc((info.title || 'Your offer').slice(0, 48))}</b><span>${esc(info.who ? info.who + ' · ' + BRAND : BRAND)}</span></div>
             <div class="pr-lines">${lines}</div>
             <div class="pr-beam"><i></i></div>
             <div class="pr-done"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l7.5 7.5L37.5 19"/></svg></div>
