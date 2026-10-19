@@ -527,6 +527,38 @@
   .od-doc .od-pitch p{margin:8px 0 0;font:700 18px/1.45 Sora,sans-serif;letter-spacing:-.01em;color:var(--ink);}
   .od-pcopy{border:1px solid rgba(55,48,179,.3);background:var(--panel);color:#3730B3;border-radius:8px;padding:5px 10px;font:700 11.5px Inter,sans-serif;letter-spacing:0;cursor:pointer;}
   .od-pcopy:hover{background:#3730B3;color:#fff;}
+
+  /* extra input: a sales call and a voice sample */
+  .od-in{width:100%;max-width:820px;max-height:calc(100vh - 40px);overflow:auto;padding:24px;}
+  .od-in-h{display:flex;justify-content:space-between;gap:12px;} .od-in-h h3{margin:0;font:800 20px Sora,sans-serif;} .od-in-h p{margin:5px 0 0;color:var(--slate);font-size:13.5px;}
+  .od-in-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;}
+  .od-in-grid section{border:1px solid var(--border-soft);border-radius:14px;padding:14px;background:var(--panel-alt);display:flex;flex-direction:column;}
+  .od-in-grid b{font-size:14.5px;} .od-in-grid small{display:block;margin:5px 0 10px;font-size:12.5px;line-height:1.5;color:var(--slate);}
+  .od-in-grid textarea{flex:1;min-height:170px;width:100%;box-sizing:border-box;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font:500 13.5px/1.55 Inter,sans-serif;resize:vertical;background:var(--panel);color:var(--ink);outline:none;}
+  .od-in-grid textarea:focus{border-color:var(--teal);}
+  .od-in-row{display:flex;align-items:center;gap:10px;margin-top:8px;} .od-in-n{font-size:12px;color:var(--slate-light);}
+  .od-in-f{display:flex;align-items:center;gap:8px;margin-top:18px;} .od-in-f .grow{flex:1;}
+  .od-side-in{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);} .od-side-in .btn{flex:1;justify-content:center;padding:0 6px;}
+  .od-pre{display:inline-block;margin:0 0 8px;padding:4px 10px;border-radius:999px;background:rgba(55,48,179,.1);color:#3730B3;font-size:12px;font-weight:700;}
+  .od-sugg{margin-top:10px;border:1px solid rgba(55,48,179,.25);background:rgba(55,48,179,.05);border-radius:12px;padding:12px 14px;}
+  .od-sugg small{font-size:12px;font-weight:700;color:#3730B3;} .od-sugg p{margin:6px 0 10px;font-size:14px;line-height:1.55;white-space:pre-wrap;} .od-sugg-b{display:flex;gap:6px;}
+  /* check your facts */
+  .od-facts{text-align:left;max-width:720px;margin:6px auto 0;}
+  .od-facts h3{margin:8px 0 4px;font:800 18px Sora,sans-serif;text-align:center;} .od-facts > p{margin:0 auto 14px;max-width:520px;text-align:center;font-size:13.5px;color:var(--slate);line-height:1.55;}
+  .od-fg{border:1px solid var(--border-soft);border-radius:14px;padding:12px 14px;margin-bottom:10px;background:var(--panel);}
+  .od-fg h4{margin:0 0 8px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--slate-light);}
+  .od-fr{display:grid;grid-template-columns:minmax(120px,38%) 1fr 30px;gap:6px;margin-bottom:6px;}
+  .od-fr input{height:36px;border:1px solid var(--border);border-radius:9px;padding:0 10px;font:500 13.5px Inter,sans-serif;background:var(--panel-alt);color:var(--ink);outline:none;min-width:0;}
+  .od-fr input.lab{font-weight:700;} .od-fr input:focus{border-color:var(--teal);}
+  .od-fr.empty .val{border-color:#D97706;background:rgba(217,119,6,.06);}
+  .od-fx{border:none;background:none;color:var(--slate-light);cursor:pointer;border-radius:8px;} .od-fx:hover{color:var(--fail);background:rgba(180,59,50,.08);}
+  .od-fadd{border:none;background:none;color:#3730B3;font-weight:700;font-size:12.5px;cursor:pointer;padding:4px 2px;}
+  /* the admin: AI access */
+  .od-ac{width:100%;max-width:560px;padding:22px;}
+  .od-ac-add{display:flex;gap:8px;margin:16px 0 12px;} .od-ac-add input{flex:1;height:38px;border:1.5px solid var(--border);border-radius:10px;padding:0 12px;font:500 14px Inter,sans-serif;background:var(--panel-alt);color:var(--ink);outline:none;}
+  .od-ac-i{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-soft);border-radius:12px;margin-bottom:8px;} .od-ac-i > span:first-child{flex:1;min-width:0;}
+  .od-ac-i b{display:block;font-size:14px;} .od-ac-i small{display:block;font-size:12.5px;color:var(--slate);} .od-ac-on{font-size:11.5px;font-weight:800;color:var(--ok);background:rgba(30,158,116,.1);padding:3px 9px;border-radius:999px;}
+  @media (max-width:760px){ .od-in-grid{grid-template-columns:1fr;} }
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -987,7 +1019,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   <div class="seq-main"><div class="od">
     <div class="od-head">
       <div><h1>📄 Offer Doc <span class="od-h1sub">– Your unique mechanism explained</span></h1><p id="odSub">Your AI writes your offer document with you: upload your template, answer its questions, and get a document that sells for you after the call.</p></div>
-      <div style="display:flex;gap:8px"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div>
+      <div style="display:flex;gap:8px"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odAccessBtn">⚙️ AI access</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div>
     </div>
 
     <section id="vHome">
@@ -1014,6 +1046,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
     <section id="vInterview" class="hidden"><div class="od-blobs" aria-hidden="true"><i></i><i></i><i></i></div><div class="od-iv">
       <aside class="card od-steps"><h4>Your sections</h4><div id="odSteps"></div><button type="button" class="btn primary sm write hidden" id="odGoWrite">✍️ Write my offer doc</button>
+        <div class="od-side-in"><button type="button" class="btn sm" id="odInCall">📞 Sales call</button><button type="button" class="btn sm" id="odInVoice">🎙️ Your voice</button></div>
         <label class="od-lang">🌐 <select id="odLangSwitch" aria-label="Language of the questions and the document"></select></label></aside>
       <div class="card od-q" id="odQ"></div>
     </div></section>
@@ -1022,7 +1055,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       <div style="font-size:42px">🎉</div><h2 style="font:800 22px Sora,sans-serif;margin:8px 0 6px">All questions answered</h2>
       <p style="color:var(--slate);margin:0 auto 16px;max-width:520px;line-height:1.6">The AI now writes your offer document from your answers. Anything else it should know? (optional)</p>
       <textarea id="odExtra" placeholder="E.g. “Keep it under 2 pages.” or “Make the guarantee stand out.” or “Most of my clients worry about the price.”" style="width:100%;max-width:620px;min-height:90px;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14.5px;outline:none;background:var(--panel);color:var(--ink)"></textarea>
-      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px"><button type="button" class="btn" id="odBackToQ">← Check my answers</button><button type="button" class="btn primary" id="odWrite">✍️ Write my offer doc</button></div>
+      <div class="od-facts" id="odFacts"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px"><button type="button" class="btn" id="odBackToQ">← Check my answers</button><button type="button" class="btn primary" id="odFactsBtn">🧾 Check your facts</button><button type="button" class="btn primary hidden" id="odWrite">✍️ Write my offer doc</button></div>
     </div></section>
 
     <section id="vDoc" class="hidden">
@@ -1038,7 +1072,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <button type="button" class="btn sm" id="odPdf">📄 PDF</button>
         <button type="button" class="btn sm primary" id="odLib">📚 Save to Library</button>
       </div>
-      <div class="card od-ask"><input id="odAskIn" placeholder="Ask the AI to change something: “make the guarantee stronger”, “shorter”, “use Emma’s name”…" maxlength="1000"><button type="button" class="btn primary sm" id="odAskGo">✨ Change it</button></div>
+      <div class="card od-ask"><input id="odAskIn" placeholder="Ask the AI to change something: “make the guarantee stronger”, “shorter”, “add more numbers”…" maxlength="1000"><button type="button" class="btn primary sm" id="odAskGo">✨ Change it</button></div>
       <div class="card od-check hidden" id="odCheckBox"></div>
       <div class="card od-score hidden" id="odScore"></div>
       <article class="card od-doc" id="odDoc" contenteditable="true" spellcheck="true" aria-label="Your offer document"></article>
@@ -1067,14 +1101,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const LANGS = [['English', 'English'], ['Nederlands', 'Dutch'], ['Français', 'French'], ['Deutsch', 'German'], ['Español', 'Spanish'], ['Italiano', 'Italian'], ['Português', 'Portuguese']];
   const langOf = ()=> (D && (D.lang || (D.plan && D.plan.language))) || localStorage.getItem('ptOdLang') || 'English';
   const langName = (l)=> (LANGS.find((x)=> x[0] === l || x[1] === l) || [l, l])[1];
-  const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(Object.assign({language: langName(data.language || langOf()), who: myName}, data)).then((r)=> r.data);
+  const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(Object.assign({language: langName(data.language || langOf()), who: myName}, D && D.voice ? {voice: D.voice} : {}, data)).then((r)=> r.data);
   const aiErr = (e)=> (e && e.message) || 'The AI couldn’t answer right now. Please try again.';
   const ADMIN_EMAILS = ['gabriele.oizaz@pala-consultancy.com'];       // who sees “🧠 Lessons” (the server checks it too)
   let amAdmin = false;
   let me = null, myName = '', myCompany = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
   // ---------- views ----------
-  function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); $('odLessonsBtn').classList.toggle('hidden', v !== 'vHome' || !amAdmin); const m = document.querySelector('.seq-main'); if(m) m.scrollTop = 0; window.scrollTo(0, 0); }
+  function show(v){ ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=> $(x).classList.toggle('hidden', x !== v)); $('odBack').classList.toggle('hidden', v === 'vHome'); $('odNew').classList.toggle('hidden', v !== 'vHome'); $('odTrashBtn').classList.toggle('hidden', v !== 'vHome'); $('odLessonsBtn').classList.toggle('hidden', v !== 'vHome' || !amAdmin); $('odAccessBtn').classList.toggle('hidden', v !== 'vHome' || !amAdmin); const m = document.querySelector('.seq-main'); if(m) m.scrollTop = 0; window.scrollTo(0, 0); }
   const allQ = (s)=> (s.questions || []).concat(s.followups || []);
   function progress(d){ if(!d || !d.plan) return 0; let n = 0, a = 0; d.plan.sections.forEach((s)=> allQ(s).forEach((q)=>{ n++; if((d.answers || {})[q.id] != null) a++; })); return n ? a / n : 0; }
   // a cover per offer doc: a finished cover when it's written, a sketched "not written yet" cover when it isn't
@@ -1335,7 +1369,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const ref = db.collection('offerDocs').doc();
       D = {id: ref.id, createdBy: me, workspaceId: wsId, authorName: myName, authorCompany: myCompany, lang, title: plan.title || 'Offer document', templateName: name, template: text.slice(0, 40000), plan, answers: {}, pos: {s: 0, q: 0}, stage: 'interview'};
       const {id, ...rest} = D; await ref.set(Object.assign(rest, {createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}));
-      cur = {s: 0, q: 0}; await playIntro(plan); fs.exit(); openInterview();
+      cur = {s: 0, q: 0}; await playIntro(plan); fs.exit(); openInterview(); setTimeout(()=> openInputs(true).then(()=>{ renderSteps(); renderQ(); }), 700);
     } catch(e){ ld.stop(); fs.exit(); console.error(e); toast(aiErr(e), true); $('setupPick').classList.remove('hidden'); $('setupBusy').classList.add('hidden'); }
   }
   function showReading(t, sub){
@@ -1382,9 +1416,52 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     });
   }
 
+  // ---------- extra input: a sales call (pre-fills answers) and a voice sample (the user's style) ----------
+  function cleanTranscript(t){ return String(t || '').replace(/^WEBVTT.*$/m, '').replace(/^\d+\s*$/gm, '').replace(/^\s*\d{1,2}:\d{2}(:\d{2})?[.,]\d{3}\s*-->.*$/gm, '').replace(/<[^>]+>/g, '').replace(/\n{3,}/g, '\n\n').trim(); }
+  function openInputs(start){
+    return new Promise((done)=>{
+      const ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:800;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+      ov.innerHTML = `<div class="card od-in" role="dialog" aria-modal="true" aria-labelledby="inT">
+        <div class="od-in-h"><div><h3 id="inT">${start ? '⚡ Make it faster (optional)' : 'Your sales call and voice'}</h3><p>Both are optional. They make your interview faster and your document sound like you.</p></div>${start ? '' : '<button type="button" class="btn sm" data-x>Close</button>'}</div>
+        <div class="od-in-grid">
+          <section><b>📞 A sales call</b><small>Paste the transcript of a sales call (from Zoom, Fathom, Otter…), or upload the file. The AI pre-fills the answers it covers; you check them.</small>
+            <textarea id="inCall" placeholder="Paste the transcript here…">${esc(D.call || '')}</textarea>
+            <div class="od-in-row"><label class="btn sm">📎 Upload a file<input type="file" class="hidden" id="inCallFile" accept=".txt,.vtt,.srt,.docx,.pdf,.md"></label><span class="od-in-n" id="inCallN"></span></div></section>
+          <section><b>🎙️ Your voice</b><small>Paste a few of your LinkedIn posts, or a transcript of you talking. The AI writes in your style (it never copies the content).</small>
+            <textarea id="inVoice" placeholder="Paste a few posts, or something you said…">${esc(D.voice || '')}</textarea></section>
+        </div>
+        <div class="od-in-f">${start ? '<button type="button" class="btn" data-skip>Skip for now</button>' : ''}<span class="grow"></span><button type="button" class="btn primary" data-go>${start ? 'Continue' : 'Save'}</button></div></div>`;
+      document.body.appendChild(ov);
+      const callT = ov.querySelector('#inCall'), voiceT = ov.querySelector('#inVoice'), n = ov.querySelector('#inCallN');
+      const count = ()=>{ const w = callT.value.split(/\s+/).filter(Boolean).length; n.textContent = w ? `${w.toLocaleString('en-US')} words` : ''; }; count(); callT.addEventListener('input', count);
+      ov.querySelector('#inCallFile').addEventListener('change', async (e)=>{ const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+        try { const ext = (f.name.split('.').pop() || '').toLowerCase(); let t = ['docx', 'pdf'].includes(ext) ? await readTemplate(f) : await f.text(); callT.value = cleanTranscript(t).slice(0, 60000); count(); }
+        catch(err){ toast('Couldn’t read that file. Paste the text instead.', true); } });
+      const finish = ()=>{ ov.remove(); done(); };
+      const x = ov.querySelector('[data-x]'); if(x) x.addEventListener('click', finish);
+      const sk = ov.querySelector('[data-skip]'); if(sk) sk.addEventListener('click', finish);
+      ov.querySelector('[data-go]').addEventListener('click', async (e)=>{
+        const b = e.currentTarget, call = callT.value.trim().slice(0, 60000), voice = voiceT.value.trim().slice(0, 8000);
+        const newCall = call && call !== (D.call || '');
+        save({call, voice}); D.call = call; D.voice = voice;
+        if(newCall){
+          if(call.length < 200){ toast('That transcript looks too short. Paste the whole call.', true); return; }
+          b.disabled = true; b.innerHTML = '<span class="spin" style="width:16px;height:16px;border-width:2px"></span> Reading your call…';
+          try { const r = await AI({mode: 'prefill', plan: D.plan, call}); let k = 0; D.prefilled = D.prefilled || {};
+            (r.answers || []).forEach((a)=>{ const cur = D.answers[a.id]; if(cur == null || cur === '' || cur === '__skip'){ D.answers[a.id] = a.answer; D.prefilled[a.id] = true; k++; } });
+            save({answers: D.answers, prefilled: D.prefilled}); toast(k ? `✨ ${k} answer${k === 1 ? '' : 's'} pre-filled from your call. Check them as you go.` : 'Your call didn’t answer any open questions, but it’s saved.');
+          } catch(err){ toast(aiErr(err), true); b.disabled = false; b.textContent = start ? 'Continue' : 'Save'; return; }
+        } else if(voice) toast('Saved. Your document will be written in your voice.');
+        finish();
+      });
+    });
+  }
+
   // ---------- step 2: the interview ----------
   function openInterview(){ show('vInterview'); paintLang(); renderSteps(); renderQ(); }
   function paintLang(){ const l = langOf(); $('odLangSwitch').innerHTML = LANGS.map(([k])=> `<option value="${esc(k)}"${k === l || langName(k) === l ? ' selected' : ''}>${esc(k)}</option>`).join(''); }
+  $('odInCall').addEventListener('click', ()=> openInputs(false).then(()=>{ renderSteps(); renderQ(); }));
+  $('odInVoice').addEventListener('click', ()=> openInputs(false).then(()=>{ renderSteps(); renderQ(); }));
   $('odLangSwitch').addEventListener('change', async (e)=>{
     const to = e.target.value, from = langOf(); if(langName(to) === langName(from)) return;
     const card = $('odQ'); card.innerHTML = `<div class="od-busy"><div class="spin"></div><b>Translating your questions into ${esc(to)}…</b><small>Your answers stay exactly as they are.</small></div>`;
@@ -1413,18 +1490,30 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const {n, k} = counts(), isFu = (s.followups || []).some((f)=> f.id === q.id), a = (D.answers || {})[q.id];
     $('odQ').innerHTML = `<div class="meta"><span>${esc(s.title)}</span><span>Question ${k + 1} of ${n}</span></div><div class="od-prog"><i style="width:${Math.round(k / n * 100)}%"></i></div>
       ${isFu ? '<span class="fu">Follow-up question</span>' : ''}<h2 class="od-words">${esc(q.q).split(' ').map((w, i)=> `<span style="animation-delay:${Math.min(i, 30) * 28}ms">${w}</span>`).join(' ')}</h2>${q.why ? `<p class="why">${esc(q.why)}</p>` : ''}${q.tip ? `<div class="tip"><span>💡</span><span>${esc(q.tip)}</span></div>` : ''}
+      ${(D.prefilled || {})[q.id] ? '<div class="od-pre">✨ From your sales call: check and adjust</div>' : ''}
       <div class="od-ans"><textarea id="odA" class="${q.kind === 'short' ? 'short' : ''}" placeholder="Your answer…">${esc(a && a !== '__skip' ? a : '')}</textarea>
         ${speech ? '<button type="button" class="od-mic" id="odMic" title="Speak your answer" aria-label="Speak your answer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>' : ''}</div>
       ${q.kind === 'short' ? '' : '<div class="od-meter" id="odMeter" aria-live="polite"></div>'}
       <div class="od-media" id="odMedia">${mediaRow(q.id)}</div>
-      <div class="btns"><button type="button" class="btn sm" id="odPrev" ${cur.s === 0 && cur.q === 0 ? 'disabled' : ''}>← Back</button><span class="grow"></span>
+      <div class="od-sugg hidden" id="odSugg"></div>
+      <div class="btns"><button type="button" class="btn sm" id="odPrev" ${cur.s === 0 && cur.q === 0 ? 'disabled' : ''}>← Back</button><button type="button" class="btn sm" id="odHelp" title="The AI drafts an answer from what you already said">✨ Help me answer</button><span class="grow"></span>
         <button type="button" class="od-skip" id="odSkip">I don’t know yet</button><button type="button" class="btn primary" id="odNext">Next →</button></div>
       <div class="hint" style="margin-top:8px">Tip: Ctrl+Enter for Next. Your answers save automatically.</div>`;
     const card = $('odQ'); card.classList.remove('in-l', 'in-r'); void card.offsetWidth; card.classList.add(dir < 0 ? 'in-l' : 'in-r'); dir = 1;
     const ta = $('odA'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
     meter(ta.value); ta.addEventListener('input', ()=> meter(ta.value));
     if(speech) $('odMic').addEventListener('click', ()=> dictate(ta)); ta.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); $('odNext').click(); } });
-    ta.addEventListener('input', ()=>{ D.answers[q.id] = ta.value; save({answers: D.answers}); });
+    ta.addEventListener('input', ()=>{ D.answers[q.id] = ta.value; if(D.prefilled && D.prefilled[q.id]){ delete D.prefilled[q.id]; const pb = document.querySelector('.od-pre'); if(pb) pb.remove(); save({answers: D.answers, prefilled: D.prefilled}); } else save({answers: D.answers}); });
+    $('odHelp').addEventListener('click', async (e)=>{
+      const b = e.currentTarget, box = $('odSugg'); b.disabled = true; b.innerHTML = '<span class="spin" style="width:14px;height:14px;border-width:2px"></span> Thinking…';
+      try { const answers = {}; Object.entries(D.answers).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
+        const r = await AI({mode: 'help', plan: D.plan, answers, question: q.q, call: D.call ? D.call.slice(0, 15000) : ''});
+        if(curQid !== q.id) return;
+        box.classList.remove('hidden'); box.innerHTML = `<small>✨ A draft from what you already said. Adjust it to make it yours.</small><p>${esc(r.answer || '')}</p><div class="od-sugg-b"><button type="button" class="btn sm primary" data-use>Use this answer</button><button type="button" class="btn sm" data-no>No thanks</button></div>`;
+        box.querySelector('[data-use]').addEventListener('click', ()=>{ ta.value = r.answer || ''; ta.dispatchEvent(new Event('input')); box.classList.add('hidden'); ta.focus(); });
+        box.querySelector('[data-no]').addEventListener('click', ()=> box.classList.add('hidden'));
+      } catch(err){ toast(aiErr(err), true); } finally { b.disabled = false; b.textContent = '✨ Help me answer'; }
+    });
     $('odNext').addEventListener('click', ()=>{ if(rec) rec.stop(); D.answers[q.id] = ta.value.trim() || '__skip';
       const sc = +(($('odMeter') || {}).dataset || {}).score || 0; if(sc >= 3) cheer(['That’s specific, great! 🔥', 'Strong answer 💪', 'Love the numbers ✨'][Math.floor(Math.random() * 3)]);
       chime([660, 990], 0.045); setTimeout(next, sc >= 3 ? 450 : 0); });
@@ -1528,7 +1617,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const done = D.plan.sections[cur.s]; if(done && sectionDone(done) && !done.partied){ done.partied = true; sectionParty(done, cur.s); }
     const i = D.plan.sections.findIndex((s, k)=> k > cur.s && !sectionDone(s)), j = i >= 0 ? i : D.plan.sections.findIndex((s)=> !sectionDone(s));
     if(j >= 0){ cur = {s: j, q: Math.max(0, allQ(D.plan.sections[j]).findIndex((q)=> D.answers[q.id] == null))}; save({pos: cur}); renderQ(); return; }
-    save({stage: 'ready', pos: cur}); renderSteps(); show('vReady');
+    save({stage: 'ready', pos: cur}); renderSteps(); show('vReady'); paintFacts(); if(!(D.facts || []).length){ $('odFactsBtn').classList.remove('hidden'); $('odWrite').classList.add('hidden'); }
   }
 
   // ---------- step 3: the document ----------
@@ -1565,7 +1654,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     try {
       const answers = {}; Object.entries(D.answers).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
       const skipped = []; D.plan.sections.forEach((x)=> allQ(x).forEach((q)=>{ if(D.answers[q.id] === '__skip') skipped.push(q.q); }));
-      const {doc} = await AI({mode: 'write', template: D.template, plan: D.plan, answers, extra: $('odExtra').value.trim(), media: mediaForAI(), skipped});
+      const {doc} = await AI({mode: 'write', template: D.template, plan: D.plan, answers, extra: $('odExtra').value.trim(), media: mediaForAI(), skipped, facts: D.facts || []});
       await ld.done(); fs.exit();
       D.review = null; save({doc, stage: 'done', title: doc.title || D.title, review: null}); openDocView(); toast('Your offer document is ready. Read it through and adjust anything you like.');
       runReview();
@@ -1595,7 +1684,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const ins = $('odAskIn').value.trim(); if(!ins){ $('odAskIn').focus(); return; }
     const b = $('odAskGo'); b.disabled = true; b.textContent = 'Changing…';
     try { const answers = {}; Object.entries(D.answers).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
-      const before = docFromDOM(); const {doc} = await AI({mode: 'revise', doc: before, instruction: ins, plan: D.plan, answers, media: mediaForAI()}); D.prevDoc = before; save({doc}); openDocView(); $('odAskIn').value = ''; toast('Done. Not what you wanted? Click “Undo AI change”.'); }
+      const before = docFromDOM(); const {doc} = await AI({mode: 'revise', doc: before, instruction: ins, plan: D.plan, answers, media: mediaForAI(), facts: D.facts || []}); D.prevDoc = before; save({doc}); openDocView(); $('odAskIn').value = ''; toast('Done. Not what you wanted? Click “Undo AI change”.'); }
     catch(e){ toast(aiErr(e), true); } finally { b.disabled = false; b.textContent = '✨ Change it'; }
   });
   $('odAskIn').addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); $('odAskGo').click(); } });
@@ -1683,9 +1772,33 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('odRewrite').addEventListener('click', ()=> ask('Write it again?', 'The AI writes the whole document again from your answers. Your own edits in the text are replaced.', 'Write again', ()=>{ $('odExtra').value = ''; scanSnd.prime(); fs.enter(); write(); }));
   $('odUndo').addEventListener('click', ()=>{ if(!D.prevDoc) return; const now = D.doc; save({doc: D.prevDoc}); D.prevDoc = now; openDocView(); toast('Back to the version before the AI change.'); });
   $('odEditAnswers').addEventListener('click', ()=>{ cur = {s: 0, q: 0}; openInterview(); });
-  $('odGoWrite').addEventListener('click', ()=> show('vReady'));
+  $('odGoWrite').addEventListener('click', ()=>{ show('vReady'); paintFacts(); if(!(D.facts || []).length){ $('odFactsBtn').classList.remove('hidden'); $('odWrite').classList.add('hidden'); } });
   $('odBackToQ').addEventListener('click', ()=>{ cur = {s: 0, q: 0}; openInterview(); });
-  $('odWrite').addEventListener('click', ()=>{ scanSnd.prime(); fs.enter(); write(); });
+  $('odWrite').addEventListener('click', ()=>{ D.facts = readFacts(); save({facts: D.facts}); scanSnd.prime(); fs.enter(); write(); });
+  // the fact sheet: every number, name and price, checked once, then used exactly in the document
+  function paintFacts(){
+    const box = $('odFacts'), F = D.facts || [];
+    if(!F.length){ box.innerHTML = ''; return; }
+    const groups = []; F.forEach((f)=>{ if(!groups.includes(f.group)) groups.push(f.group); });
+    box.innerHTML = `<h3>🧾 Check your facts</h3><p>These are the numbers, names and prices your document will use, exactly as written here. Fix anything that’s off, and fill in what’s empty.</p>` +
+      groups.map((g)=> `<div class="od-fg"><h4>${esc(g)}</h4>${F.map((f, i)=> f.group !== g ? '' : `<div class="od-fr${f.value ? '' : ' empty'}" data-fi="${i}"><input class="lab" value="${esc(f.label)}" aria-label="What"><input class="val" value="${esc(f.value)}" placeholder="Fill this in" aria-label="Value"><button type="button" class="od-fx" data-fdel="${i}" aria-label="Remove">✕</button></div>`).join('')}
+        <button type="button" class="od-fadd" data-fadd="${esc(g)}">＋ Add a fact</button></div>`).join('');
+    $('odFactsBtn').classList.add('hidden'); $('odWrite').classList.remove('hidden');
+  }
+  function readFacts(){ const F = D.facts || []; return [...document.querySelectorAll('#odFacts .od-fr')].map((r)=>{ const f = F[+r.dataset.fi] || {group: 'Offer'}; return {group: f.group, label: r.querySelector('.lab').value.trim(), value: r.querySelector('.val').value.trim()}; }).filter((f)=> f.label); }
+  $('odFacts').addEventListener('click', (e)=>{
+    const d = e.target.closest('[data-fdel]'), a = e.target.closest('[data-fadd]'); if(!d && !a) return;
+    D.facts = readFacts(); if(d) D.facts.splice(+d.dataset.fdel, 1); if(a) D.facts.push({group: a.dataset.fadd, label: '', value: ''});
+    paintFacts(); save({facts: D.facts}); if(a){ const rows = document.querySelectorAll('#odFacts .od-fr .lab'); rows[rows.length - 1] && [...document.querySelectorAll(`#odFacts .od-fg`)].forEach(()=>{}); }
+  });
+  $('odFacts').addEventListener('input', (e)=>{ const r = e.target.closest('.od-fr'); if(r) r.classList.toggle('empty', !r.querySelector('.val').value.trim()); });
+  $('odFactsBtn').addEventListener('click', async (e)=>{
+    const b = e.currentTarget; b.disabled = true; b.innerHTML = '<span class="spin" style="width:16px;height:16px;border-width:2px"></span> Collecting your facts…';
+    try { const answers = {}; Object.entries(D.answers).forEach(([k, v])=>{ answers[k] = v === '__skip' ? '' : v; });
+      const r = await AI({mode: 'facts', plan: D.plan, answers}); D.facts = r.facts || []; save({facts: D.facts}); paintFacts();
+      const empty = D.facts.filter((f)=> !f.value).length; if(empty) toast(`${empty} fact${empty === 1 ? ' is' : 's are'} empty: fill ${empty === 1 ? 'it' : 'them'} in, or remove ${empty === 1 ? 'it' : 'them'}.`);
+    } catch(err){ toast(aiErr(err), true); } finally { b.disabled = false; b.textContent = '🧾 Check your facts'; }
+  });
 
   // ---------- wiring ----------
   $('odNew').addEventListener('click', newDoc);
@@ -1729,6 +1842,22 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     load();
   }
   $('odLessonsBtn').addEventListener('click', openLessons);
+  function openAccess(){
+    const ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:800;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = `<div class="card od-ac" role="dialog" aria-modal="true" aria-labelledby="acT"><div class="od-ls-h"><div><h3 id="acT">⚙️ AI access</h3><p>Accounts with the <b>stronger AI model</b> for writing (better documents, higher cost per document).</p></div><button type="button" class="btn sm" data-x>Close</button></div>
+      <div class="od-ac-add"><input id="acEmail" type="email" placeholder="Their account email, e.g. emma@acme.com"><button type="button" class="btn sm primary" id="acAdd">Switch on</button></div>
+      <div class="od-ac-list" id="acList"><div class="od-empty" style="padding:20px"><p>Loading…</p></div></div></div>`;
+    document.body.appendChild(ov); const close = ()=> ov.remove(); ov.addEventListener('mousedown', (e)=>{ if(e.target === ov) close(); }); ov.querySelector('[data-x]').addEventListener('click', close);
+    const load = ()=> AI({mode: 'access'}).then((r)=>{ const L = r.accounts || [];
+      $('acList').innerHTML = L.length ? L.map((a)=> `<div class="od-ac-i"><span><b>${esc(a.name || a.email)}</b><small>${esc(a.email)}</small></span><span class="od-ac-on">Stronger AI</span><button type="button" class="btn sm" data-off="${esc(a.email)}">Switch off</button></div>`).join('')
+        : '<div class="od-empty" style="padding:20px"><p>No accounts have the stronger model yet. Everyone uses the standard model.</p></div>'; }).catch((e)=>{ $('acList').innerHTML = `<p style="color:var(--fail)">${esc(aiErr(e))}</p>`; });
+    const set = (email, strong)=> AI({mode: 'accessSet', email, strong}).then(()=>{ toast(strong ? `Stronger AI switched on for ${email}.` : `Switched off for ${email}.`); load(); }).catch((e)=> toast(aiErr(e), true));
+    $('acAdd').addEventListener('click', ()=>{ const e = $('acEmail').value.trim(); if(!/^\S+@\S+\.\S+$/.test(e)){ toast('Enter an email address.', true); return; } set(e, true); $('acEmail').value = ''; });
+    $('acEmail').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') $('acAdd').click(); });
+    $('acList').addEventListener('click', (e)=>{ const b = e.target.closest('[data-off]'); if(b) set(b.dataset.off, false); });
+    load();
+  }
+  $('odAccessBtn').addEventListener('click', openAccess);
   $('odUsePala').addEventListener('click', ()=>{ scanSnd.prime(); fs.enter(); startFrom(PALA_TEMPLATE, 'PALA template'); });
   const drop = $('odDrop');
   drop.addEventListener('click', ()=>{ scanSnd.prime(); $('odFile').click(); }); drop.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('odFile').click(); } });
