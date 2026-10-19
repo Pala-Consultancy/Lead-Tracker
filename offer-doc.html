@@ -559,6 +559,11 @@
   .od-ac-i{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-soft);border-radius:12px;margin-bottom:8px;} .od-ac-i > span:first-child{flex:1;min-width:0;}
   .od-ac-i b{display:block;font-size:14px;} .od-ac-i small{display:block;font-size:12.5px;color:var(--slate);} .od-ac-on{font-size:11.5px;font-weight:800;color:var(--ok);background:rgba(30,158,116,.1);padding:3px 9px;border-radius:999px;}
   @media (max-width:760px){ .od-in-grid{grid-template-columns:1fr;} }
+
+  .od-rec.on{background:#E5484D;border-color:#E5484D;color:#fff;animation:odRec 1.2s ease-in-out infinite;}
+  .od-rec:disabled{opacity:.5;cursor:default;}
+  #inRecT{font-variant-numeric:tabular-nums;font-weight:700;color:#E5484D;}
+  .od-rec-tip{display:block;margin:8px 0 0 !important;font-size:12px !important;color:var(--slate-light) !important;}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -1427,8 +1432,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <section><b>📞 A sales call</b><small>Paste the transcript of a sales call (from Zoom, Fathom, Otter…), or upload the file. The AI pre-fills the answers it covers; you check them.</small>
             <textarea id="inCall" placeholder="Paste the transcript here…">${esc(D.call || '')}</textarea>
             <div class="od-in-row"><label class="btn sm">📎 Upload a file<input type="file" class="hidden" id="inCallFile" accept=".txt,.vtt,.srt,.docx,.pdf,.md"></label><span class="od-in-n" id="inCallN"></span></div></section>
-          <section><b>🎙️ Your voice</b><small>Paste a few of your LinkedIn posts, or a transcript of you talking. The AI writes in your style (it never copies the content).</small>
-            <textarea id="inVoice" placeholder="Paste a few posts, or something you said…">${esc(D.voice || '')}</textarea></section>
+          <section><b>🎙️ Your voice</b><small>Paste a few of your LinkedIn posts, or <b>record yourself</b> talking. The AI writes in your style (it never copies the content).</small>
+            <textarea id="inVoice" placeholder="Paste a few posts, or record yourself talking…">${esc(D.voice || '')}</textarea>
+            <div class="od-in-row"><button type="button" class="btn sm od-rec" id="inRec" ${SR ? '' : 'disabled title="Recording works in Chrome, Edge and Safari"'}>🎤 Record yourself</button><span class="od-in-n" id="inRecT">${SR ? '' : 'Recording works in Chrome, Edge and Safari.'}</span></div>
+            <small class="od-rec-tip">Tip: talk for 1–2 minutes about how you help your clients, as if you’re explaining it to a friend.</small></section>
         </div>
         <div class="od-in-f">${start ? '<button type="button" class="btn" data-skip>Skip for now</button>' : ''}<span class="grow"></span><button type="button" class="btn primary" data-go>${start ? 'Continue' : 'Save'}</button></div></div>`;
       document.body.appendChild(ov);
@@ -1437,10 +1444,31 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       ov.querySelector('#inCallFile').addEventListener('change', async (e)=>{ const f = e.target.files[0]; e.target.value = ''; if(!f) return;
         try { const ext = (f.name.split('.').pop() || '').toLowerCase(); let t = ['docx', 'pdf'].includes(ext) ? await readTemplate(f) : await f.text(); callT.value = cleanTranscript(t).slice(0, 60000); count(); }
         catch(err){ toast('Couldn’t read that file. Paste the text instead.', true); } });
-      const finish = ()=>{ ov.remove(); done(); };
+      // 🎤 record yourself: your words appear live in the field (speech recognition in the browser)
+      let recOn = false, recog = null, recBase = '', recFinal = '', recT0 = 0, recTimer = null;
+      const recBtn = ov.querySelector('#inRec'), recT = ov.querySelector('#inRecT');
+      const BCP = {English: 'en-US', Nederlands: 'nl-NL', Dutch: 'nl-NL', 'Français': 'fr-FR', French: 'fr-FR', Deutsch: 'de-DE', German: 'de-DE', 'Español': 'es-ES', Spanish: 'es-ES', Italiano: 'it-IT', Italian: 'it-IT', 'Português': 'pt-PT', Portuguese: 'pt-PT'};
+      const stopRec = ()=>{ recOn = false; clearInterval(recTimer); if(recog){ try { recog.stop(); } catch(e){} } recBtn.classList.remove('on'); recBtn.textContent = '🎤 Record yourself'; voiceT.value = voiceT.value.trim(); };
+      const listen = ()=>{
+        recog = new SR(); recog.lang = BCP[langOf()] || navigator.language || 'en-US'; recog.continuous = true; recog.interimResults = true;
+        recog.onresult = (e)=>{ let interim = ''; for(let i = e.resultIndex; i < e.results.length; i++){ const r = e.results[i]; if(r.isFinal) recFinal += r[0].transcript.trim() + ' '; else interim += r[0].transcript; }
+          voiceT.value = (recBase + recFinal + interim).replace(/\s+$/, ' '); voiceT.scrollTop = voiceT.scrollHeight; };
+        recog.onerror = (e)=>{ if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){ toast('Allow the microphone in your browser to record yourself.', true); stopRec(); } };
+        recog.onend = ()=>{ if(recOn) try { listen(); } catch(e){ stopRec(); } };          // a long pause ends it: keep listening until you click Stop
+        recog.start();
+      };
+      if(recBtn && SR) recBtn.addEventListener('click', ()=>{
+        if(recOn){ stopRec(); toast('Recording stopped. You can edit the text, or record more.'); return; }
+        recOn = true; recBase = voiceT.value.trim() ? voiceT.value.trim() + '\n\n' : ''; recFinal = ''; recT0 = Date.now();
+        recBtn.classList.add('on'); recBtn.textContent = '⏹ Stop recording';
+        recTimer = setInterval(()=>{ const s = Math.floor((Date.now() - recT0) / 1000); recT.textContent = `● ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if(s >= 300){ stopRec(); toast('That’s 5 minutes: plenty for your voice. Recording stopped.'); } }, 250);
+        try { listen(); } catch(e){ stopRec(); toast('Couldn’t start the recording.', true); }
+      });
+      const finish = ()=>{ if(recOn) stopRec(); ov.remove(); done(); };
       const x = ov.querySelector('[data-x]'); if(x) x.addEventListener('click', finish);
       const sk = ov.querySelector('[data-skip]'); if(sk) sk.addEventListener('click', finish);
       ov.querySelector('[data-go]').addEventListener('click', async (e)=>{
+        if(recOn) stopRec();
         const b = e.currentTarget, call = callT.value.trim().slice(0, 60000), voice = voiceT.value.trim().slice(0, 8000);
         const newCall = call && call !== (D.call || '');
         save({call, voice}); D.call = call; D.voice = voice;
