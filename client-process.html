@@ -629,17 +629,19 @@
     border:1px solid rgba(15,23,42,.08);box-shadow:0 1px 0 rgba(0,0,0,.02),0 12px 26px -16px rgba(15,23,42,.28);color:#2B3445;transform:rotate(-.25deg);}
   .note::before{content:"";position:absolute;top:0;bottom:0;left:18px;width:1.5px;background:rgba(220,90,80,.45);}
   .note .tape{position:absolute;top:-9px;left:50%;width:84px;height:20px;margin-left:-42px;background:rgba(232,226,210,.75);border:1px solid rgba(0,0,0,.04);transform:rotate(-2deg);box-shadow:0 1px 3px rgba(0,0,0,.06);backdrop-filter:blur(1px);}
-  .note-h{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B7486;margin-bottom:6px;}
+  .note-h{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin:0;padding:0;border:none;background:none;cursor:pointer;text-align:left;font:inherit;color:inherit;}
+  .note-t{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B7486;line-height:28px;}
+  .note-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s ease;} .note-body > .note-tx{overflow:hidden;min-height:0;}
+  .note.open .note-body{grid-template-rows:1fr;} .note.open .note-tx{padding-top:6px;}
   .note-tx{font-size:15px;line-height:28px;white-space:pre-wrap;word-break:break-word;}
   .note-tx b{color:#111827;} .note-tx a{color:#2B5FA8;}
-  .note.fold .note-tx{max-height:140px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent);transition:max-height .45s ease;}
-  .note.fold.open .note-tx{max-height:4000px;-webkit-mask-image:none;mask-image:none;}
-  .note-more{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:6px 12px;border:1px solid rgba(15,23,42,.14);border-radius:999px;background:#fff;color:#2B3445;font:600 13px var(--sans,inherit);cursor:pointer;}
+  .note.fold{padding-top:16px;padding-bottom:14px;}
+  .note-more{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;padding:6px 12px;border:1px solid rgba(15,23,42,.14);border-radius:999px;background:#fff;color:#2B3445;font:600 13px var(--sans,inherit);cursor:pointer;}
   .note-more:hover{background:#F4F6FA;} .note-more svg{width:14px;height:14px;transition:transform .25s;} .note.open .note-more svg{transform:rotate(180deg);}
   html[data-theme="dark"] .note{background-color:#262B35;background-image:repeating-linear-gradient(transparent 0 27px, rgba(160,190,240,.1) 27px 28px);border-color:rgba(255,255,255,.08);color:#E6E9F0;}
-  html[data-theme="dark"] .note-tx b{color:#FFFFFF;} html[data-theme="dark"] .note-h{color:#A9B2C4;} html[data-theme="dark"] .note .tape{background:rgba(255,255,255,.14);}
+  html[data-theme="dark"] .note-tx b{color:#FFFFFF;} html[data-theme="dark"] .note-t{color:#A9B2C4;} html[data-theme="dark"] .note .tape{background:rgba(255,255,255,.14);}
   html[data-theme="dark"] .note-more{background:rgba(255,255,255,.06);color:#E6E9F0;border-color:rgba(255,255,255,.16);}
-  @media (prefers-reduced-motion: reduce){ .note{transform:none;} .note.fold .note-tx{transition:none;} }
+  @media (prefers-reduced-motion: reduce){ .note{transform:none;} .note-body{transition:none;} }
 </style>
 </head>
 <body>
@@ -981,17 +983,19 @@
   function noteHTML(g) {
     const t = String(g.task.note || ''); if (!t.trim()) return '';
     const html = esc(t).replace(/\*\*([^*\n][^*]*?)\*\*/g, '<b>$1</b>').replace(/(^|\s)(https?:\/\/[^\s<]+)/g, (m, sp, u) => `${sp}<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
-    const long = t.length > 280 || t.split('\n').length > 6, id = g.task.id, open = openNotes.has(id);
+    const id = g.task.id, open = openNotes.has(id);
     const who = ((proc.senderName || '').split(/\s+from\s+/i)[0] || '').split(/\s+/)[0];
-    return `<div class="note${long ? ' fold' : ''}${open ? ' open' : ''}" data-note="${esc(id)}"><span class="tape" aria-hidden="true"></span>
-      <div class="note-h">📌 ${who ? 'A note from ' + esc(who) : 'A note'}</div><div class="note-tx">${html}</div>
-      ${long ? `<button type="button" class="note-more" data-notemore="${esc(id)}" aria-expanded="${open}"><span>${open ? 'Show less' : 'Read the full note'}</span>${ic('chev', 'sm')}</button>` : ''}</div>`;
+    // folded by default: only the heading shows; one click opens the whole note
+    return `<div class="note fold${open ? ' open' : ''}" data-note="${esc(id)}"><span class="tape" aria-hidden="true"></span>
+      <button type="button" class="note-h" data-notemore="${esc(id)}" aria-expanded="${open}"><span class="note-t">📌 ${who ? 'A note from ' + esc(who) : 'A note'}</span>
+        <span class="note-more"><span>${open ? 'Close the note' : 'Read the note'}</span>${ic('chev', 'sm')}</span></button>
+      <div class="note-body"><div class="note-tx">${html}</div></div></div>`;
   }
   document.addEventListener('click', (e) => {
     const nm = e.target.closest('[data-notemore]'); if (!nm) return;
     const id = nm.dataset.notemore, box = nm.closest('.note'), open = !openNotes.has(id);
     if (open) openNotes.add(id); else openNotes.delete(id);
-    box.classList.toggle('open', open); nm.setAttribute('aria-expanded', String(open)); nm.querySelector('span').textContent = open ? 'Show less' : 'Read the full note';
+    box.classList.toggle('open', open); nm.setAttribute('aria-expanded', String(open)); nm.querySelector('.note-more span').textContent = open ? 'Close the note' : 'Read the note';
     if (!open) { const r = box.getBoundingClientRect(); if (r.top < 0) box.scrollIntoView({behavior: 'smooth', block: 'center'}); }
   });
   function ctaHTML(b) {
