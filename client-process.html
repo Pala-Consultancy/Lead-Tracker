@@ -594,6 +594,20 @@
   .yt-chap:hover{background:rgba(255,255,255,.14);} .yt-chap span{opacity:.75;}
   .yt-grow{flex:1;}
   @media (max-width:560px){ .yt-chap{display:none;} .yt-speed{display:none;} }
+
+  /* "Before our call" / "After our call" */
+  .phase{display:flex;align-items:center;gap:12px;margin:26px 0 10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);}
+  .phase:first-child{margin-top:4px;}
+  .phase .ph-ic{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--accent);color:#fff;}
+  .phase .ph-ic svg{width:15px;height:15px;}
+  .phase b{display:block;font:600 17px var(--serif);letter-spacing:-.01em;} .phase small{display:block;margin-top:2px;font-size:13px;color:var(--ink-2);}
+  .phase.after{border-style:dashed;} .phase.after .ph-ic{background:var(--ink-3);}
+  .phase.after.open{border-style:solid;border-color:rgba(30,158,116,.35);background:rgba(30,158,116,.07);} .phase.after.open .ph-ic{background:var(--ok);}
+  .phase-intro{margin:0 0 10px;}
+  .step.later{opacity:.72;}
+  .step.later .num{background:var(--sunk);border-style:dashed;}
+  .step.later .s-body .do,.step.later .s-body .drop,.step.later [data-docs],.step.later .s-body textarea,.step.later .s-body input{pointer-events:none;opacity:.55;}
+  .tag.later-tag{color:var(--ink-2);font-weight:600;}
 </style>
 </head>
 <body>
@@ -840,20 +854,25 @@
 
   // ---------- The page: a welcome letter, then the steps ----------
   const TASK = ['todo', 'upload', 'question'], HEAD = ['h1', 'h2', 'h3'];
+  let afterInfo = null;   // the "After our call" divider: {label, open, intro: [blocks between the divider and its first task]}
+  const isLater = (g) => !!(g && g.after && !proc.callDone);
   function build() {
-    groups = []; intro = [];
-    let cur = null;
+    groups = []; intro = []; afterInfo = null;
+    let cur = null, pendingAfter = false;
     (proc.blocks || []).forEach((b) => {
+      if (b.type === 'aftercall') { afterInfo = {label: b.label || 'After our call', open: !!b.open, intro: []}; pendingAfter = true; return; }
       if (TASK.includes(b.type)) {
-        const prev = cur ? cur.content : intro;
+        const prev = pendingAfter ? afterInfo.intro : cur ? cur.content : intro;
         let section = '';
         while (prev.length && HEAD.includes(prev[prev.length - 1].type)) { const h = prev.pop(); section = section || textOf(h.html); }
         const atts = b.attachments || [];
         cur = {task: b, section, forms: atts.filter((a) => a.kind === 'form' && a.form),
           ctas: atts.filter((a) => a.kind === 'button' && (a.url || a.locked)).map((a) => ({id: a.id, type: 'button', label: a.label, url: a.url, locked: !!a.locked, left: a.left || 0})),
           content: atts.filter((a) => a.kind !== 'form' && a.kind !== 'button').map((a) => ({id: a.id, type: a.kind, video: a.video, file: a.file, image: a.image, preview: a.preview}))};
+        if (afterInfo) { cur.after = true; if (pendingAfter) { cur.firstAfter = true; pendingAfter = false; } }
         groups.push(cur);
-      } else if (cur && b.type === 'button') cur.ctas.push(b);     // shown in the step itself, always visible
+      } else if (pendingAfter) afterInfo.intro.push(b);              // text right under the divider: shown with its banner
+      else if (cur && b.type === 'button') cur.ctas.push(b);     // shown in the step itself, always visible
       else (cur ? cur.content : intro).push(b);
     });
   }
@@ -1020,7 +1039,7 @@
   }
 
   // ---------- Drawing ----------
-  const nextGroup = () => groups.find((g) => !g.task.state.done);
+  const nextGroup = () => groups.find((g) => !g.task.state.done && !isLater(g));
   // only touch the page when something actually changed (the page checks for updates every 8 seconds)
   const setHTML = (el, html) => { if (el && el.__html !== html) { el.innerHTML = html; el.__html = html; } };
   function render() {
@@ -1037,7 +1056,8 @@
     const HC = 2 * Math.PI * 52; $('heroRing').style.strokeDasharray = HC; $('heroRing').style.strokeDashoffset = HC * (1 - pct / 100);
     $('heroPct').textContent = pct + '%';
     $('heroStat').textContent = proc.status === 'completed' ? 'All steps done' : `${done} of ${total} step${total === 1 ? '' : 's'} done`;
-    $('heroNext').textContent = next ? 'Next: ' + titleOf(next.task) : 'Thank you!';
+    const waitCall = !next && groups.some((g) => isLater(g) && !g.task.state.done);
+    $('heroNext').textContent = next ? 'Next: ' + titleOf(next.task) : waitCall ? 'Next: your onboarding call' : 'Thank you!';
     $('heroGo').classList.toggle('hidden', !next);
     $('heroGo').firstChild.textContent = done ? 'Continue' : 'Start';
     // the roadmap: every step as a dot on one line that fills up
@@ -1055,9 +1075,17 @@
     if ($('intro').dataset.html !== introHTML) { $('intro').innerHTML = introHTML; $('intro').dataset.html = introHTML; loadMedia($('intro')); }
     // the steps (built once; afterwards only what changed is updated, so a playing video or a half-filled document stays)
     const host = $('tasks');
-    const sig = groups.map((g) => [g.task.id, g.ctas.map((b) => b.id + b.url + b.label + (b.locked ? 'L' + b.left : '')).join(','), g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
+    const phaseHTML = (g) => {
+      if (!afterInfo) return '';
+      if (g === groups[0] && !g.after) return `<div class="phase before"><span class="ph-ic">${ic('check', 'sm')}</span><div><b>Before our call</b><small>Complete these first, then book your call.</small></div></div>`;
+      if (!g.firstAfter) return '';
+      const ih = afterInfo.intro.map(contentHTML).join('');
+      return `<div class="phase after${proc.callDone ? ' open' : ''}"><span class="ph-ic">${proc.callDone ? ic('check', 'sm') : ic('lock', 'sm')}</span><div><b>${esc(afterInfo.label)}</b>
+        <small>${proc.callDone ? 'Unlocked: you can do these now.' : 'These open after our onboarding call. You can already look at them.'}</small></div></div>${ih ? `<div class="content phase-intro">${ih}</div>` : ''}`;
+    };
+    const sig = String(!!proc.callDone) + '|' + groups.map((g) => [g.task.id, g.ctas.map((b) => b.id + b.url + b.label + (b.locked ? 'L' + b.left : '')).join(','), g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
     if (host.dataset.sig !== sig) {
-      host.innerHTML = groups.map((g, i) => `${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
+      host.innerHTML = groups.map((g, i) => `${phaseHTML(g)}${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
         <article class="step" id="step-${esc(g.task.id)}" data-id="${esc(g.task.id)}" aria-labelledby="st-${esc(g.task.id)}">
           <div class="s-head"><span class="num-slot"></span>
             <div class="s-main"><h3 id="st-${esc(g.task.id)}">${esc(titleOf(g.task))}</h3>
@@ -1074,12 +1102,14 @@
       el.dataset.here = isNext ? 'You’re here' : '';
       el.classList.toggle('done', !!st.done); el.classList.toggle('is-next', !!isNext); el.classList.toggle('open', isMore);
       el.classList.toggle('keep', g.forms.some((a) => openDocs.has(a.id)));
-      const tickable = g.task.type === 'todo' && !g.forms.length && !(!(g.task.state || {}).done && g.ctas.some((c) => c.locked));
+      const later = isLater(g); el.classList.toggle('later', later);
+      const tickable = !later && g.task.type === 'todo' && !g.forms.length && !(!(g.task.state || {}).done && g.ctas.some((c) => c.locked));
       const numHTML = `<button type="button" class="num" ${tickable ? `data-tick="${i}" title="${st.done ? 'Completed · click to undo' : 'Mark as done'}"` : 'tabindex="-1"'} aria-label="${st.done ? 'Step completed' : 'Step ' + (i + 1)}"><span class="n">${i + 1}</span><span class="ck">${ic('check', 'sm')}</span></button>`;
       const ns = el.querySelector('.num-slot'); if (ns.dataset.html !== numHTML) { ns.innerHTML = numHTML; ns.dataset.html = numHTML; }
       let act;
       const lockedStep = !st.done && g.ctas.some((c) => c.locked);   // its booking isn't open yet, so it can't be ticked yet
-      if (lockedStep) act = `<span class="tag">${ic('lock', 'sm')} Locked</span>`;
+      if (later) act = `<span class="tag later-tag">${ic('lock', 'sm')} After our call</span>`;
+      else if (lockedStep) act = `<span class="tag">${ic('lock', 'sm')} Locked</span>`;
       else if (tickable) act = st.done ? `<button type="button" class="act done" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${ic('check')}</span><span class="d">Done</span><span class="u">Undo</span></button>`
         : `<button type="button" class="act" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving' : `<span class="c">${ic('check')}</span>Mark as done`}</button>`;
       else if (g.forms.length && !st.done && !g.forms.every((a) => (st.forms || {})[a.id])) { const f0 = g.forms[0], open = openDocs.has(f0.id), started = !!draftOf(f0.id) || Object.keys(st.forms || {}).length;

@@ -354,6 +354,18 @@
   .vt-jump:hover{color:var(--teal);border-color:var(--teal);} .vt-del:hover{color:#C0392B;border-color:#C0392B;}
   .vt-empty{font-size:13px;color:var(--slate-light);padding:8px 2px;}
   .vt-lab{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13.5px;font-weight:600;} .vt-lab select{height:36px;max-width:220px;}
+
+  /* "After our call": the section divider in the editor, and the onboarding call card */
+  .be-after{border:1.5px dashed #C9B8F5;background:rgba(122,90,240,.05);border-radius:12px;padding:10px 12px;margin:8px 0;}
+  .be-after-line{display:flex;align-items:center;gap:8px;} .be-after-line span{font-size:16px;}
+  .be-after-line .in{flex:1;font-weight:700;font-size:15px;background:transparent;border-color:transparent;}
+  .be-after-line .in:hover,.be-after-line .in:focus{border-color:var(--border);background:var(--panel);}
+  .be-after small{display:block;margin-top:6px;font-size:12.5px;line-height:1.5;color:var(--slate);}
+  .dt-call{display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:12px 14px;border-radius:12px;border:1px solid #D9CEF8;background:rgba(122,90,240,.06);}
+  .dt-call.on{border-color:rgba(30,158,116,.35);background:rgba(30,158,116,.07);}
+  .dt-call .ic{font-size:18px;} .dt-call > div{flex:1;min-width:0;} .dt-call b{display:block;font-size:14px;} .dt-call small{display:block;font-size:12.5px;color:var(--slate);margin-top:2px;}
+  .dt-sec{margin:14px 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6E56CF;}
+  .dstep.later{opacity:.62;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -876,6 +888,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="sec"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><h3 style="margin:0">What your client does</h3><span class="chip" id="dtChip"></span><span class="live-badge" title="Updates the moment your client does something"><i></i>Live</span></div>
       <div class="dt-prog"><div class="dt-ring"><svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="27"/><circle class="vl" id="dtRing" cx="32" cy="32" r="27"/></svg><b id="dtPct">0%</b></div>
         <div style="flex:1;min-width:0"><b id="dtProg" class="dt-count"></b><div class="pbar"><i id="dtBar"></i></div><div class="meta"><span id="dtOpt"></span><span id="dtLast"></span></div></div></div>
+      <div class="dt-call hidden" id="dtCall"></div>
       <div id="dtSteps" style="margin-top:8px"></div></div>
     <div class="sec"><h3>Activity</h3><div id="dtAct"></div></div>
   </div>
@@ -1057,6 +1070,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'file', ic: '📄', label: 'Document', hint: 'Preview + download button'},
     {k: 'image', ic: '🖼️', label: 'Image', hint: 'A picture or screenshot'},
     {k: 'button', ic: '🔘', label: 'Button', hint: 'A link, e.g. “Book your call”'},
+    {k: 'aftercall', ic: '⏳', label: 'After our call (section)', hint: 'Below this: tasks for after your onboarding call'},
     {k: 'todo', ic: '☑', label: 'To-do for the client', hint: 'They tick it off', client: true},
     {k: 'callstep', ic: '📅', label: 'Book a call (step)', hint: 'A step with your booking link', client: true},
     {k: 'upload', ic: '📤', label: 'Upload request', hint: 'They send you a file', client: true},
@@ -1325,6 +1339,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (TEXTISH.includes(b.type)) body = ce(b.type);
     else if (b.type === 'bullets' || b.type === 'numbers') body = `<${b.type === 'bullets' ? 'ul' : 'ol'} class="be be-list" contenteditable="true">${b.html || '<li></li>'}</${b.type === 'bullets' ? 'ul' : 'ol'}>`;
     else if (b.type === 'divider') body = '<hr class="be-hr">';
+    else if (b.type === 'aftercall') body = `<div class="be-after"><div class="be-after-line"><span>⏳</span><input class="in" data-f="label" maxlength="120" placeholder="After our call" value="${esc(b.label || '')}" aria-label="Section title"></div>
+      <small>Everything <b>below</b> this line is for after your onboarding call. Your client sees it, but it stays locked until you click <b>“Onboarding call done”</b> on their page. It never blocks booking the call.</small></div>`;
     else if (b.type === 'todo') body = `<div class="be-task"><div class="be-tag">☑ To-do for your client</div><div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>${attHTML(b)}</div>`;
     else if (b.type === 'video') {
       const v = b.video;
@@ -1459,6 +1475,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function newBlock(k) {
     if (k === 'callstep') return {id: uidGen(), type: 'todo', html: 'Book your onboarding call', required: true, note: 'Pick a time that suits you. We’ll go through everything together.',
       attachments: [{id: uidGen(), kind: 'button', label: 'Book your onboarding call', url: '', gate: true}]};
+    if (k === 'aftercall') return {id: uidGen(), type: 'aftercall', label: ''};
     const b = {id: uidGen(), type: k};
     if (TEXTISH.includes(k) || k === 'todo') b.html = '';
     if (k === 'bullets' || k === 'numbers') b.html = '<li></li>';
@@ -1648,7 +1665,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const ql = slash.q.toLowerCase();
     // names that START with what you typed come first ("/vid" → Video, not Divider)
     const score = (x) => { const l = x.label.toLowerCase().replace(/-/g, ''); if (!ql) return 1; if (l.startsWith(ql) || x.k.startsWith(ql)) return 4; if (l.split(/\s+/).some((w) => w.startsWith(ql))) return 3; if (l.includes(ql) || x.k.includes(ql)) return 2; return x.hint.toLowerCase().includes(ql) ? 1 : 0; };
-    slash.items = BLOCKS.map((x, i) => ({x, i, s: score(x)})).filter((o) => o.s > 0).sort((a, b) => b.s - a.s || a.i - b.i).map((o) => o.x);
+    const hasAfter = editing && (editing.data.blocks || []).some((b) => b.type === 'aftercall');
+    slash.items = BLOCKS.map((x, i) => ({x, i, s: score(x)})).filter((o) => o.s > 0 && !(o.x.k === 'aftercall' && hasAfter)).sort((a, b) => b.s - a.s || a.i - b.i).map((o) => o.x);
     if (!slash.items.length) { closeSlash(); return; }
     drawSlash();
     const anchor = blk || $('pgAdd'), r = anchor.getBoundingClientRect(), m = $('slashMenu');
@@ -1994,7 +2012,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     $('dtLast').innerHTML = activeNow(p) ? '<span class="live-now"><i></i>Your client is active right now</span>' : p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Not opened yet';
     $('dtArchive').textContent = p.status === 'archived' ? 'Reopen' : 'Archive';
     const ICON = {todo: '☑', upload: '📤', question: '✍️'};
+    // the onboarding call: one click unlocks the "After our call" tasks for the client
+    const allB = blocksOf(p), cut = allB.findIndex((b) => b.type === 'aftercall'), afterSet = new Set(cut === -1 ? [] : allB.slice(cut + 1).map((b) => b.id));
+    const callBox = $('dtCall'); callBox.classList.toggle('hidden', cut === -1);
+    if (cut !== -1) {
+      const nAfter = steps.filter((s) => afterSet.has(s.id)).length;
+      callBox.className = 'dt-call' + (p.callDone ? ' on' : '');
+      callBox.innerHTML = p.callDone
+        ? `<span class="ic">✓</span><div><b>Onboarding call done${p.callDoneAt ? ' · ' + esc(ago(p.callDoneAt)) : ''}</b><small>The ${nAfter} “${esc(allB[cut].label || 'After our call')}” task${nAfter === 1 ? ' is' : 's are'} open for your client.</small></div><button class="link" id="dtCallUndo">Undo</button>`
+        : `<span class="ic">🔒</span><div><b>“${esc(allB[cut].label || 'After our call')}” is locked</b><small>Your client sees ${nAfter} task${nAfter === 1 ? '' : 's'} for after your onboarding call, but can’t do them yet.</small></div><button class="btn primary sm" id="dtCallDone">✓ Onboarding call done</button>`;
+    }
+    let shownAfter = false;
     $('dtSteps').innerHTML = steps.length ? steps.map((s, i) => {
+      const head = afterSet.has(s.id) && !shownAfter ? (shownAfter = true, `<div class="dt-sec">${p.callDone ? '' : '🔒 '}${esc(allB[cut].label || 'After our call')}</div>`) : '';
       const r = prog[s.id] || {};
       const answer = (s.type === 'question' && r.answers && r.answers.value ? `<div class="ans">${esc(r.answers.value)}</div>` : '')
         + (s.attachments || []).filter((a) => a.kind === 'form' && a.form).map((a) => {
@@ -2004,7 +2034,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           return `<div class="ans form-ans"><span>📝 ${esc(a.form.title || 'Form')} · filled in by ${esc(sub.by)} ${ago(sub.at)}</span>${a.form.fields.filter((fd) => !['heading', 'paragraph'].includes(fd.type)).map((fd) => `<div><span>${esc(fd.label || 'Field')}</span>${val(fd)}</div>`).join('')}</div>`;
         }).join('');
       const ups = (r.uploads || []).map((u, j) => `<div class="fitem"><span class="nm">📎 ${esc(u.name)}</span><small>${fsize(u.size)} · ${esc(u.by)}</small><button class="link" data-dl="${esc(s.id)}:${j}">Download</button></div>`).join('');
-      return `<div class="dstep${r.done ? ' done' : ''}" data-sid="${esc(s.id)}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${ICON[s.type]} ${esc(labelOf(s))}</b>
+      return head + `<div class="dstep${r.done ? ' done' : ''}${afterSet.has(s.id) && !p.callDone ? ' later' : ''}" data-sid="${esc(s.id)}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${ICON[s.type]} ${esc(labelOf(s))}</b>
         <div class="st">${r.done ? `Done by ${esc(r.doneBy || 'someone')} · ${ago(r.doneAt)}` : s.required === false ? 'Optional · not done yet' : 'Not done yet'}</div>
         ${answer}${ups ? `<div class="flist">${ups}</div>` : ''}</div>
         ${s.type === 'todo' ? `<button class="btn sm" data-mark="${esc(s.id)}">${r.done ? 'Undo' : 'Mark done'}</button>` : ''}</div>`;
@@ -2055,6 +2085,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('dtPinChange').addEventListener('click', () => newLink('set'));
   $('dtPinRemove').addEventListener('click', async () => { if (await ask('Anyone with the new link can then open the page, without a PIN.', {title: 'Remove the PIN?', ok: 'Remove PIN', danger: true})) newLink('remove'); });
   $('dtEdit').addEventListener('click', () => { const p = current; $('dtOv').classList.remove('open'); current = null; openEditor('process', p, p.id); });
+  $('dtCall').addEventListener('click', async (e) => {
+    const on = e.target.closest('#dtCallDone'), off = e.target.closest('#dtCallUndo'); if (!on && !off || !current) return;
+    const FV = firebase.firestore.FieldValue, who = (auth.currentUser && (auth.currentUser.displayName || auth.currentUser.email)) || 'You';
+    const upd = on ? {callDone: true, callDoneAt: FV.serverTimestamp(), activity: FV.arrayUnion({text: 'marked the onboarding call as done: the after-call tasks are open', by: who, at: firebase.firestore.Timestamp.now()})}
+      : {callDone: false, callDoneAt: FV.delete()};
+    try { await db.collection('clientProcesses').doc(current.id).update(Object.assign(upd, {updatedAt: FV.serverTimestamp()}));
+      showToast(on ? 'Done: your client can now do the after-call tasks.' : 'Locked again.'); }
+    catch (err) { console.error(err); showToast('Couldn\u2019t save.', true); }
+  });
   $('dtArchive').addEventListener('click', async () => {
     const p = current, steps = tasksOf(p), prog = p.progress || {};
     const all = steps.length > 0 && steps.filter((s) => s.required !== false).every((s) => prog[s.id] && prog[s.id].done);
