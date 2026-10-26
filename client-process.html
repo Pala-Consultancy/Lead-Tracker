@@ -643,6 +643,21 @@
   .roadmap.crowded:has(.rm-dot:hover) .rm-dot.now:not(:hover) em,.roadmap.crowded:has(.rm-dot:focus-visible) .rm-dot.now:not(:focus-visible) em{display:none;}
   .roadmap.crowded .rm-dot:hover em{color:var(--ink);}
   .roadmap.crowded .rm-dot:first-of-type em{left:0;transform:none;} .roadmap.crowded .rm-dot:last-of-type em{left:auto;right:0;transform:none;}
+
+  /* the "after our call" section as a library: a toggle, categories, compact rows */
+  .phase.after{cursor:pointer;user-select:none;} .phase.after:hover{filter:brightness(.985);}
+  .ph-fold{order:9;margin-left:auto;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-2);background:color-mix(in srgb,var(--pc) 10%,transparent);transition:transform .3s var(--ease);flex-shrink:0;}
+  .ph-fold svg{width:15px;height:15px;} .after-folded .ph-fold{transform:rotate(-90deg);}
+  .phase.after > div{flex:1;}
+  .after-folded .step.in-after,.after-folded .section.sec-after,.after-folded .phase-intro{display:none !important;}
+  .section.sec-after,.section{font-size:13px;font-weight:800;letter-spacing:.05em;color:var(--ink-2);text-transform:none;}
+  .section.sec-after{margin:18px 0 4px;padding:6px 4px 0;font-size:16px;letter-spacing:-.005em;color:var(--ink);font-family:var(--serif);}
+  .step.in-after .s-head{padding-top:12px;padding-bottom:12px;}
+  .step.in-after h3{font-size:16px;}
+  .step.in-after .s-meta{margin-top:2px;}
+  .num .n.emo{font-size:17px;font-family:system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif;line-height:1;}
+  .rm-dot.rm-after span{border-style:dashed;}
+  .rm-dot span{font-family:var(--serif),"Apple Color Emoji","Segoe UI Emoji";}
 </style>
 </head>
 <body>
@@ -1118,6 +1133,14 @@
 
   // ---------- Drawing ----------
   const nextGroup = () => groups.find((g) => !g.task.state.done && !isLater(g));
+  // numbers start at 1 again in the "after our call" section
+  const stepNo = (i) => { const g = groups[i]; if (!afterInfo || !g || !g.after) return i + 1; const first = groups.findIndex((x) => x.after); return i - first + 1; };
+  // a title that starts with an emoji ("📍 How to define your positioning"): the emoji goes in the circle
+  const EMO = /^\s*((?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\uFE0F|\u200D(?:\p{Extended_Pictographic}|\p{Regional_Indicator})|[\u{1F3FB}-\u{1F3FF}])*)\s*/u;
+  const emojiOf = (t) => { const m = String(t || '').match(EMO); return m ? m[1] : ''; };
+  const plainTitle = (t) => String(t || '').replace(EMO, '');
+  const FOLD_KEY = 'ptCpFold:' + (new URLSearchParams(location.search).get('t') || '');
+  let afterFolded = false; try { afterFolded = localStorage.getItem(FOLD_KEY) === '1'; } catch (e) { /* ignore */ }
   // only touch the page when something actually changed (the page checks for updates every 8 seconds)
   const setHTML = (el, html) => { if (el && el.__html !== html) { el.innerHTML = html; el.__html = html; } };
   function render() {
@@ -1140,7 +1163,7 @@
     $('heroGo').firstChild.textContent = done ? 'Continue' : 'Start';
     // the roadmap: every step as a dot on one line that fills up
     const fillTo = groups.length > 1 ? Math.max(0, groups.reduce((m, g, i) => (g.task.state.done ? i : m), -1)) / (groups.length - 1) * 100 : 0;
-    setHTML($('roadmap'), groups.length > 1 ? `<div class="rm-line"><i style="width:${fillTo}%"></i></div>${groups.map((g, i) => `<button type="button" class="rm-dot${g.task.state.done ? ' done' : ''}${next === g ? ' now' : ''}" data-goto="${esc(g.task.id)}" style="left:${groups.length > 1 ? i / (groups.length - 1) * 100 : 0}%" title="${esc(titleOf(g.task))}"><span>${g.task.state.done ? '✓' : i + 1}</span><em>${esc(titleOf(g.task))}</em></button>`).join('')}` : '');
+    setHTML($('roadmap'), groups.length > 1 ? `<div class="rm-line"><i style="width:${fillTo}%"></i></div>${groups.map((g, i) => `<button type="button" class="rm-dot${g.task.state.done ? ' done' : ''}${next === g ? ' now' : ''}${g.after ? ' rm-after' : ''}" data-goto="${esc(g.task.id)}" style="left:${groups.length > 1 ? i / (groups.length - 1) * 100 : 0}%" title="${esc(titleOf(g.task))}"><span>${g.task.state.done ? '✓' : emojiOf(titleOf(g.task)) || stepNo(i)}</span><em>${esc(plainTitle(titleOf(g.task)) || titleOf(g.task))}</em></button>`).join('')}` : '');
     fitRoadmap();
     $('stepsSub').textContent = groups.length ? `${groups.length} step${groups.length === 1 ? '' : 's'}${done ? ` · ${done} done` : ''}` : '';
     const wasHidden = $('doneNote').classList.contains('hidden');
@@ -1159,15 +1182,16 @@
       if (g === groups[0] && !g.after) return `<div class="phase before"><span class="ph-ic">${ic('check', 'sm')}</span><div><b>${esc(afterInfo.beforeLabel)}</b><small>${esc(afterInfo.beforeText)}</small></div></div>`;
       if (!g.firstAfter) return '';
       const ih = afterInfo.intro.map(contentHTML).join('');
-      return `<div class="phase after${proc.callDone ? ' open' : ''}"><span class="ph-ic">${proc.callDone ? ic('check', 'sm') : ic('lock', 'sm')}</span><div><b>${esc(afterInfo.label)}</b>
+      return `<div class="phase after${proc.callDone ? ' open' : ''}" role="button" tabindex="0" data-foldafter aria-expanded="${!afterFolded}" title="${afterFolded ? 'Show' : 'Hide'} these steps"><span class="ph-fold">${ic('chev', 'sm')}</span><span class="ph-ic">${proc.callDone ? ic('check', 'sm') : ic('lock', 'sm')}</span><div><b>${esc(afterInfo.label)}</b>
         <small>${proc.callDone ? 'Unlocked: you can do these now.' : esc(afterInfo.afterText)}</small></div></div>${ih ? `<div class="content phase-intro">${ih}</div>` : ''}`;
     };
+    host.classList.toggle('after-folded', !!afterInfo && afterFolded);
     const sig = String(!!proc.callDone) + '|' + (afterInfo ? [afterInfo.label, afterInfo.beforeLabel, afterInfo.beforeText, afterInfo.afterText].join('¦') : '') + '|' + groups.map((g) => [g.task.id, g.ctas.map((b) => b.id + b.url + b.label + (b.logo || '') + (b.locked ? 'L' + b.left : '')).join(','), g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
     if (host.dataset.sig !== sig) {
-      host.innerHTML = groups.map((g, i) => `${phaseHTML(g)}${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
+      host.innerHTML = groups.map((g, i) => `${phaseHTML(g)}${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section${g.after ? ' sec-after' : ''}">${esc(g.section)}</div>` : ''}
         <article class="step" id="step-${esc(g.task.id)}" data-id="${esc(g.task.id)}" aria-labelledby="st-${esc(g.task.id)}">
           <div class="s-head"><span class="num-slot"></span>
-            <div class="s-main"><h3 id="st-${esc(g.task.id)}">${esc(titleOf(g.task))}</h3>
+            <div class="s-main"><h3 id="st-${esc(g.task.id)}">${esc(plainTitle(titleOf(g.task)) || titleOf(g.task))}</h3>
               <div class="s-meta">${meta(g)}${g.content.length ? `<button type="button" class="more" data-more="${i}" aria-expanded="false"><span class="ml">Show details</span>${ic('chev', 'sm')}</button>` : ''}<span class="who-slot"></span></div></div>
             <div class="s-act"></div></div>
           <div class="s-body">${noteHTML(g)}${g.ctas.length ? `<div class="s-ctas">${g.ctas.map(ctaHTML).join('')}</div>` : ''}${g.content.length ? `<div class="s-more"><div><div class="content" data-content="${i}"></div></div></div>` : ''}<div data-docs="${i}"></div><div data-do="${i}"></div></div>
@@ -1184,7 +1208,7 @@
       const later = isLater(g); el.classList.toggle('later', later);
       if (afterInfo) { el.classList.toggle('in-before', !g.after); el.classList.toggle('in-after', !!g.after); el.classList.toggle('open-after', !!g.after && !!proc.callDone); }
       const tickable = !later && g.task.type === 'todo' && !g.forms.length && !(!(g.task.state || {}).done && g.ctas.some((c) => c.locked));
-      const numHTML = `<button type="button" class="num" ${tickable ? `data-tick="${i}" title="${st.done ? 'Completed · click to undo' : 'Mark as done'}"` : 'tabindex="-1"'} aria-label="${st.done ? 'Step completed' : 'Step ' + (i + 1)}"><span class="n">${i + 1}</span><span class="ck">${ic('check', 'sm')}</span></button>`;
+      const numHTML = `<button type="button" class="num" ${tickable ? `data-tick="${i}" title="${st.done ? 'Completed · click to undo' : 'Mark as done'}"` : 'tabindex="-1"'} aria-label="${st.done ? 'Step completed' : 'Step ' + stepNo(i)}"><span class="n${emojiOf(titleOf(g.task)) ? ' emo' : ''}">${emojiOf(titleOf(g.task)) || stepNo(i)}</span><span class="ck">${ic('check', 'sm')}</span></button>`;
       const ns = el.querySelector('.num-slot'); if (ns.dataset.html !== numHTML) { ns.innerHTML = numHTML; ns.dataset.html = numHTML; }
       let act;
       const lockedStep = !st.done && g.ctas.some((c) => c.locked);   // its booking isn't open yet, so it can't be ticked yet
@@ -1250,6 +1274,12 @@
   $('heroGo').addEventListener('click', () => { const nx = nextGroup(); if (nx) goTo(nx.task.id); });
   // the titles under the dots never overlap: each gets the room up to the next dot; when that's too tight,
   // only the current step's title shows (and the one you hover)
+  // fold / unfold the "after our call" section (remembered on this device)
+  function toggleAfter() { afterFolded = !afterFolded; try { localStorage.setItem(FOLD_KEY, afterFolded ? '1' : '0'); } catch (e) { /* ignore */ }
+    const host = document.querySelector('.phase.after') && document.querySelector('.phase.after').parentElement; if (host) host.classList.toggle('after-folded', afterFolded);
+    document.querySelectorAll('[data-foldafter]').forEach((x) => { x.setAttribute('aria-expanded', String(!afterFolded)); x.title = (afterFolded ? 'Show' : 'Hide') + ' these steps'; }); }
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-foldafter]')) toggleAfter(); });
+  document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-foldafter]')) { e.preventDefault(); toggleAfter(); } });
   function fitRoadmap() {
     const rm = $('roadmap'), n = rm.querySelectorAll('.rm-dot').length; if (n < 2 || !rm.clientWidth) return;
     const gap = rm.clientWidth / (n - 1);
