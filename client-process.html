@@ -648,6 +648,15 @@
   @media (prefers-reduced-motion: reduce){ .note{transform:none;} .note-body{transition:none;} }
   .pv-none{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:24px;border-radius:14px;background:var(--sunk);color:var(--ink-2);text-align:center;}
   .pv-none span svg{width:26px;height:26px;opacity:.6;} .pv-none b{color:var(--ink);font-size:15px;} .pv-none small{font-size:13px;}
+
+  /* the roadmap's titles: never overlapping */
+  .roadmap{--lw:120px;} .rm-dot{width:var(--lw);} .rm-dot em{max-width:var(--lw);}
+  .roadmap.crowded .rm-dot{width:36px;}
+  .roadmap.crowded .rm-dot em{display:none;position:absolute;top:44px;left:50%;transform:translateX(-50%);max-width:240px;}
+  .roadmap.crowded .rm-dot.now em,.roadmap.crowded .rm-dot:hover em,.roadmap.crowded .rm-dot:focus-visible em{display:block;}
+  .roadmap.crowded:has(.rm-dot:hover) .rm-dot.now:not(:hover) em,.roadmap.crowded:has(.rm-dot:focus-visible) .rm-dot.now:not(:focus-visible) em{display:none;}
+  .roadmap.crowded .rm-dot:hover em{color:var(--ink);}
+  .roadmap.crowded .rm-dot:first-of-type em{left:0;transform:none;} .roadmap.crowded .rm-dot:last-of-type em{left:auto;right:0;transform:none;}
 </style>
 </head>
 <body>
@@ -1144,6 +1153,7 @@
     // the roadmap: every step as a dot on one line that fills up
     const fillTo = groups.length > 1 ? Math.max(0, groups.reduce((m, g, i) => (g.task.state.done ? i : m), -1)) / (groups.length - 1) * 100 : 0;
     setHTML($('roadmap'), groups.length > 1 ? `<div class="rm-line"><i style="width:${fillTo}%"></i></div>${groups.map((g, i) => `<button type="button" class="rm-dot${g.task.state.done ? ' done' : ''}${next === g ? ' now' : ''}" data-goto="${esc(g.task.id)}" style="left:${groups.length > 1 ? i / (groups.length - 1) * 100 : 0}%" title="${esc(titleOf(g.task))}"><span>${g.task.state.done ? '✓' : i + 1}</span><em>${esc(titleOf(g.task))}</em></button>`).join('')}` : '');
+    fitRoadmap();
     $('stepsSub').textContent = groups.length ? `${groups.length} step${groups.length === 1 ? '' : 's'}${done ? ` · ${done} done` : ''}` : '';
     const wasHidden = $('doneNote').classList.contains('hidden');
     $('doneNote').classList.toggle('hidden', proc.status !== 'completed');
@@ -1250,6 +1260,17 @@
     pill.dataset.id = nx.task.id;
   }
   $('heroGo').addEventListener('click', () => { const nx = nextGroup(); if (nx) goTo(nx.task.id); });
+  // the titles under the dots never overlap: each gets the room up to the next dot; when that's too tight,
+  // only the current step's title shows (and the one you hover)
+  function fitRoadmap() {
+    const rm = $('roadmap'), n = rm.querySelectorAll('.rm-dot').length; if (n < 2 || !rm.clientWidth) return;
+    const gap = rm.clientWidth / (n - 1);
+    rm.classList.toggle('crowded', gap < 110);
+    rm.style.setProperty('--lw', Math.max(36, Math.min(120, Math.floor(gap - 12))) + 'px');
+  }
+  // measure again once the roadmap has its real size, and whenever that size changes
+  if (window.ResizeObserver) new ResizeObserver(() => fitRoadmap()).observe($('roadmap'));
+  else window.addEventListener('resize', () => { clearTimeout(fitRoadmap.t); fitRoadmap.t = setTimeout(fitRoadmap, 120); });
   $('roadmap').addEventListener('click', (e) => { const d = e.target.closest('[data-goto]'); if (d) goTo(d.dataset.goto); });
   $('nextPill').addEventListener('click', () => { const id = $('nextPill').dataset.id; if (id) { goTo(id); $('nextPill').classList.remove('show'); } });
   let ticking = false;
