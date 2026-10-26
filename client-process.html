@@ -935,12 +935,7 @@
     if (!f || !isSafeUrl(f.url)) return '';
     if (/^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp)$/i.test(f.name)) return `<img src="${esc(f.url)}" alt="">`;
     if (/pdf/.test(f.contentType || '') || /\.pdf$/i.test(f.name)) return `<iframe data-src="${esc(f.url)}#toolbar=0" title="${esc(f.name)}"></iframe>`;
-    if (/\.(docx?|xlsx?|pptx?)$/i.test(f.name)) {
-      // Microsoft's viewer can't open a stored name with spaces or "+" in it (older uploads): say so clearly instead of its error
-      let stored = ''; try { stored = decodeURIComponent((new URL(f.url).pathname.split('/o/')[1] || '')); } catch (e) { /* ignore */ }
-      if (/[^A-Za-z0-9._\-\/]/.test(stored)) return `<div class="pv-none"><span>${ic('file')}</span><b>Preview not available for this file</b><small>Download it below to open it.</small></div>`;
-      return `<iframe data-src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}" title="${esc(f.name)}"></iframe>`;
-    }
+    if (/\.(docx?|xlsx?|pptx?)$/i.test(f.name)) return '';      // Word, Excel and PowerPoint: no preview, just the download card
     return '';
   }
   function contentHTML(b) {
