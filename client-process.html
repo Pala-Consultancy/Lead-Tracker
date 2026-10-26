@@ -658,6 +658,25 @@
   .num .n.emo{font-size:17px;font-family:system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif;line-height:1;}
   .rm-dot.rm-after span{border-style:dashed;}
   .rm-dot span{font-family:var(--serif),"Apple Color Emoji","Segoe UI Emoji";}
+
+  /* ===== a calmer page: one open step, slim rows, one progress indicator ===== */
+  .hring,#heroStat{display:none !important;}
+  .roadmap{height:auto !important;margin:2px 0 22px !important;}
+  .rm-simple{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:14.5px;color:var(--ink-2);}
+  .rm-simple b{color:var(--ink);} .rm-sep{color:var(--ink-3);margin:0 2px;} .rm-simple svg{width:15px;height:15px;color:var(--ok);}
+  .rm-next{border:none;background:none;padding:0;font:inherit;font-weight:600;color:var(--accent);cursor:pointer;text-align:left;} .rm-next:hover{text-decoration:underline;}
+  .step.in-before::after,.step.in-after::after{display:none !important;}
+  .s-head{cursor:pointer;outline-offset:-3px;}
+  .s-chev{align-self:center;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-3);flex-shrink:0;transition:transform .25s var(--ease),background .15s;}
+  .s-chev svg{width:15px;height:15px;} .s-head:hover .s-chev{background:var(--hover);color:var(--ink-2);}
+  .step:not(.collapsed) .s-chev{transform:rotate(180deg);}
+  .step.collapsed .s-body,.step.collapsed .s-meta{display:none !important;}
+  .step.collapsed .s-head{padding-top:14px;padding-bottom:14px;align-items:center;}
+  .step.collapsed h3{font-size:16px;}
+  .step.collapsed .s-act .act:not(.done),.step.collapsed .s-act .tag:not(.later-tag){display:none;}
+  .step.collapsed.done h3{color:var(--ink-3);}
+  .act.quiet{background:transparent !important;border-color:transparent !important;color:var(--ink-2) !important;box-shadow:none !important;font-weight:600;}
+  .act.quiet:hover{background:var(--hover) !important;color:var(--ink) !important;}
 </style>
 </head>
 <body>
@@ -1093,7 +1112,7 @@
     const inputs = f.fields.filter((x) => INPUTS.includes(x.type)), n = inputs.filter((x) => filled(vals[x.id])).length, draft = !!draftOf(a.id), sent = sub && !draft;
     return `<div class="doc${sent ? ' sent' : ''}${isOpen ? ' open' : ''}" data-doc="${esc(a.id)}" data-g="${gi}">
       <button type="button" class="doc-h" data-docopen="${esc(a.id)}" aria-expanded="${isOpen}"><span class="di">${ic(sent ? 'check' : 'form')}</span>
-        <span class="dt"><b>${esc(f.title || 'Document to fill in')}</b><small>${sent ? `Submitted by ${esc(sub.by)} · ${when(sub.at)}` : `<span class="meter"><i style="width:${inputs.length ? n / inputs.length * 100 : 0}%"></i></span>${n} of ${inputs.length} answered${draft ? ' · draft saved' : ''}`}</small></span>
+        <span class="dt"><b>${(f.title || '').trim().toLowerCase() === String(titleOf(g.task)).trim().toLowerCase() ? 'Fill in the form' : esc(f.title || 'Document to fill in')}</b><small>${sent ? `Submitted by ${esc(sub.by)} · ${when(sub.at)}` : `<span class="meter"><i style="width:${inputs.length ? n / inputs.length * 100 : 0}%"></i></span>${n} of ${inputs.length} answered${draft ? ' · draft saved' : ''}`}</small></span>
         <span class="chev">${ic('chev', 'sm')}</span></button>
       <div class="doc-b"><div><div class="sheets"><form class="paper" data-form="${esc(a.id)}" novalidate>
         ${sent ? `<div class="stamp" aria-label="Submitted">Submitted<small>${esc(when(sub.at))}</small></div>` : ''}
@@ -1133,6 +1152,19 @@
 
   // ---------- Drawing ----------
   const nextGroup = () => groups.find((g) => !g.task.state.done && !isLater(g));
+  // focus: the current step is open, the others are slim rows; your client opens or folds any of them
+  const openSteps = new Set(), closedSteps = new Set();
+  const isExpanded = (g, next) => { const id = g.task.id; if (openSteps.has(id)) return true; if (closedSteps.has(id)) return false;
+    return g === next || g.forms.some((a) => openDocs.has(a.id)) || !!busy[id]; };
+  function setStepOpen(id, open) {
+    if (open) { openSteps.add(id); closedSteps.delete(id); } else { closedSteps.add(id); openSteps.delete(id); }
+    const el = document.querySelector(`.step[data-id="${CSS.escape(id)}"]`); if (el) { el.classList.toggle('collapsed', !open); el.querySelector('.s-head').setAttribute('aria-expanded', String(open)); }
+  }
+  document.addEventListener('click', (e) => {
+    const sh = e.target.closest('.step .s-head'); if (!sh || e.target.closest('button, a, input, textarea, label, select, .s-act')) return;
+    const el = sh.closest('.step'); setStepOpen(el.dataset.id, el.classList.contains('collapsed'));
+  });
+  document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('s-head')) { e.preventDefault(); e.target.click(); } });
   // numbers start at 1 again in the "after our call" section
   const stepNo = (i) => { const g = groups[i]; if (!afterInfo || !g || !g.after) return i + 1; const first = groups.findIndex((x) => x.after); return i - first + 1; };
   // a title that starts with an emoji ("📍 How to define your positioning"): the emoji goes in the circle
@@ -1148,7 +1180,7 @@
     document.title = proc.title + (proc.workspaceName ? ' · ' + proc.workspaceName : '');
     $('title').textContent = proc.title;
     $('forLine').innerHTML = proc.clientName ? `Prepared for <b>${esc(proc.clientName)}</b>` : '';
-    const req = groups.filter((g) => g.task.required !== false), base = req.length ? req : groups;
+    const openG = groups.filter((g) => !isLater(g)), req = openG.filter((g) => g.task.required !== false), base = req.length ? req : openG;
     const total = base.length, done = base.filter((g) => g.task.state.done).length, pct = proc.status === 'completed' ? 100 : total ? Math.round(done / total * 100) : 0;
     const next = nextGroup();
     $('barFill').style.width = pct + '%'; $('topLine').style.width = pct + '%';
@@ -1162,10 +1194,14 @@
     $('heroGo').classList.toggle('hidden', !next);
     $('heroGo').firstChild.textContent = done ? 'Continue' : 'Start';
     // the roadmap: every step as a dot on one line that fills up
-    const fillTo = groups.length > 1 ? Math.max(0, groups.reduce((m, g, i) => (g.task.state.done ? i : m), -1)) / (groups.length - 1) * 100 : 0;
-    setHTML($('roadmap'), groups.length > 1 ? `<div class="rm-line"><i style="width:${fillTo}%"></i></div>${groups.map((g, i) => `<button type="button" class="rm-dot${g.task.state.done ? ' done' : ''}${next === g ? ' now' : ''}${g.after ? ' rm-after' : ''}" data-goto="${esc(g.task.id)}" style="left:${groups.length > 1 ? i / (groups.length - 1) * 100 : 0}%" title="${esc(titleOf(g.task))}"><span>${g.task.state.done ? '✓' : emojiOf(titleOf(g.task)) || stepNo(i)}</span><em>${esc(plainTitle(titleOf(g.task)) || titleOf(g.task))}</em></button>`).join('')}` : '');
+    const rmG = afterInfo ? groups.filter((g) => !g.after) : groups;      // the after-call library isn't part of "your next steps"
+    const fillTo = rmG.length > 1 ? Math.max(0, rmG.reduce((m, g, i) => (g.task.state.done ? i : m), -1)) / (rmG.length - 1) * 100 : 0;
+    const rmPos = next ? rmG.indexOf(next) : -1;
+    setHTML($('roadmap'), rmG.length ? `<div class="rm-simple">${rmPos >= 0 ? `Step <b>${rmPos + 1}</b> of ${rmG.length}<span class="rm-sep">·</span>Next: <button type="button" class="rm-next" data-goto="${esc(next.task.id)}">${esc(plainTitle(titleOf(next.task)) || titleOf(next.task))}</button>`
+      : rmG.every((g) => g.task.state.done) ? `${ic('check', 'sm')} All ${rmG.length} step${rmG.length === 1 ? '' : 's'} done` : `${rmG.length} steps`}</div>` : '');
     fitRoadmap();
-    $('stepsSub').textContent = groups.length ? `${groups.length} step${groups.length === 1 ? '' : 's'}${done ? ` · ${done} done` : ''}` : '';
+    const rmDone = rmG.filter((g) => g.task.state.done).length;
+    $('stepsSub').textContent = '';
     const wasHidden = $('doneNote').classList.contains('hidden');
     $('doneNote').classList.toggle('hidden', proc.status !== 'completed');
     if (wasHidden && proc.status === 'completed' && !firstPaint) { $('doneNote').classList.remove('fresh'); void $('doneNote').offsetWidth; $('doneNote').classList.add('fresh'); }
@@ -1190,10 +1226,10 @@
     if (host.dataset.sig !== sig) {
       host.innerHTML = groups.map((g, i) => `${phaseHTML(g)}${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section${g.after ? ' sec-after' : ''}">${esc(g.section)}</div>` : ''}
         <article class="step" id="step-${esc(g.task.id)}" data-id="${esc(g.task.id)}" aria-labelledby="st-${esc(g.task.id)}">
-          <div class="s-head"><span class="num-slot"></span>
+          <div class="s-head" tabindex="0" role="button" aria-expanded="true"><span class="num-slot"></span>
             <div class="s-main"><h3 id="st-${esc(g.task.id)}">${esc(plainTitle(titleOf(g.task)) || titleOf(g.task))}</h3>
               <div class="s-meta">${meta(g)}${g.content.length ? `<button type="button" class="more" data-more="${i}" aria-expanded="false"><span class="ml">Show details</span>${ic('chev', 'sm')}</button>` : ''}<span class="who-slot"></span></div></div>
-            <div class="s-act"></div></div>
+            <div class="s-act"></div><span class="s-chev" aria-hidden="true">${ic('chev', 'sm')}</span></div>
           <div class="s-body">${noteHTML(g)}${g.ctas.length ? `<div class="s-ctas">${g.ctas.map(ctaHTML).join('')}</div>` : ''}${g.content.length ? `<div class="s-more"><div><div class="content" data-content="${i}"></div></div></div>` : ''}<div data-docs="${i}"></div><div data-do="${i}"></div></div>
         </article>`).join('');
       host.dataset.sig = sig;
@@ -1205,6 +1241,7 @@
       el.dataset.here = isNext ? 'You’re here' : '';
       el.classList.toggle('done', !!st.done); el.classList.toggle('is-next', !!isNext); el.classList.toggle('open', isMore);
       el.classList.toggle('keep', g.forms.some((a) => openDocs.has(a.id)));
+      const exp = isExpanded(g, next); el.classList.toggle('collapsed', !exp); el.querySelector('.s-head').setAttribute('aria-expanded', String(exp));
       const later = isLater(g); el.classList.toggle('later', later);
       if (afterInfo) { el.classList.toggle('in-before', !g.after); el.classList.toggle('in-after', !!g.after); el.classList.toggle('open-after', !!g.after && !!proc.callDone); }
       const tickable = !later && g.task.type === 'todo' && !g.forms.length && !(!(g.task.state || {}).done && g.ctas.some((c) => c.locked));
@@ -1215,7 +1252,7 @@
       if (later) act = `<span class="tag later-tag">${ic('lock', 'sm')} After our call</span>`;
       else if (lockedStep) act = `<span class="tag">${ic('lock', 'sm')} Locked</span>`;
       else if (tickable) act = st.done ? `<button type="button" class="act done" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${ic('check')}</span><span class="d">Done</span><span class="u">Undo</span></button>`
-        : `<button type="button" class="act" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving' : `<span class="c">${ic('check')}</span>Mark as done`}</button>`;
+        : `<button type="button" class="act${g.ctas.length ? ' quiet' : ''}" data-tick="${i}" ${b ? 'disabled' : ''}>${b ? '<span class="spin"></span>Saving' : `<span class="c">${ic('check')}</span>${g.ctas.length ? 'I’ve done this' : 'Mark as done'}`}</button>`;
       else if (g.forms.length && !st.done && !g.forms.every((a) => (st.forms || {})[a.id])) { const f0 = g.forms[0], open = openDocs.has(f0.id), started = !!draftOf(f0.id) || Object.keys(st.forms || {}).length;
         act = `<button type="button" class="act ${open ? 'ghost' : 'go'}" data-docopen="${esc(f0.id)}">${open ? 'Close' : `${started ? 'Continue' : 'Fill in'}${ic('arrow', 'sm')}`}</button>`; }
       else if (st.done) act = `<button type="button" class="act done" data-tick="${i}" ${b ? 'disabled' : ''}><span class="c">${ic('check')}</span><span class="d">Done</span><span class="u">Undo</span></button>`;
@@ -1453,7 +1490,7 @@
   }
   function loadMedia(el) {
     enhanceVideos(el); el.querySelectorAll('iframe[data-src]').forEach((f) => { f.src = f.dataset.src; f.removeAttribute('data-src'); }); }
-  function goTo(id) { const el = document.querySelector(`.step[data-id="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+  function goTo(id) { setStepOpen(id, true); const el = document.querySelector(`.step[data-id="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
 
   // ---------- Who's working on this ----------
   function needName(then) {
