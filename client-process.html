@@ -1563,7 +1563,12 @@
   // ---------- The first visit: a welcome, then your client's name ----------
   const WELCOME_KEY = 'ptCpWelcomed:' + token;
   function maybeWelcome() {
-    if (PREVIEW || name || document.getElementById('welcome')) return;
+    if (PREVIEW || document.getElementById('welcome')) return;
+    if (new URLSearchParams(location.search).has('welcome')) {           // …&welcome at the end of the link: play it again (handy to try it out)
+      const u = new URL(location.href); u.searchParams.delete('welcome'); try { history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch (e) { /* ignore */ }
+      runWelcome(); return;
+    }
+    if (name) return;
     try { if (localStorage.getItem(WELCOME_KEY)) return; } catch (e) { /* ignore */ }
     runWelcome();
   }
