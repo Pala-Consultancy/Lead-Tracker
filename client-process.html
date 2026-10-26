@@ -596,13 +596,16 @@
   @media (max-width:560px){ .yt-chap{display:none;} .yt-speed{display:none;} }
 
   /* "Before our call" / "After our call" */
-  .phase{display:flex;align-items:center;gap:12px;margin:26px 0 10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--sunk);}
+  .phase{--pc:#2563EB;display:flex;align-items:center;gap:14px;margin:30px 0 12px;padding:16px 18px;border-radius:16px;border:1.5px solid color-mix(in srgb,var(--pc) 30%,transparent);
+    background:linear-gradient(120deg,color-mix(in srgb,var(--pc) 12%,var(--card,#fff)),color-mix(in srgb,var(--pc) 4%,var(--card,#fff)));box-shadow:0 10px 24px -18px var(--pc);}
+  .phase.after{--pc:#7A5AF0;} .phase.after.open{--pc:#1E9E74;}
+  .step.in-before::after,.step.in-after::after{content:"";position:absolute;left:-1px;top:18px;bottom:18px;width:4px;border-radius:0 4px 4px 0;pointer-events:none;}
+  .step.in-before::after{background:rgba(37,99,235,.6);} .step.in-after::after{background:rgba(122,90,240,.6);} .step.in-after.open-after::after{background:rgba(30,158,116,.6);}
   .phase:first-child{margin-top:4px;}
-  .phase .ph-ic{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--accent);color:#fff;}
+  .phase .ph-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--pc);color:#fff;box-shadow:0 6px 14px -6px var(--pc);}
   .phase .ph-ic svg{width:15px;height:15px;}
-  .phase b{display:block;font:600 17px var(--serif);letter-spacing:-.01em;} .phase small{display:block;margin-top:2px;font-size:13px;color:var(--ink-2);}
-  .phase.after{border-style:dashed;} .phase.after .ph-ic{background:var(--ink-3);}
-  .phase.after.open{border-style:solid;border-color:rgba(30,158,116,.35);background:rgba(30,158,116,.07);} .phase.after.open .ph-ic{background:var(--ok);}
+  .phase b{display:block;font:700 19px var(--serif);letter-spacing:-.01em;color:var(--ink);} .phase small{display:block;margin-top:3px;font-size:13.5px;color:var(--ink-2);}
+
   .phase-intro{margin:0 0 10px;}
   .step.later{opacity:.72;}
   .step.later .num{background:var(--sunk);border-style:dashed;}
@@ -1178,6 +1181,7 @@
       el.classList.toggle('done', !!st.done); el.classList.toggle('is-next', !!isNext); el.classList.toggle('open', isMore);
       el.classList.toggle('keep', g.forms.some((a) => openDocs.has(a.id)));
       const later = isLater(g); el.classList.toggle('later', later);
+      if (afterInfo) { el.classList.toggle('in-before', !g.after); el.classList.toggle('in-after', !!g.after); el.classList.toggle('open-after', !!g.after && !!proc.callDone); }
       const tickable = !later && g.task.type === 'todo' && !g.forms.length && !(!(g.task.state || {}).done && g.ctas.some((c) => c.locked));
       const numHTML = `<button type="button" class="num" ${tickable ? `data-tick="${i}" title="${st.done ? 'Completed · click to undo' : 'Mark as done'}"` : 'tabindex="-1"'} aria-label="${st.done ? 'Step completed' : 'Step ' + (i + 1)}"><span class="n">${i + 1}</span><span class="ck">${ic('check', 'sm')}</span></button>`;
       const ns = el.querySelector('.num-slot'); if (ns.dataset.html !== numHTML) { ns.innerHTML = numHTML; ns.dataset.html = numHTML; }

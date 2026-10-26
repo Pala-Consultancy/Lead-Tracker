@@ -356,8 +356,23 @@
   .vt-lab{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13.5px;font-weight:600;} .vt-lab select{height:36px;max-width:220px;}
 
   /* "After our call": the section divider in the editor, and the onboarding call card */
-  .be-after{border:1.5px dashed #C9B8F5;background:rgba(122,90,240,.05);border-radius:12px;padding:10px 12px;margin:8px 0;}
-  .be-after-line{display:flex;align-items:center;gap:8px;} .be-after-line span{font-size:16px;}
+  .be-after{border-radius:16px;margin:18px 0;overflow:hidden;border:1.5px solid #CFC3F7;background:var(--panel);box-shadow:0 10px 26px -18px rgba(91,75,230,.6);}
+  .be-after-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(120deg,#2563EB,#5B4BE6 55%,#7A5AF0);color:#fff;}
+  .be-after-bar .ic{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .be-after-bar b{display:block;font-size:14.5px;} .be-after .be-after-bar small{display:block;margin-top:2px;font-size:12.5px;line-height:1.45;color:rgba(255,255,255,.88);} .be-after .be-after-bar small b{display:inline;font-size:inherit;color:#fff;}
+  .be-after-sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;}
+  .be-side{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:12px;border:1px solid;}
+  .be-side.before{border-color:rgba(37,99,235,.28);background:rgba(37,99,235,.05);} .be-side.after{border-color:rgba(122,90,240,.3);background:rgba(122,90,240,.06);}
+  .be-side-tag{font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;}
+  .be-side.before .be-side-tag{color:#2563EB;} .be-side.after .be-side-tag{color:#6E56CF;}
+  .be-side .in{font-size:13.5px;background:var(--panel);}
+  .blk.sec-before::after,.blk.sec-after::after{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;border-radius:4px;pointer-events:none;}
+  .blk.sec-before::after{background:rgba(37,99,235,.55);} .blk.sec-after::after{background:rgba(122,90,240,.65);}
+  .sec-tag{position:absolute;left:46px;top:-18px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;z-index:1;pointer-events:none;}
+  .sec-tag.before{background:rgba(37,99,235,.1);color:#2563EB;} .sec-tag.after{background:rgba(122,90,240,.12);color:#6E56CF;}
+  .blk.sec-before:first-child{margin-top:22px;} .blk-aftercall + .blk.sec-after{margin-top:24px;}
+  @media (max-width:760px){ .be-after-sides{grid-template-columns:1fr;} }
+
   .be-after-line .in{flex:1;font-weight:700;font-size:15px;background:transparent;border-color:transparent;}
   .be-after-line .in:hover,.be-after-line .in:focus{border-color:var(--border);background:var(--panel);}
   .be-after small{display:block;margin-top:6px;font-size:12.5px;line-height:1.5;color:var(--slate);}
@@ -1356,12 +1371,13 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (TEXTISH.includes(b.type)) body = ce(b.type);
     else if (b.type === 'bullets' || b.type === 'numbers') body = `<${b.type === 'bullets' ? 'ul' : 'ol'} class="be be-list" contenteditable="true">${b.html || '<li></li>'}</${b.type === 'bullets' ? 'ul' : 'ol'}>`;
     else if (b.type === 'divider') body = '<hr class="be-hr">';
-    else if (b.type === 'aftercall') body = `<div class="be-after"><div class="be-after-line"><span>⏳</span><b>The line between “before” and “after” your onboarding call</b></div>
-      <small>Everything <b>below</b> this line is for after your onboarding call. Your client sees it, but it stays locked until you click <b>“Onboarding call done”</b> on their page. It never blocks booking the call.</small>
-      <div class="be-after-txt"><span class="lbl">⬆ Section above the line</span><input class="in" data-f="beforeLabel" maxlength="80" placeholder="Before our call" value="${esc(b.beforeLabel || '')}" aria-label="Title of the section above">
-        <input class="in" data-f="beforeText" maxlength="200" placeholder="Complete these first, then book your call." value="${esc(b.beforeText || '')}" aria-label="Text of the section above"></div>
-      <div class="be-after-txt"><span class="lbl">⬇ Section below the line</span><input class="in" data-f="label" maxlength="80" placeholder="After our call" value="${esc(b.label || '')}" aria-label="Title of the section below">
-        <input class="in" data-f="afterText" maxlength="200" placeholder="These open after our onboarding call. You can already look at them." value="${esc(b.afterText || '')}" aria-label="Text of the section below"></div></div>`;
+    else if (b.type === 'aftercall') body = `<div class="be-after"><div class="be-after-bar"><span class="ic">⏳</span><div><b>Section line: before and after your onboarding call</b>
+        <small>Everything below this line stays locked for your client until you click <b>“Onboarding call done”</b>. It never blocks booking the call.</small></div></div>
+      <div class="be-after-sides">
+        <div class="be-side before"><span class="be-side-tag">⬆ Above the line · before the call</span><input class="in" data-f="beforeLabel" maxlength="80" placeholder="Before our call" value="${esc(b.beforeLabel || '')}" aria-label="Title of the section above">
+          <input class="in" data-f="beforeText" maxlength="200" placeholder="Complete these first, then book your call." value="${esc(b.beforeText || '')}" aria-label="Text of the section above"></div>
+        <div class="be-side after"><span class="be-side-tag">⬇ Below the line · after the call 🔒</span><input class="in" data-f="label" maxlength="80" placeholder="After our call" value="${esc(b.label || '')}" aria-label="Title of the section below">
+          <input class="in" data-f="afterText" maxlength="200" placeholder="These open after our onboarding call. You can already look at them." value="${esc(b.afterText || '')}" aria-label="Text of the section below"></div></div></div>`;
     else if (b.type === 'todo') body = `<div class="be-task"><div class="be-tag">☑ To-do for your client</div><div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>${attHTML(b)}</div>`;
     else if (b.type === 'video') {
       const v = b.video;
@@ -1487,6 +1503,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const headingBeforeTask = ['h1', 'h2', 'h3'].includes(b.type) && next && INTERACTIVE.includes(next.type);
       if (inTask && !headingBeforeTask) el.classList.add('in-task');
     });
+    // with a section line: a blue stripe for "before the call", a purple one for "after the call"
+    const cut = editing.data.blocks.findIndex((b) => b.type === 'aftercall');
+    if (cut !== -1) editing.data.blocks.forEach((b, i) => { const el = $('pgBlocks').children[i]; if (!el || i === cut) return;
+      el.classList.add(i < cut ? 'sec-before' : 'sec-after');
+      if (i === 0 || i === cut + 1) el.insertAdjacentHTML('afterbegin', `<span class="sec-tag ${i < cut ? 'before' : 'after'}">${i < cut ? '⬆ Before the call' : '⬇ After the call · locked until your call'}</span>`); });
     const n = editing.data.blocks.filter((b) => INTERACTIVE.includes(b.type)).length;
     $('edCount').textContent = n ? `${n} thing${n === 1 ? '' : 's'} for your client to do` : 'Nothing for your client to do yet: add a to-do, upload request or question';
     if (focusId) focusBlock(focusId, atEnd);
