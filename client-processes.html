@@ -366,6 +366,10 @@
   .dt-call .ic{font-size:18px;} .dt-call > div{flex:1;min-width:0;} .dt-call b{display:block;font-size:14px;} .dt-call small{display:block;font-size:12.5px;color:var(--slate);margin-top:2px;}
   .dt-sec{margin:14px 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6E56CF;}
   .dstep.later{opacity:.62;}
+
+  .ff-nets{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;} .ff-nets > span{font-size:12.5px;font-weight:600;color:var(--slate);margin-right:2px;}
+  .ff-net{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer;user-select:none;}
+  .ff-net input{margin:0;} .ff-net.on{border-color:var(--teal);color:var(--ink);background:rgba(46,107,138,.08);}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1403,8 +1407,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   }
   // ---------- Fillable documents (forms) ----------
   const FIELD_TYPES = [['text', 'Short answer'], ['longtext', 'Long answer'], ['email', 'Email'], ['phone', 'Phone'], ['number', 'Number'], ['date', 'Date'],
-    ['choice', 'One choice'], ['multi', 'Several choices'], ['yesno', 'Yes / no'], ['signature', 'Signature'], ['heading', 'Section title'], ['paragraph', 'Explanation text']];
+    ['choice', 'One choice'], ['multi', 'Several choices'], ['yesno', 'Yes / no'], ['signature', 'Signature'], ['socials', 'Social profiles'], ['heading', 'Section title'], ['paragraph', 'Explanation text']];
   const NEEDS_OPTIONS = ['choice', 'multi'];
+  // "Social profiles": the client fills in a link per platform; you choose which platforms to ask for
+  const SOCIAL_NETS = [['linkedin', 'LinkedIn'], ['instagram', 'Instagram'], ['youtube', 'YouTube'], ['tiktok', 'TikTok'], ['x', 'X'], ['facebook', 'Facebook'], ['website', 'Website']];
+  const SOCIAL_KEYS = SOCIAL_NETS.map((n) => n[0]);
+  const socialsDefault = (fld) => { if (!(fld.options || []).some((o) => SOCIAL_KEYS.includes(o))) fld.options = SOCIAL_KEYS.slice(); if (!fld.label) fld.label = 'Your social profiles'; };
   function formBuilderHTML(a) {
     const f = a.form || (a.form = {title: '', intro: '', fields: []});
     const fid = esc(a.id);
@@ -1416,6 +1424,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <button type="button" class="ib" data-fmove="${fid}:${j}:-1" ${j === 0 ? 'disabled' : ''} aria-label="Up">↑</button><button type="button" class="ib" data-fmove="${fid}:${j}:1" ${j === f.fields.length - 1 ? 'disabled' : ''} aria-label="Down">↓</button><button type="button" class="ib del" data-fdel="${fid}:${j}" aria-label="Remove field">×</button></div>
         ${isStatic ? '' : `<div class="ff-more"><input class="in" data-ff="${fid}:${j}:help" placeholder="Help text (optional)" value="${esc(x.help || '')}">
           ${NEEDS_OPTIONS.includes(x.type) ? `<textarea class="in" data-ff="${fid}:${j}:options" rows="3" placeholder="One option per line">${esc((x.options || []).join('\n'))}</textarea>` : ''}
+          ${x.type === 'socials' ? `<div class="ff-nets"><span>Ask for:</span>${SOCIAL_NETS.map(([k, l]) => `<label class="ff-net${(x.options || []).includes(k) ? ' on' : ''}"><input type="checkbox" data-ffnet="${fid}:${j}:${k}" ${(x.options || []).includes(k) ? 'checked' : ''}>${l}</label>`).join('')}</div>` : ''}
           <label class="req"><input type="checkbox" data-ff="${fid}:${j}:required" ${x.required ? 'checked' : ''}> Required</label></div>`}</div>`;
     }).join('');
     return `<input class="in ff-title" data-att="${fid}" data-af="formTitle" placeholder="Title, e.g. Client intake form" value="${esc(f.title || '')}">
@@ -1569,11 +1578,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (e.target.dataset.ff) {
       const [aid, j, prop] = e.target.dataset.ff.split(':'); const form = formOf(blk, aid);
       if (form && prop === 'type') { form.fields[Number(j)].type = e.target.value; if (NEEDS_OPTIONS.includes(e.target.value) && !(form.fields[Number(j)].options || []).length) form.fields[Number(j)].options = ['Option 1', 'Option 2']; changed(); renderPage(); }
+      if (form && prop === 'type' && e.target.value === 'socials') { socialsDefault(form.fields[Number(j)]); changed(); renderPage(); }
       if (form && prop === 'required') { form.fields[Number(j)].required = e.target.checked; changed(); }
+    }
+    if (e.target.dataset.ffnet) {                    // which platforms a "Social profiles" field asks for
+      const [aid, j, net] = e.target.dataset.ffnet.split(':'); const form = formOf(blk, aid); const fld = form && form.fields[Number(j)];
+      if (fld) { const set = new Set(fld.options || []); if (e.target.checked) set.add(net); else set.delete(net);
+        fld.options = SOCIAL_KEYS.filter((k) => set.has(k)); if (!fld.options.length) { fld.options = [net]; e.target.checked = true; showToast('Ask for at least one platform.'); }
+        e.target.closest('.ff-net').classList.toggle('on', e.target.checked); changed(); }
     }
     if (e.target.dataset.addfield) {
       const form = formOf(blk, e.target.dataset.addfield), type = e.target.value; e.target.value = '';
-      if (form && type) { form.fields.push({id: uidGen(), type, label: '', help: '', required: false, options: NEEDS_OPTIONS.includes(type) ? ['Option 1', 'Option 2'] : []}); changed(); renderPage();
+      if (form && type) { const nf = {id: uidGen(), type, label: '', help: '', required: false, options: NEEDS_OPTIONS.includes(type) ? ['Option 1', 'Option 2'] : []}; if (type === 'socials') socialsDefault(nf); form.fields.push(nf); changed(); renderPage();
         setTimeout(() => { const els = document.querySelectorAll(`[data-attid="${CSS.escape(e.target.dataset.addfield)}"] [data-ff$=":label"]`); const el = els[els.length - 1]; if (el) el.focus(); }, 30); }
     }
     if (e.target.dataset.attup) { const a = (b.attachments || []).find((x) => x.id === e.target.dataset.attup); if (a) uploadAtt(a, e.target.files[0], e.target.dataset.kind); }
@@ -2030,7 +2046,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         + (s.attachments || []).filter((a) => a.kind === 'form' && a.form).map((a) => {
           const sub = (r.forms || {})[a.id];
           if (!sub) return `<div class="ans"><span>📝 ${esc(a.form.title || 'Form')}</span>Not filled in yet</div>`;
-          const val = (fd) => { const v = sub.values[fd.id]; if (v == null || v === '') return '<i style="color:var(--slate-light)">–</i>'; if (Array.isArray(v)) return esc(v.join(', ')); if (fd.type === 'signature') return `✍️ <b>${esc(v.name)}</b> (agreed)`; if (fd.type === 'yesno') return v === 'yes' ? 'Yes' : 'No'; return esc(v).replace(/\n/g, '<br>'); };
+          const val = (fd) => { const v = sub.values[fd.id]; if (v == null || v === '') return '<i style="color:var(--slate-light)">–</i>';
+            if (fd.type === 'socials' && typeof v === 'object') { const L = Object.fromEntries(SOCIAL_NETS); const rows = Object.entries(v).filter(([, u]) => /^https?:\/\//.test(u || ''));
+              return rows.length ? rows.map(([k, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(L[k] || k)} ↗</a>`).join(' · ') : '<i style="color:var(--slate-light)">–</i>'; } if (Array.isArray(v)) return esc(v.join(', ')); if (fd.type === 'signature') return `✍️ <b>${esc(v.name)}</b> (agreed)`; if (fd.type === 'yesno') return v === 'yes' ? 'Yes' : 'No'; return esc(v).replace(/\n/g, '<br>'); };
           return `<div class="ans form-ans"><span>📝 ${esc(a.form.title || 'Form')} · filled in by ${esc(sub.by)} ${ago(sub.at)}</span>${a.form.fields.filter((fd) => !['heading', 'paragraph'].includes(fd.type)).map((fd) => `<div><span>${esc(fd.label || 'Field')}</span>${val(fd)}</div>`).join('')}</div>`;
         }).join('');
       const ups = (r.uploads || []).map((u, j) => `<div class="fitem"><span class="nm">📎 ${esc(u.name)}</span><small>${fsize(u.size)} · ${esc(u.by)}</small><button class="link" data-dl="${esc(s.id)}:${j}">Download</button></div>`).join('');
