@@ -25,7 +25,7 @@
 <script>
   // light or dark: the client's own choice, otherwise their device's setting (set before drawing: no flash)
   (function () { let t = null; try { t = localStorage.getItem('ptCpTheme'); } catch (e) { /* ignore */ }
-    if (t !== 'dark' && t !== 'light') t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (t !== 'dark' && t !== 'light') t = 'light';     // always starts in light mode; only a choice your client makes with the toggle is remembered
     document.documentElement.dataset.theme = t; })();
 </script>
 <style>
@@ -701,6 +701,7 @@
   .wc-logo{position:absolute;inset:0;border-radius:28px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;
     box-shadow:0 20px 60px -10px color-mix(in srgb,var(--accent) 70%,transparent),0 0 0 1px rgba(255,255,255,.4);animation:wcPop .9s cubic-bezier(.2,1.4,.3,1) .25s both;}
   .wc-logo img{width:100%;height:100%;object-fit:contain;padding:12px;box-sizing:border-box;} .wc-logo img.round{padding:0;object-fit:cover;}
+  .wc-logo.fill{background:transparent;} .wc-logo.fill img{padding:0;object-fit:cover;}
   .wc-logo span{font:800 34px var(--serif);color:var(--accent);}
   @keyframes wcPop{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
   .wc-word{margin:0;font:800 clamp(46px,9vw,84px)/1 var(--serif);letter-spacing:-.03em;display:flex;justify-content:center;}
@@ -730,6 +731,20 @@
     .wc-word i,.wc-sub,.wc-card{opacity:1 !important;transform:none !important;filter:none !important;}
   }
   @media (max-width:520px){ .wc-row{flex-direction:column;} .wc-row button{width:100%;} }
+
+  /* the opening screen (one click allows sound), and the scene after it */
+  .wc-gate{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;animation:wcRise .8s ease .1s both;}
+  #welcome.go .wc-gate{display:none;}
+  #welcome:not(.go) .wc-in{display:none;}
+  .wc-glow{position:relative;width:96px;height:96px;margin-bottom:6px;}
+  .wc-glow::before{content:"";position:absolute;inset:-26px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 65%,transparent),transparent 68%);animation:wcBreath 2.6s ease-in-out infinite;}
+  .wc-glow .wc-logo{animation:none;}
+  @keyframes wcBreath{0%,100%{transform:scale(.9);opacity:.65}50%{transform:scale(1.12);opacity:1}}
+  .wc-gate p{margin:0;font-size:16px;color:rgba(255,255,255,.8);}
+  .wc-open{height:54px;padding:0 26px;border:none;border-radius:999px;background:#fff;color:#14131F;font:700 16.5px inherit;cursor:pointer;box-shadow:0 14px 40px -12px color-mix(in srgb,var(--accent) 80%,transparent),0 0 0 6px rgba(255,255,255,.08);transition:transform .2s;}
+  .wc-open:hover{transform:translateY(-2px) scale(1.02);}
+  .wc-gate small{font-size:12.5px;color:rgba(255,255,255,.55);}
+  .wc-demo{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:4;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);font-size:12px;font-weight:700;letter-spacing:.04em;}
 </style>
 </head>
 <body>
@@ -846,7 +861,7 @@
   setTheme(document.documentElement.dataset.theme || 'light', false);
   $('themeBtn').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
   // follow the device while the client hasn't chosen themselves
-  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => { let saved = null; try { saved = localStorage.getItem('ptCpTheme'); } catch (err) { /* ignore */ } if (!saved) setTheme(e.matches ? 'dark' : 'light', false); });
+  // the page doesn't follow the device's light/dark setting: it starts light, and only your client's own choice counts
 
   // ---------- Sound ----------
   // Made in the browser (no files): soft bell tones. One rising "ding-ding" for a finished step,
@@ -1564,20 +1579,27 @@
   const WELCOME_KEY = 'ptCpWelcomed:' + token;
   function maybeWelcome() {
     if (PREVIEW || document.getElementById('welcome')) return;
-    if (new URLSearchParams(location.search).has('welcome')) {           // …&welcome at the end of the link: play it again (handy to try it out)
+    const wq = new URLSearchParams(location.search);
+    if (wq.has('welcome')) {           // …&welcome: play it again · …&welcome=preview: a preview where nothing is saved (the button in PalaTrack)
+      const demo = wq.get('welcome') === 'preview';
       const u = new URL(location.href); u.searchParams.delete('welcome'); try { history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch (e) { /* ignore */ }
-      runWelcome(); return;
+      runWelcome(demo); return;
     }
     if (name) return;
     try { if (localStorage.getItem(WELCOME_KEY)) return; } catch (e) { /* ignore */ }
     runWelcome();
   }
-  function runWelcome() {
+  function runWelcome(demo) {
     const b = proc.brand || {}, company = b.company || proc.workspaceName || '', person = (proc.senderName || '').split(/\s+from\s+/i)[0] || '';
-    const mark = b.logo ? `<img src="${esc(b.logo)}" alt="">` : b.photo ? `<img class="round" src="${esc(b.photo)}" alt="">` : `<span>${esc(initials(person || company || 'Hi'))}</span>`;
+    // a square logo (an icon) fills the whole tile; a wide one (with a name in it) is shown in full
+    const mark = b.logo ? `<img src="${esc(b.logo)}" alt="" onload="if(this.naturalWidth/this.naturalHeight<1.35)this.parentNode.classList.add('fill')">` : b.photo ? `<img class="round" src="${esc(b.photo)}" alt="">` : `<span>${esc(initials(person || company || 'Hi'))}</span>`;
     const word = 'Welcome', letters = [...word].map((c, i) => `<i style="--d:${0.9 + i * 0.06}s">${esc(c)}</i>`).join('');
     const ov = document.createElement('div'); ov.id = 'welcome'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'wcWord');
     ov.innerHTML = `<div class="wc-bg" aria-hidden="true"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="grain"></i></div><canvas class="wc-fx" aria-hidden="true"></canvas>
+      ${demo ? '<div class="wc-demo">Preview · nothing is saved</div>' : ''}
+      <div class="wc-gate"><div class="wc-glow"><div class="wc-logo">${mark}</div></div>
+        <p>${company ? esc(company) + ' prepared something for you' : 'Something is ready for you'}</p>
+        <button type="button" class="wc-open">${'▶'} Open your onboarding</button><small>${soundOn ? '🔊 Best with sound on' : '🔇 Sound is off'}</small></div>
       <div class="wc-in">
         <div class="wc-mark"><b class="r1"></b><b class="r2"></b><div class="wc-logo">${mark}</div></div>
         <h1 class="wc-word" id="wcWord">${letters}</h1>
@@ -1588,19 +1610,86 @@
         <div class="wc-hi" aria-live="polite"></div>
       </div>`;
     document.body.appendChild(ov); document.documentElement.classList.add('wc-lock');
-    const input = ov.querySelector('#wcName'), form = ov.querySelector('.wc-card');
-    setTimeout(() => input.focus({preventScroll: true}), matchMedia('(prefers-reduced-motion: reduce)').matches ? 50 : 2300);
+    const input = ov.querySelector('#wcName'), form = ov.querySelector('.wc-card'), calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => ov.querySelector('.wc-open').focus({preventScroll: true}), 400);
+    ov.querySelector('.wc-open').addEventListener('click', () => {          // this click allows sound: the scene starts
+      ov.classList.add('go'); wcSound('open');
+      setTimeout(() => input.focus({preventScroll: true}), calm ? 50 : 2300);
+    });
     form.addEventListener('submit', (e) => {
       e.preventDefault(); const v = input.value.trim().replace(/\s+/g, ' ');
       if (!v) { form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); input.focus(); return; }
-      name = v; try { localStorage.setItem(NAME_KEY, v); localStorage.setItem(WELCOME_KEY, '1'); } catch (err) { /* ignore */ }
+      const before = name;
+      if (demo) name = v;                                                   // a preview: the name is shown, but never saved
+      else { name = v; try { localStorage.setItem(NAME_KEY, v); localStorage.setItem(WELCOME_KEY, '1'); } catch (err) { /* ignore */ } }
       ov.querySelector('.wc-hi').innerHTML = `Nice to meet you,<br><b>${esc(v.split(' ')[0])}</b>.`;
-      ov.classList.add('named'); try { chime('all'); } catch (err) { /* ignore */ }
+      ov.classList.add('named'); wcSound('named');
       confetti(ov.querySelector('.wc-fx'));
       render();
-      setTimeout(() => { ov.classList.add('leave'); document.documentElement.classList.remove('wc-lock'); }, 1900);
-      setTimeout(() => { ov.remove(); const h = $('hello'); if (h) { h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop'); } }, 2700);
+      setTimeout(() => { ov.classList.add('leave'); document.documentElement.classList.remove('wc-lock'); wcSound('leave'); }, 1900);
+      setTimeout(() => { ov.remove(); const h = $('hello'); if (h) { h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop'); }
+        if (demo) setTimeout(() => { name = before; render(); toast('That was a preview: nothing was saved.'); }, 2600); }, 2700);
     });
+  }
+  // the welcome's sound: cinematic and calm (a riser, a deep impact with a wide chord, one warm swell, a brand
+  // sting after the name, a whoosh at the end), all in a soft reverb. Made in the browser; follows the sound switch.
+  let wcRev = null;
+  function wcSound(stage) {
+    if (!soundOn) return; const a = audio(); if (!a) return; const t = a.currentTime + 0.03;
+    const master = a.createGain(), comp = a.createDynamicsCompressor(); master.gain.value = 0.62;
+    comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.01; comp.release.value = 0.3; master.connect(comp); comp.connect(a.destination);
+    if (!wcRev) {                                                       // a soft, wide room
+      const len = a.sampleRate * 2.8, ir = a.createBuffer(2, len, a.sampleRate);
+      for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+      wcRev = ir;
+    }
+    const rev = a.createConvolver(), wet = a.createGain(); rev.buffer = wcRev; wet.gain.value = 0.55; rev.connect(wet); wet.connect(master);
+    const out = (node, dry = 1, toRev = 0.6) => { const g = a.createGain(); g.gain.value = dry; node.connect(g); g.connect(master); if (toRev) { const r = a.createGain(); r.gain.value = toRev; node.connect(r); r.connect(rev); } };
+    const noise = (len) => { const n = a.createBuffer(1, a.sampleRate * len, a.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; const src = a.createBufferSource(); src.buffer = n; return src; };
+    const riser = (at, len, vol) => {                                   // air that grows, with a low tone underneath
+      const src = noise(len), f = a.createBiquadFilter(), g = a.createGain(); f.type = 'bandpass'; f.Q.value = 0.7;
+      f.frequency.setValueAtTime(180, at); f.frequency.exponentialRampToValueAtTime(3200, at + len);
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + len * 0.92); g.gain.exponentialRampToValueAtTime(0.0001, at + len + 0.08);
+      src.connect(f); f.connect(g); out(g, 1, 0.4); src.start(at); src.stop(at + len + 0.1);
+      const o = a.createOscillator(), og = a.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(55, at); o.frequency.exponentialRampToValueAtTime(82.4, at + len);
+      og.gain.setValueAtTime(0.0001, at); og.gain.exponentialRampToValueAtTime(vol * 1.6, at + len * 0.9); og.gain.exponentialRampToValueAtTime(0.0001, at + len + 0.1);
+      o.connect(og); out(og, 1, 0); o.start(at); o.stop(at + len + 0.15);
+    };
+    const impact = (at, vol) => {                                       // a deep, soft hit
+      const o = a.createOscillator(), g = a.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(92, at); o.frequency.exponentialRampToValueAtTime(38, at + 0.7);
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, at + 1.3);
+      o.connect(g); out(g, 1, 0.25); o.start(at); o.stop(at + 1.4);
+      const src = noise(0.6), f = a.createBiquadFilter(), ng = a.createGain(); f.type = 'lowpass'; f.frequency.setValueAtTime(900, at); f.frequency.exponentialRampToValueAtTime(140, at + 0.5);
+      ng.gain.setValueAtTime(0.0001, at); ng.gain.exponentialRampToValueAtTime(vol * 0.35, at + 0.01); ng.gain.exponentialRampToValueAtTime(0.0001, at + 0.55);
+      src.connect(f); f.connect(ng); out(ng, 1, 0.7); src.start(at); src.stop(at + 0.6);
+    };
+    const chord = (at, freqs, len, vol, fFrom, fTo, attack) => {        // a warm, wide chord through a filter that opens
+      const f = a.createBiquadFilter(), g = a.createGain(); f.type = 'lowpass'; f.Q.value = 0.9;
+      f.frequency.setValueAtTime(fFrom, at); f.frequency.exponentialRampToValueAtTime(fTo, at + Math.min(len * 0.6, 1.6));
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + attack); g.gain.setValueAtTime(vol, at + len * 0.55); g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+      f.connect(g); out(g, 0.8, 0.9);
+      freqs.forEach((fq, i) => [-7, 7].forEach((dt) => { const o = a.createOscillator(), p = a.createStereoPanner ? a.createStereoPanner() : null; o.type = 'sawtooth'; o.frequency.value = fq; o.detune.value = dt + i * 1.5;
+        const og = a.createGain(); og.gain.value = 0.5 / freqs.length; o.connect(og); if (p) { p.pan.value = dt < 0 ? -0.45 : 0.45; og.connect(p); p.connect(f); } else og.connect(f); o.start(at); o.stop(at + len + 0.05); }));
+    };
+    const pop = (at, vol) => { const o = a.createOscillator(), g = a.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(660, at); o.frequency.exponentialRampToValueAtTime(990, at + 0.05);
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.16); o.connect(g); out(g, 1, 0.5); o.start(at); o.stop(at + 0.2); };
+    const whooshDown = (at, len, vol) => { const src = noise(len), f = a.createBiquadFilter(), g = a.createGain(); f.type = 'bandpass'; f.Q.value = 0.6;
+      f.frequency.setValueAtTime(2400, at); f.frequency.exponentialRampToValueAtTime(160, at + len);
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + len * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+      src.connect(f); f.connect(g); out(g, 1, 0.8); src.start(at); src.stop(at + len + 0.05); };
+    // D major (add9), low and wide: calm and confident
+    if (stage === 'open') {
+      riser(t, 0.55, 0.16);
+      impact(t + 0.55, 0.9);
+      chord(t + 0.55, [73.42, 110.0, 146.83, 185.0, 220.0, 329.63], 3.4, 0.22, 260, 1600, 0.45);
+      chord(t + 1.25, [293.66, 369.99, 440.0, 659.25], 2.6, 0.07, 500, 2400, 0.9);     // one warm swell under "Welcome"
+      pop(t + 2.1, 0.06);                                                              // the name card
+    }
+    if (stage === 'named') {
+      impact(t, 0.75);
+      chord(t, [61.74, 92.5, 123.47, 185.0, 246.94, 311.13, 370.0], 2.4, 0.26, 220, 3200, 0.06);   // the brand sting: B major (add9), filter opening
+    }
+    if (stage === 'leave') whooshDown(t, 0.9, 0.12);
   }
   function confetti(cv) {
     if (!cv || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
