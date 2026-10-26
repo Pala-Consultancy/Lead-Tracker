@@ -677,6 +677,59 @@
   .step.collapsed.done h3{color:var(--ink-3);}
   .act.quiet{background:transparent !important;border-color:transparent !important;color:var(--ink-2) !important;box-shadow:none !important;font-weight:600;}
   .act.quiet:hover{background:var(--hover) !important;color:var(--ink) !important;}
+
+  /* ===== the first visit: the welcome ===== */
+  html.wc-lock,html.wc-lock body{overflow:hidden;}
+  #welcome{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden;
+    background:#0B0A1A;animation:wcIn .5s ease both;transition:opacity .8s ease,transform .8s cubic-bezier(.6,0,.2,1);}
+  #welcome.leave{opacity:0;transform:scale(1.08);pointer-events:none;}
+  @keyframes wcIn{from{opacity:0}to{opacity:1}}
+  .wc-bg{position:absolute;inset:0;pointer-events:none;}
+  .wc-bg i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.75;mix-blend-mode:screen;}
+  .wc-bg .o1{width:60vmax;height:60vmax;left:50%;top:45%;margin:-30vmax 0 0 -30vmax;background:radial-gradient(circle,var(--accent) 0%,transparent 62%);animation:wcO1 14s ease-in-out infinite alternate;}
+  .wc-bg .o2{width:42vmax;height:42vmax;left:15%;top:75%;margin:-21vmax 0 0 -21vmax;background:radial-gradient(circle,#22D3EE 0%,transparent 60%);opacity:.35;animation:wcO2 18s ease-in-out infinite alternate;}
+  .wc-bg .o3{width:38vmax;height:38vmax;left:85%;top:20%;margin:-19vmax 0 0 -19vmax;background:radial-gradient(circle,#E879F9 0%,transparent 60%);opacity:.32;animation:wcO3 20s ease-in-out infinite alternate;}
+  .wc-bg .grain{inset:-50%;width:auto;height:auto;border-radius:0;filter:none;mix-blend-mode:normal;opacity:.08;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:wcGrain 1.2s steps(6) infinite;}
+  @keyframes wcO1{to{transform:translate(4vmax,-3vmax) scale(1.1)}} @keyframes wcO2{to{transform:translate(8vmax,-6vmax) scale(1.15)}} @keyframes wcO3{to{transform:translate(-7vmax,5vmax) scale(.9)}}
+  @keyframes wcGrain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}100%{transform:translate(0,0)}}
+  .wc-fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;}
+  .wc-in{position:relative;z-index:2;width:min(560px,92vw);text-align:center;display:flex;flex-direction:column;align-items:center;}
+  .wc-mark{position:relative;width:104px;height:104px;margin-bottom:28px;}
+  .wc-mark .r1,.wc-mark .r2{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.55);animation:wcRing 2.4s cubic-bezier(.2,.7,.2,1) .35s infinite;opacity:0;}
+  .wc-mark .r2{animation-delay:1.15s;}
+  @keyframes wcRing{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+  .wc-logo{position:absolute;inset:0;border-radius:28px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    box-shadow:0 20px 60px -10px color-mix(in srgb,var(--accent) 70%,transparent),0 0 0 1px rgba(255,255,255,.4);animation:wcPop .9s cubic-bezier(.2,1.4,.3,1) .25s both;}
+  .wc-logo img{width:100%;height:100%;object-fit:contain;padding:12px;box-sizing:border-box;} .wc-logo img.round{padding:0;object-fit:cover;}
+  .wc-logo span{font:800 34px var(--serif);color:var(--accent);}
+  @keyframes wcPop{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+  .wc-word{margin:0;font:800 clamp(46px,9vw,84px)/1 var(--serif);letter-spacing:-.03em;display:flex;justify-content:center;}
+  .wc-word i{font-style:normal;display:inline-block;opacity:0;transform:translateY(28px);filter:blur(10px);animation:wcLetter .8s cubic-bezier(.2,.8,.2,1) var(--d) both;
+    background:linear-gradient(180deg,#fff 30%,rgba(255,255,255,.72));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  @keyframes wcLetter{to{opacity:1;transform:none;filter:none}}
+  .wc-sub{margin:14px 0 0;font-size:17px;color:rgba(255,255,255,.78);opacity:0;animation:wcRise .8s ease 1.55s both;} .wc-sub b{color:#fff;}
+  @keyframes wcRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .wc-card{margin-top:34px;width:100%;box-sizing:border-box;padding:20px;border-radius:20px;text-align:left;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 30px 60px -30px rgba(0,0,0,.6);opacity:0;animation:wcRise .9s cubic-bezier(.2,.8,.2,1) 2.05s both;}
+  .wc-card label{display:block;font-weight:700;font-size:15.5px;margin-bottom:12px;}
+  .wc-row{display:flex;gap:8px;} .wc-row input{flex:1;min-width:0;height:52px;border-radius:14px;border:1.5px solid rgba(255,255,255,.28);background:rgba(255,255,255,.95);color:#15141F;padding:0 16px;font:600 17px inherit;outline:none;transition:box-shadow .2s;}
+  .wc-row input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 45%,transparent);}
+  .wc-row button{height:52px;padding:0 20px;border:none;border-radius:14px;background:var(--accent);color:var(--on-accent);font:700 16px inherit;cursor:pointer;white-space:nowrap;box-shadow:0 10px 24px -10px var(--accent);transition:transform .15s;}
+  .wc-row button:hover{transform:translateY(-1px);} .wc-row button span{display:inline-block;transition:transform .2s;} .wc-row button:hover span{transform:translateX(3px);}
+  .wc-card small{display:block;margin-top:10px;font-size:13px;color:rgba(255,255,255,.65);}
+  .wc-card.shake{animation:wcShake .4s ease;} @keyframes wcShake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+  .wc-hi{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%) scale(.9);opacity:0;pointer-events:none;font:700 clamp(30px,5.5vw,48px)/1.2 var(--serif);letter-spacing:-.02em;transition:opacity .5s ease .2s,transform .7s cubic-bezier(.2,1.2,.3,1) .2s;}
+  .wc-hi b{font-weight:800;}
+  #welcome.named .wc-word,#welcome.named .wc-sub,#welcome.named .wc-card{transition:opacity .35s ease,transform .45s ease;opacity:0 !important;transform:translateY(-14px);animation:none;}
+  #welcome.named .wc-mark{transition:transform .6s cubic-bezier(.2,1.2,.3,1);transform:translateY(-70px) scale(.82);}
+  #welcome.named .wc-hi{opacity:1;transform:translateY(-50%) scale(1);}
+  .hello{font:700 15px var(--sans,inherit);color:rgba(255,255,255,.88);margin:0 0 6px;letter-spacing:.01em;}
+  .hello.pop{animation:wcRise .7s cubic-bezier(.2,.8,.2,1) both;}
+  @media (prefers-reduced-motion: reduce){
+    #welcome *,#welcome{animation:none !important;transition:opacity .2s !important;}
+    .wc-word i,.wc-sub,.wc-card{opacity:1 !important;transform:none !important;filter:none !important;}
+  }
+  @media (max-width:520px){ .wc-row{flex-direction:column;} .wc-row button{width:100%;} }
 </style>
 </head>
 <body>
@@ -705,6 +758,7 @@
       <div class="hero-in">
         <div class="hero-main">
           <div class="from" id="from"></div>
+          <div class="hello hidden" id="hello"></div>
           <h1 class="title" id="title"></h1>
           <div class="for" id="forLine"></div>
         </div>
@@ -893,7 +947,7 @@
     if (!token) { notice('link', 'This link isn\u2019t complete', 'Check that you copied the whole link, or ask for it again.'); return; }
     if (first && !proc) {           // a return visit: show the remembered page right away
       const c = cacheGet();
-      if (c && c.blocks) { proc = c; build(); render(); show('page'); requestAnimationFrame(() => { reveal(); updateNextPill(); }); }
+      if (c && c.blocks) { proc = c; build(); render(); show('page'); maybeWelcome(); requestAnimationFrame(() => { reveal(); updateNextPill(); }); }
     }
     try {
       let r;
@@ -908,7 +962,7 @@
       }
       if (r.paused) { notice('pause', 'This onboarding is paused', `${r.workspaceName || 'The sender'} will open it again soon. You don\u2019t need to do anything for now.`); return; }
       const firstShow = $('page').classList.contains('hidden');
-      proc = r.process; cacheSet(proc); build(); render(); show('page');
+      proc = r.process; cacheSet(proc); build(); render(); show('page'); maybeWelcome();
       if (firstShow) requestAnimationFrame(() => { reveal(); updateNextPill(); });   // the page is visible now: steps further down can glide in
     } catch (e) {
       if (/not-found|permission-denied/.test(e.code || '')) cacheDrop();     // the link is gone or turned off
@@ -1205,6 +1259,7 @@
     const wasHidden = $('doneNote').classList.contains('hidden');
     $('doneNote').classList.toggle('hidden', proc.status !== 'completed');
     if (wasHidden && proc.status === 'completed' && !firstPaint) { $('doneNote').classList.remove('fresh'); void $('doneNote').offsetWidth; $('doneNote').classList.add('fresh'); }
+    const hl = $('hello'); if (hl) { hl.classList.toggle('hidden', !name); if (name) hl.textContent = `Welcome, ${name.split(/\s+/)[0]} 👋`; }
     $('whoLine').innerHTML = name ? `Working as <b>${esc(name)}</b> · <button type="button" class="link" id="changeName" style="padding:0">Not you?</button>` : '';
     const cn = $('changeName'); if (cn) cn.onclick = () => { name = ''; try { localStorage.removeItem(NAME_KEY); } catch (e) { /* ignore */ } needName(() => {}); render(); };
     const introHTML = intro.map(contentHTML).join('');
@@ -1504,6 +1559,57 @@
     $('nameModal').classList.add('hidden');
     const a = pendingAction; pendingAction = null; if (a) a(); else render();
   });
+
+  // ---------- The first visit: a welcome, then your client's name ----------
+  const WELCOME_KEY = 'ptCpWelcomed:' + token;
+  function maybeWelcome() {
+    if (PREVIEW || name || document.getElementById('welcome')) return;
+    try { if (localStorage.getItem(WELCOME_KEY)) return; } catch (e) { /* ignore */ }
+    runWelcome();
+  }
+  function runWelcome() {
+    const b = proc.brand || {}, company = b.company || proc.workspaceName || '', person = (proc.senderName || '').split(/\s+from\s+/i)[0] || '';
+    const mark = b.logo ? `<img src="${esc(b.logo)}" alt="">` : b.photo ? `<img class="round" src="${esc(b.photo)}" alt="">` : `<span>${esc(initials(person || company || 'Hi'))}</span>`;
+    const word = 'Welcome', letters = [...word].map((c, i) => `<i style="--d:${0.9 + i * 0.06}s">${esc(c)}</i>`).join('');
+    const ov = document.createElement('div'); ov.id = 'welcome'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'wcWord');
+    ov.innerHTML = `<div class="wc-bg" aria-hidden="true"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="grain"></i></div><canvas class="wc-fx" aria-hidden="true"></canvas>
+      <div class="wc-in">
+        <div class="wc-mark"><b class="r1"></b><b class="r2"></b><div class="wc-logo">${mark}</div></div>
+        <h1 class="wc-word" id="wcWord">${letters}</h1>
+        <p class="wc-sub">${company ? `Your onboarding with <b>${esc(company)}</b>` : 'Your onboarding starts here'}</p>
+        <form class="wc-card" novalidate><label for="wcName">First things first: what’s your name?</label>
+          <div class="wc-row"><input id="wcName" autocomplete="given-name" maxlength="60" placeholder="Your first name" required><button type="submit">Let’s go <span>→</span></button></div>
+          <small>${person ? `So ${esc(person.split(/\s+/)[0])} knows who’s working on this.` : 'So we know who’s working on this.'}</small></form>
+        <div class="wc-hi" aria-live="polite"></div>
+      </div>`;
+    document.body.appendChild(ov); document.documentElement.classList.add('wc-lock');
+    const input = ov.querySelector('#wcName'), form = ov.querySelector('.wc-card');
+    setTimeout(() => input.focus({preventScroll: true}), matchMedia('(prefers-reduced-motion: reduce)').matches ? 50 : 2300);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault(); const v = input.value.trim().replace(/\s+/g, ' ');
+      if (!v) { form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); input.focus(); return; }
+      name = v; try { localStorage.setItem(NAME_KEY, v); localStorage.setItem(WELCOME_KEY, '1'); } catch (err) { /* ignore */ }
+      ov.querySelector('.wc-hi').innerHTML = `Nice to meet you,<br><b>${esc(v.split(' ')[0])}</b>.`;
+      ov.classList.add('named'); try { chime('all'); } catch (err) { /* ignore */ }
+      confetti(ov.querySelector('.wc-fx'));
+      render();
+      setTimeout(() => { ov.classList.add('leave'); document.documentElement.classList.remove('wc-lock'); }, 1900);
+      setTimeout(() => { ov.remove(); const h = $('hello'); if (h) { h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop'); } }, 2700);
+    });
+  }
+  function confetti(cv) {
+    if (!cv || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1), W = cv.width = innerWidth * dpr, H = cv.height = innerHeight * dpr, ctx = cv.getContext('2d');
+    const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#5B4BE6';
+    const cols = [acc, '#FFFFFF', '#FFD166', '#7DE2D1', '#FF8FAB', '#A5B4FC'];
+    const P = Array.from({length: 160}, () => { const a = Math.random() * Math.PI * 2, v = (6 + Math.random() * 10) * dpr;
+      return {x: W / 2, y: H * 0.46, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 6 * dpr, s: (4 + Math.random() * 6) * dpr, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[(Math.random() * cols.length) | 0], life: 0}; });
+    const t0 = performance.now();
+    (function frame(t) { const k = (t - t0) / 1000; ctx.clearRect(0, 0, W, H);
+      P.forEach((p) => { p.vy += 0.35 * dpr; p.vx *= 0.985; p.vy *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        ctx.save(); ctx.globalAlpha = Math.max(0, 1 - k / 2.4); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); });
+      if (k < 2.4) requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H); })(t0);
+  }
 
   // ---------- Doing things ----------
   async function act(key, taskId, fn, after) {
