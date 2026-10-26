@@ -1104,6 +1104,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     {k: 'image', ic: '🖼️', label: 'Image', hint: 'A picture or screenshot'},
     {k: 'button', ic: '🔘', label: 'Button', hint: 'A link, e.g. “Book your call”'},
     {k: 'aftercall', ic: '⏳', label: 'After our call (section)', hint: 'Below this: tasks for after your onboarding call'},
+    {k: 'category', ic: '🗂', label: 'Category title', hint: 'Groups the steps below it, e.g. “Offer + Positioning”'},
     {k: 'todo', ic: '☑', label: 'To-do for the client', hint: 'They tick it off', client: true},
     {k: 'callstep', ic: '📅', label: 'Book a call (step)', hint: 'A step with your booking link', client: true},
     {k: 'upload', ic: '📤', label: 'Upload request', hint: 'They send you a file', client: true},
@@ -1524,6 +1525,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (k === 'callstep') return {id: uidGen(), type: 'todo', html: 'Book your onboarding call', required: true, note: 'Pick a time that suits you. We’ll go through everything together.',
       attachments: [{id: uidGen(), kind: 'button', label: 'Book your onboarding call', url: '', gate: true}]};
     if (k === 'aftercall') return {id: uidGen(), type: 'aftercall', label: ''};
+    if (k === 'category') return {id: uidGen(), type: 'h2', html: ''};          // a category is a heading right above its steps
     const b = {id: uidGen(), type: k};
     if (TEXTISH.includes(k) || k === 'todo') b.html = '';
     if (k === 'bullets' || k === 'numbers') b.html = '<li></li>';
