@@ -615,6 +615,13 @@
   .soc-ic svg{width:18px;height:18px;fill:currentColor;}
   .fq.socials .soc .field{flex:1;min-width:0;margin:0;}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+  /* a logo on a button, instead of the link icon */
+  .cta-ic.logo{background:#fff;border:1px solid var(--line);overflow:hidden;position:relative;padding:0;}
+  .cta-ic.logo img{width:100%;height:100%;object-fit:contain;padding:6px;box-sizing:border-box;}
+  .cta.locked .cta-ic.logo{background:#fff;} .cta.locked .cta-ic.logo img{filter:grayscale(1);opacity:.45;}
+  .cta-lock{position:absolute;right:-1px;bottom:-1px;width:20px;height:20px;border-radius:8px 0 12px 0;background:var(--ink-2);color:#fff;display:flex;align-items:center;justify-content:center;}
+  .cta-lock svg{width:11px;height:11px;}
 </style>
 </head>
 <body>
@@ -867,14 +874,16 @@
     groups = []; intro = []; afterInfo = null;
     let cur = null, pendingAfter = false;
     (proc.blocks || []).forEach((b) => {
-      if (b.type === 'aftercall') { afterInfo = {label: b.label || 'After our call', open: !!b.open, intro: []}; pendingAfter = true; return; }
+      if (b.type === 'aftercall') { afterInfo = {label: b.label || 'After our call', open: !!b.open, intro: [],
+        beforeLabel: b.beforeLabel || 'Before our call', beforeText: b.beforeText || 'Complete these first, then book your call.',
+        afterText: b.afterText || 'These open after our onboarding call. You can already look at them.'}; pendingAfter = true; return; }
       if (TASK.includes(b.type)) {
         const prev = pendingAfter ? afterInfo.intro : cur ? cur.content : intro;
         let section = '';
         while (prev.length && HEAD.includes(prev[prev.length - 1].type)) { const h = prev.pop(); section = section || textOf(h.html); }
         const atts = b.attachments || [];
         cur = {task: b, section, forms: atts.filter((a) => a.kind === 'form' && a.form),
-          ctas: atts.filter((a) => a.kind === 'button' && (a.url || a.locked)).map((a) => ({id: a.id, type: 'button', label: a.label, url: a.url, locked: !!a.locked, left: a.left || 0})),
+          ctas: atts.filter((a) => a.kind === 'button' && (a.url || a.locked)).map((a) => ({id: a.id, type: 'button', label: a.label, url: a.url, locked: !!a.locked, left: a.left || 0, logo: a.logo || ''})),
           content: atts.filter((a) => a.kind !== 'form' && a.kind !== 'button').map((a) => ({id: a.id, type: a.kind, video: a.video, file: a.file, image: a.image, preview: a.preview}))};
         if (afterInfo) { cur.after = true; if (pendingAfter) { cur.firstAfter = true; pendingAfter = false; } }
         groups.push(cur);
@@ -951,14 +960,15 @@
   }
   function ctaHTML(b) {
     // locked until the other steps are done (the server doesn't even send the link yet)
-    if (b.locked) return `<div class="cta locked" aria-disabled="true"><span class="cta-ic">${ic('lock')}</span>
+    const logo = b.logo && /^https:\/\/firebasestorage\.googleapis\.com\//.test(b.logo) ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : '';
+    if (b.locked) return `<div class="cta locked" aria-disabled="true"><span class="cta-ic${logo ? ' logo' : ''}">${logo ? logo + `<i class="cta-lock">${ic('lock', 'sm')}</i>` : ic('lock')}</span>
       <span class="cta-tx"><b>${esc(b.label || 'Book your call')}</b><small>Unlocks when you’ve finished the other step${b.left === 1 ? '' : 's'}</small></span>
       <span class="cta-go">${ic('lock', 'sm')}${b.left} step${b.left === 1 ? '' : 's'} to go</span></div>`;
     const url = normUrl(b.url); if (!url) return '';
     b = Object.assign({}, b, {url});
     const label = b.label || 'Open', isCall = /call|book|meeting|meet|schedule|plan|calendly|gesprek|afspraak|bel/i.test(label + ' ' + b.url);
     let host = ''; try { host = b.url.startsWith('mailto:') ? b.url.slice(7) : new URL(b.url).hostname.replace(/^www\./, ''); } catch (e) { /* ignore */ }
-    return `<a class="cta" href="${esc(b.url)}" target="_blank" rel="noopener"><span class="cta-ic">${ic(isCall ? 'cal' : 'link')}</span>
+    return `<a class="cta" href="${esc(b.url)}" target="_blank" rel="noopener"><span class="cta-ic${logo ? ' logo' : ''}">${logo || ic(isCall ? 'cal' : 'link')}</span>
       <span class="cta-tx"><b>${esc(label)}</b>${host ? `<small>${esc(host)}</small>` : ''}</span><span class="cta-go">${isCall ? 'Book now' : 'Open'}${ic('arrow', 'sm')}</span></a>`;
   }
   function meta(g) {
@@ -1102,13 +1112,13 @@
     const host = $('tasks');
     const phaseHTML = (g) => {
       if (!afterInfo) return '';
-      if (g === groups[0] && !g.after) return `<div class="phase before"><span class="ph-ic">${ic('check', 'sm')}</span><div><b>Before our call</b><small>Complete these first, then book your call.</small></div></div>`;
+      if (g === groups[0] && !g.after) return `<div class="phase before"><span class="ph-ic">${ic('check', 'sm')}</span><div><b>${esc(afterInfo.beforeLabel)}</b><small>${esc(afterInfo.beforeText)}</small></div></div>`;
       if (!g.firstAfter) return '';
       const ih = afterInfo.intro.map(contentHTML).join('');
       return `<div class="phase after${proc.callDone ? ' open' : ''}"><span class="ph-ic">${proc.callDone ? ic('check', 'sm') : ic('lock', 'sm')}</span><div><b>${esc(afterInfo.label)}</b>
-        <small>${proc.callDone ? 'Unlocked: you can do these now.' : 'These open after our onboarding call. You can already look at them.'}</small></div></div>${ih ? `<div class="content phase-intro">${ih}</div>` : ''}`;
+        <small>${proc.callDone ? 'Unlocked: you can do these now.' : esc(afterInfo.afterText)}</small></div></div>${ih ? `<div class="content phase-intro">${ih}</div>` : ''}`;
     };
-    const sig = String(!!proc.callDone) + '|' + groups.map((g) => [g.task.id, g.ctas.map((b) => b.id + b.url + b.label + (b.locked ? 'L' + b.left : '')).join(','), g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
+    const sig = String(!!proc.callDone) + '|' + (afterInfo ? [afterInfo.label, afterInfo.beforeLabel, afterInfo.beforeText, afterInfo.afterText].join('¦') : '') + '|' + groups.map((g) => [g.task.id, g.ctas.map((b) => b.id + b.url + b.label + (b.logo || '') + (b.locked ? 'L' + b.left : '')).join(','), g.content.map((b) => b.id).join(','), g.forms.map((a) => a.id + ':' + a.form.fields.length).join(','), g.section, g.task.note || ''].join(':')).join('|');
     if (host.dataset.sig !== sig) {
       host.innerHTML = groups.map((g, i) => `${phaseHTML(g)}${g.section && g.section.toLowerCase() !== titleOf(g.task).toLowerCase() ? `<div class="section">${esc(g.section)}</div>` : ''}
         <article class="step" id="step-${esc(g.task.id)}" data-id="${esc(g.task.id)}" aria-labelledby="st-${esc(g.task.id)}">

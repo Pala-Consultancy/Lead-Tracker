@@ -361,6 +361,10 @@
   .be-after-line .in{flex:1;font-weight:700;font-size:15px;background:transparent;border-color:transparent;}
   .be-after-line .in:hover,.be-after-line .in:focus{border-color:var(--border);background:var(--panel);}
   .be-after small{display:block;margin-top:6px;font-size:12.5px;line-height:1.5;color:var(--slate);}
+  .be-after-line b{font-size:14px;}
+  .be-after-txt{display:grid;grid-template-columns:1fr 1.6fr;gap:6px;margin-top:10px;} .be-after-txt .lbl{grid-column:1/-1;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6E56CF;}
+  .be-after-txt .in{font-size:13.5px;background:var(--panel);}
+  @media (max-width:700px){ .be-after-txt{grid-template-columns:1fr;} }
   .dt-call{display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:12px 14px;border-radius:12px;border:1px solid #D9CEF8;background:rgba(122,90,240,.06);}
   .dt-call.on{border-color:rgba(30,158,116,.35);background:rgba(30,158,116,.07);}
   .dt-call .ic{font-size:18px;} .dt-call > div{flex:1;min-width:0;} .dt-call b{display:block;font-size:14px;} .dt-call small{display:block;font-size:12.5px;color:var(--slate);margin-top:2px;}
@@ -370,6 +374,15 @@
   .ff-nets{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;} .ff-nets > span{font-size:12.5px;font-weight:600;color:var(--slate);margin-right:2px;}
   .ff-net{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer;user-select:none;}
   .ff-net input{margin:0;} .ff-net.on{border-color:var(--teal);color:var(--ink);background:rgba(46,107,138,.08);}
+
+  /* a logo on a button */
+  .be-logo{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--panel);font-size:13px;}
+  .be-logo img{width:36px;height:36px;border-radius:9px;object-fit:contain;background:#fff;border:1px solid var(--border);}
+  .be-logo span{flex:1;font-weight:600;}
+  .be-logo.add{cursor:pointer;border-style:dashed;flex-wrap:wrap;} .be-logo.add b{font-size:13px;} .be-logo.add small{flex-basis:100%;color:var(--slate);font-size:12px;margin-top:-4px;}
+  .be-logo.add:hover{border-color:var(--teal);}
+  .be-logo-spin{flex:0 0 16px !important;width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--teal);animation:beSpin .8s linear infinite;}
+  @keyframes beSpin{to{transform:rotate(360deg);}}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1343,8 +1356,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (TEXTISH.includes(b.type)) body = ce(b.type);
     else if (b.type === 'bullets' || b.type === 'numbers') body = `<${b.type === 'bullets' ? 'ul' : 'ol'} class="be be-list" contenteditable="true">${b.html || '<li></li>'}</${b.type === 'bullets' ? 'ul' : 'ol'}>`;
     else if (b.type === 'divider') body = '<hr class="be-hr">';
-    else if (b.type === 'aftercall') body = `<div class="be-after"><div class="be-after-line"><span>⏳</span><input class="in" data-f="label" maxlength="120" placeholder="After our call" value="${esc(b.label || '')}" aria-label="Section title"></div>
-      <small>Everything <b>below</b> this line is for after your onboarding call. Your client sees it, but it stays locked until you click <b>“Onboarding call done”</b> on their page. It never blocks booking the call.</small></div>`;
+    else if (b.type === 'aftercall') body = `<div class="be-after"><div class="be-after-line"><span>⏳</span><b>The line between “before” and “after” your onboarding call</b></div>
+      <small>Everything <b>below</b> this line is for after your onboarding call. Your client sees it, but it stays locked until you click <b>“Onboarding call done”</b> on their page. It never blocks booking the call.</small>
+      <div class="be-after-txt"><span class="lbl">⬆ Section above the line</span><input class="in" data-f="beforeLabel" maxlength="80" placeholder="Before our call" value="${esc(b.beforeLabel || '')}" aria-label="Title of the section above">
+        <input class="in" data-f="beforeText" maxlength="200" placeholder="Complete these first, then book your call." value="${esc(b.beforeText || '')}" aria-label="Text of the section above"></div>
+      <div class="be-after-txt"><span class="lbl">⬇ Section below the line</span><input class="in" data-f="label" maxlength="80" placeholder="After our call" value="${esc(b.label || '')}" aria-label="Title of the section below">
+        <input class="in" data-f="afterText" maxlength="200" placeholder="These open after our onboarding call. You can already look at them." value="${esc(b.afterText || '')}" aria-label="Text of the section below"></div></div>`;
     else if (b.type === 'todo') body = `<div class="be-task"><div class="be-tag">☑ To-do for your client</div><div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>${attHTML(b)}</div>`;
     else if (b.type === 'video') {
       const v = b.video;
@@ -1361,7 +1378,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       body = b.image ? `<div class="be-panel be-imgwrap"><img src="${esc(b.image.url)}" alt=""><label class="link">Replace<input type="file" accept="image/*" class="hidden" data-up="image"></label></div>`
         : `<div class="be-panel">${b._up ? upBar(b) : '<label class="be-drop">🖼️ <b>Upload an image</b><small>PNG, JPG, GIF or WebP</small><input type="file" accept="image/*" class="hidden" data-up="image"></label>'}</div>`;
     } else if (b.type === 'button') {
-      body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" data-link="1" placeholder="https://calendly.com/…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>${linkNote(b.url)}${gateBox(b, 'data-gate="block"')}</div>`;
+      body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" data-link="1" placeholder="https://calendly.com/…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>${linkNote(b.url)}${gateBox(b, 'data-gate="block"')}${logoBox(b, 'blk')}</div>`;
     } else if (b.type === 'upload') {
       body = `<div class="be-panel be-client"><div class="be-tag">📤 Your client uploads a file here</div><input class="in" data-f="label" placeholder="What should they send? e.g. The signed contract" value="${esc(b.label || '')}">
         <input class="in" data-f="help" placeholder="Extra explanation (optional)" value="${esc(b.help || '')}">${reqToggle(b)}${attHTML(b)}</div>`;
@@ -1390,7 +1407,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       } else if (a.kind === 'button') {
         inner = `<div class="be-row"><input class="in" data-att="${esc(a.id)}" data-af="btnLabel" placeholder="Button text, e.g. Book your onboarding call" value="${esc(a.label || '')}">
           <input class="in" data-att="${esc(a.id)}" data-af="btnUrl" data-link="1" placeholder="Your booking link, e.g. https://calendly.com/…" value="${esc(a.url || '')}"></div>${linkNote(a.url)}${gateBox(a, `data-gate="att" data-gatt="${esc(a.id)}"`)}
-          <div class="hint">Your client sees this as a big “Book now” card in this step.</div>`;
+          ${logoBox(a, 'att:' + a.id)}<div class="hint">Your client sees this as a big “Book now” card in this step.</div>`;
       } else if (a.kind === 'form') {
         inner = formBuilderHTML(a);
       } else if (a.kind === 'image') {
@@ -1504,8 +1521,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function changed() { sendPreview(); editing.dirty = true; $('edSaved').textContent = 'Saving…'; clearTimeout(saveTimer); saveTimer = setTimeout(save, 900); }
   function blocksForSave() {
     return (editing || {data: {blocks: []}}).data.blocks.map((b) => {
-      const c = {...b}; delete c._up;
-      if (Array.isArray(c.attachments)) c.attachments = c.attachments.map((a) => { const x = {...a}; delete x._up; return x; }).filter((a) => a.video || a.file || a.image || a.form || (a.kind === 'button' && a.url));
+      const c = {...b}; delete c._up; delete c._logoUp;
+      if (Array.isArray(c.attachments)) c.attachments = c.attachments.map((a) => { const x = {...a}; delete x._up; delete x._logoUp; return x; }).filter((a) => a.video || a.file || a.image || a.form || (a.kind === 'button' && a.url));
       if ('html' in c) c.html = c.type === 'bullets' || c.type === 'numbers' ? cleanHTML(c.html).replace(/<(?!\/?(li|b|strong|i|em|u|s|code|a|br)\b)[^>]*>/gi, '') : cleanHTML(c.html);
       return c;
     });
@@ -1592,6 +1609,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       if (form && type) { const nf = {id: uidGen(), type, label: '', help: '', required: false, options: NEEDS_OPTIONS.includes(type) ? ['Option 1', 'Option 2'] : []}; if (type === 'socials') socialsDefault(nf); form.fields.push(nf); changed(); renderPage();
         setTimeout(() => { const els = document.querySelectorAll(`[data-attid="${CSS.escape(e.target.dataset.addfield)}"] [data-ff$=":label"]`); const el = els[els.length - 1]; if (el) el.focus(); }, 30); }
     }
+    if (e.target.dataset.logoup) { const ref = e.target.dataset.logoup, owner = ref === 'blk' ? b : (b.attachments || []).find((x) => x.id === ref.slice(4)); if (owner) uploadLogo(owner, e.target.files[0]); e.target.value = ''; }
     if (e.target.dataset.attup) { const a = (b.attachments || []).find((x) => x.id === e.target.dataset.attup); if (a) uploadAtt(a, e.target.files[0], e.target.dataset.kind); }
     if (e.target.dataset.up) uploadInto(b, e.target.files[0], e.target.dataset.up);
   });
@@ -1641,6 +1659,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       if (gb.dataset.gate === 'att') { const a = (b.attachments || []).find((x) => x.id === gb.dataset.gatt); if (a) a.gate = v; } else b.gate = v;
       changed(); renderPage(); return;
     }
+    const lx = e.target.closest('[data-logox]');
+    if (lx) { const b = editing.data.blocks[findB(blk.dataset.id)], ref = lx.dataset.logox, owner = ref === 'blk' ? b : (b.attachments || []).find((x) => x.id === ref.slice(4));
+      if (owner) { delete owner.logo; changed(); renderPage(); } return; }
     const add = e.target.closest('[data-addatt]');
     if (add) {
       const b = editing.data.blocks[findB(blk.dataset.id)];
@@ -1761,6 +1782,21 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   pg.addEventListener('dragend', () => { dragId = null; pg.querySelectorAll('.dragging,.drop-before,.drop-after').forEach((x) => x.classList.remove('dragging', 'drop-before', 'drop-after')); });
 
   // ---------- Files (videos, documents, images) ----------
+  // a logo on a button: shown to the client instead of the link icon
+  const logoBox = (owner, ref) => owner._logoUp ? `<div class="be-logo"><span class="be-logo-spin"></span><span>Uploading the logo…</span></div>`
+    : owner.logo && owner.logo.url ? `<div class="be-logo"><img src="${esc(owner.logo.url)}" alt=""><span>Logo on this button</span><button type="button" class="link" data-logox="${esc(ref)}">Remove</button></div>`
+    : `<label class="be-logo add">🖼️ <b>Add a logo</b><small>Shown on the button instead of the link icon. A square image works best.</small><input type="file" class="hidden" accept="image/*" data-logoup="${esc(ref)}"></label>`;
+  async function uploadLogo(owner, f) {
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
+    if (f.size > 5 * 1024 * 1024) { showToast('Use a logo smaller than 5 MB.', true); return; }
+    const folder = (editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id;
+    const path = `workspaces/${wsId}/clientProcessFiles/${folder}/logo-${Date.now()}-${f.name.replace(/[\\/]/g, '_').slice(0, 100)}`;
+    owner._logoUp = true; renderPage();
+    try { await storage.ref(path).put(f, {contentType: f.type}); owner.logo = {url: await storage.ref(path).getDownloadURL(), path}; }
+    catch (err) { console.error(err); showToast('Couldn’t upload the logo.', true); }
+    delete owner._logoUp; changed(); renderPage();
+  }
   async function uploadAtt(a, f, kind) {
     if (!f) return;
     if (kind === 'video' && !/^video\//.test(f.type)) { showToast('That isn’t a video file.', true); return; }
