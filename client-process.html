@@ -646,6 +646,8 @@
   html[data-theme="dark"] .note-tx b{color:#FFFFFF;} html[data-theme="dark"] .note-t{color:#A9B2C4;} html[data-theme="dark"] .note .tape{background:rgba(255,255,255,.14);}
   html[data-theme="dark"] .note-more{background:rgba(255,255,255,.06);color:#E6E9F0;border-color:rgba(255,255,255,.16);}
   @media (prefers-reduced-motion: reduce){ .note{transform:none;} .note-body{transition:none;} }
+  .pv-none{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:24px;border-radius:14px;background:var(--sunk);color:var(--ink-2);text-align:center;}
+  .pv-none span svg{width:26px;height:26px;opacity:.6;} .pv-none b{color:var(--ink);font-size:15px;} .pv-none small{font-size:13px;}
 </style>
 </head>
 <body>
@@ -933,7 +935,12 @@
     if (!f || !isSafeUrl(f.url)) return '';
     if (/^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp)$/i.test(f.name)) return `<img src="${esc(f.url)}" alt="">`;
     if (/pdf/.test(f.contentType || '') || /\.pdf$/i.test(f.name)) return `<iframe data-src="${esc(f.url)}#toolbar=0" title="${esc(f.name)}"></iframe>`;
-    if (/\.(docx?|xlsx?|pptx?)$/i.test(f.name)) return `<iframe data-src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}" title="${esc(f.name)}"></iframe>`;
+    if (/\.(docx?|xlsx?|pptx?)$/i.test(f.name)) {
+      // Microsoft's viewer can't open a stored name with spaces or "+" in it (older uploads): say so clearly instead of its error
+      let stored = ''; try { stored = decodeURIComponent((new URL(f.url).pathname.split('/o/')[1] || '')); } catch (e) { /* ignore */ }
+      if (/[^A-Za-z0-9._\-\/]/.test(stored)) return `<div class="pv-none"><span>${ic('file')}</span><b>Preview not available for this file</b><small>Download it below to open it.</small></div>`;
+      return `<iframe data-src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}" title="${esc(f.name)}"></iframe>`;
+    }
     return '';
   }
   function contentHTML(b) {

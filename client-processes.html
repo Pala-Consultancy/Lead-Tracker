@@ -1193,7 +1193,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (!f) return;
     if (!/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
     if (f.size > 10 * 1024 * 1024) { showToast('Images can be up to 10 MB.', true); return; }
-    const b = editing.data.brand, path = `workspaces/${wsId}/clientProcessFiles/brand/${Date.now()}-${kind}-${f.name.replace(/[\\/]/g, '_').slice(0, 80)}`;
+    const b = editing.data.brand, path = `workspaces/${wsId}/clientProcessFiles/brand/${Date.now()}-${kind}-${safeName(f.name).slice(0, 80)}`;
     b['_up_' + kind] = 0; renderBrand();
     try {
       const task = storage.ref(path).put(f, {contentType: f.type});
@@ -1813,18 +1813,26 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (!/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
     if (f.size > 5 * 1024 * 1024) { showToast('Use a logo smaller than 5 MB.', true); return; }
     const folder = (editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id;
-    const path = `workspaces/${wsId}/clientProcessFiles/${folder}/logo-${Date.now()}-${f.name.replace(/[\\/]/g, '_').slice(0, 100)}`;
+    const path = `workspaces/${wsId}/clientProcessFiles/${folder}/logo-${Date.now()}-${safeName(f.name).slice(0, 100)}`;
     owner._logoUp = true; renderPage();
     try { await storage.ref(path).put(f, {contentType: f.type}); owner.logo = {url: await storage.ref(path).getDownloadURL(), path}; }
     catch (err) { console.error(err); showToast('Couldn’t upload the logo.', true); }
     delete owner._logoUp; changed(); renderPage();
+  }
+  // the name a file is stored under: letters, numbers, dots, dashes and underscores only. Spaces and "+" in a
+  // stored name break Microsoft's document preview; your client still sees the original name.
+  function safeName(name) {
+    const n = String(name || 'file').normalize('NFKD').replace(/[\u0300-\u036f]/g, ''), dot = n.lastIndexOf('.');
+    const base = (dot > 0 ? n.slice(0, dot) : n).replace(/[^A-Za-z0-9._-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'file';
+    const ext = dot > 0 ? n.slice(dot + 1).replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
+    return base.slice(0, 100) + (ext ? '.' + ext : '');
   }
   async function uploadAtt(a, f, kind) {
     if (!f) return;
     if (kind === 'video' && !/^video\//.test(f.type)) { showToast('That isn’t a video file.', true); return; }
     if (kind === 'image' && !/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
     if (f.size > (kind === 'video' ? MAX_VIDEO : MAX_DOC)) { showToast(`${f.name} is larger than ${kind === 'video' ? '500' : '50'} MB.`, true); return; }
-    const path = `workspaces/${wsId}/clientProcessFiles/${(editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id}/${Date.now()}-${f.name.replace(/[\\/]/g, '_').slice(0, 120)}`;
+    const path = `workspaces/${wsId}/clientProcessFiles/${(editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id}/${Date.now()}-${safeName(f.name).slice(0, 120)}`;
     a._up = {name: f.name, pct: 0}; renderPage();
     try {
       const task = storage.ref(path).put(f, {contentType: f.type || 'application/octet-stream'});
@@ -1843,7 +1851,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (kind === 'image' && !/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
     if (f.size > (kind === 'video' ? MAX_VIDEO : MAX_DOC)) { showToast(`${f.name} is larger than ${kind === 'video' ? '500' : '50'} MB.`, true); return; }
     const folder = (editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id;
-    const path = `workspaces/${wsId}/clientProcessFiles/${folder}/${Date.now()}-${f.name.replace(/[\\/]/g, '_').slice(0, 120)}`;
+    const path = `workspaces/${wsId}/clientProcessFiles/${folder}/${Date.now()}-${safeName(f.name).slice(0, 120)}`;
     b._up = {name: f.name, pct: 0}; renderPage();
     try {
       const task = storage.ref(path).put(f, {contentType: f.type || 'application/octet-stream'});
