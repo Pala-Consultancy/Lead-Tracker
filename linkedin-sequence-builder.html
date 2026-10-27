@@ -74,66 +74,89 @@
   .dm-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:22px 28px 14px;flex-shrink:0;}
   .dm-head h1{margin:0;font:800 24px Sora,sans-serif;letter-spacing:-.02em;}
   .dm-head p{margin:4px 0 0;font-size:14px;color:var(--slate);}
-  .dm{flex:1;min-height:0;display:grid;grid-template-columns:340px 1fr;margin:0 28px 24px;background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;}
+  /* ===== LinkedIn Messaging's look ===== */
+  .dm{--li-bg:#FFFFFF;--li-line:#E8E8E8;--li-ink:rgba(0,0,0,.9);--li-ink2:rgba(0,0,0,.6);--li-ink3:rgba(0,0,0,.45);--li-hover:#F3F2EF;--li-sel:#EBF3FB;--li-green:#01754F;--li-blue:#0A66C2;--li-blue-d:#004182;
+    font-family:-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Fira Sans",Ubuntu,Oxygen,"Oxygen Sans",Cantarell,"Droid Sans","Apple Color Emoji","Segoe UI Emoji",sans-serif;
+    flex:1;min-height:0;display:grid;grid-template-columns:340px 1fr;margin:0 28px 24px;background:var(--li-bg);border:1px solid var(--li-line);border-radius:10px;box-shadow:0 0 0 1px rgba(140,140,140,.08),0 2px 4px rgba(0,0,0,.04);overflow:hidden;color:var(--li-ink);}
+  html[data-theme="dark"] .dm{--li-bg:#1B1F23;--li-line:#38434F;--li-ink:rgba(255,255,255,.9);--li-ink2:rgba(255,255,255,.6);--li-ink3:rgba(255,255,255,.45);--li-hover:#262C31;--li-sel:#20303F;--li-green:#3FBF8F;--li-blue:#71B7FB;--li-blue-d:#A8D4FF;}
   /* the list */
-  .dm-list{border-right:1px solid var(--border-soft);display:flex;flex-direction:column;min-height:0;}
-  .dm-search{padding:12px;border-bottom:1px solid var(--border-soft);}
-  .dm-search .in{height:36px;font-size:13.5px;}
+  .dm-list{border-right:1px solid var(--li-line);display:flex;flex-direction:column;min-height:0;}
+  .dm-lh{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 8px 16px;border-bottom:1px solid var(--li-line);}
+  .dm-lh b{font-size:16px;font-weight:600;}
+  .dm-lh button{width:36px;height:36px;border-radius:50%;border:none;background:none;color:var(--li-ink2);display:flex;align-items:center;justify-content:center;} .dm-lh button:hover{background:var(--li-hover);}
+  .dm-lh svg{width:20px;height:20px;}
+  .dm-search{padding:8px 12px;border-bottom:1px solid var(--li-line);}
+  .dm-search .sw{position:relative;} .dm-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--li-ink2);pointer-events:none;}
+  .dm-search .in{height:34px;font-size:14px;padding-left:34px;border:none;border-radius:4px;background:var(--li-hover);color:var(--li-ink);}
+  .dm-search .in:focus{box-shadow:0 0 0 2px var(--li-ink);}
   .dm-items{flex:1;overflow-y:auto;}
-  .dm-item{display:flex;gap:11px;align-items:center;width:100%;padding:12px 14px;border:none;border-left:3px solid transparent;background:none;text-align:left;}
-  .dm-item:hover{background:var(--panel-alt);}
-  .dm-item.on{background:rgba(10,102,194,.07);border-left-color:var(--li);}
+  .dm-item{position:relative;display:flex;gap:12px;align-items:center;width:100%;padding:12px 12px 12px 16px;border:none;background:none;text-align:left;color:inherit;}
+  .dm-item::after{content:"";position:absolute;left:84px;right:0;bottom:0;height:1px;background:var(--li-line);}
+  .dm-item:hover{background:var(--li-hover);}
+  .dm-item.on{background:var(--li-sel);} .dm-item.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--li-green);}
   .dm-item .meta{flex:1;min-width:0;}
-  .dm-item .row{display:flex;justify-content:space-between;gap:8px;}
-  .dm-item b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .dm-item time{font-size:12px;color:var(--slate-light);flex-shrink:0;}
-  .dm-item small{display:block;margin-top:2px;font-size:13px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .dm-empty{padding:40px 22px;text-align:center;color:var(--slate);font-size:14px;line-height:1.6;}
-  .dm-empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px;}
+  .dm-item .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .dm-item b{font-size:16px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dm-item time{font-size:12px;color:var(--li-ink2);flex-shrink:0;}
+  .dm-item small{display:block;margin-top:2px;font-size:14px;color:var(--li-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dm-empty{padding:40px 22px;text-align:center;color:var(--li-ink2);font-size:14px;line-height:1.6;}
+  .dm-empty b{display:block;color:var(--li-ink);font-size:16px;font-weight:600;margin-bottom:4px;}
   /* avatars */
-  .av{width:48px;height:48px;border-radius:50%;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;background:linear-gradient(135deg,#5B6FD8,#3730B3);}
+  .av{width:56px;height:56px;border-radius:50%;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;color:#fff;background:#8C8C8C;}
   .av img{width:100%;height:100%;object-fit:cover;display:block;}
   .av.sm{width:40px;height:40px;font-size:14px;} .av.xs{width:32px;height:32px;font-size:12px;}
-  .av.me{background:linear-gradient(135deg,#0A66C2,#3B82F6);}
+  .av.me{background:#0A66C2;}
   /* the thread */
   .dm-thread{display:flex;flex-direction:column;min-height:0;}
-  .th-head{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border-soft);}
-  .th-head .meta{flex:1;min-width:0;} .th-head b{display:block;font-size:15.5px;} .th-head small{display:block;font-size:13px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .th-chips{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;}
-  .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--panel-alt);border:1px solid var(--border-soft);color:var(--slate);text-decoration:none;}
-  .chip.li{color:var(--li);border-color:rgba(10,102,194,.25);}
-  .th-back{display:none;}
-  .th-body{flex:1;overflow-y:auto;padding:18px 22px 10px;}
-  .day{display:flex;align-items:center;gap:12px;margin:14px 0 10px;font-size:12px;font-weight:700;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;}
-  .day::before,.day::after{content:"";flex:1;height:1px;background:var(--border-soft);}
-  .grp{display:flex;gap:10px;margin-bottom:12px;}
+  .th-head{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 16px;border-bottom:1px solid var(--li-line);min-height:60px;}
+  .th-head .meta{flex:1;min-width:0;}
+  .th-head b{display:block;font-size:16px;font-weight:600;} .th-head b a{color:inherit;text-decoration:none;} .th-head b a:hover{text-decoration:underline;}
+  .th-head small{display:block;font-size:12px;color:var(--li-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .th-head .ib{width:36px;height:36px;border-radius:50%;border:none;background:none;color:var(--li-ink2);display:inline-flex;align-items:center;justify-content:center;font-size:15px;} .th-head .ib:hover{background:var(--li-hover);color:var(--li-ink);}
+  .th-head .ib svg{width:20px;height:20px;}
+  .th-chips{display:none;}
+  .th-head .th-back{display:none;}
+  .th-body{flex:1;overflow-y:auto;padding:8px 16px 12px;}
+  .th-profile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px 0 12px;border-bottom:1px solid var(--li-line);margin-bottom:6px;}
+  .th-profile .av{width:72px;height:72px;font-size:24px;}
+  .th-profile b{font-size:16px;font-weight:600;margin-top:4px;} .th-profile b a{color:inherit;text-decoration:none;} .th-profile b a:hover{text-decoration:underline;color:var(--li-blue);} .th-profile span{font-size:14px;color:var(--li-ink2);}
+  .th-profile .pl{font-size:12px;color:var(--li-ink3);} .th-profile .pl a{color:var(--li-blue);font-weight:600;text-decoration:none;}
+  .day{display:flex;align-items:center;gap:12px;margin:14px 0 8px;font-size:12px;font-weight:400;color:var(--li-ink2);text-transform:uppercase;letter-spacing:0;}
+  .day::before,.day::after{content:"";flex:1;height:1px;background:var(--li-line);}
+  .grp{display:flex;gap:8px;margin:4px 0;}
   .grp .who{flex:1;min-width:0;}
-  .grp .nm{display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:700;margin-bottom:3px;} .grp .nm time{font-size:12px;font-weight:500;color:var(--slate-light);}
-  .msg{position:relative;max-width:640px;padding:8px 12px;border-radius:4px 14px 14px 14px;margin-bottom:4px;font-size:14.5px;line-height:1.5;word-break:break-word;background:var(--them-bubble);border:1px solid var(--border-soft);}
+  .grp .nm{display:flex;align-items:baseline;gap:4px;font-size:14px;font-weight:600;line-height:20px;margin-bottom:0;}
+  .grp .nm time{font-size:12px;font-weight:400;color:var(--li-ink2);} .grp .nm time::before{content:"• ";}
+  .msg{position:relative;max-width:none;padding:2px 0;border-radius:0;margin:0;font-size:14px;line-height:20px;word-break:break-word;background:none;border:none;color:var(--li-ink);}
+  .grp.me .msg{background:none;}
   .msg .tx{white-space:pre-wrap;}
-  .grp.me .msg{background:var(--me-bubble);border-color:transparent;}
-  .msg .tools{position:absolute;top:-12px;right:6px;display:none;gap:2px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:2px;box-shadow:var(--shadow);}
+  .msg .tools{position:absolute;top:-6px;right:0;display:none;gap:2px;background:var(--li-bg);border:1px solid var(--li-line);border-radius:16px;padding:2px;box-shadow:0 2px 6px rgba(0,0,0,.12);}
+  .msg:hover{background:var(--li-hover);margin:0 -8px;padding:2px 8px;border-radius:4px;}
   .msg:hover .tools,.msg:focus-within .tools{display:flex;}
-  .msg .tools button{border:none;background:none;width:26px;height:24px;border-radius:6px;font-size:12px;color:var(--slate);} .msg .tools button:hover{background:var(--panel-alt);color:var(--ink);}
-  .msg .mt{display:block;margin-top:2px;font-size:11px;color:var(--slate-light);}
-  .msg textarea{width:100%;min-height:60px;border:1.5px solid var(--teal);border-radius:8px;padding:6px 8px;font-size:14px;background:var(--panel);resize:vertical;}
+  .msg .tools button{border:none;background:none;width:26px;height:24px;border-radius:12px;font-size:12px;color:var(--li-ink2);} .msg .tools button:hover{background:var(--li-hover);color:var(--li-ink);}
+  .msg .mt{display:none;}
+  .msg textarea{width:100%;min-height:60px;border:1px solid var(--li-ink2);border-radius:4px;padding:6px 8px;font:inherit;background:var(--li-bg);resize:vertical;}
   .msg .edit-b{display:flex;gap:6px;margin-top:6px;}
-  .th-none{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:var(--slate);padding:30px;}
-  .th-none .ic{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:rgba(10,102,194,.1);color:var(--li);}
+  .th-none{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:var(--li-ink2);padding:30px;}
+  .th-none .ic{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--li-hover);color:var(--li-ink2);}
   .th-none .ic svg{width:30px;height:30px;}
-  .th-none b{color:var(--ink);font-size:17px;}
-  /* the composer */
-  .cmp{border-top:1px solid var(--border-soft);padding:10px 16px 14px;}
-  .cmp-who{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12.5px;font-weight:700;color:var(--slate);}
-  .seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--panel-alt);border:1px solid var(--border-soft);}
-  .seg button{display:inline-flex;align-items:center;gap:6px;border:none;background:none;padding:4px 12px 4px 4px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--slate);}
+  .th-none b{color:var(--li-ink);font-size:16px;font-weight:600;}
+  /* the composer, like LinkedIn's "Write a message…" */
+  .cmp{border-top:1px solid var(--li-line);padding:0;}
+  .cmp-row{display:block;padding:12px 16px 4px;}
+  .cmp-row textarea{width:100%;min-height:72px;max-height:200px;border:none;border-radius:8px;padding:12px;font:inherit;font-size:14px;line-height:20px;background:var(--li-hover);color:var(--li-ink);resize:none;outline:none;}
+  .cmp-row textarea:focus{box-shadow:0 0 0 1px var(--li-ink2) inset;}
+  .cmp-bar{display:flex;align-items:center;gap:10px;padding:8px 16px 12px;border-top:1px solid var(--li-line);margin-top:8px;}
+  .cmp-who{display:flex;align-items:center;gap:8px;margin:0;font-size:12px;font-weight:600;color:var(--li-ink2);}
+  .seg{display:inline-flex;padding:2px;border-radius:999px;background:var(--li-hover);border:none;}
+  .seg button{display:inline-flex;align-items:center;gap:6px;border:none;background:none;padding:3px 12px 3px 3px;border-radius:999px;font-size:13px;font-weight:600;color:var(--li-ink2);}
   .seg button .av{width:22px;height:22px;font-size:9px;}
-  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.15);}
-  .cmp-when{margin-left:auto;display:flex;align-items:center;gap:6px;} .cmp-when input{height:30px;border:1px solid var(--border);border-radius:8px;padding:0 8px;font-size:12.5px;background:var(--panel-alt);}
-  .cmp-row{display:flex;gap:8px;align-items:flex-end;}
-  .cmp-row textarea{flex:1;min-height:44px;max-height:180px;border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.45;background:var(--panel-alt);resize:none;outline:none;}
-  .cmp-row textarea:focus{border-color:var(--li);}
-  .cmp-hint{margin-top:6px;font-size:11.5px;color:var(--slate-light);}
+  .seg button.on{background:var(--li-bg);color:var(--li-ink);box-shadow:0 0 0 1px var(--li-line),0 1px 2px rgba(0,0,0,.1);}
+  .cmp-when{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--li-ink2);} .cmp-when input{height:28px;border:1px solid var(--li-line);border-radius:4px;padding:0 6px;font-size:12px;background:var(--li-bg);color:var(--li-ink);}
+  .cmp-send{margin-left:auto;height:28px;padding:0 16px;border:none;border-radius:999px;background:var(--li-blue);color:#fff;font-weight:600;font-size:14px;}
+  html[data-theme="dark"] .cmp-send{color:#000;}
+  .cmp-send:hover{background:var(--li-blue-d);}
+  .cmp-hint{margin:0;padding:0 16px 10px;font-size:12px;color:var(--li-ink3);}
   /* the "new conversation" dialog */
   .ov{position:fixed;inset:0;z-index:800;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px;}
   .dlg{width:100%;max-width:520px;max-height:calc(100vh - 40px);overflow:auto;background:var(--panel);border-radius:18px;box-shadow:var(--shadow);padding:22px;}
@@ -151,9 +174,9 @@
   .ph small{display:block;font-size:12px;color:var(--slate);font-weight:500;}
   .dlg-b{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
   @media (max-width:900px){
-    .dm{grid-template-columns:1fr;margin:0 12px 12px;} .dm-head{padding:16px 14px 10px;}
+    .dm{grid-template-columns:1fr;margin:0 12px 12px;} .dm-head{padding:16px 14px 10px;} .cmp-bar{flex-wrap:wrap;}
     .dm.open .dm-list{display:none;} .dm:not(.open) .dm-thread{display:none;}
-    .th-back{display:inline-flex;}
+    .th-head .th-back{display:inline-flex;}
   }
 </style>
 </head>
@@ -168,7 +191,8 @@
       <button type="button" class="btn primary" id="newBtn">＋ New conversation</button></div>
     <div class="dm" id="dm">
       <aside class="dm-list">
-        <div class="dm-search"><input class="in" id="search" type="search" placeholder="Search conversations" aria-label="Search conversations"></div>
+        <div class="dm-lh"><b>Messaging</b><button type="button" id="newBtn2" title="New conversation" aria-label="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
+        <div class="dm-search"><div class="sw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="in" id="search" type="search" placeholder="Search messages" aria-label="Search messages"></div></div>
         <div class="dm-items" id="items"></div>
       </aside>
       <section class="dm-thread" id="thread" aria-live="polite"></section>
@@ -240,20 +264,23 @@
     });
     if(last) html += '</div></div>';
     const keep = keepComposer && box.querySelector('#cmpText') ? box.querySelector('#cmpText').value : '';
-    box.innerHTML = `<div class="th-head"><button type="button" class="btn sm th-back" id="backBtn" aria-label="Back to conversations">←</button>${avatar(p.name, p.photo, 'sm')}
-        <div class="meta"><b>${esc(p.name)}</b>${p.headline ? `<small>${esc(p.headline)}</small>` : ''}
-          <div class="th-chips">${p.linkedinUrl ? `<a class="chip li" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener">in · Profile ↗</a>` : ''}${p.lead ? `<span class="chip">📋 ${esc(p.lead.boardName || 'Lead')}</span>` : ''}</div></div>
-        <button type="button" class="btn sm" id="editP">Edit</button><button type="button" class="btn sm danger" id="delC" title="Delete this conversation">Delete</button></div>
-      <div class="th-body" id="thBody">${html || `<div class="th-none" style="height:100%"><span class="ic">${SVG_CHAT}</span><b>Log your conversation with ${esc(first(p.name))}</b><span>Add your message and ${esc(first(p.name))}’s replies below, in order.</span></div>`}</div>
-      <div class="cmp"><div class="cmp-who"><span>Message from</span>
-          <span class="seg" role="radiogroup" aria-label="Who sent this message"><button type="button" data-from="me" class="${from === 'me' ? 'on' : ''}" role="radio" aria-checked="${from === 'me'}">${meAv()}Me</button><button type="button" data-from="them" class="${from === 'them' ? 'on' : ''}" role="radio" aria-checked="${from === 'them'}">${avatar(p.name, p.photo)}${esc(first(p.name))}</button></span>
-          <label class="cmp-when">at <input type="datetime-local" id="cmpAt" value="${localInput(new Date())}" aria-label="When it was sent"></label></div>
-        <div class="cmp-row"><textarea id="cmpText" rows="1" placeholder="${from === 'me' ? 'Paste or type your message…' : 'Paste or type ' + esc(first(p.name)) + '’s reply…'}" aria-label="Message">${esc(keep)}</textarea><button type="button" class="btn primary" id="logBtn">Log message</button></div>
-        <div class="cmp-hint">Enter logs it · Shift+Enter for a new line · the sender switches by itself after each message</div></div>`;
+    const nameHTML = p.linkedinUrl ? `<a href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name);
+    box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
+        <div class="meta"><b>${nameHTML}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
+        ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
+        <button type="button" class="ib" id="editP" title="Edit prospect" aria-label="Edit prospect">✎</button><button type="button" class="ib" id="delC" title="Delete this conversation" aria-label="Delete this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
+      <div class="th-body" id="thBody"><div class="th-profile">${avatar(p.name, p.photo)}<b>${nameHTML}</b>${p.headline ? `<span>${esc(p.headline)}</span>` : ''}
+          <span class="pl">${p.lead ? `📋 ${esc(p.lead.boardName || 'Lead')}` : ''}${p.lead && p.linkedinUrl ? ' · ' : ''}${p.linkedinUrl ? `<a href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener">View profile</a>` : ''}</span></div>
+        ${html || `<div class="dm-empty" style="padding:28px 10px">Log your conversation with ${esc(first(p.name))}: your messages and ${esc(first(p.name))}’s replies, in order.</div>`}</div>
+      <div class="cmp"><div class="cmp-row"><textarea id="cmpText" rows="3" placeholder="${from === 'me' ? 'Write a message…' : 'Write ' + esc(first(p.name)) + '’s reply…'}" aria-label="Message">${esc(keep)}</textarea></div>
+        <div class="cmp-bar"><div class="cmp-who"><span class="seg" role="radiogroup" aria-label="Who sent this message"><button type="button" data-from="me" class="${from === 'me' ? 'on' : ''}" role="radio" aria-checked="${from === 'me'}">${meAv()}Me</button><button type="button" data-from="them" class="${from === 'them' ? 'on' : ''}" role="radio" aria-checked="${from === 'them'}">${avatar(p.name, p.photo)}${esc(first(p.name))}</button></span></div>
+          <label class="cmp-when"><input type="datetime-local" id="cmpAt" value="${localInput(new Date())}" aria-label="When it was sent"></label>
+          <button type="button" class="cmp-send" id="logBtn">Log</button></div>
+        <div class="cmp-hint">Press Enter to log · Shift+Enter for a new line · the sender switches by itself</div></div>`;
     const b = $('thBody'); b.scrollTop = b.scrollHeight;
     const ta = $('cmpText'); grow(ta);
   }
-  function grow(ta){ ta.style.height = 'auto'; ta.style.height = Math.min(180, ta.scrollHeight + 2) + 'px'; }
+  function grow(ta){ ta.style.height = 'auto'; ta.style.height = Math.max(72, Math.min(200, ta.scrollHeight + 2)) + 'px'; }
   const save = (c, data)=> db.collection('linkedinDmLogs').doc(c.id).update(Object.assign({updatedAt: FV.serverTimestamp()}, data)).catch((e)=>{ console.error(e); toast('Couldn’t save. Check your connection.', true); });
   function summary(msgs){ const s = msgs.slice().sort((a, b)=> String(a.at).localeCompare(String(b.at))), l = s[s.length - 1]; return {lastAt: l ? l.at : '', lastText: l ? l.text.slice(0, 140) : '', lastFrom: l ? l.from : ''}; }
   // a lead from your boards: the first message marks it as contacted, the first reply as replied
@@ -280,7 +307,7 @@
     if(e.target.closest('#backBtn')){ openId = null; renderList(); renderThread(); return; }
     const f = e.target.closest('[data-from]'); if(f){ from = f.dataset.from; const c = cur(); renderThread(true); const ta = $('cmpText'); if(ta) ta.focus(); return; }
     if(e.target.closest('#logBtn')){ logMessage(); return; }
-    if(e.target.closest('#newBtn')){ openProspectDialog(null); return; }
+    if(e.target.closest('#newBtn') || e.target.closest('#newBtn2')){ openProspectDialog(null); return; }
     if(e.target.closest('#editP')){ openProspectDialog(cur()); return; }
     if(e.target.closest('#delC')){ const c = cur(); if(!c) return; if(!confirm(`Delete your conversation with ${c.prospect.name}? This can’t be undone.`)) return;
       db.collection('linkedinDmLogs').doc(c.id).delete().then(()=>{ openId = null; toast('Conversation deleted.'); }).catch(()=> toast('Couldn’t delete.', true)); return; }
