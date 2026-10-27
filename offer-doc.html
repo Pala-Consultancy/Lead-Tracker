@@ -567,6 +567,25 @@
   .od-rec:disabled{opacity:.5;cursor:default;}
   #inRecT{font-variant-numeric:tabular-nums;font-weight:700;color:#E5484D;}
   .od-rec-tip{display:block;margin:8px 0 0 !important;font-size:12px !important;color:var(--slate-light) !important;}
+
+  /* invitation only: the lock screen */
+  .od-lock{max-width:560px;margin:48px auto;padding:44px 36px;text-align:center;border-radius:24px;background:var(--panel);border:1px solid var(--border-soft);box-shadow:0 24px 60px -34px rgba(55,48,179,.55);}
+  .od-lock-ic{width:68px;height:68px;margin:0 auto 18px;border-radius:20px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#2D2A8C,#5B4BE6);box-shadow:0 14px 30px -12px rgba(55,48,179,.8);}
+  .od-lock-ic svg{width:30px;height:30px;}
+  .od-lock-eye{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#5B4BE6;}
+  .od-lock h2{margin:8px 0 12px;font:800 26px Sora,sans-serif;letter-spacing:-.02em;}
+  .od-lock p{margin:0 auto;max-width:430px;font-size:15.5px;line-height:1.65;color:var(--slate);} .od-lock p b{color:var(--ink);}
+  .od-lock-btn{margin-top:24px;display:inline-flex;text-decoration:none !important;}
+  .od-lock small{display:block;margin-top:14px;font-size:13px;color:var(--slate);} .od-lock small a{color:#3730B3;font-weight:600;}
+  html.od-is-locked #odNew,html.od-is-locked #odTrashBtn,html.od-is-locked #odLessonsBtn,html.od-is-locked #odAccessBtn,html.od-is-locked .od-share{display:none !important;}
+  /* the access panel: a switch per account */
+  .od-ac-count{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);margin:2px 2px 8px;}
+  .od-ac-i.off b{color:var(--slate);}
+  .od-ac-t{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--slate);cursor:pointer;white-space:nowrap;}
+  .od-ac-t input{position:absolute;opacity:0;pointer-events:none;}
+  .od-ac-t i{position:relative;width:30px;height:18px;border-radius:999px;background:var(--border);transition:background .2s;flex-shrink:0;}
+  .od-ac-t i::after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s;}
+  .od-ac-t input:checked + i{background:#3730B3;} .od-ac-t input:checked + i::after{transform:translateX(12px);} .od-ac-t input:focus-visible + i{box-shadow:0 0 0 3px rgba(55,48,179,.3);}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -1028,9 +1047,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="od-head">
       <h1>📄 Offer Doc – Your unique mechanism explained</h1>
       <div class="od-head-row"><p id="odSub">Your AI writes your offer document with you: upload your template, answer its questions, and get a clear overview of how you help your clients.</p>
-      <div class="od-head-btns"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odAccessBtn">⚙️ AI access</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div></div>
+      <div class="od-head-btns"><button type="button" class="btn hidden" id="odBack">← All offer docs</button><button type="button" class="btn hidden" id="odAccessBtn">⚙️ Clients &amp; AI access</button><button type="button" class="btn hidden" id="odLessonsBtn">🧠 Lessons</button><button type="button" class="btn" id="odTrashBtn">🗑 Trash</button><button type="button" class="btn primary" id="odNew">＋ New offer doc</button></div></div>
     </div>
 
+    <section id="vLocked" class="hidden">
+      <div class="od-lock">
+        <div class="od-lock-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <div class="od-lock-eye">Invitation only</div>
+        <h2>Offer Doc is invitation only</h2>
+        <p>This is for individuals and businesses that are consistently scaling their client acquisition with <b>The PALA Growth Pyramid</b>.</p>
+        <a class="btn primary od-lock-btn" href="mailto:info@pala-consultancy.com?subject=Offer%20Doc">✉️ Message us</a>
+        <small>For info, message us at <a href="mailto:info@pala-consultancy.com">info@pala-consultancy.com</a></small>
+      </div>
+    </section>
     <section id="vHome">
       <div class="card od-share"><div class="od-share-t"><b>🧠 Get the most out of your offer doc <em>anonymous</em></b>
         <small>Let it learn from you and from others, so the AI keeps getting smarter. Only patterns are kept (like “people often ask for a stronger guarantee”), <b>never</b> your text, names, numbers or prices, and never who you are.</small></div>
@@ -1877,17 +1906,24 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('odLessonsBtn').addEventListener('click', openLessons);
   function openAccess(){
     const ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:800;background:rgba(15,22,38,.45);display:flex;align-items:center;justify-content:center;padding:20px';
-    ov.innerHTML = `<div class="card od-ac" role="dialog" aria-modal="true" aria-labelledby="acT"><div class="od-ls-h"><div><h3 id="acT">⚙️ AI access</h3><p>Accounts with the <b>stronger AI model</b> for writing (better documents, higher cost per document).</p></div><button type="button" class="btn sm" data-x>Close</button></div>
-      <div class="od-ac-add"><input id="acEmail" type="email" placeholder="Their account email, e.g. emma@acme.com"><button type="button" class="btn sm primary" id="acAdd">Switch on</button></div>
+    ov.innerHTML = `<div class="card od-ac" role="dialog" aria-modal="true" aria-labelledby="acT"><div class="od-ls-h"><div><h3 id="acT">⚙️ Offer Doc access</h3><p>Offer Doc is <b>invitation only</b>: only your <b>Pala Method clients</b> can use it. Add a client by the email of their PalaTrack account.</p></div><button type="button" class="btn sm" data-x>Close</button></div>
+      <div class="od-ac-add"><input id="acEmail" type="email" placeholder="Their account email, e.g. emma@acme.com"><button type="button" class="btn sm primary" id="acAdd">Add as client</button></div>
       <div class="od-ac-list" id="acList"><div class="od-empty" style="padding:20px"><p>Loading…</p></div></div></div>`;
     document.body.appendChild(ov); const close = ()=> ov.remove(); ov.addEventListener('mousedown', (e)=>{ if(e.target === ov) close(); }); ov.querySelector('[data-x]').addEventListener('click', close);
-    const load = ()=> AI({mode: 'access'}).then((r)=>{ const L = r.accounts || [];
-      $('acList').innerHTML = L.length ? L.map((a)=> `<div class="od-ac-i"><span><b>${esc(a.name || a.email)}</b><small>${esc(a.email)}</small></span><span class="od-ac-on">Stronger AI</span><button type="button" class="btn sm" data-off="${esc(a.email)}">Switch off</button></div>`).join('')
-        : '<div class="od-empty" style="padding:20px"><p>No accounts have the stronger model yet. Everyone uses the standard model.</p></div>'; }).catch((e)=>{ $('acList').innerHTML = `<p style="color:var(--fail)">${esc(aiErr(e))}</p>`; });
-    const set = (email, strong)=> AI({mode: 'accessSet', email, strong}).then(()=>{ toast(strong ? `Stronger AI switched on for ${email}.` : `Switched off for ${email}.`); load(); }).catch((e)=> toast(aiErr(e), true));
-    $('acAdd').addEventListener('click', ()=>{ const e = $('acEmail').value.trim(); if(!/^\S+@\S+\.\S+$/.test(e)){ toast('Enter an email address.', true); return; } set(e, true); $('acEmail').value = ''; });
+    const load = ()=> AI({mode: 'access'}).then((r)=>{ const L = (r.accounts || []).sort((x, y)=> (y.client - x.client) || String(x.name || x.email).localeCompare(String(y.name || y.email)));
+      const clients = L.filter((a)=> a.client).length;
+      $('acList').innerHTML = L.length ? `<div class="od-ac-count">${clients} Pala Method client${clients === 1 ? '' : 's'}</div>` + L.map((a)=> `<div class="od-ac-i${a.client ? '' : ' off'}"><span><b>${esc(a.name || a.email)}</b><small>${esc(a.email)}</small></span>
+          <label class="od-ac-t" title="Can use Offer Doc"><input type="checkbox" data-client="${esc(a.email)}" ${a.client ? 'checked' : ''}><i></i>Pala client</label>
+          <label class="od-ac-t" title="Uses the stronger AI model for writing (higher cost)"><input type="checkbox" data-strong="${esc(a.email)}" ${a.strong ? 'checked' : ''}><i></i>Stronger AI</label></div>`).join('')
+        : '<div class="od-empty" style="padding:20px"><p>No clients yet. Once your client has created their PalaTrack account, add them here with their email.</p></div>'; })
+      .catch((e)=>{ $('acList').innerHTML = `<p style="color:var(--fail)">${esc(aiErr(e))}</p>`; });
+    const set = (email, data, msg)=> AI(Object.assign({mode: 'accessSet', email}, data)).then(()=>{ toast(msg); load(); }).catch((e)=>{ toast(aiErr(e), true); load(); });
+    $('acAdd').addEventListener('click', ()=>{ const e = $('acEmail').value.trim(); if(!/^\S+@\S+\.\S+$/.test(e)){ toast('Enter an email address.', true); return; }
+      set(e, {client: true}, `${e} is now a Pala Method client: Offer Doc is open for them.`); $('acEmail').value = ''; });
     $('acEmail').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') $('acAdd').click(); });
-    $('acList').addEventListener('click', (e)=>{ const b = e.target.closest('[data-off]'); if(b) set(b.dataset.off, false); });
+    $('acList').addEventListener('change', (e)=>{ const c = e.target.closest('[data-client]'), st = e.target.closest('[data-strong]');
+      if(c) set(c.dataset.client, {client: c.checked}, c.checked ? `Offer Doc is open for ${c.dataset.client}.` : `Offer Doc is locked again for ${c.dataset.client}.`);
+      if(st) set(st.dataset.strong, {strong: st.checked}, st.checked ? `Stronger AI on for ${st.dataset.strong}.` : `Stronger AI off for ${st.dataset.strong}.`); });
     load();
   }
   $('odAccessBtn').addEventListener('click', openAccess);
@@ -1968,8 +2004,17 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       docs = s.docs.map((d)=> Object.assign({id: d.id}, d.data())); if(!D) renderHome(); if(!$('vTrash').classList.contains('hidden')) renderTrash();
       if(!purged){ purged = true; docs.filter((d)=> d.deleted && d.deletedAt && d.deletedAt.toMillis && Date.now() - d.deletedAt.toMillis() > 30 * 864e5).forEach((d)=> deleteForever(d).catch(()=>{})); }   // after 30 days: gone for good
     }, (e)=> console.error(e));
-    $('pageLoader').style.display = 'none'; $('appRoot').style.display = 'flex'; renderHome(); show('vHome');
+    $('pageLoader').style.display = 'none'; $('appRoot').style.display = 'flex';
+    // invitation only: the admin and the accounts marked as a Pala Method client (the server checks this too)
+    let access = {allowed: true}; try { access = await AI({mode: 'me'}); } catch(e){ access = {allowed: !/invitation only/i.test(String(e && e.message))}; }
+    if(!access.allowed){ lockOfferDoc(); return; }
+    renderHome(); show('vHome');
   });
+  function lockOfferDoc(){
+    document.documentElement.classList.add('od-is-locked');
+    ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=>{ const el = $(x); if(el) el.classList.add('hidden'); });
+    $('vLocked').classList.remove('hidden');
+  }
 })();
 </script>
 </body>
