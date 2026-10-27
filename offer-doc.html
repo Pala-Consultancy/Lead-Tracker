@@ -1060,7 +1060,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <small>For info, message us at <a href="mailto:info@pala-consultancy.com">info@pala-consultancy.com</a></small>
       </div>
     </section>
-    <section id="vHome">
+    <section id="vHome" class="hidden">
       <div class="card od-share"><div class="od-share-t"><b>🧠 Get the most out of your offer doc <em>anonymous</em></b>
         <small>Let it learn from you and from others, so the AI keeps getting smarter. Only patterns are kept (like “people often ask for a stronger guarantee”), <b>never</b> your text, names, numbers or prices, and never who you are.</small></div>
         <label class="od-switch"><input type="checkbox" id="odShare"><i></i></label></div>
@@ -1142,7 +1142,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(Object.assign({language: langName(data.language || langOf()), who: myName}, D && D.voice ? {voice: D.voice} : {}, data)).then((r)=> r.data);
   const aiErr = (e)=> (e && e.message) || 'The AI couldn’t answer right now. Please try again.';
   const ADMIN_EMAILS = ['gabriele.oizaz@pala-consultancy.com'];       // who sees “🧠 Lessons” (the server checks it too)
-  let amAdmin = false;
+  let amAdmin = false, accessKnown = '';
   const BRAND = 'PalaTrack';                                     // shown on the covers next to the person's name
   let me = null, myName = '', myCompany = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
@@ -2001,17 +2001,21 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     } catch(e){ toast('Could not load your workspace.', true); return; }
     let purged = false;
     db.collection('offerDocs').where('createdBy', '==', me).where('workspaceId', '==', wsId).onSnapshot((s)=>{
-      docs = s.docs.map((d)=> Object.assign({id: d.id}, d.data())); if(!D) renderHome(); if(!$('vTrash').classList.contains('hidden')) renderTrash();
+      docs = s.docs.map((d)=> Object.assign({id: d.id}, d.data())); if(!D && accessKnown === 'yes') renderHome(); if(!$('vTrash').classList.contains('hidden')) renderTrash();
       if(!purged){ purged = true; docs.filter((d)=> d.deleted && d.deletedAt && d.deletedAt.toMillis && Date.now() - d.deletedAt.toMillis() > 30 * 864e5).forEach((d)=> deleteForever(d).catch(()=>{})); }   // after 30 days: gone for good
     }, (e)=> console.error(e));
-    $('pageLoader').style.display = 'none'; $('appRoot').style.display = 'flex';
-    // invitation only: the admin and the accounts marked as a Pala Method client (the server checks this too)
+    // invitation only: the admin and the accounts marked as a Pala Method client (the server checks this too).
+    // Nothing shows until we know: the loading screen stays, then either Offer Doc or the lock appears.
+    const AKEY = 'ptOdAccess:' + me; let known = null; try { known = sessionStorage.getItem(AKEY); } catch(e){ /* ignore */ }
+    const reveal = (ok)=>{ accessKnown = ok ? 'yes' : 'no'; $('pageLoader').style.display = 'none'; $('appRoot').style.display = 'flex';
+      if(ok){ document.documentElement.classList.remove('od-is-locked'); $('vLocked').classList.add('hidden'); renderHome(); show('vHome'); } else lockOfferDoc(); };
+    if(known === 'yes' || known === 'no') reveal(known === 'yes');        // this session already knows: the right screen straight away
     let access = {allowed: true}; try { access = await AI({mode: 'me'}); } catch(e){ access = {allowed: !/invitation only/i.test(String(e && e.message))}; }
-    if(!access.allowed){ lockOfferDoc(); return; }
-    renderHome(); show('vHome');
+    try { sessionStorage.setItem(AKEY, access.allowed ? 'yes' : 'no'); } catch(e){ /* ignore */ }
+    if(accessKnown !== (access.allowed ? 'yes' : 'no')) reveal(!!access.allowed);
   });
   function lockOfferDoc(){
-    document.documentElement.classList.add('od-is-locked');
+    accessKnown = 'no'; document.documentElement.classList.add('od-is-locked');
     ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=>{ const el = $(x); if(el) el.classList.add('hidden'); });
     $('vLocked').classList.remove('hidden');
   }
