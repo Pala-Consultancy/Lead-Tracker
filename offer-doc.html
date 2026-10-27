@@ -586,6 +586,10 @@
   .od-ac-t i{position:relative;width:30px;height:18px;border-radius:999px;background:var(--border);transition:background .2s;flex-shrink:0;}
   .od-ac-t i::after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s;}
   .od-ac-t input:checked + i{background:#3730B3;} .od-ac-t input:checked + i::after{transform:translateX(12px);} .od-ac-t input:focus-visible + i{box-shadow:0 0 0 3px rgba(55,48,179,.3);}
+
+  .od-owner{margin-top:26px;padding:16px 18px;border-radius:16px;text-align:left;background:#F4F2FF;border:1px solid #DCD6FB;}
+  .od-owner b{font-size:14.5px;} .od-owner p{margin:6px 0 12px !important;max-width:none !important;font-size:13.5px !important;}
+  .od-owner-b{display:flex;gap:8px;flex-wrap:wrap;}
 </style>
 
 <!-- pt-dark-theme:start -->
@@ -1058,6 +1062,11 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <p>This is for individuals and businesses that are consistently scaling their client acquisition with <b>The PALA Growth Pyramid</b>.</p>
         <a class="btn primary od-lock-btn" href="mailto:info@pala-consultancy.com?subject=Offer%20Doc">✉️ Message us</a>
         <small>For info, message us at <a href="mailto:info@pala-consultancy.com">info@pala-consultancy.com</a></small>
+        <div class="od-owner hidden" id="odOwner">
+          <b>👋 You’re the owner of PalaTrack</b>
+          <p>For security, Offer Doc only recognises you once your email address <span id="odOwnerEmail"></span> is verified. Send yourself a verification email, click the link in it, then come back here.</p>
+          <div class="od-owner-b"><button type="button" class="btn primary sm" id="odVerifySend">📧 Send verification email</button><button type="button" class="btn sm" id="odVerifyDone">I’ve verified it</button></div>
+        </div>
       </div>
     </section>
     <section id="vHome" class="hidden">
@@ -1142,7 +1151,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const AI = (data)=> firebase.functions().httpsCallable('offerDocAI', {timeout: 300000})(Object.assign({language: langName(data.language || langOf()), who: myName}, D && D.voice ? {voice: D.voice} : {}, data)).then((r)=> r.data);
   const aiErr = (e)=> (e && e.message) || 'The AI couldn’t answer right now. Please try again.';
   const ADMIN_EMAILS = ['gabriele.oizaz@pala-consultancy.com'];       // who sees “🧠 Lessons” (the server checks it too)
-  let amAdmin = false, accessKnown = '';
+  let amAdmin = false, accessKnown = '', authUser = null;
   const BRAND = 'PalaTrack';                                     // shown on the covers next to the person's name
   let me = null, myName = '', myCompany = '', wsId = null, docs = [], D = null, cur = {s: 0, q: 0};
 
@@ -1927,6 +1936,19 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     load();
   }
   $('odAccessBtn').addEventListener('click', openAccess);
+  // the owner verifies their email, then Offer Doc and the admin buttons open
+  $('odVerifySend').addEventListener('click', async (e)=>{ const b = e.currentTarget; b.disabled = true;
+    try { await (firebase.auth().currentUser || authUser).sendEmailVerification(); toast('Sent! Check your inbox (and your spam folder), and click the link.'); }
+    catch(err){ toast(err && err.code === 'auth/too-many-requests' ? 'An email was sent a moment ago. Check your inbox, or try again in a few minutes.' : 'Couldn’t send the email. Try again in a moment.', true); }
+    finally { b.disabled = false; } });
+  $('odVerifyDone').addEventListener('click', async (e)=>{ const b = e.currentTarget; b.disabled = true;
+    try { const cu = firebase.auth().currentUser || authUser; await cu.reload();
+      const fresh = firebase.auth().currentUser || cu;
+      if(!fresh.emailVerified){ toast('Not verified yet: click the link in the email first.', true); return; }
+      await fresh.getIdToken(true);                 // a fresh sign-in token that says the email is verified
+      try { sessionStorage.removeItem('ptOdAccess:' + me); } catch(err){ /* ignore */ }
+      location.reload();
+    } catch(err){ toast('Couldn’t check. Try again in a moment.', true); } finally { b.disabled = false; } });
   $('odUsePala').addEventListener('click', ()=>{ scanSnd.prime(); fs.enter(); startFrom(PALA_TEMPLATE, 'PALA template'); });
   const drop = $('odDrop');
   drop.addEventListener('click', ()=>{ scanSnd.prime(); $('odFile').click(); }); drop.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('odFile').click(); } });
@@ -1991,7 +2013,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   try { Promise.resolve(firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)).catch(()=>{}); } catch(e){}
   firebase.auth().onAuthStateChanged(async (u)=>{
     if(!u){ location.href = 'home.html'; return; }
-    me = u.uid; amAdmin = ADMIN_EMAILS.includes(String(u.email || '').toLowerCase());
+    me = u.uid; authUser = u; amAdmin = ADMIN_EMAILS.includes(String(u.email || '').toLowerCase());
     db.doc(`offerDocPrefs/${me}`).get().then((d)=>{ $('odShare').checked = !!(d.exists && d.data().share === true); }).catch(()=>{});
     try { const dir = await db.doc(`userDirectory/${me}`).get(); wsId = dir.exists ? dir.data().workspaceId : null;
       if(!wsId){ location.href = 'home.html'; return; }
@@ -2017,6 +2039,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   });
   function lockOfferDoc(){
     accessKnown = 'no'; document.documentElement.classList.add('od-is-locked');
+    const cu = firebase.auth().currentUser || authUser;
+    if(amAdmin && cu && !cu.emailVerified){ $('odOwner').classList.remove('hidden'); $('odOwnerEmail').textContent = '(' + cu.email + ')'; }
     ['vHome', 'vSetup', 'vInterview', 'vReady', 'vDoc', 'vTrash'].forEach((x)=>{ const el = $(x); if(el) el.classList.add('hidden'); });
     $('vLocked').classList.remove('hidden');
   }
