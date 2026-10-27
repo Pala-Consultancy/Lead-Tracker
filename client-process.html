@@ -598,7 +598,7 @@
 
   /* "Before our call" / "After our call" */
   .phase{--pc:#2563EB;display:flex;align-items:center;gap:14px;margin:30px 0 12px;padding:16px 18px;border-radius:16px;border:1.5px solid color-mix(in srgb,var(--pc) 30%,transparent);
-    background:linear-gradient(120deg,color-mix(in srgb,var(--pc) 12%,var(--card,#fff)),color-mix(in srgb,var(--pc) 4%,var(--card,#fff)));box-shadow:0 10px 24px -18px var(--pc);}
+    background:linear-gradient(120deg,color-mix(in srgb,var(--pc) 14%,var(--surface,#fff)),color-mix(in srgb,var(--pc) 5%,var(--surface,#fff)));box-shadow:0 10px 24px -18px var(--pc);}
   .phase.after{--pc:#7A5AF0;} .phase.after.open{--pc:#1E9E74;}
   .step.in-before::after,.step.in-after::after{content:"";position:absolute;left:-1px;top:18px;bottom:18px;width:4px;border-radius:0 4px 4px 0;pointer-events:none;}
   .step.in-before::after{background:rgba(37,99,235,.6);} .step.in-after::after{background:rgba(122,90,240,.6);} .step.in-after.open-after::after{background:rgba(30,158,116,.6);}
@@ -752,6 +752,10 @@
   #welcome.portal .wc-hi{transform:translateY(-62%) scale(.96);opacity:0;transition:opacity .35s ease,transform .5s ease;}
   .wc-fly{position:fixed;z-index:2001;margin:0;transform-origin:0 0;transition:transform 1.05s cubic-bezier(.5,0,.2,1),border-radius 1.05s ease,opacity .4s ease;pointer-events:none;}
   @media (prefers-reduced-motion: reduce){ #welcome.portal{transition:opacity .3s;clip-path:none;} }
+
+  /* a square logo on a button fills the whole tile (a wide one stays fully visible) */
+  .cta-ic.logo.fill{background:transparent;border-color:transparent;} .cta-ic.logo.fill img{padding:0;object-fit:cover;}
+  .cta.locked .cta-ic.logo.fill{background:transparent;}
 </style>
 </head>
 <body>
@@ -1113,7 +1117,7 @@
   });
   function ctaHTML(b) {
     // locked until the other steps are done (the server doesn't even send the link yet)
-    const logo = b.logo && /^https:\/\/firebasestorage\.googleapis\.com\//.test(b.logo) ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : '';
+    const logo = b.logo && /^https:\/\/firebasestorage\.googleapis\.com\//.test(b.logo) ? `<img src="${esc(b.logo)}" alt="" loading="lazy" onload="if(this.naturalWidth/this.naturalHeight<1.35)this.parentNode.classList.add('fill')">` : '';
     if (b.locked) return `<div class="cta locked" aria-disabled="true"><span class="cta-ic${logo ? ' logo' : ''}">${logo ? logo + `<i class="cta-lock">${ic('lock', 'sm')}</i>` : ic('lock')}</span>
       <span class="cta-tx"><b>${esc(b.label || 'Book your call')}</b><small>Unlocks when you’ve finished the other step${b.left === 1 ? '' : 's'}</small></span>
       <span class="cta-go">${ic('lock', 'sm')}${b.left} step${b.left === 1 ? '' : 's'} to go</span></div>`;
