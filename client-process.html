@@ -745,6 +745,13 @@
   .wc-open:hover{transform:translateY(-2px) scale(1.02);}
   .wc-gate small{font-size:12.5px;color:rgba(255,255,255,.55);}
   .wc-demo{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:4;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);font-size:12px;font-weight:700;letter-spacing:.04em;}
+
+  /* the exit: a portal into your logo, the logo flying to the header, the page appearing in layers */
+  #welcome{clip-path:circle(var(--pr,150vmax) at var(--px,50%) var(--py,50%));}
+  #welcome.portal{clip-path:circle(0px at var(--px,50%) var(--py,50%));transition:clip-path 1.05s cubic-bezier(.45,0,.2,1) .05s,opacity .35s ease .85s;opacity:0;}
+  #welcome.portal .wc-hi{transform:translateY(-62%) scale(.96);opacity:0;transition:opacity .35s ease,transform .5s ease;}
+  .wc-fly{position:fixed;z-index:2001;margin:0;transform-origin:0 0;transition:transform 1.05s cubic-bezier(.5,0,.2,1),border-radius 1.05s ease,opacity .4s ease;pointer-events:none;}
+  @media (prefers-reduced-motion: reduce){ #welcome.portal{transition:opacity .3s;clip-path:none;} }
 </style>
 </head>
 <body>
@@ -1626,14 +1633,40 @@
       ov.classList.add('named'); wcSound('named');
       confetti(ov.querySelector('.wc-fx'));
       render();
-      setTimeout(() => { ov.classList.add('leave'); document.documentElement.classList.remove('wc-lock'); wcSound('leave'); }, 1900);
+      setTimeout(() => wcLeave(ov), 1900);
       setTimeout(() => { ov.remove(); const h = $('hello'); if (h) { h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop'); }
-        if (demo) setTimeout(() => { name = before; render(); toast('That was a preview: nothing was saved.'); }, 2600); }, 2700);
+        if (demo) setTimeout(() => { name = before; render(); toast('That was a preview: nothing was saved.'); }, 2600); }, 3150);
     });
   }
   // the welcome's sound: cinematic and calm (a riser, a deep impact with a wide chord, one warm swell, a brand
   // sting after the name, a whoosh at the end), all in a soft reverb. Made in the browser; follows the sound switch.
   let wcRev = null;
+  // the exit: the scene closes like a portal into your logo in the header, the logo flies to its place,
+  // and the page appears behind it in layers
+  function wcLeave(ov) {
+    wcSound('leave');
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches, target = $('brand'), logo = ov.querySelector('.wc-logo');
+    const tr = target && target.getBoundingClientRect(), lr = logo && logo.getBoundingClientRect();
+    document.documentElement.classList.remove('wc-lock');
+    if (calm || !tr || !tr.width || !lr) { ov.classList.add('leave'); return; }
+    // the page comes in behind it, layer by layer: the header, the welcome block, the letter, the steps
+    [['.bar', 120], ['.hero', 300], ['.letter', 470], ['.steps-wrap', 620]].forEach(([sel, delay]) => { const el = document.querySelector(sel); if (el && el.animate)
+      el.animate([{opacity: 0, transform: 'translateY(28px) scale(.985)', filter: 'blur(8px)'}, {opacity: 1, transform: 'none', filter: 'none'}], {duration: 900, delay, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards'}); });
+    const tx = tr.left + Math.min(tr.height, tr.width) / 2, ty = tr.top + tr.height / 2;
+    const R = Math.hypot(Math.max(tx, innerWidth - tx), Math.max(ty, innerHeight - ty)) + 20;     // just big enough to cover the screen: it shrinks visibly right away
+    ov.style.setProperty('--px', tx + 'px'); ov.style.setProperty('--py', ty + 'px'); ov.style.setProperty('--pr', R + 'px');
+    // the logo flies to the header
+    const fly = logo.cloneNode(true); fly.classList.add('wc-fly');
+    Object.assign(fly.style, {left: lr.left + 'px', top: lr.top + 'px', width: lr.width + 'px', height: lr.height + 'px'});
+    document.body.appendChild(fly); logo.style.visibility = 'hidden';
+    const size = Math.min(tr.height, 44), s = size / lr.width;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fly.style.transform = `translate(${tx - size / 2 - lr.left}px, ${ty - size / 2 - lr.top}px) scale(${s})`; fly.style.borderRadius = '40px';
+      ov.classList.add('portal');
+    }));
+    setTimeout(() => { fly.style.opacity = '0'; }, 1000);
+    setTimeout(() => fly.remove(), 1450);
+  }
   function wcSound(stage) {
     if (!soundOn) return; const a = audio(); if (!a) return; const t = a.currentTime + 0.03;
     const master = a.createGain(), comp = a.createDynamicsCompressor(); master.gain.value = 0.62;
