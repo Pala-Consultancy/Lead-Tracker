@@ -2009,9 +2009,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const AKEY = 'ptOdAccess:' + me; let known = null; try { known = sessionStorage.getItem(AKEY); } catch(e){ /* ignore */ }
     const reveal = (ok)=>{ accessKnown = ok ? 'yes' : 'no'; $('pageLoader').style.display = 'none'; $('appRoot').style.display = 'flex';
       if(ok){ document.documentElement.classList.remove('od-is-locked'); $('vLocked').classList.add('hidden'); renderHome(); show('vHome'); } else lockOfferDoc(); };
-    if(known === 'yes' || known === 'no') reveal(known === 'yes');        // this session already knows: the right screen straight away
-    let access = {allowed: true}; try { access = await AI({mode: 'me'}); } catch(e){ access = {allowed: !/invitation only/i.test(String(e && e.message))}; }
-    try { sessionStorage.setItem(AKEY, access.allowed ? 'yes' : 'no'); } catch(e){ /* ignore */ }
+    if(known === 'no') reveal(false);                                    // the lock straight away; access itself always waits for the server
+    let access, ok = false;
+    try { access = await AI({mode: 'me'}); ok = true; } catch(e){ access = {allowed: amAdmin}; }     // the check failed: locked (except for you, the admin)
+    if(ok) { try { sessionStorage.setItem(AKEY, access.allowed ? 'yes' : 'no'); } catch(e){ /* ignore */ } }
     if(accessKnown !== (access.allowed ? 'yes' : 'no')) reveal(!!access.allowed);
   });
   function lockOfferDoc(){
