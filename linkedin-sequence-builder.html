@@ -200,6 +200,8 @@
   .fu-menu label{display:block;margin-top:8px;font-size:12px;font-weight:600;color:var(--slate);} .fu-menu label span{font-weight:400;}
   .fu-menu input{display:block;width:100%;margin-top:4px;height:34px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font:inherit;font-size:13.5px;background:var(--panel-alt);color:var(--ink);}
   .fu-b{display:flex;justify-content:flex-end;gap:6px;margin-top:12px;}
+  .cmp-now{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--li-line);background:var(--li-bg);color:var(--li-blue);font:600 12px inherit;}
+  .cmp-now:hover{background:var(--li-hover);}
 </style>
 </head>
 <body>
@@ -242,6 +244,8 @@
   // at (ISO time)}], lastAt, lastText, createdAt, updatedAt}. Only you see your own conversations.
   // ---------------------------------------------------------------------------
   let me = null, wsId = null, myName = '', myPhoto = '', convs = [], openId = null, from = 'me', q = '', view = 'all';
+  let atManual = false;                                                     // the time follows the clock until you change it yourself
+  setInterval(()=>{ const n = document.getElementById('cmpAt'); if(n && !atManual && document.activeElement !== n){ const v = localInput(new Date()); if(n.value !== v) n.value = v; } }, 1000);
   // a follow-up: {due: 'YYYY-MM-DD', note} on the conversation, until you mark it done
   const todayStr = ()=> { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
   const addDays = (n)=> { const d = new Date(); d.setDate(d.getDate() + n); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
@@ -300,6 +304,8 @@
     });
     if(last) html += '</div></div>';
     const keep = keepComposer && box.querySelector('#cmpText') ? box.querySelector('#cmpText').value : '';
+    const keepAt = keepComposer && box.querySelector('#cmpAt') ? box.querySelector('#cmpAt').value : '';
+    if(!keepComposer) atManual = false;
     const nameHTML = p.linkedinUrl ? `<a href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name);
     box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
         <div class="meta"><b>${nameHTML}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
@@ -312,7 +318,7 @@
         ${html || `<div class="dm-empty" style="padding:28px 10px">Log your conversation with ${esc(first(p.name))}: your messages and ${esc(first(p.name))}’s replies, in order.</div>`}</div>
       <div class="cmp"><div class="cmp-row"><textarea id="cmpText" rows="3" placeholder="${from === 'me' ? 'Write a message…' : 'Write ' + esc(first(p.name)) + '’s reply…'}" aria-label="Message">${esc(keep)}</textarea></div>
         <div class="cmp-bar"><div class="cmp-who"><span class="seg" role="radiogroup" aria-label="Who sent this message"><button type="button" data-from="me" class="${from === 'me' ? 'on' : ''}" role="radio" aria-checked="${from === 'me'}">${meAv()}Me</button><button type="button" data-from="them" class="${from === 'them' ? 'on' : ''}" role="radio" aria-checked="${from === 'them'}">${avatar(p.name, p.photo)}${esc(first(p.name))}</button></span></div>
-          <label class="cmp-when"><input type="datetime-local" id="cmpAt" value="${localInput(new Date())}" aria-label="When it was sent"></label>
+          <label class="cmp-when"><input type="datetime-local" id="cmpAt" value="${keepAt && atManual ? esc(keepAt) : localInput(new Date())}" aria-label="When it was sent"><button type="button" class="cmp-now${atManual ? '' : ' hidden'}" id="cmpNow" title="Back to the current time">↺ Now</button></label>
           <button type="button" class="cmp-send" id="logBtn">Log</button></div>
         <div class="cmp-hint">Press Enter to log · Shift+Enter for a new line · choose who sent each message with Me / ${esc(first(p.name))}</div></div>`;
     const b = $('thBody'); b.scrollTop = b.scrollHeight;
@@ -330,13 +336,13 @@
   }
   function logMessage(){
     const c = cur(), ta = $('cmpText'); if(!c || !ta) return; const text = ta.value.trim(); if(!text){ ta.focus(); return; }
-    const atIn = $('cmpAt').value, at = atIn ? new Date(atIn) : new Date();
+    const atIn = $('cmpAt').value, at = atManual && atIn ? new Date(atIn) : new Date();
     const msgs = (c.messages || []).slice(); touchLead(c, from);
     msgs.push({id: uid(), from, text: text.slice(0, 8000), at: (isNaN(at) ? new Date() : at).toISOString()});
     c.messages = msgs; Object.assign(c, summary(msgs)); save(c, Object.assign({messages: msgs}, summary(msgs)));
-    ta.value = ''; renderThread(false); renderList();
+    ta.value = ''; atManual = false; renderThread(false); renderList();
     const nt = $('cmpText'); if(nt) nt.focus();
-    const n = $('cmpAt'); if(n){ const nx = new Date(Math.max(Date.now(), at.getTime() + 60000)); n.value = localInput(nx > new Date() ? new Date() : nx); }
+
   }
   // ---------- clicks ----------
   document.addEventListener('click', (e)=>{
@@ -344,6 +350,7 @@
     if(e.target.closest('#backBtn')){ openId = null; renderList(); renderThread(); return; }
     const f = e.target.closest('[data-from]'); if(f){ from = f.dataset.from; const c = cur(); renderThread(true); const ta = $('cmpText'); if(ta) ta.focus(); return; }
     if(e.target.closest('#logBtn')){ logMessage(); return; }
+    if(e.target.closest('#cmpNow')){ e.preventDefault(); atManual = false; $('cmpAt').value = localInput(new Date()); $('cmpNow').classList.add('hidden'); return; }
     if(e.target.closest('#newBtn') || e.target.closest('#newBtn2')){ openProspectDialog(null); return; }
     if(e.target.closest('#editP')){ openProspectDialog(cur()); return; }
     const tv = e.target.closest('[data-view]'); if(tv){ view = tv.dataset.view; renderList(); return; }
@@ -362,7 +369,9 @@
     if(e.target.closest('[data-ecancel]')){ renderThread(true); }
   });
   document.addEventListener('keydown', (e)=>{ if(e.target && e.target.id === 'cmpText' && e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); logMessage(); } });
-  document.addEventListener('input', (e)=>{ if(e.target && e.target.id === 'cmpText') grow(e.target); if(e.target && e.target.id === 'search'){ q = e.target.value.trim().toLowerCase(); renderList(); } });
+  document.addEventListener('change', (e)=>{ if(e.target && e.target.id === 'cmpAt'){ atManual = true; const b = $('cmpNow'); if(b) b.classList.remove('hidden'); } });
+  document.addEventListener('input', (e)=>{ if(e.target && e.target.id === 'cmpAt'){ atManual = true; const b = $('cmpNow'); if(b) b.classList.remove('hidden'); }
+    if(e.target && e.target.id === 'cmpText') grow(e.target); if(e.target && e.target.id === 'search'){ q = e.target.value.trim().toLowerCase(); renderList(); } });
 
   // ---------- follow-ups: pick when ----------
   function openFollowUp(anchor){
