@@ -47,7 +47,7 @@
       link('navCampaigns', 'campaigns.html' + q, 'Email campaigns') +
       link('navScheduled', 'scheduled-emails.html' + q, 'Scheduled') +
       '<div class="seq-sidebar-label">LinkedIn</div>' +
-      link('navLinkedinSeq', 'linkedin-sequence-builder.html' + q, 'LinkedIn Sequences') +
+      link('navLinkedinSeq', 'linkedin-sequence-builder.html' + q, 'LinkedIn DM log') +
       link('navLinkedinPost', 'linkedin-post-composer.html' + q, 'LinkedIn Post') +
       '<div class="seq-sidebar-label">Clients</div>' +
       link('navClients', 'client-processes.html', 'Client processes') +
