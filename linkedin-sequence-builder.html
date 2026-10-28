@@ -344,7 +344,11 @@
   // Reads a conversation copied from LinkedIn Messaging into [{name, at (Date), text, quote: {name, text} | null}]
   function parseLinkedInPaste(raw, now) {
     now = now || new Date();
-    const lines = String(raw || '').replace(/\r/g, '').split('\n').map((l) => l.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '').replace(/[\u00a0\u2007\u202F]/g, ' ').replace(/\s+$/, ''));
+    let firstUrl = '';
+    const lines = String(raw || '').replace(/\r/g, '')
+      .replace(/\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g, (m, t, u) => { if (!firstUrl && /linkedin\.com\/(feed|posts)\//.test(u)) firstUrl = u; return t; })
+      .replace(/^\s*[*\-]\s*$/gm, '').replace(/^\s*[*\-]\s+(?=\S)/gm, '')
+      .replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Today|Yesterday)(?=\S[^\n]* sent the following messages? at )/gim, '$1\n').split('\n').map((l) => l.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '').replace(/[\u00a0\u2007\u202F]/g, ' ').replace(/\s+$/, ''));
     const WD = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const HEAD = /^(.+?) sent the following messages? at (\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\b.*$/;
     const STAMP = /^(.+?)\s{2,}(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/;
@@ -421,22 +425,24 @@
       if (d && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim()))) { setDay(d); continue; }
       const h = t.match(HEAD); if (h) { flush(); who = h[1].trim(); names.add(who); at = withTime(baseDay(h[2]), h[2]); continue; }
       if (VIEW.test(t)) { flush(); continue; }
-      const pv = t.match(POSTVIEW);
-      if (pv) {                                                        // read the whole post into one card
-        const post = {author: pv[1].trim(), degree: '', headline: '', age: '', text: '', url: ''}; let j = i + 1;
-        const meta = []; while (j < lines.length && meta.length < 4) { const x = lines[j].trim(); j++; if (!x) continue; meta.push(x); if (AGE.test(x)) break; }
-        meta.forEach((x) => { if (/^•\s*(1st|2nd|3rd\+?)/i.test(x)) post.degree = x.replace(/^•\s*/, ''); else if (AGE.test(x)) post.age = x.replace(/\s*•.*$/, '').trim(); else if (x !== post.author && !post.headline) post.headline = x; });
+      const pv = t.match(POSTVIEW), pc = !pv && who && t.match(/^(.{2,60}?)\s*•\s*(1st|2nd|3rd\+?)(.*?)(?:(\d+\s*(?:s|m|h|d|w|mo|yr|y))\s*•\s*(?:Edited\s*•?\s*)?)?$/i);
+      if (pv || pc) {                                                  // read the whole post into one card
+        const post = {author: (pv ? pv[1] : pc[1]).trim(), degree: pc ? pc[2] : '', headline: pc ? pc[3].trim() : '', age: pc && pc[4] ? pc[4].replace(/\s+/g, '') : '', text: '', url: firstUrl || ''}; let j = i + 1;
+        if (pv) { const meta = []; while (j < lines.length && meta.length < 4) { const x = lines[j].trim(); j++; if (!x) continue; meta.push(x); if (AGE.test(x)) break; }
+          meta.forEach((x) => { if (/^•\s*(1st|2nd|3rd\+?)/i.test(x)) post.degree = x.replace(/^•\s*/, ''); else if (AGE.test(x)) post.age = x.replace(/\s*•.*$/, '').trim(); else if (x !== post.author && !post.headline) post.headline = x; }); }
         const body = [];
         for (; j < lines.length; j++) { const x = lines[j].trim();
           if (HEAD.test(x) || VIEW.test(x) || POSTVIEW.test(x) || / sent the following messages? at /i.test(x)) break;
           const st = x.match(STAMP); if (st && names.has(st[1].trim())) break;
           if (dayFrom(x) && j + 1 < lines.length && HEAD.test(lines[j + 1].trim())) break;
-          if (/^(…|\.\.\.)\s*(more|see more)$/i.test(x) || /^Activate to view larger image/i.test(x)) continue;
+          if (/^(…|\.\.\.)\s*(more|see more)$/i.test(x)) { j++; while (j < lines.length && /^Activate to view larger image/i.test(lines[j].trim())) j++; break; }
+          if (/^Activate to view larger image/i.test(x)) { while (j < lines.length && /^Activate to view larger image/i.test(lines[j].trim())) j++; break; }
           body.push(lines[j]); }
         post.text = body.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         posts.push(post); buf.push('\u0000POST:' + (posts.length - 1)); i = j - 1; continue;
       }
-      const s = t.match(STAMP); if (s && (names.has(s[1].trim()) || /^[A-Z]/.test(s[1]))) { flush(); who = s[1].trim(); names.add(who); at = withTime(baseDay(s[2]), s[2]); continue; }
+      const s1 = t.match(/^(.+?)\s+(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/); const s = t.match(STAMP) || (s1 && names.has(s1[1].trim()) ? s1 : null);
+      if (s && (names.has(s[1].trim()) || /^[A-Z]/.test(s[1]))) { flush(); who = s[1].trim(); names.add(who); at = withTime(baseDay(s[2]), s[2]); continue; }
       buf.push(l);
     }
     flush();
