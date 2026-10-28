@@ -221,6 +221,7 @@
   .dlg.wide{max-width:640px;}
   .ps-in{width:100%;min-height:110px;max-height:200px;border:1.5px dashed var(--border);border-radius:12px;padding:12px;font:inherit;font-size:13.5px;background:var(--panel-alt);color:var(--ink);resize:vertical;outline:none;}
   .ps-in:focus{border-color:#0A66C2;border-style:solid;}
+  .ps-note{margin-top:10px;padding:9px 12px;border-radius:10px;background:rgba(10,102,194,.08);color:var(--ink);font-size:12.5px;line-height:1.5;}
   .ps-warn{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(232,140,0,.12);color:#8A5300;font-size:13px;}
   .ps-sum{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:13.5px;}
   .ps-sum select{margin-left:6px;height:30px;border:1px solid var(--border);border-radius:8px;padding:0 6px;font:inherit;font-size:13px;background:var(--panel);color:var(--ink);}
@@ -252,6 +253,18 @@
   .lv-w i{flex:1;border-radius:2px;background:rgba(255,255,255,.55);height:30%;}
   .lv-w i:nth-child(3n){height:70%;} .lv-w i:nth-child(4n+1){height:45%;} .lv-w i:nth-child(5n+2){height:90%;} .lv-w i:nth-child(7n){height:55%;}
   .lv-l{display:block;margin:2px 0 2px;font-size:11.5px;color:var(--li-ink2,#666);}
+
+  /* closed prospects, and the status menu */
+  .fu-tag.closed{background:rgba(212,160,23,.16);color:#8A6A00;} html[data-theme="dark"] .fu-tag.closed{color:#F2C94C;}
+  .bk-btn.won{border-color:#C9A227;background:linear-gradient(135deg,#F6D365,#D4A017);color:#3B2A00;}
+  .st-menu{position:fixed;z-index:850;width:260px;padding:6px;border-radius:10px;background:var(--panel);border:1px solid var(--border);box-shadow:0 4px 18px rgba(0,0,0,.18);font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;}
+  .st-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;background:none;border-radius:8px;text-align:left;color:var(--ink);}
+  .st-menu button:hover{background:var(--panel-alt);} .st-menu button.on{background:rgba(10,102,194,.08);}
+  .st-menu .ic{font-size:18px;width:24px;text-align:center;} .st-menu b{display:block;font-size:13.5px;} .st-menu small{display:block;font-size:12px;color:var(--slate);}
+  .st-menu .ck{margin-left:auto;color:#0A66C2;font-weight:700;}
+  .dm-tabs button{padding:5px 7px;font-size:12.5px;display:inline-flex;align-items:center;gap:3px;}
+  .dm-tabs i{font-style:normal;} .dm-tabs em{font-style:normal;}
+  .dm-tabs.more{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);}
 </style>
 </head>
 <body>
@@ -301,7 +314,7 @@
   const addDays = (n)=> { const d = new Date(); d.setDate(d.getDate() + n); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
   const daysUntil = (due)=> Math.round((new Date(due + 'T00:00:00') - new Date(todayStr() + 'T00:00:00')) / 864e5);
   // waiting for a reply: your message was the last one, and no call is booked yet
-  const isWaiting = (c)=> c.lastFrom === 'me' && !c.booked && (c.messages || []).length > 0;
+  const isWaiting = (c)=> c.lastFrom === 'me' && !c.booked && !c.closed && (c.messages || []).length > 0;
   function waitText(iso){ const h = Math.max(0, (Date.now() - new Date(iso)) / 36e5);
     if(h < 1){ const m = Math.round(h * 60); return m < 2 ? 'just now' : `${m} min`; } if(h < 24) return `${Math.floor(h)} hour${Math.floor(h) === 1 ? '' : 's'}`; const d = Math.floor(h / 24); return `${d} day${d === 1 ? '' : 's'}`; }
   function fuLabel(fu){ if(!fu || !fu.due) return null; const n = daysUntil(fu.due);
@@ -361,6 +374,9 @@
       if (ap === 'p' && h < 12) h += 12; if (ap === 'a' && h === 12) h = 0;
       const d = new Date(day); d.setHours(h, min, 0, 0); return d;
     }
+    let noDay = false;
+    // no day label before the first message: today, or yesterday if that time hasn't happened yet today
+    const baseDay = (t) => { if (day.getFullYear() > 1970) return day; noDay = true; let d = startOfDay(now); if (withTime(d, t) > now) { d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1); } day = d; return d; };
     const out = []; let day = new Date(1970, 0, 1), who = null, at = null, buf = [], names = new Set();
     const flush = () => {
       // drop the reaction bars LinkedIn copies along ("React with", an emoji, a count; or a run of 3+ single-emoji lines)
@@ -402,7 +418,7 @@
       const setDay = (nd)=>{ flush(); while (nd < day) nd = new Date(nd.getFullYear(), nd.getMonth(), nd.getDate() + 7); day = nd; };   // days only move forward
       if (d && !buf.some((x) => x.trim())) { setDay(d); continue; }
       if (d && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim()))) { setDay(d); continue; }
-      const h = t.match(HEAD); if (h) { flush(); who = h[1].trim(); names.add(who); at = withTime(day, h[2]); continue; }
+      const h = t.match(HEAD); if (h) { flush(); who = h[1].trim(); names.add(who); at = withTime(baseDay(h[2]), h[2]); continue; }
       if (VIEW.test(t)) { flush(); continue; }
       const pv = t.match(POSTVIEW);
       if (pv) {                                                        // read the whole post into one card
@@ -419,11 +435,11 @@
         post.text = body.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         posts.push(post); buf.push('\u0000POST:' + (posts.length - 1)); i = j - 1; continue;
       }
-      const s = t.match(STAMP); if (s && (names.has(s[1].trim()) || /^[A-Z]/.test(s[1]))) { flush(); who = s[1].trim(); names.add(who); at = withTime(day, s[2]); continue; }
+      const s = t.match(STAMP); if (s && (names.has(s[1].trim()) || /^[A-Z]/.test(s[1]))) { flush(); who = s[1].trim(); names.add(who); at = withTime(baseDay(s[2]), s[2]); continue; }
       buf.push(l);
     }
     flush();
-    return {messages: out, names: [...names]};
+    return {messages: out, names: [...names], noDay};
   }
   const norm = (n)=> String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
   // a shared post, shown like LinkedIn's post preview
@@ -436,6 +452,11 @@
       ${po.text ? `<div class="lp-tx">${esc(po.text)}</div><button type="button" class="lp-more" data-lpmore>…more</button>` : ''}
       ${po.url ? `<a class="lp-link" href="${esc(po.url)}" target="_blank" rel="noopener">View post on LinkedIn ↗</a>` : ''}</div>`;
   }
+  const isBadDate = (m)=> !m.at || new Date(m.at).getFullYear() < 2000;
+  const textKey = (m)=> m.from + '|' + String(m.text || '').trim().slice(0, 200) + (m.voice ? '|v' + m.voice.duration : '') + (m.post ? '|p' + String(m.post.text || '').slice(0, 40) : '');
+  // which existing messages a paste repairs: same sender and text, but saved with a broken date
+  function repairsFor(existing, msgs){ const bad = new Map(); (existing || []).filter(isBadDate).forEach((m)=> bad.set(textKey(m), m)); const fix = new Map();
+    msgs.forEach((m)=>{ const k = textKey(m), o = bad.get(k); if(o && !fix.has(o.id)){ fix.set(o.id, m.at); bad.delete(k); } }); return fix; }
   const msgKey = (m)=> m.from + '|' + String(m.at).slice(0, 16) + '|' + String(m.text || '').trim().slice(0, 200) + (m.voice ? '|v' + m.voice.duration : '') + (m.post ? '|p' + String(m.post.text || '').slice(0, 40) : '');
   // which of the names in the pasted text is you
   function guessMe(names){ const mn = norm(myName), mf = mn.split(' ')[0];
@@ -448,20 +469,24 @@
   // ---------- the list ----------
   function renderList(){
     const fuCount = convs.filter((c)=> c.followUp && c.followUp.due).length;
-    const waitCount = convs.filter(isWaiting).length, bookCount = convs.filter((c)=> c.booked).length;
-    const tab = (k, label, n)=> `<button type="button" data-view="${k}" class="${view === k ? 'on' : ''}">${label}${n ? ` <span>${n}</span>` : ''}</button>`;
-    const tb = $('listTabs'); if(tb) tb.innerHTML = tab('all', 'All', 0) + tab('wait', 'Waiting', waitCount) + tab('fu', 'Follow-ups', fuCount) + tab('booked', 'Booked', bookCount);
-    const inView = (c)=> view === 'fu' ? !!(c.followUp && c.followUp.due) : view === 'wait' ? isWaiting(c) : view === 'booked' ? !!c.booked : true;
+    const waitCount = convs.filter(isWaiting).length, bookCount = convs.filter((c)=> c.booked && !c.closed).length, closedCount = convs.filter((c)=> c.closed).length;
+    const ICON = {wait: '⏳', fu: '🔔', booked: '📅', closed: '🏆'};
+    const tab = (k, label, n)=> `<button type="button" data-view="${k}" class="${view === k ? 'on' : ''}" title="${label}" aria-label="${label}${n ? ' (' + n + ')' : ''}">${ICON[k] ? `<i>${ICON[k]}</i>` : ''}${!ICON[k] || view === k ? `<em>${label}</em>` : ''}${n ? ` <span>${n}</span>` : ''}</button>`;
+    const tb = $('listTabs'); if(tb) tb.innerHTML = tab('all', 'All', 0) + tab('wait', 'Waiting', waitCount) + tab('fu', 'Follow-up', fuCount) + tab('booked', 'Booked', bookCount) + tab('closed', 'Closed', closedCount);
+    if(tb){ const on = tb.querySelector('.on'); if(on) on.scrollIntoView({block: 'nearest', inline: 'nearest'});
+      tb.classList.toggle('more', tb.scrollWidth > tb.clientWidth + 1 && tb.scrollLeft + tb.clientWidth < tb.scrollWidth - 1); }
+    const inView = (c)=> view === 'fu' ? !!(c.followUp && c.followUp.due) : view === 'wait' ? isWaiting(c) : view === 'booked' ? !!c.booked && !c.closed : view === 'closed' ? !!c.closed : true;
     const list = convs.filter((c)=> inView(c) && (!q || (c.prospect.name + ' ' + (c.prospect.headline || '') + ' ' + (c.lastText || '')).toLowerCase().includes(q)))
       .sort(view === 'fu' ? (a, b)=> String(a.followUp.due).localeCompare(String(b.followUp.due))        // the most urgent first
         : view === 'wait' ? (a, b)=> String(a.lastAt).localeCompare(String(b.lastAt))                      // the longest wait first
         : view === 'booked' ? (a, b)=> String(b.booked.at || '').localeCompare(String(a.booked.at || ''))
+        : view === 'closed' ? (a, b)=> String(b.closed.at || '').localeCompare(String(a.closed.at || ''))
         : (a, b)=> String(b.lastAt || b.created || '').localeCompare(String(a.lastAt || a.created || '')));
     $('items').innerHTML = list.length ? list.map((c)=> `<button type="button" class="dm-item${c.id === openId ? ' on' : ''}" data-open="${esc(c.id)}">${avatar(c.prospect.name, c.prospect.photo)}
         <span class="meta"><span class="row"><b>${esc(c.prospect.name)}</b><time>${esc(shortWhen(c.lastAt))}</time></span>
         <small>${c.lastText ? (c.lastFrom === 'me' ? 'You: ' : '') + esc(c.lastText) : esc(c.prospect.headline || 'No messages yet')}</small>
-        <span class="tags">${c.booked ? '<span class="fu-tag booked">📅 Call booked</span>' : ''}${isWaiting(c) ? `<span class="fu-tag wait">⏳ Waiting · ${esc(waitText(c.lastAt))}</span>` : ''}${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></span></button>`).join('')
-      : `<div class="dm-empty">${view === 'wait' && convs.length ? '<b>Nobody is waiting</b>Every prospect has answered your last message. 🎉' : view === 'booked' && convs.length ? '<b>No booked calls yet</b>Mark a prospect with 📅 Call booked at the top of a conversation.' : view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
+        <span class="tags">${c.closed ? '<span class="fu-tag closed">🏆 Closed</span>' : c.booked ? '<span class="fu-tag booked">📅 Call booked</span>' : ''}${isWaiting(c) ? `<span class="fu-tag wait">⏳ Waiting · ${esc(waitText(c.lastAt))}</span>` : ''}${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></span></button>`).join('')
+      : `<div class="dm-empty">${view === 'wait' && convs.length ? '<b>Nobody is waiting</b>Every prospect has answered your last message. 🎉' : view === 'booked' && convs.length ? '<b>No booked calls yet</b>Mark a prospect as 📅 Call booked with the status button at the top of a conversation.' : view === 'closed' && convs.length ? '<b>No closed prospects yet</b>Mark a prospect as 🏆 Closed with the status button at the top of a conversation.' : view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
   }
   // ---------- the thread ----------
   function renderThread(keepComposer){
@@ -487,7 +512,7 @@
     box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
         <div class="meta"><b>${nameHTML}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
         ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
-        <button type="button" class="bk-btn${c.booked ? ' on' : ''}" id="bkBtn" aria-pressed="${!!c.booked}" title="${c.booked ? 'Click to undo' : 'Mark that they booked a call'}">📅 ${c.booked ? 'Call booked' : 'Booked a call?'}</button>
+        <button type="button" class="bk-btn${c.closed ? ' won' : c.booked ? ' on' : ''}" id="stBtn" aria-haspopup="true" title="Status">${c.closed ? '🏆 Closed' : c.booked ? '📅 Call booked' : 'Status'} ▾</button>
         <button type="button" class="fu-btn${c.followUp && c.followUp.due ? ' on' : ''}" id="fuBtn" aria-haspopup="true">🔔 ${c.followUp && c.followUp.due ? esc(fuLabel(c.followUp).text) : 'Follow up'}</button>
         <button type="button" class="ib" id="pasteBtn" title="Paste messages from LinkedIn" aria-label="Paste messages from LinkedIn">📋</button>
         <button type="button" class="ib" id="editP" title="Edit prospect" aria-label="Edit prospect">✎</button><button type="button" class="ib" id="delC" title="Delete this conversation" aria-label="Delete this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
@@ -536,7 +561,7 @@
     if(e.target.closest('#editP')){ openProspectDialog(cur()); return; }
     const tv = e.target.closest('[data-view]'); if(tv){ view = tv.dataset.view; renderList(); return; }
     if(e.target.closest('#fuBtn')){ openFollowUp(e.target.closest('#fuBtn')); return; }
-    if(e.target.closest('#bkBtn')){ toggleBooked(); return; }
+    if(e.target.closest('#stBtn')){ openStatus(e.target.closest('#stBtn')); return; }
     if(e.target.closest('#pasteBtn')){ openPaste(cur()); return; }
     if(e.target.closest('#fuDone')){ const c = cur(); if(!c) return; c.followUp = null; save(c, {followUp: null}); renderThread(true); renderList(); toast('Follow-up done.'); return; }
     if(e.target.closest('#delC')){ const c = cur(); if(!c) return; if(!confirm(`Delete your conversation with ${c.prospect.name}? This can’t be undone.`)) return;
@@ -553,23 +578,45 @@
   });
   document.addEventListener('keydown', (e)=>{ if(e.target && e.target.id === 'cmpText' && e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); logMessage(); } });
   document.addEventListener('change', (e)=>{ if(e.target && e.target.id === 'cmpAt'){ atManual = true; const b = $('cmpNow'); if(b) b.classList.remove('hidden'); } });
+  document.addEventListener('scroll', (e)=>{ const t = e.target; if(t && t.id === 'listTabs') t.classList.toggle('more', t.scrollLeft + t.clientWidth < t.scrollWidth - 1); }, true);
   document.addEventListener('input', (e)=>{ if(e.target && e.target.id === 'cmpAt'){ atManual = true; const b = $('cmpNow'); if(b) b.classList.remove('hidden'); }
     if(e.target && e.target.id === 'cmpText') grow(e.target); if(e.target && e.target.id === 'search'){ q = e.target.value.trim().toLowerCase(); renderList(); } });
 
-  // ---------- a booked call: marked here, and as "Call booked" on the lead in your board ----------
-  function toggleBooked(){
-    const c = cur(); if(!c) return; const on = !c.booked;
-    c.booked = on ? {at: new Date().toISOString()} : null; save(c, {booked: c.booked});
-    const L = c.prospect.lead;
-    if(L && L.boardId && L.leadId){
-      const ref = db.doc(`workspaces/${wsId}/boards/${L.boardId}/leads/${L.leadId}`);
-      ref.get().then((d)=>{ if(!d.exists) return; const x = d.data();
-        if(on && x.status !== 'Call booked') return ref.update({status: 'Call booked', callBookedAt: FV.serverTimestamp(), contacted: true});
-        if(!on && x.status === 'Call booked') return ref.update({status: 'Contacted', callBookedAt: null});
-      }).then(()=>{}).catch(()=>{});
-    }
+  // ---------- the status: call booked, closed (here, and on the lead in your board) ----------
+  function boardStatus(c, status){                                          // the same changes the board itself makes
+    const L = c.prospect.lead; if(!L || !L.boardId || !L.leadId) return false;
+    const ref = db.doc(`workspaces/${wsId}/boards/${L.boardId}/leads/${L.leadId}`);
+    ref.get().then((d)=>{ if(!d.exists) return; const x = d.data(); if(x.status === status) return;
+      const u = {status, statusChangedAt: FV.serverTimestamp()};
+      if(status === 'Call booked'){ if(!x.callBookedAt) u.callBookedAt = FV.serverTimestamp(); u.contacted = true; }
+      else if(x.status === 'Call booked') u.callBookedAt = null;
+      if(status === 'Won'){ u.showedUp = true; u.contacted = true; u.noShow = false; if(!x.contactedAt) u.contactedAt = FV.serverTimestamp(); if(x.callBookedAt) delete u.callBookedAt; }
+      return ref.update(u);
+    }).catch(()=>{});
+    return true;
+  }
+  function setStage(stage){                                                  // '' | 'booked' | 'closed'
+    const c = cur(); if(!c) return; const now = new Date().toISOString(), was = c.closed ? 'closed' : c.booked ? 'booked' : '';
+    if(stage === was) return;
+    if(stage === 'closed'){ c.closed = {at: now}; if(!c.booked) c.booked = {at: now}; }
+    else if(stage === 'booked'){ c.closed = null; c.booked = c.booked || {at: now}; }
+    else { c.closed = null; c.booked = null; }
+    save(c, {booked: c.booked, closed: c.closed});
+    const inBoard = boardStatus(c, stage === 'closed' ? 'Won' : stage === 'booked' ? 'Call booked' : 'Contacted');
     renderThread(true); renderList();
-    toast(on ? `🎉 Call booked with ${first(c.prospect.name)}${L ? ': also updated in your board' : ''}.` : 'Undone: no call booked.');
+    const nm = first(c.prospect.name), also = inBoard ? ': also updated in your board' : '';
+    toast(stage === 'closed' ? `🏆 Closed with ${nm}${inBoard ? ': marked as Won in your board' : ''}. Congrats!` : stage === 'booked' ? `🎉 Call booked with ${nm}${also}.` : `Status cleared for ${nm}${also}.`);
+  }
+  function openStatus(anchor){
+    const c = cur(); if(!c) return; const old = document.getElementById('stMenu'); if(old){ old.remove(); return; }
+    const r = anchor.getBoundingClientRect(), stage = c.closed ? 'closed' : c.booked ? 'booked' : '';
+    const m = document.createElement('div'); m.id = 'stMenu'; m.className = 'st-menu'; m.setAttribute('role', 'menu');
+    m.style.top = (r.bottom + 6) + 'px'; m.style.right = Math.max(12, innerWidth - r.right) + 'px';
+    const opt = (k, ic, label, sub)=> `<button type="button" role="menuitemradio" aria-checked="${stage === k}" data-stage="${k}" class="${stage === k ? 'on' : ''}"><span class="ic">${ic}</span><span><b>${label}</b><small>${sub}</small></span>${stage === k ? '<span class="ck">✓</span>' : ''}</button>`;
+    m.innerHTML = opt('', '💬', 'In conversation', 'No call booked yet') + opt('booked', '📅', 'Call booked', 'They booked a call with you') + opt('closed', '🏆', 'Closed', 'They became a client (Won)');
+    document.body.appendChild(m);
+    m.addEventListener('click', (e)=>{ const b = e.target.closest('[data-stage]'); if(!b) return; m.remove(); setStage(b.dataset.stage); });
+    setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target) && ev.target !== anchor){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
   }
 
   // ---------- follow-ups: pick when ----------
@@ -607,15 +654,18 @@
       const others = parsed.names.filter((n)=> norm(n) !== norm(meName));
       if(!into){ theirName = theirName && others.includes(theirName) ? theirName : (others[0] || '');
         if(!lead){ try { const L = await loadLeads(); const f = L.find((x)=> norm(x.name) === norm(theirName)); if(f) lead = f; } catch(e){ /* ignore */ } } }
-      const msgs = toMessages(parsed, meName), have = new Set(((into && into.messages) || []).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m)));
+      const msgs = toMessages(parsed, meName), fixes = repairsFor(into && into.messages, msgs), fixedTexts = new Set([...((into && into.messages) || [])].filter((m)=> fixes.has(m.id)).map(textKey));
+      const have = new Set(((into && into.messages) || []).filter((m)=> !isBadDate(m)).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m)) && !fixedTexts.has(textKey(m)));
       const nm = into ? into.prospect.name : theirName, ph = into ? into.prospect.photo : photo, days = [...new Set(msgs.map((m)=> dayLabel(new Date(m.at))))];
-      out.innerHTML = `<div class="ps-sum"><span>✅ <b>${msgs.length}</b> message${msgs.length === 1 ? '' : 's'} · ${esc(days[0])}${days.length > 1 ? ' – ' + esc(days[days.length - 1]) : ''}${into && fresh.length < msgs.length ? ` · <b>${msgs.length - fresh.length}</b> already logged` : ''}</span>
+      out.innerHTML = `<div class="ps-sum"><span>✅ <b>${msgs.length}</b> message${msgs.length === 1 ? '' : 's'} · ${esc(days[0])}${days.length > 1 ? ' – ' + esc(days[days.length - 1]) : ''}${into && have.size && msgs.some((m)=> have.has(msgKey(m))) ? ` · <b>${msgs.filter((m)=> have.has(msgKey(m))).length}</b> already logged` : ''}${fixes.size ? ` · <b>${fixes.size}</b> date${fixes.size === 1 ? '' : 's'} to fix` : ''}</span>
           ${parsed.names.length > 1 ? `<label>You are <select id="psMe">${parsed.names.map((n)=> `<option ${norm(n) === norm(meName) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>` : ''}</div>
+        ${parsed.noDay ? `<div class="ps-note">📅 No day found in what you copied, so it’s set to ${esc(dayLabel(new Date(msgs[0].at)).toLowerCase())}. For exact dates, start your selection at a day label on LinkedIn, like “Today” or “Monday”.</div>` : ''}
         ${!into ? `<div class="ps-who">${avatar(theirName || '?', photo, 'sm')}<div style="flex:1;min-width:0"><b>${esc(theirName || 'Prospect')}</b><small>${lead ? `📋 Linked to the lead in ${esc(lead.boardName)}` : 'Not in your boards: added as a new conversation'}</small></div>
           <label class="btn sm">${photo ? 'Change photo' : 'Add photo'}<input type="file" accept="image/*" class="hidden" id="psPhoto"></label></div>` : ''}
         <div class="ps-prev">${msgs.slice(-40).map((m)=> `<div class="ps-m ${m.from}${have.has(msgKey(m)) ? ' old' : ''}">${m.from === 'me' ? meAv('xs') : avatar(nm, ph, 'xs')}<div><b>${esc(m.from === 'me' ? (myName || 'You') : nm)}</b><time>${esc(dayLabel(new Date(m.at)))} · ${esc(clock(new Date(m.at)))}</time>
           ${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}${m.text ? `<p>${esc(m.text)}</p>` : ''}${m.voice ? voiceCard(m.voice) : ''}${m.post ? postCard(m.post, into ? into.prospect : {name: theirName, photo}) : ''}</div></div>`).join('')}${msgs.length > 40 ? `<div class="ps-more">…and ${msgs.length - 40} earlier messages</div>` : ''}</div>`;
-      go.disabled = into ? !fresh.length : !theirName; go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}` : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
+      go.disabled = into ? !(fresh.length || fixes.size) : !theirName;
+      go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}${fixes.size ? ` · fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : ''}` : fixes.size ? `Fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
       const pv = out.querySelector('.ps-prev'); if(pv) pv.scrollTop = pv.scrollHeight;
     };
     ov.addEventListener('input', (e)=>{ if(e.target.id !== 'psIn') return; const v = e.target.value; parsed = v.trim() ? parseLinkedInPaste(v, new Date()) : null;
@@ -630,11 +680,13 @@
       const msgs = toMessages(parsed, meName);
       try {
         if(into){
-          const have = new Set((into.messages || []).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m))); if(!fresh.length){ close(); return; }
+          const fixes = repairsFor(into.messages, msgs), fixedTexts = new Set((into.messages || []).filter((m)=> fixes.has(m.id)).map(textKey));
+          const have = new Set((into.messages || []).filter((m)=> !isBadDate(m)).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m)) && !fixedTexts.has(textKey(m)));
+          if(!fresh.length && !fixes.size){ close(); return; }
           ['me', 'them'].forEach((w)=>{ if(fresh.some((m)=> m.from === w)) touchLead(into, w); });
-          const all = (into.messages || []).concat(fresh); into.messages = all; Object.assign(into, summary(all));
+          const all = (into.messages || []).map((m)=> fixes.has(m.id) ? Object.assign({}, m, {at: fixes.get(m.id)}) : m).concat(fresh); into.messages = all; Object.assign(into, summary(all));
           await db.collection('linkedinDmLogs').doc(into.id).update(Object.assign({messages: all, updatedAt: FV.serverTimestamp()}, summary(all)));
-          toast(`${fresh.length} new message${fresh.length === 1 ? '' : 's'} added.`); renderThread(true); renderList();
+          toast([fresh.length ? `${fresh.length} new message${fresh.length === 1 ? '' : 's'} added` : '', fixes.size ? `${fixes.size} date${fixes.size === 1 ? '' : 's'} fixed` : ''].filter(Boolean).join(' · ') + '.'); renderThread(true); renderList();
         } else {
           const prospect = {name: theirName.slice(0, 80), headline: lead ? lead.headline : '', linkedinUrl: lead ? lead.linkedinUrl : '', photo, lead: lead ? {boardId: lead.boardId, leadId: lead.leadId, boardName: lead.boardName} : null};
           const ref = await db.collection('linkedinDmLogs').add(Object.assign({workspaceId: wsId, createdBy: me, prospect, messages: msgs, created: new Date().toISOString(), createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}, summary(msgs)));
