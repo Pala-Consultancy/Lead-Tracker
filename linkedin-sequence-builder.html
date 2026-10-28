@@ -266,6 +266,11 @@
   .dm-tabs button{padding:5px 7px;font-size:12.5px;display:inline-flex;align-items:center;gap:3px;}
   .dm-tabs i{font-style:normal;} .dm-tabs em{font-style:normal;}
   .dm-tabs.more{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);}
+
+  /* the profile, like LinkedIn: "Will Barnes · 1st" and the full headline */
+  .deg{font-weight:400;color:var(--li-ink2,#666);font-size:14px;}
+  .th-profile .hl{max-width:560px;line-height:20px;}
+  .ps-hl{color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 </style>
 </head>
 <body>
@@ -301,6 +306,7 @@
   firebase.initializeApp({apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM", authDomain: "lead-tracker-c5c3a.firebaseapp.com", projectId: "lead-tracker-c5c3a",
     storageBucket: "lead-tracker-c5c3a.firebasestorage.app", messagingSenderId: "720572896285", appId: "1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"});
   const db = firebase.firestore(), FV = firebase.firestore.FieldValue;
+  try { db.enablePersistence({synchronizeTabs: true}).catch(()=>{}); } catch(e){ /* not available in this browser: it simply loads from the server */ }
   // ---------------------------------------------------------------------------
   // The LinkedIn DM log: you log the conversation you're having on LinkedIn with a prospect, and see it like
   // LinkedIn Messaging. linkedinDmLogs/{id} = {workspaceId, createdBy, prospect: {name, headline, photo (a small
@@ -416,8 +422,10 @@
         out.push({name: who, at: new Date(at || (day.getFullYear() > 1970 ? day : startOfDay(now))), text, quote, post, voice});
       });
     };
+    const pre = []; let started = false;
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i], t = l.trim();
+      if (!started) { if (HEAD.test(t) || / sent the following messages? at /i.test(t) || (dayFrom(t) && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim())))) started = true; else { if (t) pre.push(t); continue; } }
       if (!t) { buf.push(''); continue; }
       const d = dayFrom(t);
       const setDay = (nd)=>{ flush(); while (nd < day) nd = new Date(nd.getFullYear(), nd.getMonth(), nd.getDate() + 7); day = nd; };   // days only move forward
@@ -447,7 +455,19 @@
     }
     flush();
     const authors = [...new Set(out.filter((m) => m.post && m.post.author).map((m) => m.post.author))];
-    return {messages: out, names: [...names], noDay, authors};
+    // the profile at the top: "Will Barnes", "· 1st" (sometimes on the same line), and the headline
+    let profile = null;
+    const SKIP = /^(messaging|active now|available on mobile|mobile|seen|load more|close your conversation|open the options|.*\bactive\b.*ago|premium|view profile|\d+\s*(?:s|m|h|d|w)\s*ago)$/i;
+    const P = pre.map((x) => x.replace(/^View .+?['’]s? profile/i, '').trim()).filter((x) => x && !SKIP.test(x));
+    const di = P.findIndex((x) => /(?:^|[·•]\s*)(1st|2nd|3rd\+?)\s*$/i.test(x));
+    if (di >= 0) {
+      const dl = P[di], deg = (dl.match(/(1st|2nd|3rd\+?)\s*$/i) || [])[1] || '';
+      let nm = dl.replace(/[·•]?\s*(1st|2nd|3rd\+?)\s*$/i, '').replace(/\s*(Premium|LinkedIn Member)\s*$/i, '').trim();
+      if (!nm && di > 0) nm = P[di - 1];
+      const hl = P[di + 1] && !/^(1st|2nd|3rd)/i.test(P[di + 1]) ? P[di + 1] : '';
+      if (nm && nm.length <= 80) profile = {name: nm, degree: deg, headline: hl.slice(0, 300)};
+    }
+    return {messages: out, names: [...names], noDay, authors, profile};
   }
   const norm = (n)=> String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
   // a shared post, shown like LinkedIn's post preview
@@ -468,7 +488,10 @@
   const msgKey = (m)=> m.from + '|' + String(m.at).slice(0, 16) + '|' + String(m.text || '').trim().slice(0, 200) + (m.voice ? '|v' + m.voice.duration : '') + (m.post ? '|p' + String(m.post.text || '').slice(0, 40) : '');
   // which of the names in the pasted text is you
   function guessMe(names){ const mn = norm(myName), mf = mn.split(' ')[0];
-    return names.find((n)=> norm(n) === mn) || names.find((n)=> norm(n).split(' ')[0] === mf) || (names.length === 2 ? names[1] : names[0]) || ''; }
+    const found = names.find((n)=> norm(n) === mn) || names.find((n)=> norm(n).split(' ')[0] === mf);
+    if(found) return found;
+    if(names.length >= 2) return names[1];          // two people and neither name matches yours: LinkedIn lists the other person first
+    return myName || 'Me'; }                          // only the prospect wrote in what you copied: you're simply not in it
   // turn the pasted text into messages for this conversation
   function toMessages(parsed, meName){ return parsed.messages.map((m)=> ({id: uid(), from: norm(m.name) === norm(meName) ? 'me' : 'them', text: m.text.slice(0, 8000), at: m.at.toISOString(), quote: m.quote ? {name: m.quote.name.slice(0, 60), text: m.quote.text.slice(0, 300)} : null,
     post: m.post ? {author: m.post.author.slice(0, 80), degree: m.post.degree.slice(0, 10), headline: m.post.headline.slice(0, 220), age: m.post.age.slice(0, 12), text: m.post.text.slice(0, 3000), url: /^https:\/\/(lnkd\.in|([a-z]+\.)?linkedin\.com)\//i.test(m.post.url || '') ? m.post.url : ''} : null,
@@ -518,14 +541,14 @@
     if(!keepComposer) atManual = false;
     const nameHTML = p.linkedinUrl ? `<a href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name);
     box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
-        <div class="meta"><b>${nameHTML}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
+        <div class="meta"><b>${nameHTML}${p.degree ? `<span class="deg"> · ${esc(p.degree)}</span>` : ''}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
         ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
         <button type="button" class="bk-btn${c.closed ? ' won' : c.booked ? ' on' : ''}" id="stBtn" aria-haspopup="true" title="Status">${c.closed ? '🏆 Closed' : c.booked ? '📅 Call booked' : 'Status'} ▾</button>
         <button type="button" class="fu-btn${c.followUp && c.followUp.due ? ' on' : ''}" id="fuBtn" aria-haspopup="true">🔔 ${c.followUp && c.followUp.due ? esc(fuLabel(c.followUp).text) : 'Follow up'}</button>
         <button type="button" class="ib" id="pasteBtn" title="Paste messages from LinkedIn" aria-label="Paste messages from LinkedIn">📋</button>
         <button type="button" class="ib" id="editP" title="Edit prospect" aria-label="Edit prospect">✎</button><button type="button" class="ib" id="delC" title="Delete this conversation" aria-label="Delete this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
       ${c.followUp && c.followUp.due ? (()=>{ const f = fuLabel(c.followUp); return `<div class="fu-bar ${f.cls}"><span>🔔 <b>Follow up ${f.cls === 'late' ? '' : (f.text === 'Today' || f.text === 'Tomorrow' ? f.text.toLowerCase() : 'on ' + esc(f.text))}${f.cls === 'late' ? esc(f.text.toLowerCase()) : ''}</b>${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span><button type="button" class="fu-done" id="fuDone">✓ Done</button></div>`; })() : ''}
-      <div class="th-body" id="thBody"><div class="th-profile">${avatar(p.name, p.photo)}<b>${nameHTML}</b>${p.headline ? `<span>${esc(p.headline)}</span>` : ''}
+      <div class="th-body" id="thBody"><div class="th-profile">${avatar(p.name, p.photo)}<b>${nameHTML}${p.degree ? `<span class="deg"> · ${esc(p.degree)}</span>` : ''}</b>${p.headline ? `<span class="hl">${esc(p.headline)}</span>` : ''}
           <span class="pl">${p.lead ? `📋 ${esc(p.lead.boardName || 'Lead')}` : ''}${p.lead && p.linkedinUrl ? ' · ' : ''}${p.linkedinUrl ? `<a href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener">View profile</a>` : ''}</span></div>
         ${html || `<div class="dm-empty" style="padding:28px 10px">Log your conversation with ${esc(first(p.name))}: your messages and ${esc(first(p.name))}’s replies, in order.</div>`}</div>
       <div class="cmp"><div class="cmp-row"><textarea id="cmpText" rows="3" placeholder="${from === 'me' ? 'Write a message…' : 'Write ' + esc(first(p.name)) + '’s reply…'}" aria-label="Message">${esc(keep)}</textarea></div>
@@ -659,7 +682,8 @@
     const draw = async ()=>{
       const out = ov.querySelector('#psOut'), go = ov.querySelector('#psGo');
       if(!parsed || !parsed.messages.length){ out.innerHTML = parsed ? '<div class="ps-warn">No messages found. Copy the messages themselves from the conversation on LinkedIn, from the first to the last.</div>' : ''; go.disabled = true; go.textContent = 'Import'; return; }
-      const others = parsed.names.filter((n)=> norm(n) !== norm(meName)).concat((parsed.authors || []).filter((n)=> norm(n) !== norm(meName) && !parsed.names.some((x)=> norm(x) === norm(n))));
+      const prof = parsed.profile && norm(parsed.profile.name) !== norm(meName) ? parsed.profile : null;
+      const others = parsed.names.filter((n)=> norm(n) !== norm(meName)).concat(prof && !parsed.names.some((x)=> norm(x) === norm(prof.name)) ? [prof.name] : [], (parsed.authors || []).filter((n)=> norm(n) !== norm(meName) && !parsed.names.some((x)=> norm(x) === norm(n))));
       if(!into){ theirName = typedName || (theirName && others.includes(theirName) ? theirName : (others[0] || ''));
         if(!lead){ try { const L = await loadLeads(); const f = L.find((x)=> norm(x.name) === norm(theirName)); if(f) lead = f; } catch(e){ /* ignore */ } } }
       const msgs = toMessages(parsed, meName), fixes = repairsFor(into && into.messages, msgs), fixedTexts = new Set([...((into && into.messages) || [])].filter((m)=> fixes.has(m.id)).map(textKey));
@@ -668,13 +692,14 @@
       out.innerHTML = `<div class="ps-sum"><span>✅ <b>${msgs.length}</b> message${msgs.length === 1 ? '' : 's'} · ${esc(days[0])}${days.length > 1 ? ' – ' + esc(days[days.length - 1]) : ''}${into && have.size && msgs.some((m)=> have.has(msgKey(m))) ? ` · <b>${msgs.filter((m)=> have.has(msgKey(m))).length}</b> already logged` : ''}${fixes.size ? ` · <b>${fixes.size}</b> date${fixes.size === 1 ? '' : 's'} to fix` : ''}</span>
           ${parsed.names.length > 1 ? `<label>You are <select id="psMe">${parsed.names.map((n)=> `<option ${norm(n) === norm(meName) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>` : ''}</div>
         ${parsed.noDay ? `<div class="ps-note">📅 No day found in what you copied, so it’s set to ${esc(dayLabel(new Date(msgs[0].at)).toLowerCase())}. For exact dates, start your selection at a day label on LinkedIn, like “Today” or “Monday”.</div>` : ''}
-        ${!into ? `<div class="ps-who">${avatar(theirName || '?', photo, 'sm')}<div style="flex:1;min-width:0">${theirName && !typedName ? `<b>${esc(theirName)}</b>` : `<input class="in ps-name" id="psName" maxlength="80" placeholder="Their name (only your messages were found)" value="${esc(typedName)}">`}<small>${lead ? `📋 Linked to the lead in ${esc(lead.boardName)}` : theirName ? 'Not in your boards: added as a new conversation' : 'Type the prospect’s name to import this conversation.'}</small></div>
+        ${!into ? `<div class="ps-who">${avatar(theirName || '?', photo, 'sm')}<div style="flex:1;min-width:0">${theirName && !typedName ? `<b>${esc(theirName)}</b>` : `<input class="in ps-name" id="psName" maxlength="80" placeholder="Their name (only your messages were found)" value="${esc(typedName)}">`}${prof && norm(prof.name) === norm(theirName) ? `<small class="ps-hl">${prof.degree ? '· ' + esc(prof.degree) + ' · ' : ''}${esc(prof.headline || '')}</small>` : ''}<small>${lead ? `📋 Linked to the lead in ${esc(lead.boardName)}` : theirName ? 'Not in your boards: added as a new conversation' : 'Type the prospect’s name to import this conversation.'}</small></div>
           <label class="btn sm">${photo ? 'Change photo' : 'Add photo'}<input type="file" accept="image/*" class="hidden" id="psPhoto"></label></div>` : ''}
         <div class="ps-prev">${msgs.slice(-40).map((m)=> `<div class="ps-m ${m.from}${have.has(msgKey(m)) ? ' old' : ''}">${m.from === 'me' ? meAv('xs') : avatar(nm, ph, 'xs')}<div><b>${esc(m.from === 'me' ? (myName || 'You') : nm)}</b><time>${esc(dayLabel(new Date(m.at)))} · ${esc(clock(new Date(m.at)))}</time>
           ${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}${m.text ? `<p>${esc(m.text)}</p>` : ''}${m.voice ? voiceCard(m.voice) : ''}${m.post ? postCard(m.post, into ? into.prospect : {name: theirName, photo}) : ''}</div></div>`).join('')}${msgs.length > 40 ? `<div class="ps-more">…and ${msgs.length - 40} earlier messages</div>` : ''}</div>`;
-      go.disabled = into ? !(fresh.length || fixes.size) : !theirName;
+      const pfNew = into && parsed.profile && norm(parsed.profile.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((parsed.profile.headline && parsed.profile.headline !== into.prospect.headline) || (parsed.profile.degree && parsed.profile.degree !== into.prospect.degree));
+      go.disabled = into ? !(fresh.length || fixes.size || pfNew) : !theirName;
       if(!into && !theirName) go.textContent = 'Add their name first';
-      if(into || theirName) go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}${fixes.size ? ` · fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : ''}` : fixes.size ? `Fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
+      if(into || theirName) go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}${fixes.size ? ` · fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : ''}` : fixes.size ? `Fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : pfNew ? 'Update their profile' : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
       const pv = out.querySelector('.ps-prev'); if(pv) pv.scrollTop = pv.scrollHeight;
     };
     ov.addEventListener('input', (e)=>{ if(e.target.id === 'psName'){ typedName = e.target.value.trim(); const go = ov.querySelector('#psGo'); go.disabled = !typedName; go.textContent = typedName ? `Import ${parsed.messages.length} message${parsed.messages.length === 1 ? '' : 's'}` : 'Add their name first'; theirName = typedName; return; }
@@ -692,13 +717,18 @@
         if(into){
           const fixes = repairsFor(into.messages, msgs), fixedTexts = new Set((into.messages || []).filter((m)=> fixes.has(m.id)).map(textKey));
           const have = new Set((into.messages || []).filter((m)=> !isBadDate(m)).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m)) && !fixedTexts.has(textKey(m)));
-          if(!fresh.length && !fixes.size){ close(); return; }
+          const pfChange = parsed.profile && norm(parsed.profile.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((parsed.profile.headline && parsed.profile.headline !== into.prospect.headline) || (parsed.profile.degree && parsed.profile.degree !== into.prospect.degree));
+          if(!fresh.length && !fixes.size && !pfChange){ close(); return; }
           ['me', 'them'].forEach((w)=>{ if(fresh.some((m)=> m.from === w)) touchLead(into, w); });
           const all = (into.messages || []).map((m)=> fixes.has(m.id) ? Object.assign({}, m, {at: fixes.get(m.id)}) : m).concat(fresh); into.messages = all; Object.assign(into, summary(all));
-          await db.collection('linkedinDmLogs').doc(into.id).update(Object.assign({messages: all, updatedAt: FV.serverTimestamp()}, summary(all)));
+          const pf = parsed.profile, upd = {};
+          if(pf && norm(pf.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((pf.headline && pf.headline !== into.prospect.headline) || (pf.degree && pf.degree !== into.prospect.degree))){
+            into.prospect = Object.assign({}, into.prospect, pf.headline ? {headline: pf.headline} : {}, pf.degree ? {degree: pf.degree} : {}); upd.prospect = into.prospect; }
+          await db.collection('linkedinDmLogs').doc(into.id).update(Object.assign({messages: all, updatedAt: FV.serverTimestamp()}, summary(all), upd));
           toast([fresh.length ? `${fresh.length} new message${fresh.length === 1 ? '' : 's'} added` : '', fixes.size ? `${fixes.size} date${fixes.size === 1 ? '' : 's'} fixed` : ''].filter(Boolean).join(' · ') + '.'); renderThread(true); renderList();
         } else {
-          const prospect = {name: theirName.slice(0, 80), headline: lead ? lead.headline : '', linkedinUrl: lead ? lead.linkedinUrl : '', photo, lead: lead ? {boardId: lead.boardId, leadId: lead.leadId, boardName: lead.boardName} : null};
+          const pf = parsed.profile && norm(parsed.profile.name) === norm(theirName) ? parsed.profile : null;
+          const prospect = {name: theirName.slice(0, 80), headline: (pf && pf.headline) || (lead ? lead.headline : ''), degree: pf ? pf.degree : '', linkedinUrl: lead ? lead.linkedinUrl : '', photo, lead: lead ? {boardId: lead.boardId, leadId: lead.leadId, boardName: lead.boardName} : null};
           const ref = await db.collection('linkedinDmLogs').add(Object.assign({workspaceId: wsId, createdBy: me, prospect, messages: msgs, created: new Date().toISOString(), createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}, summary(msgs)));
           const c = {id: ref.id, prospect, messages: []}; ['me', 'them'].forEach((w)=>{ if(msgs.some((m)=> m.from === w)) touchLead(c, w); });
           openId = ref.id; from = 'me'; toast(`Imported ${msgs.length} messages with ${first(theirName)}.`);
@@ -780,21 +810,46 @@
   }
 
   // ---------- start ----------
-  firebase.auth().onAuthStateChanged(async (u)=>{
-    if(!u){ location.href = 'home.html'; return; }
-    me = u.uid;
-    try { const dir = await db.doc(`userDirectory/${me}`).get(); wsId = dir.exists ? dir.data().workspaceId : null;
-      if(!wsId){ location.href = 'home.html'; return; }
-      const [m, pr] = await Promise.all([db.doc(`workspaces/${wsId}/members/${me}`).get(), db.doc(`profiles/${me}`).get().catch(()=> null)]);
-      myName = (m.exists && m.data().name) || u.displayName || (u.email || '').split('@')[0] || 'You';
-      myPhoto = (pr && pr.exists && pr.data().photo) || (m.exists && (m.data().photo || m.data().photoURL)) || u.photoURL || '';
-    } catch(e){ console.error(e); toast('Couldn’t load your workspace.', true); }
-    db.collection('linkedinDmLogs').where('workspaceId', '==', wsId).where('createdBy', '==', me).onSnapshot((s)=>{
+  // ---------- start: remembered data first, then the live data ----------
+  const CACHE = 'ptDmCache:v1';
+  const readCache = ()=>{ try { return JSON.parse(localStorage.getItem(CACHE) || 'null'); } catch(e){ return null; } };
+  let cacheT = null;
+  function writeCache(){ clearTimeout(cacheT); cacheT = setTimeout(()=>{
+    try { const strip = (c)=> { const x = Object.assign({}, c); delete x.createdAt; delete x.updatedAt; return x; };
+      let data = {uid: me, wsId, myName, myPhoto, convs: convs.map(strip), at: Date.now()}, json = JSON.stringify(data);
+      if(json.length > 3500000){ data.convs = convs.map((c)=> Object.assign(strip(c), {messages: (c.messages || []).slice(-40)})); json = JSON.stringify(data); }   // too big: the latest messages only
+      localStorage.setItem(CACHE, json);
+    } catch(e){ try { localStorage.removeItem(CACHE); } catch(err){ /* ignore */ } } }, 400); }
+  let shown = false;
+  function showApp(){ if(shown) return; shown = true; $('pageLoader').style.display = 'none'; $('appRoot').style.display = 'flex'; renderList(); renderThread(); }
+  // the conversations you had last time: shown as soon as your sign-in is confirmed, and only to you
+  const cached = readCache();
+  let unsub = null;
+  function listen(){
+    if(unsub) unsub();
+    unsub = db.collection('linkedinDmLogs').where('workspaceId', '==', wsId).where('createdBy', '==', me).onSnapshot((s)=>{
       convs = s.docs.map((d)=> Object.assign({id: d.id}, d.data(), {prospect: Object.assign({name: 'Prospect'}, d.data().prospect || {})}));
       if(openId && !convs.some((c)=> c.id === openId)) openId = null;
-      const editing = document.querySelector('.msg textarea'); renderList(); if(!editing) renderThread(true);
-    }, (e)=>{ console.error(e); toast('Couldn’t load your conversations.', true); });
-    $('pageLoader').style.display = 'none'; $('appRoot').style.display = 'flex'; renderList(); renderThread();
+      const editing = document.querySelector('.msg textarea, #fuMenu, #stMenu'); renderList(); if(!editing) renderThread(true);
+      showApp(); writeCache();
+    }, (e)=>{ console.error(e); toast('Couldn’t load your conversations.', true); showApp(); });
+  }
+  firebase.auth().onAuthStateChanged(async (u)=>{
+    if(!u){ try { localStorage.removeItem(CACHE); } catch(e){ /* ignore */ } location.href = 'home.html'; return; }
+    me = u.uid;
+    if(cached && cached.uid === u.uid && Array.isArray(cached.convs)){ wsId = cached.wsId; myName = cached.myName || ''; myPhoto = cached.myPhoto || ''; convs = cached.convs; showApp(); }
+    else if(cached){ try { localStorage.removeItem(CACHE); } catch(e){ /* ignore */ } }   // someone else signed in: their list is never shown, and it's forgotten
+    const sameWs = cached && cached.uid === u.uid && cached.wsId;
+    if(sameWs){ wsId = cached.wsId; listen(); }                               // the live data starts loading right away
+    try { const dir = await db.doc(`userDirectory/${me}`).get(); const ws = dir.exists ? dir.data().workspaceId : null;
+      if(!ws){ location.href = 'home.html'; return; }
+      if(ws !== wsId || !unsub){ wsId = ws; listen(); }
+      const [m, pr] = await Promise.all([db.doc(`workspaces/${wsId}/members/${me}`).get(), db.doc(`profiles/${me}`).get().catch(()=> null)]);
+      const nm = (m.exists && m.data().name) || u.displayName || (u.email || '').split('@')[0] || 'You';
+      const ph = (pr && pr.exists && pr.data().photo) || (m.exists && (m.data().photo || m.data().photoURL)) || u.photoURL || '';
+      if(nm !== myName || ph !== myPhoto){ myName = nm; myPhoto = ph; renderList(); if(!document.querySelector('.msg textarea')) renderThread(true); writeCache(); }
+    } catch(e){ console.error(e); if(!sameWs) toast('Couldn’t load your workspace.', true); }
+    showApp();
   });
 })();
 </script>
