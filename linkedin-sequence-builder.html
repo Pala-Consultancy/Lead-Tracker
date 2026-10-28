@@ -231,6 +231,27 @@
   .ps-m{display:flex;gap:8px;padding:5px 0;} .ps-m.old{opacity:.45;}
   .ps-m b{font-size:13px;} .ps-m time{margin-left:6px;font-size:11.5px;color:var(--slate-light);} .ps-m p{margin:1px 0 0;font-size:13.5px;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
   .ps-more{padding:6px 0;font-size:12px;color:var(--slate);text-align:center;}
+
+  /* a shared post, like LinkedIn's preview card */
+  .li-post{margin:4px 0 6px;max-width:440px;border:1px solid var(--li-line,#e0e0e0);border-radius:8px;background:var(--li-bg,#fff);padding:12px 14px 10px;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;}
+  .lp-h{display:flex;gap:8px;align-items:flex-start;} .lp-m{min-width:0;flex:1;}
+  .lp-m b{font-size:14px;font-weight:600;color:var(--li-ink,#222);} .lp-d{font-size:13px;color:var(--li-ink2,#666);}
+  .lp-m small{display:block;font-size:12px;line-height:16px;color:var(--li-ink2,#666);} .lp-hl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lp-tx{margin-top:10px;font-size:14px;line-height:20px;color:var(--li-ink,#222);white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .li-post.open .lp-tx{display:block;-webkit-line-clamp:unset;}
+  .lp-more{display:block;margin:2px 0 0 auto;border:none;background:none;padding:2px 0;font:inherit;font-size:14px;color:var(--li-ink2,#666);cursor:pointer;} .lp-more:hover{color:var(--li-blue,#0A66C2);text-decoration:underline;}
+  .lp-link{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--li-blue,#0A66C2);text-decoration:none;} .lp-link:hover{text-decoration:underline;}
+  .msg:hover .li-post{background:var(--li-bg,#fff);}
+  .ps-m .li-post{max-width:360px;}
+
+  /* a voice note, like LinkedIn's blue player */
+  .li-voice{display:flex;align-items:center;gap:10px;width:260px;max-width:100%;height:38px;margin:4px 0 0;padding:0 12px;border-radius:6px;background:#0A66C2;color:#fff;}
+  html[data-theme="dark"] .li-voice{background:#378FE9;}
+  .lv-p{font-size:13px;} .lv-d{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .lv-w{flex:1;display:flex;align-items:center;gap:2px;height:20px;}
+  .lv-w i{flex:1;border-radius:2px;background:rgba(255,255,255,.55);height:30%;}
+  .lv-w i:nth-child(3n){height:70%;} .lv-w i:nth-child(4n+1){height:45%;} .lv-w i:nth-child(5n+2){height:90%;} .lv-w i:nth-child(7n){height:55%;}
+  .lv-l{display:block;margin:2px 0 2px;font-size:11.5px;color:var(--li-ink2,#666);}
 </style>
 </head>
 <body>
@@ -314,6 +335,10 @@
     const HEAD = /^(.+?) sent the following messages? at (\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/;
     const STAMP = /^(.+?)\s{2,}(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/;
     const VIEW = /^View .+?['’]s? profile/i;
+    // a shared post: "View Emem Umoh’s  graphic link" (or "… link"), then author, "• 1st", headline, "1w •", and the post's text
+    const POSTVIEW = /^View (.+?)['’]s?\s+(?:[a-z ]*?\s)?link\s*$/i;
+    const AGE = /^\d+\s*(?:s|m|h|d|w|mo|y|yr)s?\s*•?\s*(?:Edited\s*•?)?\s*$/i;
+    const posts = [];
     const EMOJI1 = /^\s*(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\uFE0F|\u200D(?:\p{Extended_Pictographic})|[\u{1F3FB}-\u{1F3FF}])*\s*$/u;
     const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
     function dayFrom(line) {
@@ -357,10 +382,17 @@
         const first = [...names].map((n) => n.split(/\s+/)[0]);
         const qm = pl[0].match(/^([^:]{1,40}):\s(.+)$/);
         if (pl.length > 1 && qm && first.some((f) => f.toLowerCase() === qm[1].trim().toLowerCase())) { quote = {name: qm[1].trim(), text: qm[2].trim()}; pl = pl.slice(1); }
+        let post = null; const pi = pl.findIndex((x) => /^\u0000POST:\d+$/.test(x));
+        if (pi >= 0) { post = posts[+pl[pi].split(':')[1]]; pl = pl.filter((x, k) => k !== pi);
+          // the link right before the post belongs to the post card
+          const li = pl.length - 1; if (li >= 0 && /^https?:\/\/\S+$/.test(pl[li])) { post.url = post.url || pl[li]; pl = pl.slice(0, li); } }
         let text = pl.join('\n').replace(/\s*\(Edited\)\s*$/i, '').trim();
         if (/^Play$/i.test(text)) text = '🎥 Video message';
-        if (!text) return;
-        out.push({name: who, at: new Date(at || (day.getFullYear() > 1970 ? day : startOfDay(now))), text, quote});
+        // a voice note: LinkedIn copies only its length ("0:21", sometimes with "Play" or "Pause")
+        let voice = null; const vm = text.match(/^(?:(?:Play|Pause|Voice message|Audio message)\s*\n?\s*)?(\d{1,2}:\d{2})$/i);
+        if (vm && !quote) { voice = {duration: vm[1]}; text = ''; }
+        if (!text && !post && !voice) return;
+        out.push({name: who, at: new Date(at || (day.getFullYear() > 1970 ? day : startOfDay(now))), text, quote, post, voice});
       });
     };
     for (let i = 0; i < lines.length; i++) {
@@ -372,20 +404,46 @@
       if (d && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim()))) { setDay(d); continue; }
       const h = t.match(HEAD); if (h) { flush(); who = h[1].trim(); names.add(who); at = withTime(day, h[2]); continue; }
       if (VIEW.test(t)) { flush(); continue; }
+      const pv = t.match(POSTVIEW);
+      if (pv) {                                                        // read the whole post into one card
+        const post = {author: pv[1].trim(), degree: '', headline: '', age: '', text: '', url: ''}; let j = i + 1;
+        const meta = []; while (j < lines.length && meta.length < 4) { const x = lines[j].trim(); j++; if (!x) continue; meta.push(x); if (AGE.test(x)) break; }
+        meta.forEach((x) => { if (/^•\s*(1st|2nd|3rd\+?)/i.test(x)) post.degree = x.replace(/^•\s*/, ''); else if (AGE.test(x)) post.age = x.replace(/\s*•.*$/, '').trim(); else if (x !== post.author && !post.headline) post.headline = x; });
+        const body = [];
+        for (; j < lines.length; j++) { const x = lines[j].trim();
+          if (HEAD.test(x) || VIEW.test(x) || POSTVIEW.test(x)) break;
+          const st = x.match(STAMP); if (st && names.has(st[1].trim())) break;
+          if (dayFrom(x) && j + 1 < lines.length && HEAD.test(lines[j + 1].trim())) break;
+          if (/^(…|\.\.\.)\s*(more|see more)$/i.test(x) || /^Activate to view larger image/i.test(x)) continue;
+          body.push(lines[j]); }
+        post.text = body.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        posts.push(post); buf.push('\u0000POST:' + (posts.length - 1)); i = j - 1; continue;
+      }
       const s = t.match(STAMP); if (s && (names.has(s[1].trim()) || /^[A-Z]/.test(s[1]))) { flush(); who = s[1].trim(); names.add(who); at = withTime(day, s[2]); continue; }
       buf.push(l);
     }
     flush();
     return {messages: out, names: [...names]};
   }
-
   const norm = (n)=> String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
-  const msgKey = (m)=> m.from + '|' + String(m.at).slice(0, 16) + '|' + String(m.text).trim().slice(0, 200);
+  // a shared post, shown like LinkedIn's post preview
+  // a voice note, like LinkedIn's blue player
+  const voiceCard = (v)=> `<div class="li-voice" title="Voice note (listen to it on LinkedIn)"><span class="lv-p" aria-hidden="true">▶</span><span class="lv-w" aria-hidden="true">${'<i></i>'.repeat(22)}</span><span class="lv-d">${esc(v.duration)}</span></div><small class="lv-l">🎤 Voice note</small>`;
+  function postCard(po, p){
+    const photo = p && norm(po.author) === norm(p.name) ? p.photo : '';
+    return `<div class="li-post"><div class="lp-h">${avatar(po.author, photo, 'sm')}<div class="lp-m"><b>${esc(po.author)}</b>${po.degree ? `<span class="lp-d"> • ${esc(po.degree)}</span>` : ''}
+        ${po.headline ? `<small class="lp-hl">${esc(po.headline)}</small>` : ''}${po.age ? `<small>${esc(po.age)} • 🌐</small>` : ''}</div></div>
+      ${po.text ? `<div class="lp-tx">${esc(po.text)}</div><button type="button" class="lp-more" data-lpmore>…more</button>` : ''}
+      ${po.url ? `<a class="lp-link" href="${esc(po.url)}" target="_blank" rel="noopener">View post on LinkedIn ↗</a>` : ''}</div>`;
+  }
+  const msgKey = (m)=> m.from + '|' + String(m.at).slice(0, 16) + '|' + String(m.text || '').trim().slice(0, 200) + (m.voice ? '|v' + m.voice.duration : '') + (m.post ? '|p' + String(m.post.text || '').slice(0, 40) : '');
   // which of the names in the pasted text is you
   function guessMe(names){ const mn = norm(myName), mf = mn.split(' ')[0];
     return names.find((n)=> norm(n) === mn) || names.find((n)=> norm(n).split(' ')[0] === mf) || (names.length === 2 ? names[1] : names[0]) || ''; }
   // turn the pasted text into messages for this conversation
-  function toMessages(parsed, meName){ return parsed.messages.map((m)=> ({id: uid(), from: norm(m.name) === norm(meName) ? 'me' : 'them', text: m.text.slice(0, 8000), at: m.at.toISOString(), quote: m.quote ? {name: m.quote.name.slice(0, 60), text: m.quote.text.slice(0, 300)} : null})); }
+  function toMessages(parsed, meName){ return parsed.messages.map((m)=> ({id: uid(), from: norm(m.name) === norm(meName) ? 'me' : 'them', text: m.text.slice(0, 8000), at: m.at.toISOString(), quote: m.quote ? {name: m.quote.name.slice(0, 60), text: m.quote.text.slice(0, 300)} : null,
+    post: m.post ? {author: m.post.author.slice(0, 80), degree: m.post.degree.slice(0, 10), headline: m.post.headline.slice(0, 220), age: m.post.age.slice(0, 12), text: m.post.text.slice(0, 3000), url: /^https:\/\/(lnkd\.in|([a-z]+\.)?linkedin\.com)\//i.test(m.post.url || '') ? m.post.url : ''} : null,
+    voice: m.voice ? {duration: String(m.voice.duration).slice(0, 8)} : null})); }
 
   // ---------- the list ----------
   function renderList(){
@@ -417,7 +475,7 @@
       const cont = last && last.from === m.from && (d - tOf(last.at)) < 15 * 60000;   // one group per person, like LinkedIn
       if(!cont){ if(last) html += '</div></div>';
         html += `<div class="grp ${m.from}">${m.from === 'me' ? meAv('sm') : avatar(p.name, p.photo, 'sm')}<div class="who"><div class="nm">${esc(m.from === 'me' ? (myName || 'You') : p.name)}<time>${esc(clock(d))}</time></div>`; }
-      html += `<div class="msg" data-mid="${esc(m.id)}">${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}<span class="tx">${esc(m.text)}</span>${cont ? `<span class="mt">${esc(clock(d))}</span>` : ''}
+      html += `<div class="msg" data-mid="${esc(m.id)}">${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}${m.text ? `<span class="tx">${esc(m.text)}</span>` : ''}${m.voice ? voiceCard(m.voice) : ''}${m.post ? postCard(m.post, p) : ''}${cont ? `<span class="mt">${esc(clock(d))}</span>` : ''}
         <span class="tools"><button type="button" data-edit="${esc(m.id)}" title="Edit" aria-label="Edit message">✎</button><button type="button" data-del="${esc(m.id)}" title="Delete" aria-label="Delete message">✕</button></span></div>`;
       last = m;
     });
@@ -447,7 +505,7 @@
   }
   function grow(ta){ ta.style.height = 'auto'; ta.style.height = Math.max(72, Math.min(200, ta.scrollHeight + 2)) + 'px'; }
   const save = (c, data)=> db.collection('linkedinDmLogs').doc(c.id).update(Object.assign({updatedAt: FV.serverTimestamp()}, data)).catch((e)=>{ console.error(e); toast('Couldn’t save. Check your connection.', true); });
-  function summary(msgs){ const s = msgs.slice().sort((a, b)=> String(a.at).localeCompare(String(b.at))), l = s[s.length - 1]; return {lastAt: l ? l.at : '', lastText: l ? l.text.slice(0, 140) : '', lastFrom: l ? l.from : ''}; }
+  function summary(msgs){ const s = msgs.slice().sort((a, b)=> String(a.at).localeCompare(String(b.at))), l = s[s.length - 1]; return {lastAt: l ? l.at : '', lastText: l ? (l.text || (l.voice ? '🎤 Voice note' : l.post ? '📰 Shared a post' : '')).slice(0, 140) : '', lastFrom: l ? l.from : ''}; }
   // a lead from your boards: the first message marks it as contacted, the first reply as replied
   function touchLead(c, who){
     const L = c.prospect.lead; if(!L || !L.boardId || !L.leadId) return;
@@ -471,6 +529,7 @@
     const o = e.target.closest('[data-open]'); if(o){ openId = o.dataset.open; from = 'me'; renderList(); renderThread(); return; }
     if(e.target.closest('#backBtn')){ openId = null; renderList(); renderThread(); return; }
     const f = e.target.closest('[data-from]'); if(f){ from = f.dataset.from; const c = cur(); renderThread(true); const ta = $('cmpText'); if(ta) ta.focus(); return; }
+    const lm = e.target.closest('[data-lpmore]'); if(lm){ const c = lm.closest('.li-post'); const open = !c.classList.contains('open'); c.classList.toggle('open', open); lm.textContent = open ? 'Show less' : '…more'; return; }
     if(e.target.closest('#logBtn')){ logMessage(); return; }
     if(e.target.closest('#cmpNow')){ e.preventDefault(); atManual = false; $('cmpAt').value = localInput(new Date()); $('cmpNow').classList.add('hidden'); return; }
     if(e.target.closest('#newBtn') || e.target.closest('#newBtn2')){ openProspectDialog(null); return; }
@@ -555,7 +614,7 @@
         ${!into ? `<div class="ps-who">${avatar(theirName || '?', photo, 'sm')}<div style="flex:1;min-width:0"><b>${esc(theirName || 'Prospect')}</b><small>${lead ? `📋 Linked to the lead in ${esc(lead.boardName)}` : 'Not in your boards: added as a new conversation'}</small></div>
           <label class="btn sm">${photo ? 'Change photo' : 'Add photo'}<input type="file" accept="image/*" class="hidden" id="psPhoto"></label></div>` : ''}
         <div class="ps-prev">${msgs.slice(-40).map((m)=> `<div class="ps-m ${m.from}${have.has(msgKey(m)) ? ' old' : ''}">${m.from === 'me' ? meAv('xs') : avatar(nm, ph, 'xs')}<div><b>${esc(m.from === 'me' ? (myName || 'You') : nm)}</b><time>${esc(dayLabel(new Date(m.at)))} · ${esc(clock(new Date(m.at)))}</time>
-          ${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}<p>${esc(m.text)}</p></div></div>`).join('')}${msgs.length > 40 ? `<div class="ps-more">…and ${msgs.length - 40} earlier messages</div>` : ''}</div>`;
+          ${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}${m.text ? `<p>${esc(m.text)}</p>` : ''}${m.voice ? voiceCard(m.voice) : ''}${m.post ? postCard(m.post, into ? into.prospect : {name: theirName, photo}) : ''}</div></div>`).join('')}${msgs.length > 40 ? `<div class="ps-more">…and ${msgs.length - 40} earlier messages</div>` : ''}</div>`;
       go.disabled = into ? !fresh.length : !theirName; go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}` : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
       const pv = out.querySelector('.ps-prev'); if(pv) pv.scrollTop = pv.scrollHeight;
     };
