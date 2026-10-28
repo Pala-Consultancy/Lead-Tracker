@@ -202,6 +202,17 @@
   .fu-b{display:flex;justify-content:flex-end;gap:6px;margin-top:12px;}
   .cmp-now{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--li-line);background:var(--li-bg);color:var(--li-blue);font:600 12px inherit;}
   .cmp-now:hover{background:var(--li-hover);}
+
+  /* waiting for a reply, and booked calls */
+  .dm-tabs{flex-wrap:nowrap;gap:2px;padding:8px 8px 0;overflow-x:auto;scrollbar-width:none;} .dm-tabs::-webkit-scrollbar{display:none;}
+  .dm-tabs button{padding:5px 8px;font-size:12.5px;white-space:nowrap;flex-shrink:0;} .dm-tabs span{font-size:11px;min-width:16px;}
+  .dm-item .tags{display:flex;flex-wrap:wrap;gap:4px;} .dm-item .tags .fu-tag{margin-top:4px;}
+  .fu-tag.wait{background:rgba(232,140,0,.13);color:#9A5B00;} html[data-theme="dark"] .fu-tag.wait{color:#F5B14C;}
+  .fu-tag.booked{background:rgba(1,117,79,.12);color:var(--li-green);}
+  .bk-btn{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--li-ink2);background:none;color:var(--li-ink2);font:600 13.5px inherit;white-space:nowrap;}
+  .bk-btn:hover{background:var(--li-hover);color:var(--li-ink);}
+  .bk-btn.on{border-color:var(--li-green);background:var(--li-green);color:#fff;} .bk-btn.on:hover{filter:brightness(1.08);}
+  @media (max-width:900px){ .bk-btn,.fu-btn{padding:0 9px;font-size:12.5px;} }
 </style>
 </head>
 <body>
@@ -250,6 +261,10 @@
   const todayStr = ()=> { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
   const addDays = (n)=> { const d = new Date(); d.setDate(d.getDate() + n); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
   const daysUntil = (due)=> Math.round((new Date(due + 'T00:00:00') - new Date(todayStr() + 'T00:00:00')) / 864e5);
+  // waiting for a reply: your message was the last one, and no call is booked yet
+  const isWaiting = (c)=> c.lastFrom === 'me' && !c.booked && (c.messages || []).length > 0;
+  function waitText(iso){ const h = Math.max(0, (Date.now() - new Date(iso)) / 36e5);
+    if(h < 1) return 'just now'; if(h < 24) return `${Math.floor(h)} hour${Math.floor(h) === 1 ? '' : 's'}`; const d = Math.floor(h / 24); return `${d} day${d === 1 ? '' : 's'}`; }
   function fuLabel(fu){ if(!fu || !fu.due) return null; const n = daysUntil(fu.due);
     if(n < 0) return {cls: 'late', text: `Overdue · ${-n} day${n === -1 ? '' : 's'}`};
     if(n === 0) return {cls: 'today', text: 'Today'}; if(n === 1) return {cls: '', text: 'Tomorrow'};
@@ -276,15 +291,20 @@
   // ---------- the list ----------
   function renderList(){
     const fuCount = convs.filter((c)=> c.followUp && c.followUp.due).length;
-    const tb = $('listTabs'); if(tb) tb.innerHTML = `<button type="button" data-view="all" class="${view === 'all' ? 'on' : ''}">All</button><button type="button" data-view="fu" class="${view === 'fu' ? 'on' : ''}">🔔 Follow-ups${fuCount ? ` <span>${fuCount}</span>` : ''}</button>`;
-    const list = convs.filter((c)=> (view !== 'fu' || (c.followUp && c.followUp.due)) && (!q || (c.prospect.name + ' ' + (c.prospect.headline || '') + ' ' + (c.lastText || '')).toLowerCase().includes(q)))
+    const waitCount = convs.filter(isWaiting).length, bookCount = convs.filter((c)=> c.booked).length;
+    const tab = (k, label, n)=> `<button type="button" data-view="${k}" class="${view === k ? 'on' : ''}">${label}${n ? ` <span>${n}</span>` : ''}</button>`;
+    const tb = $('listTabs'); if(tb) tb.innerHTML = tab('all', 'All', 0) + tab('wait', 'Waiting', waitCount) + tab('fu', 'Follow-ups', fuCount) + tab('booked', 'Booked', bookCount);
+    const inView = (c)=> view === 'fu' ? !!(c.followUp && c.followUp.due) : view === 'wait' ? isWaiting(c) : view === 'booked' ? !!c.booked : true;
+    const list = convs.filter((c)=> inView(c) && (!q || (c.prospect.name + ' ' + (c.prospect.headline || '') + ' ' + (c.lastText || '')).toLowerCase().includes(q)))
       .sort(view === 'fu' ? (a, b)=> String(a.followUp.due).localeCompare(String(b.followUp.due))        // the most urgent first
+        : view === 'wait' ? (a, b)=> String(a.lastAt).localeCompare(String(b.lastAt))                      // the longest wait first
+        : view === 'booked' ? (a, b)=> String(b.booked.at || '').localeCompare(String(a.booked.at || ''))
         : (a, b)=> String(b.lastAt || b.created || '').localeCompare(String(a.lastAt || a.created || '')));
     $('items').innerHTML = list.length ? list.map((c)=> `<button type="button" class="dm-item${c.id === openId ? ' on' : ''}" data-open="${esc(c.id)}">${avatar(c.prospect.name, c.prospect.photo)}
         <span class="meta"><span class="row"><b>${esc(c.prospect.name)}</b><time>${esc(shortWhen(c.lastAt))}</time></span>
         <small>${c.lastText ? (c.lastFrom === 'me' ? 'You: ' : '') + esc(c.lastText) : esc(c.prospect.headline || 'No messages yet')}</small>
-        ${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></button>`).join('')
-      : `<div class="dm-empty">${view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
+        <span class="tags">${c.booked ? '<span class="fu-tag booked">📅 Call booked</span>' : ''}${isWaiting(c) ? `<span class="fu-tag wait">⏳ Waiting · ${esc(waitText(c.lastAt))}</span>` : ''}${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></span></button>`).join('')
+      : `<div class="dm-empty">${view === 'wait' && convs.length ? '<b>Nobody is waiting</b>Every prospect has answered your last message. 🎉' : view === 'booked' && convs.length ? '<b>No booked calls yet</b>Mark a prospect with 📅 Call booked at the top of a conversation.' : view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
   }
   // ---------- the thread ----------
   function renderThread(keepComposer){
@@ -310,6 +330,7 @@
     box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
         <div class="meta"><b>${nameHTML}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
         ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
+        <button type="button" class="bk-btn${c.booked ? ' on' : ''}" id="bkBtn" aria-pressed="${!!c.booked}" title="${c.booked ? 'Click to undo' : 'Mark that they booked a call'}">📅 ${c.booked ? 'Call booked' : 'Booked a call?'}</button>
         <button type="button" class="fu-btn${c.followUp && c.followUp.due ? ' on' : ''}" id="fuBtn" aria-haspopup="true">🔔 ${c.followUp && c.followUp.due ? esc(fuLabel(c.followUp).text) : 'Follow up'}</button>
         <button type="button" class="ib" id="editP" title="Edit prospect" aria-label="Edit prospect">✎</button><button type="button" class="ib" id="delC" title="Delete this conversation" aria-label="Delete this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
       ${c.followUp && c.followUp.due ? (()=>{ const f = fuLabel(c.followUp); return `<div class="fu-bar ${f.cls}"><span>🔔 <b>Follow up ${f.cls === 'late' ? '' : (f.text === 'Today' || f.text === 'Tomorrow' ? f.text.toLowerCase() : 'on ' + esc(f.text))}${f.cls === 'late' ? esc(f.text.toLowerCase()) : ''}</b>${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span><button type="button" class="fu-done" id="fuDone">✓ Done</button></div>`; })() : ''}
@@ -331,7 +352,8 @@
   function touchLead(c, who){
     const L = c.prospect.lead; if(!L || !L.boardId || !L.leadId) return;
     const already = (c.messages || []).some((m)=> m.from === who); if(already) return;
-    db.doc(`workspaces/${wsId}/boards/${L.boardId}/leads/${L.leadId}`).update(who === 'me' ? {contacted: true} : {replied: true})
+    const ref = db.doc(`workspaces/${wsId}/boards/${L.boardId}/leads/${L.leadId}`);
+    ref.get().then((d)=> d.exists ? ref.update(who === 'me' ? Object.assign({contacted: true}, (d.data().status || 'New') === 'New' ? {status: 'Contacted'} : {}) : {replied: true}) : null)
       .then(()=> toast(who === 'me' ? `${first(c.prospect.name)} is marked as contacted in your board.` : `${first(c.prospect.name)} is marked as replied in your board.`)).catch(()=>{});
   }
   function logMessage(){
@@ -355,6 +377,7 @@
     if(e.target.closest('#editP')){ openProspectDialog(cur()); return; }
     const tv = e.target.closest('[data-view]'); if(tv){ view = tv.dataset.view; renderList(); return; }
     if(e.target.closest('#fuBtn')){ openFollowUp(e.target.closest('#fuBtn')); return; }
+    if(e.target.closest('#bkBtn')){ toggleBooked(); return; }
     if(e.target.closest('#fuDone')){ const c = cur(); if(!c) return; c.followUp = null; save(c, {followUp: null}); renderThread(true); renderList(); toast('Follow-up done.'); return; }
     if(e.target.closest('#delC')){ const c = cur(); if(!c) return; if(!confirm(`Delete your conversation with ${c.prospect.name}? This can’t be undone.`)) return;
       db.collection('linkedinDmLogs').doc(c.id).delete().then(()=>{ openId = null; toast('Conversation deleted.'); }).catch(()=> toast('Couldn’t delete.', true)); return; }
@@ -372,6 +395,22 @@
   document.addEventListener('change', (e)=>{ if(e.target && e.target.id === 'cmpAt'){ atManual = true; const b = $('cmpNow'); if(b) b.classList.remove('hidden'); } });
   document.addEventListener('input', (e)=>{ if(e.target && e.target.id === 'cmpAt'){ atManual = true; const b = $('cmpNow'); if(b) b.classList.remove('hidden'); }
     if(e.target && e.target.id === 'cmpText') grow(e.target); if(e.target && e.target.id === 'search'){ q = e.target.value.trim().toLowerCase(); renderList(); } });
+
+  // ---------- a booked call: marked here, and as "Call booked" on the lead in your board ----------
+  function toggleBooked(){
+    const c = cur(); if(!c) return; const on = !c.booked;
+    c.booked = on ? {at: new Date().toISOString()} : null; save(c, {booked: c.booked});
+    const L = c.prospect.lead;
+    if(L && L.boardId && L.leadId){
+      const ref = db.doc(`workspaces/${wsId}/boards/${L.boardId}/leads/${L.leadId}`);
+      ref.get().then((d)=>{ if(!d.exists) return; const x = d.data();
+        if(on && x.status !== 'Call booked') return ref.update({status: 'Call booked', callBookedAt: FV.serverTimestamp(), contacted: true});
+        if(!on && x.status === 'Call booked') return ref.update({status: 'Contacted', callBookedAt: null});
+      }).then(()=>{}).catch(()=>{});
+    }
+    renderThread(true); renderList();
+    toast(on ? `🎉 Call booked with ${first(c.prospect.name)}${L ? ': also updated in your board' : ''}.` : 'Undone: no call booked.');
+  }
 
   // ---------- follow-ups: pick when ----------
   function openFollowUp(anchor){
