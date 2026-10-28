@@ -227,7 +227,8 @@
   .ps-sum select{margin-left:6px;height:30px;border:1px solid var(--border);border-radius:8px;padding:0 6px;font:inherit;font-size:13px;background:var(--panel);color:var(--ink);}
   .ps-sum label{font-size:12.5px;font-weight:700;color:var(--slate);}
   .ps-who{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border:1px solid var(--border-soft);border-radius:12px;}
-  .ps-who b{display:block;font-size:14px;} .ps-who small{display:block;font-size:12px;color:var(--slate);}
+  .ps-who b{display:block;font-size:14px;} .ps-name{height:34px;font-size:14px;margin-bottom:3px;}
+  #psGo:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;} .ps-who small{display:block;font-size:12px;color:var(--slate);}
   .ps-prev{margin-top:10px;max-height:300px;overflow:auto;border:1px solid var(--border-soft);border-radius:12px;padding:8px 12px;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;}
   .ps-m{display:flex;gap:8px;padding:5px 0;} .ps-m.old{opacity:.45;}
   .ps-m b{font-size:13px;} .ps-m time{margin-left:6px;font-size:11.5px;color:var(--slate-light);} .ps-m p{margin:1px 0 0;font-size:13.5px;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
@@ -343,9 +344,9 @@
   // Reads a conversation copied from LinkedIn Messaging into [{name, at (Date), text, quote: {name, text} | null}]
   function parseLinkedInPaste(raw, now) {
     now = now || new Date();
-    const lines = String(raw || '').replace(/\r/g, '').split('\n').map((l) => l.replace(/\u00a0/g, ' ').replace(/\s+$/, ''));
+    const lines = String(raw || '').replace(/\r/g, '').split('\n').map((l) => l.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '').replace(/[\u00a0\u2007\u202F]/g, ' ').replace(/\s+$/, ''));
     const WD = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const HEAD = /^(.+?) sent the following messages? at (\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/;
+    const HEAD = /^(.+?) sent the following messages? at (\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\b.*$/;
     const STAMP = /^(.+?)\s{2,}(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/;
     const VIEW = /^View .+?['’]s? profile/i;
     // a shared post: "View Emem Umoh’s  graphic link" (or "… link"), then author, "• 1st", headline, "1w •", and the post's text
@@ -427,7 +428,7 @@
         meta.forEach((x) => { if (/^•\s*(1st|2nd|3rd\+?)/i.test(x)) post.degree = x.replace(/^•\s*/, ''); else if (AGE.test(x)) post.age = x.replace(/\s*•.*$/, '').trim(); else if (x !== post.author && !post.headline) post.headline = x; });
         const body = [];
         for (; j < lines.length; j++) { const x = lines[j].trim();
-          if (HEAD.test(x) || VIEW.test(x) || POSTVIEW.test(x)) break;
+          if (HEAD.test(x) || VIEW.test(x) || POSTVIEW.test(x) || / sent the following messages? at /i.test(x)) break;
           const st = x.match(STAMP); if (st && names.has(st[1].trim())) break;
           if (dayFrom(x) && j + 1 < lines.length && HEAD.test(lines[j + 1].trim())) break;
           if (/^(…|\.\.\.)\s*(more|see more)$/i.test(x) || /^Activate to view larger image/i.test(x)) continue;
@@ -439,7 +440,8 @@
       buf.push(l);
     }
     flush();
-    return {messages: out, names: [...names], noDay};
+    const authors = [...new Set(out.filter((m) => m.post && m.post.author).map((m) => m.post.author))];
+    return {messages: out, names: [...names], noDay, authors};
   }
   const norm = (n)=> String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
   // a shared post, shown like LinkedIn's post preview
@@ -640,7 +642,7 @@
 
   // ---------- paste a conversation copied from LinkedIn ----------
   function openPaste(into){
-    const ov = document.createElement('div'); ov.className = 'ov'; let parsed = null, meName = '', theirName = '', lead = null, photo = '';
+    const ov = document.createElement('div'); ov.className = 'ov'; let parsed = null, meName = '', theirName = '', typedName = '', lead = null, photo = '';
     ov.innerHTML = `<div class="dlg wide" role="dialog" aria-modal="true" aria-labelledby="psT"><h3 id="psT">📋 Paste from LinkedIn</h3>
       <p>On LinkedIn, open the conversation, select all the messages with your mouse, copy them (Ctrl+C) and paste them here (Ctrl+V).</p>
       <textarea class="ps-in" id="psIn" placeholder="Paste the conversation here…" aria-label="The copied conversation"></textarea>
@@ -651,8 +653,8 @@
     const draw = async ()=>{
       const out = ov.querySelector('#psOut'), go = ov.querySelector('#psGo');
       if(!parsed || !parsed.messages.length){ out.innerHTML = parsed ? '<div class="ps-warn">No messages found. Copy the messages themselves from the conversation on LinkedIn, from the first to the last.</div>' : ''; go.disabled = true; go.textContent = 'Import'; return; }
-      const others = parsed.names.filter((n)=> norm(n) !== norm(meName));
-      if(!into){ theirName = theirName && others.includes(theirName) ? theirName : (others[0] || '');
+      const others = parsed.names.filter((n)=> norm(n) !== norm(meName)).concat((parsed.authors || []).filter((n)=> norm(n) !== norm(meName) && !parsed.names.some((x)=> norm(x) === norm(n))));
+      if(!into){ theirName = typedName || (theirName && others.includes(theirName) ? theirName : (others[0] || ''));
         if(!lead){ try { const L = await loadLeads(); const f = L.find((x)=> norm(x.name) === norm(theirName)); if(f) lead = f; } catch(e){ /* ignore */ } } }
       const msgs = toMessages(parsed, meName), fixes = repairsFor(into && into.messages, msgs), fixedTexts = new Set([...((into && into.messages) || [])].filter((m)=> fixes.has(m.id)).map(textKey));
       const have = new Set(((into && into.messages) || []).filter((m)=> !isBadDate(m)).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m)) && !fixedTexts.has(textKey(m)));
@@ -660,15 +662,17 @@
       out.innerHTML = `<div class="ps-sum"><span>✅ <b>${msgs.length}</b> message${msgs.length === 1 ? '' : 's'} · ${esc(days[0])}${days.length > 1 ? ' – ' + esc(days[days.length - 1]) : ''}${into && have.size && msgs.some((m)=> have.has(msgKey(m))) ? ` · <b>${msgs.filter((m)=> have.has(msgKey(m))).length}</b> already logged` : ''}${fixes.size ? ` · <b>${fixes.size}</b> date${fixes.size === 1 ? '' : 's'} to fix` : ''}</span>
           ${parsed.names.length > 1 ? `<label>You are <select id="psMe">${parsed.names.map((n)=> `<option ${norm(n) === norm(meName) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>` : ''}</div>
         ${parsed.noDay ? `<div class="ps-note">📅 No day found in what you copied, so it’s set to ${esc(dayLabel(new Date(msgs[0].at)).toLowerCase())}. For exact dates, start your selection at a day label on LinkedIn, like “Today” or “Monday”.</div>` : ''}
-        ${!into ? `<div class="ps-who">${avatar(theirName || '?', photo, 'sm')}<div style="flex:1;min-width:0"><b>${esc(theirName || 'Prospect')}</b><small>${lead ? `📋 Linked to the lead in ${esc(lead.boardName)}` : 'Not in your boards: added as a new conversation'}</small></div>
+        ${!into ? `<div class="ps-who">${avatar(theirName || '?', photo, 'sm')}<div style="flex:1;min-width:0">${theirName && !typedName ? `<b>${esc(theirName)}</b>` : `<input class="in ps-name" id="psName" maxlength="80" placeholder="Their name (only your messages were found)" value="${esc(typedName)}">`}<small>${lead ? `📋 Linked to the lead in ${esc(lead.boardName)}` : theirName ? 'Not in your boards: added as a new conversation' : 'Type the prospect’s name to import this conversation.'}</small></div>
           <label class="btn sm">${photo ? 'Change photo' : 'Add photo'}<input type="file" accept="image/*" class="hidden" id="psPhoto"></label></div>` : ''}
         <div class="ps-prev">${msgs.slice(-40).map((m)=> `<div class="ps-m ${m.from}${have.has(msgKey(m)) ? ' old' : ''}">${m.from === 'me' ? meAv('xs') : avatar(nm, ph, 'xs')}<div><b>${esc(m.from === 'me' ? (myName || 'You') : nm)}</b><time>${esc(dayLabel(new Date(m.at)))} · ${esc(clock(new Date(m.at)))}</time>
           ${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}${m.text ? `<p>${esc(m.text)}</p>` : ''}${m.voice ? voiceCard(m.voice) : ''}${m.post ? postCard(m.post, into ? into.prospect : {name: theirName, photo}) : ''}</div></div>`).join('')}${msgs.length > 40 ? `<div class="ps-more">…and ${msgs.length - 40} earlier messages</div>` : ''}</div>`;
       go.disabled = into ? !(fresh.length || fixes.size) : !theirName;
-      go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}${fixes.size ? ` · fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : ''}` : fixes.size ? `Fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
+      if(!into && !theirName) go.textContent = 'Add their name first';
+      if(into || theirName) go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}${fixes.size ? ` · fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : ''}` : fixes.size ? `Fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
       const pv = out.querySelector('.ps-prev'); if(pv) pv.scrollTop = pv.scrollHeight;
     };
-    ov.addEventListener('input', (e)=>{ if(e.target.id !== 'psIn') return; const v = e.target.value; parsed = v.trim() ? parseLinkedInPaste(v, new Date()) : null;
+    ov.addEventListener('input', (e)=>{ if(e.target.id === 'psName'){ typedName = e.target.value.trim(); const go = ov.querySelector('#psGo'); go.disabled = !typedName; go.textContent = typedName ? `Import ${parsed.messages.length} message${parsed.messages.length === 1 ? '' : 's'}` : 'Add their name first'; theirName = typedName; return; }
+      if(e.target.id !== 'psIn') return; typedName = ''; const v = e.target.value; parsed = v.trim() ? parseLinkedInPaste(v, new Date()) : null;
       if(parsed){ meName = guessMe(parsed.names); if(into){ const other = parsed.names.find((n)=> norm(n) !== norm(meName)); if(other && norm(other) !== norm(into.prospect.name) && norm(other).split(' ')[0] !== norm(into.prospect.name).split(' ')[0]) toast(`Heads up: this looks like a conversation with ${other}, not ${into.prospect.name}.`, true); } }
       lead = null; draw(); });
     ov.addEventListener('change', async (e)=>{ if(e.target.id === 'psMe'){ meName = e.target.value; lead = null; theirName = ''; draw(); }
