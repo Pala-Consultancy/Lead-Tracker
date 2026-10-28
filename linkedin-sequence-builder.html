@@ -213,6 +213,24 @@
   .bk-btn:hover{background:var(--li-hover);color:var(--li-ink);}
   .bk-btn.on{border-color:var(--li-green);background:var(--li-green);color:#fff;} .bk-btn.on:hover{filter:brightness(1.08);}
   @media (max-width:900px){ .bk-btn,.fu-btn{padding:0 9px;font-size:12.5px;} }
+
+  /* a quoted reply, like LinkedIn */
+  .qt{display:block;width:fit-content;max-width:100%;margin:2px 0 4px;padding:4px 10px;border-left:3px solid var(--li-line,#ddd);border-radius:2px;font-size:13px;line-height:18px;color:var(--li-ink2,#666);background:var(--li-hover,#f3f2ef);white-space:pre-wrap;}
+  .qt b{display:block;font-size:12px;font-weight:600;color:var(--li-ink,#222);}
+  /* the paste dialog */
+  .dlg.wide{max-width:640px;}
+  .ps-in{width:100%;min-height:110px;max-height:200px;border:1.5px dashed var(--border);border-radius:12px;padding:12px;font:inherit;font-size:13.5px;background:var(--panel-alt);color:var(--ink);resize:vertical;outline:none;}
+  .ps-in:focus{border-color:#0A66C2;border-style:solid;}
+  .ps-warn{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(232,140,0,.12);color:#8A5300;font-size:13px;}
+  .ps-sum{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:13.5px;}
+  .ps-sum select{margin-left:6px;height:30px;border:1px solid var(--border);border-radius:8px;padding:0 6px;font:inherit;font-size:13px;background:var(--panel);color:var(--ink);}
+  .ps-sum label{font-size:12.5px;font-weight:700;color:var(--slate);}
+  .ps-who{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border:1px solid var(--border-soft);border-radius:12px;}
+  .ps-who b{display:block;font-size:14px;} .ps-who small{display:block;font-size:12px;color:var(--slate);}
+  .ps-prev{margin-top:10px;max-height:300px;overflow:auto;border:1px solid var(--border-soft);border-radius:12px;padding:8px 12px;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;}
+  .ps-m{display:flex;gap:8px;padding:5px 0;} .ps-m.old{opacity:.45;}
+  .ps-m b{font-size:13px;} .ps-m time{margin-left:6px;font-size:11.5px;color:var(--slate-light);} .ps-m p{margin:1px 0 0;font-size:13.5px;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
+  .ps-more{padding:6px 0;font-size:12px;color:var(--slate);text-align:center;}
 </style>
 </head>
 <body>
@@ -264,7 +282,7 @@
   // waiting for a reply: your message was the last one, and no call is booked yet
   const isWaiting = (c)=> c.lastFrom === 'me' && !c.booked && (c.messages || []).length > 0;
   function waitText(iso){ const h = Math.max(0, (Date.now() - new Date(iso)) / 36e5);
-    if(h < 1) return 'just now'; if(h < 24) return `${Math.floor(h)} hour${Math.floor(h) === 1 ? '' : 's'}`; const d = Math.floor(h / 24); return `${d} day${d === 1 ? '' : 's'}`; }
+    if(h < 1){ const m = Math.round(h * 60); return m < 2 ? 'just now' : `${m} min`; } if(h < 24) return `${Math.floor(h)} hour${Math.floor(h) === 1 ? '' : 's'}`; const d = Math.floor(h / 24); return `${d} day${d === 1 ? '' : 's'}`; }
   function fuLabel(fu){ if(!fu || !fu.due) return null; const n = daysUntil(fu.due);
     if(n < 0) return {cls: 'late', text: `Overdue · ${-n} day${n === -1 ? '' : 's'}`};
     if(n === 0) return {cls: 'today', text: 'Today'}; if(n === 1) return {cls: '', text: 'Tomorrow'};
@@ -287,6 +305,87 @@
   const localInput = (d)=> { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 16); };
   const uid = ()=> Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
   const cur = ()=> convs.find((c)=> c.id === openId) || null;
+
+  // Reads a conversation copied from LinkedIn Messaging into [{name, at (Date), text, quote: {name, text} | null}]
+  function parseLinkedInPaste(raw, now) {
+    now = now || new Date();
+    const lines = String(raw || '').replace(/\r/g, '').split('\n').map((l) => l.replace(/\u00a0/g, ' ').replace(/\s+$/, ''));
+    const WD = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const HEAD = /^(.+?) sent the following messages? at (\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/;
+    const STAMP = /^(.+?)\s{2,}(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/;
+    const VIEW = /^View .+?['’]s? profile/i;
+    const EMOJI1 = /^\s*(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\uFE0F|\u200D(?:\p{Extended_Pictographic})|[\u{1F3FB}-\u{1F3FF}])*\s*$/u;
+    const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    function dayFrom(line) {
+      const l = line.trim(), low = l.toLowerCase();
+      if (low === 'today') return startOfDay(now);
+      if (low === 'yesterday') { const d = startOfDay(now); d.setDate(d.getDate() - 1); return d; }
+      const w = WD.indexOf(low);
+      if (w >= 0) { const d = startOfDay(now); let back = (d.getDay() - w + 7) % 7; if (back === 0) back = 7; d.setDate(d.getDate() - back); return d; }
+      if (/^[A-Za-z]{3,9}\.? \d{1,2}(, \d{4})?$/.test(l) || /^\d{1,2} [A-Za-z]{3,9}\.?( \d{4})?$/.test(l) || /^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(l)) {
+        let d = new Date(/\d{4}/.test(l) ? l : l + ' ' + now.getFullYear());
+        if (isNaN(d)) return null; d = startOfDay(d);
+        if (!/\d{4}/.test(l) && d > now) d.setFullYear(d.getFullYear() - 1);
+        return d;
+      }
+      return null;
+    }
+    function withTime(day, t) {
+      const m = String(t).trim().match(/^(\d{1,2})[:.](\d{2})\s*([AaPp])?/); if (!m) return new Date(day);
+      let h = +m[1]; const min = +m[2], ap = (m[3] || '').toLowerCase();
+      if (ap === 'p' && h < 12) h += 12; if (ap === 'a' && h === 12) h = 0;
+      const d = new Date(day); d.setHours(h, min, 0, 0); return d;
+    }
+    const out = []; let day = new Date(1970, 0, 1), who = null, at = null, buf = [], names = new Set();
+    const flush = () => {
+      // drop the reaction bars LinkedIn copies along ("React with", an emoji, a count; or a run of 3+ single-emoji lines)
+      let L = buf.slice(); buf = [];
+      for (let i = 0; i < L.length; i++) {
+        if (/^React with$/i.test(L[i].trim())) { let j = i + 1; while (j < L.length && L[j].trim() && (EMOJI1.test(L[j]) || /^\d+$/.test(L[j].trim()))) j++; L.splice(i, j - i); i--; continue; }
+        if (EMOJI1.test(L[i])) { let j = i; while (j < L.length && EMOJI1.test(L[j])) j++; if (j - i >= 3) { L.splice(i, j - i); i--; continue; } }
+      }
+      // one message per block of text between blank lines
+      const paras = []; let p = [];
+      L.forEach((l) => { if (!l.trim()) { if (p.length) { paras.push(p); p = []; } } else p.push(l.trim()); }); if (p.length) paras.push(p);
+      for (let k = 0; k < paras.length - 1; k++) {
+        const one = paras[k], qx = one.length === 1 && one[0].match(/^([^:]{1,40}):\s(.+)$/);
+        if (qx && [...names].some((n) => n.split(/\s+/)[0].toLowerCase() === qx[1].trim().toLowerCase())) { paras.splice(k, 2, one.concat(paras[k + 1])); }
+      }
+      paras.forEach((pl) => {
+        if (!who) return;
+        let quote = null;
+        const first = [...names].map((n) => n.split(/\s+/)[0]);
+        const qm = pl[0].match(/^([^:]{1,40}):\s(.+)$/);
+        if (pl.length > 1 && qm && first.some((f) => f.toLowerCase() === qm[1].trim().toLowerCase())) { quote = {name: qm[1].trim(), text: qm[2].trim()}; pl = pl.slice(1); }
+        let text = pl.join('\n').replace(/\s*\(Edited\)\s*$/i, '').trim();
+        if (/^Play$/i.test(text)) text = '🎥 Video message';
+        if (!text) return;
+        out.push({name: who, at: new Date(at || (day.getFullYear() > 1970 ? day : startOfDay(now))), text, quote});
+      });
+    };
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i], t = l.trim();
+      if (!t) { buf.push(''); continue; }
+      const d = dayFrom(t);
+      const setDay = (nd)=>{ flush(); while (nd < day) nd = new Date(nd.getFullYear(), nd.getMonth(), nd.getDate() + 7); day = nd; };   // days only move forward
+      if (d && !buf.some((x) => x.trim())) { setDay(d); continue; }
+      if (d && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim()))) { setDay(d); continue; }
+      const h = t.match(HEAD); if (h) { flush(); who = h[1].trim(); names.add(who); at = withTime(day, h[2]); continue; }
+      if (VIEW.test(t)) { flush(); continue; }
+      const s = t.match(STAMP); if (s && (names.has(s[1].trim()) || /^[A-Z]/.test(s[1]))) { flush(); who = s[1].trim(); names.add(who); at = withTime(day, s[2]); continue; }
+      buf.push(l);
+    }
+    flush();
+    return {messages: out, names: [...names]};
+  }
+
+  const norm = (n)=> String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const msgKey = (m)=> m.from + '|' + String(m.at).slice(0, 16) + '|' + String(m.text).trim().slice(0, 200);
+  // which of the names in the pasted text is you
+  function guessMe(names){ const mn = norm(myName), mf = mn.split(' ')[0];
+    return names.find((n)=> norm(n) === mn) || names.find((n)=> norm(n).split(' ')[0] === mf) || (names.length === 2 ? names[1] : names[0]) || ''; }
+  // turn the pasted text into messages for this conversation
+  function toMessages(parsed, meName){ return parsed.messages.map((m)=> ({id: uid(), from: norm(m.name) === norm(meName) ? 'me' : 'them', text: m.text.slice(0, 8000), at: m.at.toISOString(), quote: m.quote ? {name: m.quote.name.slice(0, 60), text: m.quote.text.slice(0, 300)} : null})); }
 
   // ---------- the list ----------
   function renderList(){
@@ -318,7 +417,7 @@
       const cont = last && last.from === m.from && (d - tOf(last.at)) < 15 * 60000;   // one group per person, like LinkedIn
       if(!cont){ if(last) html += '</div></div>';
         html += `<div class="grp ${m.from}">${m.from === 'me' ? meAv('sm') : avatar(p.name, p.photo, 'sm')}<div class="who"><div class="nm">${esc(m.from === 'me' ? (myName || 'You') : p.name)}<time>${esc(clock(d))}</time></div>`; }
-      html += `<div class="msg" data-mid="${esc(m.id)}"><span class="tx">${esc(m.text)}</span>${cont ? `<span class="mt">${esc(clock(d))}</span>` : ''}
+      html += `<div class="msg" data-mid="${esc(m.id)}">${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}<span class="tx">${esc(m.text)}</span>${cont ? `<span class="mt">${esc(clock(d))}</span>` : ''}
         <span class="tools"><button type="button" data-edit="${esc(m.id)}" title="Edit" aria-label="Edit message">✎</button><button type="button" data-del="${esc(m.id)}" title="Delete" aria-label="Delete message">✕</button></span></div>`;
       last = m;
     });
@@ -332,6 +431,7 @@
         ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
         <button type="button" class="bk-btn${c.booked ? ' on' : ''}" id="bkBtn" aria-pressed="${!!c.booked}" title="${c.booked ? 'Click to undo' : 'Mark that they booked a call'}">📅 ${c.booked ? 'Call booked' : 'Booked a call?'}</button>
         <button type="button" class="fu-btn${c.followUp && c.followUp.due ? ' on' : ''}" id="fuBtn" aria-haspopup="true">🔔 ${c.followUp && c.followUp.due ? esc(fuLabel(c.followUp).text) : 'Follow up'}</button>
+        <button type="button" class="ib" id="pasteBtn" title="Paste messages from LinkedIn" aria-label="Paste messages from LinkedIn">📋</button>
         <button type="button" class="ib" id="editP" title="Edit prospect" aria-label="Edit prospect">✎</button><button type="button" class="ib" id="delC" title="Delete this conversation" aria-label="Delete this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
       ${c.followUp && c.followUp.due ? (()=>{ const f = fuLabel(c.followUp); return `<div class="fu-bar ${f.cls}"><span>🔔 <b>Follow up ${f.cls === 'late' ? '' : (f.text === 'Today' || f.text === 'Tomorrow' ? f.text.toLowerCase() : 'on ' + esc(f.text))}${f.cls === 'late' ? esc(f.text.toLowerCase()) : ''}</b>${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span><button type="button" class="fu-done" id="fuDone">✓ Done</button></div>`; })() : ''}
       <div class="th-body" id="thBody"><div class="th-profile">${avatar(p.name, p.photo)}<b>${nameHTML}</b>${p.headline ? `<span>${esc(p.headline)}</span>` : ''}
@@ -378,6 +478,7 @@
     const tv = e.target.closest('[data-view]'); if(tv){ view = tv.dataset.view; renderList(); return; }
     if(e.target.closest('#fuBtn')){ openFollowUp(e.target.closest('#fuBtn')); return; }
     if(e.target.closest('#bkBtn')){ toggleBooked(); return; }
+    if(e.target.closest('#pasteBtn')){ openPaste(cur()); return; }
     if(e.target.closest('#fuDone')){ const c = cur(); if(!c) return; c.followUp = null; save(c, {followUp: null}); renderThread(true); renderList(); toast('Follow-up done.'); return; }
     if(e.target.closest('#delC')){ const c = cur(); if(!c) return; if(!confirm(`Delete your conversation with ${c.prospect.name}? This can’t be undone.`)) return;
       db.collection('linkedinDmLogs').doc(c.id).delete().then(()=>{ openId = null; toast('Conversation deleted.'); }).catch(()=> toast('Couldn’t delete.', true)); return; }
@@ -431,6 +532,62 @@
     setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target) && ev.target !== anchor){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
   }
 
+  // ---------- paste a conversation copied from LinkedIn ----------
+  function openPaste(into){
+    const ov = document.createElement('div'); ov.className = 'ov'; let parsed = null, meName = '', theirName = '', lead = null, photo = '';
+    ov.innerHTML = `<div class="dlg wide" role="dialog" aria-modal="true" aria-labelledby="psT"><h3 id="psT">📋 Paste from LinkedIn</h3>
+      <p>On LinkedIn, open the conversation, select all the messages with your mouse, copy them (Ctrl+C) and paste them here (Ctrl+V).</p>
+      <textarea class="ps-in" id="psIn" placeholder="Paste the conversation here…" aria-label="The copied conversation"></textarea>
+      <div id="psOut"></div>
+      <div class="dlg-b"><button type="button" class="btn" data-x>Cancel</button><button type="button" class="btn primary" id="psGo" disabled>Import</button></div></div>`;
+    document.body.appendChild(ov); setTimeout(()=> ov.querySelector('#psIn').focus(), 30);
+    const close = ()=> ov.remove();
+    const draw = async ()=>{
+      const out = ov.querySelector('#psOut'), go = ov.querySelector('#psGo');
+      if(!parsed || !parsed.messages.length){ out.innerHTML = parsed ? '<div class="ps-warn">No messages found. Copy the messages themselves from the conversation on LinkedIn, from the first to the last.</div>' : ''; go.disabled = true; go.textContent = 'Import'; return; }
+      const others = parsed.names.filter((n)=> norm(n) !== norm(meName));
+      if(!into){ theirName = theirName && others.includes(theirName) ? theirName : (others[0] || '');
+        if(!lead){ try { const L = await loadLeads(); const f = L.find((x)=> norm(x.name) === norm(theirName)); if(f) lead = f; } catch(e){ /* ignore */ } } }
+      const msgs = toMessages(parsed, meName), have = new Set(((into && into.messages) || []).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m)));
+      const nm = into ? into.prospect.name : theirName, ph = into ? into.prospect.photo : photo, days = [...new Set(msgs.map((m)=> dayLabel(new Date(m.at))))];
+      out.innerHTML = `<div class="ps-sum"><span>✅ <b>${msgs.length}</b> message${msgs.length === 1 ? '' : 's'} · ${esc(days[0])}${days.length > 1 ? ' – ' + esc(days[days.length - 1]) : ''}${into && fresh.length < msgs.length ? ` · <b>${msgs.length - fresh.length}</b> already logged` : ''}</span>
+          ${parsed.names.length > 1 ? `<label>You are <select id="psMe">${parsed.names.map((n)=> `<option ${norm(n) === norm(meName) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>` : ''}</div>
+        ${!into ? `<div class="ps-who">${avatar(theirName || '?', photo, 'sm')}<div style="flex:1;min-width:0"><b>${esc(theirName || 'Prospect')}</b><small>${lead ? `📋 Linked to the lead in ${esc(lead.boardName)}` : 'Not in your boards: added as a new conversation'}</small></div>
+          <label class="btn sm">${photo ? 'Change photo' : 'Add photo'}<input type="file" accept="image/*" class="hidden" id="psPhoto"></label></div>` : ''}
+        <div class="ps-prev">${msgs.slice(-40).map((m)=> `<div class="ps-m ${m.from}${have.has(msgKey(m)) ? ' old' : ''}">${m.from === 'me' ? meAv('xs') : avatar(nm, ph, 'xs')}<div><b>${esc(m.from === 'me' ? (myName || 'You') : nm)}</b><time>${esc(dayLabel(new Date(m.at)))} · ${esc(clock(new Date(m.at)))}</time>
+          ${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}<p>${esc(m.text)}</p></div></div>`).join('')}${msgs.length > 40 ? `<div class="ps-more">…and ${msgs.length - 40} earlier messages</div>` : ''}</div>`;
+      go.disabled = into ? !fresh.length : !theirName; go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}` : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
+      const pv = out.querySelector('.ps-prev'); if(pv) pv.scrollTop = pv.scrollHeight;
+    };
+    ov.addEventListener('input', (e)=>{ if(e.target.id !== 'psIn') return; const v = e.target.value; parsed = v.trim() ? parseLinkedInPaste(v, new Date()) : null;
+      if(parsed){ meName = guessMe(parsed.names); if(into){ const other = parsed.names.find((n)=> norm(n) !== norm(meName)); if(other && norm(other) !== norm(into.prospect.name) && norm(other).split(' ')[0] !== norm(into.prospect.name).split(' ')[0]) toast(`Heads up: this looks like a conversation with ${other}, not ${into.prospect.name}.`, true); } }
+      lead = null; draw(); });
+    ov.addEventListener('change', async (e)=>{ if(e.target.id === 'psMe'){ meName = e.target.value; lead = null; theirName = ''; draw(); }
+      if(e.target.id === 'psPhoto'){ const f = e.target.files[0]; if(!f) return; try { photo = await photoToData(f); draw(); } catch(err){ toast('That file isn’t an image.', true); } } });
+    ov.addEventListener('mousedown', (e)=>{ if(e.target === ov) close(); });
+    ov.addEventListener('click', async (e)=>{
+      if(e.target.closest('[data-x]')){ close(); return; }
+      if(!e.target.closest('#psGo') || !parsed) return;
+      const msgs = toMessages(parsed, meName);
+      try {
+        if(into){
+          const have = new Set((into.messages || []).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m))); if(!fresh.length){ close(); return; }
+          ['me', 'them'].forEach((w)=>{ if(fresh.some((m)=> m.from === w)) touchLead(into, w); });
+          const all = (into.messages || []).concat(fresh); into.messages = all; Object.assign(into, summary(all));
+          await db.collection('linkedinDmLogs').doc(into.id).update(Object.assign({messages: all, updatedAt: FV.serverTimestamp()}, summary(all)));
+          toast(`${fresh.length} new message${fresh.length === 1 ? '' : 's'} added.`); renderThread(true); renderList();
+        } else {
+          const prospect = {name: theirName.slice(0, 80), headline: lead ? lead.headline : '', linkedinUrl: lead ? lead.linkedinUrl : '', photo, lead: lead ? {boardId: lead.boardId, leadId: lead.leadId, boardName: lead.boardName} : null};
+          const ref = await db.collection('linkedinDmLogs').add(Object.assign({workspaceId: wsId, createdBy: me, prospect, messages: msgs, created: new Date().toISOString(), createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp()}, summary(msgs)));
+          const c = {id: ref.id, prospect, messages: []}; ['me', 'them'].forEach((w)=>{ if(msgs.some((m)=> m.from === w)) touchLead(c, w); });
+          openId = ref.id; from = 'me'; toast(`Imported ${msgs.length} messages with ${first(theirName)}.`);
+        }
+        close();
+      } catch(err){ console.error(err); toast('Couldn’t import. Check your connection.', true); }
+    });
+    // "From your boards" tab → paste: the paste box opens from the new-conversation dialog too
+  }
+
   // ---------- a new conversation (or editing the prospect) ----------
   let leadsCache = null;
   async function loadLeads(){
@@ -457,7 +614,7 @@
     const ov = document.createElement('div'); ov.className = 'ov';
     const paint = ()=>{
       ov.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT"><h3 id="dlgT">${edit ? 'Edit prospect' : 'New conversation'}</h3><p>${edit ? 'Change the name, headline, link or photo.' : 'Who are you talking to on LinkedIn?'}</p>
-        ${edit ? '' : `<div class="tabs" role="tablist"><button type="button" data-tab="board" class="${tab === 'board' ? 'on' : ''}">📋 From your boards</button><button type="button" data-tab="manual" class="${tab === 'manual' ? 'on' : ''}">✍️ Type a name</button></div>`}
+        ${edit ? '' : `<div class="tabs" role="tablist"><button type="button" data-tab="board" class="${tab === 'board' ? 'on' : ''}">📋 From your boards</button><button type="button" data-tab="manual" class="${tab === 'manual' ? 'on' : ''}">✍️ Type a name</button><button type="button" data-tab="paste">📥 Paste from LinkedIn</button></div>`}
         ${tab === 'board' ? `<input class="in" id="leadQ" type="search" placeholder="Search your leads by name or company"><div class="leads" id="leadList"><div class="dm-empty">Loading your leads…</div></div>` : ''}
         <div ${tab === 'board' && !P.lead ? 'class="hidden"' : ''} id="pFields">
           <label class="fl">Name<input class="in" id="pName" maxlength="80" value="${esc(P.name)}" placeholder="E.g. Emma Jansen"></label>
@@ -481,7 +638,8 @@
     ov.addEventListener('mousedown', (e)=>{ if(e.target === ov) close(); });
     ov.addEventListener('click', async (e)=>{
       if(e.target.closest('[data-x]')){ close(); return; }
-      const t = e.target.closest('[data-tab]'); if(t){ readFields(); tab = t.dataset.tab; if(tab === 'manual') P.lead = null; paint(); return; }
+      const t = e.target.closest('[data-tab]'); if(t && t.dataset.tab === 'paste'){ close(); openPaste(null); return; }
+      if(t){ readFields(); tab = t.dataset.tab; if(tab === 'manual') P.lead = null; paint(); return; }
       const l = e.target.closest('[data-lead]'); if(l){ const [bId, lId] = l.dataset.lead.split('|'); const L = (await loadLeads()).find((x)=> x.boardId === bId && x.leadId === lId); if(!L) return;
         Object.assign(P, {name: L.name, headline: L.headline, linkedinUrl: L.linkedinUrl, lead: {boardId: L.boardId, leadId: L.leadId, boardName: L.boardName}}); paint(); return; }
       if(e.target.closest('#pPhotoX')){ readFields(); P.photo = ''; paint(); return; }
