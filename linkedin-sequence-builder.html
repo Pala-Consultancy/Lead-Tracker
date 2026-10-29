@@ -272,17 +272,52 @@
   .th-profile .hl{max-width:560px;line-height:20px;}
   .ps-hl{color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-  /* the statistics row under the conversations */
-  .dm{margin-bottom:12px !important;}
-  .dm-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:0 28px 20px;flex-shrink:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;}
-  .st-card{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"ic num" "lbl lbl" "sub sub";align-items:center;column-gap:8px;padding:12px 14px;border:1px solid var(--border-soft);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);text-align:left;color:var(--ink);transition:transform .15s,border-color .15s;}
-  .st-card:hover{transform:translateY(-1px);border-color:var(--slate-light);}
-  .st-card.on{border-color:#0A66C2;box-shadow:0 0 0 1px #0A66C2,var(--shadow);}
-  .st-ic{grid-area:ic;font-size:18px;} .st-num{grid-area:num;font:800 24px Sora,sans-serif;letter-spacing:-.02em;}
-  .st-lbl{grid-area:lbl;margin-top:2px;font-size:13px;font-weight:600;} .st-sub{grid-area:sub;margin-top:1px;font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .st-card.hot .st-sub{color:#C2410C;font-weight:600;}
-  @media (max-width:1200px){ .dm-stats{grid-template-columns:repeat(3,minmax(0,1fr));} }
-  @media (max-width:900px){ .dm-stats{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 12px 12px;} }
+
+  /* not interested right now */
+  .fu-tag.notnow{background:rgba(100,116,139,.14);color:#475569;} html[data-theme="dark"] .fu-tag.notnow{color:#CBD5E1;}
+  .bk-btn.nn{border-color:#94A3B8;background:rgba(100,116,139,.12);color:var(--li-ink,#334155);}
+
+  /* ===== the analytics under the conversations ===== */
+  .seq-main{overflow-y:auto !important;}
+  .dm{flex:none !important;height:calc(100vh - 118px);min-height:520px;margin-bottom:16px !important;}
+  .dm-stats{margin:0 28px 28px;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--ink);}
+  .an-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:6px 0 12px;}
+  .an-head h2{margin:0;font:800 20px Sora,sans-serif;letter-spacing:-.02em;} .an-head p{margin:3px 0 0;font-size:13px;color:var(--slate);}
+  .an-seg{display:inline-flex;padding:3px;border-radius:10px;background:var(--panel);border:1px solid var(--border-soft);}
+  .an-seg button{border:none;background:none;padding:6px 12px;border-radius:8px;font:600 13px inherit;color:var(--slate);}
+  .an-seg button.on{background:#0A66C2;color:#fff;} html[data-theme="dark"] .an-seg button.on{background:#378FE9;}
+  .an-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;}
+  .an-kpi{display:flex;flex-direction:column;align-items:flex-start;padding:14px 16px;border:1px solid var(--border-soft);border-radius:14px;background:var(--panel);text-align:left;color:var(--ink);transition:border-color .15s,transform .15s;}
+  .an-kpi[data-statview]:hover{border-color:#0A66C2;transform:translateY(-1px);} .an-kpi[tabindex="-1"]{cursor:default;}
+  .an-ic{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:rgba(10,102,194,.09);color:#0A66C2;flex-shrink:0;}
+  html[data-theme="dark"] .an-ic{background:rgba(113,183,251,.12);color:#71B7FB;}
+  .an-ic svg{width:17px;height:17px;}
+  .an-num{margin-top:10px;font:800 26px/1 Sora,sans-serif;letter-spacing:-.02em;} .an-lbl{margin-top:6px;font-size:13px;font-weight:600;}
+  .an-sub{margin-top:2px;font-size:12px;color:var(--slate);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .an-kpi.warn .an-ic{background:rgba(217,119,6,.12);color:#B45309;} .an-kpi.good .an-ic{background:rgba(1,117,79,.12);color:#01754F;}
+  .an-grid{display:grid;grid-template-columns:1.25fr 1.25fr 1fr 1fr;gap:10px;margin-top:10px;}
+  .an-card{padding:16px 18px;border:1px solid var(--border-soft);border-radius:14px;background:var(--panel);min-width:0;}
+  .an-card h3{margin:0 0 12px;font-size:14px;font-weight:700;} .an-card h3 span{font-weight:400;color:var(--slate);font-size:12.5px;margin-left:4px;}
+  .an-step{margin-bottom:10px;} .an-step-h{display:flex;justify-content:space-between;font-size:13px;} .an-step-h b{font-weight:700;}
+  .an-bar{height:8px;margin-top:5px;border-radius:99px;background:var(--panel-alt);overflow:hidden;} .an-bar i{display:block;height:100%;border-radius:99px;transition:width .4s;}
+  .s1 .an-bar i{background:#93C5FD;} .s2 .an-bar i{background:#3B82F6;} .s3 .an-bar i{background:#0A66C2;} .s4 .an-bar i{background:#01754F;}
+  .an-step small{display:block;margin-top:3px;font-size:11.5px;color:var(--slate);}
+  .an-foot{margin:8px 0 0;font-size:12px;color:var(--slate);}
+  .an-chart{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;height:150px;align-items:end;}
+  .an-col{display:flex;flex-direction:column;align-items:center;height:100%;}
+  .an-bars{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px;}
+  .an-bars i{display:block;width:40%;max-width:14px;min-height:2px;border-radius:3px 3px 0 0;}
+  .an-bars i.me,.an-legend i.me{background:#0A66C2;} .an-bars i.them,.an-legend i.them{background:#7DD3A8;}
+  .an-col small{margin-top:5px;font-size:10.5px;color:var(--slate);white-space:nowrap;}
+  .an-legend{display:flex;gap:14px;margin:10px 0 0;font-size:12px;color:var(--slate);} .an-legend span{display:inline-flex;align-items:center;gap:6px;} .an-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .an-att{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;margin-bottom:6px;border:1px solid transparent;border-radius:10px;background:var(--panel-alt);text-align:left;color:var(--ink);font-size:13px;}
+  .an-att small{display:block;font-size:11.5px;color:var(--slate);} .an-att b{font-size:15px;}
+  .an-att.on{background:rgba(217,119,6,.08);border-color:rgba(217,119,6,.25);} .an-att.on .an-ic{background:rgba(217,119,6,.14);color:#B45309;}
+  .an-att.on:hover{border-color:#B45309;} .an-att:not(.on){cursor:default;opacity:.75;}
+  .an-go{margin-left:auto;color:#B45309;} .an-go svg{width:16px;height:16px;}
+  .an-ins{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;} .an-ins b{display:block;font:800 18px Sora,sans-serif;} .an-ins small{display:block;font-size:12px;color:var(--slate);line-height:1.35;}
+  @media (max-width:1300px){ .an-kpis{grid-template-columns:repeat(3,minmax(0,1fr));} .an-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:900px){ .dm-stats{margin:0 12px 16px;} .an-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} .an-grid{grid-template-columns:1fr;} .an-head{flex-direction:column;align-items:flex-start;} .dm{height:calc(100vh - 100px);} }
 </style>
 </head>
 <body>
@@ -334,7 +369,7 @@
   const addDays = (n)=> { const d = new Date(); d.setDate(d.getDate() + n); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
   const daysUntil = (due)=> Math.round((new Date(due + 'T00:00:00') - new Date(todayStr() + 'T00:00:00')) / 864e5);
   // waiting for a reply: your message was the last one, and no call is booked yet
-  const isWaiting = (c)=> c.lastFrom === 'me' && !c.booked && !c.closed && (c.messages || []).length > 0;
+  const isWaiting = (c)=> c.lastFrom === 'me' && !c.booked && !c.closed && !c.notNow && (c.messages || []).length > 0;
   function waitText(iso){ const h = Math.max(0, (Date.now() - new Date(iso)) / 36e5);
     if(h < 1){ const m = Math.round(h * 60); return m < 2 ? 'just now' : `${m} min`; } if(h < 24) return `${Math.floor(h)} hour${Math.floor(h) === 1 ? '' : 's'}`; const d = Math.floor(h / 24); return `${d} day${d === 1 ? '' : 's'}`; }
   function fuLabel(fu){ if(!fu || !fu.due) return null; const n = daysUntil(fu.due);
@@ -510,49 +545,126 @@
     post: m.post ? {author: m.post.author.slice(0, 80), degree: m.post.degree.slice(0, 10), headline: m.post.headline.slice(0, 220), age: m.post.age.slice(0, 12), text: m.post.text.slice(0, 3000), url: /^https:\/\/(lnkd\.in|([a-z]+\.)?linkedin\.com)\//i.test(m.post.url || '') ? m.post.url : ''} : null,
     voice: m.voice ? {duration: String(m.voice.duration).slice(0, 8)} : null})); }
 
-  // ---------- the statistics under the conversations ----------
+  // ---------- the analytics under the conversations ----------
+  // Everything is worked out from your logged conversations; the period counts conversations by when they started.
+  let anPeriod = (()=>{ try { return localStorage.getItem('ptDmPeriod') || '30'; } catch(e){ return '30'; } })();
+  const IC = {
+    chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    reply: '<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>',
+    cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+    hour: '<path d="M6 2h12M6 22h12M7 2c0 5 10 6 10 10s-10 5-10 10M17 2c0 5-10 6-10 10s10 5 10 10"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+    ghost: '<circle cx="12" cy="12" r="9"/><path d="M8 15s1.5-2 4-2 4 2 4 2"/><path d="M9 9h.01M15 9h.01"/>',
+    pause: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
+    spark: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>'};
+  const svg = (k)=> `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
+  const pctN = (a, b)=> b ? Math.round(a / b * 100) : null;
+  const pct = (a, b)=> b ? Math.round(a / b * 100) + '%' : '–';
+  function dur(ms){ if(ms == null || !isFinite(ms)) return '–'; const h = ms / 36e5;
+    if(h < 1) return Math.max(1, Math.round(h * 60)) + ' min'; if(h < 24) return (h < 10 ? h.toFixed(1).replace(/\.0$/, '') : Math.round(h)) + ' h';
+    const d = h / 24; return (d < 10 ? d.toFixed(1).replace(/\.0$/, '') : Math.round(d)) + ' days'; }
+  const median = (a)=> { if(!a.length) return null; const s = a.slice().sort((x, y)=> x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const sorted = (c)=> (c.messages || []).slice().sort((a, b)=> String(a.at).localeCompare(String(b.at)));
+  const startOf = (c)=> { const m = sorted(c)[0]; return m ? new Date(m.at) : new Date(c.created || Date.now()); };
   function renderStats(){
     const box = $('dmStats'); if(!box) return;
-    const n = convs.length, has = (c, w)=> (c.messages || []).some((m)=> m.from === w);
-    const reached = convs.filter((c)=> has(c, 'me')).length, answered = convs.filter((c)=> has(c, 'them')).length;
-    const waiting = convs.filter(isWaiting).length, fu = convs.filter((c)=> c.followUp && c.followUp.due);
-    const fuDue = fu.filter((c)=> daysUntil(c.followUp.due) <= 0).length;
-    const booked = convs.filter((c)=> c.booked || c.closed).length, closed = convs.filter((c)=> c.closed).length;
-    const pct = (a, b)=> b ? Math.round(a / b * 100) + '%' : '–';
-    const card = (view, ic, num, label, sub, hot)=> `<button type="button" class="st-card${hot ? ' hot' : ''}${view && view === window.__dmView ? ' on' : ''}" ${view ? `data-statview="${view}"` : 'data-statview="all"'}>
-        <span class="st-ic" aria-hidden="true">${ic}</span><span class="st-num">${num}</span><span class="st-lbl">${label}</span>${sub ? `<span class="st-sub">${sub}</span>` : ''}</button>`;
-    box.innerHTML =
-      card('all', '💬', n, 'Conversations', reached ? `${reached} contacted by you` : '') +
-      card('all', '↩️', answered, 'Answered', reached ? `${pct(answered, reached)} replied` : '') +
-      card('wait', '⏳', waiting, 'Waiting for reply', waiting ? 'they still need to answer' : 'nobody waiting 🎉') +
-      card('fu', '🔔', fu.length, 'Follow-ups', fuDue ? `${fuDue} due today or overdue` : (fu.length ? 'none due yet' : ''), fuDue > 0) +
-      card('booked', '📅', booked, 'Calls booked', answered ? `${pct(booked, answered)} of who answered` : '') +
-      card('closed', '🏆', closed, 'Closed', booked ? `${pct(closed, booked)} of booked calls` : '');
+    const now = Date.now(), days = anPeriod === 'all' ? null : +anPeriod, from = days ? now - days * 864e5 : 0;
+    const all = convs, inP = all.filter((c)=> startOf(c).getTime() >= from);
+    // per conversation: who wrote first, the first reply after your first message, how many of your messages before a booked call
+    const facts = inP.map((c)=>{ const ms = sorted(c), firstMe = ms.find((m)=> m.from === 'me'), firstThem = ms.find((m)=> m.from === 'them');
+      const replyAfter = firstMe ? ms.find((m)=> m.from === 'them' && m.at > firstMe.at) : null;
+      return {c, ms, inbound: !!(firstThem && (!firstMe || firstThem.at < firstMe.at)), contacted: !!firstMe, replied: !!firstThem,
+        replyMs: firstMe && replyAfter ? new Date(replyAfter.at) - new Date(firstMe.at) : null, firstMeAt: firstMe ? new Date(firstMe.at) : null,
+        booked: !!(c.booked || c.closed), closed: !!c.closed, notNow: !!c.notNow, myCount: ms.filter((m)=> m.from === 'me').length}; });
+    const n = facts.length, inbound = facts.filter((f)=> f.inbound).length;
+    const outbound = facts.filter((f)=> f.contacted && !f.inbound), outReplied = outbound.filter((f)=> f.replied).length;
+    const replied = facts.filter((f)=> f.replied).length, booked = facts.filter((f)=> f.booked).length, closed = facts.filter((f)=> f.closed).length, notNow = facts.filter((f)=> f.notNow).length;
+    const contacted = facts.filter((f)=> f.contacted).length;
+    const medReply = median(outbound.map((f)=> f.replyMs).filter((x)=> x != null && x >= 0));
+    // right now (regardless of the period)
+    const waiting = all.filter(isWaiting), oldestWait = waiting.length ? Math.max(...waiting.map((c)=> now - new Date(c.lastAt))) : null;
+    const fuDue = all.filter((c)=> c.followUp && c.followUp.due && daysUntil(c.followUp.due) <= 0).length;
+    const ghost = all.filter((c)=> isWaiting(c) && (now - new Date(c.lastAt)) >= 7 * 864e5).length;
+    const recheck = all.filter((c)=> c.notNow && c.notNow.at && (now - new Date(c.notNow.at)) >= 30 * 864e5).length;
+    // insights
+    const byDay = {}; outbound.forEach((f)=>{ if(!f.firstMeAt) return; const d = f.firstMeAt.getDay(); byDay[d] = byDay[d] || {n: 0, r: 0}; byDay[d].n++; if(f.replied) byDay[d].r++; });
+    const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const best = Object.entries(byDay).filter(([, v])=> v.n >= 3).sort((a, b)=> (b[1].r / b[1].n) - (a[1].r / a[1].n))[0];
+    const toBook = facts.filter((f)=> f.booked && f.myCount), avgToBook = toBook.length ? toBook.reduce((s, f)=> s + f.myCount, 0) / toBook.length : null;
+    const avgLen = n ? facts.reduce((s, f)=> s + f.ms.length, 0) / n : null;
+    // the last 8 weeks: your messages and their replies per week
+    const wk0 = (()=>{ const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); })();
+    const weeks = Array.from({length: 8}, (_, i)=> ({start: wk0 - (7 - i) * 7 * 864e5, me: 0, them: 0}));
+    all.forEach((c)=> (c.messages || []).forEach((m)=>{ const t = new Date(m.at).getTime(); const w = weeks.find((x)=> t >= x.start && t < x.start + 7 * 864e5); if(w) w[m.from === 'me' ? 'me' : 'them']++; }));
+    const maxW = Math.max(1, ...weeks.map((w)=> Math.max(w.me, w.them)));
+    // building the panel
+    const kpi = (ic, num, label, sub, view, tone)=> `<button type="button" class="an-kpi${tone ? ' ' + tone : ''}" ${view ? `data-statview="${view}"` : 'tabindex="-1"'}>
+        <span class="an-ic">${svg(ic)}</span><span class="an-num">${num}</span><span class="an-lbl">${label}</span><span class="an-sub">${sub || '&nbsp;'}</span></button>`;
+    const stage = (label, val, base, cls)=> { const w = contacted ? Math.max(val ? 4 : 0, Math.round(val / Math.max(contacted, 1) * 100)) : 0;
+      return `<div class="an-step ${cls}"><div class="an-step-h"><span>${label}</span><b>${val}</b></div><div class="an-bar"><i style="width:${w}%"></i></div>${base != null ? `<small>${pct(val, base)} of the step before</small>` : '<small>&nbsp;</small>'}</div>`; };
+    const att = (ic, val, label, sub, view)=> `<button type="button" class="an-att${val ? ' on' : ''}" ${view ? `data-statview="${view}"` : ''}><span class="an-ic">${svg(ic)}</span><span><b>${val}</b> ${label}<small>${sub}</small></span>${val && view ? `<span class="an-go">${svg('arrow')}</span>` : ''}</button>`;
+    const P = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['all', 'All time']];
+    box.innerHTML = `<div class="an-head"><div><h2>Performance</h2><p>${anPeriod === 'all' ? 'All your logged conversations' : `Conversations started in the last ${anPeriod} days`} · ${n} conversation${n === 1 ? '' : 's'}</p></div>
+        <div class="an-seg" role="radiogroup" aria-label="Period">${P.map(([k, l])=> `<button type="button" role="radio" aria-checked="${anPeriod === k}" class="${anPeriod === k ? 'on' : ''}" data-period="${k}">${l}</button>`).join('')}</div></div>
+      <div class="an-kpis">
+        ${kpi('chat', n, 'Conversations', inbound ? `${inbound} inbound · ${n - inbound} outbound` : `${contacted} started by you`, 'all')}
+        ${kpi('reply', pct(outReplied, outbound.length), 'Reply rate', outbound.length ? `${outReplied} of ${outbound.length} replied` : 'no outreach yet', 'all')}
+        ${kpi('clock', dur(medReply), 'Median reply time', medReply != null ? 'from your first message' : 'no replies yet', '')}
+        ${kpi('cal', booked, 'Calls booked', replied ? `${pct(booked, replied)} of replies` : '', 'booked')}
+        ${kpi('trophy', closed, 'Closed', booked ? `${pct(closed, booked)} of booked calls` : '', 'closed', closed ? 'good' : '')}
+        ${kpi('hour', waiting.length, 'Waiting for reply', waiting.length ? `longest: ${dur(oldestWait)}` : 'nobody waiting', 'wait', waiting.length ? 'warn' : '')}
+      </div>
+      <div class="an-grid">
+        <section class="an-card"><h3>Funnel</h3>
+          <div class="an-funnel">${stage('Contacted', contacted, null, 's1')}${stage('Replied', facts.filter((f)=> f.contacted && f.replied).length, contacted, 's2')}${stage('Call booked', booked, facts.filter((f)=> f.contacted && f.replied).length, 's3')}${stage('Closed', closed, booked, 's4')}</div>
+          <p class="an-foot">${notNow ? `<b>${notNow}</b> marked as not interested right now · ` : ''}Overall: ${pct(closed, contacted)} of contacted prospects became clients</p></section>
+        <section class="an-card"><h3>Activity <span>last 8 weeks</span></h3>
+          <div class="an-chart" role="img" aria-label="Messages sent and replies received per week">${weeks.map((w, i)=> `<div class="an-col" title="Week of ${new Date(w.start).toLocaleDateString([], {day: 'numeric', month: 'short'})}: ${w.me} sent, ${w.them} replies">
+              <div class="an-bars"><i class="me" style="height:${Math.round(w.me / maxW * 100)}%"></i><i class="them" style="height:${Math.round(w.them / maxW * 100)}%"></i></div>
+              <small>${i === 7 ? 'This wk' : new Date(w.start).toLocaleDateString([], {day: 'numeric', month: 'short'})}</small></div>`).join('')}</div>
+          <p class="an-legend"><span><i class="me"></i>Messages you sent</span><span><i class="them"></i>Replies received</span></p></section>
+        <section class="an-card"><h3>Needs attention</h3>
+          ${att('bell', fuDue, `follow-up${fuDue === 1 ? '' : 's'} due`, 'today or overdue', 'fu')}
+          ${att('ghost', ghost, `prospect${ghost === 1 ? '' : 's'} with no reply`, 'for 7 days or more: time for a follow-up', 'wait')}
+          ${att('pause', recheck, `“not interested” to check back on`, 'marked 30+ days ago', 'notnow')}</section>
+        <section class="an-card"><h3>Insights</h3>
+          <div class="an-ins"><span class="an-ic">${svg('spark')}</span><div><b>${best ? DAYS[best[0]] : '–'}</b><small>${best ? `best day for a first message (${pct(best[1].r, best[1].n)} replied)` : 'best day for a first message: needs 3+ first messages on a day'}</small></div></div>
+          <div class="an-ins"><span class="an-ic">${svg('cal')}</span><div><b>${avgToBook != null ? avgToBook.toFixed(1).replace(/\.0$/, '') : '–'}</b><small>of your messages, on average, to book a call</small></div></div>
+          <div class="an-ins"><span class="an-ic">${svg('chat')}</span><div><b>${avgLen != null ? avgLen.toFixed(1).replace(/\.0$/, '') : '–'}</b><small>messages per conversation, on average</small></div></div></section>
+      </div>`;
   }
-  document.addEventListener('click', (e)=>{ const c = e.target.closest('[data-statview]'); if(!c) return; view = c.dataset.statview; renderList(); const it = $('items'); if(it) it.scrollTop = 0; });
+  document.addEventListener('click', (e)=>{
+    const pb = e.target.closest('[data-period]'); if(pb){ anPeriod = pb.dataset.period; try { localStorage.setItem('ptDmPeriod', anPeriod); } catch(err){ /* ignore */ } renderStats(); return; }
+    const c = e.target.closest('[data-statview]'); if(!c) return; view = c.dataset.statview; renderList();
+    const it = $('items'); if(it) it.scrollTop = 0; const d = $('dm'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'start'});
+  });
 
   // ---------- the list ----------
   function renderList(){
     window.__dmView = view; try { renderStats(); } catch(e){ /* the list still shows */ }
     const fuCount = convs.filter((c)=> c.followUp && c.followUp.due).length;
-    const waitCount = convs.filter(isWaiting).length, bookCount = convs.filter((c)=> c.booked && !c.closed).length, closedCount = convs.filter((c)=> c.closed).length;
-    const ICON = {wait: '⏳', fu: '🔔', booked: '📅', closed: '🏆'};
+    const waitCount = convs.filter(isWaiting).length, bookCount = convs.filter((c)=> c.booked && !c.closed).length, closedCount = convs.filter((c)=> c.closed).length, notNowCount = convs.filter((c)=> c.notNow).length;
+    const ICON = {wait: '⏳', fu: '🔔', booked: '📅', closed: '🏆', notnow: '💤'};
     const tab = (k, label, n)=> `<button type="button" data-view="${k}" class="${view === k ? 'on' : ''}" title="${label}" aria-label="${label}${n ? ' (' + n + ')' : ''}">${ICON[k] ? `<i>${ICON[k]}</i>` : ''}${!ICON[k] || view === k ? `<em>${label}</em>` : ''}${n ? ` <span>${n}</span>` : ''}</button>`;
-    const tb = $('listTabs'); if(tb) tb.innerHTML = tab('all', 'All', 0) + tab('wait', 'Waiting', waitCount) + tab('fu', 'Follow-up', fuCount) + tab('booked', 'Booked', bookCount) + tab('closed', 'Closed', closedCount);
+    const tb = $('listTabs'); if(tb) tb.innerHTML = tab('all', 'All', 0) + tab('wait', 'Waiting', waitCount) + tab('fu', 'Follow-up', fuCount) + tab('booked', 'Booked', bookCount) + tab('closed', 'Closed', closedCount) + tab('notnow', 'Not now', notNowCount);
     if(tb){ const on = tb.querySelector('.on'); if(on) on.scrollIntoView({block: 'nearest', inline: 'nearest'});
       tb.classList.toggle('more', tb.scrollWidth > tb.clientWidth + 1 && tb.scrollLeft + tb.clientWidth < tb.scrollWidth - 1); }
-    const inView = (c)=> view === 'fu' ? !!(c.followUp && c.followUp.due) : view === 'wait' ? isWaiting(c) : view === 'booked' ? !!c.booked && !c.closed : view === 'closed' ? !!c.closed : true;
+    const inView = (c)=> view === 'fu' ? !!(c.followUp && c.followUp.due) : view === 'wait' ? isWaiting(c) : view === 'booked' ? !!c.booked && !c.closed : view === 'closed' ? !!c.closed : view === 'notnow' ? !!c.notNow : true;
     const list = convs.filter((c)=> inView(c) && (!q || (c.prospect.name + ' ' + (c.prospect.headline || '') + ' ' + (c.lastText || '')).toLowerCase().includes(q)))
       .sort(view === 'fu' ? (a, b)=> String(a.followUp.due).localeCompare(String(b.followUp.due))        // the most urgent first
         : view === 'wait' ? (a, b)=> String(a.lastAt).localeCompare(String(b.lastAt))                      // the longest wait first
         : view === 'booked' ? (a, b)=> String(b.booked.at || '').localeCompare(String(a.booked.at || ''))
         : view === 'closed' ? (a, b)=> String(b.closed.at || '').localeCompare(String(a.closed.at || ''))
+        : view === 'notnow' ? (a, b)=> String(b.notNow.at || '').localeCompare(String(a.notNow.at || ''))
         : (a, b)=> String(b.lastAt || b.created || '').localeCompare(String(a.lastAt || a.created || '')));
     $('items').innerHTML = list.length ? list.map((c)=> `<button type="button" class="dm-item${c.id === openId ? ' on' : ''}" data-open="${esc(c.id)}">${avatar(c.prospect.name, c.prospect.photo)}
         <span class="meta"><span class="row"><b>${esc(c.prospect.name)}</b><time>${esc(shortWhen(c.lastAt))}</time></span>
         <small>${c.lastText ? (c.lastFrom === 'me' ? 'You: ' : '') + esc(c.lastText) : esc(c.prospect.headline || 'No messages yet')}</small>
-        <span class="tags">${c.closed ? '<span class="fu-tag closed">🏆 Closed</span>' : c.booked ? '<span class="fu-tag booked">📅 Call booked</span>' : ''}${isWaiting(c) ? `<span class="fu-tag wait">⏳ Waiting · ${esc(waitText(c.lastAt))}</span>` : ''}${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></span></button>`).join('')
-      : `<div class="dm-empty">${view === 'wait' && convs.length ? '<b>Nobody is waiting</b>Every prospect has answered your last message. 🎉' : view === 'booked' && convs.length ? '<b>No booked calls yet</b>Mark a prospect as 📅 Call booked with the status button at the top of a conversation.' : view === 'closed' && convs.length ? '<b>No closed prospects yet</b>Mark a prospect as 🏆 Closed with the status button at the top of a conversation.' : view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
+        <span class="tags">${c.closed ? '<span class="fu-tag closed">🏆 Closed</span>' : c.booked ? '<span class="fu-tag booked">📅 Call booked</span>' : c.notNow ? '<span class="fu-tag notnow">💤 Not interested now</span>' : ''}${isWaiting(c) ? `<span class="fu-tag wait">⏳ Waiting · ${esc(waitText(c.lastAt))}</span>` : ''}${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></span></button>`).join('')
+      : `<div class="dm-empty">${view === 'wait' && convs.length ? '<b>Nobody is waiting</b>Every prospect has answered your last message. 🎉' : view === 'booked' && convs.length ? '<b>No booked calls yet</b>Mark a prospect as 📅 Call booked with the status button at the top of a conversation.' : view === 'closed' && convs.length ? '<b>No closed prospects yet</b>Mark a prospect as 🏆 Closed with the status button at the top of a conversation.' : view === 'notnow' && convs.length ? '<b>Nobody here</b>Mark a prospect as 💤 Not interested now with the status button. Add a 🔔 follow-up to check back later.' : view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
   }
   // ---------- the thread ----------
   function renderThread(keepComposer){
@@ -578,7 +690,7 @@
     box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
         <div class="meta"><b>${nameHTML}${p.degree ? `<span class="deg"> · ${esc(p.degree)}</span>` : ''}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
         ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
-        <button type="button" class="bk-btn${c.closed ? ' won' : c.booked ? ' on' : ''}" id="stBtn" aria-haspopup="true" title="Status">${c.closed ? '🏆 Closed' : c.booked ? '📅 Call booked' : 'Status'} ▾</button>
+        <button type="button" class="bk-btn${c.closed ? ' won' : c.booked ? ' on' : c.notNow ? ' nn' : ''}" id="stBtn" aria-haspopup="true" title="Status">${c.closed ? '🏆 Closed' : c.booked ? '📅 Call booked' : c.notNow ? '💤 Not interested now' : 'Status'} ▾</button>
         <button type="button" class="fu-btn${c.followUp && c.followUp.due ? ' on' : ''}" id="fuBtn" aria-haspopup="true">🔔 ${c.followUp && c.followUp.due ? esc(fuLabel(c.followUp).text) : 'Follow up'}</button>
         <button type="button" class="ib" id="pasteBtn" title="Paste messages from LinkedIn" aria-label="Paste messages from LinkedIn">📋</button>
         <button type="button" class="ib" id="editP" title="Edit prospect" aria-label="Edit prospect">✎</button><button type="button" class="ib" id="delC" title="Delete this conversation" aria-label="Delete this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
@@ -662,24 +774,26 @@
     return true;
   }
   function setStage(stage){                                                  // '' | 'booked' | 'closed'
-    const c = cur(); if(!c) return; const now = new Date().toISOString(), was = c.closed ? 'closed' : c.booked ? 'booked' : '';
+    const c = cur(); if(!c) return; const now = new Date().toISOString(), was = c.closed ? 'closed' : c.booked ? 'booked' : c.notNow ? 'notnow' : '';
     if(stage === was) return;
-    if(stage === 'closed'){ c.closed = {at: now}; if(!c.booked) c.booked = {at: now}; }
-    else if(stage === 'booked'){ c.closed = null; c.booked = c.booked || {at: now}; }
-    else { c.closed = null; c.booked = null; }
-    save(c, {booked: c.booked, closed: c.closed});
-    const inBoard = boardStatus(c, stage === 'closed' ? 'Won' : stage === 'booked' ? 'Call booked' : 'Contacted');
+    if(stage === 'closed'){ c.closed = {at: now}; if(!c.booked) c.booked = {at: now}; c.notNow = null; }
+    else if(stage === 'booked'){ c.closed = null; c.booked = c.booked || {at: now}; c.notNow = null; }
+    else if(stage === 'notnow'){ c.closed = null; c.booked = null; c.notNow = {at: now}; }
+    else { c.closed = null; c.booked = null; c.notNow = null; }
+    save(c, {booked: c.booked, closed: c.closed, notNow: c.notNow});
+    // the board: "not interested now" leaves the lead's status as it is (it isn't "Lost")
+    const inBoard = stage === 'notnow' ? false : (was === 'notnow' && stage === '') ? false : boardStatus(c, stage === 'closed' ? 'Won' : stage === 'booked' ? 'Call booked' : 'Contacted');
     renderThread(true); renderList();
     const nm = first(c.prospect.name), also = inBoard ? ': also updated in your board' : '';
-    toast(stage === 'closed' ? `🏆 Closed with ${nm}${inBoard ? ': marked as Won in your board' : ''}. Congrats!` : stage === 'booked' ? `🎉 Call booked with ${nm}${also}.` : `Status cleared for ${nm}${also}.`);
+    toast(stage === 'notnow' ? `💤 ${nm} is marked as not interested right now. Tip: add a 🔔 follow-up to check back later.` : stage === 'closed' ? `🏆 Closed with ${nm}${inBoard ? ': marked as Won in your board' : ''}. Congrats!` : stage === 'booked' ? `🎉 Call booked with ${nm}${also}.` : `Status cleared for ${nm}${also}.`);
   }
   function openStatus(anchor){
     const c = cur(); if(!c) return; const old = document.getElementById('stMenu'); if(old){ old.remove(); return; }
-    const r = anchor.getBoundingClientRect(), stage = c.closed ? 'closed' : c.booked ? 'booked' : '';
+    const r = anchor.getBoundingClientRect(), stage = c.closed ? 'closed' : c.booked ? 'booked' : c.notNow ? 'notnow' : '';
     const m = document.createElement('div'); m.id = 'stMenu'; m.className = 'st-menu'; m.setAttribute('role', 'menu');
     m.style.top = (r.bottom + 6) + 'px'; m.style.right = Math.max(12, innerWidth - r.right) + 'px';
     const opt = (k, ic, label, sub)=> `<button type="button" role="menuitemradio" aria-checked="${stage === k}" data-stage="${k}" class="${stage === k ? 'on' : ''}"><span class="ic">${ic}</span><span><b>${label}</b><small>${sub}</small></span>${stage === k ? '<span class="ck">✓</span>' : ''}</button>`;
-    m.innerHTML = opt('', '💬', 'In conversation', 'No call booked yet') + opt('booked', '📅', 'Call booked', 'They booked a call with you') + opt('closed', '🏆', 'Closed', 'They became a client (Won)');
+    m.innerHTML = opt('', '💬', 'In conversation', 'No call booked yet') + opt('booked', '📅', 'Call booked', 'They booked a call with you') + opt('closed', '🏆', 'Closed', 'They became a client (Won)') + opt('notnow', '💤', 'Not interested now', 'Not the right moment: check back later');
     document.body.appendChild(m);
     m.addEventListener('click', (e)=>{ const b = e.target.closest('[data-stage]'); if(!b) return; m.remove(); setStage(b.dataset.stage); });
     setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target) && ev.target !== anchor){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
