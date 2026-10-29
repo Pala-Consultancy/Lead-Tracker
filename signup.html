@@ -642,6 +642,12 @@
   ::-webkit-scrollbar-thumb{background:var(--c-border-alt, var(--border));border-radius:6px;border:2px solid transparent;background-clip:padding-box;}
   ::-webkit-scrollbar-thumb:hover{background:var(--slate-light);background-clip:padding-box;}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+  /* the username field */
+  .un-wrap{position:relative;display:flex;align-items:center;}
+  .un-wrap span{position:absolute;left:14px;font-weight:700;color:var(--slate);pointer-events:none;}
+  .un-wrap input{width:100%;padding-left:30px !important;}
+  .un-hint.ok{color:#1E9E74;} .un-hint.bad{color:#C2410C;} .un-hint.wait{color:var(--slate);}
 </style>
 </head>
 <body>
@@ -696,6 +702,11 @@
         <div class="field-hint" id="companySlugHint">&nbsp;</div>
       </div>
       <div class="field">
+        <label for="signupUsername">Username</label>
+        <div class="un-wrap"><span aria-hidden="true">@</span><input id="signupUsername" type="text" maxlength="24" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="yourname" required aria-describedby="usernameHint"></div>
+        <div class="field-hint un-hint" id="usernameHint" aria-live="polite">Others in PalaTrack can find and message you with this.</div>
+      </div>
+      <div class="field">
         <label for="signupEmail" data-i18n="email">Email</label>
         <div class="input-with-icon">
           <input id="signupEmail" type="email" placeholder="you@company.com" required>
@@ -743,6 +754,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
   // ---------- i18n ----------
@@ -1000,8 +1012,9 @@
     submitBtn.textContent = t('creatingAccount');
     signingUp = true;
     const dirRef = db.collection('workspaceDirectory').doc(slug);
+    let username = '';
 
-    dirRef.get().then(dirDoc=>{
+    unReady().then((v)=>{ username = v; return dirRef.get(); }).then(dirDoc=>{
       if(dirDoc.exists){
         throw {code: 'company-exists', companyName: dirDoc.data().companyName};
       }
@@ -1013,12 +1026,14 @@
       // unavailable, so both should actually hold the name, not just one.
       return cred.user.updateProfile({displayName: name}).then(()=>cred);
     }).then(cred=>{
-      return createWorkspaceForUser(cred, name, company);
+      return createWorkspaceForUser(cred, name, company).then(()=> claimUsername(cred.user.uid, username, name, company));
     }).then(()=>{
-      location.href = BUY ? 'billing.html?buy=' + BUY : 'billing.html';
+      afterSignup(submitBtn);
     }).catch(err=>{
       signingUp = false;
-      reportSignupError(err);
+      if(err && err.code === 'username-invalid'){ showLoginError('Choose a username: 3–24 characters, lowercase letters, numbers, dots and underscores.'); unEl.focus(); }
+      else if(err && err.code === 'username-taken'){ showLoginError('@' + err.name + ' is already taken. Choose another username.'); unCheck(); unEl.focus(); }
+      else reportSignupError(err);
       submitBtn.disabled = false;
       submitBtn.textContent = t('createAccountBtn');
     });
@@ -1046,23 +1061,69 @@
     signingUp = true;
     const dirRef = db.collection('workspaceDirectory').doc(slug);
     const provider = new firebase.auth.GoogleAuthProvider();
+    let username = '';
 
-    dirRef.get().then(dirDoc=>{
+    unReady().then((v)=>{ username = v; return dirRef.get(); }).then(dirDoc=>{
       if(dirDoc.exists){
         throw {code: 'company-exists', companyName: dirDoc.data().companyName};
       }
       return auth.signInWithPopup(provider);
     }).then(cred=>{
       const name = cred.user.displayName || '';
-      return createWorkspaceForUser(cred, name, company);
+      return createWorkspaceForUser(cred, name, company).then(()=> claimUsername(cred.user.uid, username, name, company));
     }).then(()=>{
-      location.href = BUY ? 'billing.html?buy=' + BUY : 'billing.html';
+      afterSignup(googleBtn);
     }).catch(err=>{
       signingUp = false;
-      reportSignupError(err);
+      if(err && err.code === 'username-invalid'){ showLoginError('Choose a username: 3–24 characters, lowercase letters, numbers, dots and underscores.'); unEl.focus(); }
+      else if(err && err.code === 'username-taken'){ showLoginError('@' + err.name + ' is already taken. Choose another username.'); unCheck(); unEl.focus(); }
+      else reportSignupError(err);
       googleBtn.disabled = false;
     });
   });
+
+  // ---------- the username: chosen while signing up (so no pop-up asks for it later) ----------
+  const UN_RE = /^[a-z0-9](?:[a-z0-9._]{1,22})[a-z0-9]$/;
+  const unClean = (v)=> String(v || '').toLowerCase().replace(/^@+/, '').replace(/[^a-z0-9._]/g, '');
+  const unEl = document.getElementById('signupUsername'), unHint = document.getElementById('usernameHint');
+  let unOk = '', unTouched = false, unTimer = null;
+  function unSay(cls, text){ unHint.className = 'field-hint un-hint ' + cls; unHint.textContent = text; }
+  function unCheck(){
+    const v = unClean(unEl.value); if(unEl.value !== v) unEl.value = v; unOk = ''; clearTimeout(unTimer);
+    if(!v){ unSay('', 'Others in PalaTrack can find and message you with this.'); return; }
+    if(!UN_RE.test(v)){ unSay('bad', v.length < 3 ? 'At least 3 characters.' : 'Lowercase letters, numbers, dots and underscores; start and end with a letter or number.'); return; }
+    unSay('wait', 'Checking…');
+    unTimer = setTimeout(()=>{ if(!firebaseConnected){ unSay('', ''); return; }
+      db.doc('usernames/' + v).get().then((d)=>{ if(unClean(unEl.value) !== v) return;
+        if(d.exists){ unSay('bad', '@' + v + ' is taken. Try another one.'); } else { unOk = v; unSay('ok', '@' + v + ' is available.'); }
+      }).catch(()=> unSay('', 'We’ll check it when you create your account.')); }, 350);
+  }
+  unEl.addEventListener('input', ()=>{ unTouched = true; unCheck(); });
+  // a suggestion from your name, until you type your own
+  function unSuggest(){ if(unTouched) return; const f = document.getElementById('signupFirstName').value, l = document.getElementById('signupLastName').value;
+    const v = unClean((f + ' ' + l).trim().replace(/\s+/g, '.')).replace(/\.{2,}/g, '.').replace(/^\.|\.$/g, '').slice(0, 24);
+    if(v.length >= 3 && v !== unEl.value){ unEl.value = v; unCheck(); } }
+  ['signupFirstName', 'signupLastName'].forEach((id)=> document.getElementById(id).addEventListener('input', unSuggest));
+  // is the username free? (checked again right before the account is created)
+  function unReady(){ const v = unClean(unEl.value);
+    if(!UN_RE.test(v)) return Promise.reject({code: 'username-invalid'});
+    return db.doc('usernames/' + v).get().then((d)=>{ if(d.exists) throw {code: 'username-taken', name: v}; return v; }, ()=> v); }
+  function claimUsername(uid, v, name, company){
+    const b = db.batch(), now = firebase.firestore.FieldValue.serverTimestamp(), nm = String(name || '').trim();
+    b.set(db.doc('usernames/' + v), {uid, createdAt: now});
+    b.set(db.doc('profiles/' + uid), {uid, username: v, name: nm, nameLower: nm.toLowerCase(), photoURL: '', headline: String(company || '').slice(0, 120), updatedAt: now}, {merge: true});
+    return b.commit().catch(()=>{ /* taken at the very last moment: they can pick another one in PalaTrack */ });
+  }
+  // after the account exists: straight to payment for the chosen plan (and back to the home page after), otherwise home
+  function afterSignup(btn){
+    if(!BUY){ location.href = 'home.html'; return; }
+    if(btn) btn.textContent = 'Taking you to secure payment…';
+    try {
+      firebase.functions().httpsCallable('createCheckoutSession')({plan: BUY, siteUrl: location.origin, locale: currentLang, returnTo: 'home'})
+        .then((r)=>{ location.href = r.data.url; })
+        .catch(()=>{ location.href = 'billing.html?buy=' + BUY; });     // the billing page tries again
+    } catch(e){ location.href = 'billing.html?buy=' + BUY; }
+  }
 
   // the plan someone picked on the pricing page: after creating their account, they go straight to payment
   var BUY = (function(){ try { var p = new URLSearchParams(location.search).get('plan'); return p === 'starter' || p === 'premium' ? p : ''; } catch(e){ return ''; } })();

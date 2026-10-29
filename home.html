@@ -2805,6 +2805,13 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
       setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 500);
     }catch(e){}
   }
+  // back from Stripe after signing up (?checkout=success|cancelled): a short note, then a clean address
+  (function(){ let c = ''; try { c = new URLSearchParams(location.search).get('checkout') || ''; } catch(e){ return; }
+    if(c !== 'success' && c !== 'cancelled') return;
+    try { const u = new URL(location.href); u.searchParams.delete('checkout'); history.replaceState({}, '', u.pathname + u.search + u.hash); } catch(e){ /* ignore */ }
+    setTimeout(()=>{ c === 'success' ? showToast('🎉 Payment received: your plan is being activated. Welcome to PalaTrack!')
+      : showToast('Payment cancelled, nothing was charged. You can choose a plan any time under Billing.', true); }, 1200);
+  })();
   function showToast(message, danger){
     if(!danger) playSuccessSound();
     const stack = document.getElementById('toastStack');
