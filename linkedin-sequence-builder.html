@@ -271,6 +271,18 @@
   .deg{font-weight:400;color:var(--li-ink2,#666);font-size:14px;}
   .th-profile .hl{max-width:560px;line-height:20px;}
   .ps-hl{color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* the statistics row under the conversations */
+  .dm{margin-bottom:12px !important;}
+  .dm-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:0 28px 20px;flex-shrink:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;}
+  .st-card{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"ic num" "lbl lbl" "sub sub";align-items:center;column-gap:8px;padding:12px 14px;border:1px solid var(--border-soft);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);text-align:left;color:var(--ink);transition:transform .15s,border-color .15s;}
+  .st-card:hover{transform:translateY(-1px);border-color:var(--slate-light);}
+  .st-card.on{border-color:#0A66C2;box-shadow:0 0 0 1px #0A66C2,var(--shadow);}
+  .st-ic{grid-area:ic;font-size:18px;} .st-num{grid-area:num;font:800 24px Sora,sans-serif;letter-spacing:-.02em;}
+  .st-lbl{grid-area:lbl;margin-top:2px;font-size:13px;font-weight:600;} .st-sub{grid-area:sub;margin-top:1px;font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .st-card.hot .st-sub{color:#C2410C;font-weight:600;}
+  @media (max-width:1200px){ .dm-stats{grid-template-columns:repeat(3,minmax(0,1fr));} }
+  @media (max-width:900px){ .dm-stats{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 12px 12px;} }
 </style>
 </head>
 <body>
@@ -291,6 +303,7 @@
       </aside>
       <section class="dm-thread" id="thread" aria-live="polite"></section>
     </div>
+    <div class="dm-stats" id="dmStats" aria-label="Your DM statistics"></div>
   </div>
 </div>
 
@@ -497,8 +510,30 @@
     post: m.post ? {author: m.post.author.slice(0, 80), degree: m.post.degree.slice(0, 10), headline: m.post.headline.slice(0, 220), age: m.post.age.slice(0, 12), text: m.post.text.slice(0, 3000), url: /^https:\/\/(lnkd\.in|([a-z]+\.)?linkedin\.com)\//i.test(m.post.url || '') ? m.post.url : ''} : null,
     voice: m.voice ? {duration: String(m.voice.duration).slice(0, 8)} : null})); }
 
+  // ---------- the statistics under the conversations ----------
+  function renderStats(){
+    const box = $('dmStats'); if(!box) return;
+    const n = convs.length, has = (c, w)=> (c.messages || []).some((m)=> m.from === w);
+    const reached = convs.filter((c)=> has(c, 'me')).length, answered = convs.filter((c)=> has(c, 'them')).length;
+    const waiting = convs.filter(isWaiting).length, fu = convs.filter((c)=> c.followUp && c.followUp.due);
+    const fuDue = fu.filter((c)=> daysUntil(c.followUp.due) <= 0).length;
+    const booked = convs.filter((c)=> c.booked || c.closed).length, closed = convs.filter((c)=> c.closed).length;
+    const pct = (a, b)=> b ? Math.round(a / b * 100) + '%' : '–';
+    const card = (view, ic, num, label, sub, hot)=> `<button type="button" class="st-card${hot ? ' hot' : ''}${view && view === window.__dmView ? ' on' : ''}" ${view ? `data-statview="${view}"` : 'data-statview="all"'}>
+        <span class="st-ic" aria-hidden="true">${ic}</span><span class="st-num">${num}</span><span class="st-lbl">${label}</span>${sub ? `<span class="st-sub">${sub}</span>` : ''}</button>`;
+    box.innerHTML =
+      card('all', '💬', n, 'Conversations', reached ? `${reached} contacted by you` : '') +
+      card('all', '↩️', answered, 'Answered', reached ? `${pct(answered, reached)} replied` : '') +
+      card('wait', '⏳', waiting, 'Waiting for reply', waiting ? 'they still need to answer' : 'nobody waiting 🎉') +
+      card('fu', '🔔', fu.length, 'Follow-ups', fuDue ? `${fuDue} due today or overdue` : (fu.length ? 'none due yet' : ''), fuDue > 0) +
+      card('booked', '📅', booked, 'Calls booked', answered ? `${pct(booked, answered)} of who answered` : '') +
+      card('closed', '🏆', closed, 'Closed', booked ? `${pct(closed, booked)} of booked calls` : '');
+  }
+  document.addEventListener('click', (e)=>{ const c = e.target.closest('[data-statview]'); if(!c) return; view = c.dataset.statview; renderList(); const it = $('items'); if(it) it.scrollTop = 0; });
+
   // ---------- the list ----------
   function renderList(){
+    window.__dmView = view; try { renderStats(); } catch(e){ /* the list still shows */ }
     const fuCount = convs.filter((c)=> c.followUp && c.followUp.due).length;
     const waitCount = convs.filter(isWaiting).length, bookCount = convs.filter((c)=> c.booked && !c.closed).length, closedCount = convs.filter((c)=> c.closed).length;
     const ICON = {wait: '⏳', fu: '🔔', booked: '📅', closed: '🏆'};
