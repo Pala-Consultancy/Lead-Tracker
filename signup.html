@@ -998,6 +998,7 @@
 
     submitBtn.disabled = true;
     submitBtn.textContent = t('creatingAccount');
+    signingUp = true;
     const dirRef = db.collection('workspaceDirectory').doc(slug);
 
     dirRef.get().then(dirDoc=>{
@@ -1014,8 +1015,9 @@
     }).then(cred=>{
       return createWorkspaceForUser(cred, name, company);
     }).then(()=>{
-      location.href = 'billing.html';
+      location.href = BUY ? 'billing.html?buy=' + BUY : 'billing.html';
     }).catch(err=>{
+      signingUp = false;
       reportSignupError(err);
       submitBtn.disabled = false;
       submitBtn.textContent = t('createAccountBtn');
@@ -1041,6 +1043,7 @@
 
     const googleBtn = document.getElementById('googleSignupBtn');
     googleBtn.disabled = true;
+    signingUp = true;
     const dirRef = db.collection('workspaceDirectory').doc(slug);
     const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -1053,18 +1056,28 @@
       const name = cred.user.displayName || '';
       return createWorkspaceForUser(cred, name, company);
     }).then(()=>{
-      location.href = 'billing.html';
+      location.href = BUY ? 'billing.html?buy=' + BUY : 'billing.html';
     }).catch(err=>{
+      signingUp = false;
       reportSignupError(err);
       googleBtn.disabled = false;
     });
   });
 
+  // the plan someone picked on the pricing page: after creating their account, they go straight to payment
+  var BUY = (function(){ try { var p = new URLSearchParams(location.search).get('plan'); return p === 'starter' || p === 'premium' ? p : ''; } catch(e){ return ''; } })();
+  var signingUp = false;
+  if(BUY){
+    var sub = document.querySelector('[data-i18n="signupSub"]'), price = BUY === 'premium' ? '$57' : '$49', nm = BUY === 'premium' ? 'Premium' : 'Starter';
+    if(sub){ sub.removeAttribute('data-i18n'); sub.innerHTML = 'You chose <b>' + nm + '</b> (' + price + '/month). Create your account first, then you’ll go straight to secure payment.'; }
+    var li = document.querySelector('a[href="boards.html?login=1"]'); if(li) li.href = 'boards.html?login=1&buy=' + BUY;
+  }
   if(firebaseConnected){
     auth.onAuthStateChanged(user=>{
       if(user){
-        // Already signed in — no reason to see a signup form, send them home.
-        location.href = 'home.html';
+        if(signingUp) return;          // just created: the sign-up itself moves on once the workspace exists
+        // Already signed in — no reason to see a signup form: to payment for the chosen plan, otherwise home.
+        location.href = BUY ? 'billing.html?buy=' + BUY : 'home.html';
       } else {
         document.getElementById('pageLoader').style.display = 'none';
         const screen = document.getElementById('loginScreen');

@@ -3345,7 +3345,9 @@ html[data-theme="dark"] .ob-ai-reply-text{background:var(--c-blue-bg, rgba(91,15
     const cameFromLogInLink = new URLSearchParams(location.search).has('login');
     function completeLoginRedirect(){
       try{ sessionStorage.setItem('ptJustLoggedIn', String(Date.now())); }catch(e){}
-      location.href = 'home.html';
+      // came from a price on the pricing page (?buy=starter|premium): straight on to payment
+      let buy = ''; try{ buy = new URLSearchParams(location.search).get('buy') || ''; }catch(e){}
+      location.href = (buy === 'starter' || buy === 'premium') ? 'billing.html?buy=' + buy : 'home.html';
     }
 
     // Firebase itself already considers someone fully signed in the

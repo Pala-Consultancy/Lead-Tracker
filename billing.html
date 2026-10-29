@@ -2300,6 +2300,16 @@ html[data-theme="dark"] .card-cvc-box{background:#161934;color:#ECEEFF}
   }
 
   let cardOnFile = null;
+  // ?buy=starter|premium (from the pricing page, after creating an account or signing in): start the payment right away
+  let pendingBuy = (()=>{ try { const p = new URLSearchParams(location.search).get('buy'); return p === 'starter' || p === 'premium' ? p : ''; } catch(e){ return ''; } })();
+  function runPendingBuy(){
+    if(!pendingBuy) return; const plan = pendingBuy; pendingBuy = '';
+    try { const u = new URL(location.href); u.searchParams.delete('buy'); history.replaceState({}, '', u.pathname + u.search + u.hash); } catch(e){ /* ignore */ }
+    if(currentPlan === plan){ showToast(`You’re already on ${plan === 'premium' ? 'Premium' : 'Starter'}.`); return; }
+    if(!currentUserIsAdmin){ showToast('Only the owner of this workspace can choose the plan.', true); return; }
+    showToast('Taking you to secure payment…');
+    setTimeout(()=> switchPlan(plan), 600);
+  }
   function initBillingSync(){
     if(unsubscribeBilling){ unsubscribeBilling(); unsubscribeBilling = null; }
     if(!firebaseConnected || !billingDocRef){
@@ -2314,6 +2324,7 @@ html[data-theme="dark"] .card-cvc-box{background:#161934;color:#ECEEFF}
       // which is the Free plan, whatever plan name is still stored.
       if(data.billingExempt !== true && data.subscriptionActive !== true) currentPlan = 'free';
       renderOverview(data);
+      runPendingBuy();
       // Trial status: 7 days of Premium from when the workspace was created.
       {
         const note = document.getElementById('trialNote');
