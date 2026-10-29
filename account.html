@@ -2440,7 +2440,7 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
     deleteAccountConfirmBtn.textContent = t('deletingAccount');
 
     reauthPromise.then(()=>{
-      return performAccountDeletion(user);
+      return releaseUsername(user).then(()=> performAccountDeletion(user));
     }).then(()=>{
       location.href = 'index.html';
     }).catch(err=>{
@@ -2453,6 +2453,18 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
       deleteAccountConfirmBtn.textContent = t('yesDeleteAccount');
     });
   });
+
+  // the username (usernames/{name}) and public profile (profiles/{uid}) go too, so the name is free again
+  function releaseUsername(user){
+    const ref = db.collection('profiles').doc(user.uid);
+    return ref.get().then((d)=>{
+      const name = d.exists ? d.data().username : '';
+      const b = db.batch();
+      if(name) b.delete(db.collection('usernames').doc(name));
+      if(d.exists) b.delete(ref);
+      return b.commit();
+    }).catch(()=>{ /* the server cleans up anything left behind */ });
+  }
 
   // ---------- Authentication gate ----------
   const pageLoader = document.getElementById('pageLoader');
