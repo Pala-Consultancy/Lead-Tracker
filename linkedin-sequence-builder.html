@@ -274,7 +274,7 @@
   .ps-hl{color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 
-  /* not interested right now */
+  /* not a good fit right now */
   .fu-tag.notnow{background:rgba(100,116,139,.14);color:#475569;} html[data-theme="dark"] .fu-tag.notnow{color:#CBD5E1;}
   .bk-btn.nn{border-color:#94A3B8;background:rgba(100,116,139,.12);color:var(--li-ink,#334155);}
 
@@ -621,7 +621,7 @@
       <div class="an-grid">
         <section class="an-card"><h3>Funnel</h3>
           <div class="an-funnel">${stage('Contacted', contacted, null, 's1')}${stage('Replied', facts.filter((f)=> f.contacted && f.replied).length, contacted, 's2')}${stage('Call booked', booked, facts.filter((f)=> f.contacted && f.replied).length, 's3')}${stage('Closed', closed, booked, 's4')}</div>
-          <p class="an-foot">${notNow ? `<b>${notNow}</b> marked as not interested right now · ` : ''}Overall: ${pct(closed, contacted)} of contacted prospects became clients</p></section>
+          <p class="an-foot">${notNow ? `<b>${notNow}</b> marked as not a good fit right now · ` : ''}Overall: ${pct(closed, contacted)} of contacted prospects became clients</p></section>
         <section class="an-card"><h3>Activity <span>last 8 weeks</span></h3>
           <div class="an-chart" role="img" aria-label="Messages sent and replies received per week">${weeks.map((w, i)=> `<div class="an-col" title="Week of ${new Date(w.start).toLocaleDateString([], {day: 'numeric', month: 'short'})}: ${w.me} sent, ${w.them} replies">
               <div class="an-bars"><i class="me" style="height:${Math.round(w.me / maxW * 100)}%"></i><i class="them" style="height:${Math.round(w.them / maxW * 100)}%"></i></div>
@@ -630,7 +630,7 @@
         <section class="an-card"><h3>Needs attention</h3>
           ${att('bell', fuDue, `follow-up${fuDue === 1 ? '' : 's'} due`, 'today or overdue', 'fu')}
           ${att('ghost', ghost, `prospect${ghost === 1 ? '' : 's'} with no reply`, 'for 7 days or more: time for a follow-up', 'wait')}
-          ${att('pause', recheck, `“not interested” to check back on`, 'marked 30+ days ago', 'notnow')}</section>
+          ${att('pause', recheck, `“not a good fit” to check back on`, 'marked 30+ days ago', 'notnow')}</section>
         <section class="an-card"><h3>Insights</h3>
           <div class="an-ins"><span class="an-ic">${svg('spark')}</span><div><b>${best ? DAYS[best[0]] : '–'}</b><small>${best ? `best day for a first message (${pct(best[1].r, best[1].n)} replied)` : 'best day for a first message: needs 3+ first messages on a day'}</small></div></div>
           <div class="an-ins"><span class="an-ic">${svg('cal')}</span><div><b>${avgToBook != null ? avgToBook.toFixed(1).replace(/\.0$/, '') : '–'}</b><small>of your messages, on average, to book a call</small></div></div>
@@ -650,7 +650,7 @@
     const waitCount = convs.filter(isWaiting).length, bookCount = convs.filter((c)=> c.booked && !c.closed).length, closedCount = convs.filter((c)=> c.closed).length, notNowCount = convs.filter((c)=> c.notNow).length;
     const ICON = {wait: '⏳', fu: '🔔', booked: '📅', closed: '🏆', notnow: '💤'};
     const tab = (k, label, n)=> `<button type="button" data-view="${k}" class="${view === k ? 'on' : ''}" title="${label}" aria-label="${label}${n ? ' (' + n + ')' : ''}">${ICON[k] ? `<i>${ICON[k]}</i>` : ''}${!ICON[k] || view === k ? `<em>${label}</em>` : ''}${n ? ` <span>${n}</span>` : ''}</button>`;
-    const tb = $('listTabs'); if(tb) tb.innerHTML = tab('all', 'All', 0) + tab('wait', 'Waiting', waitCount) + tab('fu', 'Follow-up', fuCount) + tab('booked', 'Booked', bookCount) + tab('closed', 'Closed', closedCount) + tab('notnow', 'Not now', notNowCount);
+    const tb = $('listTabs'); if(tb) tb.innerHTML = tab('all', 'All', 0) + tab('wait', 'Waiting', waitCount) + tab('fu', 'Follow-up', fuCount) + tab('booked', 'Booked', bookCount) + tab('closed', 'Closed', closedCount) + tab('notnow', 'Not a fit', notNowCount);
     if(tb){ const on = tb.querySelector('.on'); if(on) on.scrollIntoView({block: 'nearest', inline: 'nearest'});
       tb.classList.toggle('more', tb.scrollWidth > tb.clientWidth + 1 && tb.scrollLeft + tb.clientWidth < tb.scrollWidth - 1); }
     const inView = (c)=> view === 'fu' ? !!(c.followUp && c.followUp.due) : view === 'wait' ? isWaiting(c) : view === 'booked' ? !!c.booked && !c.closed : view === 'closed' ? !!c.closed : view === 'notnow' ? !!c.notNow : true;
@@ -664,8 +664,8 @@
     $('items').innerHTML = list.length ? list.map((c)=> `<button type="button" class="dm-item${c.id === openId ? ' on' : ''}" data-open="${esc(c.id)}">${avatar(c.prospect.name, c.prospect.photo)}
         <span class="meta"><span class="row"><b>${esc(c.prospect.name)}</b><time>${esc(shortWhen(c.lastAt))}</time></span>
         <small>${c.lastText ? (c.lastFrom === 'me' ? 'You: ' : '') + esc(c.lastText) : esc(c.prospect.headline || 'No messages yet')}</small>
-        <span class="tags">${c.closed ? '<span class="fu-tag closed">🏆 Closed</span>' : c.booked ? '<span class="fu-tag booked">📅 Call booked</span>' : c.notNow ? '<span class="fu-tag notnow">💤 Not interested now</span>' : ''}${isWaiting(c) ? `<span class="fu-tag wait">⏳ Waiting · ${esc(waitText(c.lastAt))}</span>` : ''}${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></span></button>`).join('')
-      : `<div class="dm-empty">${view === 'wait' && convs.length ? '<b>Nobody is waiting</b>Every prospect has answered your last message. 🎉' : view === 'booked' && convs.length ? '<b>No booked calls yet</b>Mark a prospect as 📅 Call booked with the status button at the top of a conversation.' : view === 'closed' && convs.length ? '<b>No closed prospects yet</b>Mark a prospect as 🏆 Closed with the status button at the top of a conversation.' : view === 'notnow' && convs.length ? '<b>Nobody here</b>Mark a prospect as 💤 Not interested now with the status button. Add a 🔔 follow-up to check back later.' : view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
+        <span class="tags">${c.closed ? '<span class="fu-tag closed">🏆 Closed</span>' : c.booked ? '<span class="fu-tag booked">📅 Call booked</span>' : c.notNow ? '<span class="fu-tag notnow">💤 Not a good fit now</span>' : ''}${isWaiting(c) ? `<span class="fu-tag wait">⏳ Waiting · ${esc(waitText(c.lastAt))}</span>` : ''}${(()=>{ const f = fuLabel(c.followUp); return f ? `<span class="fu-tag ${f.cls}">🔔 ${esc(f.text)}${c.followUp.note ? ' · ' + esc(c.followUp.note) : ''}</span>` : ''; })()}</span></span></button>`).join('')
+      : `<div class="dm-empty">${view === 'wait' && convs.length ? '<b>Nobody is waiting</b>Every prospect has answered your last message. 🎉' : view === 'booked' && convs.length ? '<b>No booked calls yet</b>Mark a prospect as 📅 Call booked with the status button at the top of a conversation.' : view === 'closed' && convs.length ? '<b>No closed prospects yet</b>Mark a prospect as 🏆 Closed with the status button at the top of a conversation.' : view === 'notnow' && convs.length ? '<b>Nobody here</b>Mark a prospect as 💤 Not a good fit now with the status button. Add a 🔔 follow-up to check back later.' : view === 'fu' && convs.length ? '<b>No follow-ups</b>Mark someone with 🔔 Follow up at the top of a conversation.' : convs.length ? '<b>No matches</b>Try another name.' : '<b>No conversations yet</b>Click “New conversation” to log your first LinkedIn chat with a prospect.'}</div>`;
   }
   // ---------- the thread ----------
   function renderThread(keepComposer){
@@ -691,7 +691,7 @@
     box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
         <div class="meta"><b>${nameHTML}${p.degree ? `<span class="deg"> · ${esc(p.degree)}</span>` : ''}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
         ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
-        <button type="button" class="bk-btn${c.closed ? ' won' : c.booked ? ' on' : c.notNow ? ' nn' : ''}" id="stBtn" aria-haspopup="true" title="Status">${c.closed ? '🏆 Closed' : c.booked ? '📅 Call booked' : c.notNow ? '💤 Not interested now' : 'Status'} ▾</button>
+        <button type="button" class="bk-btn${c.closed ? ' won' : c.booked ? ' on' : c.notNow ? ' nn' : ''}" id="stBtn" aria-haspopup="true" title="Status">${c.closed ? '🏆 Closed' : c.booked ? '📅 Call booked' : c.notNow ? '💤 Not a good fit now' : 'Status'} ▾</button>
         <button type="button" class="fu-btn${c.followUp && c.followUp.due ? ' on' : ''}" id="fuBtn" aria-haspopup="true">🔔 ${c.followUp && c.followUp.due ? esc(fuLabel(c.followUp).text) : 'Follow up'}</button>
         <button type="button" class="ib" id="pasteBtn" title="Paste messages from LinkedIn" aria-label="Paste messages from LinkedIn">📋</button>
         <button type="button" class="ib" id="editP" title="Edit prospect" aria-label="Edit prospect">✎</button><button type="button" class="ib" id="delC" title="Delete this conversation" aria-label="Delete this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
@@ -782,11 +782,11 @@
     else if(stage === 'notnow'){ c.closed = null; c.booked = null; c.notNow = {at: now}; }
     else { c.closed = null; c.booked = null; c.notNow = null; }
     save(c, {booked: c.booked, closed: c.closed, notNow: c.notNow});
-    // the board: "not interested now" leaves the lead's status as it is (it isn't "Lost")
+    // the board: "not a good fit now" leaves the lead's status as it is (it isn't "Lost")
     const inBoard = stage === 'notnow' ? false : (was === 'notnow' && stage === '') ? false : boardStatus(c, stage === 'closed' ? 'Won' : stage === 'booked' ? 'Call booked' : 'Contacted');
     renderThread(true); renderList();
     const nm = first(c.prospect.name), also = inBoard ? ': also updated in your board' : '';
-    toast(stage === 'notnow' ? `💤 ${nm} is marked as not interested right now. Tip: add a 🔔 follow-up to check back later.` : stage === 'closed' ? `🏆 Closed with ${nm}${inBoard ? ': marked as Won in your board' : ''}. Congrats!` : stage === 'booked' ? `🎉 Call booked with ${nm}${also}.` : `Status cleared for ${nm}${also}.`);
+    toast(stage === 'notnow' ? `💤 ${nm} is marked as not a good fit right now. Tip: add a 🔔 follow-up to check back later.` : stage === 'closed' ? `🏆 Closed with ${nm}${inBoard ? ': marked as Won in your board' : ''}. Congrats!` : stage === 'booked' ? `🎉 Call booked with ${nm}${also}.` : `Status cleared for ${nm}${also}.`);
   }
   function openStatus(anchor){
     const c = cur(); if(!c) return; const old = document.getElementById('stMenu'); if(old){ old.remove(); return; }
@@ -794,7 +794,7 @@
     const m = document.createElement('div'); m.id = 'stMenu'; m.className = 'st-menu'; m.setAttribute('role', 'menu');
     m.style.top = (r.bottom + 6) + 'px'; m.style.right = Math.max(12, innerWidth - r.right) + 'px';
     const opt = (k, ic, label, sub)=> `<button type="button" role="menuitemradio" aria-checked="${stage === k}" data-stage="${k}" class="${stage === k ? 'on' : ''}"><span class="ic">${ic}</span><span><b>${label}</b><small>${sub}</small></span>${stage === k ? '<span class="ck">✓</span>' : ''}</button>`;
-    m.innerHTML = opt('', '💬', 'In conversation', 'No call booked yet') + opt('booked', '📅', 'Call booked', 'They booked a call with you') + opt('closed', '🏆', 'Closed', 'They became a client (Won)') + opt('notnow', '💤', 'Not interested now', 'Not the right moment: check back later');
+    m.innerHTML = opt('', '💬', 'In conversation', 'No call booked yet') + opt('booked', '📅', 'Call booked', 'They booked a call with you') + opt('closed', '🏆', 'Closed', 'They became a client (Won)') + opt('notnow', '💤', 'Not a good fit now', 'Not the right moment: check back later');
     document.body.appendChild(m);
     m.addEventListener('click', (e)=>{ const b = e.target.closest('[data-stage]'); if(!b) return; m.remove(); setStage(b.dataset.stage); });
     setTimeout(()=> document.addEventListener('mousedown', function off(ev){ if(!m.contains(ev.target) && ev.target !== anchor){ m.remove(); document.removeEventListener('mousedown', off); } }), 0);
