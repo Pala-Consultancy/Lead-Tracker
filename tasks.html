@@ -2338,7 +2338,7 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
     db.doc(`calendarConnections/${myUid}`).onSnapshot(d=>{ gcalConn = d.exists ? d.data() : null; if(!gcalConn) gcalEvents = {}; if(view === 'calendar') render(); }, ()=>{});
     const r = new URLSearchParams(location.search).get('calendarConnect');
     if(r){
-      showToast(r === 'success' ? '🗓 Google Calendar connected. Your tasks with a date are in the "PalaTrack" calendar now.' : r === 'denied' ? 'Google Calendar was not connected.' : r === 'expired' ? 'That sign-in link expired. Please try again.' : 'Could not connect Google Calendar. Please try again.', r !== 'success' && r !== 'denied');
+      showToast(r === 'success' ? '🗓 Google Calendar connected. Your tasks with a date are in the "PalaTrack" calendar now.' : r === 'denied' ? 'Google Calendar was not connected.' : r === 'expired' ? 'That sign-in link expired. Please try again.' : r === 'scopes' ? 'Google Calendar needs both permissions. Please connect again and tick both boxes on Google’s screen.' : 'Could not connect Google Calendar. Please try again.', r !== 'success' && r !== 'denied');
       if(r === 'success'){ view = 'calendar'; localStorage.setItem('ptTasksView', 'calendar'); render(); }
       const q = new URLSearchParams(location.search); q.delete('calendarConnect');
       history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));

@@ -2896,7 +2896,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
       document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') refreshGoogle(); });
       const r = new URLSearchParams(location.search).get('calendarConnect');
       if(r){
-        showToast(r === 'success' ? '🗓 Google Calendar connected. Everything here is in the "PalaTrack" calendar in Google now.' : r === 'denied' ? 'Google Calendar was not connected.' : r === 'expired' ? 'That sign-in link expired. Please try again.' : 'Could not connect Google Calendar. Please try again.', r !== 'success' && r !== 'denied');
+        showToast(r === 'success' ? '🗓 Google Calendar connected. Everything here is in the "PalaTrack" calendar in Google now.' : r === 'denied' ? 'Google Calendar was not connected.' : r === 'expired' ? 'That sign-in link expired. Please try again.' : r === 'scopes' ? 'Google Calendar needs both permissions. Please connect again and tick both boxes on Google’s screen.' : 'Could not connect Google Calendar. Please try again.', r !== 'success' && r !== 'denied');
         history.replaceState(null, '', location.pathname);
       }
     }).catch(err=>{ console.error(err); showToast('Could not load your workspace.', true); reveal(); });
