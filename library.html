@@ -134,13 +134,35 @@
   .lib-item .snip{display:block;font-size:11.5px;color:var(--slate);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .lib-none{padding:4px 14px 8px;font-size:12px;color:var(--slate-light);}
   /* dragging a page onto another folder */
-  .lib-item[draggable="true"]{cursor:grab;} .lib-item[draggable="true"]:active{cursor:grabbing;}
-  .lib-item.dragging{opacity:.4;}
-  .lib-group{border-radius:10px;transition:background .12s,box-shadow .12s;}
-  .lib-tree.dragging-on .lib-group[data-drop]{box-shadow:inset 0 0 0 1px transparent;}
-  .lib-group.drop-on{background:rgba(55,48,179,.08);box-shadow:inset 0 0 0 2px rgba(55,48,179,.45);}
-  .lib-group.drop-on .lib-none::after{content:" · drop it here";color:var(--teal);font-weight:600;}
+  .lib-item[data-drag]{cursor:grab;-webkit-touch-callout:none;user-select:none;}
+  body.lib-dragging, body.lib-dragging *{cursor:grabbing !important;user-select:none !important;}
+  .lib-item.lifted{opacity:.45;background:none !important;box-shadow:inset 0 0 0 1.5px var(--border);border-radius:8px;}
+  .lib-item.lifted *{visibility:hidden;}
+  .lib-group{border-radius:10px;transition:background .15s,box-shadow .15s;}
+  .lib-group.drop-on{background:rgba(55,48,179,.07);box-shadow:inset 0 0 0 2px rgba(55,48,179,.4);}
+  .lib-group.drop-on .lib-group-h{color:var(--teal);}
+  .lib-group.drop-on .lib-group-h .nm::after{content:"Drop here";margin-left:8px;padding:1px 7px;border-radius:999px;background:var(--teal);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.04em;vertical-align:1px;animation:libPop .18s ease-out;}
+  @keyframes libPop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}}
+  .lib-group.opening .lib-group-h{position:relative;}
+  .lib-group.opening .lib-group-h::after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:2px;border-radius:2px;background:var(--teal);transform-origin:left;animation:libOpen .6s linear forwards;}
+  @keyframes libOpen{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .lib-slot{height:34px;margin:2px 8px;border-radius:8px;border:1.5px dashed rgba(55,48,179,.45);background:rgba(55,48,179,.05);animation:libSlot .18s ease-out;}
+  .lib-slot.out{animation:libSlotOut .15s ease-in forwards;}
+  @keyframes libSlot{from{height:0;opacity:0}to{height:34px;opacity:1}}
+  @keyframes libSlotOut{to{height:0;opacity:0;margin:0 8px}}
+  .lib-none.hide{display:none;}
+  .lib-ghost{position:fixed;left:0;top:0;z-index:1000;pointer-events:none;will-change:transform;transform-origin:30% 50%;}
+  .lib-ghost .g-card{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:var(--panel,#fff);color:var(--ink);font:600 13px 'Inter',sans-serif;
+    box-shadow:0 18px 40px -12px rgba(16,24,40,.45),0 0 0 1px rgba(55,48,179,.25);}
+  .lib-ghost .g-card .ic{display:inline-flex;width:20px;justify-content:center;} .lib-ghost .g-card .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lib-ghost .g-hint{display:inline-block;margin:6px 0 0 10px;padding:3px 9px;border-radius:999px;background:#16202C;color:#fff;font:600 11px 'Inter',sans-serif;transition:background .15s;}
+  .lib-ghost.ok .g-hint{background:var(--teal,#3730B3);}
+  .lib-ghost.landing{transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .22s;} .lib-ghost.landing .g-hint{opacity:0;transition:opacity .1s;}
+  .lib-ghost.back{opacity:.6;}
+  .lib-item.just-moved{animation:libJust 1.2s ease-out;}
+  @keyframes libJust{0%{background:rgba(55,48,179,.22);box-shadow:inset 0 0 0 2px rgba(55,48,179,.5)}100%{background:transparent;box-shadow:none}}
   html[data-theme="dark"] .lib-group.drop-on{background:rgba(129,140,248,.12);box-shadow:inset 0 0 0 2px rgba(129,140,248,.5);}
+  html[data-theme="dark"] .lib-slot{border-color:rgba(129,140,248,.6);background:rgba(129,140,248,.08);}
   .lib-page{min-width:0;min-height:0;overflow-y:auto;background:var(--paper);}
   .lib-empty{max-width:520px;margin:12vh auto 0;text-align:center;padding:0 20px;}
   .lib-empty .big{font-size:46px;margin-bottom:10px;}
@@ -1617,7 +1639,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const item = p=>{
       let snip = '';
       if(q && !(p.title || '').toLowerCase().includes(q)){ const t = p.text || '', i = t.toLowerCase().indexOf(q); snip = (i > 20 ? '…' : '') + t.slice(Math.max(0, i - 20), i + 60); }
-      return `<button type="button" class="lib-item${p.id === curId ? ' on' : ''}" data-open="${esc(p.id)}"${canEdit(p) ? ` draggable="true" data-drag="${esc(p.id)}"` : ''}><span class="ic">${iconHTML(p)}</span>
+      return `<button type="button" class="lib-item${p.id === curId ? ' on' : ''}" data-open="${esc(p.id)}"${canEdit(p) ? ` data-drag="${esc(p.id)}"` : ''}><span class="ic">${iconHTML(p)}</span>
         <span class="t">${esc(p.title || 'Untitled')}${snip ? `<span class="snip">${esc(snip)}</span>` : ''}</span>${PTLib.usesOf(p) ? `<span class="tm used" title="Used ${PTLib.usesOf(p)}× in messages">🔥${PTLib.usesOf(p)}</span>` : ''}${p.visibility === 'team' ? '<span class="tm" title="Shared with your team">👥</span>' : ''}</button>`;
     };
     let html = '';
@@ -1655,44 +1677,115 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     toggle();
   });
   // ---------- drag a page onto another folder ----------
-  let dragId = null, overGroup = null, openTimer = null;
+  // Our own dragging, so it feels alive: a card follows the cursor (with a little tilt), the target folder opens a gap
+  // where the page will land, closed folders open while you hover, the list scrolls near its edges, and the card glides
+  // into place (or back, when it's dropped outside a folder). Mouse: press and move. Touch: press and hold, then move.
+  const tree = $('libTree');
+  let drag = null, skipClick = false;
   function movePage(id, fid){
-    const p = pages[id]; if(!p || !canEdit(p) || !folderById(fid) || folderIdOf(p) === fid) return;
+    const p = pages[id]; if(!p || !canEdit(p) || !folderById(fid) || folderIdOf(p) === fid) return false;
     const upd = {folderId: fid, folder: folderName(fid)};
-    Object.assign(p, upd); closedFolders.delete(fid); localStorage.setItem('ptLibClosed', JSON.stringify([...closedFolders]));
+    Object.assign(p, upd); p.updatedAt = {toMillis: ()=> Date.now()};
+    closedFolders.delete(fid); localStorage.setItem('ptLibClosed', JSON.stringify([...closedFolders]));
     renderTree(); if(id === curId) renderMeta();
     db.collection('libraryPages').doc(id).update({...upd, updatedAt: FV.serverTimestamp(), updatedBy: myUid, updatedByName: myName})
       .then(()=> showToast(`Moved “${p.title || 'Untitled'}” to ${folderName(fid)}.`))
       .catch(err=> showToast('Could not move the page: ' + (err.message || ''), true));
+    return true;
   }
-  function clearOver(){ if(overGroup){ overGroup.classList.remove('drop-on'); overGroup = null; } clearTimeout(openTimer); }
-  $('libTree').addEventListener('dragstart', e=>{
-    const it = e.target.closest && e.target.closest('[data-drag]'); if(!it){ return; }
-    dragId = it.dataset.drag; it.classList.add('dragging'); $('libTree').classList.add('dragging-on');
-    e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dragId); } catch(err){}
-  });
-  $('libTree').addEventListener('dragend', e=>{
-    dragId = null; clearOver(); $('libTree').classList.remove('dragging-on');
-    document.querySelectorAll('#libTree .lib-item.dragging').forEach(x=> x.classList.remove('dragging'));
-  });
-  $('libTree').addEventListener('dragover', e=>{
-    if(!dragId) return;
-    const g = e.target.closest('[data-drop]');
-    if(!g){ clearOver(); return; }
-    const same = folderIdOf(pages[dragId]) === g.dataset.drop;
-    e.preventDefault(); e.dataTransfer.dropEffect = same ? 'none' : 'move';
-    if(g !== overGroup){
-      clearOver(); if(same) return;
-      overGroup = g; g.classList.add('drop-on');
-      // holding a page over a closed folder opens it
-      if(g.classList.contains('closed')) openTimer = setTimeout(()=>{ closedFolders.delete(g.dataset.drop); g.classList.remove('closed'); }, 650);
+  function scrollBox(el){ while(el && el !== document.body){ const o = getComputedStyle(el).overflowY; if(/(auto|scroll)/.test(o) && el.scrollHeight > el.clientHeight) return el; el = el.parentElement; } return document.scrollingElement; }
+  function beginDrag(item, x, y){
+    const id = item.dataset.drag, p = pages[id]; if(!p) return;
+    const r = item.getBoundingClientRect();
+    const ghost = document.createElement('div'); ghost.className = 'lib-ghost';
+    ghost.innerHTML = `<div class="g-card"><span class="ic">${iconHTML(p)}</span><span class="t">${esc(p.title || 'Untitled')}</span></div><div class="g-hint">Drop on a folder</div>`;
+    ghost.style.width = Math.max(200, r.width) + 'px'; document.body.appendChild(ghost);
+    item.classList.add('lifted'); tree.classList.add('dragging-on'); document.body.classList.add('lib-dragging');
+    drag = {id, item, ghost, from: folderIdOf(p), ox: x - r.left, oy: y - r.top, x, y, gx: r.left, gy: r.top, vx: 0, target: null, openT: null, box: scrollBox(tree), raf: 0};
+    if(navigator.vibrate) try { navigator.vibrate(12); } catch(e){}
+    const loop = ()=>{                                   // the card follows the pointer smoothly, tilting with the movement
+      if(!drag) return;
+      const tx = drag.x - drag.ox, ty = drag.y - drag.oy;
+      drag.vx = drag.vx * 0.7 + (tx - drag.gx) * 0.3;
+      drag.gx += (tx - drag.gx) * 0.35; drag.gy += (ty - drag.gy) * 0.35;
+      const tilt = Math.max(-8, Math.min(8, drag.vx * 0.6));
+      drag.ghost.style.transform = `translate(${drag.gx}px,${drag.gy}px) rotate(${tilt}deg) scale(1.03)`;
+      // near the top or bottom of the list: scroll
+      const b = drag.box.getBoundingClientRect ? drag.box.getBoundingClientRect() : {top: 0, bottom: innerHeight};
+      const top = Math.max(b.top, 0), bottom = Math.min(b.bottom, innerHeight);
+      if(drag.y < top + 50) drag.box.scrollTop -= Math.ceil((top + 50 - drag.y) / 5);
+      else if(drag.y > bottom - 50) drag.box.scrollTop += Math.ceil((drag.y - bottom + 50) / 5);
+      drag.raf = requestAnimationFrame(loop);
+    };
+    loop(); updateTarget();
+  }
+  function updateTarget(){
+    if(!drag) return;
+    const under = document.elementFromPoint(drag.x, drag.y), g = under && under.closest && under.closest('#libTree [data-drop]');
+    const fid = g && g.dataset.drop !== drag.from ? g.dataset.drop : null;
+    if((drag.target && drag.target.dataset.drop) === fid) return;
+    // leave the old folder
+    if(drag.target){ drag.target.classList.remove('drop-on', 'opening'); }
+    clearTimeout(drag.openT);
+    drag.target = fid ? g : null;
+    const hint = drag.ghost.querySelector('.g-hint');
+    if(!fid){ hint.textContent = g ? 'Already in this folder' : 'Drop on a folder'; drag.ghost.classList.remove('ok'); return; }
+    hint.textContent = 'Move to ' + folderName(fid); drag.ghost.classList.add('ok');
+    g.classList.add('drop-on');
+    if(g.classList.contains('closed')){                 // a closed folder opens after a moment
+      g.classList.add('opening');
+      drag.openT = setTimeout(()=>{ if(!drag || drag.target !== g) return; g.classList.remove('opening', 'closed'); closedFolders.delete(fid); }, 600);
     }
+  }
+  function endDrag(cancel){
+    if(!drag) return;
+    const d = drag; drag = null; cancelAnimationFrame(d.raf); clearTimeout(d.openT);
+    document.body.classList.remove('lib-dragging'); tree.classList.remove('dragging-on');
+    const fid = !cancel && d.target ? d.target.dataset.drop : null;
+    let land = d.item.getBoundingClientRect();
+    if(fid){ const first = d.target.querySelector('.lib-items .lib-item:not(.lifted)'), h = d.target.querySelector('.lib-group-h').getBoundingClientRect();
+      land = first && !d.target.classList.contains('closed') ? first.getBoundingClientRect() : {left: h.left + 8, top: h.bottom}; }
+    // the card glides into its new spot, or back to where it came from
+    d.ghost.classList.add('landing', fid ? 'ok' : 'back');
+    d.ghost.style.transform = `translate(${land.left}px,${land.top}px) rotate(0deg) scale(1)`;
+    setTimeout(()=>{
+      d.ghost.remove(); d.item.classList.remove('lifted');
+      if(d.target) d.target.classList.remove('drop-on', 'opening');
+      if(fid && movePage(d.id, fid)){
+        const it = tree.querySelector(`[data-open="${CSS.escape(d.id)}"]`);
+        if(it){ it.classList.add('just-moved'); it.scrollIntoView({block: 'nearest'}); setTimeout(()=> it.classList.remove('just-moved'), 1200); }
+      }
+    }, 230);
+  }
+  // mouse and pen: press, then move a little to pick the page up
+  tree.addEventListener('pointerdown', e=>{
+    if(e.pointerType === 'touch' || e.button !== 0) return;
+    const item = e.target.closest('[data-drag]'); if(!item) return;
+    const sx = e.clientX, sy = e.clientY;
+    const move = ev=>{
+      if(!drag){ if(Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; beginDrag(item, sx, sy); skipClick = true; }
+      drag.x = ev.clientX; drag.y = ev.clientY; updateTarget();
+    };
+    const up = ()=>{ removeEventListener('pointermove', move); removeEventListener('pointerup', up); if(drag) endDrag(false); };
+    addEventListener('pointermove', move); addEventListener('pointerup', up);
   });
-  $('libTree').addEventListener('dragleave', e=>{ if(overGroup && !overGroup.contains(e.relatedTarget)) clearOver(); });
-  $('libTree').addEventListener('drop', e=>{
-    const g = e.target.closest('[data-drop]'); if(!dragId || !g) return;
-    e.preventDefault(); const id = dragId, fid = g.dataset.drop; clearOver(); dragId = null; movePage(id, fid);
-  });
+  // touch: press and hold, then move (a quick swipe still scrolls the list)
+  tree.addEventListener('touchstart', e=>{
+    const item = e.target.closest('[data-drag]'); if(!item || e.touches.length > 1) return;
+    const t0 = e.touches[0], sx = t0.clientX, sy = t0.clientY; let moved = false;
+    const hold = setTimeout(()=>{ if(!moved){ beginDrag(item, sx, sy); skipClick = true; } }, 320);
+    const move = ev=>{
+      const t = ev.touches[0];
+      if(!drag){ if(Math.hypot(t.clientX - sx, t.clientY - sy) > 8){ moved = true; clearTimeout(hold); } return; }
+      ev.preventDefault(); drag.x = t.clientX; drag.y = t.clientY; updateTarget();
+    };
+    const end = ()=>{ clearTimeout(hold); tree.removeEventListener('touchmove', move); tree.removeEventListener('touchend', end); tree.removeEventListener('touchcancel', end); if(drag) endDrag(false); };
+    tree.addEventListener('touchmove', move, {passive: false}); tree.addEventListener('touchend', end); tree.addEventListener('touchcancel', end);
+  }, {passive: true});
+  // after a drag, the release isn't a click on the page; Escape puts the page back
+  tree.addEventListener('click', e=>{ if(skipClick){ skipClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  addEventListener('keydown', e=>{ if(e.key === 'Escape' && drag) endDrag(true); });
+  tree.addEventListener('contextmenu', e=>{ if(drag) e.preventDefault(); });
 
   $('libSearch').addEventListener('input', renderTree);
   document.querySelectorAll('.lib-scope [data-scope]').forEach(b=> b.addEventListener('click', ()=>{ scope = b.dataset.scope; localStorage.setItem('ptLibScope', scope); renderTree(); }));
@@ -2057,6 +2150,28 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     return ov;
   }
   const closeGdoc = ()=>{ const ov = document.getElementById('gdocDlg'); if(ov) ov.remove(); };
+  // Google Docs reads the text between two "$" signs as a maths formula ("$1.5M … ($7.2B" turns into an equation).
+  // So the page goes to Google with an invisible word-joiner after each "$" (the text looks exactly the same); PalaTrack then
+  // reads the new Doc back, and if Google still turned dollar signs into formulas, it makes the Doc again with a dollar sign
+  // Google never reads as a formula (＄).
+  function dollarSafe(html, mode){
+    const t = document.createElement('template'); t.innerHTML = html;
+    const w = document.createTreeWalker(t.content, NodeFilter.SHOW_TEXT, {acceptNode: n=> n.parentNode && /^(STYLE|SCRIPT)$/.test(n.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+    let n; while((n = w.nextNode())) if(n.nodeValue.indexOf('$') >= 0) n.nodeValue = n.nodeValue.replace(/\$/g, mode === 'wide' ? '\uFF04' : '$\u2060');
+    return t.innerHTML;
+  }
+  const dollarsIn = (html)=>{ const t = document.createElement('template'); t.innerHTML = html; return (t.content.textContent.match(/\$/g) || []).length; };
+  async function docKeptDollars(id, token, want){
+    try {
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}/export?mimeType=text/plain`, {headers: {Authorization: 'Bearer ' + token}});
+      if(!r.ok) return true;                       // can't check: keep the Doc as it is
+      return ((await r.text()).match(/\$/g) || []).length >= want;
+    } catch(e){ return true; }
+  }
+  function gdocPayload(title, html){
+    const bd = 'ptlib' + Date.now() + Math.random().toString(36).slice(2, 6);
+    return {bd, payload: `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name: title, mimeType: 'application/vnd.google-apps.document'})}\r\n--${bd}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${bd}--`};
+  }
   async function exportGoogleDoc(p){
     if(!(window.google && window.google.accounts && window.google.accounts.oauth2)){
       showToast('Connecting to Google… click “Open as Google Doc” once more.'); loadGis().catch(()=> showToast('Google couldn’t load. Check your connection.')); return;
@@ -2071,7 +2186,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       return;
     }
     gdocDialog('Creating your Google Doc…', 'This takes a few seconds.', []);
-    const html = `<html><head><meta charset="utf-8"><style>${EXPORT_CSS.replace(/@page\{[^}]*\}/, '')}</style></head><body>${body}</body></html>`;
+    const dollars = dollarsIn(body);
+    const page = (b)=> `<html><head><meta charset="utf-8"><style>${EXPORT_CSS.replace(/@page\{[^}]*\}/, '')}</style></head><body>${b}</body></html>`;
+    const html = page(dollars ? dollarSafe(body) : body);
     const bd = 'ptlib' + Date.now();
     const payload = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name: title, mimeType: 'application/vnd.google-apps.document'})}\r\n--${bd}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${bd}--`;
     const ctrl = new AbortController(), timer = setTimeout(()=> ctrl.abort(), 30000);
@@ -2098,6 +2215,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       }
       gdocDialog('Couldn’t create the Google Doc', `Google answered (${r.status}): <b>${esc(msg || 'no details')}</b>`, [{label: 'OK', primary: true}]);
       return;
+    }
+    // the dollar signs: did Google keep them all as text? If not, make the Doc once more with the wide dollar sign.
+    if(dollars && !(await docKeptDollars(j.id, token, dollars))){
+      try {
+        const g2 = gdocPayload(title, page(dollarSafe(body, 'wide')));
+        const r2 = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {method: 'POST', headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'multipart/related; boundary=' + g2.bd}, body: g2.payload});
+        if(r2.ok){
+          const j2 = await r2.json();
+          fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(j.id)}`, {method: 'DELETE', headers: {Authorization: 'Bearer ' + token}}).catch(()=>{});   // the first try goes
+          j = j2;
+        }
+      } catch(e){ console.warn('Google Doc export: second try failed', e); }
     }
     const url = j.webViewLink || `https://docs.google.com/document/d/${j.id}/edit`;
     gdocDialog('Your Google Doc is ready', `“${esc(title)}” is in your Google Drive now. You can edit and share it there.`,
