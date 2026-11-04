@@ -40,32 +40,79 @@
     return '<div class="cp-frame"><iframe src="' + esc(v.embed) + '" loading="lazy" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen title="' + esc(label || 'Video') + '"></iframe></div>';
   }
 
-  // ---------- the page ----------
-  function headline(title, hl) {
-    var t = String(title || ''), h = String(hl || '').trim();
-    if (!h) return esc(t);
-    var i = t.toLowerCase().indexOf(h.toLowerCase());
-    if (i < 0) return esc(t);
-    return esc(t.slice(0, i)) + '<span class="cp-hl">' + esc(t.slice(i, i + h.length)) + '</span>' + esc(t.slice(i + h.length));
+  // ---------- formatted text ----------
+  // Texts can carry simple styling made in the editor's preview: bold, italic, the accent underline, a marker,
+  // a colour and a size. Only these are kept; everything else (other tags, attributes, scripts) is dropped.
+  var KEEP = ['cp-hl', 'cp-mark', 'cp-acc', 'cp-mut', 'cp-sz-s', 'cp-sz-l', 'cp-sz-xl'];
+  var COLORS = ['#FACC15', '#22C55E', '#3B82F6', '#EC4899', '#FFFFFF', '#111827'];
+  var isRich = function (s) { return /<(?!br\s*\/?>)[a-z]/i.test(String(s || '')); };   // a line break alone is still plain text
+  function clean(html) {
+    var t = document.createElement('template'); t.innerHTML = String(html || '');
+    function walk(node) {
+      var out = '';
+      node.childNodes.forEach(function (n, i) {
+        if (n.nodeType === 3) { out += esc(n.nodeValue); return; }
+        if (n.nodeType !== 1) return;
+        var tag = n.tagName.toLowerCase(), kids = walk(n);
+        if (tag === 'br') out += '<br>';
+        else if (tag === 'b' || tag === 'strong') out += kids ? '<b>' + kids + '</b>' : '';
+        else if (tag === 'i' || tag === 'em') out += kids ? '<i>' + kids + '</i>' : '';
+        else if (tag === 'u') out += kids ? '<span class="cp-hl">' + kids + '</span>' : '';
+        else if (tag === 'span' || tag === 'font') {
+          var cls = [].filter.call(n.classList || [], function (c) { return KEEP.indexOf(c) >= 0; });
+          var st = String(n.getAttribute('style') || ''), m = st.match(/(?:^|;)\s*color:\s*(#[0-9a-f]{6})/i), rgb = st.match(/(?:^|;)\s*color:\s*rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)/i);
+          var hex = m ? m[1].toUpperCase() : rgb ? '#' + [rgb[1], rgb[2], rgb[3]].map(function (x) { return ('0' + (+x).toString(16)).slice(-2); }).join('').toUpperCase() : '';
+          var col = COLORS.indexOf(hex) >= 0 ? hex : '';                // only the colours from the toolbar
+          if (!kids) return;
+          out += (cls.length || col) ? '<span' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + (col ? ' style="color:' + col + '"' : '') + '>' + kids + '</span>' : kids;
+        }
+        else if (tag === 'div' || tag === 'p') out += (out && !/<br>$/.test(out) ? '<br>' : '') + kids;
+        else out += kids;
+      });
+      return out;
+    }
+    return walk(t.content).replace(/(<br>)+$/, '');
   }
-  function para(text) { return String(text || '').trim() ? '<p class="cp-sub">' + esc(text).replace(/\n/g, '<br>') + '</p>' : ''; }
+  // plain text keeps its line breaks; formatted text is cleaned first
+  function rich(s) { return isRich(s) ? clean(s) : esc(s).replace(/\n/g, '<br>'); }
+  function plain(s) { var d = document.createElement('div'); d.innerHTML = rich(s).replace(/<br>/g, '\n'); return d.textContent; }
+
+  // ---------- the page ----------
+  var ED = false;                                                   // true while drawing the editor's preview
+  var ed = function (path) { return ED ? ' data-edit="' + path + '"' : ''; };
+  function headline(title, hl) {
+    if (isRich(title)) return clean(title);
+    var t = String(title || ''), h = String(hl || '').trim(), br = function (x) { return esc(x).replace(/\n/g, '<br>'); };
+    if (!h) return br(t);
+    var i = t.toLowerCase().indexOf(h.toLowerCase());
+    if (i < 0) return br(t);
+    return br(t.slice(0, i)) + '<span class="cp-hl">' + br(t.slice(i, i + h.length)) + '</span>' + br(t.slice(i + h.length));
+  }
+  function para(text, path) {
+    if (String(text || '').trim()) return '<p class="cp-sub"' + ed(path) + '>' + rich(text) + '</p>';
+    return ED && path ? '<p class="cp-sub cp-ph"' + ed(path) + '></p>' : '';             // an empty text: still clickable in the editor
+  }
   function continueBar() { return '<div class="cp-continue">Continue scrolling <span aria-hidden="true">↓</span></div>'; }
 
-  function render(page, root) {
+  function render(page, root, opts) {
+    ED = !!(opts && opts.editable);
     page = page || {}; var theme = page.theme || {}, hero = page.hero || {}, blocks = page.blocks || [];
     var accent = /^#[0-9a-f]{6}$/i.test(theme.accent || '') ? theme.accent : '#E5463A';
     root.className = 'cpv cp-' + (theme.mode === 'light' ? 'light' : 'dark');
     root.style.setProperty('--cp-accent', accent);
-    var out = '<div class="cp-glow" aria-hidden="true"></div><header class="cp-hero"><h1>' + headline(hero.title || 'Your Call Is Confirmed!', hero.highlight) + '</h1>' + para(hero.subtitle) + '</header>';
+    var out = '<div class="cp-glow" aria-hidden="true"></div><header class="cp-hero"><h1' + ed('hero.title') + '>' + headline(hero.title || 'Your Call Is Confirmed!', hero.highlight) + '</h1>' + para(hero.subtitle, 'hero.subtitle') + '</header>';
     var step = 0, first = true;
-    blocks.forEach(function (b) {
+    blocks.forEach(function (b, bi) {
       var numbered = b.type !== 'results';
       if (numbered && !first) out += continueBar();
       first = false;
-      var head = (numbered ? '<span class="cp-step">Step ' + (++step) + '</span>' : '') + (b.title ? '<h2>' + esc(b.title) + '</h2>' : '') + para(b.text);
+      var hasText = ['video', 'questions', 'clients', 'text'].indexOf(b.type) >= 0;
+      var head = (numbered ? '<span class="cp-step">Step ' + (++step) + '</span>' : '') +
+        (b.title || (ED && b.type !== 'button') ? '<h2' + ed('b:' + bi + ':title') + (b.title ? '' : ' class="cp-ph"') + '>' + rich(b.title) + '</h2>' : '') +
+        (hasText ? para(b.text, 'b:' + bi + ':text') : '');
       var body = '';
       if (b.type === 'video') body = '<div class="cp-main">' + videoHTML(b.url, b.title) + '</div>';
-      else if (b.type === 'questions') body = '<div class="cp-grid cp-g3">' + (b.items || []).map(function (it) { return '<div class="cp-q"><h3>' + esc(it.q || '') + '</h3>' + videoHTML(it.url, it.q) + '</div>'; }).join('') + '</div>';
+      else if (b.type === 'questions') body = '<div class="cp-grid cp-g3">' + (b.items || []).map(function (it, j) { return '<div class="cp-q"><h3' + ed('q:' + bi + ':' + j) + (it.q ? '' : ' class="cp-ph"') + '>' + rich(it.q || '') + '</h3>' + videoHTML(it.url, plain(it.q)) + '</div>'; }).join('') + '</div>';
       else if (b.type === 'clients') body = '<div class="cp-grid cp-g2">' + (b.urls || []).map(function (u) { return '<div>' + videoHTML(u, 'Client story') + '</div>'; }).join('') + '</div>';
       else if (b.type === 'results') {
         var imgs = (b.images || []).filter(Boolean);
@@ -79,11 +126,13 @@
           body = '<div class="cp-wall">' + rs + '</div>';
         } else body = '<div class="cp-frame cp-empty cp-short"><div>🖼️ Add screenshots of client results</div></div>';
       }
-      else if (b.type === 'button') body = b.label ? '<div class="cp-cta"><a href="' + esc(/^(https?:|mailto:|tel:)/i.test(b.href || '') ? b.href : (b.href ? 'https://' + b.href : '#')) + '" target="_blank" rel="noopener">' + esc(b.label) + '</a></div>' : '';
+      else if (b.type === 'button') body = (b.label || ED) ? '<div class="cp-cta"><a href="' + esc(/^(https?:|mailto:|tel:)/i.test(b.href || '') ? b.href : (b.href ? 'https://' + b.href : '#')) + '" target="_blank" rel="noopener"' + ed('b:' + bi + ':label') + '>' + rich(b.label || '') + '</a></div>' : '';
       out += '<section class="cp-sec cp-' + esc(b.type) + '">' + head + body + '</section>';
     });
     if (!blocks.length) out += '<section class="cp-sec"><div class="cp-frame cp-empty cp-short"><div>➕ Add your first step</div></div></section>';
     root.innerHTML = '<div class="cp-in">' + out + '</div>';
+    root.classList.toggle('cp-editing', ED);
+    ED = false;
   }
 
   // ---------- clicks: play a video in place, and open a result screenshot larger ----------
@@ -100,6 +149,16 @@
 
   // ---------- the look ----------
   var CSS = [
+    '.cpv b{font-weight:800} .cpv i{font-style:italic}',
+    '.cpv .cp-mark{background:color-mix(in srgb,var(--cp-accent) 32%,transparent);padding:0 .14em;border-radius:.18em;-webkit-box-decoration-break:clone;box-decoration-break:clone}',
+    '.cpv .cp-acc{color:var(--cp-accent)} .cpv .cp-mut{color:var(--cp-muted)}',
+    '.cpv .cp-sz-s{font-size:.8em} .cpv .cp-sz-l{font-size:1.25em} .cpv .cp-sz-xl{font-size:1.55em}',
+    '.cpv .cp-sub .cp-hl::after,.cpv h2 .cp-hl::after,.cpv h3 .cp-hl::after{height:.09em;bottom:-.06em}',
+    '.cpv.cp-editing [data-edit]{cursor:text;border-radius:8px;outline:1.5px dashed transparent;outline-offset:6px;transition:outline-color .15s}',
+    '.cpv.cp-editing [data-edit]:hover{outline-color:color-mix(in srgb,var(--cp-accent) 70%,transparent)}',
+    '.cpv.cp-editing [data-edit][contenteditable="true"]{outline:2px solid var(--cp-accent);cursor:text}',
+    '.cpv.cp-editing .cp-ph{min-height:1.4em;color:var(--cp-muted);opacity:.6} .cpv.cp-editing .cp-ph:empty::before{content:"Click to add text";font-weight:500;font-size:15px}',
+    '.cpv.cp-editing h2.cp-ph:empty::before{content:"Click to add a title"}',
     '.cpv{--cp-bg:#0A0B0E;--cp-ink:#FFFFFF;--cp-muted:#A7ADB8;--cp-card:#14161C;position:relative;overflow:hidden;background:var(--cp-bg);color:var(--cp-ink);font-family:Montserrat,Inter,system-ui,sans-serif;container-type:inline-size;',
     '  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;}',
     '.cpv.cp-light{--cp-bg:#F6F7FA;--cp-ink:#12141A;--cp-muted:#5C6575;--cp-card:#FFFFFF;background-image:radial-gradient(rgba(16,24,40,.07) 1px,transparent 1px);}',
@@ -151,5 +210,5 @@
   function injectCss() { if (document.getElementById('cp-css')) return; var s = document.createElement('style'); s.id = 'cp-css'; s.textContent = CSS; (document.head || document.documentElement).appendChild(s); }
   injectCss();
 
-  window.CallPage = {render: render, parseVideo: parseVideo};
+  window.CallPage = {render: render, parseVideo: parseVideo, clean: clean, isRich: isRich, plain: plain, COLORS: COLORS};
 })();

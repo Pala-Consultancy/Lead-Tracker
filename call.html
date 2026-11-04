@@ -42,7 +42,7 @@
       var page = d.data().page;
       CallPage.render(page, root);
       document.body.style.background = getComputedStyle(root).backgroundColor;
-      var t = (page.hero && page.hero.title) || 'Your Call Is Confirmed'; document.title = t;
+      var t = (page.hero && page.hero.title) ? CallPage.plain(page.hero.title) : 'Your Call Is Confirmed'; document.title = t.replace(/\s+/g, ' ').trim();
       var made = document.createElement('a'); made.className = 'cp-made'; made.href = 'https://www.palatrack.com/'; made.target = '_blank'; made.rel = 'noopener'; made.textContent = 'Made with PalaTrack';
       root.after(made);
     }).catch(function(e){ if(e && e.code === 'permission-denied') state('This page is currently unavailable', 'Please contact the person who sent you this link.'); else state('Something went wrong', 'Please check your connection and refresh the page.'); });

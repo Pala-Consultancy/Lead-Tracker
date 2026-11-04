@@ -157,6 +157,20 @@
   .modal .box{background:var(--panel);border-radius:16px;padding:22px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);}
   .modal h3{margin:0 0 8px;font:700 18px Sora,sans-serif;} .modal p{color:var(--slate);font-size:14px;line-height:1.5;margin:0 0 16px;}
   .modal .row{display:flex;gap:8px;justify-content:flex-end;}
+  /* editing text in the preview */
+  .rt-bar{position:fixed;z-index:450;display:flex;align-items:center;gap:2px;padding:5px;border-radius:12px;background:#16202C;box-shadow:0 14px 34px -10px rgba(0,0,0,.5);--rt-acc:#E5463A;}
+  .rt-bar button{height:32px;min-width:32px;padding:0 9px;border:0;border-radius:8px;background:none;color:#fff;font-size:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:4px;}
+  .rt-bar button:hover{background:rgba(255,255,255,.12);}
+  .rt-bar .rt-done{background:#fff;color:#16202C;margin-left:4px;} .rt-bar .rt-done:hover{background:#E8ECF4;}
+  .rt-sep{width:1px;height:20px;background:rgba(255,255,255,.18);margin:0 3px;}
+  .rt-swatch{display:inline-block;width:12px;height:4px;border-radius:2px;background:var(--rt-acc);}
+  .rt-menu{position:relative;}
+  .rt-pop{display:none;position:absolute;top:38px;left:0;padding:6px;border-radius:10px;background:#16202C;box-shadow:0 14px 34px -10px rgba(0,0,0,.5);gap:4px;}
+  .rt-menu.open .rt-pop{display:flex;}
+  .rt-pop button.sw{width:26px;min-width:26px;height:26px;padding:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);}
+  .rich-note{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 11px;border-radius:9px;background:rgba(122,79,181,.08);border:1px dashed rgba(122,79,181,.35);font-size:12.5px;color:var(--ink);}
+  .rich-note button{margin-left:auto;border:0;background:none;color:var(--teal);font-weight:600;font-size:12px;text-decoration:underline;padding:0;}
+  .pv-tip{font-size:12px;color:var(--slate);}
   @media (max-width:1100px){ .ed-body{grid-template-columns:1fr;} .pv-wrap{display:none;} .pv-wrap.show{display:flex;position:fixed;inset:0;z-index:200;} }
 </style>
 </head>
@@ -191,7 +205,7 @@
       <div class="ed-body">
         <div class="form" id="form"></div>
         <div class="pv-wrap" id="pvWrap">
-          <div class="pv-bar"><b>Live preview</b><span class="sp"></span><span class="seg"><button id="pvDesk" class="on" type="button">🖥 Desktop</button><button id="pvPhone" type="button">📱 Phone</button></span><button class="btn sm" id="pvClose" style="display:none">✕ Close</button></div>
+          <div class="pv-bar"><b>Live preview</b><span class="pv-tip">· click any text to edit and style it</span><span class="sp"></span><span class="seg"><button id="pvDesk" class="on" type="button">🖥 Desktop</button><button id="pvPhone" type="button">📱 Phone</button></span><button class="btn sm" id="pvClose" style="display:none">✕ Close</button></div>
           <div class="pv-scroll"><div class="pv-frame desk" id="pvFrame"><div id="pv"></div></div></div>
         </div>
       </div>
@@ -199,6 +213,20 @@
   </div>
 </div>
 
+<div class="rt-bar hidden" id="rtBar" role="toolbar" aria-label="Text style">
+  <button type="button" data-rt="bold" title="Bold"><b>B</b></button>
+  <button type="button" data-rt="italic" title="Italic"><i>I</i></button>
+  <button type="button" data-rt="hl" title="Coloured underline"><span style="text-decoration:underline;text-decoration-color:var(--rt-acc);text-decoration-thickness:3px">U</span></button>
+  <button type="button" data-rt="mark" title="Marker">🖍</button>
+  <span class="rt-sep"></span>
+  <span class="rt-menu"><button type="button" data-rt="colors" title="Colour">A<i class="rt-swatch"></i></button>
+    <span class="rt-pop" id="rtColors"></span></span>
+  <span class="rt-menu"><button type="button" data-rt="sizes" title="Size">Aa ▾</button>
+    <span class="rt-pop" id="rtSizes"><button type="button" data-size="cp-sz-s">S</button><button type="button" data-size="">M</button><button type="button" data-size="cp-sz-l">L</button><button type="button" data-size="cp-sz-xl">XL</button></span></span>
+  <span class="rt-sep"></span>
+  <button type="button" data-rt="clear" title="Remove styling">⌫</button>
+  <button type="button" data-rt="done" class="rt-done">Done</button>
+</div>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -219,7 +247,7 @@
   const slugify = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
   const ACCENTS = ['#E5463A', '#F59E0B', '#10B981', '#2563EB', '#7C3AED', '#EC4899', '#111827'];
   const TYPES = {video: ['🎬', 'Main video'], questions: ['❓', 'Question videos'], clients: ['⭐', 'Client videos'], results: ['🖼️', 'Results wall'], text: ['📝', 'Text'], button: ['👉', 'Button']};
-  let uid = null, wsId = null, pages = [], cur = null, saveTimer = null, saving = false, pvMode = 'desk', ws = {};
+  let uid = null, wsId = null, pages = [], cur = null, saveTimer = null, saving = false, pvMode = 'desk', ws = {}, editEl = null, editPath = '';
   // Call pages is a Premium feature (Custom includes it too). Same plan rule as the other pages: billing-exempt,
   // an active subscription, or the first 7 days (the free Premium trial); otherwise Free.
   const tms = (t) => (t && t.toMillis ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0));
@@ -296,7 +324,7 @@
     history.replaceState(null, '', '#' + id);
     renderForm(); renderPreview(); renderTop();
   }
-  function closeEditor() { flushSave(); cur = null; $('edView').classList.remove('open'); $('listView').classList.remove('hidden'); history.replaceState(null, '', location.pathname); renderList(); }
+  function closeEditor() { if (editEl) { readEdit(); editEl = null; $('rtBar').classList.add('hidden'); } flushSave(); cur = null; $('edView').classList.remove('open'); $('listView').classList.remove('hidden'); history.replaceState(null, '', location.pathname); renderList(); }
   $('backBtn').addEventListener('click', closeEditor);
   $('delBtn').addEventListener('click', () => {
     const m = document.createElement('div'); m.className = 'modal';
@@ -367,6 +395,7 @@
       return `<div class="blk"><div class="blk-h"><span>${ic}</span><b>${label}</b>${n}<span class="sp"></span>
         <button type="button" class="ic" data-mv="${i}:-1" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="ic" data-mv="${i}:1" title="Move down" ${i === cur.blocks.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="ic del" data-rm="${i}" title="Remove this step">🗑</button></div>${f}</div>`;
     }).join('') || '<div class="hint" style="margin:6px 0 0">No steps yet. Add one below.</div>';
+    markRich();
   }
   function vhint(u) { if (!String(u || '').trim()) return ''; const v = CallPage.parseVideo(u); return v ? `<div class="hint ok">✓ ${({youtube: 'YouTube', vimeo: 'Vimeo', loom: 'Loom', wistia: 'Wistia', drive: 'Google Drive', file: 'Video file'})[v.kind]} video</div>` : '<div class="hint bad">This link isn’t a supported video (YouTube, Vimeo, Loom, Wistia or Google Drive).</div>'; }
 
@@ -482,8 +511,144 @@
   }
   addEventListener('beforeunload', () => { if (cur) flushSave(); });
 
+  // ---------- editing texts right in the preview ----------
+  function getPath(path) {
+    if (path.startsWith('hero.')) return cur.hero[path.slice(5)] || '';
+    const [k, i, x] = path.split(':');
+    if (k === 'b') return (cur.blocks[+i] || {})[x] || '';
+    if (k === 'q') return ((cur.blocks[+i] || {}).items || [])[+x] ? cur.blocks[+i].items[+x].q || '' : '';
+    return '';
+  }
+  function setPath(path, v) {
+    if (path.startsWith('hero.')) { cur.hero[path.slice(5)] = v; return; }
+    const [k, i, x] = path.split(':');
+    if (k === 'b' && cur.blocks[+i]) cur.blocks[+i][x] = v;
+    if (k === 'q' && cur.blocks[+i] && cur.blocks[+i].items[+x]) cur.blocks[+i].items[+x].q = v;
+  }
+  const decode = (html) => { const t = document.createElement('textarea'); t.innerHTML = String(html).replace(/<br>/g, '\n'); return t.value; };
+  // what's typed in the preview: formatted text is kept (cleaned); without any styling it's stored as plain text
+  function readEdit() { if (!editEl) return; const v = CallPage.clean(editEl.innerHTML); setPath(editPath, CallPage.isRich(v) ? v : decode(v).replace(/^\s+|\s+$/g, '')); }
+  function startEdit(path) {
+    if (editEl) finishEdit();
+    const el = $('pv').querySelector(`[data-edit="${CSS.escape(path)}"]`); if (!el) return;
+    editEl = el; editPath = path;
+    el.contentEditable = 'true'; el.spellcheck = true; el.focus();
+    const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    document.execCommand('styleWithCSS', false, false);
+    const bar = $('rtBar'); bar.style.setProperty('--rt-acc', cur.theme.accent); bar.classList.remove('hidden'); placeBar();
+  }
+  function placeBar() {
+    if (!editEl) return; const bar = $('rtBar'), r = editEl.getBoundingClientRect(), w = bar.offsetWidth;
+    let top = r.top - bar.offsetHeight - 14; if (top < 8) top = r.bottom + 14;
+    bar.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px'; bar.style.top = top + 'px';
+  }
+  function finishEdit() {
+    if (!editEl) return;
+    readEdit(); editEl.contentEditable = 'false'; editEl = null; editPath = '';
+    $('rtBar').classList.add('hidden'); document.querySelectorAll('.rt-menu.open').forEach((m) => m.classList.remove('open'));
+    renderForm(); renderPreview(); changed();
+  }
+  $('pv').addEventListener('click', (e) => {
+    if (e.target.closest('.cp-cta a') || (editEl && editEl.contains(e.target))) e.preventDefault();
+    const t = e.target.closest('[data-edit]'); if (!t || t === editEl) return;
+    startEdit(t.dataset.edit);
+  });
+  $('pv').addEventListener('input', () => { if (!editEl) return; readEdit(); $('saved').textContent = 'Editing…'; clearTimeout(saveTimer); saveTimer = setTimeout(() => flushSave(), 900); placeBar(); });
+  $('pv').addEventListener('keydown', (e) => {
+    if (!editEl) return;
+    if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertLineBreak'); }
+    if (e.key === 'Escape') { e.preventDefault(); finishEdit(); }
+  });
+  $('pv').addEventListener('paste', (e) => { if (!editEl) return; e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); });
+  document.addEventListener('mousedown', (e) => { if (editEl && !e.target.closest('#rtBar') && !e.target.closest('[contenteditable="true"]')) finishEdit(); });
+  document.querySelector('.pv-scroll').addEventListener('scroll', placeBar, {passive: true}); addEventListener('resize', placeBar);
+
+  // the toolbar: works on the selected words
+  function selRange() {
+    const sel = getSelection(); if (!sel.rangeCount) return null; const r = sel.getRangeAt(0);
+    return editEl && editEl.contains(r.commonAncestorContainer) && !r.collapsed ? r : null;
+  }
+  const SIZES = ['cp-sz-s', 'cp-sz-l', 'cp-sz-xl'], COLS = ['cp-acc', 'cp-mut'];
+  function strip(frag, group) {            // remove an earlier size or colour from the selected part, so they don't stack
+    frag.querySelectorAll('span').forEach((sp) => {
+      (group === 'size' ? SIZES : COLS).forEach((c) => sp.classList.remove(c));
+      if (group === 'color') sp.style.color = '';
+      if (!sp.className && !sp.getAttribute('style')) sp.replaceWith(...sp.childNodes);
+    });
+  }
+  function wrap(cls, color, group) {
+    const r = selRange(); if (!r) { showToast('Select a few words first.'); return; }
+    // the selected words already have a colour or size of their own: take that styling along, so the new one replaces it
+    if (group) {
+      let n = r.commonAncestorContainer; n = n.nodeType === 3 ? n.parentNode : n;
+      while (n && n !== editEl && n.tagName === 'SPAN' && n.textContent === r.toString()) { r.selectNode(n); n = n.parentNode; }
+    }
+    const frag = r.extractContents(); if (group) strip(frag, group);
+    let node = frag;
+    if (cls || color) { const sp = document.createElement('span'); if (cls) sp.className = cls; if (color) sp.style.color = color; sp.appendChild(frag); node = sp; }
+    const first = node.firstChild, last = node.lastChild; r.insertNode(node);
+    const sel = getSelection(), nr = document.createRange();
+    if (node.nodeType === 1) nr.selectNodeContents(node); else if (first && last) { nr.setStartBefore(first); nr.setEndAfter(last); }
+    sel.removeAllRanges(); sel.addRange(nr); readEdit(); changedSoft();
+  }
+  function toggle(cls) {                   // the underline and the marker switch off when used again
+    const r = selRange(); if (!r) { showToast('Select a few words first.'); return; }
+    let n = r.commonAncestorContainer; n = n.nodeType === 3 ? n.parentNode : n;
+    const sp = n.closest && n.closest('span.' + cls);
+    if (sp && editEl.contains(sp)) { sp.classList.remove(cls); if (!sp.className && !sp.getAttribute('style')) sp.replaceWith(...sp.childNodes); readEdit(); changedSoft(); return; }
+    wrap(cls, '', null);
+  }
+  // bold and italic: on when used once, off when used again (the same on headlines, which are bold already)
+  function toggleTag(tag) {
+    const r = selRange(); if (!r) { showToast('Select a few words first.'); return; }
+    let n = r.commonAncestorContainer; n = n.nodeType === 3 ? n.parentNode : n;
+    const on = n.closest && n.closest(tag);
+    if (on && editEl.contains(on)) { on.replaceWith(...on.childNodes); readEdit(); changedSoft(); return; }
+    const frag = r.extractContents(); frag.querySelectorAll(tag).forEach((x) => x.replaceWith(...x.childNodes));
+    const el = document.createElement(tag); el.appendChild(frag); r.insertNode(el);
+    const sel = getSelection(), nr = document.createRange(); nr.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(nr);
+    readEdit(); changedSoft();
+  }
+  function changedSoft() { $('saved').textContent = 'Editing…'; clearTimeout(saveTimer); saveTimer = setTimeout(() => flushSave(), 900); placeBar(); }
+  $('rtColors').innerHTML = `<button type="button" class="sw" data-col="acc" title="Accent colour" style="background:var(--rt-acc)"></button><button type="button" class="sw" data-col="mut" title="Gray" style="background:#9CA3AF"></button>` +
+    CallPage.COLORS.map((c) => `<button type="button" class="sw" data-col="${c}" title="${c}" style="background:${c}"></button>`).join('') + `<button type="button" data-col="" title="Default colour">✕</button>`;
+  $('rtBar').addEventListener('mousedown', (e) => e.preventDefault());       // keep the selected words selected
+  $('rtBar').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b || !editEl) return; const a = b.dataset.rt;
+    if (a === 'bold' || a === 'italic') toggleTag(a === 'bold' ? 'b' : 'i');
+    else if (a === 'hl') toggle('cp-hl');
+    else if (a === 'mark') toggle('cp-mark');
+    else if (a === 'colors' || a === 'sizes') { const m = b.parentNode; const was = m.classList.contains('open'); document.querySelectorAll('.rt-menu.open').forEach((x) => x.classList.remove('open')); if (!was) m.classList.add('open'); }
+    else if (b.dataset.col != null) { const c = b.dataset.col; wrap(c === 'acc' ? 'cp-acc' : c === 'mut' ? 'cp-mut' : '', /^#/.test(c) ? c : '', 'color'); b.closest('.rt-menu').classList.remove('open'); }
+    else if (b.dataset.size != null) { wrap(b.dataset.size, '', 'size'); b.closest('.rt-menu').classList.remove('open'); }
+    else if (a === 'clear') {
+      const r = selRange();
+      if (r) { const t = document.createTextNode(r.toString()); r.deleteContents(); r.insertNode(t); }
+      else editEl.innerHTML = CallPage.clean(editEl.innerHTML).replace(/<(?!br>)[^>]+>/g, '');
+      readEdit(); changedSoft();
+    }
+    else if (a === 'done') finishEdit();
+  });
+
+  // the form: a text with styling is edited in the preview (so the styling is never lost by accident)
+  function markRich() {
+    document.querySelectorAll('#form [data-k]').forEach((el) => {
+      const k = el.dataset.k; let path = '';
+      if (k.startsWith('hero.') && k !== 'hero.highlight') path = k;
+      else if (el.dataset.item != null && k === 'q') path = `q:${el.dataset.b}:${el.dataset.item}`;
+      else if (el.dataset.b != null && el.dataset.item == null && ['title', 'text', 'label'].includes(k)) path = `b:${el.dataset.b}:${k}`;
+      if (!path || !CallPage.isRich(getPath(path))) return;
+      el.outerHTML = `<div class="rich-note">✨ Formatted text: click it in the preview to edit it.<button type="button" data-plain="${path}">Remove formatting</button></div>`;
+    });
+    if (CallPage.isRich(cur.hero.title)) { const h = document.querySelector('#form [data-k="hero.highlight"]'); if (h) { const hint = h.nextElementSibling; h.previousElementSibling.remove(); h.remove(); if (hint && hint.classList.contains('hint')) hint.remove(); } }
+  }
+  document.getElementById('form').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-plain]'); if (!b) return;
+    setPath(b.dataset.plain, CallPage.plain(getPath(b.dataset.plain))); renderForm(); changed();
+  });
+
   // ---------- the preview ----------
-  function renderPreview() { if (cur) CallPage.render(pageData(cur), $('pv')); }
+  function renderPreview() { if (cur && !editEl) CallPage.render(pageData(cur), $('pv'), {editable: true}); }
   $('pvDesk').addEventListener('click', () => { $('pvFrame').className = 'pv-frame desk'; $('pvDesk').classList.add('on'); $('pvPhone').classList.remove('on'); });
   $('pvPhone').addEventListener('click', () => { $('pvFrame').className = 'pv-frame phone'; $('pvPhone').classList.add('on'); $('pvDesk').classList.remove('on'); });
   function smallScreen() { const s = innerWidth <= 1100; $('pvBtn').style.display = s ? '' : 'none'; $('pvClose').style.display = s ? '' : 'none'; if (!s) $('pvWrap').classList.remove('show'); }
