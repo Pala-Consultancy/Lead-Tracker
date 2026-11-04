@@ -752,6 +752,35 @@
   .pvd-stats div{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;} .pvd-stats b{display:block;font:800 17px 'Sora',sans-serif;color:#16202C;} .pvd-stats small{font-size:10.5px;color:var(--slate);}
   .footer-google{flex-basis:100%;max-width:760px;margin:10px auto 0;font-size:11.5px;line-height:1.5;color:var(--slate,#5C6B7C);text-align:center;}
   .footer-google a{color:inherit;text-decoration:underline;}
+
+  /* ---------- the promo video, with Add to Chrome ---------- */
+  .demo-video{padding:70px 6vw 10px;max-width:1080px;margin:0 auto;text-align:center;}
+  .demo-video .section-eyebrow{display:inline-flex;align-items:center;gap:8px;}
+  .demo-video h2{font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(26px,3.4vw,38px);letter-spacing:-.02em;margin:0 0 12px;}
+  .demo-video > p{font-size:17px;line-height:1.6;color:var(--slate);max-width:620px;margin:0 auto 28px;}
+  .dv-frame{position:relative;border-radius:22px;overflow:hidden;background:#0F1220;aspect-ratio:16/9;
+    box-shadow:0 40px 80px -36px rgba(36,31,122,.55),0 0 0 1px rgba(36,31,122,.08);}
+  .dv-frame::before{content:"";position:absolute;inset:-2px;border-radius:24px;padding:2px;background:linear-gradient(120deg,#2E62B7,#7A4FB5,#F59E0B);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;z-index:2;}
+  .dv-frame video{display:block;width:100%;height:100%;object-fit:cover;background:#0F1220;}
+  .dv-play{position:absolute;inset:0;z-index:1;border:0;padding:0;cursor:pointer;background:url(palatrack-demo-poster.jpg) center/cover no-repeat;display:flex;align-items:center;justify-content:center;}
+  .dv-play::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at center,rgba(15,18,32,.05),rgba(15,18,32,.45));}
+  .dv-play span{position:relative;z-index:1;display:inline-flex;align-items:center;gap:12px;padding:16px 26px 16px 18px;border-radius:999px;
+    background:rgba(255,255,255,.95);color:#241F7A;font:700 16px 'Inter',sans-serif;box-shadow:0 18px 40px -14px rgba(0,0,0,.55);transition:transform .2s;}
+  .dv-play span i{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3730B3,#7A4FB5);display:inline-flex;align-items:center;justify-content:center;}
+  .dv-play:hover span{transform:scale(1.05);}
+  .dv-play small{position:absolute;z-index:1;right:16px;bottom:14px;padding:4px 10px;border-radius:999px;background:rgba(15,18,32,.6);color:#fff;font:600 12px 'Inter',sans-serif;}
+  .dv-frame.playing .dv-play{display:none;}
+  .dv-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px;}
+  .dv-chrome{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 24px;border-radius:14px;background:linear-gradient(135deg,#3730B3,#5B4BE6);
+    color:#fff;font:700 16px 'Inter',sans-serif;text-decoration:none;box-shadow:0 14px 30px -14px rgba(55,48,179,.9);transition:transform .15s,box-shadow .15s;}
+  .dv-chrome:hover{transform:translateY(-2px);box-shadow:0 18px 34px -14px rgba(55,48,179,.95);}
+  .dv-chrome svg{width:24px;height:24px;flex-shrink:0;}
+  .dv-second{display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:14px;border:1.5px solid var(--teal);color:var(--teal);
+    background:rgba(255,255,255,.7);font:700 16px 'Inter',sans-serif;text-decoration:none;transition:background .15s,color .15s;}
+  .dv-second:hover{background:var(--teal);color:#fff;}
+  .dv-note{margin-top:14px;font-size:13.5px;color:var(--slate);}
+  @media (max-width:640px){ .demo-video{padding:50px 5vw 0;} .dv-frame{border-radius:16px;} .dv-play span{padding:12px 18px 12px 12px;font-size:14px;} .dv-play span i{width:36px;height:36px;} .dv-chrome,.dv-second{width:100%;justify-content:center;} }
 </style>
 </head>
 <body>
@@ -851,6 +880,25 @@
         </div>
       </div>
     </div>
+  </section>
+
+
+  <section class="demo-video" id="demoVideo" aria-labelledby="demoVideoTitle">
+    <div class="section-eyebrow">Free Chrome extension</div>
+    <h2 id="demoVideoTitle">Your PalaTrack CRM, now inside LinkedIn too</h2>
+    <p>Our free Chrome extension brings your PalaTrack CRM to LinkedIn: write and schedule posts, follow your results and save profiles as leads, all synced with your PalaTrack workspace.</p>
+    <div class="dv-frame" id="dvFrame">
+      <video id="dvVideo" preload="none" playsinline controls poster="palatrack-demo-poster.jpg" aria-label="PalaTrack promo video">
+        <source src="palatrack-demo.mp4" type="video/mp4">
+      </video>
+      <button class="dv-play" id="dvPlay" type="button" aria-label="Play the video"><span><i><svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M8 5v14l11-7z"/></svg></i>Watch the 45-second demo</span><small>0:45</small></button>
+    </div>
+    <div class="dv-cta">
+      <!-- the extension's page in the Chrome Web Store -->
+      <a class="dv-chrome" id="dvChrome" href="https://chromewebstore.google.com/detail/okkffbffcggojpoblkhlflobkcpjdheg" target="_blank" rel="noopener"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="#fff"/><path d="M24 14h17.3A20 20 0 0 0 6.7 14L15.3 29A10 10 0 0 1 24 14z" fill="#EA4335"/><path d="M15.3 29 6.7 14A20 20 0 0 0 24 44l8.7-15A10 10 0 0 1 15.3 29z" fill="#34A853"/><path d="M41.3 14H24a10 10 0 0 1 8.7 15L24 44a20 20 0 0 0 17.3-30z" fill="#FBBC05"/><circle cx="24" cy="24" r="8" fill="#fff"/><circle cx="24" cy="24" r="6.4" fill="#4285F4"/></svg>Add to Chrome, it’s free</a>
+      <a class="dv-second" href="signup.html">Start a demo</a>
+    </div>
+    <div class="dv-note">Works with your PalaTrack account. Free to install.</div>
   </section>
 
   <section class="section" id="whatsInsideSection">
@@ -2129,6 +2177,20 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
+</script>
+
+<script>
+  // the promo video: plays with sound when you click the cover, and stops when it scrolls out of view
+  (function(){
+    var CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/okkffbffcggojpoblkhlflobkcpjdheg';   // the extension's page in the Chrome Web Store
+    var chrome = document.getElementById('dvChrome'); if(CHROME_STORE_URL && chrome) chrome.href = CHROME_STORE_URL;
+    var frame = document.getElementById('dvFrame'), v = document.getElementById('dvVideo'), play = document.getElementById('dvPlay');
+    if(!frame || !v || !play) return;
+    play.addEventListener('click', function(){ frame.classList.add('playing'); v.play().catch(function(){}); });
+    v.addEventListener('play', function(){ frame.classList.add('playing'); });
+    v.addEventListener('ended', function(){ frame.classList.remove('playing'); v.currentTime = 0; });
+    if('IntersectionObserver' in window) new IntersectionObserver(function(es){ es.forEach(function(e){ if(!e.isIntersecting && !v.paused) v.pause(); }); }, {threshold: .15}).observe(frame);
+  })();
 </script>
 </body>
 </html>
