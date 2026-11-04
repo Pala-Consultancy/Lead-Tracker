@@ -89,6 +89,9 @@
   .pill{display:inline-flex;align-items:center;gap:6px;width:max-content;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--panel-alt);color:var(--slate);border:1px solid var(--border-soft);}
   .pill.live{background:var(--success-soft);color:var(--success);border-color:transparent;}
   .pill.live::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .lock{background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;padding:46px 24px;text-align:center;box-shadow:var(--shadow);}
+  .lock-ic{width:64px;height:64px;margin:0 auto 14px;border-radius:18px;background:var(--panel-alt);display:flex;align-items:center;justify-content:center;font-size:28px;}
+  .lock h2{font:700 21px Sora,sans-serif;margin:0 0 8px;} .lock p{color:var(--slate);max-width:540px;margin:0 auto 20px;line-height:1.6;font-size:14.5px;}
   .empty{background:var(--panel);border:1px dashed var(--border);border-radius:18px;padding:46px 24px;text-align:center;}
   .empty h2{font:700 20px Sora,sans-serif;margin:0 0 8px;} .empty p{color:var(--slate);max-width:520px;margin:0 auto 18px;line-height:1.55;font-size:14.5px;}
 
@@ -216,7 +219,17 @@
   const slugify = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
   const ACCENTS = ['#E5463A', '#F59E0B', '#10B981', '#2563EB', '#7C3AED', '#EC4899', '#111827'];
   const TYPES = {video: ['🎬', 'Main video'], questions: ['❓', 'Question videos'], clients: ['⭐', 'Client videos'], results: ['🖼️', 'Results wall'], text: ['📝', 'Text'], button: ['👉', 'Button']};
-  let uid = null, wsId = null, pages = [], cur = null, saveTimer = null, saving = false, pvMode = 'desk';
+  let uid = null, wsId = null, pages = [], cur = null, saveTimer = null, saving = false, pvMode = 'desk', ws = {};
+  // Call pages is a Premium feature (Custom includes it too). Same plan rule as the other pages: billing-exempt,
+  // an active subscription, or the first 7 days (the free Premium trial); otherwise Free.
+  const tms = (t) => (t && t.toMillis ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0));
+  function effectivePlan(w) {
+    w = w || {};
+    if (w.billingExempt === true) return w.plan && w.plan !== 'free' ? w.plan : 'premium';
+    if (w.subscriptionActive === true) return w.plan || 'premium';
+    const c = tms(w.createdAt); return c && Date.now() < c + 7 * 86400000 ? 'premium' : 'free';
+  }
+  const hasPremium = () => ['premium', 'growth', 'custom'].includes(effectivePlan(ws));
 
   // a new page starts as a complete example, so it's quick to fill in
   function template(name) {
@@ -234,7 +247,16 @@
   const pageData = (p) => ({theme: p.theme, hero: p.hero, blocks: p.blocks});
 
   // ---------- the list ----------
+  function renderLock() {
+    $('newBtn').style.display = 'none';
+    const live = pages.filter((p) => p.live).length;
+    $('cards').outerHTML = `<div class="cards" id="cards"><div class="lock" style="grid-column:1/-1">
+      <div class="lock-ic">🔒</div><h2>Call pages is a Premium feature</h2>
+      <p>Send everyone who books a call to a page with your main video, answers to common questions, and real client stories and results, so leads show up warmed up and ready to buy.${pages.length ? `<br><br><b>You have ${pages.length} call page${pages.length === 1 ? '' : 's'}${live ? ` (${live} published, now offline)` : ''}.</b> Upgrade to edit ${pages.length === 1 ? 'it' : 'them'} and put ${live === 1 ? 'it' : 'them'} back online.` : ''}</p>
+      <a class="btn primary" href="billing.html?buy=premium">Upgrade to Premium</a> <a class="btn" href="pricing.html" style="margin-left:6px">Compare plans</a></div></div>`;
+  }
   function renderList() {
+    if (!hasPremium()) { renderLock(); return; }
     const box = $('cards');
     if (!pages.length) {
       box.outerHTML = '<div class="cards" id="cards"></div>';
@@ -255,6 +277,7 @@
 
   // ---------- new, open, delete ----------
   async function newPage() {
+    if (!hasPremium()) { renderLock(); return; }
     const ref = db.collection('callPages').doc();
     const p = template('Call confirmed'); p.slug = (slugify(window.__wsName || '') || 'call') + '-' + Math.random().toString(36).slice(2, 6);
     const now = firebase.firestore.FieldValue.serverTimestamp();
@@ -265,6 +288,7 @@
   window.newPage = newPage;
   $('newBtn').addEventListener('click', newPage);
   function openPage(id) {
+    if (!hasPremium()) { renderLock(); return; }
     const p = pages.find((x) => x.id === id); if (!p) return;
     cur = JSON.parse(JSON.stringify(p)); cur.id = id; cur._publishedSlug = p.live ? p.slug : '';
     $('listView').classList.add('hidden'); $('edView').classList.add('open');
@@ -474,7 +498,7 @@
       const dir = await db.doc(`userDirectory/${uid}`).get();
       wsId = dir.exists ? dir.data().workspaceId : null;
       if (!wsId) { location.href = 'home.html'; return; }
-      const w = await db.doc(`workspaces/${wsId}`).get(); window.__wsName = w.exists ? (w.data().name || '') : '';
+      const w = await db.doc(`workspaces/${wsId}`).get(); ws = w.exists ? w.data() : {}; window.__wsName = ws.name || '';
       const snap = await db.collection('callPages').where('workspaceId', '==', wsId).get();
       pages = snap.docs.map((d) => ({id: d.id, ...d.data()})).sort((a, b) => ((b.updatedAt && b.updatedAt.toMillis ? b.updatedAt.toMillis() : 0) - (a.updatedAt && a.updatedAt.toMillis ? a.updatedAt.toMillis() : 0)));
     } catch (e) { showToast('Could not load your call pages.', true); }
