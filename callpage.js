@@ -40,10 +40,62 @@
     return '<div class="cp-frame"><iframe src="' + esc(v.embed) + '" loading="lazy" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen title="' + esc(label || 'Video') + '"></iframe></div>';
   }
 
+  // ---------- fonts: loaded from Google Fonts, only the ones a page uses ----------
+  var FONTS = {
+    'montserrat': ['Montserrat', 'sans-serif', '500;600;700;800'], 'inter': ['Inter', 'sans-serif', '400;500;600;700;800'], 'poppins': ['Poppins', 'sans-serif', '400;500;600;700;800'],
+    'sora': ['Sora', 'sans-serif', '400;600;700;800'], 'outfit': ['Outfit', 'sans-serif', '400;500;600;700;800'], 'space-grotesk': ['Space Grotesk', 'sans-serif', '400;500;600;700'],
+    'raleway': ['Raleway', 'sans-serif', '400;500;600;700;800'], 'oswald': ['Oswald', 'sans-serif', '400;500;600;700'], 'bebas-neue': ['Bebas Neue', 'sans-serif', '400'],
+    'playfair': ['Playfair Display', 'serif', '400;600;700;800'], 'dm-serif': ['DM Serif Display', 'serif', '400'], 'lora': ['Lora', 'serif', '400;500;600;700']
+  };
+  var fontStack = function (k) { var f = FONTS[k] || FONTS.montserrat; return "'" + f[0] + "'," + f[1]; };
+  var loaded = {};
+  function loadFonts(keys) {
+    keys.forEach(function (k) {
+      if (!FONTS[k] || loaded[k]) return; loaded[k] = 1;
+      var l = document.createElement('link'); l.rel = 'stylesheet';
+      l.href = 'https://fonts.googleapis.com/css2?family=' + FONTS[k][0].replace(/ /g, '+') + ':wght@' + FONTS[k][2] + '&display=swap';
+      (document.head || document.documentElement).appendChild(l);
+    });
+  }
+  // ---------- backgrounds: ready-made, your own colour, or your own image ----------
+  var BGS = {
+    'dark': ['Dark', 'dark', '', '#0A0B0E'],
+    'midnight': ['Midnight', 'dark', 'linear-gradient(160deg,#0B1023 0%,#111A3A 55%,#0A0F24 100%)', '#0B1023'],
+    'aurora': ['Aurora', 'dark', 'radial-gradient(1100px 620px at 12% 0%,rgba(124,58,237,.38),transparent 60%),radial-gradient(1000px 600px at 92% 8%,rgba(14,165,233,.26),transparent 60%)', '#0B0B14'],
+    'glow': ['Accent glow', 'dark', 'radial-gradient(1200px 700px at 50% -8%,color-mix(in srgb,var(--cp-accent) 42%,transparent),transparent 66%)', '#0A0B0E'],
+    'sunset': ['Sunset', 'dark', 'linear-gradient(170deg,#24101A 0%,#3A1520 40%,#160A10 100%)', '#1A0B12'],
+    'forest': ['Forest', 'dark', 'linear-gradient(170deg,#06140F 0%,#0C2A1E 50%,#06110C 100%)', '#07150F'],
+    'ocean': ['Ocean', 'dark', 'linear-gradient(170deg,#04131E 0%,#0A2C42 55%,#03101A 100%)', '#05141F'],
+    'light': ['Light', 'light', '', '#F6F7FA'],
+    'white': ['White', 'light', '', '#FFFFFF'],
+    'cream': ['Cream', 'light', '', '#FBF6EE'],
+    'blush': ['Blush', 'light', 'linear-gradient(180deg,#FFF1F2 0%,#FDF2F8 50%,#F5F3FF 100%)', '#FFF5F7'],
+    'sky': ['Sky', 'light', 'linear-gradient(180deg,#E8F1FF 0%,#F0F9FF 55%,#FFFFFF 100%)', '#F3F8FF']
+  };
+  var lum = function (hex) { var c = parseInt(hex.slice(1), 16), r = c >> 16 & 255, g = c >> 8 & 255, b = c & 255; return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+  function applyTheme(root, theme, accent) {
+    var bg = theme.bg || (theme.mode === 'light' ? 'light' : 'dark'), mode = 'dark', layers = [], sizes = [], col = '#0A0B0E';
+    var pat = theme.pattern || 'dots';
+    if (bg === 'custom' && /^#[0-9a-f]{6}$/i.test(theme.bgColor || '')) { col = theme.bgColor; mode = lum(col) > 0.6 ? 'light' : 'dark'; }
+    else if (bg === 'image' && theme.bgImage) {
+      var o = Math.max(0, Math.min(0.9, +theme.overlay >= 0 ? +theme.overlay : 0.55));
+      layers.push('linear-gradient(rgba(5,6,10,' + o + '),rgba(5,6,10,' + o + '))', 'url("' + String(theme.bgImage).replace(/["\\]/g, '') + '")'); sizes.push('auto', 'cover'); col = '#0A0B0E';
+    }
+    else { var b = BGS[bg] || BGS.dark; mode = b[1]; col = b[3]; if (b[2]) { layers.push(b[2]); sizes.push('auto'); } }
+    var dot = mode === 'light' ? 'rgba(16,24,40,.07)' : 'rgba(255,255,255,.06)';
+    if (pat === 'dots') { layers.unshift('radial-gradient(' + dot + ' 1px,transparent 1px)'); sizes.unshift('22px 22px'); }
+    if (pat === 'grid') { layers.unshift('linear-gradient(' + dot + ' 1px,transparent 1px),linear-gradient(90deg,' + dot + ' 1px,transparent 1px)'); sizes.unshift('44px 44px,44px 44px'); }
+    root.style.backgroundColor = col; root.style.backgroundImage = layers.join(',') || 'none'; root.style.backgroundSize = sizes.join(',');
+    root.style.backgroundPosition = (bg === 'image' ? 'center' : '0 0');
+    root.style.setProperty('--cp-bg', col);
+    root.style.setProperty('--cp-font-h', fontStack(theme.fontHead)); root.style.setProperty('--cp-font-b', fontStack(theme.fontBody));
+    return mode;
+  }
+
   // ---------- formatted text ----------
   // Texts can carry simple styling made in the editor's preview: bold, italic, the accent underline, a marker,
   // a colour and a size. Only these are kept; everything else (other tags, attributes, scripts) is dropped.
-  var KEEP = ['cp-hl', 'cp-mark', 'cp-acc', 'cp-mut', 'cp-sz-s', 'cp-sz-l', 'cp-sz-xl'];
+  var KEEP = ['cp-hl', 'cp-mark', 'cp-acc', 'cp-mut', 'cp-sz-s', 'cp-sz-l', 'cp-sz-xl'].concat(Object.keys(FONTS).map(function (k) { return 'cp-f-' + k; }));
   var COLORS = ['#FACC15', '#22C55E', '#3B82F6', '#EC4899', '#FFFFFF', '#111827'];
   var isRich = function (s) { return /<(?!br\s*\/?>)[a-z]/i.test(String(s || '')); };   // a line break alone is still plain text
   function clean(html) {
@@ -98,8 +150,13 @@
     ED = !!(opts && opts.editable);
     page = page || {}; var theme = page.theme || {}, hero = page.hero || {}, blocks = page.blocks || [];
     var accent = /^#[0-9a-f]{6}$/i.test(theme.accent || '') ? theme.accent : '#E5463A';
-    root.className = 'cpv cp-' + (theme.mode === 'light' ? 'light' : 'dark');
     root.style.setProperty('--cp-accent', accent);
+    var mode = applyTheme(root, theme, accent);
+    root.className = 'cpv cp-' + mode + (theme.bg === 'image' && theme.bgImage ? ' cp-img' : '');
+    // the fonts this page uses: the two page fonts, plus any picked for a few words
+    var used = [theme.fontHead || 'montserrat', theme.fontBody || 'montserrat'], m, re = /cp-f-([a-z-]+)/g, all = JSON.stringify(page);
+    while ((m = re.exec(all))) used.push(m[1]);
+    loadFonts(used);
     var out = '<div class="cp-glow" aria-hidden="true"></div><header class="cp-hero"><h1' + ed('hero.title') + '>' + headline(hero.title || 'Your Call Is Confirmed!', hero.highlight) + '</h1>' + para(hero.subtitle, 'hero.subtitle') + '</header>';
     var step = 0, first = true;
     blocks.forEach(function (b, bi) {
@@ -150,6 +207,19 @@
   // ---------- the look ----------
   var CSS = [
     '.cpv b{font-weight:800} .cpv i{font-style:italic}',
+    '.cpv .cp-f-montserrat{font-family:' + fontStack('montserrat') + '}',
+    '.cpv .cp-f-inter{font-family:' + fontStack('inter') + '}',
+    '.cpv .cp-f-poppins{font-family:' + fontStack('poppins') + '}',
+    '.cpv .cp-f-sora{font-family:' + fontStack('sora') + '}',
+    '.cpv .cp-f-outfit{font-family:' + fontStack('outfit') + '}',
+    '.cpv .cp-f-space-grotesk{font-family:' + fontStack('space-grotesk') + '}',
+    '.cpv .cp-f-raleway{font-family:' + fontStack('raleway') + '}',
+    '.cpv .cp-f-oswald{font-family:' + fontStack('oswald') + '}',
+    '.cpv .cp-f-bebas-neue{font-family:' + fontStack('bebas-neue') + '}',
+    '.cpv .cp-f-playfair{font-family:' + fontStack('playfair') + '}',
+    '.cpv .cp-f-dm-serif{font-family:' + fontStack('dm-serif') + '}',
+    '.cpv .cp-f-lora{font-family:' + fontStack('lora') + '}',
+    
     '.cpv .cp-mark{background:color-mix(in srgb,var(--cp-accent) 32%,transparent);padding:0 .14em;border-radius:.18em;-webkit-box-decoration-break:clone;box-decoration-break:clone}',
     '.cpv .cp-acc{color:var(--cp-accent)} .cpv .cp-mut{color:var(--cp-muted)}',
     '.cpv .cp-sz-s{font-size:.8em} .cpv .cp-sz-l{font-size:1.25em} .cpv .cp-sz-xl{font-size:1.55em}',
@@ -159,9 +229,11 @@
     '.cpv.cp-editing [data-edit][contenteditable="true"]{outline:2px solid var(--cp-accent);cursor:text}',
     '.cpv.cp-editing .cp-ph{min-height:1.4em;color:var(--cp-muted);opacity:.6} .cpv.cp-editing .cp-ph:empty::before{content:"Click to add text";font-weight:500;font-size:15px}',
     '.cpv.cp-editing h2.cp-ph:empty::before{content:"Click to add a title"}',
-    '.cpv{--cp-bg:#0A0B0E;--cp-ink:#FFFFFF;--cp-muted:#A7ADB8;--cp-card:#14161C;position:relative;overflow:hidden;background:var(--cp-bg);color:var(--cp-ink);font-family:Montserrat,Inter,system-ui,sans-serif;container-type:inline-size;',
-    '  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;}',
-    '.cpv.cp-light{--cp-bg:#F6F7FA;--cp-ink:#12141A;--cp-muted:#5C6575;--cp-card:#FFFFFF;background-image:radial-gradient(rgba(16,24,40,.07) 1px,transparent 1px);}',
+    '.cpv{--cp-bg:#0A0B0E;--cp-ink:#FFFFFF;--cp-muted:#A7ADB8;--cp-card:#14161C;position:relative;overflow:hidden;background-color:var(--cp-bg);color:var(--cp-ink);font-family:var(--cp-font-b,Montserrat,Inter,system-ui,sans-serif);container-type:inline-size;}',
+    '.cpv.cp-light{--cp-ink:#12141A;--cp-muted:#5C6575;--cp-card:#FFFFFF;}',
+    '.cpv.cp-img{--cp-muted:#D3D7DE;--cp-card:rgba(20,22,28,.85);} .cpv.cp-img .cp-glow{display:none}',
+    '.cpv h1,.cpv h2,.cpv h3,.cpv .cp-step,.cpv .cp-cta a,.cpv .cp-continue{font-family:var(--cp-font-h,Montserrat,Inter,system-ui,sans-serif)}',
+    '.cpv .cp-sub{font-family:var(--cp-font-b,Montserrat,Inter,system-ui,sans-serif)}',
     '.cpv *{box-sizing:border-box}',
     '.cpv .cp-glow{position:absolute;left:50%;top:-220px;width:760px;height:440px;margin-left:-380px;border-radius:50%;background:var(--cp-accent);opacity:.13;filter:blur(90px);pointer-events:none}',
     '.cpv .cp-in{position:relative;max-width:1180px;margin:0 auto;padding:clamp(48px,8cqw,110px) clamp(16px,4cqw,40px) clamp(48px,7cqw,90px)}',
@@ -210,5 +282,5 @@
   function injectCss() { if (document.getElementById('cp-css')) return; var s = document.createElement('style'); s.id = 'cp-css'; s.textContent = CSS; (document.head || document.documentElement).appendChild(s); }
   injectCss();
 
-  window.CallPage = {render: render, parseVideo: parseVideo, clean: clean, isRich: isRich, plain: plain, COLORS: COLORS};
+  window.CallPage = {render: render, parseVideo: parseVideo, clean: clean, isRich: isRich, plain: plain, COLORS: COLORS, FONTS: FONTS, BGS: BGS, loadFonts: loadFonts, fontStack: fontStack};
 })();
