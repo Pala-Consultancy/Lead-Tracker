@@ -291,6 +291,75 @@
     if (tries < 40) setTimeout(function () { waitForAuth(tries + 1); }, 250);
   })(0);
 
+  // ---------- Santa, for the surprise: a friendly cartoon, with a waving arm, a mouth and a belly that move ----------
+  var SANTA = '<svg viewBox="0 0 220 250" aria-hidden="true">' +
+    '<defs><radialGradient id="xsSuit" cx="45%" cy="30%" r="80%"><stop offset="0" stop-color="#F0414F"/><stop offset="1" stop-color="#A81E2D"/></radialGradient></defs>' +
+    // the body, the belt and the fur
+    '<g class="xs-belly"><path d="M30 250c0-64 34-104 80-104s80 40 80 104z" fill="url(#xsSuit)"/>' +
+    '<rect x="44" y="204" width="132" height="18" rx="4" fill="#1F2430"/><rect x="98" y="200" width="26" height="26" rx="4" fill="none" stroke="#F4C542" stroke-width="5"/>' +
+    '<path d="M110 150v54" stroke="#fff" stroke-width="16" stroke-linecap="round"/></g>' +
+    // the waving arm (left side, from Santa's shoulder)
+    '<g class="xs-arm"><path d="M52 176c-16-10-26-30-28-52" stroke="#C72535" stroke-width="22" stroke-linecap="round" fill="none"/>' +
+    '<rect x="11" y="114" width="27" height="10" rx="5" fill="#fff" transform="rotate(-8 24 119)"/><circle cx="22" cy="104" r="13" fill="#2A9D5C"/><circle cx="12" cy="100" r="6" fill="#2A9D5C"/></g>' +
+    '<path d="M168 176c12 10 16 24 14 40" stroke="#C72535" stroke-width="22" stroke-linecap="round" fill="none"/><circle cx="182" cy="220" r="12" fill="#2A9D5C"/>' +
+    // the head: face, beard, moustache and mouth
+    '<g class="xs-head"><circle cx="110" cy="96" r="40" fill="#F6C9A8"/>' +
+    '<path d="M66 100c0 40 18 70 44 70s44-30 44-70c-8 10-22 14-44 14s-36-4-44-14z" fill="#fff"/>' +
+    '<path d="M70 104c4 22 12 40 22 50M150 104c-4 22-12 40-22 50" stroke="#E8EDF5" stroke-width="3" fill="none"/>' +
+    '<ellipse class="xs-mouth" cx="110" cy="121" rx="9" ry="3" fill="#7A2230"/>' +
+    '<path d="M110 112c-6-8-22-8-28 2 8 2 18 4 28-2zM110 112c6-8 22-8 28 2-8 2-18 4-28-2z" fill="#fff" stroke="#E8EDF5" stroke-width="1.5"/>' +
+    '<circle cx="110" cy="104" r="7" fill="#E9967F"/><circle cx="86" cy="104" r="7" fill="#F2A0A8" opacity=".7"/><circle cx="134" cy="104" r="7" fill="#F2A0A8" opacity=".7"/>' +
+    '<path d="M92 90q5-6 10 0M118 90q5-6 10 0" stroke="#2B2233" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+    '<path d="M88 80q8-5 16 0M116 80q8-5 16 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+    // the hat
+    '<path d="M70 74c4-34 30-52 62-44 22 6 34 22 40 44-10-6-22-6-28 4-14-6-40-8-74-4z" fill="url(#xsSuit)"/>' +
+    '<rect x="64" y="66" width="92" height="18" rx="9" fill="#fff"/><circle cx="174" cy="80" r="12" fill="#fff"/></g></svg>';
+
+  // ---------- "Ho ho ho!": a recording if christmas-hohoho.mp3 is next to this file, otherwise a deep synthesized voice ----------
+  var HOHO_FILE = (me && me.src ? me.src.replace(/[^\/?#]*([?#].*)?$/, '') : '') + 'christmas-hohoho.mp3', hohoBuf = null, hohoTried = false;
+  function loadHoho() {
+    if (hohoTried || !audio()) return; hohoTried = true;
+    fetch(HOHO_FILE).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(function (b) { return new Promise(function (ok, no) { ac.decodeAudioData(b, ok, no); }); })
+      .then(function (buf) { hohoBuf = buf; }).catch(function () { /* no recording: the synthesized voice is used */ });
+  }
+  function ho(t, f0, dest) {                                    // one "Ho": a deep voice through the vowel "o" (formants), with a breathy "h"
+    var src = ac.createOscillator(); src.type = 'sawtooth';
+    src.frequency.setValueAtTime(f0 * 1.08, t); src.frequency.exponentialRampToValueAtTime(f0, t + 0.08); src.frequency.exponentialRampToValueAtTime(f0 * 0.82, t + 0.36);
+    var vib = ac.createOscillator(), vg = ac.createGain(); vib.frequency.value = 5.5; vg.gain.value = 2.5; vib.connect(vg); vg.connect(src.frequency);
+    var out = ac.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.55, t + 0.05); out.gain.setValueAtTime(0.55, t + 0.22); out.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    [[430, 7, 1], [780, 8, 0.55], [2500, 10, 0.12]].forEach(function (fm) {
+      var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = fm[0]; bp.Q.value = fm[1];
+      var g = ac.createGain(); g.gain.value = fm[2] * 3; src.connect(bp); bp.connect(g); g.connect(out);
+    });
+    if (!nbuf) { nbuf = ac.createBuffer(1, ac.sampleRate * 0.4, ac.sampleRate); var d = nbuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    var h = ac.createBufferSource(); h.buffer = nbuf; var hb = ac.createBiquadFilter(); hb.type = 'bandpass'; hb.frequency.value = 1100; hb.Q.value = 0.8;
+    var hg = ac.createGain(); hg.gain.setValueAtTime(0.0001, t - 0.06); hg.gain.exponentialRampToValueAtTime(0.18, t - 0.02); hg.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    h.connect(hb); hb.connect(hg); hg.connect(dest || master); h.start(t - 0.06); h.stop(t + 0.1);
+    // a little room around the voice
+    var dl = ac.createDelay(); dl.delayTime.value = 0.09; var fb = ac.createGain(); fb.gain.value = 0.25; out.connect(dl); dl.connect(fb); fb.connect(dl);
+    var wet = ac.createGain(); wet.gain.value = 0.3; dl.connect(wet); wet.connect(dest || master);
+    out.connect(dest || master); src.start(t); vib.start(t); src.stop(t + 0.45); vib.stop(t + 0.45);
+  }
+  // Santa says it: the sound, the words in the bubble, his mouth and belly, all at the same moments
+  var HOHO_TIMES = [0.39, 0.72, 1.07];                         // where the three "Ho"s are in christmas-hohoho.mp3
+  function hohoho(santa) {
+    var gaps = hohoBuf ? HOHO_TIMES : [0, 0.46, 0.92], words = santa.querySelectorAll('.xi-bubble b'), mouth = santa.querySelector('.xs-mouth'), belly = santa.querySelector('.xs-belly');
+    if (ac) {
+      if (musicBus) { musicBus.gain.setTargetAtTime(musicOn ? 0.3 : 0, ac.currentTime, 0.05); setTimeout(function () { if (musicBus) musicBus.gain.setTargetAtTime(musicOn ? 1 : 0, ac.currentTime, 0.3); }, hohoBuf ? 2100 : 1700); }
+      var t0 = ac.currentTime + 0.05;
+      if (hohoBuf) { var s0 = ac.createBufferSource(); s0.buffer = hohoBuf; var g0 = ac.createGain(); g0.gain.value = 1; s0.connect(g0); g0.connect(master); s0.start(t0); }
+      else [118, 112, 100].forEach(function (f, i) { ho(t0 + gaps[i], f, master); });
+    }
+    gaps.forEach(function (g, i) {
+      setTimeout(function () {
+        if (words[i]) words[i].classList.add('on'); if (i === 0) santa.querySelector('.xi-bubble').classList.add('on');
+        if (mouth && mouth.animate) mouth.animate([{transform: 'scaleY(1)'}, {transform: 'scaleY(3)'}, {transform: 'scaleY(1)'}], {duration: 380, easing: 'ease-out'});
+        if (belly && belly.animate) belly.animate([{transform: 'scale(1,1)'}, {transform: 'scale(1.04,.95)'}, {transform: 'scale(.98,1.03)'}, {transform: 'scale(1,1)'}], {duration: 380, easing: 'ease-out'});
+      }, g * 1000 + 50);
+    });
+  }
+
   // ---------- the surprise: a snowy night, Santa's sleigh, a gift that bursts open, and Jingle Bells ----------
   var ICSS = [
     '.xi-ov{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;',
@@ -323,6 +392,19 @@
     '.xi-btns .no{background:none;color:#6B7280;font-weight:600;font-size:13.5px;height:34px;}',
     '.xi-small{margin-top:10px;font-size:12px;color:#8A94A6;}',
     '.xi-mute{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:0;background:#EEF2F8;font-size:16px;cursor:pointer;}',
+    '.xi-santa{position:absolute;bottom:3%;left:max(3%,calc(50% - 520px));width:230px;z-index:2;transform-origin:50% 100%;}',
+    '.xi-santa svg{display:block;width:100%;filter:drop-shadow(0 18px 24px rgba(0,0,0,.45));}',
+    '.xi-santa .xs-arm{transform-origin:52px 176px;animation:xsWave 1.1s ease-in-out infinite;}',
+    '.xi-santa .xs-mouth,.xi-santa .xs-belly{transform-box:fill-box;transform-origin:50% 50%;}',
+    '.xi-santa .xs-head{transform-origin:110px 140px;animation:xsNod 2.6s ease-in-out infinite;}',
+    '@keyframes xsWave{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}',
+    '@keyframes xsNod{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}',
+    '.xi-bubble{position:absolute;top:-6px;left:150px;padding:10px 16px;border-radius:18px;background:#fff;color:#8E1D2A;font:800 22px Sora,Inter,sans-serif;white-space:nowrap;box-shadow:0 12px 26px -10px rgba(0,0,0,.5);}',
+    '.xi-bubble::after{content:"";position:absolute;left:14px;bottom:-12px;border:12px solid transparent;border-top-color:#fff;border-bottom:0;transform:skewX(20deg);}',
+    '.xi-bubble{opacity:0;transform:scale(.6) translateY(10px);transform-origin:10% 100%;transition:opacity .15s,transform .3s cubic-bezier(.2,1.6,.4,1);} .xi-bubble.on{opacity:1;transform:none;}',
+    '.xi-bubble b{display:inline-block;opacity:0;transform:scale(.4);transition:opacity .15s,transform .25s cubic-bezier(.2,1.6,.4,1);}',
+    '.xi-bubble b.on{opacity:1;transform:none;}',
+    '@media (max-width:860px){.xi-santa{width:140px;left:2%;bottom:1%;}.xi-bubble{left:96px;font-size:17px;padding:8px 12px;}}',
     '.xi-hatfly{position:fixed;z-index:2147483001;width:60px;height:50px;background:url("' + HAT + '") center/contain no-repeat;pointer-events:none;}'
   ].join('\n');
   var musicBus = null, musicTimer = null, musicOn = true;
@@ -352,6 +434,7 @@
     var ov = document.createElement('div'); ov.className = 'xi-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'xiT');
     ov.innerHTML = '<div class="xi-stars"></div><div class="xi-moon"></div><canvas></canvas><div class="xi-hills"></div>' +
       '<div class="xi-gift" aria-hidden="true"><div class="box"></div><div class="lid"><div class="bow"></div></div></div>' +
+      '<div class="xi-santa" aria-hidden="true" style="visibility:hidden"><div class="xi-bubble"><b>Ho,</b> <b>ho,</b> <b>ho!</b></div>' + SANTA + '</div>' +
       '<div class="xi-card"><button type="button" class="xi-mute" aria-label="Music on or off" aria-pressed="true">\uD83D\uDD0A</button><div class="big">\uD83C\uDF84</div>' +
       '<h2 id="xiT">Christmas has arrived at PalaTrack!</h2>' +
       '<p>Snow, twinkling lights and a little holiday spirit across your whole tracker, until January 6.</p>' +
@@ -361,9 +444,14 @@
       '<div class="xi-small">Merry Christmas from the PalaTrack team \uD83C\uDF85</div></div>';
     document.body.appendChild(ov);
     var sn = makeSnow(ov.querySelector('canvas'), 9000, {max: 160, big: true, night: true, speed: 1.3});
-    var card = ov.querySelector('.xi-card'), gift = ov.querySelector('.xi-gift');
-    startMusic();
-    if (reduced) { gift.remove(); card.classList.add('show'); card.querySelector('.go').focus(); }
+    var card = ov.querySelector('.xi-card'), gift = ov.querySelector('.xi-gift'), santa = ov.querySelector('.xi-santa');
+    startMusic(); loadHoho();
+    function santaUp() {                                     // Santa pops up from behind the hills, then says "Ho, ho, ho!"
+      santa.style.visibility = 'visible';
+      if (!reduced) santa.animate([{transform: 'translateY(110%) rotate(-6deg)'}, {transform: 'translateY(-6%) rotate(3deg)', offset: 0.7}, {transform: 'translateY(0) rotate(0)'}], {duration: 750, easing: 'cubic-bezier(.2,1.2,.4,1)'});
+      setTimeout(function () { hohoho(santa); }, reduced ? 200 : 650);
+    }
+    if (reduced) { gift.remove(); card.classList.add('show'); card.querySelector('.go').focus(); santaUp(); }
     else {
       // 1. Santa flies past the moon, 2. the gift drops in and bounces, 3. it bursts open, 4. the card appears
       var sleighHost = ov; flySleigh(sleighHost, {y: innerHeight * 0.12, dur: 3200, color: '#0B1230', opacity: 0.95});
@@ -385,7 +473,8 @@
         })();
         sn.burst(60);
         gift.animate([{opacity: 1, transform: 'scale(1)'}, {opacity: 0, transform: 'scale(.6) translateY(30px)'}], {duration: 500, delay: 350, fill: 'forwards'});
-        setTimeout(function () { card.classList.add('show'); card.querySelector('.go').focus(); }, 450);
+        setTimeout(santaUp, 250);
+        setTimeout(function () { card.classList.add('show'); card.querySelector('.go').focus(); }, 2350);
       }, 4250);
     }
     function close(turnOff) {
@@ -413,5 +502,6 @@
       {duration: 1100, easing: 'cubic-bezier(.4,0,.2,1)'}).onfinish = function () { h.remove(); introRunning = false; document.documentElement.classList.add('pt-xm-hat'); if (ac) bell(ac.currentTime, 1568, 0.12, null, 1.2); };
   }
   window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && wanted() && !seen()) play(); });
-  window.ptChristmasIntro = {play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Christmas surprise will show again for this account.'; }};
+  function renderHoho(ctx) { var pa = ac, pm = master; ac = ctx; master = ctx.destination; try { [118, 112, 100].forEach(function (f, i) { ho(0.2 + [0, 0.46, 0.92][i], f, ctx.destination); }); } finally { ac = pa; master = pm; } }
+  window.ptChristmasIntro = {renderHoho: renderHoho, play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Christmas surprise will show again for this account.'; }};
 })();
