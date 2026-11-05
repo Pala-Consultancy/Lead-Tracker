@@ -1205,6 +1205,39 @@ html[data-theme="dark"] .confirm-modal-icon.warn{background:var(--c-red-bg, rgba
     <a class="btn btn-primary" href="email-settings.html" style="flex-shrink:0;">Manage →</a>
   </div>
 
+  <!-- Christmas decorations: on by default from November 3 to January 6, turned off here (saved in this browser) -->
+  <div class="password-card" id="christmasCard" style="display:none;align-items:center;justify-content:space-between;gap:16px;">
+    <div>
+      <h3 style="margin:0 0 4px;">🎄 Christmas decorations</h3>
+      <p style="margin:0;" id="xmText">Snow, twinkling lights, an ornament and Santa's sleigh across the tracker, from 18 November. Switches itself off after January 6.</p>
+    </div>
+    <label class="hw-switch xm-switch" title="Christmas decorations">
+      <input type="checkbox" id="xmToggleSet" aria-label="Christmas decorations">
+      <span class="hw-track"><span class="hw-knob"></span></span>
+    </label>
+  </div>
+  <style>.xm-switch input:checked + .hw-track{background:linear-gradient(135deg,#D62839,#2A9D5C) !important;}</style>
+  <script>
+    (function(){
+      var t = document.getElementById('xmToggleSet'), txt = document.getElementById('xmText');
+      function sync(){
+        var on = true; try { on = localStorage.getItem('ptChristmas') !== 'off'; } catch(e) {}
+        t.checked = on;
+        var d = new Date(), m = d.getMonth(), inSeason = window.ptChristmas ? window.ptChristmas.inSeason() : ((m === 10 && d.getDate() >= 18) || m === 11 || (m === 0 && d.getDate() <= 6));
+        // before the season (or after it) the switch stays hidden; the owner's preview shows it
+        document.getElementById('christmasCard').style.display = inSeason ? 'flex' : 'none';
+        // the Halloween switch only shows during its season (October)
+        var hw = document.getElementById('halloweenCard'); if (hw) hw.style.display = (m === 9 || (m === 10 && d.getDate() <= 2)) ? 'flex' : 'none';
+      }
+      t.addEventListener('change', function(){
+        if (window.ptChristmas) window.ptChristmas.set(t.checked);
+        else try { localStorage.setItem('ptChristmas', t.checked ? 'on' : 'off'); } catch(e) {}
+      });
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
+      window.addEventListener('load', function(){ setTimeout(sync, 300); setTimeout(sync, 2500); });
+    })();
+  </script>
+
   <!-- Halloween decorations: on by default in October, turned off here (saved in this browser) -->
   <div class="password-card" id="halloweenCard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
     <div>

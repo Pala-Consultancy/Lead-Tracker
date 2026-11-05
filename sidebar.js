@@ -1262,3 +1262,14 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   window.ptPing = {show: show};          // (for testing: ptPing.show({name:'Emma', text:'Hi!', link:''}))
 })();
+
+/* ---------------------------------------------------------------------------
+   Christmas (November 3 – January 6): christmas.js, next to this file, adds snow, lights, an ornament,
+   Santa's sleigh, the side panel in Christmas colours and a one-time surprise. Loaded on every tracker page.
+   --------------------------------------------------------------------------- */
+(function () {
+  if (document.getElementById('ptChristmasJs')) return;
+  var me = document.currentScript, base = (me && me.src) ? me.src.replace(/[^\/?#]*([?#].*)?$/, '') : '';
+  var s = document.createElement('script'); s.id = 'ptChristmasJs'; s.src = base + 'christmas.js'; s.dataset.place = 'app';
+  (document.head || document.documentElement).appendChild(s);
+})();
