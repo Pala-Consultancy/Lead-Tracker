@@ -81,6 +81,7 @@
     '#ptXmas .xm-orn .str{display:block;margin:0 auto;width:1.5px;height:' + (PLACE === 'site' ? 120 : 92) + 'px;background:linear-gradient(#C9A24A,#E8C76A);}',
     '#ptXmas .xm-orn svg{display:block;width:34px;height:46px;margin-top:-3px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(140,18,32,.3));transition:transform .2s;}',
     '#ptXmas .xm-orn svg:hover{transform:scale(1.08);}',
+    '@media (max-width:760px){#ptXmas .xm-orn{display:none;}}',
     '#ptXmas .xm-orn.spin svg{animation:xmSpin .9s cubic-bezier(.3,1.4,.5,1);}',
     '@keyframes xmSwing{0%,100%{transform:rotate(4deg);}50%{transform:rotate(-4deg);}}',
     '@keyframes xmSpin{0%{transform:rotate(0) scale(1);}40%{transform:rotate(200deg) scale(1.18);}100%{transform:rotate(360deg) scale(1);}}',
@@ -109,6 +110,7 @@
     '.xm-toggle:hover{transform:scale(1.08);} .xm-toggle.off{filter:grayscale(1);opacity:.6;}',
     '.xm-preview{position:fixed;right:14px;bottom:14px;z-index:2147482000;display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:#0F3D2A;color:#FFE7A3;font:600 12px Inter,system-ui,sans-serif;box-shadow:0 8px 20px -8px rgba(0,0,0,.45);pointer-events:none;}',
     '.xm-preview small{font-weight:500;color:#CDE8D8;}',
+    '@media (max-width:600px){.xm-preview small{display:none;}.xm-preview{right:12px;bottom:18px;}}',
     '.xmb span{font-size:15px;line-height:1;} .xmb[aria-pressed="false"] span{filter:grayscale(1);opacity:.55;}',
     '@media (prefers-reduced-motion: reduce){#ptXmas *,.pt-xm-greet .tr{animation:none !important;transition:none !important;}}'
   ].join('\n');
@@ -122,15 +124,19 @@
     if (opts.soft) { sprite = document.createElement('canvas'); sprite.width = sprite.height = 32; var sx = sprite.getContext('2d'), gr = sx.createRadialGradient(16, 16, 0, 16, 16, 16);
       gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); sx.fillStyle = gr; sx.fillRect(0, 0, 32, 32); }
     function size() { W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (opts.once) return;                                   // snow that only falls in short flurries: nothing falls by itself
       var n = Math.round(Math.min(opts.max || 70, W * H / density)); while (flakes.length < n) flakes.push(flake(true)); flakes.length = n; }
     function flake(anywhere) { var r = 0.9 + Math.random() * (opts.big ? 3.4 : 2.4); return {x: Math.random() * W, y: anywhere ? Math.random() * H : -10, r: r, vy: 0.25 + r * 0.22 + Math.random() * 0.25, ph: Math.random() * 6.28, sw: 0.3 + Math.random() * 0.6}; }
+    var running = false;
     function frame() {
-      if (stopped) return;
+      if (stopped) { running = false; return; }
+      if (opts.once && !flakes.length) { ctx.clearRect(0, 0, W, H); running = false; return; }   // the flurry is over: stop drawing
+      running = true;
       if (!document.hidden) {
         ctx.clearRect(0, 0, W, H); var dk = opts.night || dark();
         for (var i = 0; i < flakes.length; i++) {
           var f = flakes[i]; f.y += f.vy * (opts.speed || 1); f.ph += 0.012; f.x += Math.sin(f.ph) * f.sw * 0.6;
-          if (f.y > H + 6) { flakes[i] = flake(false); continue; }
+          if (f.y > H + 6) { if (opts.once) { flakes.splice(i, 1); i--; } else flakes[i] = flake(false); continue; }
           if (sprite) { ctx.globalAlpha = 0.55 + f.r * 0.08; ctx.drawImage(sprite, f.x - f.r * 2.2, f.y - f.r * 2.2, f.r * 4.4, f.r * 4.4); ctx.globalAlpha = 1; continue; }
           ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.283);
           ctx.fillStyle = dk ? 'rgba(255,255,255,' + (0.45 + f.r * 0.12) + ')' : 'rgba(126,150,190,' + (0.25 + f.r * 0.08) + ')'; ctx.fill();
@@ -140,7 +146,11 @@
     }
     size(); var onR = function () { size(); }; addEventListener('resize', onR);
     if (reduced) { frame(); stopped = true; cancelAnimationFrame(raf); } else frame();
-    return {stop: function () { stopped = true; cancelAnimationFrame(raf); removeEventListener('resize', onR); }, burst: function (n) { for (var i = 0; i < n; i++) flakes.push(flake(true)); }};
+    return {stop: function () { stopped = true; cancelAnimationFrame(raf); removeEventListener('resize', onR); },
+      burst: function (n) {
+        for (var i = 0; i < n; i++) { var f = flake(true); if (opts.once) f.y = -Math.random() * H * 0.4 - 10; flakes.push(f); }   // a flurry comes in from the top
+        if (!running && !stopped && !reduced) frame();
+      }};
   }
   // a string of lights along the top (in the app: next to the side panel)
   function lights() {
@@ -218,10 +228,10 @@
     layer = document.createElement('div'); layer.id = 'ptXmas'; layer.setAttribute('aria-hidden', 'true');
     layer.innerHTML = '<div class="xm-glow"></div><canvas></canvas>' + (PLACE === 'client' ? '' : '<div class="xm-orn"><span class="str"></span>' + ORNAMENT + '</div>');
     document.body.appendChild(layer);
-    snow = makeSnow(layer.querySelector('canvas'), PLACE === 'client' ? 34000 : 24000, {max: PLACE === 'client' ? 40 : 70});
+    snow = makeSnow(layer.querySelector('canvas'), PLACE === 'client' ? 34000 : 24000, {max: PLACE === 'client' ? 40 : 70, once: PLACE === 'app', speed: PLACE === 'app' ? 2.6 : 1});
     var orn = layer.querySelector('.xm-orn');
     if (orn) orn.querySelector('svg').addEventListener('click', function () {   // click the ornament: it spins and jingles
-      orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); if (snow) snow.burst(18);
+      orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); if (snow) snow.burst(PLACE === 'app' ? 40 : 18);
     });
     lights();
     if (PLACE === 'app') {
@@ -237,10 +247,18 @@
     }
     if (PLACE === 'site') {
       var nav = document.querySelector('.nav');
-      if (nav && !document.querySelector('.xm-ribbon')) { var r = document.createElement('div'); r.className = 'xm-ribbon'; r.innerHTML = '\uD83C\uDF84 Merry Christmas from PalaTrack \u2744\uFE0F'; nav.insertAdjacentElement('afterend', r); }
+      if (nav && !document.querySelector('.xm-ribbon')) { var r = document.createElement('div'); r.className = 'xm-ribbon'; r.innerHTML = '\uD83C\uDF84 Merry Christmas from PalaTrack \u2744\uFE0F'; nav.insertAdjacentElement('afterend', r); placeRibbon(); setTimeout(placeRibbon, 400); }
     }
     if (PLACE !== 'client') later(sleighLoop, 5000);
   }
+  function placeRibbon() {
+    var r = document.querySelector('.xm-ribbon'), nav = document.querySelector('.nav'); if (!r || !nav) return;
+    r.style.marginTop = '';
+    var pos = getComputedStyle(nav).position; if (pos !== 'fixed' && pos !== 'sticky') return;
+    var below = nav.getBoundingClientRect().bottom, top = r.getBoundingClientRect().top;
+    if (top < below) r.style.marginTop = Math.ceil(below - top) + 'px';
+  }
+  addEventListener('resize', function () { setTimeout(placeRibbon, 150); });
   function off() {
     document.documentElement.classList.remove('pt-xm-on');
     timers.forEach(clearTimeout); timers = []; if (snow) { snow.stop(); snow = null; }
@@ -568,8 +586,8 @@
         '<div class="xi-title" aria-hidden="true">' + title + '</div><div class="xi-flash"></div></div>' +
       '<div class="xi-card"><button type="button" class="xi-mute" aria-label="Music on or off" aria-pressed="true">\uD83D\uDD0A</button><div class="big">\uD83C\uDF84</div>' +
       '<h2 id="xiT">Christmas has arrived at PalaTrack!</h2>' +
-      '<p>Snow, twinkling lights and a little holiday spirit across your whole tracker, until January 6.</p>' +
-      '<div class="tip">\uD83C\uDF81 Tip: click the ornament in the top right</div>' +
+      '<p>Twinkling lights, a jingling ornament and a little holiday spirit across your whole tracker, until January 6.</p>' +
+      '<div class="tip">\uD83C\uDF81 Tip: click the ornament in the top right for a little snow</div>' +
       '<p style="font-size:13px">Not your thing? Turn it off anytime in <b>Settings \u2192 Christmas decorations</b>.</p>' +
       '<div class="xi-btns"><button type="button" class="go" data-xi="go">Let it snow \u2744\uFE0F</button><button type="button" class="no" data-xi="off">Turn the decorations off</button></div>' +
       '<div class="xi-small">Merry Christmas from the PalaTrack team \uD83C\uDF85</div></div>' +
