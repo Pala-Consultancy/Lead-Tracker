@@ -53,8 +53,8 @@
     '<path d="M6 42c12 6 24 6 36 0" fill="none" stroke="#FFFFFF" stroke-width="1.2" opacity=".55" stroke-dasharray="2 3"/><ellipse cx="16" cy="28" rx="5" ry="7" fill="#fff" opacity=".35" transform="rotate(-25 16 28)"/></svg>';
   var SLEIGH = '<svg viewBox="0 0 240 60" aria-hidden="true"><g fill="currentColor">' +
     // two reindeer
-    '<g><ellipse cx="34" cy="30" rx="15" ry="6"/><path d="M45 27l8-8 3 2-6 9z"/><circle cx="56" cy="19" r="4"/><path d="M55 15l-2-7M53 10l-4-2M57 15l3-7M59 10l4-2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M22 33l-6 10M26 34l-2 11M40 34l3 10M44 32l7 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></g>' +
-    '<g transform="translate(46 4)"><ellipse cx="34" cy="30" rx="15" ry="6"/><path d="M45 27l8-8 3 2-6 9z"/><circle cx="56" cy="19" r="4"/><path d="M55 15l-2-7M53 10l-4-2M57 15l3-7M59 10l4-2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M22 33l-6 10M26 34l-2 11M40 34l3 10M44 32l7 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></g>' +
+    '<g transform="translate(78 0) scale(-1 1)"><ellipse cx="34" cy="30" rx="15" ry="6"/><path d="M45 27l8-8 3 2-6 9z"/><circle cx="56" cy="19" r="4"/><path d="M55 15l-2-7M53 10l-4-2M57 15l3-7M59 10l4-2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M22 33l-6 10M26 34l-2 11M40 34l3 10M44 32l7 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></g>' +
+    '<g transform="translate(46 4)"><g transform="translate(78 0) scale(-1 1)"><ellipse cx="34" cy="30" rx="15" ry="6"/><path d="M45 27l8-8 3 2-6 9z"/><circle cx="56" cy="19" r="4"/><path d="M55 15l-2-7M53 10l-4-2M57 15l3-7M59 10l4-2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M22 33l-6 10M26 34l-2 11M40 34l3 10M44 32l7 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></g></g>' +
     '<path d="M60 32 Q100 36 136 36" stroke="currentColor" stroke-width="1.2" fill="none"/>' +
     // the sleigh with Santa and his bag
     '<path d="M136 26h62c6 0 8 6 6 12l-3 7h-56c-6 0-9-5-9-10z"/><path d="M130 52h78c6 0 10-4 11-9" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
@@ -164,10 +164,10 @@
     opts = opts || {}; var W = innerWidth, s = document.createElement('div'); s.className = 'xm-sleigh'; s.innerHTML = SLEIGH;
     if (opts.color) s.style.color = opts.color; if (opts.opacity) s.style.opacity = opts.opacity;
     host.appendChild(s); var y = opts.y != null ? opts.y : 70 + Math.random() * innerHeight * 0.22, dur = opts.dur || 7000;
-    var a = s.animate([{transform: 'translate3d(' + (W + 40) + 'px,' + (y + 30) + 'px,0) scaleX(-1)'}, {transform: 'translate3d(' + (W * 0.5) + 'px,' + (y - 20) + 'px,0) scaleX(-1)', offset: 0.5}, {transform: 'translate3d(-240px,' + (y - 50) + 'px,0) scaleX(-1)'}], {duration: dur, easing: 'ease-in-out'});
+    var a = s.animate([{transform: 'translate3d(' + (W + 40) + 'px,' + (y + 30) + 'px,0) rotate(5deg)'}, {transform: 'translate3d(' + (W * 0.5) + 'px,' + (y - 20) + 'px,0)', offset: 0.5}, {transform: 'translate3d(-240px,' + (y - 50) + 'px,0) rotate(5deg)'}], {duration: dur, easing: 'ease-in-out'});
     var sp = setInterval(function () {                                      // a little trail of sparkles
       var r = s.getBoundingClientRect(), hr = host.getBoundingClientRect(), d = document.createElement('i'); d.className = 'xm-spark';
-      d.style.left = (r.right - hr.left - 20) + 'px'; d.style.top = (r.top - hr.top + 36) + 'px'; host.appendChild(d);
+      d.style.left = (r.right - hr.left - 14) + 'px'; d.style.top = (r.top - hr.top + 36) + 'px'; host.appendChild(d);
       d.animate([{opacity: 1, transform: 'scale(1)'}, {opacity: 0, transform: 'translateY(16px) scale(.3)'}], {duration: 900, easing: 'ease-out'}).onfinish = function () { d.remove(); };
     }, 90);
     a.onfinish = function () { clearInterval(sp); s.remove(); };
@@ -341,38 +341,83 @@
     });
   }
 
-  // ---------- the surprise: a snowy night, Santa's sleigh, a gift that bursts open, and Jingle Bells ----------
+  // ---------- the surprise: a little Christmas movie ----------
+  // 1. a magical night: northern lights, a rising moon, mountains, a village with lit windows and smoking chimneys,
+  //    snow in two depths and a shooting star; 2. Santa's sleigh (Rudolph's nose glowing) flies past the moon with a trail
+  //    of golden dust and drops the gift; 3. it lands in the snow (a snow burst, a thud, a little shake); 4. it glows and
+  //    wiggles, faster and faster; 5. a flash: the lid blasts off, light rays shine out, confetti and stars; 6. Santa rises
+  //    and says "Ho, ho, ho!"; 7. "Merry Christmas" in glowing gold letters; 8. the card flips in with a golden border.
   var ICSS = [
-    '.xi-ov{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;',
-    '  background:radial-gradient(120% 80% at 50% 110%,#22356B 0%,#121E44 45%,#070B1E 100%);animation:xiIn .7s ease both;font-family:Inter,system-ui,sans-serif;}',
-    '.xi-ov.out{animation:xiOut .45s ease forwards;}',
+    '.xi-ov{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;font-family:Inter,system-ui,sans-serif;',
+    '  background:linear-gradient(180deg,#040814 0%,#0A1430 40%,#16244F 75%,#22356B 100%);animation:xiIn .9s ease both;perspective:1200px;}',
+    '.xi-ov.out{animation:xiOut .55s ease forwards;}',
     '@keyframes xiIn{from{opacity:0}to{opacity:1}} @keyframes xiOut{to{opacity:0}}',
-    '.xi-ov canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}',
-    '.xi-stars{position:absolute;inset:0;background-image:radial-gradient(1.4px 1.4px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 32%,#fff,transparent),radial-gradient(1.6px 1.6px at 46% 12%,#fff,transparent),radial-gradient(1px 1px at 64% 26%,#fff,transparent),radial-gradient(1.3px 1.3px at 82% 16%,#fff,transparent),radial-gradient(1px 1px at 90% 40%,#fff,transparent),radial-gradient(1.2px 1.2px at 8% 46%,#fff,transparent),radial-gradient(1px 1px at 36% 52%,#fff,transparent);opacity:.8;animation:xiStar 3s ease-in-out infinite alternate;}',
-    '@keyframes xiStar{to{opacity:.45}}',
-    '.xi-moon{position:absolute;right:12%;top:9%;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#FFFDF2,#F7E9B8 60%,#E9D38E);box-shadow:0 0 60px 20px rgba(255,240,190,.25);}',
+    '.xi-scene{position:absolute;inset:0;}',
+    '.xi-scene canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}',
+    '.xi-scene canvas.near{filter:blur(1.6px);}',
+    '.xi-stars{position:absolute;inset:0;background-image:radial-gradient(1.4px 1.4px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 32%,#fff,transparent),radial-gradient(1.6px 1.6px at 46% 12%,#fff,transparent),radial-gradient(1px 1px at 64% 26%,#fff,transparent),radial-gradient(1.3px 1.3px at 82% 16%,#fff,transparent),radial-gradient(1px 1px at 90% 40%,#fff,transparent),radial-gradient(1.2px 1.2px at 8% 46%,#fff,transparent),radial-gradient(1px 1px at 36% 52%,#fff,transparent),radial-gradient(1.1px 1.1px at 55% 40%,#fff,transparent),radial-gradient(1px 1px at 74% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 20% 6%,#fff,transparent);animation:xiStar 2.6s ease-in-out infinite alternate;}',
+    '@keyframes xiStar{from{opacity:.95}to{opacity:.5}}',
+    // the northern lights: two soft ribbons that drift and shimmer
+    '.xi-aur{position:absolute;left:-20%;right:-20%;height:46%;top:-6%;filter:blur(38px);opacity:.0;mix-blend-mode:screen;animation:xiAurIn 2.4s ease .3s forwards;}',
+    '.xi-aur i{position:absolute;inset:0;border-radius:50%;}',
+    '.xi-aur .a1{background:linear-gradient(100deg,transparent 10%,rgba(56,239,170,.55) 30%,rgba(90,255,200,.25) 45%,transparent 60%);animation:xiAur1 9s ease-in-out infinite alternate;}',
+    '.xi-aur .a2{background:linear-gradient(80deg,transparent 30%,rgba(150,90,255,.45) 50%,rgba(70,160,255,.3) 62%,transparent 78%);animation:xiAur2 11s ease-in-out infinite alternate;}',
+    '@keyframes xiAurIn{to{opacity:1}} @keyframes xiAur1{from{transform:translateX(-6%) skewY(-4deg) scaleY(.8)}to{transform:translateX(8%) skewY(3deg) scaleY(1.1)}} @keyframes xiAur2{from{transform:translateX(7%) skewY(3deg)}to{transform:translateX(-7%) skewY(-3deg) scaleY(1.2)}}',
+    '.xi-moon{position:absolute;right:12%;top:8%;width:118px;height:118px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#FFFDF2,#F7E9B8 60%,#E9D38E);box-shadow:0 0 70px 26px rgba(255,240,190,.28),0 0 160px 60px rgba(255,240,190,.08);animation:xiMoon 3s cubic-bezier(.2,.8,.2,1) both;}',
+    '.xi-moon::before{content:"";position:absolute;left:26%;top:30%;width:16%;height:16%;border-radius:50%;background:rgba(200,180,120,.25);box-shadow:30px 14px 0 -2px rgba(200,180,120,.18),12px 34px 0 -4px rgba(200,180,120,.16);}',
+    '@keyframes xiMoon{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}',
+    '.xi-mount{position:absolute;left:0;right:0;bottom:16%;height:34%;}',
+    '.xi-village{position:absolute;left:0;right:0;bottom:12%;height:22%;}',
+    '.xi-mount svg,.xi-village svg,.xi-trees svg{position:absolute;inset:0;width:100%;height:100%;}',
+    '.xi-win{animation:xiWin 3s ease-in-out infinite alternate;} @keyframes xiWin{from{opacity:.85}to{opacity:1}}',
+    '.xi-smoke{position:absolute;width:14px;height:14px;border-radius:50%;background:rgba(220,230,255,.35);filter:blur(3px);animation:xiSmoke 4s linear infinite;}',
+    '@keyframes xiSmoke{from{transform:translate(0,0) scale(.6);opacity:.7}to{transform:translate(26px,-90px) scale(2.4);opacity:0}}',
     '.xi-hills{position:absolute;left:-5%;right:-5%;bottom:-2px;height:22%;background:radial-gradient(70% 100% at 25% 100%,#F4F8FF 60%,transparent 61%),radial-gradient(70% 100% at 80% 100%,#E8EFFB 60%,transparent 61%);}',
-    '.xi-ov .xm-sleigh{position:absolute;left:0;top:0;width:260px;height:66px;color:#0B1230;opacity:.95;}',
-    '.xi-gift{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;}',
+    '.xi-trees{position:absolute;left:0;right:0;bottom:0;height:30%;pointer-events:none;}',
+    '.xi-shoot{position:absolute;top:12%;left:18%;width:120px;height:2px;border-radius:2px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff);transform:rotate(-24deg);opacity:0;}',
+    '.xi-ov .xm-sleigh{position:absolute;left:0;top:0;width:290px;height:72px;color:#060B1C;opacity:1;filter:drop-shadow(0 0 1px rgba(255,255,255,.2));}',
+    '.xi-ov .xs-nose{fill:#FF3B3B;filter:drop-shadow(0 0 4px #FF3B3B) drop-shadow(0 0 9px #FF6B6B);animation:xiNose .5s ease-in-out infinite alternate;}',
+    '@keyframes xiNose{to{opacity:.55}}',
+    '.xi-dust{position:absolute;width:5px;height:5px;border-radius:50%;background:#FFE6A0;box-shadow:0 0 8px 2px rgba(255,214,120,.85);pointer-events:none;}',
+    '.xi-dust.w{background:#fff;box-shadow:0 0 6px 2px rgba(255,255,255,.8);width:3px;height:3px;}',
+    // the gift, the light rays, the flash and the particles
+    '.xi-gift{position:absolute;left:50%;top:60%;width:120px;height:120px;margin:-60px 0 0 -60px;opacity:0;}',
     '.xi-gift .box{position:absolute;left:10px;right:10px;bottom:0;height:78px;border-radius:8px;background:linear-gradient(90deg,transparent 42%,#F4C542 42% 58%,transparent 58%),linear-gradient(#E02D3F,#A81E2D);box-shadow:0 18px 30px -12px rgba(0,0,0,.5);}',
     '.xi-gift .lid{position:absolute;left:2px;right:2px;top:26px;height:22px;border-radius:6px;background:linear-gradient(90deg,transparent 42%,#F4C542 42% 58%,transparent 58%),linear-gradient(#F0414F,#C72535);transform-origin:20% 100%;}',
     '.xi-gift .bow{position:absolute;left:50%;top:-4px;width:56px;height:32px;margin-left:-28px;}',
     '.xi-gift .bow::before,.xi-gift .bow::after{content:"";position:absolute;top:6px;width:24px;height:20px;border:5px solid #F4C542;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;}',
     '.xi-gift .bow::before{left:2px;transform:rotate(-20deg);} .xi-gift .bow::after{right:2px;transform:rotate(20deg);}',
-    '.xi-conf{position:absolute;left:50%;top:50%;width:9px;height:14px;border-radius:2px;pointer-events:none;}',
-    '.xi-card{position:relative;max-width:470px;width:100%;padding:30px 28px 24px;border-radius:24px;background:linear-gradient(180deg,#FFFFFF,#F6F9FF);color:#16202C;text-align:center;box-shadow:0 40px 90px -30px rgba(0,0,0,.7);opacity:0;transform:scale(.6) translateY(40px);}',
-    '.xi-card.show{animation:xiCard .6s cubic-bezier(.2,1.4,.4,1) forwards;}',
-    '@keyframes xiCard{to{opacity:1;transform:none}}',
+    '.xi-gift.glow .box{animation:xiGlow .5s ease-in-out infinite alternate;} @keyframes xiGlow{from{box-shadow:0 0 18px 4px rgba(255,214,120,.35),0 18px 30px -12px rgba(0,0,0,.5)}to{box-shadow:0 0 50px 16px rgba(255,214,120,.8),0 18px 30px -12px rgba(0,0,0,.5)}}',
+    '.xi-rays{position:absolute;left:50%;top:60%;width:1600px;height:1600px;margin:-800px 0 0 -800px;opacity:0;pointer-events:none;',
+    '  background:repeating-conic-gradient(from 0deg,rgba(255,230,160,.22) 0deg 7deg,rgba(255,230,160,0) 7deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 18%,transparent 52%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 18%,transparent 52%);animation:xiSpin 26s linear infinite;}',
+    '.xi-rays::after{content:"";position:absolute;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;background:radial-gradient(circle,rgba(255,240,200,.55),transparent 65%);}',
+    '@keyframes xiSpin{to{transform:rotate(360deg)}}',
+    '.xi-flash{position:absolute;inset:0;background:#FFF8E6;opacity:0;pointer-events:none;}',
+    '.xi-conf{position:absolute;left:50%;top:60%;width:9px;height:14px;border-radius:2px;pointer-events:none;}',
+    '.xi-star{position:absolute;left:50%;top:60%;font-size:18px;line-height:1;color:#FFE08A;text-shadow:0 0 10px rgba(255,214,120,.9);pointer-events:none;}',
+    '.xi-puff{position:absolute;border-radius:50%;background:#fff;pointer-events:none;filter:blur(1px);}',
+    // "Merry Christmas" in glowing gold
+    '.xi-title{position:absolute;left:0;right:0;top:20%;text-align:center;font:800 clamp(38px,7vw,86px)/1 Sora,Inter,sans-serif;letter-spacing:-.02em;pointer-events:none;z-index:3;}',
+    '.xi-title span{display:inline-block;background:linear-gradient(180deg,#FFF6D6 0%,#FFD875 45%,#E8A93A 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(255,200,90,.55)) drop-shadow(0 4px 0 rgba(120,60,10,.35));opacity:0;}',
+    // the card: flips in, with a shimmering golden border
+    '.xi-card{position:relative;max-width:470px;width:100%;padding:30px 28px 24px;border-radius:24px;background:linear-gradient(180deg,#FFFFFF,#F6F9FF);color:#16202C;text-align:center;box-shadow:0 40px 90px -30px rgba(0,0,0,.75),0 0 60px -10px rgba(255,214,120,.35);opacity:0;transform-origin:50% 100%;z-index:4;}',
+    '.xi-card::before{content:"";position:absolute;inset:-3px;border-radius:27px;padding:3px;background:conic-gradient(from var(--xi-a,0deg),#F4C542,#FFF3C4,#E63946,#F4C542,#2A9D5C,#FFF3C4,#F4C542);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:xiBorder 3s linear infinite;pointer-events:none;}',
+    '@property --xi-a{syntax:"<angle>";inherits:false;initial-value:0deg;} @keyframes xiBorder{to{--xi-a:360deg}}',
+    '.xi-card.show{animation:xiFlip .9s cubic-bezier(.2,1.3,.35,1) forwards;}',
+    '@keyframes xiFlip{0%{opacity:0;transform:rotateX(75deg) translateY(60px) scale(.8)}60%{opacity:1}100%{opacity:1;transform:none}}',
     '.xi-card .big{font-size:46px;line-height:1;margin-bottom:6px;}',
     '.xi-card h2{margin:6px 0 10px;font:800 23px/1.25 Sora,Inter,sans-serif;color:#8E1D2A;}',
     '.xi-card p{margin:0 0 10px;font-size:14.5px;line-height:1.55;color:#4A5568;}',
     '.xi-card .tip{display:inline-block;margin:2px 0 14px;padding:7px 12px;border-radius:10px;background:#FFF6DE;color:#7A5A0E;font-size:13px;font-weight:600;}',
     '.xi-btns{display:flex;flex-direction:column;gap:8px;margin-top:6px;}',
     '.xi-btns button{height:46px;border-radius:12px;border:0;font:700 15px Inter,sans-serif;cursor:pointer;}',
-    '.xi-btns .go{background:linear-gradient(135deg,#D62839,#A81E2D);color:#fff;box-shadow:0 12px 24px -12px rgba(214,40,57,.8);}',
+    '.xi-btns .go{background:linear-gradient(135deg,#D62839,#A81E2D);color:#fff;box-shadow:0 12px 24px -12px rgba(214,40,57,.8);transition:transform .15s;} .xi-btns .go:hover{transform:translateY(-1px) scale(1.01);}',
     '.xi-btns .no{background:none;color:#6B7280;font-weight:600;font-size:13.5px;height:34px;}',
     '.xi-small{margin-top:10px;font-size:12px;color:#8A94A6;}',
     '.xi-mute{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:0;background:#EEF2F8;font-size:16px;cursor:pointer;}',
+    '.xi-skip{position:absolute;right:18px;bottom:16px;z-index:5;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#E8EEF8;font:600 12px Inter,sans-serif;cursor:pointer;}',
+    '.xi-skip:hover{background:rgba(255,255,255,.16);}',
+    // Santa
     '.xi-santa{position:absolute;bottom:0;left:max(3%,calc(50% - 540px));width:260px;z-index:2;transform-origin:50% 100%;line-height:0;}',
     '.xi-santa svg{display:block;width:100%;overflow:visible;filter:drop-shadow(0 -4px 22px rgba(0,0,0,.35));}',
     '.xi-santa .xs-arm{transform-origin:52px 176px;animation:xsWave 1.1s ease-in-out infinite;}',
@@ -380,32 +425,72 @@
     '.xi-santa .xs-head{transform-origin:110px 140px;animation:xsNod 2.6s ease-in-out infinite;}',
     '@keyframes xsWave{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}',
     '@keyframes xsNod{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}',
-    '.xi-bubble{position:absolute;top:-2px;left:178px;line-height:normal;padding:10px 16px;border-radius:18px;background:#fff;color:#8E1D2A;font:800 22px Sora,Inter,sans-serif;white-space:nowrap;box-shadow:0 12px 26px -10px rgba(0,0,0,.5);}',
+    '.xi-bubble{position:absolute;top:-56px;left:96px;line-height:normal;padding:10px 16px;border-radius:18px;background:#fff;color:#8E1D2A;font:800 22px Sora,Inter,sans-serif;white-space:nowrap;box-shadow:0 12px 26px -10px rgba(0,0,0,.5);opacity:0;transform:scale(.6) translateY(10px);transform-origin:10% 100%;transition:opacity .15s,transform .3s cubic-bezier(.2,1.6,.4,1);}',
+    '.xi-bubble.on{opacity:1;transform:none;}',
     '.xi-bubble::after{content:"";position:absolute;left:14px;bottom:-12px;border:12px solid transparent;border-top-color:#fff;border-bottom:0;transform:skewX(20deg);}',
-    '.xi-bubble{opacity:0;transform:scale(.6) translateY(10px);transform-origin:10% 100%;transition:opacity .15s,transform .3s cubic-bezier(.2,1.6,.4,1);} .xi-bubble.on{opacity:1;transform:none;}',
     '.xi-bubble b{display:inline-block;opacity:0;transform:scale(.4);transition:opacity .15s,transform .25s cubic-bezier(.2,1.6,.4,1);}',
     '.xi-bubble b.on{opacity:1;transform:none;}',
-    '@media (max-width:860px){.xi-santa{width:158px;left:2%;bottom:0;}.xi-bubble{left:108px;font-size:17px;padding:8px 12px;}}',
+    '@media (max-width:860px){.xi-santa{width:158px;left:2%;bottom:0;}.xi-bubble{left:58px;top:-46px;font-size:17px;padding:8px 12px;}.xi-moon{width:80px;height:80px;}}',
     '.xi-hatfly{position:fixed;z-index:2147483001;width:60px;height:50px;background:url("' + HAT + '") center/contain no-repeat;pointer-events:none;}'
   ].join('\n');
+
+  // the scenery: mountains, a village (windows that glow, chimneys that smoke) and pine trees
+  var MOUNTAINS = '<svg viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true"><path d="M0 300V170l120-80 90 60 130-120 120 100 80-50 140 110 110-90 140 120 110-70 160 110V300z" fill="#1B2A5C"/>' +
+    '<path d="M340 30l-40 37 22-6 18 14 22-18 20 12zM800 120l-34 28 20-4 16 12 18-14 16 8zM120 90l-28 19 16-2 12 8 14-10 14 4z" fill="#DCE6F7" opacity=".85"/>' +
+    '<path d="M0 300V220l160-60 120 50 160-70 140 80 120-40 160 70 120-50 220 60V300z" fill="#22356B" opacity=".9"/></svg>';
+  var VILLAGE = '<svg viewBox="0 0 1200 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="#0D1734">' +
+    '<path d="M150 200v-70l40-36 40 36v70z"/><rect x="205" y="98" width="12" height="26"/><path d="M260 200v-56l34-30 34 30v56z"/><path d="M360 200v-84l52-44 52 44v84z"/><rect x="438" y="72" width="12" height="30"/>' +
+    '<path d="M720 200v-64l38-34 38 34v64z"/><path d="M820 200v-90l56-48 56 48v90z"/><rect x="903" y="68" width="13" height="32"/><path d="M960 200v-58l34-30 34 30v58z"/>' +
+    '<path d="M560 200v-100l14-40 14 40v100z"/><path d="M553 128h42v72h-42z"/></g>' +
+    '<g class="xi-win" fill="#FFD27A">' +
+    '<rect x="170" y="150" width="12" height="14" rx="2"/><rect x="198" y="150" width="12" height="14" rx="2"/><rect x="286" y="160" width="14" height="14" rx="2"/><rect x="382" y="140" width="14" height="16" rx="2"/><rect x="428" y="140" width="14" height="16" rx="2"/><rect x="404" y="172" width="16" height="28" rx="2"/>' +
+    '<rect x="740" y="156" width="12" height="14" rx="2"/><rect x="768" y="156" width="12" height="14" rx="2"/><rect x="846" y="136" width="14" height="16" rx="2"/><rect x="892" y="136" width="14" height="16" rx="2"/><rect x="868" y="168" width="16" height="32" rx="2"/><rect x="984" y="160" width="14" height="14" rx="2"/>' +
+    '<circle cx="574" cy="146" r="6"/></g></svg>';
+  var TREES = '<svg viewBox="0 0 1200 260" preserveAspectRatio="none" aria-hidden="true"><g fill="#0A132C">' +
+    '<path d="M40 260l40-110 40 110zM60 200l20-80 20 80zM-10 260l30-80 30 80z"/><path d="M110 260l30-86 30 86zM125 210l15-60 15 60z"/>' +
+    '<path d="M1060 260l38-104 38 104zM1078 202l20-76 20 76z"/><path d="M1130 260l34-92 34 92zM1146 208l18-66 18 66z"/><path d="M1010 260l24-70 24 70z"/></g>' +
+    '<g fill="#F4F8FF" opacity=".9"><path d="M68 186l12-6 12 6-12-26zM1086 190l12-6 12 6-12-26zM1152 198l12-6 12 6-12-24z"/></g></svg>';
+
+  // ---------- sound effects for the movie (all made in the browser) ----------
+  function riser(t, dur, vol, from, to) {                     // a soft "whoosh" that rises
+    if (!nbuf) { nbuf = ac.createBuffer(1, ac.sampleRate * 0.4, ac.sampleRate); var d = nbuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    var s = ac.createBufferSource(); s.buffer = nbuf; s.loop = true; var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
+    bp.frequency.setValueAtTime(from || 400, t); bp.frequency.exponentialRampToValueAtTime(to || 4000, t + dur);
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.85); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.1);
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.15);
+  }
+  function whistle(t, dur) {                                   // the gift falling: a descending whistle
+    var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(1800, t); o.frequency.exponentialRampToValueAtTime(420, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.08); g.gain.setValueAtTime(0.07, t + dur - 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function thud(t) {                                           // the landing: a deep, soft boom
+    var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.45);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.7, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.65); riser(t, 0.25, 0.12, 2500, 300);
+  }
+  function chimes(t, notes, gap, vol) { notes.forEach(function (n, i) { bell(t + i * gap, hz(n), vol || 0.12, null, 2.2); }); }
+
+  // the Jingle Bells music (as before)
   var musicBus = null, musicTimer = null, musicOn = true;
   // Jingle Bells (James Lord Pierpont, 1857: public domain), the chorus in C, in beats
   var TUNE = [[64,1],[64,1],[64,2],[64,1],[64,1],[64,2],[64,1],[67,1],[60,1.5],[62,.5],[64,4],[65,1],[65,1],[65,1.5],[65,.5],[65,1],[64,1],[64,1],[64,.5],[64,.5],[64,1],[62,1],[62,1],[64,1],[62,2],[67,2],
     [64,1],[64,1],[64,2],[64,1],[64,1],[64,2],[64,1],[67,1],[60,1.5],[62,.5],[64,4],[65,1],[65,1],[65,1.5],[65,.5],[65,1],[64,1],[64,1],[64,.5],[64,.5],[67,1],[67,1],[65,1],[62,1],[60,4]];
-  var BASS = [48,48,48,48,53,48,50,43,48,48,48,48,53,48,43,48];          // one note per bar
+  var BASS = [48,48,48,48,53,48,50,43,48,48,48,48,53,48,43,48];
   var hz = function (n) { return 440 * Math.pow(2, (n - 69) / 12); };
-  function startMusic() {
+  function startMusic(delay) {
     if (!audio()) return; musicBus = ac.createGain(); musicBus.gain.value = musicOn ? 1 : 0; musicBus.connect(master);
     var beat = 0.42, bars = 16, loopLen = bars * 4 * beat;
     function schedule(t0) {
+      if (!musicBus) return;
       var t = t0; TUNE.forEach(function (n) { bell(t, hz(n[0] + 12), 0.13, musicBus, Math.max(0.6, n[1] * beat * 1.6)); t += n[1] * beat; });
       BASS.forEach(function (b, i) { var tb = t0 + i * 4 * beat; [0, 2].forEach(function (k) { var o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = hz(b - 12 + (k ? 7 : 0));
         g.gain.setValueAtTime(0.0001, tb + k * beat); g.gain.exponentialRampToValueAtTime(0.09, tb + k * beat + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, tb + k * beat + beat * 1.8);
         o.connect(g); g.connect(musicBus); o.start(tb + k * beat); o.stop(tb + k * beat + beat * 2); }); });
-      for (var q = 0; q < bars * 4; q++) shake(t0 + q * beat, q % 2 ? 0.035 : 0.06, musicBus);   // sleigh bells on every beat
+      for (var q = 0; q < bars * 4; q++) shake(t0 + q * beat, q % 2 ? 0.035 : 0.06, musicBus);
       musicTimer = setTimeout(function () { schedule(t0 + loopLen); }, (t0 + loopLen - ac.currentTime - 1) * 1000);
     }
-    schedule(ac.currentTime + 0.1);
+    schedule(ac.currentTime + (delay || 0.1));
   }
   function stopMusic() { clearTimeout(musicTimer); if (musicBus && ac) { musicBus.gain.setTargetAtTime(0, ac.currentTime, 0.15); var b = musicBus; setTimeout(function () { try { b.disconnect(); } catch (e) {} }, 800); } musicBus = null; }
 
@@ -413,64 +498,162 @@
     introRunning = true; try { localStorage.setItem(seenKey(), '1'); } catch (e) {}
     if (!document.getElementById('ptXmIntroCss')) { var st = document.createElement('style'); st.id = 'ptXmIntroCss'; st.textContent = ICSS; document.head.appendChild(st); }
     var ov = document.createElement('div'); ov.className = 'xi-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'xiT');
-    ov.innerHTML = '<div class="xi-stars"></div><div class="xi-moon"></div><canvas></canvas><div class="xi-hills"></div>' +
-      '<div class="xi-gift" aria-hidden="true"><div class="box"></div><div class="lid"><div class="bow"></div></div></div>' +
-      '<div class="xi-santa" aria-hidden="true" style="visibility:hidden"><div class="xi-bubble"><b>Ho,</b> <b>ho,</b> <b>ho!</b></div>' + SANTA + '</div>' +
+    var title = 'Merry Christmas'.split('').map(function (c) { return c === ' ' ? '<span>&nbsp;</span>' : '<span>' + c + '</span>'; }).join('');
+    ov.innerHTML = '<div class="xi-scene">' +
+        '<div class="xi-stars"></div><div class="xi-aur"><i class="a1"></i><i class="a2"></i></div><div class="xi-moon"></div><div class="xi-shoot"></div>' +
+        '<canvas class="far"></canvas><div class="xi-mount">' + MOUNTAINS + '</div><div class="xi-village">' + VILLAGE + '</div>' +
+        '<div class="xi-rays"></div><div class="xi-hills"></div><div class="xi-trees">' + TREES + '</div>' +
+        '<div class="xi-gift" aria-hidden="true"><div class="box"></div><div class="lid"><div class="bow"></div></div></div>' +
+        '<canvas class="near"></canvas>' +
+        '<div class="xi-santa" aria-hidden="true" style="visibility:hidden"><div class="xi-bubble"><b>Ho,</b> <b>ho,</b> <b>ho!</b></div>' + SANTA + '</div>' +
+        '<div class="xi-title" aria-hidden="true">' + title + '</div><div class="xi-flash"></div></div>' +
       '<div class="xi-card"><button type="button" class="xi-mute" aria-label="Music on or off" aria-pressed="true">\uD83D\uDD0A</button><div class="big">\uD83C\uDF84</div>' +
       '<h2 id="xiT">Christmas has arrived at PalaTrack!</h2>' +
       '<p>Snow, twinkling lights and a little holiday spirit across your whole tracker, until January 6.</p>' +
       '<div class="tip">\uD83C\uDF81 Tip: click the ornament in the top right</div>' +
       '<p style="font-size:13px">Not your thing? Turn it off anytime in <b>Settings \u2192 Christmas decorations</b>.</p>' +
       '<div class="xi-btns"><button type="button" class="go" data-xi="go">Let it snow \u2744\uFE0F</button><button type="button" class="no" data-xi="off">Turn the decorations off</button></div>' +
-      '<div class="xi-small">Merry Christmas from the PalaTrack team \uD83C\uDF85</div></div>';
+      '<div class="xi-small">Merry Christmas from the PalaTrack team \uD83C\uDF85</div></div>' +
+      '<button type="button" class="xi-skip" data-xi="skip">Skip \u203A</button>';
     document.body.appendChild(ov);
-    var sn = makeSnow(ov.querySelector('canvas'), 9000, {max: 160, big: true, night: true, speed: 1.3});
-    var card = ov.querySelector('.xi-card'), gift = ov.querySelector('.xi-gift'), santa = ov.querySelector('.xi-santa');
-    startMusic(); loadHoho();
-    function santaUp() {                                     // Santa pops up from behind the hills, then says "Ho, ho, ho!"
+    var scene = ov.querySelector('.xi-scene'), card = ov.querySelector('.xi-card'), gift = ov.querySelector('.xi-gift'), santa = ov.querySelector('.xi-santa');
+    var rays = ov.querySelector('.xi-rays'), flash = ov.querySelector('.xi-flash'), titleEl = ov.querySelector('.xi-title');
+    // snow in two depths: small, slow flakes far away and big, soft ones up close
+    var far = makeSnow(ov.querySelector('canvas.far'), 7000, {max: 170, night: true, speed: 0.7});
+    var near = makeSnow(ov.querySelector('canvas.near'), 30000, {max: 36, big: true, night: true, speed: 1.6});
+    // chimney smoke
+    [[0.183, 0.6], [0.37, 0.64], [0.757, 0.66]].forEach(function (c, i) {
+      var vil = ov.querySelector('.xi-village');
+      for (var k = 0; k < 3; k++) { var sm = document.createElement('i'); sm.className = 'xi-smoke'; sm.style.left = (c[0] * 100) + '%'; sm.style.top = (c[1] * 100 - 40) + '%'; sm.style.animationDelay = (k * 1.3 + i * 0.4) + 's'; vil.appendChild(sm); }
+    });
+    var timers = []; function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+    var done = false; loadHoho();
+    if (audio()) { chimes(ac.currentTime + 0.15, [72, 76, 79, 84, 88, 91, 96], 0.07, 0.08); riser(ac.currentTime + 0.1, 1.6, 0.05, 300, 2500); }
+    at(900, function () { startMusic(); });
+
+    function santaUp() {                                     // Santa rises from the bottom with a puff of snow, then says "Ho, ho, ho!"
       santa.style.visibility = 'visible';
-      if (!reduced) santa.animate([{transform: 'translateY(110%) rotate(-6deg)'}, {transform: 'translateY(-6%) rotate(3deg)', offset: 0.7}, {transform: 'translateY(0) rotate(0)'}], {duration: 750, easing: 'cubic-bezier(.2,1.2,.4,1)'});
+      if (!reduced) {
+        santa.animate([{transform: 'translateY(110%) rotate(-6deg)'}, {transform: 'translateY(-6%) rotate(3deg)', offset: 0.7}, {transform: 'translateY(0) rotate(0)'}], {duration: 750, easing: 'cubic-bezier(.2,1.2,.4,1)'});
+        var r = santa.getBoundingClientRect(); puff(r.left + r.width / 2, innerHeight - 10, 26, 1.2);
+      }
       var waited = 0;
       function speak() { if (hohoBuf || waited >= 2000 || hohoTried === 'failed') { hohoho(santa); return; } waited += 100; setTimeout(speak, 100); }
-      setTimeout(speak, reduced ? 200 : 650);                  // first he lands, then he speaks
+      setTimeout(speak, reduced ? 200 : 650);
     }
-    if (reduced) { gift.remove(); card.classList.add('show'); card.querySelector('.go').focus(); santaUp(); }
+    function showCard() {
+      if (done) return; done = true; timers.forEach(clearTimeout);
+      card.classList.add('show'); setTimeout(function () { card.querySelector('.go').focus(); }, 300);
+      var sk = ov.querySelector('.xi-skip'); if (sk) sk.remove();
+    }
+    // particles: a puff of snow, golden dust, confetti and stars
+    function puff(x, y, n, size) {
+      for (var i = 0; i < n; i++) {
+        var p = document.createElement('i'); p.className = 'xi-puff'; var s = (4 + Math.random() * 10) * (size || 1); p.style.width = p.style.height = s + 'px'; p.style.left = x + 'px'; p.style.top = y + 'px'; scene.appendChild(p);
+        var a = Math.PI + Math.random() * Math.PI, d = 40 + Math.random() * 140 * (size || 1);
+        p.animate([{transform: 'translate(-50%,-50%)', opacity: 0.95}, {transform: 'translate(' + (Math.cos(a) * d) + 'px,' + (Math.sin(a) * d * 0.8) + 'px) scale(.4)', opacity: 0}], {duration: 700 + Math.random() * 600, easing: 'cubic-bezier(.1,.7,.3,1)'}).onfinish = (function (p) { return function () { p.remove(); }; })(p);
+      }
+    }
+    function dust(x, y, white) {
+      var d = document.createElement('i'); d.className = 'xi-dust' + (white ? ' w' : ''); d.style.left = x + 'px'; d.style.top = y + 'px'; scene.appendChild(d);
+      d.animate([{transform: 'translate(0,0) scale(1)', opacity: 1}, {transform: 'translate(' + (Math.random() * 30 - 15) + 'px,' + (40 + Math.random() * 50) + 'px) scale(.2)', opacity: 0}], {duration: 1200 + Math.random() * 800, easing: 'ease-out'}).onfinish = function () { d.remove(); };
+    }
+
+    if (reduced) { gift.remove(); rays.style.opacity = '0.6'; santaUp(); showCard(); }
     else {
-      // 1. Santa flies past the moon, 2. the gift drops in and bounces, 3. it bursts open, 4. the card appears
-      var sleighHost = ov; flySleigh(sleighHost, {y: innerHeight * 0.12, dur: 3200, color: '#0B1230', opacity: 0.95});
-      if (ac) for (var k = 0; k < 24; k++) shake(ac.currentTime + 0.3 + k * 0.1, 0.07);
-      gift.animate([{transform: 'translateY(-' + (innerHeight * 0.7) + 'px) rotate(-8deg)'}, {transform: 'translateY(0) rotate(0)', offset: 0.6}, {transform: 'translateY(-26px) rotate(3deg)', offset: 0.75}, {transform: 'translateY(0) rotate(0)', offset: 0.88}, {transform: 'translateY(-6px)', offset: 0.94}, {transform: 'translateY(0)'}],
-        {duration: 1300, delay: 2300, easing: 'ease-in', fill: 'both'});
-      setTimeout(function () {                                // a little wiggle, then it bursts open
-        gift.animate([{transform: 'rotate(0)'}, {transform: 'rotate(-6deg)'}, {transform: 'rotate(6deg)'}, {transform: 'rotate(-4deg)'}, {transform: 'rotate(0)'}], {duration: 500});
-      }, 3700);
-      setTimeout(function () {
-        var lid = gift.querySelector('.lid'); lid.animate([{transform: 'translate(0,0) rotate(0)'}, {transform: 'translate(-60px,-130px) rotate(-55deg)', opacity: 0}], {duration: 700, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'forwards'});
-        if (ac) { [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach(function (f, i) { bell(ac.currentTime + i * 0.06, f, 0.14, null, 2); }); }
+      var W = innerWidth, H = innerHeight;
+      // a shooting star
+      at(500, function () { var s = ov.querySelector('.xi-shoot'); s.animate([{transform: 'translate(0,0) rotate(-24deg)', opacity: 0}, {opacity: 1, offset: 0.2}, {transform: 'translate(' + (W * 0.3) + 'px,' + (H * 0.14) + 'px) rotate(-24deg)', opacity: 0}], {duration: 900, easing: 'ease-in'}); if (ac) bell(ac.currentTime, 2637, 0.05, null, 0.8); });
+      // Santa's sleigh: an arc in front of the moon, with Rudolph and a trail of golden dust
+      var sl = document.createElement('div'); sl.className = 'xm-sleigh';
+      sl.innerHTML = SLEIGH.replace('</g></svg>', '</g><circle class="xs-nose" cx="17.5" cy="20" r="2.8"/></svg>'); sl.style.opacity = '0'; scene.appendChild(sl);
+      var path = [{x: W + 60, y: H * 0.34}, {x: W * 0.72, y: H * 0.14}, {x: W * 0.5, y: H * 0.1}, {x: W * 0.26, y: H * 0.14}, {x: -320, y: H * 0.3}];
+      var SLEIGH_AT = 1300, SLEIGH_DUR = 3400;
+      at(SLEIGH_AT, function () {
+        sl.style.opacity = '1';
+        sl.animate(path.map(function (p, i) { return {transform: 'translate3d(' + p.x + 'px,' + p.y + 'px,0) rotate(' + (i < 2 ? 7 : i > 2 ? -7 : 0) + 'deg)'}; }), {duration: SLEIGH_DUR, easing: 'linear'}).onfinish = function () { sl.remove(); };
+        if (ac) { for (var k = 0; k < 32; k++) shake(ac.currentTime + k * 0.1, 0.08 * Math.sin(Math.PI * k / 32) + 0.02); riser(ac.currentTime, SLEIGH_DUR / 1000, 0.035, 600, 1400); }
+        var trail = setInterval(function () {
+          if (!sl.isConnected) { clearInterval(trail); return; }
+          var r = sl.getBoundingClientRect(); dust(r.right - 30 + Math.random() * 20, r.top + 44 + Math.random() * 10); if (Math.random() < 0.6) dust(r.right - 10 + Math.random() * 30, r.top + 40 + Math.random() * 14, true);
+        }, 32);
+        timers.push(trail);
+      });
+      // the gift falls from the sleigh, spinning, with a sparkling trail and a whistle
+      var DROP_AT = SLEIGH_AT + SLEIGH_DUR * 0.48, FALL = 1050;
+      at(DROP_AT, function () {
+        var r = sl.getBoundingClientRect(), gx = r.left + r.width * 0.74, gy = r.top + 44, cx = W / 2, cy = H * 0.6;
+        gift.style.opacity = '1';
+        gift.animate([{transform: 'translate(' + (gx - cx) + 'px,' + (gy - cy) + 'px) scale(.35) rotate(-40deg)'}, {transform: 'translate(0,0) scale(1) rotate(320deg)'}], {duration: FALL, easing: 'cubic-bezier(.45,0,.9,.6)', fill: 'forwards'});
+        if (ac) whistle(ac.currentTime, FALL / 1000);
+        var tr = setInterval(function () { var g = gift.getBoundingClientRect(); dust(g.left + g.width / 2 + Math.random() * 20 - 10, g.top + Math.random() * 20); }, 28);
+        setTimeout(function () { clearInterval(tr); }, FALL);
+      });
+      // impact: a burst of snow, a thud and a little shake
+      var LAND = DROP_AT + FALL;
+      at(LAND, function () {
+        gift.getAnimations().forEach(function (a) { a.commitStyles && a.commitStyles(); a.cancel(); });
+        gift.style.transform = 'none';
+        gift.animate([{transform: 'scale(1.25,.7)'}, {transform: 'scale(.92,1.1)'}, {transform: 'scale(1)'}], {duration: 420, easing: 'ease-out'});
+        puff(W / 2, H * 0.6 + 55, 40, 1.4); if (ac) thud(ac.currentTime);
+        scene.animate([{transform: 'translate(0,0)'}, {transform: 'translate(-8px,6px)'}, {transform: 'translate(7px,-5px)'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(0,0)'}], {duration: 380, easing: 'ease-out'});
+        near.burst(30);
+      });
+      // building up: the gift glows and wiggles, faster and faster, with a rising sound
+      at(LAND + 450, function () {
+        gift.classList.add('glow'); if (ac) riser(ac.currentTime, 1.3, 0.12, 300, 6000);
+        gift.animate([0, -7, 7, -9, 9, -11, 11, -13, 13, 0].map(function (d) { return {transform: 'rotate(' + d + 'deg) scale(' + (1 + Math.abs(d) / 120) + ')'}; }), {duration: 1250, easing: 'ease-in'});
+      });
+      // the burst: a flash, the lid blasts off, light rays, confetti and stars
+      var BURST = LAND + 1750;
+      at(BURST, function () {
+        flash.animate([{opacity: 0}, {opacity: 0.85, offset: 0.15}, {opacity: 0}], {duration: 650, easing: 'ease-out'});
+        gift.querySelector('.lid').animate([{transform: 'translate(0,0) rotate(0)'}, {transform: 'translate(-90px,-240px) rotate(-120deg)', opacity: 0}], {duration: 800, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'forwards'});
+        rays.animate([{opacity: 0, transform: 'scale(.3) rotate(0deg)'}, {opacity: 1, transform: 'scale(1) rotate(40deg)'}], {duration: 900, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards'});
+        if (ac) { chimes(ac.currentTime, [72, 76, 79, 84, 88], 0.05, 0.14); riser(ac.currentTime, 0.6, 0.1, 6000, 800); }
         var cols = ['#E63946', '#2A9D5C', '#F4C542', '#3A86FF', '#FFFFFF'];
-        for (var i = 0; i < 70; i++) (function () {
-          var c = document.createElement('i'); c.className = 'xi-conf'; c.style.background = cols[i % cols.length]; ov.appendChild(c);
-          var ang = Math.random() * Math.PI * 2, dist = 160 + Math.random() * 320, dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 180;
-          c.animate([{transform: 'translate(-50%,-50%) rotate(0)', opacity: 1}, {transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (Math.random() * 720) + 'deg)', opacity: 1, offset: 0.6}, {transform: 'translate(' + dx * 1.1 + 'px,' + (dy + 260) + 'px) rotate(' + (Math.random() * 900) + 'deg)', opacity: 0}],
-            {duration: 1800 + Math.random() * 900, easing: 'cubic-bezier(.15,.7,.3,1)'}).onfinish = function () { c.remove(); };
+        for (var i = 0; i < 90; i++) (function (i) {
+          var c = document.createElement('i'); c.className = 'xi-conf'; c.style.background = cols[i % cols.length]; scene.appendChild(c);
+          var ang = Math.random() * Math.PI * 2, dist = 180 + Math.random() * 420, dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 220;
+          c.animate([{transform: 'translate(-50%,-50%) rotate(0)', opacity: 1}, {transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (Math.random() * 720) + 'deg)', opacity: 1, offset: 0.55}, {transform: 'translate(' + dx * 1.1 + 'px,' + (dy + 320) + 'px) rotate(' + (Math.random() * 900) + 'deg)', opacity: 0}],
+            {duration: 2000 + Math.random() * 1000, easing: 'cubic-bezier(.15,.7,.3,1)'}).onfinish = function () { c.remove(); };
+        })(i);
+        for (var j = 0; j < 14; j++) (function () {
+          var s = document.createElement('i'); s.className = 'xi-star'; s.textContent = '\u2726'; scene.appendChild(s);
+          var a = Math.random() * Math.PI * 2, d = 120 + Math.random() * 260;
+          s.animate([{transform: 'translate(-50%,-50%) scale(.2) rotate(0)', opacity: 1}, {transform: 'translate(' + (Math.cos(a) * d) + 'px,' + (Math.sin(a) * d - 80) + 'px) scale(1.4) rotate(180deg)', opacity: 0}], {duration: 1400 + Math.random() * 600, easing: 'ease-out'}).onfinish = function () { s.remove(); };
         })();
-        sn.burst(60);
-        gift.animate([{opacity: 1, transform: 'scale(1)'}, {opacity: 0, transform: 'scale(.6) translateY(30px)'}], {duration: 500, delay: 350, fill: 'forwards'});
-        setTimeout(santaUp, 250);
-        setTimeout(function () { card.classList.add('show'); card.querySelector('.go').focus(); }, 2350);
-      }, 4250);
+        gift.animate([{opacity: 1, transform: 'scale(1)'}, {opacity: 0, transform: 'scale(.5) translateY(40px)'}], {duration: 600, delay: 450, fill: 'forwards'});
+        far.burst(40); near.burst(20);
+      });
+      at(BURST + 250, santaUp);
+      // "Merry Christmas" in glowing gold, letter by letter, then it floats up
+      at(BURST + 650, function () {
+        titleEl.querySelectorAll('span').forEach(function (s, i) {
+          s.animate([{opacity: 0, transform: 'translateY(40px) scale(.4) rotate(-12deg)', filter: 'blur(8px) drop-shadow(0 0 14px rgba(255,200,90,.55))'}, {opacity: 1, transform: 'none', filter: 'blur(0) drop-shadow(0 0 14px rgba(255,200,90,.55))'}], {duration: 600, delay: i * 55, easing: 'cubic-bezier(.2,1.5,.4,1)', fill: 'forwards'});
+        });
+        if (ac) chimes(ac.currentTime + 0.1, [84, 88, 91, 96], 0.12, 0.07);
+      });
+      at(BURST + 2500, function () { titleEl.animate([{transform: 'none', opacity: 1}, {transform: 'translateY(-60px) scale(.9)', opacity: 0}], {duration: 700, easing: 'ease-in', fill: 'forwards'}); });
+      at(BURST + 2700, showCard);
     }
+
     function close(turnOff) {
       if (ov.classList.contains('out')) return;
-      stopMusic(); sn.stop(); ov.classList.add('out'); document.removeEventListener('keydown', key, true);
+      timers.forEach(clearTimeout); stopMusic(); far.stop(); near.stop(); ov.classList.add('out'); document.removeEventListener('keydown', key, true);
       if (turnOff) { introRunning = false; if (window.ptChristmas) window.ptChristmas.set(false); }
-      else flyHat(card);
-      setTimeout(function () { ov.remove(); }, 460);
+      else { flyHat(card); if (snow) { snow.burst(90); } }                // and a burst of snow across the app
+      setTimeout(function () { ov.remove(); }, 560);
+    }
+    function skip() {                                         // skip the movie: straight to Santa and the card
+      timers.forEach(clearTimeout); gift.style.opacity = '0'; rays.style.opacity = '0.8';
+      ov.querySelectorAll('.xm-sleigh,.xi-dust,.xi-conf,.xi-star').forEach(function (x) { x.remove(); });
+      if (santa.style.visibility !== 'visible') santaUp(); titleEl.style.opacity = '0'; showCard();
     }
     function key(e) { if (e.key === 'Escape') { e.preventDefault(); close(false); } }
     document.addEventListener('keydown', key, true);
     ov.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-xi]'); if (b) { close(b.dataset.xi === 'off'); return; }
+      var b = e.target.closest('[data-xi]'); if (b) { if (b.dataset.xi === 'skip') skip(); else close(b.dataset.xi === 'off'); return; }
       var m = e.target.closest('.xi-mute');
       if (m) { musicOn = !musicOn; m.textContent = musicOn ? '\uD83D\uDD0A' : '\uD83D\uDD07'; m.setAttribute('aria-pressed', String(musicOn)); if (musicBus && ac) musicBus.gain.setTargetAtTime(musicOn ? 1 : 0, ac.currentTime, 0.1); }
     });
