@@ -431,9 +431,16 @@
     '.xi-bubble b{display:inline-block;opacity:0;transform:scale(.4);transition:opacity .15s,transform .25s cubic-bezier(.2,1.6,.4,1);}',
     '.xi-bubble b.on{opacity:1;transform:none;}',
     '@media (max-width:860px){.xi-santa{width:158px;left:2%;bottom:0;}.xi-bubble{left:58px;top:-46px;font-size:17px;padding:8px 12px;}.xi-moon{width:80px;height:80px;}}',
+    '.xi-bigflake{position:fixed;z-index:2147483002;width:170px;height:170px;pointer-events:none;filter:drop-shadow(0 0 18px rgba(170,220,255,.9)) drop-shadow(0 0 40px rgba(120,190,255,.6));}',
+    '.xi-bigflake svg{width:100%;height:100%;}',
+    '.xm-shard{position:fixed;z-index:2147483002;pointer-events:none;color:#fff;line-height:1;text-shadow:0 0 8px rgba(160,210,255,.95),0 0 2px #9CC8FF;}',
     '.xi-hatfly{position:fixed;z-index:2147483001;width:60px;height:50px;background:url("' + HAT + '") center/contain no-repeat;pointer-events:none;}'
   ].join('\n');
 
+  // the giant snowflake for the finale
+  var FLAKE = '<svg viewBox="-60 -60 120 120" aria-hidden="true"><g stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none">' +
+    [0, 60, 120, 180, 240, 300].map(function (a) { return '<g transform="rotate(' + a + ')"><path d="M0 0V-52M0-34l-13-13M0-34l13-13M0-18l-9-9M0-18l9-9M0-46l-6-6M0-46l6-6"/></g>'; }).join('') +
+    '<circle r="7" fill="#fff" stroke="none"/></g></svg>';
   // the scenery: mountains, a village (windows that glow, chimneys that smoke) and pine trees
   var MOUNTAINS = '<svg viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true"><path d="M0 300V170l120-80 90 60 130-120 120 100 80-50 140 110 110-90 140 120 110-70 160 110V300z" fill="#1B2A5C"/>' +
     '<path d="M340 30l-40 37 22-6 18 14 22-18 20 12zM800 120l-34 28 20-4 16 12 18-14 16 8zM120 90l-28 19 16-2 12 8 14-10 14 4z" fill="#DCE6F7" opacity=".85"/>' +
@@ -476,21 +483,69 @@
   // Jingle Bells (James Lord Pierpont, 1857: public domain), the chorus in C, in beats
   var TUNE = [[64,1],[64,1],[64,2],[64,1],[64,1],[64,2],[64,1],[67,1],[60,1.5],[62,.5],[64,4],[65,1],[65,1],[65,1.5],[65,.5],[65,1],[64,1],[64,1],[64,.5],[64,.5],[64,1],[62,1],[62,1],[64,1],[62,2],[67,2],
     [64,1],[64,1],[64,2],[64,1],[64,1],[64,2],[64,1],[67,1],[60,1.5],[62,.5],[64,4],[65,1],[65,1],[65,1.5],[65,.5],[65,1],[64,1],[64,1],[64,.5],[64,.5],[67,1],[67,1],[65,1],[62,1],[60,4]];
-  var BASS = [48,48,48,48,53,48,50,43,48,48,48,48,53,48,43,48];
+  // The arrangement: two rounds of the chorus. Round 1 is light (bells, warm chords, a gentle bass, sleigh bells);
+  // round 2 goes all in (walking bass, soft kick and brushes, sleigh bells on every eighth, a twinkling celesta line).
+  // Everything goes through a warm room (reverb). Then it loops.
+  var CHORDS = ['C', 'C', 'C', 'C', 'F', 'C', 'D7', 'G', 'C', 'C', 'C', 'C', 'F', 'C', 'G7', 'C'];
+  var VOICE = {C: [60, 64, 67], F: [60, 65, 69], D7: [62, 66, 69, 72], G: [59, 62, 67], G7: [59, 62, 65, 67]};
+  var WALK = {C: [36, 40, 43, 45], F: [41, 45, 48, 50], D7: [38, 42, 45, 48], G: [43, 47, 50, 47], G7: [43, 47, 50, 41]};
   var hz = function (n) { return 440 * Math.pow(2, (n - 69) / 12); };
-  function startMusic(delay) {
-    if (!audio()) return; musicBus = ac.createGain(); musicBus.gain.value = musicOn ? 1 : 0; musicBus.connect(master);
-    var beat = 0.42, bars = 16, loopLen = bars * 4 * beat;
-    function schedule(t0) {
+  function room() {                                          // a warm reverb, made from decaying noise
+    var len = ac.sampleRate * 2.4, imp = ac.createBuffer(2, len, ac.sampleRate);
+    for (var c = 0; c < 2; c++) { var d = imp.getChannelData(c); for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+    var cv = ac.createConvolver(); cv.buffer = imp; var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5200;
+    var g = ac.createGain(); g.gain.value = 0.32; cv.connect(lp); lp.connect(g); g.connect(master); return cv;
+  }
+  function pad(t, notes, len, dest) {                        // warm chords: two slightly detuned saws per note, softly filtered
+    var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1300; lp.Q.value = 0.4;
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.022, t + 0.35); g.gain.setValueAtTime(0.022, t + len - 0.3); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.25);
+    lp.connect(g); g.connect(dest);
+    notes.forEach(function (n) { [-6, 6].forEach(function (cents) { var o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz(n); o.detune.value = cents; o.connect(lp); o.start(t); o.stop(t + len + 0.3); }); });
+  }
+  function pluck(t, n, vol, dest) {                          // a round, plucked bass note
+    var o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter();
+    o.type = 'triangle'; o2.type = 'sine'; o.frequency.value = hz(n); o2.frequency.value = hz(n) / 2;
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(1600, t); lp.frequency.exponentialRampToValueAtTime(300, t + 0.3);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(dest); o.start(t); o2.start(t); o.stop(t + 0.6); o2.stop(t + 0.6);
+  }
+  function kick(t, dest) { var o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.32, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3); o.connect(g); g.connect(dest); o.start(t); o.stop(t + 0.32); }
+  function brush(t, vol, dest) {
+    if (!nbuf) { nbuf = ac.createBuffer(1, ac.sampleRate * 0.4, ac.sampleRate); var d = nbuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    var s0 = ac.createBufferSource(); s0.buffer = nbuf; var hp = ac.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = 3200; hp.Q.value = 0.6;
+    var g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    s0.connect(hp); hp.connect(g); g.connect(dest); s0.start(t); s0.stop(t + 0.25);
+  }
+  function celesta(t, n, vol, dest) {                        // a soft, twinkling celesta note
+    var o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o2.type = 'sine'; o.frequency.value = hz(n); o2.frequency.value = hz(n) * 4;
+    var g2 = ac.createGain(); g2.gain.value = 0.18; o2.connect(g2); g2.connect(g); o.connect(g);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    g.connect(dest); o.start(t); o2.start(t); o.stop(t + 0.95); o2.stop(t + 0.95);
+  }
+  function startMusic(delay, opts) {
+    if (!opts && !audio()) return;
+    musicBus = ac.createGain(); musicBus.gain.value = musicOn ? 1 : 0; musicBus.connect(master);
+    var wet = room(), send = ac.createGain(); send.gain.value = 0.8; musicBus.connect(send); send.connect(wet);
+    var beat = 0.38, bars = 16, passLen = bars * 4 * beat;
+    function schedule(t0, round) {
       if (!musicBus) return;
-      var t = t0; TUNE.forEach(function (n) { bell(t, hz(n[0] + 12), 0.13, musicBus, Math.max(0.6, n[1] * beat * 1.6)); t += n[1] * beat; });
-      BASS.forEach(function (b, i) { var tb = t0 + i * 4 * beat; [0, 2].forEach(function (k) { var o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = hz(b - 12 + (k ? 7 : 0));
-        g.gain.setValueAtTime(0.0001, tb + k * beat); g.gain.exponentialRampToValueAtTime(0.09, tb + k * beat + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, tb + k * beat + beat * 1.8);
-        o.connect(g); g.connect(musicBus); o.start(tb + k * beat); o.stop(tb + k * beat + beat * 2); }); });
-      for (var q = 0; q < bars * 4; q++) shake(t0 + q * beat, q % 2 ? 0.035 : 0.06, musicBus);
-      musicTimer = setTimeout(function () { schedule(t0 + loopLen); }, (t0 + loopLen - ac.currentTime - 1) * 1000);
+      var full = round % 2 === 1;
+      // the melody on bells (and a glockenspiel sparkle an octave up on the long notes)
+      var t = t0; TUNE.forEach(function (n) { var d = n[1] * beat; bell(t, hz(n[0] + 12), full ? 0.12 : 0.11, musicBus, Math.max(0.6, d * 1.6)); if (d >= 2 * beat) bell(t + 0.01, hz(n[0] + 24), 0.035, musicBus, 1.2); t += d; });
+      CHORDS.forEach(function (ch, b) {
+        var tb = t0 + b * 4 * beat, w = WALK[ch];
+        pad(tb, VOICE[ch], 4 * beat, musicBus);
+        if (full) { w.forEach(function (n, k) { pluck(tb + k * beat, n, 0.2, musicBus); }); [0, 2].forEach(function (k) { kick(tb + k * beat, musicBus); }); [1, 3].forEach(function (k) { brush(tb + k * beat, 0.05, musicBus); });
+          // the celesta: the chord tones climbing, on the off-beats
+          VOICE[ch].concat([VOICE[ch][0] + 12]).forEach(function (n, k) { celesta(tb + (k * 2 + 1) * beat / 2 + beat * (k > 1 ? 1 : 0), n + 24, 0.035, musicBus); });
+        } else { pluck(tb, w[0], 0.17, musicBus); pluck(tb + 2 * beat, w[2], 0.13, musicBus); }
+      });
+      for (var q = 0; q < bars * (full ? 8 : 4); q++) shake(t0 + q * beat / (full ? 2 : 1), full ? (q % 2 ? 0.025 : 0.05) : (q % 2 ? 0.03 : 0.05), musicBus);
+      if (opts && opts.rounds) { if (round + 1 < opts.rounds) schedule(t0 + passLen, round + 1); return; }   // rendering to a file: everything at once
+      musicTimer = setTimeout(function () { schedule(t0 + passLen, round + 1); }, (t0 + passLen - ac.currentTime - 1) * 1000);
     }
-    schedule(ac.currentTime + (delay || 0.1));
+    schedule(ac.currentTime + (delay || 0.1), 0);
   }
   function stopMusic() { clearTimeout(musicTimer); if (musicBus && ac) { musicBus.gain.setTargetAtTime(0, ac.currentTime, 0.15); var b = musicBus; setTimeout(function () { try { b.disconnect(); } catch (e) {} }, 800); } musicBus = null; }
 
@@ -641,9 +696,43 @@
     function close(turnOff) {
       if (ov.classList.contains('out')) return;
       timers.forEach(clearTimeout); stopMusic(); far.stop(); near.stop(); ov.classList.add('out'); document.removeEventListener('keydown', key, true);
-      if (turnOff) { introRunning = false; if (window.ptChristmas) window.ptChristmas.set(false); }
-      else { flyHat(card); if (snow) { snow.burst(90); } }                // and a burst of snow across the app
-      setTimeout(function () { ov.remove(); }, 560);
+      if (turnOff) { introRunning = false; if (window.ptChristmas) window.ptChristmas.set(false); setTimeout(function () { ov.remove(); }, 560); return; }
+      if (reduced) { flyHat(card); if (snow) snow.burst(90); setTimeout(function () { ov.remove(); }, 560); return; }
+      ov.classList.remove('out'); finale();
+    }
+    // "Let it snow": the card spins into a giant snowflake, the scene zooms forward and dissolves, the snowflake shatters
+    // into little ones that drift down over the app, the lights flash on in a wave, the ornament jingles, the hat lands
+    function finale() {
+      var r = card.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      if (audio()) { riser(ac.currentTime, 0.75, 0.1, 500, 7000); chimes(ac.currentTime + 0.05, [84, 88, 91, 96, 100, 103], 0.06, 0.09); }
+      card.classList.remove('show'); card.style.opacity = '1';
+      card.animate([{transform: 'none', opacity: 1, filter: 'blur(0)'}, {transform: 'scale(.12) rotate(30deg)', opacity: 0, filter: 'blur(6px)'}], {duration: 460, easing: 'cubic-bezier(.6,0,.8,.4)', fill: 'forwards'});
+      var flake = document.createElement('div'); flake.className = 'xi-bigflake'; flake.style.opacity = '0'; flake.innerHTML = FLAKE; flake.style.left = cx + 'px'; flake.style.top = cy + 'px'; document.body.appendChild(flake);
+      flake.animate([{transform: 'translate(-50%,-50%) scale(0) rotate(-200deg)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1.15) rotate(15deg)', opacity: 1, offset: 0.7}, {transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 1}], {duration: 620, delay: 260, easing: 'cubic-bezier(.2,1.3,.4,1)', fill: 'both'});
+      santa.animate([{transform: 'none'}, {transform: 'translateY(-4%) rotate(-3deg)', offset: 0.3}, {transform: 'translateY(115%) rotate(4deg)'}], {duration: 800, delay: 250, easing: 'ease-in', fill: 'forwards'});
+      scene.animate([{transform: 'scale(1)', opacity: 1, filter: 'blur(0)'}, {transform: 'scale(1.25)', opacity: 0.9, filter: 'blur(1px)', offset: 0.55}, {transform: 'scale(1.7)', opacity: 0, filter: 'blur(10px)'}], {duration: 1350, delay: 450, easing: 'cubic-bezier(.45,0,.7,.2)', fill: 'both'});
+      ov.animate([{opacity: 1}, {opacity: 0}], {duration: 750, delay: 1250, easing: 'ease-in', fill: 'both'});
+      setTimeout(stopMusic, 1100);
+      setTimeout(function () {                                  // the snowflake shatters
+        flake.animate([{transform: 'translate(-50%,-50%) scale(1)', opacity: 1, filter: 'brightness(1)'}, {transform: 'translate(-50%,-50%) scale(1.6) rotate(40deg)', opacity: 0, filter: 'brightness(2)'}], {duration: 300, easing: 'ease-out', fill: 'forwards'}).onfinish = function () { flake.remove(); };
+        if (ac) { chimes(ac.currentTime, [96, 91, 88, 84, 79, 76, 72], 0.04, 0.08); for (var k = 0; k < 10; k++) shake(ac.currentTime + k * 0.04, 0.09); }
+        for (var i = 0; i < 70; i++) (function (i) {
+          var sh = document.createElement('i'); sh.className = 'xm-shard'; sh.textContent = '\u2744'; sh.style.left = cx + 'px'; sh.style.top = cy + 'px'; sh.style.fontSize = (10 + Math.random() * 18) + 'px'; document.body.appendChild(sh);
+          var a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 360, x1 = Math.cos(a) * d, y1 = Math.sin(a) * d * 0.8, fall = innerHeight - cy + 60, sway = (Math.random() - 0.5) * 160;
+          sh.animate([{transform: 'translate(-50%,-50%) scale(.2) rotate(0)', opacity: 1}, {transform: 'translate(' + x1 + 'px,' + y1 + 'px) scale(1) rotate(' + (Math.random() * 360) + 'deg)', opacity: 1, offset: 0.25},
+            {transform: 'translate(' + (x1 + sway) + 'px,' + (y1 + fall * 0.6) + 'px) rotate(' + (Math.random() * 540) + 'deg)', opacity: 0.9, offset: 0.7}, {transform: 'translate(' + (x1 - sway / 2) + 'px,' + (fall + 40) + 'px) rotate(' + (Math.random() * 720) + 'deg)', opacity: 0}],
+            {duration: 2600 + Math.random() * 1600, easing: 'cubic-bezier(.2,.6,.4,1)'}).onfinish = function () { sh.remove(); };
+        })(i);
+        flyHat(flake);
+      }, 1050);
+      setTimeout(function () {                                  // back in the app: lots of snow, the lights flash on in a wave, the ornament jingles
+        ov.remove();
+        if (snow) snow.burst(140);
+        document.querySelectorAll('#ptXmas .xm-bulb').forEach(function (b, i) {
+          b.animate([{transform: 'scale(1)', filter: 'brightness(1)'}, {transform: 'scale(1.6)', filter: 'brightness(2.4)'}, {transform: 'scale(1)', filter: 'brightness(1)'}], {duration: 520, delay: i * 70, easing: 'ease-out'});
+        });
+        var orn = document.querySelector('#ptXmas .xm-orn'); if (orn) setTimeout(function () { orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); }, 500);
+      }, 2000);
     }
     function skip() {                                         // skip the movie: straight to Santa and the card
       timers.forEach(clearTimeout); gift.style.opacity = '0'; rays.style.opacity = '0.8';
@@ -668,5 +757,8 @@
       {duration: 1100, easing: 'cubic-bezier(.4,0,.2,1)'}).onfinish = function () { h.remove(); introRunning = false; document.documentElement.classList.add('pt-xm-hat'); if (ac) bell(ac.currentTime, 1568, 0.12, null, 1.2); };
   }
   window.addEventListener('pt-welcome-dismissed', function () { if (inSeason() && wanted() && !seen()) play(); });
-  window.ptChristmasIntro = {play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Christmas surprise will show again for this account.'; }};
+  // render the music into another audio context (used to make a preview file)
+  function renderMusic(ctx) { var pa = ac, pm = master, pb = musicBus, pn = nbuf; ac = ctx; nbuf = null; master = ctx.createGain(); master.gain.value = 0.8; master.connect(ctx.destination);
+    try { startMusic(0.1, {rounds: 2}); } finally { ac = pa; master = pm; musicBus = pb; nbuf = pn; } }
+  window.ptChristmasIntro = {renderMusic: renderMusic, play: play, reset: function () { try { localStorage.removeItem(seenKey()); } catch (e) {} return 'The Christmas surprise will show again for this account.'; }};
 })();
