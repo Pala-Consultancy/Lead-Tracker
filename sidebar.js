@@ -18,7 +18,7 @@
   // Which item is "active" on which page.
   var ACTIVE = {'home.html': 'navHome', 'boards.html': 'navDashboard', 'dashboard.html': 'navDashboard', 'statistics.html': 'navDashboard', 'boards-trash.html': 'navDashboard',
     'tasks.html': 'navTasks', 'calendar.html': 'navCalendar', 'sequences.html': 'navSequences', 'sequence-builder.html': 'navSequences', 'campaigns.html': 'navCampaigns',
-    'scheduled-emails.html': 'navScheduled', 'linkedin-sequence-builder.html': 'navLinkedinSeq', 'linkedin-post-composer.html': 'navLinkedinPost',
+    'scheduled-emails.html': 'navScheduled', 'linkedin-dm-log.html': 'navLinkedinSeq', 'linkedin-post-composer.html': 'navLinkedinPost',
     'chat.html': 'navChat', 'client-processes.html': 'navClients', 'call-pages.html': 'navCallPages', 'offer-doc.html': 'navOfferDoc', 'library.html': 'navLibrary', 'whiteboard.html': 'navWhiteboard', 'team.html': 'navTeam', 'trash.html': 'navTrash', 'account.html': 'navSettings', 'email-settings.html': 'navSettings',
     'notification-settings.html': 'navSettings', 'billing.html': 'navBilling', 'help-center.html': 'navHelp', 'feedback.html': 'navHelp'};
   var active = ACTIVE[here] || '';
@@ -47,7 +47,7 @@
       link('navCampaigns', 'campaigns.html' + q, 'Email campaigns') +
       link('navScheduled', 'scheduled-emails.html' + q, 'Scheduled') +
       '<div class="seq-sidebar-label">LinkedIn</div>' +
-      link('navLinkedinSeq', 'linkedin-sequence-builder.html' + q, 'LinkedIn DM log') +
+      link('navLinkedinSeq', 'linkedin-dm-log.html' + q, 'LinkedIn DM log') +
       link('navLinkedinPost', 'linkedin-post-composer.html' + q, 'LinkedIn Post') +
       '<div class="seq-sidebar-label">Clients</div>' +
       link('navClients', 'client-processes.html', 'Client processes') +
