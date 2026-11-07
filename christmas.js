@@ -46,6 +46,9 @@
 
   // ---------- pictures ----------
   var HAT = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 54"><path d="M6 42C11 20 27 5 47 7c7 1 12 6 11 14-6-5-14-3-18 4-4 7-6 13-7 18z" fill="#D62839"/><path d="M47 7c6 2 10 7 11 14" fill="none" stroke="#A81E2D" stroke-width="2"/><path d="M14 36c8-3 16-3 24 1" fill="none" stroke="#A81E2D" stroke-width="2" opacity=".5"/><rect x="2" y="37" width="40" height="13" rx="6.5" fill="#fff"/><rect x="2" y="37" width="40" height="13" rx="6.5" fill="none" stroke="#E6EBF2" stroke-width="1.5"/><circle cx="57" cy="24" r="6.5" fill="#fff" stroke="#E6EBF2" stroke-width="1.5"/></svg>');
+  function ornament(id, c1, c2, c3, band) {                   // one glass ornament in three shades of a colour
+    return ORNAMENT.replace(/xmBall/g, 'xmBall' + id).replace(/xmCap/g, 'xmCap' + id).replace('#FF7A86', c1).replace('#E02D3F', c2).replace('#8E1220', c3).replace(/#FFE08A" stroke-width="2.4"/, band + '" stroke-width="2.4"');
+  }
   var ORNAMENT = '<svg viewBox="0 0 48 64" aria-hidden="true"><defs><radialGradient id="xmBall" cx="36%" cy="34%" r="70%"><stop offset="0" stop-color="#FF7A86"/><stop offset=".45" stop-color="#E02D3F"/><stop offset="1" stop-color="#8E1220"/></radialGradient>' +
     '<linearGradient id="xmCap" x1="0" x2="1"><stop offset="0" stop-color="#B8892B"/><stop offset=".5" stop-color="#FFE08A"/><stop offset="1" stop-color="#B8892B"/></linearGradient></defs>' +
     '<path d="M24 2c-4 0-6 3-6 5" fill="none" stroke="#C9A24A" stroke-width="2"/><rect x="17" y="7" width="14" height="8" rx="2" fill="url(#xmCap)"/>' +
@@ -81,6 +84,8 @@
     '#ptXmas .xm-orn .str{display:block;margin:0 auto;width:1.5px;height:' + (PLACE === 'site' ? 120 : 92) + 'px;background:linear-gradient(#C9A24A,#E8C76A);}',
     '#ptXmas .xm-orn svg{display:block;width:34px;height:46px;margin-top:-3px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(140,18,32,.3));transition:transform .2s;}',
     '#ptXmas .xm-orn svg:hover{transform:scale(1.08);}',
+    '#ptXmas .xm-orn.o2{right:' + (PLACE === 'site' ? 70 : 46) + 'px;width:26px;animation-duration:7s;animation-delay:-2s;} #ptXmas .xm-orn.o2 .str{height:' + (PLACE === 'site' ? 76 : 54) + 'px;} #ptXmas .xm-orn.o2 svg{width:26px;height:35px;}',
+    '#ptXmas .xm-orn.o3{right:' + (PLACE === 'site' ? 100 : 74) + 'px;width:22px;animation-duration:8s;animation-delay:-4s;} #ptXmas .xm-orn.o3 .str{height:' + (PLACE === 'site' ? 100 : 74) + 'px;} #ptXmas .xm-orn.o3 svg{width:22px;height:30px;}',
     '@media (max-width:760px){#ptXmas .xm-orn{display:none;}}',
     '#ptXmas .xm-orn.spin svg{animation:xmSpin .9s cubic-bezier(.3,1.4,.5,1);}',
     '@keyframes xmSwing{0%,100%{transform:rotate(4deg);}50%{transform:rotate(-4deg);}}',
@@ -94,9 +99,23 @@
     '.pts-host.pt-xm .seq-sidebar-link.active{background:linear-gradient(90deg,rgba(214,40,57,.14),rgba(42,157,92,.07));color:#B42332;box-shadow:inset 3px 0 0 #D62839;}',
     'html[data-theme="dark"] .pts-host.pt-xm .seq-sidebar-link.active{color:#FF9AA4;background:linear-gradient(90deg,rgba(214,40,57,.2),rgba(42,157,92,.1));}',
     '.pts-host.pt-xm .seq-sidebar-link.active .icon{color:#D62839;}',
+    // the selected menu item: a little candy-cane on its left edge
+    '.pts-host.pt-xm .seq-sidebar-link.active{position:relative;box-shadow:none;}',
+    '.pts-host.pt-xm .seq-sidebar-link.active::after{content:"";position:absolute;left:0;top:7px;bottom:7px;width:4px;border-radius:3px;background:repeating-linear-gradient(-45deg,#D62839 0 4px,#FFFFFF 4px 8px);box-shadow:0 0 0 1px rgba(214,40,57,.22);}',
+    // the side panel: faint snowflakes in the background
+    '.pts-host.pt-xm{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Cg stroke=%27%2392A9C9%27 stroke-width=%271%27 stroke-linecap=%27round%27 opacity=%27.35%27%3E%3Cpath d=%27M20 14v12M14 20h12M16 16l8 8M24 16l-8 8%27/%3E%3Cpath d=%27M84 58v8M80 62h8M81 59l6 6M87 59l-6 6%27/%3E%3Cpath d=%27M44 96v10M39 101h10M40.5 97.5l7 7M47.5 97.5l-7 7%27/%3E%3C/g%3E%3C/svg%3E"),radial-gradient(120% 34% at 0% 0%,rgba(214,40,57,.10),transparent 70%),radial-gradient(120% 30% at 100% 100%,rgba(42,157,92,.10),transparent 70%) !important;background-size:120px 120px,auto,auto !important;}',
+    // snow on the cards (Home: the two big cards, the quick-access tiles and the panels at the bottom)
+    'html.pt-xm-on .home-hub-card,html.pt-xm-on .home-quick-card,html.pt-xm-on .attention-card{position:relative;}',
+    'html.pt-xm-on .home-hub-card::after,html.pt-xm-on .home-quick-card::after,html.pt-xm-on .attention-card::after{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:14px;border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 20%27 preserveAspectRatio=%27none%27%3E%3Cpath d=%27M0 0H200V8C192 13 184 9 174 12C162 16 152 8 140 11C128 14 120 18 108 12C98 7 88 13 76 11C64 9 56 16 44 12C32 8 24 14 14 11C8 9 3 12 0 10Z%27 fill=%27%23FFFFFF%27/%3E%3C/svg%3E") top/100% 100% no-repeat;filter:drop-shadow(0 2px 1.5px rgba(110,130,165,.28));pointer-events:none;z-index:1;}',
+    'html.pt-xm-on .home-quick-card::after{height:10px;}',
+    'html[data-theme="dark"].pt-xm-on .home-hub-card::after,html[data-theme="dark"].pt-xm-on .home-quick-card::after,html[data-theme="dark"].pt-xm-on .attention-card::after{filter:brightness(.92) drop-shadow(0 2px 1.5px rgba(0,0,0,.4));}',
+    // a sprig of holly on the "Merry Christmas" card, and snow on its top
+    '.pt-xm-greet{overflow:visible !important;}',
+    '.pt-xm-greet::before{content:"";position:absolute;right:-6px;top:-12px;width:44px;height:30px;background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 60 40%27%3E%3Cpath d=%27M30 22C22 12 12 16 4 10c4 6 0 10 6 13 4 2 12 0 20-1z%27 fill=%27%232A9D5C%27/%3E%3Cpath d=%27M30 22c8-10 18-6 26-12-4 6 0 10-6 13-4 2-12 0-20-1z%27 fill=%27%23237F4B%27/%3E%3Ccircle cx=%2726%27 cy=%2724%27 r=%274%27 fill=%27%23E63946%27/%3E%3Ccircle cx=%2734%27 cy=%2724%27 r=%274%27 fill=%27%23D62839%27/%3E%3Ccircle cx=%2730%27 cy=%2729%27 r=%274%27 fill=%27%23C1121F%27/%3E%3Ccircle cx=%2725%27 cy=%2723%27 r=%271.2%27 fill=%27%23fff%27 opacity=%27.7%27/%3E%3C/svg%3E") center/contain no-repeat;transform:rotate(12deg);z-index:2;pointer-events:none;}',
+    '.pt-xm-greet .xm-cap{position:absolute;left:-1px;right:-1px;top:-2px;height:9px;border-radius:14px 14px 0 0;background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 20%27 preserveAspectRatio=%27none%27%3E%3Cpath d=%27M0 0H200V8C192 13 184 9 174 12C162 16 152 8 140 11C128 14 120 18 108 12C98 7 88 13 76 11C64 9 56 16 44 12C32 8 24 14 14 11C8 9 3 12 0 10Z%27 fill=%27%23FFFFFF%27/%3E%3C/svg%3E") top/100% 100% no-repeat;pointer-events:none;}',
     '.pts-host.pt-xm .pts-user{background:linear-gradient(var(--panel-alt,var(--pts-soft)),var(--panel-alt,var(--pts-soft))) padding-box,linear-gradient(135deg,#D62839,#2A9D5C) border-box;border:1px solid transparent;}',
     '.pt-xm-greet{margin:10px 6px 6px;padding:11px 12px;border-radius:14px;background:linear-gradient(135deg,#0F3D2A,#1C5A3C);color:#FFE7A3;display:flex;align-items:center;gap:9px;box-shadow:0 8px 20px -10px rgba(15,61,42,.6);position:relative;overflow:hidden;}',
-    '.pt-xm-greet::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.5) 1px,transparent 1.5px);background-size:18px 18px;opacity:.25;pointer-events:none;}',
+    '.pt-xm-greet::after{content:"";position:absolute;inset:0;border-radius:inherit;background-image:radial-gradient(rgba(255,255,255,.5) 1px,transparent 1.5px);background-size:18px 18px;opacity:.25;pointer-events:none;}',
     '.pt-xm-greet .tr{font-size:19px;line-height:1;filter:drop-shadow(0 0 6px rgba(255,231,163,.6));animation:xmTree 3s ease-in-out infinite;}',
     '.pt-xm-greet b{display:block;font:700 12.5px Inter,sans-serif;} .pt-xm-greet small{display:block;font:500 11px Inter,sans-serif;color:#CDE8D8;margin-top:1px;}',
     '@keyframes xmTree{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}',
@@ -158,14 +177,18 @@
     var old = layer.querySelector('.xm-lights'); if (old) old.remove();
     var side = PLACE === 'app' ? document.querySelector('.pts-host') : null, left = side ? Math.round(side.getBoundingClientRect().right) : 0;
     var W = Math.max(200, innerWidth - left - 6), n = Math.max(4, Math.round(W / 120)), seg = W / n, cols = ['r', 'g', 'y', 'b'];
-    var path = 'M0 6', bulbs = '';
+    var path = 'M0 6', bulbs = '', bows = '';
     for (var i = 0; i < n; i++) {
-      var x0 = i * seg, x1 = x0 + seg, sag = 10 + (i % 2) * 5;
+      var x0 = i * seg, x1 = x0 + seg, sag = 12 + (i % 2) * 5;
       path += ' Q' + (x0 + seg / 2).toFixed(1) + ' ' + (6 + sag * 2) + ' ' + x1.toFixed(1) + ' 6';
       bulbs += '<i class="xm-bulb ' + cols[i % 4] + '" style="left:' + (x0 + seg / 2).toFixed(1) + 'px;top:' + (6 + sag - 1) + 'px;animation-delay:-' + ((i * 0.8) % 3.4).toFixed(1) + 's"></i>';
+      if (i > 0) bows += '<use href="#xmBow" x="' + (x0 - 9).toFixed(1) + '" y="0"/>';
     }
     var box = document.createElement('div'); box.className = 'xm-lights'; box.style.left = left + 'px';
-    box.innerHTML = '<svg aria-hidden="true"><path d="' + path + '" fill="none" stroke="#2F4A3A" stroke-width="1.6" opacity=".55"/></svg>' + bulbs;
+    box.innerHTML = '<svg aria-hidden="true"><defs><g id="xmBow"><path d="M9 7C5 2 0 3 1 7s5 4 8 0zM9 7c4-5 9-4 8 0s-5 4-8 0z" fill="#D62839"/><path d="M8 8l-3 8 3-2 1 3 1-9zM10 8l3 8-3-2-1 3-1-9z" fill="#B21F2F"/><circle cx="9" cy="7" r="2.2" fill="#E63946"/></g></defs>' +
+      '<path d="' + path + '" fill="none" stroke="#1E5A38" stroke-width="9" stroke-linecap="round"/>' +
+      '<path d="' + path + '" fill="none" stroke="#2E7D4F" stroke-width="7" stroke-dasharray="1.2 3.2" stroke-linecap="round"/>' +
+      '<path d="' + path + '" fill="none" stroke="#4FA36F" stroke-width="4" stroke-dasharray="1 5" stroke-dashoffset="2" stroke-linecap="round" opacity=".8"/>' + bows + '</svg>' + bulbs;
     layer.appendChild(box);
   }
   var resizeT = null; addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(lights, 200); });
@@ -226,12 +249,16 @@
     document.documentElement.classList.add('pt-xm-on');
     if (!document.getElementById('ptXmasCss')) { var st = document.createElement('style'); st.id = 'ptXmasCss'; st.textContent = CSS; document.head.appendChild(st); }
     layer = document.createElement('div'); layer.id = 'ptXmas'; layer.setAttribute('aria-hidden', 'true');
-    layer.innerHTML = '<div class="xm-glow"></div><canvas></canvas>' + (PLACE === 'client' ? '' : '<div class="xm-orn"><span class="str"></span>' + ORNAMENT + '</div>');
+    layer.innerHTML = '<div class="xm-glow"></div><canvas></canvas>' + (PLACE === 'client' ? '' :
+      '<div class="xm-orn o2"><span class="str"></span>' + ornament('g', '#FFF1B8', '#E9B949', '#9A6B12', '#FFFFFF') + '</div>' +
+      '<div class="xm-orn o3"><span class="str"></span>' + ornament('n', '#9BE3B4', '#2A9D5C', '#145A33', '#FFE08A') + '</div>' +
+      '<div class="xm-orn"><span class="str"></span>' + ORNAMENT + '</div>');
     document.body.appendChild(layer);
     snow = makeSnow(layer.querySelector('canvas'), PLACE === 'client' ? 34000 : 24000, {max: PLACE === 'client' ? 40 : 70, once: PLACE === 'app', speed: PLACE === 'app' ? 2.6 : 1});
-    var orn = layer.querySelector('.xm-orn');
-    if (orn) orn.querySelector('svg').addEventListener('click', function () {   // click the ornament: it spins and jingles
-      orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); if (snow) snow.burst(PLACE === 'app' ? 40 : 18);
+    layer.querySelectorAll('.xm-orn').forEach(function (orn) {
+      orn.querySelector('svg').addEventListener('click', function () {   // click an ornament: it spins and jingles
+        orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); if (snow) snow.burst(PLACE === 'app' ? 40 : 18);
+      });
     });
     lights();
     if (PLACE === 'app') {
@@ -240,7 +267,7 @@
         host.classList.add('pt-xm');
         if (!host.querySelector('.pt-xm-greet')) {
           var g = document.createElement('div'); g.className = 'pt-xm-greet';
-          g.innerHTML = '<span class="tr">\uD83C\uDF84</span><span><b>Merry Christmas</b><small>Happy holidays from PalaTrack \u2744\uFE0F</small></span>';
+          g.innerHTML = '<i class="xm-cap" aria-hidden="true"></i><span class="tr">\uD83C\uDF84</span><span><b>Merry Christmas</b><small>Happy holidays from PalaTrack \u2744\uFE0F</small></span>';
           var bottom = host.querySelector('.pts-bottom'); if (bottom) host.insertBefore(g, bottom); else host.appendChild(g);
         }
       }
@@ -754,7 +781,7 @@
         document.querySelectorAll('#ptXmas .xm-bulb').forEach(function (b, i) {
           b.animate([{transform: 'scale(1)', filter: 'brightness(1)'}, {transform: 'scale(1.6)', filter: 'brightness(2.4)'}, {transform: 'scale(1)', filter: 'brightness(1)'}], {duration: 520, delay: i * 70, easing: 'ease-out'});
         });
-        var orn = document.querySelector('#ptXmas .xm-orn'); if (orn) setTimeout(function () { orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); }, 500);
+        var orn = document.querySelector('#ptXmas .xm-orn:not(.o2):not(.o3)'); if (orn) setTimeout(function () { orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); }, 500);
       }, 2000);
     }
     function skip() {                                         // skip the movie: straight to Santa and the card
