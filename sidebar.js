@@ -51,7 +51,7 @@
       link('navLinkedinPost', 'linkedin-post-composer.html' + q, 'LinkedIn Post') +
       '<div class="seq-sidebar-label">Clients</div>' +
       link('navClients', 'client-processes.html', 'Client processes') +
-      link('navCallPages', 'call-pages.html', 'Call pages') +
+      link('navCallPages', 'call-pages.html', 'Pre Call Conversion System') +
       link('navOfferDoc', 'offer-doc.html', 'Offer Doc') +
       '<div class="seq-sidebar-label">Workspace</div>' +
       link('navChat', 'chat.html', 'Team chat') +
