@@ -108,6 +108,10 @@
     'html.pt-xm-on .home-hub-card,html.pt-xm-on .home-quick-card,html.pt-xm-on .attention-card{position:relative;}',
     'html.pt-xm-on .home-hub-card::after,html.pt-xm-on .home-quick-card::after,html.pt-xm-on .attention-card::after{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:14px;border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 20%27 preserveAspectRatio=%27none%27%3E%3Cpath d=%27M0 0H200V8C192 13 184 9 174 12C162 16 152 8 140 11C128 14 120 18 108 12C98 7 88 13 76 11C64 9 56 16 44 12C32 8 24 14 14 11C8 9 3 12 0 10Z%27 fill=%27%23FFFFFF%27/%3E%3C/svg%3E") top/100% 100% no-repeat;filter:drop-shadow(0 2px 1.5px rgba(110,130,165,.28));pointer-events:none;z-index:1;}',
     'html.pt-xm-on .home-quick-card::after{height:10px;}',
+    // notification badges (and anything else that sits on a card's edge) stay on top of the snow
+    'html.pt-xm-on .home-quick-badge,html.pt-xm-on .home-hub-card [class*="badge"],html.pt-xm-on .attention-card [class*="badge"],html.pt-xm-on .home-quick-card [class*="badge"]{position:relative;z-index:3;}',
+    'html.pt-xm-on .home-quick-card .home-quick-badge{position:absolute;}',
+    'html.pt-xm-on .pt-li-badge{z-index:3;}',
     'html[data-theme="dark"].pt-xm-on .home-hub-card::after,html[data-theme="dark"].pt-xm-on .home-quick-card::after,html[data-theme="dark"].pt-xm-on .attention-card::after{filter:brightness(.92) drop-shadow(0 2px 1.5px rgba(0,0,0,.4));}',
     // a sprig of holly on the "Merry Christmas" card, and snow on its top
     '.pt-xm-greet{overflow:visible !important;}',
