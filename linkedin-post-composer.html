@@ -2955,6 +2955,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       versions = draft.versions.map(v=> ({
         id: v.id || newVersionId(), label: v.label || 'Version', content: v.content || '',
         media: (v.media || []).map(m=> ({type: m.type, name: m.name, url: m.url, path: m.path})),
+        carousel: v.carousel || null,              // "post as a carousel", set in the Chrome extension: kept as it is
       }));
       activeVersionId = versions.some(v=> v.id === draft.activeVersionId) ? draft.activeVersionId : versions[0].id;
       return true;
@@ -5573,9 +5574,10 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     return ensureDoc.then(postId=>
       uploadPendingMedia(postId, allItems).then(()=>{
         const media = meta(items);
-        const versionsMeta = savingVersions.map(v=> ({id: v.id, label: v.label, content: v.content || '', media: meta(v.media)}));
+        const versionsMeta = savingVersions.map(v=> ({id: v.id, label: v.label, content: v.content || '', media: meta(v.media), carousel: v.carousel || null}));
         savedFields = {postId, media, versionsMeta};
-        return collectionRef().doc(postId).update({...payload, media, versions: versionsMeta, activeVersionId: openId}).then(()=>{
+        const carouselOf = (savingVersions.find(v=> v.id === openId) || {}).carousel || null;
+        return collectionRef().doc(postId).update({...payload, media, versions: versionsMeta, activeVersionId: openId, carousel: carouselOf}).then(()=>{
           if(skipCleanup) return;
           // Files that were on the saved post (in any version) but got removed.
           const keep = new Set(versionsMeta.flatMap(v=> v.media.map(m=> m.path)));
