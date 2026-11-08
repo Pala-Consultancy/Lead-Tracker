@@ -79,7 +79,7 @@
   /* ===== LinkedIn Messaging's look ===== */
   .dm{--li-bg:#FFFFFF;--li-line:#E8E8E8;--li-ink:rgba(0,0,0,.9);--li-ink2:rgba(0,0,0,.6);--li-ink3:rgba(0,0,0,.45);--li-hover:#F3F2EF;--li-sel:#EBF3FB;--li-green:#01754F;--li-blue:#0A66C2;--li-blue-d:#004182;
     font-family:-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Fira Sans",Ubuntu,Oxygen,"Oxygen Sans",Cantarell,"Droid Sans","Apple Color Emoji","Segoe UI Emoji",sans-serif;
-    flex:1;min-height:0;display:grid;grid-template-columns:340px 1fr;margin:0 28px 24px;background:var(--li-bg);border:1px solid var(--li-line);border-radius:10px;box-shadow:0 0 0 1px rgba(140,140,140,.08),0 2px 4px rgba(0,0,0,.04);overflow:hidden;color:var(--li-ink);}
+    flex:1;min-height:0;display:grid;grid-template-columns:340px minmax(0,1fr);margin:0 28px 24px;background:var(--li-bg);border:1px solid var(--li-line);border-radius:10px;box-shadow:0 0 0 1px rgba(140,140,140,.08),0 2px 4px rgba(0,0,0,.04);overflow:hidden;color:var(--li-ink);}
   html[data-theme="dark"] .dm{--li-bg:#1B1F23;--li-line:#38434F;--li-ink:rgba(255,255,255,.9);--li-ink2:rgba(255,255,255,.6);--li-ink3:rgba(255,255,255,.45);--li-hover:#262C31;--li-sel:#20303F;--li-green:#3FBF8F;--li-blue:#71B7FB;--li-blue-d:#A8D4FF;}
   /* the list */
   .dm-list{border-right:1px solid var(--li-line);display:flex;flex-direction:column;min-height:0;}
@@ -109,9 +109,12 @@
   .av.sm{width:40px;height:40px;font-size:14px;} .av.xs{width:32px;height:32px;font-size:12px;}
   .av.me{background:#0A66C2;}
   /* the thread */
-  .dm-thread{display:flex;flex-direction:column;min-height:0;}
+  .dm-thread{display:flex;flex-direction:column;min-height:0;min-width:0;}
   .th-head{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 16px;border-bottom:1px solid var(--li-line);min-height:60px;}
-  .th-head .meta{flex:1;min-width:0;}
+  .th-head .meta{flex:1;min-width:0;overflow:hidden;}
+.th-head .meta b,.th-head .meta small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.th-head > :not(.meta){flex-shrink:0;}
+.th-head{flex-wrap:wrap;row-gap:6px;} .th-head .meta{flex:1 1 220px;}
   .th-head b{display:block;font-size:16px;font-weight:600;} .th-head b a{color:inherit;text-decoration:none;} .th-head b a:hover{text-decoration:underline;}
   .th-head small{display:block;font-size:12px;color:var(--li-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .th-head .ib{width:36px;height:36px;border-radius:50%;border:none;background:none;color:var(--li-ink2);display:inline-flex;align-items:center;justify-content:center;font-size:15px;} .th-head .ib:hover{background:var(--li-hover);color:var(--li-ink);}
@@ -176,7 +179,7 @@
   .ph small{display:block;font-size:12px;color:var(--slate);font-weight:500;}
   .dlg-b{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
   @media (max-width:900px){
-    .dm{grid-template-columns:1fr;margin:0 12px 12px;} .dm-head{padding:16px 14px 10px;} .cmp-bar{flex-wrap:wrap;}
+    .dm{grid-template-columns:minmax(0,1fr);margin:0 12px 12px;} .dm-head{padding:16px 14px 10px;} .cmp-bar{flex-wrap:wrap;}
     .dm.open .dm-list{display:none;} .dm:not(.open) .dm-thread{display:none;}
     .th-head .th-back{display:inline-flex;}
   }
@@ -803,7 +806,7 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
     if(!keepComposer) atManual = false;
     const nameHTML = p.linkedinUrl ? `<a href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name);
     box.innerHTML = `<div class="th-head"><button type="button" class="ib th-back" id="backBtn" aria-label="Back to conversations">←</button>
-        <div class="meta"><b>${nameHTML}${p.degree ? `<span class="deg"> · ${esc(p.degree)}</span>` : ''}</b><small>${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
+        <div class="meta"><b>${nameHTML}${p.degree ? `<span class="deg"> · ${esc(p.degree)}</span>` : ''}</b><small title="${esc(p.headline || '')}">${esc(p.headline || (p.lead ? p.lead.boardName : ''))}</small></div>
         ${p.linkedinUrl ? `<a class="ib" href="${esc(p.linkedinUrl)}" target="_blank" rel="noopener" title="Open their LinkedIn profile" aria-label="Open their LinkedIn profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>` : ''}
         <button type="button" class="bk-btn${c.closed ? ' won' : c.lost ? ' lost' : c.noShow ? ' ns' : c.booked ? ' on' : c.notNow ? ' nn' : ''}" id="stBtn" aria-haspopup="true" title="Status">${c.closed ? '🏆 Closed' + (c.closed.value ? ' · ' + money(c.closed.value) : '') : c.lost ? '❌ Lost' + (c.lost.reason ? ' · ' + esc(c.lost.reason) : '') : c.noShow ? '🚫 No-show' : c.booked ? '📅 Call booked' : c.notNow ? '💤 Not a good fit now' : 'Status'} ▾</button>
         <button type="button" class="fu-btn${c.followUp && c.followUp.due ? ' on' : ''}" id="fuBtn" aria-haspopup="true">🔔 ${c.followUp && c.followUp.due ? esc(fuLabel(c.followUp).text) : 'Follow up'}</button>

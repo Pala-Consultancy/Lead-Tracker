@@ -84,6 +84,7 @@
     '#ptXmas .xm-orn .str{display:block;margin:0 auto;width:1.5px;height:' + (PLACE === 'site' ? 120 : 92) + 'px;background:linear-gradient(#C9A24A,#E8C76A);}',
     '#ptXmas .xm-orn svg{display:block;width:34px;height:46px;margin-top:-3px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(140,18,32,.3));transition:transform .2s;}',
     '#ptXmas .xm-orn svg:hover{transform:scale(1.08);}',
+    '#ptXmas .xm-orn.aside{display:none;}',
     '#ptXmas .xm-orn.o2{right:' + (PLACE === 'site' ? 70 : 46) + 'px;width:26px;animation-duration:7s;animation-delay:-2s;} #ptXmas .xm-orn.o2 .str{height:' + (PLACE === 'site' ? 76 : 54) + 'px;} #ptXmas .xm-orn.o2 svg{width:26px;height:35px;}',
     '#ptXmas .xm-orn.o3{right:' + (PLACE === 'site' ? 100 : 74) + 'px;width:22px;animation-duration:8s;animation-delay:-4s;} #ptXmas .xm-orn.o3 .str{height:' + (PLACE === 'site' ? 100 : 74) + 'px;} #ptXmas .xm-orn.o3 svg{width:22px;height:30px;}',
     '@media (max-width:760px){#ptXmas .xm-orn{display:none;}}',
@@ -195,7 +196,27 @@
       '<path d="' + path + '" fill="none" stroke="#4FA36F" stroke-width="4" stroke-dasharray="1 5" stroke-dashoffset="2" stroke-linecap="round" opacity=".8"/>' + bows + '</svg>' + bulbs;
     layer.appendChild(box);
   }
-  var resizeT = null; addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(lights, 200); });
+  var resizeT = null; addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(function () { lights(); clearOrnaments(); }, 200); });
+  // an ornament never covers something you can click: if a button or link is under it, it steps aside on that page
+  function clearOrnaments() {
+    if (!layer) return;
+    var orns = layer.querySelectorAll('.xm-orn'); if (!orns.length) return;
+    // everything you can click on the page (that's visible), as rectangles
+    var hits = [].slice.call(document.querySelectorAll('button,a[href],input,select,textarea,[role="button"],[onclick],label[for]'))
+      .filter(function (el) { return !layer.contains(el) && el.offsetParent !== null; })
+      .map(function (el) { return el.getBoundingClientRect(); })
+      .filter(function (r) { return r.width && r.height && r.top < 260 && r.right > innerWidth - 260; });   // only near the ornaments
+    orns.forEach(function (o) {
+      var svg = o.querySelector('svg'); if (!svg) return;
+      var was = o.classList.contains('aside'); if (was) o.classList.remove('aside');
+      var r = svg.getBoundingClientRect(); if (!r.width) { if (was) o.classList.add('aside'); return; }
+      var m = 14;                                                     // room for the swing
+      var a = {l: r.left - m, r: r.right + m, t: r.top - 4, b: r.bottom + m};
+      var covers = hits.some(function (h) { return h.left < a.r && h.right > a.l && h.top < a.b && h.bottom > a.t; });
+      if (covers) o.classList.add('aside');
+    });
+  }
+  setInterval(function () { if (!document.hidden) clearOrnaments(); }, 1500);
   // Santa's sleigh: at most once every 20 minutes (remembered across pages); the first one a few minutes in
   var EVERY = 20 * 60 * 1000;
   function due() { var now = Date.now(), last = 0; try { last = Number(localStorage.getItem('ptXmLastSleigh')) || 0; } catch (e) { return false; }
