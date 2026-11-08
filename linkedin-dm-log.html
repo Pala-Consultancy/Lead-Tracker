@@ -431,6 +431,13 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
   const cur = ()=> convs.find((c)=> c.id === openId) || null;
 
   // Reads a conversation copied from LinkedIn Messaging into [{name, at (Date), text, quote: {name, text} | null}]
+  // LinkedIn's hidden label above a name when you copy a conversation: never a name
+  const badName = (n)=> /^(?:1st|2nd|3rd\+?)\s+degree connection$/i.test(String(n || '').trim());
+  function realNameIn(parsed, mine){
+    if(!parsed) return '';
+    const p = parsed.profile && parsed.profile.name && !badName(parsed.profile.name) && norm(parsed.profile.name) !== norm(mine || myName) ? parsed.profile.name : '';
+    return p || (parsed.names || []).find((n)=> !badName(n) && norm(n) !== norm(mine || myName)) || '';
+  }
   function parseLinkedInPaste(raw, now) {
     now = now || new Date();
     let firstUrl = '';
@@ -566,7 +573,7 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
     const authors = [...new Set(out.filter((m) => m.post && m.post.author).map((m) => m.post.author))];
     // the profile at the top: "Will Barnes", "· 1st" (sometimes on the same line), and the headline
     let profile = null;
-    const SKIP = /^(messaging|active now|available on mobile|mobile|seen|load more|close your conversation|open the options|.*\bactive\b.*ago|premium|view profile|\d+\s*(?:s|m|h|d|w)\s*ago)$/i;
+    const SKIP = /^(messaging|active now|available on mobile|mobile|seen|load more|close your conversation|open the options|.*\bactive\b.*ago|premium|view profile|\d+\s*(?:s|m|h|d|w)\s*ago|(?:1st|2nd|3rd\+?)\s+degree connection|status is (?:online|offline|reachable|away)|online|offline)$/i;
     const P = pre.map((x) => x.replace(/^View .+?['’]s? profile/i, '').trim()).filter((x) => x && !SKIP.test(x));
     const di = P.findIndex((x) => /(?:^|[·•]\s*)(1st|2nd|3rd\+?)\s*$/i.test(x));
     if (di >= 0) {
@@ -1005,15 +1012,16 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
           <label class="btn sm">${photo ? 'Change photo' : 'Add photo'}<input type="file" accept="image/*" class="hidden" id="psPhoto"></label></div>` : ''}
         <div class="ps-prev">${msgs.slice(-40).map((m)=> `<div class="ps-m ${m.from}${have.has(msgKey(m)) ? ' old' : ''}">${m.from === 'me' ? meAv('xs') : avatar(nm, ph, 'xs')}<div><b>${esc(m.from === 'me' ? (myName || 'You') : nm)}</b><time>${esc(dayLabel(new Date(m.at)))} · ${esc(clock(new Date(m.at)))}</time>
           ${m.quote ? `<span class="qt"><b>${esc(m.quote.name)}</b>${esc(m.quote.text)}</span>` : ''}${m.text ? `<p>${esc(m.text)}</p>` : ''}${m.voice ? voiceCard(m.voice) : ''}${m.files ? m.files.map(fileCard).join('') : ''}${m.post ? postCard(m.post, into ? into.prospect : {name: theirName, photo}) : ''}</div></div>`).join('')}${msgs.length > 40 ? `<div class="ps-more">…and ${msgs.length - 40} earlier messages</div>` : ''}</div>`;
-      const pfNew = into && parsed.profile && norm(parsed.profile.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((parsed.profile.headline && parsed.profile.headline !== into.prospect.headline) || (parsed.profile.degree && parsed.profile.degree !== into.prospect.degree));
+      const nameFix = into && badName(into.prospect.name) ? realNameIn(parsed, meName) : '';
+      const pfNew = !!nameFix || (into && parsed.profile && norm(parsed.profile.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((parsed.profile.headline && parsed.profile.headline !== into.prospect.headline) || (parsed.profile.degree && parsed.profile.degree !== into.prospect.degree)));
       go.disabled = into ? !(fresh.length || fixes.size || pfNew) : !theirName;
       if(!into && !theirName) go.textContent = 'Add their name first';
-      if(into || theirName) go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}${fixes.size ? ` · fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : ''}` : fixes.size ? `Fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : pfNew ? 'Update their profile' : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
+      if(into || theirName) go.textContent = into ? (fresh.length ? `Add ${fresh.length} new message${fresh.length === 1 ? '' : 's'}${fixes.size ? ` · fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : ''}` : fixes.size ? `Fix ${fixes.size} date${fixes.size === 1 ? '' : 's'}` : nameFix ? `Change the name to ${nameFix}` : pfNew ? 'Update their profile' : 'Nothing new to add') : `Import ${msgs.length} message${msgs.length === 1 ? '' : 's'}`;
       const pv = out.querySelector('.ps-prev'); if(pv) pv.scrollTop = pv.scrollHeight;
     };
     ov.addEventListener('input', (e)=>{ if(e.target.id === 'psName'){ typedName = e.target.value.trim(); const go = ov.querySelector('#psGo'); go.disabled = !typedName; go.textContent = typedName ? `Import ${parsed.messages.length} message${parsed.messages.length === 1 ? '' : 's'}` : 'Add their name first'; theirName = typedName; return; }
       if(e.target.id !== 'psIn') return; typedName = ''; const v = e.target.value; parsed = v.trim() ? parseLinkedInPaste(v, new Date()) : null;
-      if(parsed){ meName = guessMe(parsed.names); if(into){ const other = parsed.names.find((n)=> norm(n) !== norm(meName)); if(other && norm(other) !== norm(into.prospect.name) && norm(other).split(' ')[0] !== norm(into.prospect.name).split(' ')[0]) toast(`Heads up: this looks like a conversation with ${other}, not ${into.prospect.name}.`, true); } }
+      if(parsed){ meName = guessMe(parsed.names); if(into){ const other = parsed.names.find((n)=> norm(n) !== norm(meName)); if(other && !badName(into.prospect.name) && norm(other) !== norm(into.prospect.name) && norm(other).split(' ')[0] !== norm(into.prospect.name).split(' ')[0]) toast(`Heads up: this looks like a conversation with ${other}, not ${into.prospect.name}.`, true); } }
       lead = null; draw(); });
     ov.addEventListener('change', async (e)=>{ if(e.target.id === 'psMe'){ meName = e.target.value; lead = null; theirName = ''; draw(); }
       if(e.target.id === 'psPhoto'){ const f = e.target.files[0]; if(!f) return; try { photo = await photoToData(f); draw(); } catch(err){ toast('That file isn’t an image.', true); } } });
@@ -1026,11 +1034,13 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
         if(into){
           const fixes = repairsFor(into.messages, msgs), fixedTexts = new Set((into.messages || []).filter((m)=> fixes.has(m.id)).map(textKey));
           const have = new Set((into.messages || []).filter((m)=> !isBadDate(m)).map(msgKey)), fresh = msgs.filter((m)=> !have.has(msgKey(m)) && !fixedTexts.has(textKey(m)));
-          const pfChange = parsed.profile && norm(parsed.profile.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((parsed.profile.headline && parsed.profile.headline !== into.prospect.headline) || (parsed.profile.degree && parsed.profile.degree !== into.prospect.degree));
+          const nameFix = badName(into.prospect.name) ? realNameIn(parsed, meName) : '';
+          const pfChange = !!nameFix || (parsed.profile && norm(parsed.profile.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((parsed.profile.headline && parsed.profile.headline !== into.prospect.headline) || (parsed.profile.degree && parsed.profile.degree !== into.prospect.degree)));
           if(!fresh.length && !fixes.size && !pfChange){ close(); return; }
           ['me', 'them'].forEach((w)=>{ if(fresh.some((m)=> m.from === w)) touchLead(into, w); });
           const all = (into.messages || []).map((m)=> fixes.has(m.id) ? Object.assign({}, m, {at: fixes.get(m.id)}) : m).concat(fresh); into.messages = all; Object.assign(into, summary(all));
           const pf = parsed.profile, upd = {};
+          if(nameFix){ into.prospect = Object.assign({}, into.prospect, {name: nameFix.slice(0, 80)}); upd.prospect = into.prospect; }
           if(pf && norm(pf.name).split(' ')[0] === norm(into.prospect.name).split(' ')[0] && ((pf.headline && pf.headline !== into.prospect.headline) || (pf.degree && pf.degree !== into.prospect.degree))){
             into.prospect = Object.assign({}, into.prospect, pf.headline ? {headline: pf.headline} : {}, pf.degree ? {degree: pf.degree} : {}); upd.prospect = into.prospect; }
           await db.collection('linkedinDmLogs').doc(into.id).update(Object.assign({messages: all, updatedAt: FV.serverTimestamp()}, summary(all), upd));
