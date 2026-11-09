@@ -1271,7 +1271,7 @@
   if (document.getElementById('ptChristmasJs')) return;
   var me = document.currentScript, base = (me && me.src) ? me.src.replace(/[^\/?#]*([?#].*)?$/, '') : '';
   // the version number makes every browser fetch the newest christmas.js (change it whenever christmas.js changes)
-  var CHRISTMAS_VERSION = '2026-11-09';
+  var CHRISTMAS_VERSION = '2026-11-10';
   var s = document.createElement('script'); s.id = 'ptChristmasJs'; s.src = base + 'christmas.js?v=' + CHRISTMAS_VERSION; s.dataset.place = 'app';
   (document.head || document.documentElement).appendChild(s);
 })();

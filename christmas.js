@@ -205,37 +205,49 @@
   }
   var resizeT = null; addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(function () { lights(); clearOrnaments(); }, 200); });
   // an ornament never covers something you can click: if a button or link is under it, it steps aside on that page
+  var CLICKABLE = 'button,a[href],input,select,textarea,[role="button"],[onclick],label[for]';
+  // is there something clickable at this spot (ignoring the decorations themselves)?
+  function clickableAt(x, y) {
+    var els = document.elementsFromPoint(x, y) || [];
+    for (var i = 0; i < els.length; i++) { var el = els[i]; if (layer.contains(el)) continue; return !!(el.closest && el.closest(CLICKABLE)); }
+    return false;
+  }
   function clearBulbs() {
     if (!layer) return;
     var bulbs = layer.querySelectorAll('.xm-lights .xm-bulb'); if (!bulbs.length) return;
-    var hits = [].slice.call(document.querySelectorAll('button,a[href],input,select,textarea,[role="button"]'))
-      .filter(function (el) { return !layer.contains(el) && el.offsetParent !== null; })
-      .map(function (el) { return el.getBoundingClientRect(); }).filter(function (r) { return r.width && r.top < 70; });
     bulbs.forEach(function (bl) {
-      bl.classList.remove('aside'); var r = bl.getBoundingClientRect(), m = 0;
-      if (hits.some(function (h) { return h.left < r.right + m && h.right > r.left - m && h.top < r.bottom + m && h.bottom > r.top - m; })) bl.classList.add('aside');
+      var r = bl.getBoundingClientRect(); if (!r.width) return;
+      var hit = clickableAt(r.left + r.width / 2, r.top + r.height / 2) || clickableAt(r.left + r.width / 2, r.bottom - 1);
+      bl.classList.toggle('aside', hit);
     });
   }
   function clearOrnaments() {
     if (!layer) return;
     clearBulbs();
-    var orns = layer.querySelectorAll('.xm-orn'); if (!orns.length) return;
-    // everything you can click on the page (that's visible), as rectangles
-    var hits = [].slice.call(document.querySelectorAll('button,a[href],input,select,textarea,[role="button"],[onclick],label[for]'))
-      .filter(function (el) { return !layer.contains(el) && el.offsetParent !== null; })
-      .map(function (el) { return el.getBoundingClientRect(); })
-      .filter(function (r) { return r.width && r.height && r.top < 260 && r.right > innerWidth - 260; });   // only near the ornaments
-    orns.forEach(function (o) {
-      var svg = o.querySelector('svg'); if (!svg) return;
+    layer.querySelectorAll('.xm-orn').forEach(function (o) {
       var was = o.classList.contains('aside'); if (was) o.classList.remove('aside');
+      var svg = o.querySelector('svg'); if (!svg) { if (was) o.classList.add('aside'); return; }
       var r = svg.getBoundingClientRect(); if (!r.width) { if (was) o.classList.add('aside'); return; }
-      var m = 14;                                                     // room for the swing
-      var a = {l: r.left - m, r: r.right + m, t: r.top - 4, b: r.bottom + m};
-      var covers = hits.some(function (h) { return h.left < a.r && h.right > a.l && h.top < a.b && h.bottom > a.t; });
-      if (covers) o.classList.add('aside');
+      var m = 14, xs = [r.left - m, r.left + r.width / 2, r.right + m], ys = [r.top + 4, r.top + r.height / 2, r.bottom + m];
+      var hit = false;
+      for (var a = 0; a < 3 && !hit; a++) for (var c = 0; c < 3 && !hit; c++) hit = clickableAt(xs[a], ys[c]);
+      if (hit) o.classList.add('aside');
     });
   }
-  setInterval(function () { if (!document.hidden) clearOrnaments(); }, 1500);
+  var lastScroll = 0, clearT = null;
+  addEventListener('scroll', function () { lastScroll = Date.now(); }, {passive: true, capture: true});
+  function clearSoon() {
+    clearTimeout(clearT);
+    clearT = setTimeout(function run() {
+      if (document.hidden) return;
+      if (Date.now() - lastScroll < 400) { clearT = setTimeout(run, 400); return; }      // wait until scrolling stops
+      (window.requestIdleCallback || function (f) { return setTimeout(f, 1); })(clearOrnaments);
+    }, 500);
+  }
+  try { new MutationObserver(clearSoon).observe(document.body, {childList: true, subtree: true}); } catch (e) { /* fine */ }
+  addEventListener('load', clearSoon);
+  setInterval(function () { if (!document.hidden && Date.now() - lastScroll > 1000) clearOrnaments(); }, 10000);
+  clearSoon();
   // Santa's sleigh: at most once every 20 minutes (remembered across pages); the first one a few minutes in
   var EVERY = 20 * 60 * 1000;
   function due() { var now = Date.now(), last = 0; try { last = Number(localStorage.getItem('ptXmLastSleigh')) || 0; } catch (e) { return false; }

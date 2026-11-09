@@ -146,4 +146,43 @@
     addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
     addEventListener('scroll', close, {passive: true, capture: true});
   })();
+  // ---------- 4. smooth scrolling: the page's background on its own fixed layer ----------
+  // Pages give <body> a soft gradient with "background-attachment: fixed". Browsers repaint such a background on every
+  // frame while scrolling (across the whole screen), which makes scrolling lag on big screens. Here the same background
+  // goes onto its own fixed layer behind the page: painted once, it stays put while the page slides over it. It looks the
+  // same, and follows the light/dark switch.
+  (function () {
+    var busy = false;
+    function apply() {
+      var b = document.body; if (!b || busy) return; busy = true;
+      try {
+        var layer = document.getElementById('ptBgLayer');
+        // read the page's own background (without what we set before)
+        ['background-image', 'background-color', 'background-attachment'].forEach(function (k) { b.style.removeProperty(k); });
+        var cs = getComputedStyle(b);
+        if (String(cs.backgroundAttachment).indexOf('fixed') < 0) { if (layer) layer.remove(); return; }
+        if (!layer) { layer = document.createElement('div'); layer.id = 'ptBgLayer'; layer.setAttribute('aria-hidden', 'true'); b.insertBefore(layer, b.firstChild); }
+        layer.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;contain:strict;transform:translateZ(0);' +
+          'background-image:' + cs.backgroundImage + ';background-color:' + cs.backgroundColor + ';background-size:' + cs.backgroundSize +
+          ';background-position:' + cs.backgroundPosition + ';background-repeat:' + cs.backgroundRepeat + ';';
+        b.style.setProperty('background-image', 'none', 'important');
+        b.style.setProperty('background-color', 'transparent', 'important');
+        b.style.setProperty('background-attachment', 'scroll', 'important');
+      } catch (e) { /* the page keeps its own background */ }
+      finally { busy = false; }
+    }
+    var t = null; function soon() { clearTimeout(t); t = setTimeout(apply, 30); }
+    function start() {
+      apply();
+      // the light/dark switch (and pages that change their look) update the layer
+      try {
+        var mo = new MutationObserver(soon);
+        mo.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme', 'class']});
+        mo.observe(document.body, {attributes: true, attributeFilter: ['data-theme', 'class']});
+      } catch (e) { /* fine */ }
+      addEventListener('load', soon);
+      try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', soon); } catch (e) { /* fine */ }
+    }
+    if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+  })();
 })();
