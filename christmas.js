@@ -130,9 +130,10 @@
     '.pt-xm-greet b{display:block;font:700 12.5px Inter,sans-serif;} .pt-xm-greet small{display:block;font:500 11px Inter,sans-serif;color:#CDE8D8;margin-top:1px;}',
     '@keyframes xmTree{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}',
     'html.pt-xm-on ::selection{background:rgba(214,40,57,.22);}',
-    // the Santa hat on the logo (app side panel, Account/Billing, the homepage)
+    // the Santa hat on the logo (app side panel, Account/Billing, the homepage): its brim rests on top of the P's stem
+    // and the tip slumps over towards the ring; placed in % of the logo, so it fits every logo size
     '.pts-host.pt-xm .pts-logo,html.pt-xm-on .logo-badge,html.pt-xm-on .nav-logo{position:relative;overflow:visible;}',
-    'html.pt-xm-hat .pts-host.pt-xm .pts-logo::before,html.pt-xm-on.pt-xm-hat .logo-badge::before,html.pt-xm-on .nav-logo::before{content:"";position:absolute;left:-9px;top:-15px;width:30px;height:25px;background:url("' + HAT + '") center/contain no-repeat;transform:rotate(-18deg);z-index:2;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));}',
+    'html.pt-xm-hat .pts-host.pt-xm .pts-logo::before,html.pt-xm-on.pt-xm-hat .logo-badge::before,html.pt-xm-on .nav-logo::before{content:"";position:absolute;left:18.5%;top:-3.8%;width:41.6%;height:35.1%;background:url("' + HAT + '") center/contain no-repeat;transform:rotate(7deg);transform-origin:34% 80%;z-index:2;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));}',
     // the homepage: the ribbon under the menu, and the ❄️ button for visitors
     '.xm-ribbon{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 auto;padding:9px 16px;font:600 13.5px Inter,sans-serif;color:#8E1D2A;background:linear-gradient(90deg,rgba(214,40,57,.08),rgba(244,197,66,.12),rgba(42,157,92,.08));border-bottom:1px solid rgba(214,40,57,.14);}',
     '.xm-toggle{position:fixed;left:18px;bottom:18px;z-index:' + (Z + 1) + ';width:44px;height:44px;border-radius:50%;border:1px solid rgba(58,134,255,.3);background:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 6px 16px -6px rgba(16,24,40,.3);transition:transform .15s;}',
