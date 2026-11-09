@@ -182,7 +182,10 @@
     var g = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(name) + '&dates=' + gcalDate(b.start) + '/' + gcalDate(end) + '&details=' + encodeURIComponent(details);
     var o = 'https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=' + encodeURIComponent(name) + '&startdt=' + encodeURIComponent(new Date(b.start).toISOString()) + '&enddt=' + encodeURIComponent(new Date(end).toISOString()) + '&body=' + encodeURIComponent(details);
     var links = b.invitee ? '<div class="cp-bk-links"><a href="https://calendly.com/reschedulings/' + esc(b.invitee) + '" target="_blank" rel="noopener">Reschedule</a><span>·</span><a href="https://calendly.com/cancellations/' + esc(b.invitee) + '" target="_blank" rel="noopener">Cancel</a></div>' : '';
-    return '<div class="cp-bk"><div class="cp-bk-when"><span class="cp-bk-ic">\uD83D\uDCC5</span><div><b>' + esc(w.date) + '</b><span>' + esc(w.time) + (w.until ? ' – ' + esc(w.until) : '') + ' <em>(your time)</em></span>' + (b.eventName ? '<small>' + esc(b.eventName) + '</small>' : '') + '</div></div>' +
+    var dd = new Date(b.start), lang = navigator.language || 'en-GB', mon = '', day = '';
+    try { mon = dd.toLocaleDateString(lang, {month: 'short'}).replace('.', ''); day = String(dd.getDate()); } catch (x) { day = String(dd.getDate()); }
+    var cap = function (t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; };
+    return '<div class="cp-bk"><div class="cp-bk-when"><span class="cp-bk-cal" aria-hidden="true"><i>' + esc(mon) + '</i><b>' + esc(day) + '</b></span><div><b>' + esc(cap(w.date)) + '</b><span>' + esc(w.time) + (w.until ? ' – ' + esc(w.until) : '') + ' <em>(your time)</em></span>' + (b.eventName ? '<small>' + esc(b.eventName) + '</small>' : '') + '</div></div>' +
       '<div class="cp-bk-btns"><a class="cp-bk-btn" href="' + esc(g) + '" target="_blank" rel="noopener">Google Calendar</a><a class="cp-bk-btn" href="' + esc(o) + '" target="_blank" rel="noopener">Outlook</a>' +
       '<button type="button" class="cp-bk-btn" data-ics="1" data-start="' + esc(b.start) + '" data-end="' + esc(end) + '" data-title="' + esc(name) + '" data-details="' + esc(details) + '">Apple / other (.ics)</button></div>' + links + '</div>';
   }
@@ -308,8 +311,11 @@
     '.cpv .cp-bk-when{display:flex;gap:16px;align-items:center}',
     '.cpv .cp-bk-ic{flex:0 0 auto;width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;background:color-mix(in srgb,var(--cp-accent) 18%,transparent)}',
     '.cpv .cp-bk-when b{display:block;font:800 22px/1.2 var(--cp-font-h,Montserrat,sans-serif);color:var(--cp-ink)}',
-    '.cpv .cp-bk-when span{display:block;margin-top:3px;font-size:16px;color:var(--cp-ink)} .cpv .cp-bk-when em{font-style:normal;color:var(--cp-muted);font-size:13px}',
-    '.cpv .cp-bk-when small{display:block;margin-top:3px;font-size:13px;color:var(--cp-muted)}',
+    '.cpv .cp-bk-when > div > span{display:block;margin-top:3px;font-size:16px;color:var(--cp-ink)} .cpv .cp-bk-when em{font-style:normal;color:var(--cp-muted);font-size:13px}',
+    '.cpv .cp-bk-when > div > small{display:block;margin-top:3px;font-size:13px;color:var(--cp-muted)}',
+    '.cpv .cp-bk-cal{flex:0 0 auto;width:64px;height:68px;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;background:#fff;box-shadow:0 8px 20px -10px rgba(0,0,0,.6)}',
+    '.cpv .cp-bk-cal i{display:block;height:22px;line-height:22px;text-align:center;font:800 11px/22px var(--cp-font-b,Montserrat,sans-serif);letter-spacing:.12em;text-transform:uppercase;font-style:normal;color:#fff;background:var(--cp-accent)}',
+    '.cpv .cp-bk-cal b{flex:1;display:flex;align-items:center;justify-content:center;font:800 28px/1 var(--cp-font-h,Montserrat,sans-serif) !important;color:#111827 !important;margin:0 !important}',
     '.cpv .cp-bk-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}',
     '.cpv .cp-bk-btn{flex:1 1 150px;display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 14px;border-radius:12px;border:1.5px solid color-mix(in srgb,var(--cp-accent) 60%,transparent);background:transparent;color:var(--cp-ink);font:700 14px var(--cp-font-b,Montserrat,sans-serif);text-decoration:none;cursor:pointer}',
     '.cpv .cp-bk-btn:hover{background:color-mix(in srgb,var(--cp-accent) 16%,transparent)}',
