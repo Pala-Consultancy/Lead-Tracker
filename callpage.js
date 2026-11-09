@@ -150,13 +150,16 @@
   // {first_name}, {name}, {date}, {time} and {event} in texts become their details. Without a booking the page still reads
   // naturally: "{first_name}, your call is booked!" becomes "Your call is booked!".
   var BK = null;
+  // dates in the visitor's language (or the browser's default, if it doesn't say)
+  function fmt(d, opts, time) {
+    var f = time ? 'toLocaleTimeString' : 'toLocaleDateString';
+    try { return d[f](navigator.language || undefined, opts); } catch (x) { try { return d[f](undefined, opts); } catch (y) { return time ? d.toTimeString().slice(0, 5) : d.toDateString(); } }
+  }
   function when(b) {
     var d = new Date(b.start); if (isNaN(d)) return {date: '', time: ''};
-    var e = new Date(b.end || b.start), lang = (navigator.language || 'en-GB');
-    try {
-      return {date: d.toLocaleDateString(lang, {weekday: 'long', day: 'numeric', month: 'long'}),
-        time: d.toLocaleTimeString(lang, {hour: '2-digit', minute: '2-digit'}), until: isNaN(e) || +e === +d ? '' : e.toLocaleTimeString(lang, {hour: '2-digit', minute: '2-digit'})};
-    } catch (x) { return {date: d.toDateString(), time: d.toTimeString().slice(0, 5), until: ''}; }
+    var e = new Date(b.end || b.start);
+    return {date: fmt(d, {weekday: 'long', day: 'numeric', month: 'long'}), time: fmt(d, {hour: '2-digit', minute: '2-digit'}, true),
+      until: isNaN(e) || +e === +d ? '' : fmt(e, {hour: '2-digit', minute: '2-digit'}, true)};
   }
   function fillText(s) {
     s = String(s || ''); if (s.indexOf('{') < 0 || ED) return s;                      // the editor keeps the placeholders
@@ -176,14 +179,13 @@
   }
   var gcalDate = function (iso) { return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); };
   function bookingHTML(b, title) {
-    if (!b || !b.start) return '<div class="cp-bk cp-bk-none"><span class="cp-bk-ic">\uD83D\uDCC5</span><div><b>Your call is booked</b><span>You’ll find the date, time and calendar invite in your confirmation email.</span></div></div>';
+    if (!b || !b.start) return '<div class="cp-bk cp-bk-none"><span class="cp-bk-cal" aria-hidden="true"><i>\u00A0</i><b>\u2713</b></span><div><b>Your call is booked</b><span>You’ll find the date, time and calendar invite in your confirmation email.</span></div></div>';
     var w = when(b), name = b.eventName || title || 'Our call', details = 'Booked with ' + (b.host || 'us') + '. ' + (location.href.split('#')[0]);
     var end = b.end || new Date(new Date(b.start).getTime() + 30 * 60000).toISOString();
     var g = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(name) + '&dates=' + gcalDate(b.start) + '/' + gcalDate(end) + '&details=' + encodeURIComponent(details);
     var o = 'https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=' + encodeURIComponent(name) + '&startdt=' + encodeURIComponent(new Date(b.start).toISOString()) + '&enddt=' + encodeURIComponent(new Date(end).toISOString()) + '&body=' + encodeURIComponent(details);
     var links = b.invitee ? '<div class="cp-bk-links"><a href="https://calendly.com/reschedulings/' + esc(b.invitee) + '" target="_blank" rel="noopener">Reschedule</a><span>·</span><a href="https://calendly.com/cancellations/' + esc(b.invitee) + '" target="_blank" rel="noopener">Cancel</a></div>' : '';
-    var dd = new Date(b.start), lang = navigator.language || 'en-GB', mon = '', day = '';
-    try { mon = dd.toLocaleDateString(lang, {month: 'short'}).replace('.', ''); day = String(dd.getDate()); } catch (x) { day = String(dd.getDate()); }
+    var dd = new Date(b.start), mon = fmt(dd, {month: 'short'}).replace('.', ''), day = String(dd.getDate());
     var cap = function (t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; };
     return '<div class="cp-bk"><div class="cp-bk-when"><span class="cp-bk-cal" aria-hidden="true"><i>' + esc(mon) + '</i><b>' + esc(day) + '</b></span><div><b>' + esc(cap(w.date)) + '</b><span>' + esc(w.time) + (w.until ? ' – ' + esc(w.until) : '') + ' <em>(your time)</em></span>' + (b.eventName ? '<small>' + esc(b.eventName) + '</small>' : '') + '</div></div>' +
       '<div class="cp-bk-btns"><a class="cp-bk-btn" href="' + esc(g) + '" target="_blank" rel="noopener">Google Calendar</a><a class="cp-bk-btn" href="' + esc(o) + '" target="_blank" rel="noopener">Outlook</a>' +
@@ -320,7 +322,8 @@
     '.cpv .cp-bk-btn{flex:1 1 150px;display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 14px;border-radius:12px;border:1.5px solid color-mix(in srgb,var(--cp-accent) 60%,transparent);background:transparent;color:var(--cp-ink);font:700 14px var(--cp-font-b,Montserrat,sans-serif);text-decoration:none;cursor:pointer}',
     '.cpv .cp-bk-btn:hover{background:color-mix(in srgb,var(--cp-accent) 16%,transparent)}',
     '.cpv .cp-bk-links{display:flex;gap:8px;justify-content:center;margin-top:14px;font-size:13.5px;color:var(--cp-muted)} .cpv .cp-bk-links a{color:var(--cp-muted)}',
-    '.cpv .cp-bk-none .cp-bk-when{display:flex} .cpv .cp-bk-none{display:flex;gap:16px;align-items:center} .cpv .cp-bk-none b{display:block;font:800 18px var(--cp-font-h,Montserrat,sans-serif)} .cpv .cp-bk-none span{display:block;font-size:14px;color:var(--cp-muted)}',
+    '.cpv .cp-bk-none{display:flex;gap:16px;align-items:center} .cpv .cp-bk-none > div > b{display:block;font:800 18px var(--cp-font-h,Montserrat,sans-serif)} .cpv .cp-bk-none > div > span{display:block;margin-top:3px;font-size:14px;color:var(--cp-muted)}',
+    '.cpv .cp-bk-none .cp-bk-cal b{color:var(--cp-accent) !important}',
     '.cpv b{font-weight:800} .cpv i{font-style:italic}',
     '.cpv .cp-f-montserrat{font-family:' + fontStack('montserrat') + '}',
     '.cpv .cp-f-inter{font-family:' + fontStack('inter') + '}',

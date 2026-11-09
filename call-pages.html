@@ -261,7 +261,7 @@
       <div class="ed-body">
         <div class="form" id="form"></div>
         <div class="pv-wrap" id="pvWrap">
-          <div class="pv-bar"><b>Live preview</b><span class="pv-tip">· click any text to edit and style it</span><span class="sp"></span><span class="seg"><button id="pvDesk" class="on" type="button">🖥 Desktop</button><button id="pvPhone" type="button">📱 Phone</button></span><button class="btn sm" id="pvClose" style="display:none">✕ Close</button></div>
+          <div class="pv-bar"><b>Live preview</b><span class="pv-tip">· click any text to edit and style it</span><span class="sp"></span><span class="seg" title="How the Booking details step looks for someone coming from Calendly or a reminder, or opening the plain link"><button id="pvBkOn" class="on" type="button">📅 With booking</button><button id="pvBkOff" type="button">Without</button></span> <span class="seg"><button id="pvDesk" class="on" type="button">🖥 Desktop</button><button id="pvPhone" type="button">📱 Phone</button></span><button class="btn sm" id="pvClose" style="display:none">✕ Close</button></div>
           <div class="pv-scroll"><div class="pv-frame desk" id="pvFrame"><div id="pv"></div></div></div>
         </div>
       </div>
@@ -919,7 +919,8 @@
   const SAMPLE = (() => { const d = new Date(); d.setDate(d.getDate() + ((9 - d.getDay()) % 7 || 7)); d.setHours(14, 0, 0, 0);
     return {first: 'Sophie', full: 'Sophie Martin', start: d.toISOString(), end: new Date(d.getTime() + 45 * 60000).toISOString(), eventName: 'Strategy call', invitee: ''}; })();
   let cardDrag = null;              // a question or client video being dragged in the preview
-  function renderPreview() { if (cur && !editEl && !cardDrag) CallPage.render(pageData(cur), $('pv'), {editable: true, booking: SAMPLE}); }
+  let pvBooking = true;                // the preview shows a sample booking, or the page as someone without booking details
+  function renderPreview() { if (cur && !editEl && !cardDrag) CallPage.render(pageData(cur), $('pv'), {editable: true, booking: pvBooking ? SAMPLE : null}); }
   // ---------- drag and drop: one engine for the steps, the video cards, the screenshots and the step list ----------
   // Press and move: the item lifts and follows the pointer, the others slide aside (animated) to show where it lands,
   // the panel scrolls by itself near its top or bottom edge, and letting go saves the new order.
@@ -1042,6 +1043,8 @@
         if (next) { blk.images = next; changed(); showToast('Moved'); } renderBlocks(); }});
     }
   });
+  $('pvBkOn').addEventListener('click', () => { pvBooking = true; $('pvBkOn').classList.add('on'); $('pvBkOff').classList.remove('on'); renderPreview(); });
+  $('pvBkOff').addEventListener('click', () => { pvBooking = false; $('pvBkOff').classList.add('on'); $('pvBkOn').classList.remove('on'); renderPreview(); });
   $('pvDesk').addEventListener('click', () => { $('pvFrame').className = 'pv-frame desk'; $('pvDesk').classList.add('on'); $('pvPhone').classList.remove('on'); });
   $('pvPhone').addEventListener('click', () => { $('pvFrame').className = 'pv-frame phone'; $('pvPhone').classList.add('on'); $('pvDesk').classList.remove('on'); });
   function smallScreen() { const s = innerWidth <= 1100; $('pvBtn').style.display = s ? '' : 'none'; $('pvClose').style.display = s ? '' : 'none'; if (!s) $('pvWrap').classList.remove('show'); }
