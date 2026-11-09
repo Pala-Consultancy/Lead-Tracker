@@ -182,6 +182,33 @@
   .rich-note button{margin-left:auto;border:0;background:none;color:var(--teal);font-weight:600;font-size:12px;text-decoration:underline;padding:0;}
   .pv-tip{font-size:12px;color:var(--slate);}
   @media (max-width:1100px){ .ed-body{grid-template-columns:1fr;} .pv-wrap{display:none;} .pv-wrap.show{display:flex;position:fixed;inset:0;z-index:200;} }
+
+  /* Bookings & reminders */
+  .bk-box{max-width:780px !important;max-height:88vh;overflow:auto;padding:0 !important;}
+  .bk-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:16px 22px;background:var(--panel);border-bottom:1px solid var(--border-soft);}
+  .bk-top h3{margin:0 !important;}
+  #bkBody{padding:6px 22px 22px;}
+  .bk-sec{padding:16px 0;border-bottom:1px solid var(--border-soft);} .bk-sec:last-child{border-bottom:0;}
+  .bk-sec h4{margin:0 0 8px;font:700 15.5px Sora,sans-serif;} .bk-sec h4 small{font-weight:500;color:var(--slate);}
+  .bk-sec p{margin:6px 0;font-size:13.5px;line-height:1.5;}
+  .bk-ok{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;}
+  .bk-warn{padding:9px 12px;border-radius:10px;background:rgba(217,119,6,.1);color:#92400E;font-size:13.5px;}
+  .bk-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;} .bk-row .in{flex:1;min-width:180px;}
+  .bk-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;}
+  .bk-steps{margin:8px 0 0 18px;padding:0;font-size:13.5px;line-height:1.55;} .bk-steps li{margin-bottom:8px;}
+  .bk-checks{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0;} .bk-chk{display:flex;align-items:center;gap:7px;font-size:13.5px;margin-top:8px;cursor:pointer;}
+  .bk-how{margin-top:8px;font-size:13.5px;} .bk-how summary{cursor:pointer;font-weight:600;color:var(--teal);} .bk-how ol{margin:8px 0 0 18px;padding:0;line-height:1.55;}
+  .bk-ta{min-height:120px;} .bk-ta.sm{min-height:64px;}
+  .bk-tags code,.hint code{padding:1px 5px;border-radius:5px;background:var(--panel-alt);font-size:12px;}
+  .bk-ev{margin-top:10px;padding:12px;border-radius:12px;border:1px solid var(--border-soft);}
+  .bk-ev-h{display:flex;justify-content:space-between;font-size:14px;} .bk-ev-h span{color:var(--slate);font-size:12.5px;}
+  .bk-link{display:flex;gap:8px;align-items:center;margin-top:8px;} .bk-link code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:7px 9px;border-radius:8px;background:var(--panel-alt);font-size:12px;}
+  .bk-list{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+  .bk-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid var(--border-soft);flex-wrap:wrap;}
+  .bk-item b{display:block;font-size:14px;} .bk-item span{font-size:12.5px;color:var(--slate);}
+  .bk-chips{display:flex;gap:6px;flex-wrap:wrap;} .bk-chip{padding:3px 9px;border-radius:999px;background:var(--panel-alt);font-size:12px;color:var(--slate);}
+  .bk-chip.ok{background:rgba(1,117,79,.1);color:#01754F;} .bk-chip.bad{background:rgba(220,38,38,.1);color:#B91C1C;}
+  @media (max-width:700px){ .bk-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -196,7 +223,7 @@
     <div class="shell" id="listView">
       <div class="ph">
         <div><h1>Pre Call Conversion System</h1><p>The page your leads see right after booking a call: your main video, short answers to common questions, client stories and results. Share the link in your booking confirmation, so leads show up prepared.</p></div>
-        <div class="acts"><button class="btn primary" id="newBtn">+ New pre-call page</button></div>
+        <div class="acts"><button class="btn" id="bkBtn">📅 Bookings &amp; reminders</button> <button class="btn primary" id="newBtn">+ New pre-call page</button></div>
       </div>
       <div class="cards" id="cards"></div>
     </div>
@@ -243,6 +270,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script src="callpage.js"></script>
 <script>
   firebase.initializeApp({apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM", authDomain: "lead-tracker-c5c3a.firebaseapp.com", projectId: "lead-tracker-c5c3a",
@@ -258,7 +286,7 @@
   const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
   const slugify = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
   const ACCENTS = ['#E5463A', '#F59E0B', '#10B981', '#2563EB', '#7C3AED', '#EC4899', '#111827'];
-  const TYPES = {video: ['🎬', 'Main video'], questions: ['❓', 'Question videos'], clients: ['⭐', 'Client videos'], results: ['🖼️', 'Results wall'], text: ['📝', 'Text'], button: ['👉', 'Button']};
+  const TYPES = {booking: ['📅', 'Booking details'], video: ['🎬', 'Main video'], questions: ['❓', 'Question videos'], clients: ['⭐', 'Client videos'], results: ['🖼️', 'Results wall'], text: ['📝', 'Text'], button: ['👉', 'Button']};
   let uid = null, wsId = null, pages = [], cur = null, saveTimer = null, saving = false, pvMode = 'desk', ws = {}, editEl = null, editPath = '';
   // The Pre Call Conversion System is a Premium feature (Custom includes it too). Same plan rule as the other pages: billing-exempt,
   // an active subscription, or the first 7 days (the free Premium trial); otherwise Free.
@@ -275,8 +303,9 @@
   function template(name) {
     return {name: name || 'Call confirmed', slug: '', live: false,
       theme: {accent: '#E5463A', mode: 'dark', bg: 'dark', pattern: 'dots', fontHead: 'montserrat', fontBody: 'montserrat'},
-      hero: {title: 'Your Call Is Confirmed!', highlight: 'Confirmed!', subtitle: 'Please review the important steps below, so you’re fully prepared and we get the most out of our call.'},
+      hero: {title: '{first_name}, Your Call Is Confirmed!', highlight: 'Confirmed!', subtitle: 'Please review the important steps below, so you’re fully prepared and we get the most out of our call.'},
       blocks: [
+        {id: uidGen(), type: 'booking', title: 'Add Our Call To Your Calendar', text: ''},
         {id: uidGen(), type: 'video', title: 'Watch This Video Before Your Call', text: 'This is the most important step. Watch the full video below, so you know exactly what to expect on our call and how to get the most from it.', url: ''},
         {id: uidGen(), type: 'questions', title: 'Important Before Our Call', text: 'Watch the short videos below, where I answer the most common questions, so you feel fully prepared.',
           items: [{q: 'Who is this for, and who is it not for?', url: ''}, {q: 'How does the process work?', url: ''}, {q: 'What makes this different?', url: ''}, {q: 'How much time do I need?', url: ''}, {q: 'What happens in the first 90 days?', url: ''}, {q: 'Do I need an audience to start?', url: ''}]},
@@ -327,6 +356,135 @@
   }
   window.newPage = newPage;
   $('newBtn').addEventListener('click', newPage);
+  // ---------- Bookings & reminders: Calendly, the lead updates, reminder emails and texts ----------
+  const fn = (name) => firebase.app().functions('us-central1').httpsCallable(name);
+  let bkSet = {}, bkSaveT = null;
+  const BK_DEF = {email: {confirm: true, h24: true, h1: true,
+      confirmSubject: 'Your call is booked: {date} at {time}',
+      confirmBody: 'Hi {first_name},\n\nThanks for booking {event}. We\u2019re talking on {date} at {time}.\n\nBefore our call, please watch the short videos on your page, so we can make the most of our time together:\n{page_link}\n\nNeed another time? {reschedule_link}\n\nSee you then!',
+      remindSubject: 'Reminder: our call {when}',
+      remindBody: 'Hi {first_name},\n\nA quick reminder: we\u2019re talking {when} ({date} at {time}).\n\nIf you haven\u2019t yet, watch the videos on your page before the call:\n{page_link}\n\nJoin here: {join_link}\nCan\u2019t make it? {reschedule_link}'},
+    sms: {h24: false, h1: true, body: 'Hi {first_name}, reminder: our call is {when} ({time}). Watch this first: {page_link}'}};
+  function bkSave(patch) {
+    bkSet = Object.assign({}, bkSet, patch);
+    clearTimeout(bkSaveT); bkSaveT = setTimeout(() => db.doc(`workspaces/${wsId}/callSettings/main`).set(bkSet, {merge: true}).then(() => showToast('Saved')).catch(() => showToast('Could not save. Please try again.', true)), 500);
+  }
+  // saved right away (for choices that redraw the window, so the redraw shows the new setting)
+  async function bkSaveNow(patch) {
+    bkSet = Object.assign({}, bkSet, patch); clearTimeout(bkSaveT);
+    try { await db.doc(`workspaces/${wsId}/callSettings/main`).set(bkSet, {merge: true}); showToast('Saved'); } catch (e) { showToast('Could not save. Please try again.', true); }
+  }
+  const pageUrl = (pg) => pg && pg.slug ? `${PUBLIC}?p=${pg.slug}` : '';
+  async function openBookings() {
+    if (!hasPremium()) { renderLock(); return; }
+    const old = document.getElementById('bkModal'); if (old) old.remove();
+    const m = document.createElement('div'); m.id = 'bkModal'; m.className = 'modal';
+    m.innerHTML = `<div class="box bk-box" role="dialog" aria-modal="true" aria-labelledby="bkT"><div class="bk-top"><h3 id="bkT">📅 Bookings &amp; reminders</h3><button type="button" class="btn sm" data-bk="close">Close</button></div><div id="bkBody"><p>Loading…</p></div></div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('[data-bk="close"]')) m.remove(); });
+    await drawBookings();
+  }
+  async function drawBookings() {
+    const body = $('bkBody'); if (!body) return;
+    if (bkSaveT) { clearTimeout(bkSaveT); bkSaveT = null; await db.doc(`workspaces/${wsId}/callSettings/main`).set(bkSet, {merge: true}).catch(() => {}); }
+    const [main, cal, tw, gm, boards, bookings] = await Promise.all([
+      db.doc(`workspaces/${wsId}/callSettings/main`).get(), db.doc(`workspaces/${wsId}/callSettings/calendly`).get(), db.doc(`workspaces/${wsId}/callSettings/twilio`).get(),
+      db.doc(`emailConnections/${uid}`).get().catch(() => null), db.collection(`workspaces/${wsId}/boards`).get().catch(() => ({docs: []})),
+      db.collection('callBookings').where('wsId', '==', wsId).get().catch(() => ({docs: []}))]);
+    const d = main.exists ? main.data() : {};
+    bkSet = {boardId: d.boardId || '', dmLog: d.dmLog !== false, eventPages: d.eventPages || {}, defaultPageId: d.defaultPageId || '', senderUid: d.senderUid || '',
+      email: Object.assign({}, BK_DEF.email, d.email || {}), sms: Object.assign({}, BK_DEF.sms, d.sms || {})};
+    const c = cal.exists ? cal.data() : null, t = tw.exists ? tw.data() : null;
+    const senderIsMe = !bkSet.senderUid || bkSet.senderUid === uid, myGmail = gm && gm.exists ? (gm.data().email || '') : '';
+    const live = pages.filter((p) => p.live && p.slug);
+    const pageOpts = (sel) => `<option value="">No page</option>` + live.map((p) => `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(p.name || p.slug)}</option>`).join('');
+    const chk = (path, on, label) => `<label class="bk-chk"><input type="checkbox" data-set="${path}" ${on ? 'checked' : ''}> ${label}</label>`;
+    const tags = '<div class="hint bk-tags">Use: <code>{first_name}</code> <code>{name}</code> <code>{date}</code> <code>{time}</code> <code>{when}</code> <code>{event}</code> <code>{page_link}</code> <code>{join_link}</code> <code>{reschedule_link}</code> <code>{cancel_link}</code></div>';
+    const upcoming = bookings.docs.map((x) => x.data()).filter((b) => b.status === 'scheduled' && Date.parse(b.start) > Date.now() - 3600e3).sort((a, b) => Date.parse(a.start) - Date.parse(b.start)).slice(0, 15);
+    const chip = (b, k, label) => { const r = (b.reminders || []).find((x) => x.k === k); if (!r && k !== 'confirm') return ''; const st = b.sent && b.sent[k];
+      return `<span class="bk-chip ${st === 'failed' || (b.failed && b.failed[k]) ? 'bad' : st ? 'ok' : ''}" title="${esc((b.failed && b.failed[k]) || '')}">${st === 'failed' || (b.failed && b.failed[k]) ? '✕' : st ? '✓' : '⏳'} ${label}</span>`; };
+    body.innerHTML = `
+      <section class="bk-sec"><h4>1. Calendly</h4>
+        ${c ? `<div class="bk-ok">✅ Connected as <b>${esc(c.name || '')}</b> ${c.email ? '(' + esc(c.email) + ')' : ''} <button type="button" class="btn sm" data-bk="disconnect">Disconnect</button></div>
+          <p class="hint">When someone books, PalaTrack updates the lead on your boards (found by email), the conversation in your DM log, and plans the reminders below.</p>
+          <div id="bkEvents"><p class="hint">Loading your Calendly events…</p></div>
+          <details class="bk-how"><summary>How to send people to their page after booking</summary><ol>
+            <li>In Calendly, open the event, then <b>Booking page options</b> (or <b>Confirmation page</b>).</li>
+            <li>Choose <b>Redirect to an external site</b>, and paste the page link shown next to the event above.</li>
+            <li>Tick <b>Pass event details to your redirected page</b>, so the page shows their name, date and time. Save.</li></ol></details>`
+        : `<p>Connect Calendly once, and every booking updates PalaTrack by itself.</p>
+          <ol class="bk-steps"><li>Open <a href="https://calendly.com/integrations/api_webhooks" target="_blank" rel="noopener">Calendly → Integrations → API &amp; webhooks</a>, click <b>Get a token now</b>, give it a name (like “PalaTrack”), and copy the token.</li>
+          <li>Paste it here: <div class="bk-row"><input class="in" id="bkToken" type="password" placeholder="Your Calendly personal access token" autocomplete="off"><button type="button" class="btn primary" data-bk="connect">Connect</button></div></li></ol>
+          <p class="hint">Calendly only sends booking notifications on a paid Calendly plan (Standard or higher).</p>`}
+      </section>
+      <section class="bk-sec"><h4>2. New bookings</h4>
+        <label class="f">People who aren’t on a board yet</label>
+        <select class="in" data-set="boardId"><option value="">Don’t add them</option>${boards.docs.map((b) => `<option value="${esc(b.id)}" ${b.id === bkSet.boardId ? 'selected' : ''}>Add them to “${esc(b.data().name || 'Board')}”</option>`).join('')}</select>
+        ${chk('dmLog', bkSet.dmLog, 'Mark their conversation in the LinkedIn DM log as <b>Call booked</b> (matched by name)')}
+      </section>
+      <section class="bk-sec"><h4>3. Reminder emails</h4>
+        ${senderIsMe ? (myGmail ? `<p class="bk-ok">✉️ Sent from your Gmail: <b>${esc(myGmail)}</b></p>` : `<p class="bk-warn">Connect your Gmail first in <a href="email-settings.html">Email settings</a>, so reminders go from your own address.</p>`)
+          : `<p class="hint">Sent from the Gmail of the teammate who connected Calendly. <button type="button" class="btn sm" data-bk="me">Send them from my Gmail instead</button></p>`}
+        <div class="bk-checks">${chk('email.confirm', bkSet.email.confirm, 'Right after booking')}${chk('email.h24', bkSet.email.h24, '24 hours before')}${chk('email.h1', bkSet.email.h1, '1 hour before')}</div>
+        <details class="bk-how"><summary>Edit the email texts</summary>
+          <label class="f">Confirmation email: subject</label><input class="in" data-set="email.confirmSubject" value="${esc(bkSet.email.confirmSubject)}">
+          <label class="f">Confirmation email: text</label><textarea class="in bk-ta" data-set="email.confirmBody">${esc(bkSet.email.confirmBody)}</textarea>
+          <label class="f">Reminder email: subject</label><input class="in" data-set="email.remindSubject" value="${esc(bkSet.email.remindSubject)}">
+          <label class="f">Reminder email: text</label><textarea class="in bk-ta" data-set="email.remindBody">${esc(bkSet.email.remindBody)}</textarea>${tags}</details>
+        <div class="bk-row"><button type="button" class="btn sm" data-bk="testconfirm">Send me a test confirmation</button><button type="button" class="btn sm" data-bk="testremind">Send me a test reminder</button></div>
+      </section>
+      <section class="bk-sec"><h4>4. Text messages <small>(optional)</small></h4>
+        ${t ? `<p class="bk-ok">📱 Texts are sent from <b>${esc(t.from)}</b> through your Twilio account. <button type="button" class="btn sm" data-bk="twremove">Remove</button></p>`
+          : `<p class="hint">Texts go through <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noopener">Twilio</a> (your own account, a few cents per text). In your Twilio console, copy the <b>Account SID</b>, the <b>Auth token</b> and your Twilio phone number:</p>
+          <div class="bk-grid"><input class="in" id="twSid" placeholder="Account SID (AC…)" autocomplete="off"><input class="in" id="twTok" type="password" placeholder="Auth token" autocomplete="off"><input class="in" id="twFrom" placeholder="Twilio number (+32…)" autocomplete="off"></div>
+          <div class="bk-row"><button type="button" class="btn primary sm" data-bk="twsave">Save</button></div>`}
+        <div class="bk-checks">${chk('sms.h24', bkSet.sms.h24, '24 hours before')}${chk('sms.h1', bkSet.sms.h1, '1 hour before')}</div>
+        <label class="f">Text</label><textarea class="in bk-ta sm" data-set="sms.body">${esc(bkSet.sms.body)}</textarea>
+        <p class="hint">PalaTrack needs their phone number: in Calendly, turn on <b>text reminders</b> for the event, or add a required question “Phone number”.</p>
+        ${t ? `<div class="bk-row"><input class="in" id="twTest" placeholder="Your phone (+32…)" style="max-width:220px"><button type="button" class="btn sm" data-bk="testsms">Send me a test text</button></div>` : ''}
+      </section>
+      <section class="bk-sec"><h4>Upcoming calls</h4>
+        ${upcoming.length ? `<div class="bk-list">${upcoming.map((b) => { const dt = new Date(b.start); return `<div class="bk-item"><div><b>${esc(b.name || b.email)}</b><span>${esc(dt.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric', month: 'short'}))} · ${esc(dt.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'}))} · ${esc(b.eventName || '')}</span></div>
+          <div class="bk-chips">${chip(b, 'confirm', 'Confirmation')}${chip(b, 'e24', 'Email 24h')}${chip(b, 'e1', 'Email 1h')}${chip(b, 's24', 'Text 24h')}${chip(b, 's1', 'Text 1h')}</div></div>`; }).join('')}</div>`
+          : '<p class="hint">No upcoming calls yet. New Calendly bookings show up here, with the reminders that went out.</p>'}
+      </section>`;
+    if (c) {
+      // the Calendly events, each with its pre-call page and the link to paste in Calendly
+      try {
+        const r = await fn('listCalendlyEventTypes')({}); const evs = (r.data && r.data.eventTypes) || [];
+        $('bkEvents').innerHTML = evs.length ? evs.map((ev) => { const pid = bkSet.eventPages[ev.uri] || '', pg = pages.find((p) => p.id === pid);
+          return `<div class="bk-ev"><div class="bk-ev-h"><b>${esc(ev.name)}</b><span>${ev.duration ? esc(ev.duration) + ' min' : ''}</span></div>
+            <div class="bk-row"><select class="in" data-evpage="${esc(ev.uri)}">${pageOpts(pid)}</select></div>
+            ${pg ? `<div class="bk-link"><code>${esc(pageUrl(pg))}</code><button type="button" class="btn sm" data-copy="${esc(pageUrl(pg))}">Copy link</button></div>` : '<p class="hint">Pick a published page to get the link to paste in Calendly.</p>'}</div>`; }).join('')
+          : '<p class="hint">No active events in your Calendly yet.</p>';
+      } catch (e) { $('bkEvents').innerHTML = `<p class="bk-warn">Couldn’t load your Calendly events: ${esc(e.message || '')}</p>`; }
+    }
+  }
+  document.addEventListener('change', (e) => {
+    if (!e.target.closest('#bkModal')) return;
+    const el = e.target, k = el.dataset.set;
+    if (el.dataset.evpage != null) { const ep = Object.assign({}, bkSet.eventPages, {[el.dataset.evpage]: el.value}); bkSaveNow({eventPages: ep}).then(drawBookings); return; }
+    if (!k) return;
+    const v = el.type === 'checkbox' ? el.checked : el.value;
+    if (k.includes('.')) { const [a, b] = k.split('.'); bkSave({[a]: Object.assign({}, bkSet[a], {[b]: v})}); } else bkSave({[k]: v});
+  });
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('#bkModal [data-bk], #bkModal [data-copy]'); if (!b) return;
+    if (b.dataset.copy) { navigator.clipboard.writeText(b.dataset.copy).then(() => showToast('Link copied: paste it in Calendly')); return; }
+    const a = b.dataset.bk, busy = (on) => { b.disabled = on; };
+    try {
+      busy(true);
+      if (a === 'connect') { const tok = $('bkToken').value.trim(); if (!tok) { showToast('Paste your Calendly token first.', true); return; } const r = await fn('connectCalendly')({token: tok}); showToast(`Calendly connected (${r.data.name || r.data.email || 'your account'})`); await drawBookings(); }
+      else if (a === 'disconnect') { if (!confirm('Disconnect Calendly? New bookings will no longer update PalaTrack.')) return; await fn('disconnectCalendly')({}); showToast('Calendly disconnected'); await drawBookings(); }
+      else if (a === 'me') { await bkSaveNow({senderUid: uid}); await drawBookings(); }
+      else if (a === 'testconfirm' || a === 'testremind') { await fn('sendTestCallReminder')({kind: a === 'testconfirm' ? 'confirm' : 'remind', tz: Intl.DateTimeFormat().resolvedOptions().timeZone}); showToast('Test email sent: check your inbox'); }
+      else if (a === 'twsave') { await fn('saveTwilioSettings')({sid: $('twSid').value, token: $('twTok').value, from: $('twFrom').value}); showToast('Twilio connected'); await drawBookings(); }
+      else if (a === 'twremove') { await fn('saveTwilioSettings')({remove: true}); showToast('Twilio removed'); await drawBookings(); }
+      else if (a === 'testsms') { await fn('sendTestCallReminder')({kind: 'sms', to: $('twTest').value, tz: Intl.DateTimeFormat().resolvedOptions().timeZone}); showToast('Test text sent'); }
+    } catch (err) { showToast(String((err && err.message) || 'Something went wrong').replace(/^.*?: /, ''), true); }
+    finally { if (b.isConnected) busy(false); }
+  });
+  $('bkBtn').addEventListener('click', openBookings);
   function openPage(id) {
     if (!hasPremium()) { renderLock(); return; }
     const p = pages.find((x) => x.id === id); if (!p) return;
@@ -385,6 +543,7 @@
         <label class="f">Underlined words</label><input class="in" data-k="hero.highlight" value="${esc(h.highlight)}">
         <div class="hint">Word(s) from the headline that get the coloured underline, like “Confirmed!”.</div>
         <label class="f">Intro</label><textarea class="in" data-k="hero.subtitle">${esc(h.subtitle)}</textarea>
+        <div class="hint">Personal details: <code>{first_name}</code>, <code>{date}</code>, <code>{time}</code> and <code>{event}</code> are filled in from their booking (Calendly or a reminder link). Without a booking, the text still reads naturally.</div>
       </div>
       <div class="sec"><h3>🧱 Steps <small>numbered automatically</small></h3><div id="blocks"></div>
         <div class="add-row">${Object.entries(TYPES).map(([k, [ic, l]]) => `<button type="button" class="btn sm" data-add="${k}">${ic} ${l}</button>`).join('')}</div>
@@ -407,7 +566,8 @@
       const n = b.type === 'results' ? '' : `<span class="n">Step ${++step}</span>`;
       let f = '';
       if (b.type !== 'button') f += `<label class="f">Title</label><input class="in" data-b="${i}" data-k="title" value="${esc(b.title || '')}">`;
-      if (['video', 'questions', 'clients', 'text'].includes(b.type)) f += `<label class="f">Text</label><textarea class="in" data-b="${i}" data-k="text">${esc(b.text || '')}</textarea>`;
+      if (b.type === 'booking') f += `<div class="hint">Shows their date and time (in their own time zone), buttons to add the call to Google Calendar, Outlook or Apple, and Reschedule / Cancel links. Filled in automatically when they come from Calendly or a reminder.</div>`;
+      if (['video', 'questions', 'clients', 'text', 'booking'].includes(b.type)) f += `<label class="f">Text</label><textarea class="in" data-b="${i}" data-k="text">${esc(b.text || '')}</textarea>`;
       if (b.type === 'video') f += `<label class="f">Video link</label><input class="in" data-b="${i}" data-k="url" value="${esc(b.url || '')}" placeholder="https://youtube.com/watch?v=…">${vhint(b.url)}`;
       if (b.type === 'questions') {
         f += (b.items || []).map((it, j) => `<div class="item"><div class="two"><input class="in" data-b="${i}" data-item="${j}" data-k="q" value="${esc(it.q || '')}" placeholder="The question"><input class="in" data-b="${i}" data-item="${j}" data-k="url" value="${esc(it.url || '')}" placeholder="Video link">${vhint(it.url)}</div><button type="button" class="ic del" data-rmitem="${i}:${j}" title="Remove">✕</button></div>`).join('');
@@ -460,6 +620,7 @@
     else if (d.bgimg) { if (cur.theme.bgImage && cur.theme.bg !== 'image') { cur.theme.bg = 'image'; renderForm(); changed(); } else $('fBgFile').click(); }
     else if (d.pattern) { cur.theme.pattern = d.pattern; document.querySelectorAll('[data-pattern]').forEach((b) => b.classList.toggle('on', b === t)); changed(); }
     else if (d.add) { const b = {id: uidGen(), type: d.add, title: ''};
+      if (d.add === 'booking') Object.assign(b, {title: 'Add Our Call To Your Calendar', text: ''});
       if (d.add === 'video') Object.assign(b, {title: 'Watch This Video', text: '', url: ''});
       if (d.add === 'questions') Object.assign(b, {title: 'Common Questions', text: '', items: [{q: '', url: ''}]});
       if (d.add === 'clients') Object.assign(b, {title: 'Client Stories', text: '', urls: ['', '']});
@@ -699,7 +860,10 @@
   });
 
   // ---------- the preview ----------
-  function renderPreview() { if (cur && !editEl) CallPage.render(pageData(cur), $('pv'), {editable: true}); }
+  // the preview shows a sample booking (a call next week), so the Booking details step looks real
+  const SAMPLE = (() => { const d = new Date(); d.setDate(d.getDate() + ((9 - d.getDay()) % 7 || 7)); d.setHours(14, 0, 0, 0);
+    return {first: 'Sophie', full: 'Sophie Martin', start: d.toISOString(), end: new Date(d.getTime() + 45 * 60000).toISOString(), eventName: 'Strategy call', invitee: ''}; })();
+  function renderPreview() { if (cur && !editEl) CallPage.render(pageData(cur), $('pv'), {editable: true, booking: SAMPLE}); }
   $('pvDesk').addEventListener('click', () => { $('pvFrame').className = 'pv-frame desk'; $('pvDesk').classList.add('on'); $('pvPhone').classList.remove('on'); });
   $('pvPhone').addEventListener('click', () => { $('pvFrame').className = 'pv-frame phone'; $('pvPhone').classList.add('on'); $('pvDesk').classList.remove('on'); });
   function smallScreen() { const s = innerWidth <= 1100; $('pvBtn').style.display = s ? '' : 'none'; $('pvClose').style.display = s ? '' : 'none'; if (!s) $('pvWrap').classList.remove('show'); }

@@ -31,7 +31,19 @@
   (function(){
     var root = document.getElementById('cpRoot');
     function state(title, text){ root.className = ''; root.innerHTML = '<div class="cp-state"><b>' + title + '</b><span>' + text + '</span></div>'; }
-    var slug = (new URLSearchParams(location.search).get('p') || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+    var qs = new URLSearchParams(location.search);
+    var slug = (qs.get('p') || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+    // the person's booking: Calendly adds these when it redirects here ("pass event details"), and so do PalaTrack's reminder links
+    var booking = null, start = qs.get('event_start_time');
+    if (start && !isNaN(new Date(start))) {
+      booking = {first: qs.get('invitee_first_name') || '', full: qs.get('invitee_full_name') || '', start: start, end: qs.get('event_end_time') || '',
+        eventName: qs.get('event_type_name') || '', host: qs.get('assigned_to') || '', invitee: (qs.get('invitee_uuid') || '').replace(/[^A-Za-z0-9-]/g, '')};
+    }
+    // private details (email address, answers, …) don't stay in the address bar
+    try {
+      var keep = new URLSearchParams(); ['p', 'invitee_first_name', 'invitee_full_name', 'event_start_time', 'event_end_time', 'event_type_name', 'assigned_to', 'invitee_uuid'].forEach(function(k){ if(qs.get(k)) keep.set(k, qs.get(k)); });
+      if (keep.toString() !== qs.toString()) history.replaceState(null, '', location.pathname + '?' + keep.toString() + location.hash);
+    } catch(e){ /* fine */ }
     if(!slug){ state('Page not found', 'This link is incomplete. Please check the link you received.'); return; }
     try {
       firebase.initializeApp({apiKey: "AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM", authDomain: "lead-tracker-c5c3a.firebaseapp.com", projectId: "lead-tracker-c5c3a",
@@ -40,9 +52,9 @@
     firebase.firestore().doc('publicCallPages/' + slug).get().then(function(d){
       if(!d.exists || !d.data().page){ state('Page not found', 'This page doesn’t exist or isn’t published anymore.'); return; }
       var page = d.data().page;
-      CallPage.render(page, root);
+      CallPage.render(page, root, {booking: booking});
       document.body.style.background = getComputedStyle(root).backgroundColor;
-      var t = (page.hero && page.hero.title) ? CallPage.plain(page.hero.title) : 'Your Call Is Confirmed'; document.title = t.replace(/\s+/g, ' ').trim();
+      var h1 = root.querySelector('h1'); var t = h1 ? h1.textContent : 'Your Call Is Confirmed'; document.title = t.replace(/\s+/g, ' ').trim();
       var made = document.createElement('a'); made.className = 'cp-made'; made.href = 'https://www.palatrack.com/'; made.target = '_blank'; made.rel = 'noopener'; made.textContent = 'Made with PalaTrack';
       root.after(made);
     }).catch(function(e){ if(e && e.code === 'permission-denied') state('This page is currently unavailable', 'Please contact the person who sent you this link.'); else state('Something went wrong', 'Please check your connection and refresh the page.'); });

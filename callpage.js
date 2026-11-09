@@ -146,8 +146,51 @@
   }
   function continueBar() { return '<div class="cp-continue">Continue scrolling <span aria-hidden="true">↓</span></div>'; }
 
+  // ---------- the person's booking (from Calendly's redirect, or a reminder link) ----------
+  // {first_name}, {name}, {date}, {time} and {event} in texts become their details. Without a booking the page still reads
+  // naturally: "{first_name}, your call is booked!" becomes "Your call is booked!".
+  var BK = null;
+  function when(b) {
+    var d = new Date(b.start); if (isNaN(d)) return {date: '', time: ''};
+    var e = new Date(b.end || b.start), lang = (navigator.language || 'en-GB');
+    try {
+      return {date: d.toLocaleDateString(lang, {weekday: 'long', day: 'numeric', month: 'long'}),
+        time: d.toLocaleTimeString(lang, {hour: '2-digit', minute: '2-digit'}), until: isNaN(e) || +e === +d ? '' : e.toLocaleTimeString(lang, {hour: '2-digit', minute: '2-digit'})};
+    } catch (x) { return {date: d.toDateString(), time: d.toTimeString().slice(0, 5), until: ''}; }
+  }
+  function fillText(s) {
+    s = String(s || ''); if (s.indexOf('{') < 0 || ED) return s;                      // the editor keeps the placeholders
+    var b = BK, w = b ? when(b) : null;
+    var v = b ? {first_name: b.first || (b.full || '').split(' ')[0] || '', name: b.full || b.first || '', date: w.date, time: w.time, event: b.eventName || 'our call'}
+              : {first_name: '', name: '', date: 'the day you picked', time: 'the time you picked', event: 'our call'};
+    var out = s.replace(/\{(first_name|name|date|time|event)\}/g, function (m, k) { return v[k]; });
+    // a missing name: tidy what's left ("  , your call" → "Your call")
+    out = out.replace(/(^|>|\n)\s*[,!.:]\s*/g, '$1').replace(/\s+([,!.?])/g, '$1').replace(/ {2,}/g, ' ').replace(/(^|>)\s+/g, '$1');
+    return out.replace(/(^|>|\n)([a-z\u00e0-\u00ff])/g, function (m, a, c) { return a + c.toUpperCase(); });
+  }
+  function personal(page) {                                                       // a copy of the page with the details filled in
+    var p = JSON.parse(JSON.stringify(page || {}));
+    if (p.hero) { p.hero.title = fillText(p.hero.title); p.hero.subtitle = fillText(p.hero.subtitle); p.hero.highlight = fillText(p.hero.highlight); }
+    (p.blocks || []).forEach(function (b) { ['title', 'text', 'label'].forEach(function (k) { if (b[k]) b[k] = fillText(b[k]); }); (b.items || []).forEach(function (it) { if (it.q) it.q = fillText(it.q); }); });
+    return p;
+  }
+  var gcalDate = function (iso) { return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); };
+  function bookingHTML(b, title) {
+    if (!b || !b.start) return '<div class="cp-bk cp-bk-none"><span class="cp-bk-ic">\uD83D\uDCC5</span><div><b>Your call is booked</b><span>You’ll find the date, time and calendar invite in your confirmation email.</span></div></div>';
+    var w = when(b), name = b.eventName || title || 'Our call', details = 'Booked with ' + (b.host || 'us') + '. ' + (location.href.split('#')[0]);
+    var end = b.end || new Date(new Date(b.start).getTime() + 30 * 60000).toISOString();
+    var g = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(name) + '&dates=' + gcalDate(b.start) + '/' + gcalDate(end) + '&details=' + encodeURIComponent(details);
+    var o = 'https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=' + encodeURIComponent(name) + '&startdt=' + encodeURIComponent(new Date(b.start).toISOString()) + '&enddt=' + encodeURIComponent(new Date(end).toISOString()) + '&body=' + encodeURIComponent(details);
+    var links = b.invitee ? '<div class="cp-bk-links"><a href="https://calendly.com/reschedulings/' + esc(b.invitee) + '" target="_blank" rel="noopener">Reschedule</a><span>·</span><a href="https://calendly.com/cancellations/' + esc(b.invitee) + '" target="_blank" rel="noopener">Cancel</a></div>' : '';
+    return '<div class="cp-bk"><div class="cp-bk-when"><span class="cp-bk-ic">\uD83D\uDCC5</span><div><b>' + esc(w.date) + '</b><span>' + esc(w.time) + (w.until ? ' – ' + esc(w.until) : '') + ' <em>(your time)</em></span>' + (b.eventName ? '<small>' + esc(b.eventName) + '</small>' : '') + '</div></div>' +
+      '<div class="cp-bk-btns"><a class="cp-bk-btn" href="' + esc(g) + '" target="_blank" rel="noopener">Google Calendar</a><a class="cp-bk-btn" href="' + esc(o) + '" target="_blank" rel="noopener">Outlook</a>' +
+      '<button type="button" class="cp-bk-btn" data-ics="1" data-start="' + esc(b.start) + '" data-end="' + esc(end) + '" data-title="' + esc(name) + '" data-details="' + esc(details) + '">Apple / other (.ics)</button></div>' + links + '</div>';
+  }
+
   function render(page, root, opts) {
     ED = !!(opts && opts.editable);
+    BK = (opts && opts.booking) || null;
+    page = personal(page);
     page = page || {}; var theme = page.theme || {}, hero = page.hero || {}, blocks = page.blocks || [];
     var accent = /^#[0-9a-f]{6}$/i.test(theme.accent || '') ? theme.accent : '#E5463A';
     root.style.setProperty('--cp-accent', accent);
@@ -163,12 +206,13 @@
       var numbered = b.type !== 'results';
       if (numbered && !first) out += continueBar();
       first = false;
-      var hasText = ['video', 'questions', 'clients', 'text'].indexOf(b.type) >= 0;
+      var hasText = ['video', 'questions', 'clients', 'text', 'booking'].indexOf(b.type) >= 0;
       var head = (numbered ? '<span class="cp-step">Step ' + (++step) + '</span>' : '') +
         (b.title || (ED && b.type !== 'button') ? '<h2' + ed('b:' + bi + ':title') + (b.title ? '' : ' class="cp-ph"') + '>' + rich(b.title) + '</h2>' : '') +
         (hasText ? para(b.text, 'b:' + bi + ':text') : '');
       var body = '';
-      if (b.type === 'video') body = '<div class="cp-main">' + videoHTML(b.url, b.title) + '</div>';
+      if (b.type === 'booking') body = bookingHTML(BK, b.title);
+      else if (b.type === 'video') body = '<div class="cp-main">' + videoHTML(b.url, b.title) + '</div>';
       else if (b.type === 'questions') body = '<div class="cp-grid cp-g3">' + (b.items || []).map(function (it, j) { return '<div class="cp-q"><h3' + ed('q:' + bi + ':' + j) + (it.q ? '' : ' class="cp-ph"') + '>' + rich(it.q || '') + '</h3>' + videoHTML(it.url, plain(it.q)) + '</div>'; }).join('') + '</div>';
       else if (b.type === 'clients') body = '<div class="cp-grid cp-g2">' + (b.urls || []).map(function (u) { return '<div>' + videoHTML(u, 'Client story') + '</div>'; }).join('') + '</div>';
       else if (b.type === 'results') {
@@ -189,13 +233,22 @@
     if (!blocks.length) out += '<section class="cp-sec"><div class="cp-frame cp-empty cp-short"><div>➕ Add your first step</div></div></section>';
     root.innerHTML = '<div class="cp-in">' + out + '</div>';
     root.classList.toggle('cp-editing', ED);
-    ED = false;
+    ED = false; BK = null;
   }
 
   // ---------- clicks: play a video in place, and open a result screenshot larger ----------
   document.addEventListener('click', function (e) {
     var p = e.target.closest && e.target.closest('.cpv .cp-poster');
     if (p) { var f = document.createElement('iframe'); f.src = p.dataset.embed + '&autoplay=1'; f.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media'; f.allowFullscreen = true; f.title = p.getAttribute('aria-label') || 'Video'; p.replaceWith(f); return; }
+    var ic = e.target.closest && e.target.closest('.cpv [data-ics]');
+    if (ic) {
+      var z = function (iso) { return gcalDate(iso); }, nl = '\r\n';
+      var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PalaTrack//Call//EN', 'BEGIN:VEVENT', 'UID:' + Date.now() + '@palatrack.com', 'DTSTAMP:' + z(new Date().toISOString()),
+        'DTSTART:' + z(ic.dataset.start), 'DTEND:' + z(ic.dataset.end), 'SUMMARY:' + ic.dataset.title.replace(/[,;]/g, ' '), 'DESCRIPTION:' + ic.dataset.details.replace(/[,;]/g, ' '),
+        'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:Reminder', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join(nl);
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], {type: 'text/calendar'})); a.download = 'call.ics'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      return;
+    }
     var s = e.target.closest && e.target.closest('.cpv .cp-shot');
     if (s) {
       var box = document.createElement('div'); box.className = 'cp-lightbox'; box.innerHTML = '<img src="' + esc(s.dataset.full) + '" alt="Client result"><button type="button" aria-label="Close">✕</button>';
@@ -206,6 +259,17 @@
 
   // ---------- the look ----------
   var CSS = [
+    '.cpv .cp-bk{max-width:640px;margin:18px auto 0;padding:22px 24px;border-radius:18px;background:var(--cp-card);border:1px solid color-mix(in srgb,var(--cp-accent) 35%,transparent);box-shadow:0 18px 40px -24px rgba(0,0,0,.5);text-align:left}',
+    '.cpv .cp-bk-when{display:flex;gap:16px;align-items:center}',
+    '.cpv .cp-bk-ic{flex:0 0 auto;width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;background:color-mix(in srgb,var(--cp-accent) 18%,transparent)}',
+    '.cpv .cp-bk-when b{display:block;font:800 22px/1.2 var(--cp-font-h,Montserrat,sans-serif);color:var(--cp-ink)}',
+    '.cpv .cp-bk-when span{display:block;margin-top:3px;font-size:16px;color:var(--cp-ink)} .cpv .cp-bk-when em{font-style:normal;color:var(--cp-muted);font-size:13px}',
+    '.cpv .cp-bk-when small{display:block;margin-top:3px;font-size:13px;color:var(--cp-muted)}',
+    '.cpv .cp-bk-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}',
+    '.cpv .cp-bk-btn{flex:1 1 150px;display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 14px;border-radius:12px;border:1.5px solid color-mix(in srgb,var(--cp-accent) 60%,transparent);background:transparent;color:var(--cp-ink);font:700 14px var(--cp-font-b,Montserrat,sans-serif);text-decoration:none;cursor:pointer}',
+    '.cpv .cp-bk-btn:hover{background:color-mix(in srgb,var(--cp-accent) 16%,transparent)}',
+    '.cpv .cp-bk-links{display:flex;gap:8px;justify-content:center;margin-top:14px;font-size:13.5px;color:var(--cp-muted)} .cpv .cp-bk-links a{color:var(--cp-muted)}',
+    '.cpv .cp-bk-none .cp-bk-when{display:flex} .cpv .cp-bk-none{display:flex;gap:16px;align-items:center} .cpv .cp-bk-none b{display:block;font:800 18px var(--cp-font-h,Montserrat,sans-serif)} .cpv .cp-bk-none span{display:block;font-size:14px;color:var(--cp-muted)}',
     '.cpv b{font-weight:800} .cpv i{font-style:italic}',
     '.cpv .cp-f-montserrat{font-family:' + fontStack('montserrat') + '}',
     '.cpv .cp-f-inter{font-family:' + fontStack('inter') + '}',
