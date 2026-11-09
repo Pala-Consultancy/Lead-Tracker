@@ -406,10 +406,16 @@
   async function drawBookings() {
     const body = $('bkBody'); if (!body) return;
     if (bkSaveT) { clearTimeout(bkSaveT); bkSaveT = null; await db.doc(`workspaces/${wsId}/callSettings/main`).set(bkSet, {merge: true}).catch(() => {}); }
+    // every part loads on its own: one that's refused or slow never holds up the rest (at most 6 seconds each)
+    let refused = false;
+    const safe = (pr, empty) => Promise.race([pr, new Promise((r) => setTimeout(() => r(empty), 6000))])
+      .catch((e) => { if (e && e.code === 'permission-denied') refused = true; return empty; });
+    const none = {exists: false, data: () => ({})};
     const [main, cal, tw, gm, boards, bookings] = await Promise.all([
-      db.doc(`workspaces/${wsId}/callSettings/main`).get(), db.doc(`workspaces/${wsId}/callSettings/calendly`).get(), db.doc(`workspaces/${wsId}/callSettings/twilio`).get(),
-      db.doc(`emailConnections/${uid}`).get().catch(() => null), db.collection(`workspaces/${wsId}/boards`).get().catch(() => ({docs: []})),
-      db.collection('callBookings').where('wsId', '==', wsId).get().catch(() => ({docs: []}))]);
+      safe(db.doc(`workspaces/${wsId}/callSettings/main`).get(), none), safe(db.doc(`workspaces/${wsId}/callSettings/calendly`).get(), none), safe(db.doc(`workspaces/${wsId}/callSettings/twilio`).get(), none),
+      safe(db.doc(`emailConnections/${uid}`).get(), null), safe(db.collection(`workspaces/${wsId}/boards`).get(), {docs: []}),
+      safe(db.collection('callBookings').where('wsId', '==', wsId).get(), {docs: []})]);
+    if (!$('bkBody')) return;
     const d = main.exists ? main.data() : {};
     bkSet = {boardId: d.boardId || '', dmLog: d.dmLog !== false, eventPages: d.eventPages || {}, defaultPageId: d.defaultPageId || '', senderUid: d.senderUid || '',
       email: Object.assign({}, BK_DEF.email, d.email || {}), sms: Object.assign({}, BK_DEF.sms, d.sms || {})};
@@ -422,7 +428,7 @@
     const upcoming = bookings.docs.map((x) => x.data()).filter((b) => b.status === 'scheduled' && Date.parse(b.start) > Date.now() - 3600e3).sort((a, b) => Date.parse(a.start) - Date.parse(b.start)).slice(0, 15);
     const chip = (b, k, label) => { const r = (b.reminders || []).find((x) => x.k === k); if (!r && k !== 'confirm') return ''; const st = b.sent && b.sent[k];
       return `<span class="bk-chip ${st === 'failed' || (b.failed && b.failed[k]) ? 'bad' : st ? 'ok' : ''}" title="${esc((b.failed && b.failed[k]) || '')}">${st === 'failed' || (b.failed && b.failed[k]) ? '✕' : st ? '✓' : '⏳'} ${label}</span>`; };
-    body.innerHTML = `
+    body.innerHTML = (refused ? `<p class="bk-warn">⚠️ The database didn’t allow PalaTrack to read the booking settings yet. Publish the latest <b>firestore.rules</b> (Firebase Console → Firestore Database → Rules → paste → Publish), then open this window again.</p>` : '') + `
       <section class="bk-sec"><h4>1. Calendly</h4>
         ${c ? `<div class="bk-ok">✅ Connected as <b>${esc(c.name || '')}</b> ${c.email ? '(' + esc(c.email) + ')' : ''} <button type="button" class="btn sm" data-bk="disconnect">Disconnect</button></div>
           <p class="hint">When someone books, PalaTrack updates the lead on your boards (found by email), the conversation in your DM log, and plans the reminders below.</p>
@@ -470,7 +476,9 @@
     if (c) {
       // the Calendly events, each with its pre-call page and the link to paste in Calendly
       try {
-        const r = await fn('listCalendlyEventTypes')({}); const evs = (r.data && r.data.eventTypes) || [];
+        const r = await Promise.race([fn('listCalendlyEventTypes')({}), new Promise((_, no) => setTimeout(() => no(new Error('Calendly is taking too long to answer. Close and open this window to try again.')), 15000))]);
+        const evs = (r.data && r.data.eventTypes) || [];
+        if (!$('bkEvents')) return;
         $('bkEvents').innerHTML = evs.length ? evs.map((ev) => { const pid = bkSet.eventPages[ev.uri] || '', pg = pages.find((p) => p.id === pid);
           return `<div class="bk-ev"><div class="bk-ev-h"><b>${esc(ev.name)}</b><span>${ev.duration ? esc(ev.duration) + ' min' : ''}</span></div>
             <div class="bk-row"><select class="in" data-evpage="${esc(ev.uri)}">${pageOpts(pid)}</select></div>
