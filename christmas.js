@@ -18,8 +18,16 @@
   // The season: November 18 – January 6. Before that, only a preview:
   //  - the owner's own account sees it in the app (recognised by a one-way fingerprint of the email, so no address is in this file);
   //  - on any page, ?christmas=preview switches the preview on in that browser (and ?christmas=stop switches it off again).
-  var OWNERS = ['744c8f673403cfad7f4ba00807f665fd0bc57f516625b0a9e26406ecdfead12d', '799e7b51c2e000f9d6ff32306c366938d730d9d008d22535c849410b0ec38f4a'];
+  // the owner preview is over: the owner sees Christmas when it goes live for everyone (on November 18)
+  var OWNERS = [];
   try {
+    // once, before the season: clear what the preview left in this browser (the preview switch, and "the surprise has
+    // been seen"), so the season starts fresh for everyone, the surprise included
+    if (!realSeason() && localStorage.getItem('ptXmasFreshStart') !== '1') {
+      localStorage.removeItem('ptXmasPreview');
+      Object.keys(localStorage).forEach(function (k) { if (k.indexOf('ptXmIntroSeen') === 0) localStorage.removeItem(k); });
+      localStorage.setItem('ptXmasFreshStart', '1');
+    }
     if (/[?&]christmas=preview\b/.test(location.search)) localStorage.setItem('ptXmasPreview', '1');
     if (/[?&]christmas=stop\b/.test(location.search)) localStorage.removeItem('ptXmasPreview');
   } catch (e) { /* ignore */ }
