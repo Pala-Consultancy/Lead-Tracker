@@ -209,6 +209,25 @@
   .bk-chips{display:flex;gap:6px;flex-wrap:wrap;} .bk-chip{padding:3px 9px;border-radius:999px;background:var(--panel-alt);font-size:12px;color:var(--slate);}
   .bk-chip.ok{background:rgba(1,117,79,.1);color:#01754F;} .bk-chip.bad{background:rgba(220,38,38,.1);color:#B91C1C;}
   @media (max-width:700px){ .bk-grid{grid-template-columns:1fr;} }
+
+  /* drag and drop */
+  .blk-h .grip{cursor:grab;touch-action:none;font-size:16px;letter-spacing:-2px;color:var(--slate);}
+  .imgs > div[data-ii]{cursor:grab;touch-action:none;}
+  .cp-dragph{opacity:.35;outline:2.5px dashed var(--teal,#2E6BE6);outline-offset:3px;border-radius:12px;}
+  .cp-dragph > *{visibility:hidden;}
+  .cp-dragghost{position:fixed !important;left:0;top:0;z-index:100000;margin:0 !important;pointer-events:none;border-radius:14px;box-shadow:0 26px 50px -16px rgba(0,0,0,.55),0 0 0 2px var(--cp-accent,#2E6BE6);background:var(--panel,#fff);will-change:transform;overflow:hidden;}
+  .cpv .cp-dragghost{background:transparent;}
+  body.cp-dragging,body.cp-dragging *{cursor:grabbing !important;user-select:none !important;}
+  /* the button controls */
+  .bctl{margin-top:6px;padding:12px;border-radius:12px;background:var(--panel-alt);}
+  .bctl-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;} .bctl-2 > div{min-width:0;}
+  .bseg{display:flex;flex-wrap:wrap;gap:4px;}
+  .bseg button,.bpick{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--ink);font:600 12.5px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .bseg button.on,.bpick.on{border-color:var(--teal);background:var(--teal-soft,rgba(46,107,230,.1));color:var(--teal);}
+  .bpick input{width:20px;height:20px;padding:0;border:0;background:none;cursor:pointer;}
+  .bchk{display:flex;align-items:center;gap:7px;font-size:13px;margin-top:8px;}
+  .btn2{margin-top:12px;padding:12px;border-radius:12px;border:1px dashed var(--border);}
+  .btn2-h{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;}
 </style>
 </head>
 <body>
@@ -578,15 +597,51 @@
         f += `<div class="add-row"><button type="button" class="btn sm" data-addurl="${i}">+ Add a client video</button></div>`;
       }
       if (b.type === 'results') {
-        f += `<div class="imgs">${(b.images || []).map((src, j) => `<div><img src="${esc(src)}" alt=""><button type="button" data-rmimg="${i}:${j}" title="Remove">✕</button></div>`).join('')}</div>
+        f += `${(b.images || []).length > 1 ? '<div class="hint">Drag the screenshots to change their order.</div>' : ''}<div class="imgs">${(b.images || []).map((src, j) => `<div data-ii="${j}" data-bi="${i}" title="Drag to move"><img src="${esc(src)}" alt="" draggable="false"><button type="button" data-rmimg="${i}:${j}" title="Remove">✕</button></div>`).join('')}</div>
           <div class="drop" data-drop="${i}">📤 Click or drop screenshots here (results, reviews, messages)</div><input type="file" accept="image/*" multiple hidden data-file="${i}">`;
       }
       if (b.type === 'button') f += `<label class="f">Button text</label><input class="in" data-b="${i}" data-k="label" value="${esc(b.label || '')}" placeholder="Add the call to your calendar"><label class="f">Button link</label><input class="in" data-b="${i}" data-k="href" value="${esc(b.href || '')}" placeholder="https://…">`;
-      return `<div class="blk"><div class="blk-h"><span>${ic}</span><b>${label}</b>${n}<span class="sp"></span>
+      if (b.type === 'button') {
+        f += btnCtl(i, 'btn', b.btn || {});
+        f += b.btn2On ? `<div class="btn2"><div class="btn2-h"><b>Second button</b><button type="button" class="btn sm" data-btn2off="${i}">Remove</button></div>
+            <label class="f">Button text</label><input class="in" data-b="${i}" data-k="label2" value="${esc(b.label2 || '')}" placeholder="Watch a client story">
+            <label class="f">Button link</label><input class="in" data-b="${i}" data-k="href2" value="${esc(b.href2 || '')}" placeholder="https://…">${btnCtl(i, 'btn2', b.btn2 || {style: 'outline'})}</div>`
+          : `<div class="add-row"><button type="button" class="btn sm" data-btn2="${i}">+ Add a second button</button></div>`;
+      }
+      return `<div class="blk" data-bi="${i}"><div class="blk-h">${cur.blocks.length > 1 ? `<button type="button" class="ic grip" data-grip="${i}" title="Drag to move this step" aria-label="Drag to move this step">⠿</button>` : ''}<span>${ic}</span><b>${label}</b>${n}<span class="sp"></span>
         <button type="button" class="ic" data-mv="${i}:-1" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="ic" data-mv="${i}:1" title="Move down" ${i === cur.blocks.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="ic del" data-rm="${i}" title="Remove this step">🗑</button></div>${f}</div>`;
     }).join('') || '<div class="hint" style="margin:6px 0 0">No steps yet. Add one below.</div>';
     markRich();
   }
+  // the look of a button: style, shape, size, width, colour, icon, new tab
+  function btnCtl(i, key, c) {
+    const seg = (prop, opts, val) => `<div class="bseg">${opts.map(([v, l]) => `<button type="button" class="${(val || opts[0][0]) === v ? 'on' : ''}" data-bset="${i}:${key}:${prop}:${v}">${l}</button>`).join('')}</div>`;
+    const icons = [['', 'No icon'], ['arrow', '→ Arrow'], ['calendar', '📅 Calendar'], ['play', '▶ Play'], ['check', '✓ Check'], ['chat', '💬 Chat'], ['phone', '📞 Phone'], ['doc', '📄 Document']];
+    return `<div class="bctl">
+      <label class="f">Style</label>${seg('style', [['filled', 'Filled'], ['outline', 'Outline'], ['soft', 'Soft'], ['link', 'Text link']], c.style || (key === 'btn2' ? 'outline' : 'filled'))}
+      <div class="bctl-2"><div><label class="f">Shape</label>${seg('shape', [['round', 'Rounded'], ['pill', 'Pill'], ['square', 'Square']], c.shape)}</div>
+        <div><label class="f">Size</label>${seg('size', [['m', 'Medium'], ['s', 'Small'], ['l', 'Large']], c.size)}</div></div>
+      <div class="bctl-2">${key === 'btn' ? `<div><label class="f">Width</label>${seg('width', [['auto', 'Fit text'], ['full', 'Full width']], c.width)}</div>` : ''}
+        <div><label class="f">Colour</label><div class="bseg"><button type="button" class="${c.color ? '' : 'on'}" data-bset="${i}:${key}:color:">Page colour</button><label class="bpick ${c.color ? 'on' : ''}"><input type="color" data-bcolor="${i}:${key}" value="${esc(c.color || cur.theme.accent || '#E5463A')}"> Pick</label></div></div></div>
+      <div class="bctl-2"><div><label class="f">Icon</label><select class="in" data-bicon="${i}:${key}">${icons.map(([v, l]) => `<option value="${v}" ${(c.icon || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div><label class="f">&nbsp;</label><label class="bchk"><input type="checkbox" data-btab="${i}:${key}" ${c.newTab === false ? '' : 'checked'}> Open in a new tab</label></div></div></div>`;
+  }
+  function setBtn(spec, val) { const [i, key, prop] = spec.split(':'), b = cur.blocks[+i]; b[key] = Object.assign({}, b[key] || (key === 'btn2' ? {style: 'outline'} : {}), {[prop]: val}); }
+  $('form').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-bset],[data-btn2],[data-btn2off]'); if (!t) return;
+    const d = t.dataset;
+    if (d.bset) { const [i, key, prop, ...v] = d.bset.split(':'); setBtn(`${i}:${key}:${prop}`, v.join(':')); }
+    else if (d.btn2) { const b = cur.blocks[+d.btn2]; b.btn2On = true; if (!b.label2) b.label2 = 'Watch a client story'; }
+    else if (d.btn2off) cur.blocks[+d.btn2off].btn2On = false;
+    renderBlocks(); changed();
+  });
+  $('form').addEventListener('input', (e) => { const d = e.target.dataset; if (d.bcolor) { setBtn(d.bcolor + ':color', e.target.value); changed(); } });
+  $('form').addEventListener('change', (e) => {
+    const d = e.target.dataset;
+    if (d.bcolor) { renderBlocks(); }
+    else if (d.bicon) { setBtn(d.bicon + ':icon', e.target.value); renderBlocks(); changed(); }
+    else if (d.btab) { setBtn(d.btab + ':newTab', e.target.checked); changed(); }
+  });
   function vhint(u) { if (!String(u || '').trim()) return ''; const v = CallPage.parseVideo(u); return v ? `<div class="hint ok">✓ ${({youtube: 'YouTube', vimeo: 'Vimeo', loom: 'Loom', wistia: 'Wistia', drive: 'Google Drive', file: 'Video file'})[v.kind]} video</div>` : '<div class="hint bad">This link isn’t a supported video (YouTube, Vimeo, Loom, Wistia or Google Drive).</div>'; }
 
   // typing: update the page and the preview as you go (and re-draw the form only where needed)
@@ -863,7 +918,109 @@
   // the preview shows a sample booking (a call next week), so the Booking details step looks real
   const SAMPLE = (() => { const d = new Date(); d.setDate(d.getDate() + ((9 - d.getDay()) % 7 || 7)); d.setHours(14, 0, 0, 0);
     return {first: 'Sophie', full: 'Sophie Martin', start: d.toISOString(), end: new Date(d.getTime() + 45 * 60000).toISOString(), eventName: 'Strategy call', invitee: ''}; })();
-  function renderPreview() { if (cur && !editEl) CallPage.render(pageData(cur), $('pv'), {editable: true, booking: SAMPLE}); }
+  let cardDrag = null;              // a question or client video being dragged in the preview
+  function renderPreview() { if (cur && !editEl && !cardDrag) CallPage.render(pageData(cur), $('pv'), {editable: true, booking: SAMPLE}); }
+  // ---------- drag and drop: one engine for the steps, the video cards, the screenshots and the step list ----------
+  // Press and move: the item lifts and follows the pointer, the others slide aside (animated) to show where it lands,
+  // the panel scrolls by itself near its top or bottom edge, and letting go saves the new order.
+  function scrollerOf(el) { for (let x = el.parentElement; x; x = x.parentElement) { const o = getComputedStyle(x).overflowY; if ((o === 'auto' || o === 'scroll') && x.scrollHeight > x.clientHeight) return x; } return document.scrollingElement; }
+  function startSort(e, item, o) {
+    // o: {items: () => [elements], onDone: (elements in the new order) => {}, axis: 'y' | 'xy', maxH, ghostParent, threshold}
+    const sx = e.clientX, sy = e.clientY, id = e.pointerId; let lifted = false, ghost = null, ox = 0, oy = 0, k = 1, last = {x: sx, y: sy}, raf = 0;
+    const scroller = scrollerOf(item);
+    const place = () => { ghost.style.transform = `translate(${last.x - ox * k}px,${last.y - oy * k}px) rotate(${o.axis === 'y' ? 1 : 2.5}deg) scale(${k * 1.03})`; };
+    const lift = () => {
+      lifted = true;
+      const r = item.getBoundingClientRect(); k = Math.min(1, (o.maxH || 9999) / r.height);
+      ghost = item.cloneNode(true); ghost.classList.add('cp-dragghost'); ghost.querySelectorAll('.cp-drag,.cp-move,[data-grip]').forEach((x) => x.remove());
+      ['data-bi', 'data-di', 'data-ii'].forEach((a) => ghost.removeAttribute(a));
+      ghost.style.width = r.width + 'px'; ghost.style.height = r.height + 'px'; ghost.style.transformOrigin = '0 0';
+      ox = sx - r.left; oy = sy - r.top; (o.ghostParent || document.body).appendChild(ghost);
+      item.classList.add('cp-dragph'); document.body.classList.add('cp-dragging'); if (o.onLift) o.onLift();
+      cardDrag = true; place(); tick();
+    };
+    const items = () => o.items().filter((x) => !x.classList.contains('cp-dragghost'));
+    const target = () => {
+      const all = items(), others = all.filter((x) => x !== item);
+      let over = others.find((x) => { const q = x.getBoundingClientRect(); return last.y >= q.top && last.y <= q.bottom && (o.axis === 'y' || (last.x >= q.left && last.x <= q.right)); });
+      let ref;
+      if (over) { const before = all.indexOf(over) < all.indexOf(item); ref = before ? over : over.nextElementSibling; }
+      else if (o.axis === 'y' && others.length) {
+        // above the first one: first place; below the last one: last place
+        const f = others[0].getBoundingClientRect(), l = others[others.length - 1].getBoundingClientRect();
+        if (last.y < f.top) { over = others[0]; ref = others[0]; }
+        else if (last.y > l.bottom) { over = others[others.length - 1]; ref = over.nextElementSibling; }
+        else return;
+      } else return;
+      if (ref === item || item.nextElementSibling === ref) return;
+      const was = new Map(all.map((x) => [x, x.getBoundingClientRect()]));
+      over.parentElement.insertBefore(item, ref);
+      all.forEach((x) => { if (x === item) return; const a = was.get(x), b = x.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
+        if (dx || dy) x.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: 'none'}], {duration: 200, easing: 'cubic-bezier(.2,.8,.2,1)'}); });
+    };
+    // near the top or bottom edge of the panel, it scrolls by itself
+    const tick = () => {
+      if (!lifted || !ghost) return;
+      const box = scroller === document.scrollingElement ? {top: 0, bottom: innerHeight} : scroller.getBoundingClientRect();
+      const sr = {top: Math.max(0, box.top), bottom: Math.min(innerHeight, box.bottom)}, edge = 80;     // the part you can see
+      const v = last.y < sr.top + edge ? -Math.ceil((sr.top + edge - last.y) / 5) : last.y > sr.bottom - edge ? Math.ceil((last.y - (sr.bottom - edge)) / 5) : 0;
+      if (v) { scroller.scrollTop += v; target(); }
+      raf = requestAnimationFrame(tick);
+    };
+    const onMove = (ev) => {
+      if (ev.pointerId !== id) return; last = {x: ev.clientX, y: ev.clientY};
+      if (!lifted) { if (Math.hypot(last.x - sx, last.y - sy) < (o.threshold || 0)) return; lift(); }
+      ev.preventDefault(); place(); target();
+    };
+    const onUp = (ev) => {
+      if (ev.pointerId !== id) return;
+      removeEventListener('pointermove', onMove); removeEventListener('pointerup', onUp); removeEventListener('pointercancel', onUp); cancelAnimationFrame(raf);
+      if (!lifted) return;
+      const t = item.getBoundingClientRect();
+      ghost.style.transition = 'transform .18s ease-out'; ghost.style.transform = `translate(${t.left}px,${t.top}px) rotate(0deg) scale(${k})`;
+      setTimeout(() => { ghost.remove(); item.classList.remove('cp-dragph'); document.body.classList.remove('cp-dragging'); cardDrag = null; if (o.onEnd) o.onEnd(); o.onDone(items()); }, 190);
+    };
+    addEventListener('pointermove', onMove, {passive: false}); addEventListener('pointerup', onUp); addEventListener('pointercancel', onUp);
+    if (!o.threshold) lift();
+  }
+  const reorder = (arr, order) => (order.length === arr.length && order.some((n, i) => n !== i) ? order.map((n) => arr[n]) : null);
+  // in the preview: question and client video cards (by their handle), and whole steps (by "Move step")
+  $('pv').addEventListener('pointerdown', (e) => {
+    if (e.button > 0) return;
+    const h = e.target.closest('.cp-drag'), mv = e.target.closest('.cp-move');
+    if (h) {
+      e.preventDefault(); e.stopPropagation();
+      const card = h.parentElement, grid = card.parentElement, [list, bi] = h.dataset.drag.split(':');
+      startSort(e, card, {items: () => [...grid.children], ghostParent: $('pv'), onDone: (els) => {
+        const blk = cur.blocks[+bi], next = blk && reorder(blk[list], els.map((x) => Number(x.dataset.di)));
+        if (next) { blk[list] = next; renderBlocks(); changed(); showToast('Moved'); } else renderPreview(); }});
+    } else if (mv) {
+      e.preventDefault(); e.stopPropagation();
+      const sec = mv.parentElement;
+      startSort(e, sec, {axis: 'y', maxH: 240, ghostParent: $('pv'), items: () => [...$('pv').querySelectorAll('section.cp-sec[data-bi]')],
+        onLift: () => $('pv').classList.add('cp-sorting'), onEnd: () => $('pv').classList.remove('cp-sorting'),
+        onDone: (els) => { const next = reorder(cur.blocks, els.map((x) => Number(x.dataset.bi))); if (next) { cur.blocks = next; renderBlocks(); changed(); showToast('Step moved'); } else renderPreview(); }});
+    }
+  });
+  // in the form: the steps (by their ⠿ grip) and the result screenshots (press and move)
+  $('form').addEventListener('pointerdown', (e) => {
+    if (e.button > 0) return;
+    const g = e.target.closest('[data-grip]');
+    if (g) {
+      e.preventDefault();
+      startSort(e, g.closest('.blk'), {axis: 'y', maxH: 160, items: () => [...$('blocks').querySelectorAll('.blk[data-bi]')],
+        onDone: (els) => { const next = reorder(cur.blocks, els.map((x) => Number(x.dataset.bi))); if (next) { cur.blocks = next; changed(); showToast('Step moved'); } renderBlocks(); }});
+      return;
+    }
+    const im = e.target.closest('.imgs > div[data-ii]');
+    if (im && !e.target.closest('button')) {
+      e.preventDefault();
+      const box = im.parentElement, bi = +im.dataset.bi;
+      startSort(e, im, {threshold: 6, items: () => [...box.children], onDone: (els) => {
+        const blk = cur.blocks[bi], next = blk && reorder(blk.images || [], els.map((x) => Number(x.dataset.ii)));
+        if (next) { blk.images = next; changed(); showToast('Moved'); } renderBlocks(); }});
+    }
+  });
   $('pvDesk').addEventListener('click', () => { $('pvFrame').className = 'pv-frame desk'; $('pvDesk').classList.add('on'); $('pvPhone').classList.remove('on'); });
   $('pvPhone').addEventListener('click', () => { $('pvFrame').className = 'pv-frame phone'; $('pvPhone').classList.add('on'); $('pvDesk').classList.remove('on'); });
   function smallScreen() { const s = innerWidth <= 1100; $('pvBtn').style.display = s ? '' : 'none'; $('pvClose').style.display = s ? '' : 'none'; if (!s) $('pvWrap').classList.remove('show'); }
