@@ -940,23 +940,44 @@
       cardDrag = true; place(); tick();
     };
     const items = () => o.items().filter((x) => !x.classList.contains('cp-dragghost'));
-    const target = () => {
-      const all = items(), others = all.filter((x) => x !== item);
-      let over = others.find((x) => { const q = x.getBoundingClientRect(); return last.y >= q.top && last.y <= q.bottom && (o.axis === 'y' || (last.x >= q.left && last.x <= q.right)); });
-      let ref;
-      if (over) { const before = all.indexOf(over) < all.indexOf(item); ref = before ? over : over.nextElementSibling; }
-      else if (o.axis === 'y' && others.length) {
+    // where every item sits once it has settled (not halfway through its slide), remembered with the scroll position
+    // at that moment, so a scroll since then is simply added
+    const scrollTop = () => (scroller === document.scrollingElement ? scroller.scrollTop : scroller.scrollTop);
+    let layout = new Map();
+    const measure = (els) => { const st = scrollTop(); layout = new Map(els.map((x) => [x, {r: x.getBoundingClientRect(), st}])); };
+    const rectOf = (x) => { const m = layout.get(x); if (!m) return x.getBoundingClientRect(); const d = scrollTop() - m.st; return {left: m.r.left, right: m.r.right, top: m.r.top - d, bottom: m.r.bottom - d, width: m.r.width, height: m.r.height}; };
+    let pending = false;
+    const target = () => { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; swap(); }); };
+    const swap = () => {
+      if (!lifted) return;
+      const all = items(), others = all.filter((x) => x !== item); if (!others.length) return;
+      if (!layout.size) measure(all);
+      const me = rectOf(item);
+      let over = others.find((x) => { const q = rectOf(x); return last.y >= q.top && last.y <= q.bottom && (o.axis === 'y' || (last.x >= q.left && last.x <= q.right)); });
+      let ref = null;
+      if (over) {
+        const q = rectOf(over), after = all.indexOf(over) > all.indexOf(item);
+        // only when the pointer is past the middle of that item (towards where it would go), so nothing flips back and forth
+        const sameRow = o.axis !== 'y' && Math.abs(q.top - me.top) < Math.min(q.height, me.height) / 2;
+        const past = sameRow ? (after ? last.x > q.left + q.width / 2 : last.x < q.left + q.width / 2)
+                             : (after ? last.y > q.top + q.height / 2 : last.y < q.top + q.height / 2);
+        if (!past) return;
+        ref = after ? over.nextElementSibling : over;
+      } else if (o.axis === 'y') {
         // above the first one: first place; below the last one: last place
-        const f = others[0].getBoundingClientRect(), l = others[others.length - 1].getBoundingClientRect();
-        if (last.y < f.top) { over = others[0]; ref = others[0]; }
-        else if (last.y > l.bottom) { over = others[others.length - 1]; ref = over.nextElementSibling; }
+        const f = rectOf(others[0]), l = rectOf(others[others.length - 1]);
+        if (last.y < f.top && all[0] !== item) { over = others[0]; ref = others[0]; }
+        else if (last.y > l.bottom && all[all.length - 1] !== item) { over = others[others.length - 1]; ref = over.nextElementSibling; }
         else return;
       } else return;
       if (ref === item || item.nextElementSibling === ref) return;
+      // FLIP: where they are now (on screen, mid-slide or not), move the item, then slide everyone from there to their new place
       const was = new Map(all.map((x) => [x, x.getBoundingClientRect()]));
+      all.forEach((x) => x.getAnimations && x.getAnimations().forEach((a) => a.cancel()));
       over.parentElement.insertBefore(item, ref);
-      all.forEach((x) => { if (x === item) return; const a = was.get(x), b = x.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
-        if (dx || dy) x.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: 'none'}], {duration: 200, easing: 'cubic-bezier(.2,.8,.2,1)'}); });
+      measure(all);                                                   // the settled places, for the next check
+      all.forEach((x) => { if (x === item) return; const a = was.get(x), b = layout.get(x).r, dx = a.left - b.left, dy = a.top - b.top;
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) x.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: 'none'}], {duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)'}); });
     };
     // near the top or bottom edge of the panel, it scrolls by itself
     const tick = () => {
