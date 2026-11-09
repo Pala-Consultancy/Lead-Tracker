@@ -72,6 +72,11 @@
     '#ptXmas canvas{position:absolute;inset:0;width:100%;height:100%;}',
     '#ptXmas .xm-glow{position:absolute;left:0;right:0;top:0;height:180px;background:radial-gradient(55% 120% at 25% 0%,rgba(214,40,57,.07),transparent 70%),radial-gradient(45% 120% at 80% 0%,rgba(42,157,92,.07),transparent 70%);}',
     '#ptXmas .xm-lights{position:absolute;top:0;right:0;height:52px;}',
+    '#ptXmas .xm-lights.slim{height:14px;}',
+    '#ptXmas .xm-lights.slim .xm-bulb{width:6px;height:8px;margin-left:-3px;}',
+    '#ptXmas .xm-lights.slim .xm-bulb::before{display:none;}',
+    '#ptXmas .xm-lights.slim use{transform-box:fill-box;transform-origin:center top;transform:scale(.7);}',
+    '#ptXmas .xm-bulb.aside{visibility:hidden;}',
     '#ptXmas .xm-lights svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}',
     '#ptXmas .xm-bulb{position:absolute;width:9px;height:14px;margin-left:-4.5px;border-radius:50% 50% 45% 45%;animation:xmTwinkle 3.4s ease-in-out infinite;}',
     '#ptXmas .xm-bulb::before{content:"";position:absolute;left:2px;top:-4px;width:6px;height:5px;border-radius:2px;background:#3B4A3F;}',
@@ -182,24 +187,38 @@
     var old = layer.querySelector('.xm-lights'); if (old) old.remove();
     var side = PLACE === 'app' ? document.querySelector('.pts-host') : null, left = side ? Math.round(side.getBoundingClientRect().right) : 0;
     var W = Math.max(200, innerWidth - left - 6), n = Math.max(4, Math.round(W / 120)), seg = W / n, cols = ['r', 'g', 'y', 'b'];
-    var path = 'M0 6', bulbs = '', bows = '';
+    // inside the app a slim garland along the very top edge (the page's top bar stays free); elsewhere the full one
+    var slim = PLACE === 'app', top = slim ? 1 : 6;
+    var path = 'M0 ' + top, bulbs = '', bows = '';
     for (var i = 0; i < n; i++) {
-      var x0 = i * seg, x1 = x0 + seg, sag = 12 + (i % 2) * 5;
-      path += ' Q' + (x0 + seg / 2).toFixed(1) + ' ' + (6 + sag * 2) + ' ' + x1.toFixed(1) + ' 6';
-      bulbs += '<i class="xm-bulb ' + cols[i % 4] + '" style="left:' + (x0 + seg / 2).toFixed(1) + 'px;top:' + (6 + sag - 1) + 'px;animation-delay:-' + ((i * 0.8) % 3.4).toFixed(1) + 's"></i>';
-      if (i > 0) bows += '<use href="#xmBow" x="' + (x0 - 9).toFixed(1) + '" y="0"/>';
+      var x0 = i * seg, x1 = x0 + seg, sag = slim ? 3 + (i % 2) : 12 + (i % 2) * 5;
+      path += ' Q' + (x0 + seg / 2).toFixed(1) + ' ' + (top + sag * 2) + ' ' + x1.toFixed(1) + ' ' + top;
+      bulbs += '<i class="xm-bulb ' + cols[i % 4] + '" style="left:' + (x0 + seg / 2).toFixed(1) + 'px;top:' + (top + sag - 1) + 'px;animation-delay:-' + ((i * 0.8) % 3.4).toFixed(1) + 's"></i>';
+      if (i > 0) bows += '<use href="#xmBow" x="' + (x0 - 9).toFixed(1) + '" y="' + (slim ? -4 : 0) + '"' + (slim ? ' transform="scale(1)"' : '') + '/>';
     }
-    var box = document.createElement('div'); box.className = 'xm-lights'; box.style.left = left + 'px';
+    var box = document.createElement('div'); box.className = 'xm-lights' + (slim ? ' slim' : ''); box.style.left = left + 'px';
     box.innerHTML = '<svg aria-hidden="true"><defs><g id="xmBow"><path d="M9 7C5 2 0 3 1 7s5 4 8 0zM9 7c4-5 9-4 8 0s-5 4-8 0z" fill="#D62839"/><path d="M8 8l-3 8 3-2 1 3 1-9zM10 8l3 8-3-2-1 3-1-9z" fill="#B21F2F"/><circle cx="9" cy="7" r="2.2" fill="#E63946"/></g></defs>' +
-      '<path d="' + path + '" fill="none" stroke="#1E5A38" stroke-width="9" stroke-linecap="round"/>' +
-      '<path d="' + path + '" fill="none" stroke="#2E7D4F" stroke-width="7" stroke-dasharray="1.2 3.2" stroke-linecap="round"/>' +
-      '<path d="' + path + '" fill="none" stroke="#4FA36F" stroke-width="4" stroke-dasharray="1 5" stroke-dashoffset="2" stroke-linecap="round" opacity=".8"/>' + bows + '</svg>' + bulbs;
+      '<path d="' + path + '" fill="none" stroke="#1E5A38" stroke-width="' + (slim ? 6 : 9) + '" stroke-linecap="round"/>' +
+      '<path d="' + path + '" fill="none" stroke="#2E7D4F" stroke-width="' + (slim ? 4.5 : 7) + '" stroke-dasharray="1.2 3.2" stroke-linecap="round"/>' +
+      '<path d="' + path + '" fill="none" stroke="#4FA36F" stroke-width="' + (slim ? 2.5 : 4) + '" stroke-dasharray="1 5" stroke-dashoffset="2" stroke-linecap="round" opacity=".8"/>' + bows + '</svg>' + bulbs;
     layer.appendChild(box);
   }
   var resizeT = null; addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(function () { lights(); clearOrnaments(); }, 200); });
   // an ornament never covers something you can click: if a button or link is under it, it steps aside on that page
+  function clearBulbs() {
+    if (!layer) return;
+    var bulbs = layer.querySelectorAll('.xm-lights .xm-bulb'); if (!bulbs.length) return;
+    var hits = [].slice.call(document.querySelectorAll('button,a[href],input,select,textarea,[role="button"]'))
+      .filter(function (el) { return !layer.contains(el) && el.offsetParent !== null; })
+      .map(function (el) { return el.getBoundingClientRect(); }).filter(function (r) { return r.width && r.top < 70; });
+    bulbs.forEach(function (bl) {
+      bl.classList.remove('aside'); var r = bl.getBoundingClientRect(), m = 0;
+      if (hits.some(function (h) { return h.left < r.right + m && h.right > r.left - m && h.top < r.bottom + m && h.bottom > r.top - m; })) bl.classList.add('aside');
+    });
+  }
   function clearOrnaments() {
     if (!layer) return;
+    clearBulbs();
     var orns = layer.querySelectorAll('.xm-orn'); if (!orns.length) return;
     // everything you can click on the page (that's visible), as rectangles
     var hits = [].slice.call(document.querySelectorAll('button,a[href],input,select,textarea,[role="button"],[onclick],label[for]'))
