@@ -757,6 +757,74 @@
   /* a square logo on a button fills the whole tile (a wide one stays fully visible) */
   .cta-ic.logo.fill{background:transparent;border-color:transparent;} .cta-ic.logo.fill img{padding:0;object-fit:cover;}
   .cta.locked .cta-ic.logo.fill{background:transparent;}
+
+  /* ===================== the 2026 look: roomier, warmer, clearer (only how it looks; nothing it does changes) ===================== */
+  :root{--col:800px;--r:22px;--shadow-1:0 1px 2px rgba(16,24,40,.05),0 10px 28px -20px rgba(16,24,40,.28);}
+  [data-theme="dark"]{--shadow-1:0 1px 2px rgba(0,0,0,.4),0 14px 32px -22px rgba(0,0,0,.8);}
+  body{background:radial-gradient(1100px 520px at 50% -160px,color-mix(in srgb,var(--accent) 13%,transparent),transparent 72%),
+                  radial-gradient(700px 380px at 92% 8%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 70%),var(--bg);background-attachment:scroll;}
+  /* the header card */
+  .hero{min-height:360px;border-radius:30px;box-shadow:0 40px 80px -44px var(--accent-line),0 1px 0 rgba(255,255,255,.1) inset;}
+  .title{font:800 clamp(36px,4.8vw,58px)/1.04 var(--serif);letter-spacing:-.035em;}
+  .hstat small{max-width:230px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;}
+  .hero-prog{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.26);}
+  .hero-go{height:46px;padding:0 20px;border-radius:14px;}
+  @media (min-width:900px){
+    .hero-in{flex-wrap:nowrap;align-items:flex-end;}
+    .hero-main{flex:1 1 0;min-width:0;}
+    .hero-prog{flex-direction:column;align-items:stretch;gap:12px;padding:18px;min-width:230px;max-width:270px;}
+    .hero-prog .hero-go{justify-content:center;}
+    .hstat small{max-width:none;}
+  }
+  .hero-go:hover{transform:translateY(-1px);box-shadow:0 14px 28px -12px rgba(0,0,0,.55);}
+  /* the personal letter */
+  .letter{max-width:var(--col);padding-top:36px;}
+  /* the letter's text and signature are one card (top and bottom half): an accent edge along both, and depth */
+  .letter .intro:not(.hidden),.letter .sign:not(.hidden){box-shadow:inset 4px 0 0 var(--accent);}
+  .letter .intro:not(.hidden){box-shadow:inset 4px 0 0 var(--accent),0 1px 2px rgba(16,24,40,.04);}
+  .letter .sign:not(.hidden){box-shadow:inset 4px 0 0 var(--accent),0 24px 44px -30px rgba(16,24,40,.35);}
+  .letter .intro.hidden + .sign:not(.hidden){border-top:1px solid var(--line);border-radius:24px;}
+  .letter .intro > h2:first-child,.letter .intro > h3:first-child{margin-top:0;}
+  .content h2{font:800 26px/1.2 var(--serif);letter-spacing:-.02em;}
+  .content h3{font-weight:700;}
+  .letter .intro .tx{font-size:16px;line-height:1.7;color:var(--ink-body,var(--ink-2));}
+
+  /* the steps */
+  .steps-wrap{max-width:var(--col);margin-top:72px;}
+  .steps-h h2{font:800 30px/1.15 var(--serif);letter-spacing:-.025em;}
+  .steps-h h2{font-size:30px;}
+  .steps{border:none;background:transparent;overflow:visible;display:flex;flex-direction:column;gap:12px;}
+  .step,.steps > .step:first-child,.section + .step{border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-1);
+       transition:border-color .2s,box-shadow .25s,transform .2s,background .2s;}
+  .step:hover{border-color:color-mix(in srgb,var(--accent) 35%,var(--line));}
+  .step.is-next{background:var(--surface);border-color:color-mix(in srgb,var(--accent) 70%,transparent);
+       box-shadow:0 0 0 4px var(--accent-soft),0 24px 48px -28px var(--accent-line);}
+  .step.done{background:color-mix(in srgb,var(--ok) 4%,var(--surface));border-color:color-mix(in srgb,var(--ok) 22%,var(--line));}
+  .s-head{padding:20px 22px;gap:16px;}
+  .s-main h3{font:700 17px/1.4 var(--serif);letter-spacing:-.01em;}
+  .step.done .s-main h3{color:var(--ink-3);}
+  .num{width:36px;height:36px;border:2px solid var(--accent-line);background:var(--accent-soft);color:var(--accent);font:700 15px var(--serif);}
+  .step.is-next .num{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 8px 18px -8px var(--accent);}
+  .step.done .num{box-shadow:0 6px 14px -8px var(--ok);}
+  .section{border:none;padding:22px 4px 2px;display:flex;align-items:center;gap:10px;font:700 13px var(--sans);letter-spacing:.07em;color:var(--ink-2);}
+  .section::before{content:"";width:18px;height:3px;border-radius:3px;background:var(--accent);flex:0 0 auto;}
+  /* "Before our call" and "After our call": milestones on the way, not banners */
+  .phase{margin:34px 0 4px;padding:6px 2px;border:none;border-radius:0;background:transparent;box-shadow:none;}
+  .phase::after{content:"";flex:1 1 40px;align-self:center;height:2px;border-radius:2px;margin-left:6px;
+       background:linear-gradient(90deg,color-mix(in srgb,var(--pc) 45%,transparent),transparent);}
+  .phase b{font:800 20px var(--serif);}
+  .phase small{color:var(--ink-2);}
+  .ph-ic{width:40px;height:40px;border-radius:13px;background:linear-gradient(140deg,var(--pc),color-mix(in srgb,var(--pc) 65%,#000));}
+  /* buttons */
+  .btn.solid{border:none;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 72%,#7C3AED));box-shadow:0 10px 22px -12px var(--accent);height:44px;padding:0 20px;border-radius:12px;}
+  .btn.solid:hover{transform:translateY(-1px);box-shadow:0 14px 26px -12px var(--accent);}
+  .field,.s-body textarea,.s-body input[type="text"]{border-radius:12px;}
+  /* the footer */
+  .foot{max-width:var(--col);margin-top:72px;}
+  @media (max-width:640px){
+    .title{font-size:34px;}
+    .s-head{padding:16px;gap:12px;} .steps-h h2,.steps-h h2{font-size:25px;} .phase b{font-size:18px;}
+  }
 </style>
 </head>
 <body>
