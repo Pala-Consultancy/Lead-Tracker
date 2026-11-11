@@ -441,6 +441,21 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
     const p = parsed.profile && parsed.profile.name && !badName(parsed.profile.name) && norm(parsed.profile.name) !== norm(mine || myName) ? parsed.profile.name : '';
     return p || (parsed.names || []).find((n)=> !badName(n) && norm(n) !== norm(mine || myName)) || '';
   }
+  // a name as LinkedIn shows it, without the extras: emoji, pronouns "(He/Him)", titles ", MBA", "✓", "• 2nd", "Premium"
+  function cleanName(n){
+    return String(n || '').replace(/\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u{1F3FB}-\u{1F3FF}\uFE0F\u200D✓✔☑]/gu, ' ')
+      .replace(/\((?:he|she|they|him|her|them|ze|hij|zij|il|elle)(?:\s*\/\s*[a-z]+){0,2}\)/gi, ' ')
+      .replace(/\s*[·•]\s*(?:1st|2nd|3rd\+?)\b.*$/i, '').replace(/\s+(?:Premium|Verified|LinkedIn Member|Open to work|Hiring)\s*$/i, '')
+      .replace(/,\s*(?:MBA|PhD|Ph\.D\.|MSc|BSc|MA|BA|CPA|CFA|PMP|MD|Dr|Jr\.?|Sr\.?|III|II)\b.*$/i, '').replace(/\s+[|–—-]\s+.*$/, '')
+      .replace(/\s{2,}/g, ' ').trim();
+  }
+  const NOT_NAME = /^(today|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday|messaging|message|messages|inbox|focused|other|unread|you|me|seen|sent|delivered|linkedin|sponsored|premium|new|active|online|offline|mobile|reply|send|write|attach|view|connect|follow|more|see more|load more|january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)$/i;
+  function looksLikeName(n, minWords){
+    n = cleanName(n); if (!n || n.length > 60 || /\d|https?:|@|[?!:;"“”]/.test(n)) return false;
+    const w = n.split(' ');
+    if (w.length < (minWords || 1) || w.length > 5) return false;
+    return w.every((x) => /^(?:[\p{Lu}][\p{L}'’.-]*|van|von|de|der|den|da|di|du|del|della|le|la|ter|ten|bin|al|el)$/u.test(x) && !NOT_NAME.test(x.replace(/[.,]$/, '')));
+  }
   function parseLinkedInPaste(raw, now) {
     now = now || new Date();
     let firstUrl = '';
@@ -505,7 +520,7 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
     let noDay = false;
     // no day label before the first message: today, or yesterday if that time hasn't happened yet today
     const baseDay = (t) => { if (day.getFullYear() > 1970) return day; noDay = true; let d = startOfDay(now); if (withTime(d, t) > now) { d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1); } day = d; return d; };
-    const out = []; let day = new Date(1970, 0, 1), who = null, at = null, buf = [], names = new Set();
+    const out = []; let day = new Date(1970, 0, 1), who = null, at = null, buf = [], names = new Set(), viewNames = [];
     const flush = () => {
       // drop the reaction bars LinkedIn copies along ("React with", an emoji, a count; or a run of 3+ single-emoji lines)
       let L = buf.slice(); buf = [];
@@ -544,14 +559,15 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
     const pre = []; let started = false;
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i], t = l.trim();
-      if (!started) { if (HEAD.test(t) || / sent the following messages? at /i.test(t) || (dayFrom(t) && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim())))) started = true; else { if (t) pre.push(t); continue; } }
+      const stampLine = (x) => { const m = String(x || '').trim().match(/^(.+?)\s+(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/); return !!(m && looksLikeName(m[1], 2)); };
+      if (!started) { if (HEAD.test(t) || / sent the following messages? at /i.test(t) || stampLine(t) || (dayFrom(t) && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim()) || stampLine(lines[i + 1])))) started = true; else { if (t) pre.push(t); continue; } }
       if (!t) { buf.push(''); continue; }
       const d = dayFrom(t);
       const setDay = (nd)=>{ flush(); while (nd < day) nd = new Date(nd.getFullYear(), nd.getMonth(), nd.getDate() + 7); day = nd; };   // days only move forward
       if (d && !buf.some((x) => x.trim())) { setDay(d); continue; }
       if (d && i + 1 < lines.length && (HEAD.test(lines[i + 1].trim()) || /^View /.test(lines[i + 1].trim()))) { setDay(d); continue; }
-      const h = t.match(HEAD); if (h) { flush(); who = h[1].trim(); names.add(who); at = withTime(baseDay(h[2]), h[2]); continue; }
-      if (VIEW.test(t)) { flush(); continue; }
+      const h = t.match(HEAD); if (h) { flush(); who = cleanName(h[1]) || h[1].trim(); names.add(who); at = withTime(baseDay(h[2]), h[2]); continue; }
+      if (VIEW.test(t)) { flush(); const vn = t.match(/^View (.+?)['’]s? profile/i); if (vn) viewNames.push(cleanName(vn[1])); continue; }
       const pv = t.match(POSTVIEW), pc = !pv && who && t.match(/^(.{2,60}?)\s*•\s*(1st|2nd|3rd\+?)(.*?)(?:(\d+\s*(?:s|m|h|d|w|mo|yr|y))\s*•\s*(?:Edited\s*•?\s*)?)?$/i);
       if (pv || pc) {                                                  // read the whole post into one card
         const post = {author: (pv ? pv[1] : pc[1]).trim(), degree: pc ? pc[2] : '', headline: pc ? pc[3].trim() : '', age: pc && pc[4] ? pc[4].replace(/\s+/g, '') : '', text: '', url: firstUrl || ''}; let j = i + 1;
@@ -568,8 +584,10 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
         post.text = body.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         posts.push(post); buf.push('\u0000POST:' + (posts.length - 1)); i = j - 1; continue;
       }
-      const s1 = t.match(/^(.+?)\s+(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/); const s = t.match(STAMP) || (s1 && names.has(s1[1].trim()) ? s1 : null);
-      if (s && (names.has(s[1].trim()) || /^[A-Z]/.test(s[1]))) { flush(); who = s[1].trim(); names.add(who); at = withTime(baseDay(s[2]), s[2]); continue; }
+      const s1 = t.match(/^(.+?)\s+(\d{1,2}[:.]\d{2}(?:\s*[AaPp]\.?\s?[Mm]\.?)?)\s*$/);
+      const known = (x) => names.has(x.trim()) || names.has(cleanName(x));
+      const s = t.match(STAMP) || (s1 && (known(s1[1]) || looksLikeName(s1[1], 2)) ? s1 : null);
+      if (s && (known(s[1]) || (/^[A-Z]/.test(s[1]) && looksLikeName(s[1])))) { flush(); who = cleanName(s[1]) || s[1].trim(); names.add(who); at = withTime(baseDay(s[2]), s[2]); continue; }
       buf.push(l);
     }
     flush();
@@ -577,6 +595,7 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
     // the profile at the top: "Will Barnes", "· 1st" (sometimes on the same line), and the headline
     let profile = null;
     const SKIP = /^(messaging|active now|available on mobile|mobile|seen|load more|close your conversation|open the options|.*\bactive\b.*ago|premium|view profile|\d+\s*(?:s|m|h|d|w)\s*ago|(?:1st|2nd|3rd\+?)\s+degree connection|status is (?:online|offline|reachable|away)|online|offline)$/i;
+    pre.forEach((x) => { const vn = x.match(/^View (.+?)['’]s? profile/i); if (vn) viewNames.push(cleanName(vn[1])); });
     const P = pre.map((x) => x.replace(/^View .+?['’]s? profile/i, '').trim()).filter((x) => x && !SKIP.test(x));
     const di = P.findIndex((x) => /(?:^|[·•]\s*)(1st|2nd|3rd\+?)\s*$/i.test(x));
     if (di >= 0) {
@@ -584,9 +603,18 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
       let nm = dl.replace(/[·•]?\s*(1st|2nd|3rd\+?)\s*$/i, '').replace(/\s*(Premium|LinkedIn Member)\s*$/i, '').trim();
       if (!nm && di > 0) nm = P[di - 1];
       const hl = P[di + 1] && !/^(1st|2nd|3rd)/i.test(P[di + 1]) ? P[di + 1] : '';
+      nm = cleanName(nm);
       if (nm && nm.length <= 80) profile = {name: nm, degree: deg, headline: hl.slice(0, 300)};
     }
-    return {messages: out, names: [...names], noDay, authors, profile};
+    if (!profile) {
+      // no "· 1st" line copied: the first line that looks like a full name, with the line under it as the headline if it reads like one
+      const ni = P.findIndex((x) => looksLikeName(x, 2));
+      if (ni >= 0) { const hl = P[ni + 1] || ''; profile = {name: cleanName(P[ni]), degree: '', headline: /[|@]| at | bij | chez |founder|ceo|owner|director|manager|consultant|coach|head of|lead|partner/i.test(hl) && !looksLikeName(hl) ? hl.slice(0, 300) : '', guessed: true}; }
+    }
+    // first names the conversation mentions: "View David’s profile", and greetings ("Hi David," "Hey Sarah")
+    const firstNames = viewNames.filter((n) => n && !n.includes(' '));
+    out.forEach((m) => { const g = String(m.text || '').match(/^(?:hi|hey|hello|hallo|hoi|dag|yo+|dear|bonjour|salut|ciao|hola|goedemorgen|goedemiddag|good morning|good afternoon)[\s,]+([\p{Lu}][\p{Ll}'’-]{1,20})\b/iu); if (g && !NOT_NAME.test(g[1])) firstNames.push(g[1]); });
+    return {messages: out, names: [...names], noDay, authors, profile, viewNames: viewNames.filter((n) => n && n.includes(' ')), firstNames: [...new Set(firstNames)]};
   }
   const norm = (n)=> String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
   // a shared post, shown like LinkedIn's post preview
@@ -1003,6 +1031,12 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
       if(!parsed || !parsed.messages.length){ out.innerHTML = parsed ? '<div class="ps-warn">No messages found. Copy the messages themselves from the conversation on LinkedIn, from the first to the last.</div>' : ''; go.disabled = true; go.textContent = 'Import'; return; }
       const prof = parsed.profile && norm(parsed.profile.name) !== norm(meName) ? parsed.profile : null;
       const others = parsed.names.filter((n)=> norm(n) !== norm(meName)).concat(prof && !parsed.names.some((x)=> norm(x) === norm(prof.name)) ? [prof.name] : [], (parsed.authors || []).filter((n)=> norm(n) !== norm(meName) && !parsed.names.some((x)=> norm(x) === norm(n))));
+      // more clues: full names from "View … profile" lines; and, if no full name is anywhere, the first name you greeted them with
+      (parsed.viewNames || []).forEach((n)=>{ if(norm(n) !== norm(meName) && norm(n).split(' ')[0] !== norm(meName).split(' ')[0] && !others.some((x)=> norm(x) === norm(n))) others.push(n); });
+      // a full name that matches a first name they were greeted with goes first
+      const greet = (parsed.firstNames || []).map((f)=> norm(f));
+      others.sort((a, b)=> (greet.includes(norm(b).split(' ')[0]) ? 1 : 0) - (greet.includes(norm(a).split(' ')[0]) ? 1 : 0));
+      if(!others.length){ const f = (parsed.firstNames || []).find((x)=> norm(x) !== norm(meName).split(' ')[0]); if(f) others.push(f); }
       if(!into){ theirName = typedName || (theirName && others.includes(theirName) ? theirName : (others[0] || ''));
         if(!lead){ try { const L = await loadLeads(); const f = L.find((x)=> norm(x.name) === norm(theirName)); if(f) lead = f; } catch(e){ /* ignore */ } } }
       const msgs = toMessages(parsed, meName), fixes = repairsFor(into && into.messages, msgs), fixedTexts = new Set([...((into && into.messages) || [])].filter((m)=> fixes.has(m.id)).map(textKey));
