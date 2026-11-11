@@ -128,7 +128,7 @@
   .vsl::before { content: ""; position: absolute; width: 900px; height: 700px; left: 50%; top: -320px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, rgba(27,89,165,.10), transparent 62%); pointer-events: none; }
   .vsl::after { content: ""; position: absolute; width: 600px; height: 600px; right: -220px; top: 30%; border-radius: 50%; background: radial-gradient(circle, rgba(242,107,29,.09), transparent 62%); pointer-events: none; }
   .vsl .container { position: relative; z-index: 1; }
-  .vsl-head h1 { font-size: clamp(2rem, 3.6vw, 3.1rem); line-height: 1.06; letter-spacing: -.04em; font-weight: 800; color: var(--brand-deep); margin: .9rem auto 0; max-width: 24ch; text-wrap: balance; }
+  .vsl-head h1 { font-size: clamp(2rem, 3.6vw, 3.1rem); line-height: 1.06; letter-spacing: -.04em; font-weight: 800; color: var(--brand-deep); margin: 0 auto; max-width: 24ch; text-wrap: balance; }
   .vsl-head h1 span { color: var(--brand); }
   .vsl-head h1 .nowrap { color: inherit; }
   .vsl-cta .fit { display: inline-flex; align-items: center; gap: .55rem; margin-top: .2rem; }
@@ -645,6 +645,43 @@
   .problem-head, .method-head, .cl-head { margin-bottom: 1.8rem; }
   .section { padding: clamp(3rem, 6vw, 4.5rem) 0; }
   .clients { padding-top: 0; }
+
+  /* Pain points marked with red crosses, fixes marked in green */
+  .pp-ic { background: #FDECEC !important; color: #E03B3B !important; }
+  .pp-item.active .pp-ic { background: #E03B3B !important; color: #fff !important; }
+  .pp-tag { color: #7BE3A8 !important; background: rgba(34,181,115,.16) !important; }
+  .pp-tag::before { background: #22B573 !important; }
+
+  /* First screen shows only the headline and video; the next section starts below the fold */
+  .vsl { min-height: 100vh; min-height: 100svh; padding-bottom: clamp(4rem, 8vw, 6rem) !important; box-sizing: border-box; }
+  .clients { padding-top: clamp(1.5rem, 4vw, 3rem) !important; }
+
+  /* Solution panel matches the height of the pain point list, and grows for longer solutions */
+  .problem .pp { align-items: stretch !important; }
+  .problem .pp-list { position: static !important; align-content: start; }
+  .problem .pp-panel { min-height: 0 !important; height: auto; }
+  .problem .pp-panel:not(.has) { min-height: 100% !important; }
+
+  /* Never let the browser shift the view when content above or around changes height */
+  html, body { overflow-anchor: none; }
+
+  /* More breathing room between the clients and the 5 problems */
+  .clients { padding-bottom: clamp(4.5rem, 9vw, 7rem) !important; }
+  .problem { padding-top: clamp(4.5rem, 9vw, 7rem) !important; }
+
+  /* Booking button under the video */
+  .book { display: flex; flex-direction: column; align-items: center; gap: .7rem; margin-top: 2.4rem; text-align: center; }
+  .book-btn { font-size: 1.05rem; padding: 1.05rem 2rem; box-shadow: 0 14px 30px rgba(242,107,29,.3); }
+  .book-btn:hover { box-shadow: 0 18px 36px rgba(242,107,29,.4); }
+  .book span { font-size: var(--fs-small); color: var(--muted); }
+
+  /* Booking (embedded Aura page) */
+  .booking { background: var(--warm); border-top: 1px solid var(--gray-100); }
+  .booking-frame { max-width: 720px; margin-inline: auto; border-radius: 22px; overflow: hidden; background: #fff; border: 1px solid var(--gray-200); box-shadow: 0 24px 60px rgba(13,39,71,.1); }
+  .booking-frame iframe { display: block; width: 100%; height: 760px; border: 0; }
+  .booking-alt { text-align: center; margin: 1rem 0 0; font-size: var(--fs-small); color: var(--muted); }
+  .booking-alt a { color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  @media (max-width: 640px) { .booking-frame { border-radius: 16px; } .booking-frame iframe { height: 820px; } }
 </style>
 </head>
 <body>
@@ -654,7 +691,6 @@
   <section class="section vsl" id="video">
     <div class="container">
       <div class="vsl-head">
-        <span class="pill reveal"><i></i>Marketing</span>
         <h1 class="reveal r1">How I closed over <span>$1.5M in sales</span> and have <span class="nowrap">high-ticket</span> clients pay me <span>$24K in full</span> on a monthly basis</h1>
       </div>
       <div class="vsl-frame reveal r2">
@@ -686,6 +722,12 @@
           <b>Video coming soon</b>
           <span>Add your video as video/vsl.mp4 to show it here.</span>
         </div>
+      </div>
+    <div class="book reveal r3">
+        <a class="btn btn-orange book-btn" href="#book">Book your 1:1 call
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+        <span>45-minute strategy session with Gabriele</span>
       </div>
     </div>
   </section>
@@ -747,14 +789,14 @@
     <div class="pp-glow" aria-hidden="true"></div>
     <div class="container">
       <div class="problem-head">
-        <h2 class="reveal r1">Which of these pain points are you currently experiencing?</h2>
+        <h2 class="reveal r1">The 5 problems that keep you from consistently scaling your client acquisition</h2>
         <p class="lead reveal r2">Click the problem that sounds most like you, and I’ll show you exactly how I fix it.</p>
       </div>
       <div class="pp reveal r2">
         <ul class="pp-list" role="list">
           <li class="pp-item" data-i="1">
             <button class="pp-btn" type="button" aria-expanded="false" aria-controls="pp-sol-1">
-              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h4l3-6 4 4 3-3h4"/><path d="M3 21h18"/></svg></span>
+              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7L7 17"/></svg></span>
               <span class="pp-text">You’re struggling to consistently scale your client acquisition by signing more high-ticket clients.</span>
               <span class="pp-chev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg></span>
             </button>
@@ -773,41 +815,12 @@
                   <div><b>90%</b><span>show-up rate on calls</span></div>
                   <div><b class="up"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5"/></svg></b><span>higher closing rate</span></div>
                 </div>
-                
-                <div class="viz v-pyr">
-                <svg class="mp" viewBox="0 -10 420 230" aria-hidden="true">
-                  <ellipse cx="120" cy="212" rx="120" ry="9" fill="rgba(0,0,0,.25)"/>
-                  <g class="mp-band" style="--d:0.25s" transform="translate(0 0)">
-                    <polygon points="12.0,172.0 120.0,206.0 120.0,142.0 48.0,119.3" fill="#1B59A5"/>
-                    <polygon points="120.0,206.0 228.0,172.0 192.0,119.3 120.0,142.0" fill="#13467F"/>
-                    <polygon points="48.0,119.3 120.0,96.7 192.0,119.3 120.0,142.0" fill="#2F6DB8"/>
-                    <path d="M220.0 164.0 H262" stroke="rgba(255,255,255,.3)" stroke-width="1.5" stroke-dasharray="3 4"/>
-                    <circle cx="262" cy="164.0" r="3.5" fill="#1B59A5"/>
-                    <text x="274" y="169.0" class="mp-lab">Positioning</text>
-                  </g><g class="mp-band" style="--d:0.50s" transform="translate(0 -7)">
-                    <polygon points="48.0,119.3 120.0,142.0 120.0,78.0 84.0,66.7" fill="#4C82C6"/>
-                    <polygon points="120.0,142.0 192.0,119.3 156.0,66.7 120.0,78.0" fill="#3567AA"/>
-                    <polygon points="84.0,66.7 120.0,55.3 156.0,66.7 120.0,78.0" fill="#6299D6"/>
-                    <path d="M184.0 100.0 H262" stroke="rgba(255,255,255,.3)" stroke-width="1.5" stroke-dasharray="3 4"/>
-                    <circle cx="262" cy="100.0" r="3.5" fill="#4C82C6"/>
-                    <text x="274" y="105.0" class="mp-lab">Pipeline</text>
-                  </g><g class="mp-band" style="--d:0.75s" transform="translate(0 -14)">
-                    <polygon points="84.0,66.7 120.0,78.0 120.0,14.0" fill="#F26B1D"/>
-                    <polygon points="120.0,78.0 156.0,66.7 120.0,14.0" fill="#CF5410"/>
-                    
-                    <path d="M148.0 36.0 H262" stroke="rgba(255,255,255,.3)" stroke-width="1.5" stroke-dasharray="3 4"/>
-                    <circle cx="262" cy="36.0" r="3.5" fill="#F26B1D"/>
-                    <text x="274" y="41.0" class="mp-lab">Conversion</text>
-                  </g>
-                </svg>
-                <div class="vp-cap">Built from the bottom up</div>
-              </div>
               </div>
             </div>
           </li>
           <li class="pp-item" data-i="2">
             <button class="pp-btn" type="button" aria-expanded="false" aria-controls="pp-sol-2">
-              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2.5-6 5-6 7.5 0s5 6 7.5 0 3.5-4 5-2"/></svg></span>
+              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7L7 17"/></svg></span>
               <span class="pp-text">Highly qualified leads are inconsistent.</span>
               <span class="pp-chev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg></span>
             </button>
@@ -836,7 +849,7 @@
           </li>
           <li class="pp-item" data-i="3">
             <button class="pp-btn" type="button" aria-expanded="false" aria-controls="pp-sol-3">
-              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></span>
+              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7L7 17"/></svg></span>
               <span class="pp-text">You’re not getting enough inbound leads that fit your ICP.</span>
               <span class="pp-chev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg></span>
             </button>
@@ -864,7 +877,7 @@
           </li>
           <li class="pp-item" data-i="4">
             <button class="pp-btn" type="button" aria-expanded="false" aria-controls="pp-sol-4">
-              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7L7 17"/></svg></span>
               <span class="pp-text">Creating content takes too much of your time.</span>
               <span class="pp-chev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg></span>
             </button>
@@ -889,7 +902,7 @@
           </li>
           <li class="pp-item" data-i="5">
             <button class="pp-btn" type="button" aria-expanded="false" aria-controls="pp-sol-5">
-              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M10 9.2a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9M12 13.6v.1"/></svg></span>
+              <span class="pp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7L7 17"/></svg></span>
               <span class="pp-text">Prospects say “I’ll think about it” instead of buying.</span>
               <span class="pp-chev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg></span>
             </button>
@@ -931,7 +944,7 @@
   <section class="section" id="method">
     <div class="container">
       <div class="method-head">
-        <span class="kicker reveal">The method</span>
+        <span class="kicker reveal">The method behind $1.5M and 7-10 figure clients</span>
         <h2 class="reveal r1">The PALA Growth Pyramid</h2>
         <p class="lead reveal r2">I build it with you in three phases, from the bottom up. Each phase carries the weight of the next, so we never skip ahead.</p>
       </div>
@@ -1069,7 +1082,23 @@
     </div>
   </section>
 
-  </main>
+  <!-- ================= BOOKING ================= -->
+  <section class="section booking" id="book">
+    <div class="container">
+      <div class="problem-head">
+        <span class="kicker reveal">Ready to scale?</span>
+        <h2 class="reveal r1">Book your 1:1 call</h2>
+        <p class="lead reveal r2">Fill in your details and pick a time that suits you. 45-minute strategy session with Gabriele.</p>
+      </div>
+      <div class="booking-frame reveal r2">
+        <!-- Your Aura booking page, embedded -->
+        <iframe src="https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session" title="Book your 1:1 call with Gabriele" loading="lazy"></iframe>
+      </div>
+      <p class="booking-alt">Booking form not loading? <a href="https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session" target="_blank" rel="noopener">Open the booking page</a></p>
+    </div>
+  </section>
+
+</main>
 
 <footer class="footer">
   <div class="container">
@@ -1137,15 +1166,9 @@
         const v = content.querySelector('.viz');
         if (v) { v.classList.remove('play'); requestAnimationFrame(() => requestAnimationFrame(() => v.classList.add('play'))); }
       }
-      // Keep the top of the explanation in view
-      requestAnimationFrame(() => {
-        const target = mobile() ? item : panel;
-        const headerH = 24;
-        const y = target.getBoundingClientRect().top + window.scrollY - headerH;
-        window.scrollTo({ top: y, behavior: calm ? 'auto' : 'smooth' });
-      });
     }
     items.forEach(it => it.querySelector('.pp-btn').addEventListener('click', () => open(it)));
+
   })();
 
   /* ---------- Video (VSL) ---------- */
