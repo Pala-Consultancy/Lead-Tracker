@@ -712,7 +712,12 @@
   .pay-track .pay-card img { height: 100%; width: auto; }
   .pay-hint { text-align: center; margin: 1rem 0 0; font-size: var(--fs-small); color: var(--muted); }
   @media (max-width: 640px) { .pay-track .pay-card { height: calc(var(--h) * .32px); } }
-  @media (prefers-reduced-motion: reduce) { .pay-row { overflow-x: auto; } .pay-track { animation: none; } }
+  /* The slow moving rows keep moving, even when the computer has "reduce animations" switched on */
+  @media (prefers-reduced-motion: reduce) {
+    .pay-track { animation: payScroll 70s linear infinite !important; }
+    .pay-row.rev .pay-track { animation-duration: 62s !important; animation-direction: reverse !important; }
+    .cl-track { animation: marquee 38s linear infinite !important; }
+  }
 
   /* Proof = clients + payments as one section */
   .clients { padding-bottom: 2.4rem !important; }
