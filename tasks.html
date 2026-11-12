@@ -1377,6 +1377,10 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="search" id="tkSearch" placeholder="Search tasks" autocomplete="off" aria-label="Search tasks">
     </div>
+    <div class="tk-seg tk-sort" id="tkSortSeg" role="group" aria-label="Sort tasks">
+      <button type="button" data-sort="old" title="Earliest due date first"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v16M4 16l4 4 4-4M14 6h7M14 12h5M14 18h3"/></svg>Oldest first</button>
+      <button type="button" data-sort="new" title="Latest due date first"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20V4M4 8l4-4 4 4M14 6h3M14 12h5M14 18h7"/></svg>Newest first</button>
+    </div>
     <div class="tk-summary" id="tkSummary" aria-live="polite"></div>
   </div>
 
@@ -1569,6 +1573,14 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
   let myUid = null, myName = 'You', wsId = null;
   let tasks = [], members = {}, boards = [], leadsByBoard = {};
   let view = localStorage.getItem('ptTasksView') || 'table';
+  // the order within each group: oldest first (earliest due date on top) or newest first; tasks without a date stay last
+  let sortDir = localStorage.getItem('ptTasksSort') === 'new' ? 'new' : 'old';
+  const byDate = (a, b)=>{
+    const da = a.dueDate || '', db = b.dueDate || '';
+    if(!da || !db) return (da ? 0 : 1) - (db ? 0 : 1);
+    const d = da.localeCompare(db) || (a.dueTime || '99').localeCompare(b.dueTime || '99');
+    return sortDir === 'new' ? -d : d;
+  };
   const scope = 'mine';   // tasks are private: you only see yours (created by you or assigned to you)
   let search = '';
   let collapsed = (()=>{ try{ return new Set(JSON.parse(localStorage.getItem('ptTasksCollapsed') || '["done"]')); }catch(e){ return new Set(['done']); } })();
@@ -1695,7 +1707,7 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
     if(!list.length && !search){ view$.innerHTML = emptyHTML(); return; }
     const by = Object.fromEntries(GROUPS.map(g=>[g.id, []]));
     list.forEach(t=> by[groupOf(t)].push(t));
-    Object.values(by).forEach(arr=> arr.sort((a, b)=> (a.dueDate || '9').localeCompare(b.dueDate || '9') || (a.dueTime || '99').localeCompare(b.dueTime || '99') || (PRIORITIES.findIndex(p=>p.id === (a.priority || 'none')) - PRIORITIES.findIndex(p=>p.id === (b.priority || 'none'))) || (a.title || '').localeCompare(b.title || '')));
+    Object.values(by).forEach(arr=> arr.sort((a, b)=> byDate(a, b) || (PRIORITIES.findIndex(p=>p.id === (a.priority || 'none')) - PRIORITIES.findIndex(p=>p.id === (b.priority || 'none'))) || (a.title || '').localeCompare(b.title || '')));
     view$.innerHTML = GROUPS.filter(g=> by[g.id].length || g.id === 'today').map(g=>{
       const items = by[g.id], canAdd = !['overdue', 'done'].includes(g.id);
       const counts = STATUSES.map(s=>[s, items.filter(t=> statusOf(t) === s.id).length]).filter(x=> x[1]);
@@ -1733,7 +1745,7 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
   // ---------- Kanban view (a column per status; drag cards between them) ----------
   function renderKanban(list){
     view$.innerHTML = `<div class="tk-kanban">${STATUSES.map(s=>{
-      const items = list.filter(t=> statusOf(t) === s.id).sort((a, b)=> (a.dueDate || '9').localeCompare(b.dueDate || '9'));
+      const items = list.filter(t=> statusOf(t) === s.id).sort(byDate);
       return `<div class="tk-col" data-status="${s.id}">
         <div class="tk-col-head" style="background:${s.color}"><span>${s.label}</span><span>${items.length}</span></div>
         <div class="tk-col-body" data-drop-status="${s.id}">
@@ -2350,6 +2362,11 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
   document.querySelectorAll('#tkViewSeg button').forEach(b=> b.addEventListener('click', ()=>{ view = b.dataset.view; localStorage.setItem('ptTasksView', view); render(); }));
 
   document.getElementById('tkSearch').addEventListener('input', e=>{ search = e.target.value; render(); });
+  // the sort switch: remembered for next time
+  const sortSeg = document.getElementById('tkSortSeg');
+  const paintSort = ()=> sortSeg.querySelectorAll('[data-sort]').forEach((b)=>{ const on = b.dataset.sort === sortDir; b.classList.toggle('on', on); b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); });
+  sortSeg.addEventListener('click', (e)=>{ const b = e.target.closest('[data-sort]'); if(!b || b.dataset.sort === sortDir) return; sortDir = b.dataset.sort; localStorage.setItem('ptTasksSort', sortDir); paintSort(); render(); });
+  paintSort();
 
   // ---------- Loading ----------
   function reveal(){
