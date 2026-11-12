@@ -58,22 +58,58 @@
       fetch(api).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { put(j && j.thumbnail_url ? String(j.thumbnail_url).replace(/\?.*$/, '') + (v.kind === 'wistia' ? '?image_crop_resized=1280x720' : '') : ''); }).catch(function () {});
     });
   }
-  // the video opens on top of the page, at the size of the page's main video, and starts playing
+  // the video grows out of the thumbnail you clicked to the size of the page's main video, then plays;
+  // closing shrinks it back into its thumbnail
+  var EASE_OPEN = 'cubic-bezier(.2,1.12,.32,1)', EASE_CLOSE = 'cubic-bezier(.5,0,.75,.2)';
+  var calm = function () { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; };
   function openVideo(raw, label, from) {
-    var v = parseVideo(raw); if (!v) return;
+    var v = parseVideo(raw); if (!v || document.querySelector('.cp-vlb')) return;
     var root = (from && from.closest('.cpv')) || document.body, main = root.querySelector('.cp-main .cp-frame');
-    var w = main ? main.getBoundingClientRect().width : Math.min(820, innerWidth * 0.92);
+    var w = Math.min(main ? main.getBoundingClientRect().width : 820, innerWidth * 0.94), h = w * 9 / 16;
+    if (h > innerHeight * 0.86) { h = innerHeight * 0.86; w = h * 16 / 9; }
+    var img = from && from.querySelector('.cp-mini-img'), cover = img && img.tagName !== 'VIDEO' ? getComputedStyle(img).backgroundImage : 'none';
     var ov = document.createElement('div'); ov.className = 'cp-vlb'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', label || 'Video');
-    var player = v.kind === 'file' ? '<video controls autoplay playsinline controlslist="nofullscreen" disablepictureinpicture src="' + esc(v.src) + '"></video>'
-      : '<iframe src="' + esc(v.embed + (v.embed.indexOf('?') < 0 ? '?' : '&') + (v.kind === 'wistia' ? 'autoPlay=true' : 'autoplay=1')) + '" allow="autoplay; encrypted-media" title="' + esc(label || 'Video') + '"></iframe>';
-    ov.innerHTML = '<div class="cp-vlb-box" style="width:' + Math.round(Math.min(w, innerWidth * 0.94)) + 'px">' + player + '</div><button type="button" class="cp-vlb-x" aria-label="Close the video">✕</button>';
-    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.cp-vlb-x')) ov.remove(); });
-    root.appendChild(ov); var x = ov.querySelector('.cp-vlb-x'); if (x) x.focus();
+    ov.innerHTML = '<div class="cp-vlb-bg"></div><div class="cp-vlb-box" style="width:' + Math.round(w) + 'px;height:' + Math.round(h) + 'px"><div class="cp-vlb-cover"' + (cover && cover !== 'none' ? ' style="background-image:' + cover.replace(/"/g, "'") + '"' : '') + '></div></div><button type="button" class="cp-vlb-x" aria-label="Close the video">✕</button>';
+    root.appendChild(ov);
+    var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x');
+    ov._from = from; ov._close = function () { closeVideo(ov); };
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target === bg || e.target.closest('.cp-vlb-x')) closeVideo(ov); });
+    var startPlayer = function () {
+      if (!ov.isConnected) return;
+      var pl = v.kind === 'file' ? document.createElement('video') : document.createElement('iframe');
+      if (v.kind === 'file') { pl.src = v.src; pl.controls = true; pl.autoplay = true; pl.playsInline = true; pl.setAttribute('controlslist', 'nofullscreen'); pl.disablePictureInPicture = true; }
+      else { pl.src = v.embed + (v.embed.indexOf('?') < 0 ? '?' : '&') + (v.kind === 'wistia' ? 'autoPlay=true' : 'autoplay=1'); pl.allow = 'autoplay; encrypted-media'; pl.title = label || 'Video'; }
+      pl.className = 'cp-vlb-player'; box.appendChild(pl);
+      setTimeout(function () { pl.classList.add('on'); }, v.kind === 'file' ? 60 : 380);    // the player fades in over the cover once it has loaded a bit
+    };
+    var f = from && from.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (!f || calm() || !box.animate) { ov.classList.add('open'); startPlayer(); x.focus(); return; }
+    if (from) from.style.visibility = 'hidden';                                           // the thumbnail "lifts off" the page
+    var t0 = 'translate(' + (f.left + f.width / 2 - (b.left + b.width / 2)) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)) + 'px) scale(' + (f.width / b.width) + ',' + (f.height / b.height) + ')';
+    bg.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: 'ease-out', fill: 'both'});
+    x.animate([{opacity: 0, transform: 'scale(.6)'}, {opacity: 1, transform: 'none'}], {duration: 300, delay: 260, easing: 'ease-out', fill: 'both'});
+    box.animate([{transform: t0, borderRadius: '16px', boxShadow: '0 0 0 rgba(0,0,0,0)'}, {transform: 'none', borderRadius: '18px', boxShadow: '0 50px 120px -30px rgba(0,0,0,.9)'}],
+                {duration: 560, easing: EASE_OPEN, fill: 'both'}).onfinish = function () { ov.classList.add('open'); startPlayer(); x.focus(); };
   }
+  function closeVideo(ov) {
+    if (!ov || ov._closing) return; ov._closing = true;
+    var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), from = ov._from;
+    var pl = box.querySelector('.cp-vlb-player'); if (pl) pl.classList.remove('on');          // back to the cover, then shrink
+    var done = function () { ov.remove(); if (from) { from.style.visibility = ''; try { from.focus({preventScroll: true}); } catch (e) {} } };
+    var f = from && from.isConnected && from.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (!f || !f.width || calm() || !box.animate) return done();
+    var t0 = 'translate(' + (f.left + f.width / 2 - (b.left + b.width / 2)) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)) + 'px) scale(' + (f.width / b.width) + ',' + (f.height / b.height) + ')';
+    x.animate([{opacity: 1}, {opacity: 0}], {duration: 150, fill: 'both'});
+    bg.animate([{opacity: 1}, {opacity: 0}], {duration: 380, delay: 80, easing: 'ease-in', fill: 'both'});
+    setTimeout(function () { if (pl) pl.remove(); box.animate([{transform: 'none', borderRadius: '18px'}, {transform: t0, borderRadius: '16px'}], {duration: 420, easing: EASE_CLOSE, fill: 'both'}).onfinish = done; }, 140);
+  }
+  // the main video: the player without its control bar (viewers click the video to pause and play)
+  var CLEAN = {wistia: '&playbar=false&smallPlayButton=false&volumeControl=false&settingsControl=false&playbackRateControl=false&qualityControl=false&controlsVisibleOnLoad=false',
+               youtube: '&controls=0&disablekb=1', vimeo: '&controls=0'};
   function videoHTML(raw, label) {
-    var v = parseVideo(raw);
+    var v = parseVideo(raw); if (v && CLEAN[v.kind]) v.embed += CLEAN[v.kind];
     if (!v) return '<div class="cp-frame cp-empty"><div>' + (raw ? '⚠️ This video link isn’t supported.<small>Use a YouTube, Vimeo, Loom, Wistia or Google Drive link.</small>' : '🎬 Add a video link<small>YouTube, Vimeo, Loom, Wistia or Google Drive</small>') + '</div></div>';
-    if (v.kind === 'file') return '<div class="cp-frame"><video controls playsinline preload="metadata" controlslist="nofullscreen" disablepictureinpicture src="' + esc(v.src) + '"></video></div>';
+    if (v.kind === 'file') return '<div class="cp-frame cp-clean"><video playsinline preload="metadata" disablepictureinpicture src="' + esc(v.src) + '#t=0.1"></video><span class="cp-clean-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="34" height="34"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></div>';
     if (v.kind === 'youtube') return '<div class="cp-frame"><button type="button" class="cp-poster" data-embed="' + esc(v.embed) + '" aria-label="Play ' + esc(label || 'video') + '" style="background-image:url(' + esc(v.thumb) + ')">' + PLAY + '</button></div>';
     return '<div class="cp-frame"><iframe src="' + esc(v.embed) + '" loading="lazy" allow="autoplay; encrypted-media" title="' + esc(label || 'Video') + '"></iframe></div>';
   }
@@ -313,6 +349,8 @@
       var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], {type: 'text/calendar'})); a.download = 'call.ics'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       return;
     }
+    var cf = e.target.closest && e.target.closest('.cpv .cp-main .cp-clean');
+    if (cf) { var vd = cf.querySelector('video'); if (vd) { if (vd.paused) vd.play(); else vd.pause(); cf.classList.toggle('playing', !vd.paused); } return; }
     var mv = e.target.closest && e.target.closest('.cpv .cp-mini-btn');
     if (mv) { openVideo(mv.getAttribute('data-video'), mv.getAttribute('aria-label').replace(/^Play: /, ''), mv); return; }
     var s = e.target.closest && e.target.closest('.cpv .cp-shot');
@@ -322,7 +360,7 @@
     }
   });
   document.addEventListener('dblclick', function (e) { if (e.target && e.target.closest && e.target.closest('.cpv .cp-frame video')) e.preventDefault(); }, true);
-  addEventListener('keydown', function (e) { if (e.key === 'Escape') { var b = document.querySelector('.cp-lightbox, .cp-vlb'); if (b) b.remove(); } });
+  addEventListener('keydown', function (e) { if (e.key === 'Escape') { var vb = document.querySelector('.cp-vlb'); if (vb && vb._close) return vb._close(); var b = document.querySelector('.cp-lightbox'); if (b) b.remove(); } });
 
   // ---------- the look ----------
   var CSS = [
@@ -334,12 +372,17 @@
     '.cpv .cp-mini-play svg{margin-left:3px}',
     '.cpv .cp-mini-btn:hover .cp-mini-play{transform:scale(1.08)}',
     '.cpv .cp-mini-btn:focus-visible{outline:3px solid #fff;outline-offset:-6px}',
-    '.cpv .cp-vlb{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,8,18,.82);backdrop-filter:blur(4px);animation:cpVlbIn .2s ease}',
-    '.cpv .cp-vlb-box{position:relative;max-width:94vw;aspect-ratio:16/9;max-height:86vh;border-radius:16px;overflow:hidden;border:3px solid var(--cp-accent);background:#000;box-shadow:0 40px 90px -30px rgba(0,0,0,.85);animation:cpVlbBox .25s cubic-bezier(.2,.8,.2,1)}',
-    '.cpv .cp-vlb-box iframe,.cpv .cp-vlb-box video{position:absolute;inset:0;width:100%;height:100%;border:0}',
-    '.cpv .cp-vlb-x{position:fixed;top:16px;right:18px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font:700 18px/1 system-ui;cursor:pointer}',
+    '.cpv .cp-vlb{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center}',
+    '.cpv .cp-vlb-bg{position:absolute;inset:0;background:radial-gradient(1200px 700px at 50% 50%,color-mix(in srgb,var(--cp-accent) 22%,rgba(5,8,18,.78)),rgba(4,6,14,.9));backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2)}',
+    '.cpv .cp-vlb-box{position:relative;border-radius:18px;overflow:hidden;border:3px solid var(--cp-accent);background:#000;transform-origin:center;will-change:transform;box-shadow:0 50px 120px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.06)}',
+    '.cpv .cp-vlb-cover{position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--cp-accent) 70%,#000),#0B0F19) center/cover no-repeat}',
+    '.cpv .cp-vlb-player{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .35s ease}',
+    '.cpv .cp-vlb-player.on{opacity:1}',
+    '.cpv .cp-clean video{cursor:pointer} .cpv .cp-clean-play{position:absolute;left:50%;top:50%;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:color-mix(in srgb,var(--cp-accent) 85%,transparent);pointer-events:none;transition:opacity .2s,transform .2s}',
+    '.cpv .cp-clean.playing .cp-clean-play{opacity:0;transform:scale(.8)}',
+    '.cpv .cp-vlb-x{position:fixed;z-index:1;top:16px;right:18px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font:700 18px/1 system-ui;cursor:pointer}',
     '.cpv .cp-vlb-x:hover{background:rgba(255,255,255,.26)}',
-    '@keyframes cpVlbIn{from{opacity:0}to{opacity:1}} @keyframes cpVlbBox{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}',
+
     '.cpv .cp-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center}',
     '.cpv .cp-cta.cp-full{flex-direction:column;align-items:stretch;max-width:640px;margin-left:auto;margin-right:auto}',
     '.cpv .cp-cta a.cp-btn{--cp-bc:var(--cp-accent);gap:10px;transition:transform .15s,background .15s,box-shadow .15s}',
