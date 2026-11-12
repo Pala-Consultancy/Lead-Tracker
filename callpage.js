@@ -11,7 +11,7 @@
     var url = String(raw || '').trim(); if (!url) return null;
     // Wistia's embed code pasted instead of a link: <script …medias/ID.jsonp>, <div class="wistia_async_ID">, <wistia-player media-id="ID">, or an iframe
     var wm = url.match(/wistia_async_([\w]+)/) || url.match(/media-id=["']?([\w]+)/) || url.match(/wistia\.(?:com|net)\/(?:embed\/)?(?:medias|iframe|embed\/iframe)\/([\w]+)/);
-    if (wm && /wistia/i.test(url) && /[<\s]/.test(url)) return {kind: 'wistia', embed: 'https://fast.wistia.net/embed/iframe/' + wm[1] + '?videoFoam=true', thumb: ''};
+    if (wm && /wistia/i.test(url) && /[<\s]/.test(url)) return {kind: 'wistia', embed: 'https://fast.wistia.net/embed/iframe/' + wm[1] + '?videoFoam=true&fullscreenButton=false', thumb: ''};
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
     var u; try { u = new URL(url); } catch (e) { return null; }
     var h = u.hostname.replace(/^www\.|^m\./, ''), p = u.pathname, m;
@@ -25,22 +25,22 @@
       if (m) { var hash = u.searchParams.get('h') || m[2] || ''; return {kind: 'vimeo', embed: 'https://player.vimeo.com/video/' + m[1] + '?' + (hash ? 'h=' + hash + '&' : '') + 'title=0&byline=0&portrait=0', thumb: ''}; }
     }
     if (/(^|\.)loom\.com$/.test(h)) { m = p.match(/\/(?:share|embed)\/([\w]+)/); if (m) return {kind: 'loom', embed: 'https://www.loom.com/embed/' + m[1] + '?hide_owner=true&hide_share=true&hide_title=true', thumb: ''}; }
-    if (/(^|\.)(wistia\.com|wistia\.net|wi\.st)$/.test(h)) { m = p.match(/\/(?:medias|embed\/iframe|iframe)\/([\w]+)/); if (m) return {kind: 'wistia', embed: 'https://fast.wistia.net/embed/iframe/' + m[1] + '?videoFoam=true', thumb: ''}; }
+    if (/(^|\.)(wistia\.com|wistia\.net|wi\.st)$/.test(h)) { m = p.match(/\/(?:medias|embed\/iframe|iframe)\/([\w]+)/); if (m) return {kind: 'wistia', embed: 'https://fast.wistia.net/embed/iframe/' + m[1] + '?videoFoam=true&fullscreenButton=false', thumb: ''}; }
     if (h === 'drive.google.com') { m = p.match(/\/file\/d\/([\w-]+)/); var id = m ? m[1] : u.searchParams.get('id'); if (id) return {kind: 'drive', embed: 'https://drive.google.com/file/d/' + id + '/preview', thumb: ''}; }
     if (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(p) || /firebasestorage\.googleapis\.com$/.test(h)) return {kind: 'file', src: url, thumb: ''};
     return null;
   }
   function yt(id, u) {
     var t = u && (u.searchParams.get('t') || u.searchParams.get('start')); var start = t ? parseInt(String(t).replace(/s$/, ''), 10) || 0 : 0;
-    return {kind: 'youtube', id: id, embed: 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&modestbranding=1&playsinline=1' + (start ? '&start=' + start : ''), thumb: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'};
+    return {kind: 'youtube', id: id, embed: 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&modestbranding=1&playsinline=1&fs=0' + (start ? '&start=' + start : ''), thumb: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'};
   }
   var PLAY = '<svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.2.3 34 .3 34 .3s-21.2 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6C12.8 47.7 34 47.7 34 47.7s21.2 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3z" fill="var(--cp-accent)"/><path d="M27 34l18-10-18-10z" fill="#fff"/></svg>';
   function videoHTML(raw, label) {
     var v = parseVideo(raw);
     if (!v) return '<div class="cp-frame cp-empty"><div>' + (raw ? '⚠️ This video link isn’t supported.<small>Use a YouTube, Vimeo, Loom, Wistia or Google Drive link.</small>' : '🎬 Add a video link<small>YouTube, Vimeo, Loom, Wistia or Google Drive</small>') + '</div></div>';
-    if (v.kind === 'file') return '<div class="cp-frame"><video controls playsinline preload="metadata" src="' + esc(v.src) + '"></video></div>';
+    if (v.kind === 'file') return '<div class="cp-frame"><video controls playsinline preload="metadata" controlslist="nofullscreen" disablepictureinpicture src="' + esc(v.src) + '"></video></div>';
     if (v.kind === 'youtube') return '<div class="cp-frame"><button type="button" class="cp-poster" data-embed="' + esc(v.embed) + '" aria-label="Play ' + esc(label || 'video') + '" style="background-image:url(' + esc(v.thumb) + ')">' + PLAY + '</button></div>';
-    return '<div class="cp-frame"><iframe src="' + esc(v.embed) + '" loading="lazy" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen title="' + esc(label || 'Video') + '"></iframe></div>';
+    return '<div class="cp-frame"><iframe src="' + esc(v.embed) + '" loading="lazy" allow="autoplay; encrypted-media" title="' + esc(label || 'Video') + '"></iframe></div>';
   }
 
   // ---------- fonts: loaded from Google Fonts, only the ones a page uses ----------
@@ -267,7 +267,7 @@
   // ---------- clicks: play a video in place, and open a result screenshot larger ----------
   document.addEventListener('click', function (e) {
     var p = e.target.closest && e.target.closest('.cpv .cp-poster');
-    if (p) { var f = document.createElement('iframe'); f.src = p.dataset.embed + '&autoplay=1'; f.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media'; f.allowFullscreen = true; f.title = p.getAttribute('aria-label') || 'Video'; p.replaceWith(f); return; }
+    if (p) { var f = document.createElement('iframe'); f.src = p.dataset.embed + '&autoplay=1'; f.allow = 'autoplay; encrypted-media'; f.allowFullscreen = false; f.title = p.getAttribute('aria-label') || 'Video'; p.replaceWith(f); return; }
     var ic = e.target.closest && e.target.closest('.cpv [data-ics]');
     if (ic) {
       var z = function (iso) { return gcalDate(iso); }, nl = '\r\n';
@@ -283,6 +283,7 @@
       box.addEventListener('click', function () { box.remove(); }); document.body.appendChild(box);
     }
   });
+  document.addEventListener('dblclick', function (e) { if (e.target && e.target.closest && e.target.closest('.cpv .cp-frame video')) e.preventDefault(); }, true);
   addEventListener('keydown', function (e) { if (e.key === 'Escape') { var b = document.querySelector('.cp-lightbox'); if (b) b.remove(); } });
 
   // ---------- the look ----------
