@@ -60,7 +60,7 @@
   }
   // the video grows out of the thumbnail you clicked to the size of the page's main video, then plays;
   // closing shrinks it back into its thumbnail. Only position/size (transform) and fades move, so it stays smooth.
-  var EASE_OPEN = 'cubic-bezier(.16,1,.3,1)', EASE_CLOSE = 'cubic-bezier(.65,0,.35,1)', OPEN_MS = 520, CLOSE_MS = 380;
+  var EASE_OPEN = 'cubic-bezier(.16,1,.3,1)', EASE_CLOSE = 'cubic-bezier(.3,.6,.2,1)', OPEN_MS = 520, CLOSE_MS = 400;   // closing: moves at once, settles softly into the thumbnail
   var calm = function () { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; };
   function flight(f, b) {              // the transform that puts the big box exactly over the thumbnail
     return 'translate(' + (f.left + f.width / 2 - (b.left + b.width / 2)).toFixed(1) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)).toFixed(1) + 'px) scale(' +
@@ -126,23 +126,24 @@
   function closeVideo(ov) {
     if (!ov || ov._closing) return; ov._closing = true;
     var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), from = ov._from;
-    var pl = box.querySelector('.cp-vlb-player'); if (pl) pl.classList.remove('on');          // back to the cover first
+    var pl = box.querySelector('.cp-vlb-player');
     var done = function () {
-      ov.classList.add('idle'); ov.setAttribute('aria-hidden', 'true'); ov.classList.remove('open'); box.getAnimations && box.getAnimations().forEach(function (a) { a.cancel(); });
-      [bg, x].forEach(function (el) { el.getAnimations && el.getAnimations().forEach(function (a) { a.cancel(); }); });
-      var left = box.querySelector('.cp-vlb-player'); if (left) left.remove();
+      ov.classList.add('idle'); ov.setAttribute('aria-hidden', 'true'); ov.classList.remove('open');
+      [box, bg, x].forEach(function (el) { el.getAnimations && el.getAnimations().forEach(function (a) { a.cancel(); }); });
+      box.style.willChange = 'auto';
+      var left = box.querySelector('.cp-vlb-player'); if (left) left.remove();             // removed only once it's back in its thumbnail
       if (from) { from.style.visibility = ''; try { from.focus({preventScroll: true}); } catch (e) {} }
     };
     var f = from && from.isConnected && from.getBoundingClientRect(), b = box.getBoundingClientRect();
     if (!f || !f.width || calm() || !box.animate) return done();
-    x.animate([{opacity: 1}, {opacity: 0}], {duration: 150, fill: 'forwards'});
-    setTimeout(function () {
-      if (pl) pl.remove();
-      box.style.willChange = 'transform';
-      bg.animate([{opacity: 1}, {opacity: 0}], {duration: CLOSE_MS, easing: 'ease-in', fill: 'forwards'});
-      box.animate([{transform: 'none'}, {transform: flight(f, b)}], {duration: CLOSE_MS, easing: EASE_CLOSE, fill: 'forwards'}).onfinish = done;
-    }, 120);
+    // it shrinks right away, with the video in it; the video fades into the cover on the way
+    box.style.willChange = 'transform';
+    if (pl) { pl.style.transition = 'opacity .16s ease-out'; pl.classList.remove('on'); }
+    x.animate([{opacity: 1}, {opacity: 0}], {duration: 140, fill: 'forwards'});
+    bg.animate([{opacity: 1}, {opacity: 0}], {duration: CLOSE_MS, easing: 'ease-in', fill: 'forwards'});
+    box.animate([{transform: 'none'}, {transform: flight(f, b)}], {duration: CLOSE_MS, easing: EASE_CLOSE, fill: 'forwards'}).onfinish = done;
   }
+
   // the main video: the player without its control bar (viewers click the video to pause and play)
   var CLEAN = {wistia: '&playbar=false&smallPlayButton=false&volumeControl=false&settingsControl=false&playbackRateControl=false&qualityControl=false&controlsVisibleOnLoad=false',
                youtube: '&controls=0&disablekb=1', vimeo: '&controls=0'};
