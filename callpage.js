@@ -96,6 +96,8 @@
     var ov = from ? prewarm(from) : null; if (!ov) return;                               // (already done on hover: nothing new to build)
     var f = from.getBoundingClientRect(), b = ov._b;
     var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), ring = ov.querySelector('.cp-vlb-ring');
+    [box, bg, x, ring].forEach(function (el) { el.getAnimations && el.getAnimations().forEach(function (a) { a.cancel(); }); });   // left over from the last closing
+    var oldPl = box.querySelector('.cp-vlb-player'); if (oldPl) oldPl.remove();
     ov.setAttribute('aria-label', label || 'Video'); ov._from = from; ov._closing = false; ov.classList.remove('open');
     var startPlayer = function () {
       if (!ov.isConnected || ov._closing) return;
@@ -129,7 +131,7 @@
     var pl = box.querySelector('.cp-vlb-player');
     var done = function () {
       ov.classList.add('idle'); ov.setAttribute('aria-hidden', 'true'); ov.classList.remove('open');
-      [box, bg, x].forEach(function (el) { el.getAnimations && el.getAnimations().forEach(function (a) { a.cancel(); }); });
+      // no reset here: the pop-up stays shrunk and transparent; the next opening resets it while it's still invisible
       box.style.willChange = 'auto';
       var left = box.querySelector('.cp-vlb-player'); if (left) left.remove();             // removed only once it's back in its thumbnail
       if (from) { from.style.visibility = ''; try { from.focus({preventScroll: true}); } catch (e) {} }
