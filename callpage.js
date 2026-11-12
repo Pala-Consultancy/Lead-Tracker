@@ -35,6 +35,41 @@
     return {kind: 'youtube', id: id, embed: 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&modestbranding=1&playsinline=1&fs=0' + (start ? '&start=' + start : ''), thumb: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'};
   }
   var PLAY = '<svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.2.3 34 .3 34 .3s-21.2 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6C12.8 47.7 34 47.7 34 47.7s21.2 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3z" fill="var(--cp-accent)"/><path d="M27 34l18-10-18-10z" fill="#fff"/></svg>';
+  // ---------- the smaller videos (questions, client stories): a clean thumbnail; a click opens the video big ----------
+  var THUMBS = {};                                            // thumbnails found for Wistia/Vimeo, by link
+  function thumbHTML(raw, label) {
+    var v = parseVideo(raw); if (!v) return videoHTML(raw, label);
+    var bg = v.thumb || THUMBS[raw] || '';
+    var inner = v.kind === 'file' ? '<video class="cp-mini-img" muted playsinline preload="metadata" src="' + esc(v.src) + '#t=0.5"></video>'
+                                   : '<span class="cp-mini-img" data-thumb="' + esc(raw) + '"' + (bg ? ' style="background-image:url(' + esc(bg) + ')"' : '') + '></span>';
+    return '<div class="cp-frame cp-mini"><button type="button" class="cp-mini-btn" data-video="' + esc(raw) + '" aria-label="Play: ' + esc(label || 'video') + '">' + inner +
+      '<span class="cp-mini-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button></div>';
+  }
+  // Wistia and Vimeo thumbnails come from their oEmbed services (once per link)
+  function loadThumbs(root) {
+    (root || document).querySelectorAll('.cpv .cp-mini-img[data-thumb]:not([style])').forEach(function (el) {
+      var raw = el.getAttribute('data-thumb'), v = parseVideo(raw); if (!v) return;
+      var put = function (u) { if (u) { THUMBS[raw] = u; document.querySelectorAll('.cp-mini-img[data-thumb]').forEach(function (x) { if (x.getAttribute('data-thumb') === raw) x.style.backgroundImage = 'url(' + u + ')'; }); } };
+      if (THUMBS[raw]) return put(THUMBS[raw]);
+      var api = '';
+      if (v.kind === 'wistia') { var id = (v.embed.match(/iframe\/([\w]+)/) || [])[1]; if (id) api = 'https://fast.wistia.com/oembed?url=' + encodeURIComponent('https://fast.wistia.com/embed/iframe/' + id); }
+      else if (v.kind === 'vimeo') api = 'https://vimeo.com/api/oembed.json?width=1280&url=' + encodeURIComponent(/^https?:/i.test(raw) ? raw : 'https://' + raw);
+      if (!api) return;
+      fetch(api).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { put(j && j.thumbnail_url ? String(j.thumbnail_url).replace(/\?.*$/, '') + (v.kind === 'wistia' ? '?image_crop_resized=1280x720' : '') : ''); }).catch(function () {});
+    });
+  }
+  // the video opens on top of the page, at the size of the page's main video, and starts playing
+  function openVideo(raw, label, from) {
+    var v = parseVideo(raw); if (!v) return;
+    var root = (from && from.closest('.cpv')) || document.body, main = root.querySelector('.cp-main .cp-frame');
+    var w = main ? main.getBoundingClientRect().width : Math.min(820, innerWidth * 0.92);
+    var ov = document.createElement('div'); ov.className = 'cp-vlb'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', label || 'Video');
+    var player = v.kind === 'file' ? '<video controls autoplay playsinline controlslist="nofullscreen" disablepictureinpicture src="' + esc(v.src) + '"></video>'
+      : '<iframe src="' + esc(v.embed + (v.embed.indexOf('?') < 0 ? '?' : '&') + (v.kind === 'wistia' ? 'autoPlay=true' : 'autoplay=1')) + '" allow="autoplay; encrypted-media" title="' + esc(label || 'Video') + '"></iframe>';
+    ov.innerHTML = '<div class="cp-vlb-box" style="width:' + Math.round(Math.min(w, innerWidth * 0.94)) + 'px">' + player + '</div><button type="button" class="cp-vlb-x" aria-label="Close the video">✕</button>';
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.cp-vlb-x')) ov.remove(); });
+    root.appendChild(ov); var x = ov.querySelector('.cp-vlb-x'); if (x) x.focus();
+  }
   function videoHTML(raw, label) {
     var v = parseVideo(raw);
     if (!v) return '<div class="cp-frame cp-empty"><div>' + (raw ? '⚠️ This video link isn’t supported.<small>Use a YouTube, Vimeo, Loom, Wistia or Google Drive link.</small>' : '🎬 Add a video link<small>YouTube, Vimeo, Loom, Wistia or Google Drive</small>') + '</div></div>';
@@ -238,8 +273,8 @@
       var body = '';
       if (b.type === 'booking') body = bookingHTML(BK, b.title);
       else if (b.type === 'video') body = '<div class="cp-main">' + videoHTML(b.url, b.title) + '</div>';
-      else if (b.type === 'questions') body = '<div class="cp-grid cp-g3">' + (b.items || []).map(function (it, j) { return '<div class="cp-q"' + (ED ? ' data-di="' + j + '"' : '') + '>' + (ED && (b.items || []).length > 1 ? '<span class="cp-drag" data-drag="items:' + bi + '" title="Drag to move">\u2807 Drag</span>' : '') + '<h3' + ed('q:' + bi + ':' + j) + (it.q ? '' : ' class="cp-ph"') + '>' + rich(it.q || '') + '</h3>' + videoHTML(it.url, plain(it.q)) + '</div>'; }).join('') + '</div>';
-      else if (b.type === 'clients') body = '<div class="cp-grid cp-g2">' + (b.urls || []).map(function (u, j) { return '<div class="cp-cv"' + (ED ? ' data-di="' + j + '"' : '') + '>' + (ED && (b.urls || []).length > 1 ? '<span class="cp-drag" data-drag="urls:' + bi + '" title="Drag to move">\u2807 Drag</span>' : '') + videoHTML(u, 'Client story') + '</div>'; }).join('') + '</div>';
+      else if (b.type === 'questions') body = '<div class="cp-grid cp-g3">' + (b.items || []).map(function (it, j) { return '<div class="cp-q"' + (ED ? ' data-di="' + j + '"' : '') + '>' + (ED && (b.items || []).length > 1 ? '<span class="cp-drag" data-drag="items:' + bi + '" title="Drag to move">\u2807 Drag</span>' : '') + '<h3' + ed('q:' + bi + ':' + j) + (it.q ? '' : ' class="cp-ph"') + '>' + rich(it.q || '') + '</h3>' + thumbHTML(it.url, plain(it.q)) + '</div>'; }).join('') + '</div>';
+      else if (b.type === 'clients') body = '<div class="cp-grid cp-g2">' + (b.urls || []).map(function (u, j) { return '<div class="cp-cv"' + (ED ? ' data-di="' + j + '"' : '') + '>' + (ED && (b.urls || []).length > 1 ? '<span class="cp-drag" data-drag="urls:' + bi + '" title="Drag to move">\u2807 Drag</span>' : '') + thumbHTML(u, 'Client story') + '</div>'; }).join('') + '</div>';
       else if (b.type === 'results') {
         var imgs = (b.images || []).filter(Boolean);
         if (imgs.length) {
@@ -260,6 +295,7 @@
     });
     if (!blocks.length) out += '<section class="cp-sec"><div class="cp-frame cp-empty cp-short"><div>➕ Add your first step</div></div></section>';
     root.innerHTML = '<div class="cp-in">' + out + '</div>';
+    try { loadThumbs(root); } catch (e) {}
     root.classList.toggle('cp-editing', ED);
     ED = false; BK = null;
   }
@@ -277,6 +313,8 @@
       var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], {type: 'text/calendar'})); a.download = 'call.ics'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       return;
     }
+    var mv = e.target.closest && e.target.closest('.cpv .cp-mini-btn');
+    if (mv) { openVideo(mv.getAttribute('data-video'), mv.getAttribute('aria-label').replace(/^Play: /, ''), mv); return; }
     var s = e.target.closest && e.target.closest('.cpv .cp-shot');
     if (s) {
       var box = document.createElement('div'); box.className = 'cp-lightbox'; box.innerHTML = '<img src="' + esc(s.dataset.full) + '" alt="Client result"><button type="button" aria-label="Close">✕</button>';
@@ -284,10 +322,24 @@
     }
   });
   document.addEventListener('dblclick', function (e) { if (e.target && e.target.closest && e.target.closest('.cpv .cp-frame video')) e.preventDefault(); }, true);
-  addEventListener('keydown', function (e) { if (e.key === 'Escape') { var b = document.querySelector('.cp-lightbox'); if (b) b.remove(); } });
+  addEventListener('keydown', function (e) { if (e.key === 'Escape') { var b = document.querySelector('.cp-lightbox, .cp-vlb'); if (b) b.remove(); } });
 
   // ---------- the look ----------
   var CSS = [
+    '.cpv .cp-mini{cursor:pointer}',
+    '.cpv .cp-mini-btn{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:#0B0F19;cursor:pointer;display:block}',
+    '.cpv .cp-mini-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:linear-gradient(135deg,color-mix(in srgb,var(--cp-accent) 70%,#000),#0B0F19) center/cover no-repeat;transition:transform .35s ease,filter .25s}',
+    '.cpv .cp-mini-btn:hover .cp-mini-img{transform:scale(1.04);filter:brightness(1.08)}',
+    '.cpv .cp-mini-play{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:color-mix(in srgb,var(--cp-accent) 82%,transparent);box-shadow:0 10px 26px -8px rgba(0,0,0,.6),0 0 0 6px rgba(255,255,255,.18);transition:transform .2s}',
+    '.cpv .cp-mini-play svg{margin-left:3px}',
+    '.cpv .cp-mini-btn:hover .cp-mini-play{transform:scale(1.08)}',
+    '.cpv .cp-mini-btn:focus-visible{outline:3px solid #fff;outline-offset:-6px}',
+    '.cpv .cp-vlb{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,8,18,.82);backdrop-filter:blur(4px);animation:cpVlbIn .2s ease}',
+    '.cpv .cp-vlb-box{position:relative;max-width:94vw;aspect-ratio:16/9;max-height:86vh;border-radius:16px;overflow:hidden;border:3px solid var(--cp-accent);background:#000;box-shadow:0 40px 90px -30px rgba(0,0,0,.85);animation:cpVlbBox .25s cubic-bezier(.2,.8,.2,1)}',
+    '.cpv .cp-vlb-box iframe,.cpv .cp-vlb-box video{position:absolute;inset:0;width:100%;height:100%;border:0}',
+    '.cpv .cp-vlb-x{position:fixed;top:16px;right:18px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font:700 18px/1 system-ui;cursor:pointer}',
+    '.cpv .cp-vlb-x:hover{background:rgba(255,255,255,.26)}',
+    '@keyframes cpVlbIn{from{opacity:0}to{opacity:1}} @keyframes cpVlbBox{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}',
     '.cpv .cp-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center}',
     '.cpv .cp-cta.cp-full{flex-direction:column;align-items:stretch;max-width:640px;margin-left:auto;margin-right:auto}',
     '.cpv .cp-cta a.cp-btn{--cp-bc:var(--cp-accent);gap:10px;transition:transform .15s,background .15s,box-shadow .15s}',
