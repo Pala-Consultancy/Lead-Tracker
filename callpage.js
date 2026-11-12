@@ -59,9 +59,15 @@
     });
   }
   // the video grows out of the thumbnail you clicked to the size of the page's main video, then plays;
-  // closing shrinks it back into its thumbnail
-  var EASE_OPEN = 'cubic-bezier(.2,1.12,.32,1)', EASE_CLOSE = 'cubic-bezier(.5,0,.75,.2)';
+  // closing shrinks it back into its thumbnail. Only transforms and fades move, so it stays smooth.
+  var SPRING = 'linear(0.0000 0.0%, 0.0278 2.0%, 0.0939 4.1%, 0.1832 6.1%, 0.2841 8.1%, 0.3881 10.2%, 0.4893 12.2%, 0.5837 14.3%, 0.6688 16.3%, 0.7434 18.3%, 0.8071 20.4%, 0.8603 22.4%, 0.9037 24.4%, 0.9383 26.5%, 0.9650 28.5%, 0.9852 30.6%, 0.9997 32.6%, 1.0098 34.6%, 1.0162 36.7%, 1.0199 38.7%, 1.0215 40.7%, 1.0215 42.8%, 1.0205 44.8%, 1.0188 46.9%, 1.0167 48.9%, 1.0145 50.9%, 1.0123 53.0%, 1.0101 55.0%, 1.0082 57.0%, 1.0064 59.1%, 1.0049 61.1%, 1.0036 63.1%, 1.0026 65.2%, 1.0017 67.2%, 1.0011 69.3%, 1.0005 71.3%, 1.0002 73.3%, 0.9999 75.4%, 0.9997 77.4%, 0.9996 79.4%, 0.9995 81.5%, 0.9995 83.5%, 0.9995 85.6%, 0.9996 87.6%, 0.9996 89.6%, 0.9997 91.7%, 0.9997 93.7%, 0.9998 95.7%, 0.9998 97.8%, 0.9998 99.8%, 1 100%)';
+  var EASE_OPEN = (window.CSS && window.CSS.supports && window.CSS.supports('animation-timing-function', 'linear(0, 1)')) ? SPRING : 'cubic-bezier(.22,1.18,.36,1)';   // (window.CSS: this file has its own CSS list)
+  var EASE_CLOSE = 'cubic-bezier(.55,0,.2,1)';
   var calm = function () { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; };
+  function flight(f, b, tilt) {        // the transform that puts the big box over the thumbnail
+    return 'translate3d(' + (f.left + f.width / 2 - (b.left + b.width / 2)).toFixed(1) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)).toFixed(1) + 'px,0) scale(' +
+      (f.width / b.width).toFixed(4) + ',' + (f.height / b.height).toFixed(4) + ') rotateX(' + (tilt || 0) + 'deg)';
+  }
   function openVideo(raw, label, from) {
     var v = parseVideo(raw); if (!v || document.querySelector('.cp-vlb')) return;
     var root = (from && from.closest('.cpv')) || document.body, main = root.querySelector('.cp-main .cp-frame');
@@ -69,39 +75,54 @@
     if (h > innerHeight * 0.86) { h = innerHeight * 0.86; w = h * 16 / 9; }
     var img = from && from.querySelector('.cp-mini-img'), cover = img && img.tagName !== 'VIDEO' ? getComputedStyle(img).backgroundImage : 'none';
     var ov = document.createElement('div'); ov.className = 'cp-vlb'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', label || 'Video');
-    ov.innerHTML = '<div class="cp-vlb-bg"></div><div class="cp-vlb-box" style="width:' + Math.round(w) + 'px;height:' + Math.round(h) + 'px"><div class="cp-vlb-cover"' + (cover && cover !== 'none' ? ' style="background-image:' + cover.replace(/"/g, "'") + '"' : '') + '></div></div><button type="button" class="cp-vlb-x" aria-label="Close the video">✕</button>';
+    ov.innerHTML = '<div class="cp-vlb-bg"></div><div class="cp-vlb-stage"><div class="cp-vlb-box" style="width:' + Math.round(w) + 'px;height:' + Math.round(h) + 'px">' +
+      '<div class="cp-vlb-cover"' + (cover && cover !== 'none' ? ' style="background-image:' + cover.replace(/"/g, "'") + '"' : '') + '></div><i class="cp-vlb-sheen"></i></div><i class="cp-vlb-ring" style="width:' + Math.round(w) + 'px;height:' + Math.round(h) + 'px"></i></div>' +
+      '<button type="button" class="cp-vlb-x" aria-label="Close the video">✕</button>';
     root.appendChild(ov);
-    var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x');
+    var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), ring = ov.querySelector('.cp-vlb-ring'), sheen = ov.querySelector('.cp-vlb-sheen');
     ov._from = from; ov._close = function () { closeVideo(ov); };
-    ov.addEventListener('click', function (e) { if (e.target === ov || e.target === bg || e.target.closest('.cp-vlb-x')) closeVideo(ov); });
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target === bg || e.target.classList.contains('cp-vlb-stage') || e.target.closest('.cp-vlb-x')) closeVideo(ov); });
     var startPlayer = function () {
-      if (!ov.isConnected) return;
+      if (!ov.isConnected || ov._closing) return;
       var pl = v.kind === 'file' ? document.createElement('video') : document.createElement('iframe');
       if (v.kind === 'file') { pl.src = v.src; pl.controls = true; pl.autoplay = true; pl.playsInline = true; pl.setAttribute('controlslist', 'nofullscreen'); pl.disablePictureInPicture = true; }
       else { pl.src = v.embed + (v.embed.indexOf('?') < 0 ? '?' : '&') + (v.kind === 'wistia' ? 'autoPlay=true' : 'autoplay=1'); pl.allow = 'autoplay; encrypted-media'; pl.title = label || 'Video'; }
       pl.className = 'cp-vlb-player'; box.appendChild(pl);
-      setTimeout(function () { pl.classList.add('on'); }, v.kind === 'file' ? 60 : 380);    // the player fades in over the cover once it has loaded a bit
+      setTimeout(function () { pl.classList.add('on'); }, v.kind === 'file' ? 80 : 420);    // fades in over the cover once it has loaded a bit
+    };
+    var land = function () {
+      ov.classList.add('open'); x.focus({preventScroll: true});
+      if (ring.animate && !calm()) {
+        ring.animate([{opacity: .9, transform: 'scale(1)'}, {opacity: 0, transform: 'scale(1.06)'}], {duration: 700, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both'});
+        sheen.animate([{transform: 'translateX(-120%) skewX(-18deg)'}, {transform: 'translateX(220%) skewX(-18deg)'}], {duration: 750, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both'});
+      }
+      setTimeout(startPlayer, 120);
     };
     var f = from && from.getBoundingClientRect(), b = box.getBoundingClientRect();
-    if (!f || calm() || !box.animate) { ov.classList.add('open'); startPlayer(); x.focus(); return; }
-    if (from) from.style.visibility = 'hidden';                                           // the thumbnail "lifts off" the page
-    var t0 = 'translate(' + (f.left + f.width / 2 - (b.left + b.width / 2)) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)) + 'px) scale(' + (f.width / b.width) + ',' + (f.height / b.height) + ')';
-    bg.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: 'ease-out', fill: 'both'});
-    x.animate([{opacity: 0, transform: 'scale(.6)'}, {opacity: 1, transform: 'none'}], {duration: 300, delay: 260, easing: 'ease-out', fill: 'both'});
-    box.animate([{transform: t0, borderRadius: '16px', boxShadow: '0 0 0 rgba(0,0,0,0)'}, {transform: 'none', borderRadius: '18px', boxShadow: '0 50px 120px -30px rgba(0,0,0,.9)'}],
-                {duration: 560, easing: EASE_OPEN, fill: 'both'}).onfinish = function () { ov.classList.add('open'); startPlayer(); x.focus(); };
+    if (!f || calm() || !box.animate) { bg.style.opacity = 1; land(); return; }
+    if (from) from.style.visibility = 'hidden';                                           // the thumbnail lifts off the page
+    bg.animate([{opacity: 0}, {opacity: 1}], {duration: 450, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both'});
+    x.animate([{opacity: 0, transform: 'scale(.6) rotate(-90deg)'}, {opacity: 1, transform: 'none'}], {duration: 420, delay: 380, easing: 'cubic-bezier(.2,1.2,.3,1)', fill: 'both'});
+    box.animate([{transform: flight(f, b, 14), opacity: .85}, {transform: 'translate3d(0,0,0) scale(1,1) rotateX(0deg)', opacity: 1}],
+                {duration: 900, easing: EASE_OPEN, fill: 'both'}).onfinish = land;
   }
   function closeVideo(ov) {
     if (!ov || ov._closing) return; ov._closing = true;
     var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), from = ov._from;
-    var pl = box.querySelector('.cp-vlb-player'); if (pl) pl.classList.remove('on');          // back to the cover, then shrink
-    var done = function () { ov.remove(); if (from) { from.style.visibility = ''; try { from.focus({preventScroll: true}); } catch (e) {} } };
+    var pl = box.querySelector('.cp-vlb-player'); if (pl) pl.classList.remove('on');          // back to the cover first
+    var done = function () {
+      ov.remove();
+      if (from) { from.style.visibility = ''; if (from.animate && !calm()) from.animate([{transform: 'scale(1.035)'}, {transform: 'none'}], {duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)'}); try { from.focus({preventScroll: true}); } catch (e) {} }
+    };
     var f = from && from.isConnected && from.getBoundingClientRect(), b = box.getBoundingClientRect();
     if (!f || !f.width || calm() || !box.animate) return done();
-    var t0 = 'translate(' + (f.left + f.width / 2 - (b.left + b.width / 2)) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)) + 'px) scale(' + (f.width / b.width) + ',' + (f.height / b.height) + ')';
-    x.animate([{opacity: 1}, {opacity: 0}], {duration: 150, fill: 'both'});
-    bg.animate([{opacity: 1}, {opacity: 0}], {duration: 380, delay: 80, easing: 'ease-in', fill: 'both'});
-    setTimeout(function () { if (pl) pl.remove(); box.animate([{transform: 'none', borderRadius: '18px'}, {transform: t0, borderRadius: '16px'}], {duration: 420, easing: EASE_CLOSE, fill: 'both'}).onfinish = done; }, 140);
+    x.animate([{opacity: 1}, {opacity: 0, transform: 'scale(.7)'}], {duration: 180, fill: 'both'});
+    setTimeout(function () {
+      if (pl) pl.remove();
+      bg.animate([{opacity: 1}, {opacity: 0}], {duration: 460, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both'});
+      box.animate([{transform: 'translate3d(0,0,0) scale(1,1) rotateX(0deg)'}, {transform: flight(f, box.getBoundingClientRect(), -8)}],
+                  {duration: 480, easing: EASE_CLOSE, fill: 'both'}).onfinish = done;
+    }, 160);
   }
   // the main video: the player without its control bar (viewers click the video to pause and play)
   var CLEAN = {wistia: '&playbar=false&smallPlayButton=false&volumeControl=false&settingsControl=false&playbackRateControl=false&qualityControl=false&controlsVisibleOnLoad=false',
@@ -372,11 +393,14 @@
     '.cpv .cp-mini-play svg{margin-left:3px}',
     '.cpv .cp-mini-btn:hover .cp-mini-play{transform:scale(1.08)}',
     '.cpv .cp-mini-btn:focus-visible{outline:3px solid #fff;outline-offset:-6px}',
-    '.cpv .cp-vlb{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center}',
-    '.cpv .cp-vlb-bg{position:absolute;inset:0;background:radial-gradient(1200px 700px at 50% 50%,color-mix(in srgb,var(--cp-accent) 22%,rgba(5,8,18,.78)),rgba(4,6,14,.9));backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2)}',
-    '.cpv .cp-vlb-box{position:relative;border-radius:18px;overflow:hidden;border:3px solid var(--cp-accent);background:#000;transform-origin:center;will-change:transform;box-shadow:0 50px 120px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.06)}',
+    '.cpv .cp-vlb{position:fixed;inset:0;z-index:2147482000}',
+    '.cpv .cp-vlb-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;perspective:1600px;pointer-events:auto}',
+    '.cpv .cp-vlb-ring{position:absolute;left:50%;top:50%;translate:-50% -50%;border-radius:22px;box-shadow:0 0 0 2px var(--cp-accent),0 0 42px 6px color-mix(in srgb,var(--cp-accent) 60%,transparent);opacity:0;pointer-events:none}',
+    '.cpv .cp-vlb-sheen{position:absolute;inset:-10% auto -10% 0;width:45%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:translateX(-120%) skewX(-18deg);pointer-events:none;z-index:1}',
+    '.cpv .cp-vlb-bg{position:absolute;inset:0;background:radial-gradient(900px 560px at 50% 50%,color-mix(in srgb,var(--cp-accent) 26%,rgba(6,9,20,.86)),rgba(3,5,12,.95) 75%);will-change:opacity}',
+    '.cpv .cp-vlb-box{position:relative;border-radius:18px;overflow:hidden;border:3px solid var(--cp-accent);background:#000;transform-origin:center;will-change:transform,opacity;backface-visibility:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.06)}',
     '.cpv .cp-vlb-cover{position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--cp-accent) 70%,#000),#0B0F19) center/cover no-repeat}',
-    '.cpv .cp-vlb-player{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .35s ease}',
+    '.cpv .cp-vlb-player{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .45s cubic-bezier(.2,.7,.2,1);z-index:2}',
     '.cpv .cp-vlb-player.on{opacity:1}',
     '.cpv .cp-clean video{cursor:pointer} .cpv .cp-clean-play{position:absolute;left:50%;top:50%;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:color-mix(in srgb,var(--cp-accent) 85%,transparent);pointer-events:none;transition:opacity .2s,transform .2s}',
     '.cpv .cp-clean.playing .cp-clean-play{opacity:0;transform:scale(.8)}',
