@@ -598,13 +598,13 @@
       if (b.type !== 'button') f += `<label class="f">Title</label><input class="in" data-b="${i}" data-k="title" value="${esc(b.title || '')}">`;
       if (b.type === 'booking') f += `<div class="hint">Shows their date and time (in their own time zone), buttons to add the call to Google Calendar, Outlook or Apple, and Reschedule / Cancel links. Filled in automatically when they come from Calendly or a reminder.</div>`;
       if (['video', 'questions', 'clients', 'text', 'booking'].includes(b.type)) f += `<label class="f">Text</label><textarea class="in" data-b="${i}" data-k="text">${esc(b.text || '')}</textarea>`;
-      if (b.type === 'video') f += `<label class="f">Video link</label><input class="in" data-b="${i}" data-k="url" value="${esc(b.url || '')}" placeholder="https://youtube.com/watch?v=…">${vhint(b.url)}`;
+      if (b.type === 'video') f += `<label class="f">Video link</label><input class="in" data-b="${i}" data-k="url" value="${esc(b.url || '')}" placeholder="Paste a YouTube, Vimeo, Loom or Wistia link">${b.url ? vhint(b.url) : '<div class="hint">YouTube, Vimeo, Loom, Wistia or Google Drive. For Wistia you can paste the link or the embed code.</div>'}`;
       if (b.type === 'questions') {
-        f += (b.items || []).map((it, j) => `<div class="item"><div class="two"><input class="in" data-b="${i}" data-item="${j}" data-k="q" value="${esc(it.q || '')}" placeholder="The question"><input class="in" data-b="${i}" data-item="${j}" data-k="url" value="${esc(it.url || '')}" placeholder="Video link">${vhint(it.url)}</div><button type="button" class="ic del" data-rmitem="${i}:${j}" title="Remove">✕</button></div>`).join('');
+        f += (b.items || []).map((it, j) => `<div class="item"><div class="two"><input class="in" data-b="${i}" data-item="${j}" data-k="q" value="${esc(it.q || '')}" placeholder="The question"><input class="in" data-b="${i}" data-item="${j}" data-k="url" value="${esc(it.url || '')}" placeholder="Video link (YouTube, Vimeo, Loom, Wistia…)">${vhint(it.url)}</div><button type="button" class="ic del" data-rmitem="${i}:${j}" title="Remove">✕</button></div>`).join('');
         f += `<div class="add-row"><button type="button" class="btn sm" data-additem="${i}">+ Add a question</button></div>`;
       }
       if (b.type === 'clients') {
-        f += (b.urls || []).map((u, j) => `<div class="item"><div class="two"><input class="in" data-b="${i}" data-url="${j}" value="${esc(u || '')}" placeholder="Client video link (YouTube, Vimeo, Loom…)">${vhint(u)}</div><button type="button" class="ic del" data-rmurl="${i}:${j}" title="Remove">✕</button></div>`).join('');
+        f += (b.urls || []).map((u, j) => `<div class="item"><div class="two"><input class="in" data-b="${i}" data-url="${j}" value="${esc(u || '')}" placeholder="Client video link (YouTube, Vimeo, Loom, Wistia…)">${vhint(u)}</div><button type="button" class="ic del" data-rmurl="${i}:${j}" title="Remove">✕</button></div>`).join('');
         f += `<div class="add-row"><button type="button" class="btn sm" data-addurl="${i}">+ Add a client video</button></div>`;
       }
       if (b.type === 'results') {

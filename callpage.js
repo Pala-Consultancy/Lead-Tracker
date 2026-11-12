@@ -9,6 +9,9 @@
   // ---------- video links: YouTube, Vimeo, Loom, Wistia, Google Drive, or a direct video file ----------
   function parseVideo(raw) {
     var url = String(raw || '').trim(); if (!url) return null;
+    // Wistia's embed code pasted instead of a link: <script …medias/ID.jsonp>, <div class="wistia_async_ID">, <wistia-player media-id="ID">, or an iframe
+    var wm = url.match(/wistia_async_([\w]+)/) || url.match(/media-id=["']?([\w]+)/) || url.match(/wistia\.(?:com|net)\/(?:embed\/)?(?:medias|iframe|embed\/iframe)\/([\w]+)/);
+    if (wm && /wistia/i.test(url) && /[<\s]/.test(url)) return {kind: 'wistia', embed: 'https://fast.wistia.net/embed/iframe/' + wm[1] + '?videoFoam=true', thumb: ''};
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
     var u; try { u = new URL(url); } catch (e) { return null; }
     var h = u.hostname.replace(/^www\.|^m\./, ''), p = u.pathname, m;
