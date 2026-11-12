@@ -653,7 +653,10 @@
     else if (d.bicon) { setBtn(d.bicon + ':icon', e.target.value); renderBlocks(); changed(); }
     else if (d.btab) { setBtn(d.btab + ':newTab', e.target.checked); changed(); }
   });
-  function vhint(u) { if (!String(u || '').trim()) return ''; const v = CallPage.parseVideo(u); return v ? `<div class="hint ok">✓ ${({youtube: 'YouTube', vimeo: 'Vimeo', loom: 'Loom', wistia: 'Wistia', drive: 'Google Drive', file: 'Video file'})[v.kind]} video</div>` : '<div class="hint bad">This link isn’t a supported video (YouTube, Vimeo, Loom, Wistia or Google Drive).</div>'; }
+  function vhint(u) { if (!String(u || '').trim()) return '';
+    // a Wistia share-page link (…wistia.com/s/…) is a page about the video, not the video itself
+    if (/wistia\.(com|net)\/s\//i.test(String(u))) return '<div class="hint bad">That’s a Wistia share-page link. Open the video in Wistia and copy the address from your browser (it has <b>/medias/</b> in it), or click <b>Embed</b> in Wistia and paste the code here.</div>';
+    const v = CallPage.parseVideo(u); return v ? `<div class="hint ok">✓ ${({youtube: 'YouTube', vimeo: 'Vimeo', loom: 'Loom', wistia: 'Wistia', drive: 'Google Drive', file: 'Video file'})[v.kind]} video</div>` : '<div class="hint bad">This link isn’t a supported video (YouTube, Vimeo, Loom, Wistia or Google Drive).</div>'; }
 
   // typing: update the page and the preview as you go (and re-draw the form only where needed)
   $('form').addEventListener('input', (e) => {
