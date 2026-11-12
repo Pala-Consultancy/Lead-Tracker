@@ -59,70 +59,89 @@
     });
   }
   // the video grows out of the thumbnail you clicked to the size of the page's main video, then plays;
-  // closing shrinks it back into its thumbnail. Only transforms and fades move, so it stays smooth.
-  var SPRING = 'linear(0.0000 0.0%, 0.0278 2.0%, 0.0939 4.1%, 0.1832 6.1%, 0.2841 8.1%, 0.3881 10.2%, 0.4893 12.2%, 0.5837 14.3%, 0.6688 16.3%, 0.7434 18.3%, 0.8071 20.4%, 0.8603 22.4%, 0.9037 24.4%, 0.9383 26.5%, 0.9650 28.5%, 0.9852 30.6%, 0.9997 32.6%, 1.0098 34.6%, 1.0162 36.7%, 1.0199 38.7%, 1.0215 40.7%, 1.0215 42.8%, 1.0205 44.8%, 1.0188 46.9%, 1.0167 48.9%, 1.0145 50.9%, 1.0123 53.0%, 1.0101 55.0%, 1.0082 57.0%, 1.0064 59.1%, 1.0049 61.1%, 1.0036 63.1%, 1.0026 65.2%, 1.0017 67.2%, 1.0011 69.3%, 1.0005 71.3%, 1.0002 73.3%, 0.9999 75.4%, 0.9997 77.4%, 0.9996 79.4%, 0.9995 81.5%, 0.9995 83.5%, 0.9995 85.6%, 0.9996 87.6%, 0.9996 89.6%, 0.9997 91.7%, 0.9997 93.7%, 0.9998 95.7%, 0.9998 97.8%, 0.9998 99.8%, 1 100%)';
-  var EASE_OPEN = (window.CSS && window.CSS.supports && window.CSS.supports('animation-timing-function', 'linear(0, 1)')) ? SPRING : 'cubic-bezier(.22,1.18,.36,1)';   // (window.CSS: this file has its own CSS list)
-  var EASE_CLOSE = 'cubic-bezier(.55,0,.2,1)';
+  // closing shrinks it back into its thumbnail. Only position/size (transform) and fades move, so it stays smooth.
+  var EASE_OPEN = 'cubic-bezier(.16,1,.3,1)', EASE_CLOSE = 'cubic-bezier(.65,0,.35,1)', OPEN_MS = 520, CLOSE_MS = 380;
   var calm = function () { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; };
-  function flight(f, b, tilt) {        // the transform that puts the big box over the thumbnail
-    return 'translate3d(' + (f.left + f.width / 2 - (b.left + b.width / 2)).toFixed(1) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)).toFixed(1) + 'px,0) scale(' +
-      (f.width / b.width).toFixed(4) + ',' + (f.height / b.height).toFixed(4) + ') rotateX(' + (tilt || 0) + 'deg)';
+  function flight(f, b) {              // the transform that puts the big box exactly over the thumbnail
+    return 'translate(' + (f.left + f.width / 2 - (b.left + b.width / 2)).toFixed(1) + 'px,' + (f.top + f.height / 2 - (b.top + b.height / 2)).toFixed(1) + 'px) scale(' +
+      (f.width / b.width).toFixed(4) + ',' + (f.height / b.height).toFixed(4) + ')';
   }
-  function openVideo(raw, label, from) {
-    var v = parseVideo(raw); if (!v || document.querySelector('.cp-vlb')) return;
-    var root = (from && from.closest('.cpv')) || document.body, main = root.querySelector('.cp-main .cp-frame');
+  // built ahead of time (when the mouse comes over a thumbnail, or a finger touches it), then reused
+  function prewarm(btn) {
+    var root = btn.closest('.cpv') || document.body;
+    if (!root._vlb || !root._vlb.isConnected) {
+      var ov = document.createElement('div'); ov.className = 'cp-vlb idle'; ov.setAttribute('aria-hidden', 'true'); ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+      ov.innerHTML = '<div class="cp-vlb-bg"></div><div class="cp-vlb-box"><div class="cp-vlb-cover"></div></div><i class="cp-vlb-ring"></i><button type="button" class="cp-vlb-x" aria-label="Close the video">✕</button>';
+      ov.addEventListener('click', function (e) { if (e.target === ov || e.target.classList.contains('cp-vlb-bg') || e.target.closest('.cp-vlb-x')) closeVideo(ov); });
+      ov._close = function () { closeVideo(ov); };
+      root.appendChild(ov); root._vlb = ov;
+    }
+    var ov2 = root._vlb;
+    // the size it will land at (the page's main video), and the cover of this thumbnail
+    var main = root.querySelector('.cp-main .cp-frame');
     var w = Math.min(main ? main.getBoundingClientRect().width : 820, innerWidth * 0.94), h = w * 9 / 16;
     if (h > innerHeight * 0.86) { h = innerHeight * 0.86; w = h * 16 / 9; }
-    var img = from && from.querySelector('.cp-mini-img'), cover = img && img.tagName !== 'VIDEO' ? getComputedStyle(img).backgroundImage : 'none';
-    var ov = document.createElement('div'); ov.className = 'cp-vlb'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', label || 'Video');
-    ov.innerHTML = '<div class="cp-vlb-bg"></div><div class="cp-vlb-stage"><div class="cp-vlb-box" style="width:' + Math.round(w) + 'px;height:' + Math.round(h) + 'px">' +
-      '<div class="cp-vlb-cover"' + (cover && cover !== 'none' ? ' style="background-image:' + cover.replace(/"/g, "'") + '"' : '') + '></div><i class="cp-vlb-sheen"></i></div><i class="cp-vlb-ring" style="width:' + Math.round(w) + 'px;height:' + Math.round(h) + 'px"></i></div>' +
-      '<button type="button" class="cp-vlb-x" aria-label="Close the video">✕</button>';
-    root.appendChild(ov);
-    var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), ring = ov.querySelector('.cp-vlb-ring'), sheen = ov.querySelector('.cp-vlb-sheen');
-    ov._from = from; ov._close = function () { closeVideo(ov); };
-    ov.addEventListener('click', function (e) { if (e.target === ov || e.target === bg || e.target.classList.contains('cp-vlb-stage') || e.target.closest('.cp-vlb-x')) closeVideo(ov); });
+    var b = {left: (innerWidth - w) / 2, top: (innerHeight - h) / 2, width: w, height: h};
+    var geo = 'left:' + b.left.toFixed(1) + 'px;top:' + b.top.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px';
+    if (ov2._geo !== geo) { ov2._geo = geo; ov2.querySelector('.cp-vlb-box').style.cssText = geo; ov2.querySelector('.cp-vlb-ring').style.cssText = geo; }
+    ov2._b = b;
+    var img = btn.querySelector('.cp-mini-img'), cover = img && img.tagName !== 'VIDEO' ? getComputedStyle(img).backgroundImage : 'none';
+    if (ov2._cover !== cover) { ov2._cover = cover; ov2.querySelector('.cp-vlb-cover').style.backgroundImage = cover && cover !== 'none' ? cover : ''; }
+    var m = cover && /url\(["']?([^"')]+)/.exec(cover);
+    if (m && !btn._decoded) { btn._decoded = true; var pre = new Image(); pre.src = m[1]; if (pre.decode) pre.decode().catch(function () {}); }
+    return ov2;
+  }
+  function openVideo(raw, label, from) {
+    var v = parseVideo(raw); if (!v || document.querySelector('.cp-vlb:not(.idle)')) return;
+    var ov = from ? prewarm(from) : null; if (!ov) return;                               // (already done on hover: nothing new to build)
+    var f = from.getBoundingClientRect(), b = ov._b;
+    var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), ring = ov.querySelector('.cp-vlb-ring');
+    ov.setAttribute('aria-label', label || 'Video'); ov._from = from; ov._closing = false; ov.classList.remove('open');
     var startPlayer = function () {
       if (!ov.isConnected || ov._closing) return;
       var pl = v.kind === 'file' ? document.createElement('video') : document.createElement('iframe');
       if (v.kind === 'file') { pl.src = v.src; pl.controls = true; pl.autoplay = true; pl.playsInline = true; pl.setAttribute('controlslist', 'nofullscreen'); pl.disablePictureInPicture = true; }
       else { pl.src = v.embed + (v.embed.indexOf('?') < 0 ? '?' : '&') + (v.kind === 'wistia' ? 'autoPlay=true' : 'autoplay=1'); pl.allow = 'autoplay; encrypted-media'; pl.title = label || 'Video'; }
       pl.className = 'cp-vlb-player'; box.appendChild(pl);
-      setTimeout(function () { pl.classList.add('on'); }, v.kind === 'file' ? 80 : 420);    // fades in over the cover once it has loaded a bit
+      setTimeout(function () { pl.classList.add('on'); }, v.kind === 'file' ? 80 : 400);    // fades in over the cover once it has loaded a bit
     };
     var land = function () {
-      ov.classList.add('open'); x.focus({preventScroll: true});
-      if (ring.animate && !calm()) {
-        ring.animate([{opacity: .9, transform: 'scale(1)'}, {opacity: 0, transform: 'scale(1.06)'}], {duration: 700, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both'});
-        sheen.animate([{transform: 'translateX(-120%) skewX(-18deg)'}, {transform: 'translateX(220%) skewX(-18deg)'}], {duration: 750, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both'});
-      }
-      setTimeout(startPlayer, 120);
+      box.style.willChange = 'auto'; ov.classList.add('open'); x.focus({preventScroll: true});
+      if (ring.animate && !calm()) ring.animate([{opacity: 0}, {opacity: .9, offset: .35}, {opacity: 0}], {duration: 900, easing: 'ease-out'});
+      startPlayer();
     };
-    var f = from && from.getBoundingClientRect(), b = box.getBoundingClientRect();
-    if (!f || calm() || !box.animate) { bg.style.opacity = 1; land(); return; }
-    if (from) from.style.visibility = 'hidden';                                           // the thumbnail lifts off the page
-    bg.animate([{opacity: 0}, {opacity: 1}], {duration: 450, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'both'});
-    x.animate([{opacity: 0, transform: 'scale(.6) rotate(-90deg)'}, {opacity: 1, transform: 'none'}], {duration: 420, delay: 380, easing: 'cubic-bezier(.2,1.2,.3,1)', fill: 'both'});
-    box.animate([{transform: flight(f, b, 14), opacity: .85}, {transform: 'translate3d(0,0,0) scale(1,1) rotateX(0deg)', opacity: 1}],
-                {duration: 900, easing: EASE_OPEN, fill: 'both'}).onfinish = land;
+    ov.classList.remove('idle'); ov.removeAttribute('aria-hidden');
+    if (!f || calm() || !box.animate) { land(); return; }
+    // start on the next screen refresh, with the box already sitting over the thumbnail
+    box.style.transform = flight(f, b); box.style.willChange = 'transform'; bg.style.opacity = '0'; x.style.opacity = '0';
+    requestAnimationFrame(function () {
+      if (from) from.style.visibility = 'hidden';                                         // the thumbnail lifts off the page
+      bg.style.opacity = ''; x.style.opacity = '';
+      bg.animate([{opacity: 0}, {opacity: 1}], {duration: OPEN_MS, easing: 'ease-out'});
+      x.animate([{opacity: 0}, {opacity: 1}], {duration: 260, delay: OPEN_MS - 160, easing: 'ease-out', fill: 'backwards'});
+      box.style.transform = '';
+      box.animate([{transform: flight(f, b)}, {transform: 'none'}], {duration: OPEN_MS, easing: EASE_OPEN}).onfinish = land;
+    });
   }
   function closeVideo(ov) {
     if (!ov || ov._closing) return; ov._closing = true;
     var box = ov.querySelector('.cp-vlb-box'), bg = ov.querySelector('.cp-vlb-bg'), x = ov.querySelector('.cp-vlb-x'), from = ov._from;
     var pl = box.querySelector('.cp-vlb-player'); if (pl) pl.classList.remove('on');          // back to the cover first
     var done = function () {
-      ov.remove();
-      if (from) { from.style.visibility = ''; if (from.animate && !calm()) from.animate([{transform: 'scale(1.035)'}, {transform: 'none'}], {duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)'}); try { from.focus({preventScroll: true}); } catch (e) {} }
+      ov.classList.add('idle'); ov.setAttribute('aria-hidden', 'true'); ov.classList.remove('open'); box.getAnimations && box.getAnimations().forEach(function (a) { a.cancel(); });
+      [bg, x].forEach(function (el) { el.getAnimations && el.getAnimations().forEach(function (a) { a.cancel(); }); });
+      var left = box.querySelector('.cp-vlb-player'); if (left) left.remove();
+      if (from) { from.style.visibility = ''; try { from.focus({preventScroll: true}); } catch (e) {} }
     };
     var f = from && from.isConnected && from.getBoundingClientRect(), b = box.getBoundingClientRect();
     if (!f || !f.width || calm() || !box.animate) return done();
-    x.animate([{opacity: 1}, {opacity: 0, transform: 'scale(.7)'}], {duration: 180, fill: 'both'});
+    x.animate([{opacity: 1}, {opacity: 0}], {duration: 150, fill: 'forwards'});
     setTimeout(function () {
       if (pl) pl.remove();
-      bg.animate([{opacity: 1}, {opacity: 0}], {duration: 460, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both'});
-      box.animate([{transform: 'translate3d(0,0,0) scale(1,1) rotateX(0deg)'}, {transform: flight(f, box.getBoundingClientRect(), -8)}],
-                  {duration: 480, easing: EASE_CLOSE, fill: 'both'}).onfinish = done;
-    }, 160);
+      box.style.willChange = 'transform';
+      bg.animate([{opacity: 1}, {opacity: 0}], {duration: CLOSE_MS, easing: 'ease-in', fill: 'forwards'});
+      box.animate([{transform: 'none'}, {transform: flight(f, b)}], {duration: CLOSE_MS, easing: EASE_CLOSE, fill: 'forwards'}).onfinish = done;
+    }, 120);
   }
   // the main video: the player without its control bar (viewers click the video to pause and play)
   var CLEAN = {wistia: '&playbar=false&smallPlayButton=false&volumeControl=false&settingsControl=false&playbackRateControl=false&qualityControl=false&controlsVisibleOnLoad=false',
@@ -380,8 +399,11 @@
       box.addEventListener('click', function () { box.remove(); }); document.body.appendChild(box);
     }
   });
+  ['pointerover', 'pointerdown', 'focusin'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { var t = e.target && e.target.closest && e.target.closest('.cpv .cp-mini-btn'); if (t) prewarm(t); }, {passive: true, capture: true});
+  });
   document.addEventListener('dblclick', function (e) { if (e.target && e.target.closest && e.target.closest('.cpv .cp-frame video')) e.preventDefault(); }, true);
-  addEventListener('keydown', function (e) { if (e.key === 'Escape') { var vb = document.querySelector('.cp-vlb'); if (vb && vb._close) return vb._close(); var b = document.querySelector('.cp-lightbox'); if (b) b.remove(); } });
+  addEventListener('keydown', function (e) { if (e.key === 'Escape') { var vb = document.querySelector('.cp-vlb:not(.idle)'); if (vb && vb._close) return vb._close(); var b = document.querySelector('.cp-lightbox'); if (b) b.remove(); } });
 
   // ---------- the look ----------
   var CSS = [
@@ -394,11 +416,11 @@
     '.cpv .cp-mini-btn:hover .cp-mini-play{transform:scale(1.08)}',
     '.cpv .cp-mini-btn:focus-visible{outline:3px solid #fff;outline-offset:-6px}',
     '.cpv .cp-vlb{position:fixed;inset:0;z-index:2147482000}',
-    '.cpv .cp-vlb-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;perspective:1600px;pointer-events:auto}',
-    '.cpv .cp-vlb-ring{position:absolute;left:50%;top:50%;translate:-50% -50%;border-radius:22px;box-shadow:0 0 0 2px var(--cp-accent),0 0 42px 6px color-mix(in srgb,var(--cp-accent) 60%,transparent);opacity:0;pointer-events:none}',
-    '.cpv .cp-vlb-sheen{position:absolute;inset:-10% auto -10% 0;width:45%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:translateX(-120%) skewX(-18deg);pointer-events:none;z-index:1}',
+    '.cpv .cp-vlb.idle{opacity:.001;pointer-events:none}',
+    '.cpv .cp-vlb.idle *{pointer-events:none}',
+    '.cpv .cp-vlb-ring{position:fixed;border-radius:18px;box-shadow:0 0 0 2px var(--cp-accent),0 0 40px 4px color-mix(in srgb,var(--cp-accent) 55%,transparent);opacity:0;pointer-events:none}',
     '.cpv .cp-vlb-bg{position:absolute;inset:0;background:radial-gradient(900px 560px at 50% 50%,color-mix(in srgb,var(--cp-accent) 26%,rgba(6,9,20,.86)),rgba(3,5,12,.95) 75%);will-change:opacity}',
-    '.cpv .cp-vlb-box{position:relative;border-radius:18px;overflow:hidden;border:3px solid var(--cp-accent);background:#000;transform-origin:center;will-change:transform,opacity;backface-visibility:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.06)}',
+    '.cpv .cp-vlb-box{position:fixed;border-radius:18px;overflow:hidden;border:3px solid var(--cp-accent);background:#000;transform-origin:center;box-shadow:0 40px 100px -30px rgba(0,0,0,.85)}',
     '.cpv .cp-vlb-cover{position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--cp-accent) 70%,#000),#0B0F19) center/cover no-repeat}',
     '.cpv .cp-vlb-player{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .45s cubic-bezier(.2,.7,.2,1);z-index:2}',
     '.cpv .cp-vlb-player.on{opacity:1}',
