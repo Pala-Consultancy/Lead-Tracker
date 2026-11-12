@@ -162,10 +162,29 @@
   }
 
   // ----- Your name, photo and role (the same on every page) -----
+  // Shown at once from the last visit (remembered in this browser), then refreshed from your profile. It keeps
+  // trying until Firebase is ready (some pages set it up later), and falls back to your sign-in name and email.
+  var ME_KEY = 'ptMeCard';
+  function paintUser(name, photo, sub){
+    var n = document.getElementById('seqSidebarUserName'), av = document.getElementById('seqSidebarAvatar'), s = document.getElementById('ptsUserSub');
+    if(n) n.textContent = name || 'You';
+    if(s) s.textContent = sub || '';
+    if(av){
+      if(photo){ av.innerHTML = ''; var img = document.createElement('img'); img.src = photo; img.alt = ''; img.onerror = function(){ av.textContent = initials(name); }; av.appendChild(img); }
+      else av.textContent = initials(name);
+    }
+  }
+  function initials(name){ var w = String(name || '').trim().split(/\s+/); return (((w[0] || '?')[0] || '?') + (w[1] ? w[1][0] : '')).toUpperCase(); }
+  try { var cached = JSON.parse(localStorage.getItem(ME_KEY) || 'null'); if(cached && cached.name) paintUser(cached.name, cached.photo, cached.sub); } catch(e){}
+  var userHooked = false;
   function fillUser(){
+    if(userHooked) return true;
     if(!window.firebase || !firebase.apps || !firebase.apps.length) return false;
+    userHooked = true;
     firebase.auth().onAuthStateChanged(function(u){
       if(!u) return;
+      // someone else signed in on this browser: their sign-in name first, until their profile arrives
+      try { var c = JSON.parse(localStorage.getItem(ME_KEY) || 'null'); if(!c || c.uid !== u.uid) paintUser(u.displayName || u.email || 'You', u.photoURL || '', u.email || ''); } catch(e){}
       firebase.firestore().doc('userDirectory/' + u.uid).get().then(function(d){
         var ws = d.exists && d.data().workspaceId; if(!ws) return null;
         return firebase.firestore().doc('workspaces/' + ws + '/members/' + u.uid).get();
@@ -174,18 +193,22 @@
         var name = data.name || u.displayName || u.email || 'You';
         var photo = data.photoURL || data.linkedinPhotoURL || u.photoURL || '';
         var sub = [data.jobTitle || data.role || '', data.company || ''].filter(Boolean).join(' · ') || u.email || '';
-        var n = document.getElementById('seqSidebarUserName'), av = document.getElementById('seqSidebarAvatar'), s = document.getElementById('ptsUserSub');
-        if(n) n.textContent = name;
-        if(s) s.textContent = sub;
-        if(av){
-          if(photo){ av.innerHTML = ''; var img = document.createElement('img'); img.src = photo; img.alt = ''; av.appendChild(img); }
-          else { var w = String(name).trim().split(/\s+/); av.textContent = ((w[0] || '?')[0] + (w[1] ? w[1][0] : '')).toUpperCase(); }
-        }
-      }).catch(function(){});
+        paintUser(name, photo, sub);
+        try { localStorage.setItem(ME_KEY, JSON.stringify({uid: u.uid, name: name, photo: photo, sub: sub})); } catch(e){}
+      }).catch(function(){
+        // the profile couldn't be read right now: the sign-in name and email rather than "?"
+        var n = document.getElementById('seqSidebarUserName');
+        if(!n || n.textContent === '…') paintUser(u.displayName || u.email || 'You', u.photoURL || '', u.email || '');
+      });
     });
     return true;
   }
-  if(!fillUser()) window.addEventListener('load', fillUser);
+  if(!fillUser()){
+    var tries = 0, timer = setInterval(function(){ if(fillUser() || ++tries > 80) clearInterval(timer); }, 250);   // up to 20 seconds
+    window.addEventListener('load', fillUser);
+  }
+  // signing out forgets the remembered card
+  document.addEventListener('click', function(e){ var t = e.target && e.target.closest && e.target.closest('#signOutItem'); if(t) try { localStorage.removeItem(ME_KEY); } catch(x){} }, true);
 })();
 
 /* ---------------------------------------------------------------------------
