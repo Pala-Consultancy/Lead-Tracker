@@ -3289,7 +3289,12 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   // startLinkedInConnect gives us a login URL, LinkedIn sends the browser back
   // to linkedinOAuthCallback, which saves linkedinPhotoURL/linkedinName on
   // this user's member doc and redirects here with ?linkedinConnect=<status>.
-  let linkedinInfo = {connected: false, name: '', photoURL: ''};
+  let linkedinInfo = {connected: false, name: '', photoURL: '', loaded: false};
+  // resolves once the connection info has loaded (or after 6 s, so nothing waits forever)
+  function linkedinReady(){
+    if(linkedinInfo.loaded) return Promise.resolve();
+    return new Promise(res=>{ const t0 = Date.now(); (function wait(){ if(linkedinInfo.loaded || Date.now() - t0 > 6000) res(); else setTimeout(wait, 150); })(); });
+  }
   let functionsApi = null;
   try{ functionsApi = firebase.functions(); }catch(e){ console.error('Cloud Functions unavailable', e); }
 
@@ -3354,6 +3359,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       scopes: Array.isArray(data.linkedinScopes) ? data.linkedinScopes : null,
       postingExpiresAt: exp ? (exp.toDate ? exp.toDate() : new Date(exp)) : null,
     };
+    linkedinInfo.loaded = true;
+    try { if(document.getElementById('scheduleOverlay').classList.contains('open')) updateAutoPublishUI(); } catch(e){}
     previewPhotoURL = linkedinInfo.photoURL || myPhotoURL;
     document.getElementById('authorNameInput').value = linkedinInfo.name || myAccountName || '';
     renderLinkedinConnect();
@@ -4840,8 +4847,14 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const when = toDate(draft.scheduledAt);
     if(!when) return 'draft';
     if(when.getTime() > Date.now()) return 'scheduled';
-    return draft.autoPost && draft.publishState === 'queued' ? 'publishing' : 'due';
+    if(draft.autoPost && draft.publishState === 'queued'){
+      // the server picks due posts up within 5 minutes; still waiting 15 minutes after its time means it didn't go out
+      const due = toDate(draft.autoPublishAt) || when;
+      return Date.now() - due.getTime() > 10 * 60 * 1000 ? 'failed' : 'publishing';
+    }
+    return 'due';
   }
+  function publishErrorOf(d){ return d.publishError || (d.publishState === 'queued' ? 'It wasn\u2019t published at its scheduled time.' : ''); }
   const AUTO_FIELDS_OFF = ()=> ({
     autoPost: false,
     autoPublishAt: firebase.firestore.FieldValue.delete(),
@@ -4854,6 +4867,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     autoPost: true,
     autoPublishAt: firebase.firestore.Timestamp.fromDate(when),
     publishState: 'queued',
+    expiryWarnedAt: firebase.firestore.FieldValue.delete(),
+    publishStartedAt: firebase.firestore.FieldValue.delete(),
     publishError: firebase.firestore.FieldValue.delete(),
     publishAttempts: firebase.firestore.FieldValue.delete(),
     reminderAt: firebase.firestore.FieldValue.delete(),
@@ -4910,7 +4925,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       textEl.textContent = '⏳ Publishing to LinkedIn… this takes a few minutes, longer with a video.';
     } else if(state === 'failed'){
       chip.classList.add('failed');
-      textEl.textContent = `⚠ Couldn't publish to LinkedIn: ${draft.publishError || 'unknown error.'}`;
+      textEl.textContent = `⚠ Couldn't publish to LinkedIn: ${publishErrorOf(draft) || 'unknown error.'}`;
       addLink('Try again', ()=> publishNow({confirmed: true}));
       addLink('Reschedule', ()=> openScheduleModal());
       addLink('Post it myself', ()=> setPosted(draft, true));
@@ -4923,8 +4938,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       addLink('Mark as posted', ()=> setPosted(draft, true));
       addLink('Reschedule', ()=> openScheduleModal());
     } else {
-      textEl.textContent = `📅 Scheduled for ${fmtDay(when)} at ${fmtTime(when)}`;
-      addLink('Change', ()=> openScheduleModal());
+      textEl.textContent = `🔔 Reminder only: you post this yourself on ${fmtDay(when)} at ${fmtTime(when)}. It won't publish automatically.`;
+      addLink('Publish automatically instead', ()=> openScheduleModal());
     }
   }
 
@@ -4944,8 +4959,8 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       return;
     }
     const existing = draft && draft.status !== 'posted' ? toDate(draft.scheduledAt) : null;
-    // Auto-publish is on by default whenever it's available, unless this post was scheduled without it.
-    document.getElementById('autoPublishToggle').checked = linkedinCanAutoPost() && !(draft && draft.scheduledAt && draft.autoPost === false);
+    // Every scheduled post publishes automatically (there is no reminder option).
+    document.getElementById('autoPublishToggle').checked = true;
     document.getElementById('remindEmailToggle').checked = !(draft && draft.remindByEmail === false);
     placeholderWarned = false;
     disarmPublishNow();
@@ -4993,18 +5008,22 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     updateAutoPublishUI();
   }
   function updateAutoPublishUI(){
-    document.getElementById('remindEmailRow').style.display = document.getElementById('autoPublishToggle').checked ? 'none' : '';
+    document.getElementById('remindEmailRow').style.display = 'none';      // no reminders: every scheduled post publishes automatically
     const row = document.getElementById('autoPublishRow');
     const toggle = document.getElementById('autoPublishToggle');
+    toggle.checked = true;
     const hint = document.getElementById('autoPublishHint');
     const note = document.getElementById('scheduleNote');
     const available = linkedinCanAutoPost();
-    toggle.disabled = !available;
-    row.classList.toggle('disabled', !available);
     hint.className = '';
     hint.innerHTML = '';
-    if(!available){
-      toggle.checked = false;
+    toggle.disabled = true; row.classList.remove('disabled');   // always on
+    if(!linkedinInfo.loaded){
+      hint.textContent = 'Checking your LinkedIn connection…';
+    }
+    if(linkedinInfo.loaded && !available){
+      hint.className = 'warn';
+      hint.append('It stays scheduled to publish automatically, but LinkedIn must be connected by then. ');
       hint.append(linkedinInfo.connected
         ? (linkedinInfo.canPost ? 'Your LinkedIn connection has expired. ' : 'Your LinkedIn connection needs posting permission. ')
         : 'Connect your LinkedIn account to turn this on. ');
@@ -5013,7 +5032,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       b.textContent = linkedinInfo.connected ? 'Reconnect LinkedIn' : 'Connect LinkedIn';
       b.addEventListener('click', e=>{ e.preventDefault(); startLinkedinConnect(); });
       hint.appendChild(b);
-    } else {
+    } else if(linkedinInfo.loaded){
       const when = readScheduleInputs();
       if(toggle.checked && when && linkedinInfo.postingExpiresAt && when > linkedinInfo.postingExpiresAt){
         hint.className = 'warn';
@@ -5046,7 +5065,14 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const errEl = document.getElementById('scheduleError');
     if(!when){ errEl.textContent = 'Pick both a date and a time.'; return; }
     if(when.getTime() <= Date.now()){ errEl.textContent = 'That time has already passed. Pick a time in the future.'; return; }
-    const auto = document.getElementById('autoPublishToggle').checked && linkedinCanAutoPost();
+    const wantsAuto = document.getElementById('autoPublishToggle').checked;
+    if(wantsAuto && !linkedinInfo.loaded){
+      errEl.textContent = 'Checking your LinkedIn connection… one moment.';
+      linkedinReady().then(()=>{ errEl.textContent = ''; updateAutoPublishUI(); document.getElementById('scheduleConfirmBtn').click(); });
+      return;
+    }
+    const auto = true;                                    // every scheduled post publishes automatically
+    if(!linkedinCanAutoPost()) setTimeout(()=> showToast('Scheduled to publish automatically. Your LinkedIn connection isn\u2019t active: reconnect it before then, so the post can go out.', true, {label: 'Reconnect', fn: ()=> startLinkedinConnect()}), 400);
     const left = unfilledPlaceholders();
     if(left.length && auto){
       errEl.textContent = `Your post still has ${left.length === 1 ? 'a placeholder' : left.length + ' placeholders'} (${left.slice(0, 2).join(', ')}). Fill ${left.length === 1 ? 'it' : 'them'} in first, so it isn't published like that.`;
@@ -5142,7 +5168,10 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     const when = new Date(day);
     when.setHours(old ? old.getHours() : 9, old ? old.getMinutes() : 0, 0, 0);
     if(when.getTime() <= Date.now()){ showToast('That time has already passed. Pick a later day.', true); return; }
-    const keepAuto = draft.autoPost && linkedinCanAutoPost();
+    // a post set to publish automatically keeps that when moved (the server checks the connection when it's due,
+    // and warns you ahead of time if it will have ended); a draft publishes automatically when LinkedIn is connected
+    const keepAuto = true;                                // every scheduled post publishes automatically
+    if(linkedinInfo.loaded && !linkedinCanAutoPost()) setTimeout(()=> showToast('Heads-up: your LinkedIn connection isn\u2019t active. Reconnect LinkedIn before this post is due, so it can go out.', true, {label: 'Reconnect', fn: ()=> startLinkedinConnect()}), 400);
     collectionRef().doc(draftId).update({
       scheduledAt: firebase.firestore.Timestamp.fromDate(when),
       status: 'scheduled',
@@ -5191,7 +5220,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     } else if(state === 'failed'){
       info.label = "Couldn't publish";
       info.when = sched ? at(sched) : '';
-      info.meta = d.publishError || 'Something went wrong while publishing.'; info.err = true;
+      info.meta = publishErrorOf(d) || 'Something went wrong while publishing.'; info.err = true;
     } else if(state === 'publishing'){
       info.label = 'Publishing to LinkedIn…';
       info.when = sched ? at(sched) : '';
@@ -5261,9 +5290,17 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     document.querySelector('.composer-grid').scrollIntoView({behavior:'smooth', block:'start'});
   }
 
+  const missedAnnounced = new Set();
+  function announceMissed(){
+    allDrafts.filter(d=> d.status !== 'posted' && postState(d) === 'failed' && !missedAnnounced.has(d.id)).forEach(d=>{
+      missedAnnounced.add(d.id);
+      showToast(`⚠ A scheduled post didn't go out: “${snippetOf(d)}”. ${publishErrorOf(d)}`, true, {label: 'Open', fn: ()=> openDraftFromCalendar(d)});
+    });
+  }
   function renderCalendar(){
     const grid = document.getElementById('calGrid');
     if(!grid) return;
+    setTimeout(announceMissed, 0);
     hideCalTip(); // the pill it points at is about to be rebuilt
     document.getElementById('calMonthLabel').textContent =
       calMonth.toLocaleDateString(undefined, {month:'long', year:'numeric'});
@@ -5309,7 +5346,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
         pill.className = 'cal-pill' + ({due:' due', posted:' posted', failed:' failed', publishing:' publishing'}[state] || '') + (draft.id === activeDraftId ? ' active' : '');
         const when = calendarDate(draft);
         const tag = state === 'failed' ? ' · Failed' : state === 'publishing' ? ' · Publishing' :
-          (state === 'posted' && draft.publishState === 'published') ? ' · Published' : (draft.autoPost && state === 'scheduled') ? ' · Auto' : '';
+          (state === 'posted' && draft.publishState === 'published') ? ' · Published' : (draft.autoPost && state === 'scheduled') ? ' · Auto' : state === 'scheduled' ? ' · Reminder' : '';
         pill.innerHTML = `<b>${esc(fmtTime(when))}<span class="auto-tag">${esc(tag)}</span></b><span>${esc(snippetOf(draft))}</span>`;
         pill.setAttribute('aria-label', `${fmtTime(when)}${tag}: ${snippetOf(draft)}`);
         attachCalTip(pill, draft);
