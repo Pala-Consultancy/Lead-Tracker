@@ -996,6 +996,20 @@
   .toast{background:var(--ink);color:#fff;padding:11px 16px;border-radius:9px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);animation:toastIn .2s ease both;}
   .toast.danger{background:var(--fail);}
   @keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  /* alt text on photos */
+  .media-thumb .media-alt{position:absolute;left:5px;bottom:5px;z-index:2;border:none;border-radius:6px;padding:2px 6px;font:800 10px 'Inter',sans-serif;letter-spacing:.04em;color:#fff;background:rgba(15,15,30,.72);cursor:pointer;}
+  .media-thumb .media-alt:hover{background:rgba(15,15,30,.9);}
+  .media-thumb .media-alt.on{background:linear-gradient(135deg,#10B981,#059669);}
+  .alt-box{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,12,30,.45);}
+  .alt-card{width:min(480px,100%);border-radius:18px;background:var(--panel,#fff);padding:18px;box-shadow:0 30px 70px -30px rgba(0,0,0,.6);}
+  .alt-head{display:flex;gap:12px;align-items:center;margin-bottom:12px;}
+  .alt-head img{width:58px;height:58px;border-radius:10px;object-fit:cover;flex:0 0 auto;background:var(--panel-alt,#f3f4f8);}
+  .alt-head b{display:block;font-size:15px;color:var(--ink,#111);} .alt-head small{display:block;color:var(--slate,#667);font-size:12.5px;line-height:1.4;margin-top:2px;}
+  .alt-card textarea{width:100%;box-sizing:border-box;border:1px solid var(--border,#d9dbe3);border-radius:12px;padding:10px 12px;font:14px/1.5 'Inter',sans-serif;color:var(--ink,#111);background:var(--panel,#fff);resize:vertical;}
+  .alt-card textarea:focus{outline:none;border-color:var(--teal,#4F46E5);box-shadow:0 0 0 3px rgba(79,70,229,.15);}
+  .alt-foot{display:flex;align-items:center;gap:8px;margin-top:10px;} .alt-foot .sp{flex:1;}
+  .alt-n{font-size:12px;color:var(--slate,#667);font-variant-numeric:tabular-nums;} .alt-n.warn{color:#B45309;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -2440,6 +2454,27 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(dirty) markUnsaved();
   }
 
+  // ---------- Alt text: a description of a photo for people who use screen readers (LinkedIn reads it out to them) ----------
+  function editAltText(i){
+    const m = currentMedia[i]; if(!m || m.type !== 'image') return;
+    document.querySelectorAll('.alt-box').forEach(b=> b.remove());
+    const box = document.createElement('div'); box.className = 'alt-box'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Alt text');
+    box.innerHTML = `<div class="alt-card"><div class="alt-head"><img alt=""><div><b>Alt text</b><small>Describe this photo for people who can’t see it. LinkedIn reads it out to them.</small></div></div>
+      <textarea maxlength="1000" rows="4" placeholder="For example: Gabriele smiling at his desk, holding a printed invoice for $24,000."></textarea>
+      <div class="alt-foot"><span class="alt-n"></span><span class="sp"></span><button type="button" class="lk-btn ghost" data-a="cancel">Cancel</button><button type="button" class="lk-btn primary" data-a="save">Save</button></div></div>`;
+    document.body.appendChild(box);
+    box.querySelector('img').src = m.url || (m.blob ? URL.createObjectURL(m.blob) : '');
+    const ta = box.querySelector('textarea'), n = box.querySelector('.alt-n');
+    ta.value = m.alt || '';
+    const count = ()=>{ const l = ta.value.trim().length; n.textContent = `${l} / 1,000`; n.classList.toggle('warn', l > 250); n.title = l > 250 ? 'Shorter is usually better: one or two sentences' : ''; };
+    count(); ta.addEventListener('input', count);
+    const close = ()=> box.remove();
+    const save = ()=>{ const v = ta.value.replace(/\s+/g, ' ').trim(); const list = currentMedia.slice(); const item = {...list[i]};
+      if(v) item.alt = v; else delete item.alt; list[i] = item; setMedia(list); close(); showToast(v ? 'Alt text saved.' : 'Alt text removed.'); scheduleAutosave(); };
+    box.addEventListener('click', e=>{ const a = e.target.closest('[data-a]'); if(e.target === box || (a && a.dataset.a === 'cancel')) close(); else if(a && a.dataset.a === 'save') save(); });
+    box.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ e.stopPropagation(); close(); } else if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save(); });
+    setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 30);
+  }
   function renderMedia(){
     mediaUrls.forEach(u=> URL.revokeObjectURL(u));
     mediaUrls = [];
@@ -2456,7 +2491,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       t.className = 'media-thumb';
       const el = document.createElement(m.type === 'video' ? 'video' : 'img');
       el.src = srcFor(m);
-      if(m.type === 'video'){ el.muted = true; el.preload = 'metadata'; } else { el.alt = ''; }
+      if(m.type === 'video'){ el.muted = true; el.preload = 'metadata'; } else { el.alt = m.alt || ''; }
       t.appendChild(el);
       if(m.type === 'video' || !m.url){
         const k = document.createElement('span'); k.className = 'media-kind';
@@ -2470,6 +2505,15 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       rm.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
       rm.addEventListener('click', ()=> setMedia(currentMedia.filter((_, j)=> j !== i)));
       t.appendChild(rm);
+      if(m.type === 'image'){
+        const al = document.createElement('button');
+        al.type = 'button'; al.className = 'media-alt' + (m.alt ? ' on' : '');
+        al.textContent = m.alt ? 'ALT ✓' : 'ALT';
+        al.title = m.alt ? 'Alt text: ' + m.alt : 'Add alt text: a short description for people who can’t see the image';
+        al.setAttribute('aria-label', `${m.alt ? 'Edit' : 'Add'} alt text for photo ${i+1}`);
+        al.addEventListener('click', ()=> editAltText(i));
+        t.appendChild(al);
+      }
       thumbs.appendChild(t);
     });
     const hasVideo = currentMedia.some(m=> m.type === 'video');
@@ -2579,14 +2623,14 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 
   function loadMediaForDraft(draft){
     if(Array.isArray(draft.media) && draft.media.length){
-      setMedia(draft.media.map(m=> ({type: m.type, name: m.name, url: m.url, path: m.path})), {dirty:false});
+      setMedia(draft.media.map(m=> ({type: m.type, name: m.name, url: m.url, path: m.path, ...(m.alt ? {alt: m.alt} : {})})), {dirty:false});
       return;
     }
     setMedia([], {dirty:false});
     // Media saved by the old browser-only version: show it, upload on next save.
     legacyMediaDB.get(draft.id).then(items=>{
       if(activeDraftId === draft.id && Array.isArray(items) && items.length){
-        setMedia(items.map(m=> ({type: m.type, name: m.name, blob: m.blob})), {dirty:false});
+        setMedia(items.map(m=> ({type: m.type, name: m.name, blob: m.blob, ...(m.alt ? {alt: m.alt} : {})})), {dirty:false});
         const statusEl = document.getElementById('saveStatus');
         statusEl.textContent = 'Save to upload media';
         statusEl.className = 'save-status';
@@ -2954,7 +2998,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     if(Array.isArray(draft.versions) && draft.versions.length){
       versions = draft.versions.map(v=> ({
         id: v.id || newVersionId(), label: v.label || 'Version', content: v.content || '',
-        media: (v.media || []).map(m=> ({type: m.type, name: m.name, url: m.url, path: m.path})),
+        media: (v.media || []).map(m=> ({type: m.type, name: m.name, url: m.url, path: m.path, ...(m.alt ? {alt: m.alt} : {})})),
         carousel: v.carousel || null,              // "post as a carousel", set in the Chrome extension: kept as it is
       }));
       activeVersionId = versions.some(v=> v.id === draft.activeVersionId) ? draft.activeVersionId : versions[0].id;
@@ -4672,7 +4716,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
     syncActiveVersion();
     return JSON.stringify([
       postInput.value, fcInput.value.trim(), document.getElementById('authorHeadlineInput').value.trim(), activeVersionId, postGoal,
-      versions.map(v=> [v.id, v.label, v.content, (v.media || []).map(m=> m.path || m.name)]),
+      versions.map(v=> [v.id, v.label, v.content, (v.media || []).map(m=> (m.path || m.name) + (m.alt ? '#' + m.alt : ''))]),
     ]);
   }
   function markSavedBaseline(){ clearTimeout(autosaveTimer); lastSavedSignature = editorSignature(); }
@@ -5606,7 +5650,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       : collectionRef().add({status: 'draft', ...withoutDeletes(payload), media: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()})
           .then(ref=>{ activeDraftId = ref.id; return ref.id; });
 
-    const meta = list=> (list || []).filter(m=> m.url).map(m=> ({type: m.type, name: m.name || '', url: m.url, path: m.path}));
+    const meta = list=> (list || []).filter(m=> m.url).map(m=> ({type: m.type, name: m.name || '', url: m.url, path: m.path, ...(m.alt ? {alt: m.alt} : {})}));
     let savedFields = null;
     return ensureDoc.then(postId=>
       uploadPendingMedia(postId, allItems).then(()=>{
