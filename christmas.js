@@ -368,10 +368,15 @@
     var nav0 = document.querySelector('.nav');
     if (PLACE === 'site' && nav0 && layer) layer.style.setProperty('--xm-orn-top', Math.round(nav0.getBoundingClientRect().height) + 'px');
     var r = document.querySelector('.xm-ribbon'), nav = document.querySelector('.nav'); if (!r || !nav) return;
+    // A menu that is part of the page (static or sticky) already makes room for the ribbon below it: no extra space.
+    // Only a menu that floats over the page (fixed) needs space equal to its height. This never depends on how far
+    // the page is scrolled (measuring on screen while scrolled used to open a big gap above the ribbon).
     r.style.marginTop = '';
-    var pos = getComputedStyle(nav).position; if (pos !== 'fixed' && pos !== 'sticky') return;
-    var below = nav.getBoundingClientRect().bottom, top = r.getBoundingClientRect().top;
-    if (top < below) r.style.marginTop = Math.ceil(below - top) + 'px';
+    var pos = getComputedStyle(nav).position; if (pos !== 'fixed') return;
+    // a floating menu sits at the top of the screen: the ribbon needs to start below it. Compared in page coordinates
+    // (the ribbon's place on the page, not on the screen), so scrolling never changes the result.
+    var navBottom = nav.getBoundingClientRect().bottom, ribbonTop = r.getBoundingClientRect().top + (window.scrollY || 0);
+    if (ribbonTop < navBottom) r.style.marginTop = Math.ceil(navBottom - ribbonTop) + 'px';
   }
   addEventListener('resize', function () { setTimeout(placeRibbon, 150); });
   var scrollT = 0;
