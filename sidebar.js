@@ -1287,14 +1287,14 @@
 })();
 
 /* ---------------------------------------------------------------------------
-   Christmas (November 3 – January 6): christmas.js, next to this file, adds snow, lights, an ornament,
+   Christmas (November 15 – January 6): christmas.js, next to this file, adds snow, lights, an ornament,
    Santa's sleigh, the side panel in Christmas colours and a one-time surprise. Loaded on every tracker page.
    --------------------------------------------------------------------------- */
 (function () {
   if (document.getElementById('ptChristmasJs')) return;
   var me = document.currentScript, base = (me && me.src) ? me.src.replace(/[^\/?#]*([?#].*)?$/, '') : '';
   // the version number makes every browser fetch the newest christmas.js (change it whenever christmas.js changes)
-  var CHRISTMAS_VERSION = '2026-11-12';
+  var CHRISTMAS_VERSION = '2026-11-15';
   var s = document.createElement('script'); s.id = 'ptChristmasJs'; s.src = base + 'christmas.js?v=' + CHRISTMAS_VERSION; s.dataset.place = 'app';
   (document.head || document.documentElement).appendChild(s);
 })();

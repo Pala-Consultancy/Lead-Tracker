@@ -1,11 +1,11 @@
 /* PalaTrack · christmas.js
-   The Christmas theme, from November 3 to January 6 (then it switches itself off, until next year).
+   The Christmas theme, from November 15 to January 6 (then it switches itself off, until next year).
    Used in three places, chosen with data-place on the script tag:
      app    (loaded by sidebar.js on every tracker page): snow, lights, an ornament (click it), Santa's sleigh now
             and then, the side panel in Christmas colours with a greeting, a Santa hat on the logo, and a one-time
             surprise (a snowy night, the sleigh, a gift that bursts open, Jingle Bells) after the "Welcome back" screen.
             Settings → "Christmas decorations" turns it off (localStorage ptChristmas = 'off').
-     site   (the homepage): snow, lights, the ornament, the sleigh, a ribbon under the menu, a Santa hat on the logo,
+     site   (the website: homepage, About us, Why PalaTrack, Chrome Extension, Pricing and Contact): snow, lights, the ornament, the sleigh, a ribbon under the menu, a Santa hat on the logo,
             and a ❄️ button for visitors (ptChristmasSite).
      client (client onboarding pages): gentle snow and the lights, with a ❄️ button in the top bar (ptChristmasClient).
    Nothing blocks clicks (only the ornament and the buttons are clickable); all sound is made in the browser;
@@ -15,10 +15,10 @@
   'use strict';
   var me = document.currentScript, PLACE = (me && me.dataset && me.dataset.place) || 'app';
   var KEY = {app: 'ptChristmas', site: 'ptChristmasSite', client: 'ptChristmasClient'}[PLACE] || 'ptChristmas';
-  // The season: November 18 – January 6. Before that, only a preview:
+  // The season: November 15 – January 6. Before that, only a preview:
   //  - the owner's own account sees it in the app (recognised by a one-way fingerprint of the email, so no address is in this file);
   //  - on any page, ?christmas=preview switches the preview on in that browser (and ?christmas=stop switches it off again).
-  // the owner preview is over: the owner sees Christmas when it goes live for everyone (on November 18)
+  // the owner preview is over: the owner sees Christmas when it goes live for everyone (on November 15)
   var OWNERS = [];
   try {
     // once, before the season: clear what the preview left in this browser (the preview switch, and "the surprise has
@@ -33,7 +33,7 @@
   } catch (e) { /* ignore */ }
   var owner = false;
   function previewing() { try { return owner || localStorage.getItem('ptXmasPreview') === '1'; } catch (e) { return owner; } }
-  function realSeason() { var d = new Date(), m = d.getMonth(), day = d.getDate(); return (m === 10 && day >= 18) || m === 11 || (m === 0 && day <= 6); }
+  function realSeason() { var d = new Date(), m = d.getMonth(), day = d.getDate(); return (m === 10 && day >= 15) || m === 11 || (m === 0 && day <= 6); }
   function inSeason() { return realSeason() || previewing(); }
   // who is logged in is known a moment after the page loads: then check whether it's the owner
   function checkOwner(user) {
@@ -93,13 +93,13 @@
     '#ptXmas .xm-bulb.y{background:radial-gradient(circle at 40% 35%,#FFF6D2,#F4C542 60%);box-shadow:0 0 10px 3px rgba(244,197,66,.5);}',
     '#ptXmas .xm-bulb.b{background:radial-gradient(circle at 40% 35%,#DCE9FF,#3A86FF 60%);box-shadow:0 0 10px 3px rgba(58,134,255,.45);}',
     '@keyframes xmTwinkle{0%,100%{opacity:1;}50%{opacity:.45;}}',
-    '#ptXmas .xm-orn{position:absolute;top:0;right:' + (PLACE === 'site' ? 34 : 12) + 'px;width:34px;transform-origin:50% 0;animation:xmSwing 6s ease-in-out infinite;}',
-    '#ptXmas .xm-orn .str{display:block;margin:0 auto;width:1.5px;height:' + (PLACE === 'site' ? 120 : 92) + 'px;background:linear-gradient(#C9A24A,#E8C76A);}',
+    '#ptXmas .xm-orn{position:absolute;top:' + (PLACE === 'site' ? 'var(--xm-orn-top,0px)' : '0') + ';right:' + (PLACE === 'site' ? 34 : 12) + 'px;width:34px;transform-origin:50% 0;animation:xmSwing 6s ease-in-out infinite;}',
+    '#ptXmas .xm-orn .str{display:block;margin:0 auto;width:1.5px;height:' + (PLACE === 'site' ? 58 : 92) + 'px;background:linear-gradient(#C9A24A,#E8C76A);}',
     '#ptXmas .xm-orn svg{display:block;width:34px;height:46px;margin-top:-3px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(140,18,32,.3));transition:transform .2s;}',
     '#ptXmas .xm-orn svg:hover{transform:scale(1.08);}',
     '#ptXmas .xm-orn.aside{display:none;}',
-    '#ptXmas .xm-orn.o2{right:' + (PLACE === 'site' ? 70 : 46) + 'px;width:26px;animation-duration:7s;animation-delay:-2s;} #ptXmas .xm-orn.o2 .str{height:' + (PLACE === 'site' ? 76 : 54) + 'px;} #ptXmas .xm-orn.o2 svg{width:26px;height:35px;}',
-    '#ptXmas .xm-orn.o3{right:' + (PLACE === 'site' ? 100 : 74) + 'px;width:22px;animation-duration:8s;animation-delay:-4s;} #ptXmas .xm-orn.o3 .str{height:' + (PLACE === 'site' ? 100 : 74) + 'px;} #ptXmas .xm-orn.o3 svg{width:22px;height:30px;}',
+    '#ptXmas .xm-orn.o2{right:' + (PLACE === 'site' ? 70 : 46) + 'px;width:26px;animation-duration:7s;animation-delay:-2s;} #ptXmas .xm-orn.o2 .str{height:' + (PLACE === 'site' ? 30 : 54) + 'px;} #ptXmas .xm-orn.o2 svg{width:26px;height:35px;}',
+    '#ptXmas .xm-orn.o3{right:' + (PLACE === 'site' ? 100 : 74) + 'px;width:22px;animation-duration:8s;animation-delay:-4s;} #ptXmas .xm-orn.o3 .str{height:' + (PLACE === 'site' ? 44 : 74) + 'px;} #ptXmas .xm-orn.o3 svg{width:22px;height:30px;}',
     '@media (max-width:760px){#ptXmas .xm-orn{display:none;}}',
     '#ptXmas .xm-orn.spin svg{animation:xmSpin .9s cubic-bezier(.3,1.4,.5,1);}',
     '@keyframes xmSwing{0%,100%{transform:rotate(4deg);}50%{transform:rotate(-4deg);}}',
@@ -344,6 +344,8 @@
     if (PLACE !== 'client') later(sleighLoop, 5000);
   }
   function placeRibbon() {
+    var nav0 = document.querySelector('.nav');
+    if (PLACE === 'site' && nav0 && layer) layer.style.setProperty('--xm-orn-top', Math.round(nav0.getBoundingClientRect().height) + 'px');
     var r = document.querySelector('.xm-ribbon'), nav = document.querySelector('.nav'); if (!r || !nav) return;
     r.style.marginTop = '';
     var pos = getComputedStyle(nav).position; if (pos !== 'fixed' && pos !== 'sticky') return;
@@ -375,7 +377,7 @@
   }
   function previewLabel() {
     var l = document.getElementById('xmPreview'), show = !realSeason() && previewing();
-    if (show && !l && document.body) { l = document.createElement('div'); l.id = 'xmPreview'; l.className = 'xm-preview'; l.innerHTML = '\uD83C\uDF84 Christmas preview <small>\u00B7 only you see this, until 18 November</small>'; document.body.appendChild(l); }
+    if (show && !l && document.body) { l = document.createElement('div'); l.id = 'xmPreview'; l.className = 'xm-preview'; l.innerHTML = '\uD83C\uDF84 Christmas preview <small>\u00B7 only you see this, until 15 November</small>'; document.body.appendChild(l); }
     if (!show && l) l.remove();
   }
   function apply() {
