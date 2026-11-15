@@ -172,10 +172,10 @@
   function makeSnow(canvas, density, opts) {
     opts = opts || {}; var ctx = canvas.getContext('2d'), flakes = [], W = 0, H = 0, raf = 0, stopped = false, sprite = null;
     // lighter to draw: the decorative snow uses a canvas at half the size (a quarter of the pixels; the soft flakes look the
-    // same) and is drawn 30 times a second, 15 while the page scrolls; the evening show keeps full quality
-    var dpr = opts.night ? 1 : 0.5, FPS = opts.night ? 60 : 30, lastDraw = 0, lastScroll = 0;
-    var onScroll = function () { lastScroll = performance.now(); };
-    if (!opts.night) addEventListener('scroll', onScroll, {passive: true, capture: true});
+    // same). It's drawn on every frame, also while scrolling, so it always falls smoothly; each flake moves by the time
+    // that really passed, so it's just as smooth on 60 Hz and 120 Hz screens. The evening show keeps full quality.
+    var dpr = opts.night ? 1 : 0.5, lastDraw = 0;
+    var onScroll = function () {};
     var dk = dark(), dkAt = 0;
     if (opts.soft) { sprite = document.createElement('canvas'); sprite.width = sprite.height = 32; var sx = sprite.getContext('2d'), gr = sx.createRadialGradient(16, 16, 0, 16, 16, 16);
       gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); sx.fillStyle = gr; sx.fillRect(0, 0, 32, 32); }
@@ -189,9 +189,7 @@
       if (opts.once && !flakes.length) { ctx.clearRect(0, 0, W, H); running = false; return; }   // the flurry is over: stop drawing
       running = true;
       t = t || performance.now();
-      var fps = t - lastScroll < 250 ? 15 : FPS;
-      if (lastDraw && t - lastDraw < 1000 / fps - 2) { raf = requestAnimationFrame(frame); return; }
-      var k = lastDraw ? Math.min(4, (t - lastDraw) / 16.7) : 1; lastDraw = t;          // move as far as at 60 frames a second
+      var k = lastDraw ? Math.min(4, (t - lastDraw) / 16.7) : 1; lastDraw = t;          // move by the time that passed (60 fps = 1)
       if (!document.hidden) {
         if (t - dkAt > 1000) { dk = dark(); dkAt = t; }                                  // light or dark page: checked once a second
         ctx.clearRect(0, 0, W, H); var night = opts.night || dk;
