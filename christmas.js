@@ -86,14 +86,16 @@
     '#ptXmas .xm-lights.slim use{transform-box:fill-box;transform-origin:center top;transform:scale(.7);}',
     '#ptXmas .xm-bulb.aside{visibility:hidden;}',
     '#ptXmas .xm-lights svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}',
-    '#ptXmas .xm-bulb{position:absolute;width:9px;height:14px;margin-left:-4.5px;border-radius:50% 50% 45% 45%;animation:xmTwinkle 3.4s ease-in-out infinite;}',
+    '#ptXmas .xm-bulb{position:absolute;width:9px;height:14px;margin-left:-4.5px;border-radius:50% 50% 45% 45%;}',
+    '#ptXmas .xm-bulb:nth-of-type(3n){animation:xmTwinkle 3.4s ease-in-out infinite;}',
+    'html.pt-xm-scrolling #ptXmas .xm-bulb,html.pt-xm-scrolling #ptXmas .xm-orn{animation-play-state:paused;}',
     '#ptXmas .xm-bulb::before{content:"";position:absolute;left:2px;top:-4px;width:6px;height:5px;border-radius:2px;background:#3B4A3F;}',
     '#ptXmas .xm-bulb.r{background:radial-gradient(circle at 40% 35%,#FFD3D7,#E63946 60%);box-shadow:0 0 10px 3px rgba(230,57,70,.5);}',
     '#ptXmas .xm-bulb.g{background:radial-gradient(circle at 40% 35%,#D2F7E1,#2A9D5C 60%);box-shadow:0 0 10px 3px rgba(42,157,92,.45);}',
     '#ptXmas .xm-bulb.y{background:radial-gradient(circle at 40% 35%,#FFF6D2,#F4C542 60%);box-shadow:0 0 10px 3px rgba(244,197,66,.5);}',
     '#ptXmas .xm-bulb.b{background:radial-gradient(circle at 40% 35%,#DCE9FF,#3A86FF 60%);box-shadow:0 0 10px 3px rgba(58,134,255,.45);}',
     '@keyframes xmTwinkle{0%,100%{opacity:1;}50%{opacity:.45;}}',
-    '#ptXmas .xm-orn{position:absolute;top:' + (PLACE === 'site' ? 'var(--xm-orn-top,0px)' : '0') + ';right:' + (PLACE === 'site' ? 34 : 12) + 'px;width:34px;transform-origin:50% 0;animation:xmSwing 6s ease-in-out infinite;}',
+    '#ptXmas .xm-orn{position:absolute;top:' + (PLACE === 'site' ? 'var(--xm-orn-top,0px)' : '0') + ';right:' + (PLACE === 'site' ? 34 : 12) + 'px;width:34px;transform-origin:50% 0;animation:xmSwing 6s ease-in-out infinite;will-change:transform;}',
     '#ptXmas .xm-orn .str{display:block;margin:0 auto;width:1.5px;height:' + (PLACE === 'site' ? 58 : 92) + 'px;background:linear-gradient(#C9A24A,#E8C76A);}',
     '#ptXmas .xm-orn svg{display:block;width:34px;height:46px;margin-top:-3px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(140,18,32,.3));transition:transform .2s;}',
     '#ptXmas .xm-orn svg:hover{transform:scale(1.08);}',
@@ -168,7 +170,13 @@
   function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
   // falling snow on a canvas: light and calm, paused when the tab isn't visible
   function makeSnow(canvas, density, opts) {
-    opts = opts || {}; var ctx = canvas.getContext('2d'), flakes = [], W = 0, H = 0, raf = 0, stopped = false, dpr = 1, sprite = null;
+    opts = opts || {}; var ctx = canvas.getContext('2d'), flakes = [], W = 0, H = 0, raf = 0, stopped = false, sprite = null;
+    // lighter to draw: the decorative snow uses a canvas at half the size (a quarter of the pixels; the soft flakes look the
+    // same) and is drawn 30 times a second, 15 while the page scrolls; the evening show keeps full quality
+    var dpr = opts.night ? 1 : 0.5, FPS = opts.night ? 60 : 30, lastDraw = 0, lastScroll = 0;
+    var onScroll = function () { lastScroll = performance.now(); };
+    if (!opts.night) addEventListener('scroll', onScroll, {passive: true, capture: true});
+    var dk = dark(), dkAt = 0;
     if (opts.soft) { sprite = document.createElement('canvas'); sprite.width = sprite.height = 32; var sx = sprite.getContext('2d'), gr = sx.createRadialGradient(16, 16, 0, 16, 16, 16);
       gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); sx.fillStyle = gr; sx.fillRect(0, 0, 32, 32); }
     function size() { W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -176,25 +184,30 @@
       var n = Math.round(Math.min(opts.max || 70, W * H / density)); while (flakes.length < n) flakes.push(flake(true)); flakes.length = n; }
     function flake(anywhere) { var r = 0.9 + Math.random() * (opts.big ? 3.4 : 2.4); return {x: Math.random() * W, y: anywhere ? Math.random() * H : -10, r: r, vy: 0.25 + r * 0.22 + Math.random() * 0.25, ph: Math.random() * 6.28, sw: 0.3 + Math.random() * 0.6}; }
     var running = false;
-    function frame() {
+    function frame(t) {
       if (stopped) { running = false; return; }
       if (opts.once && !flakes.length) { ctx.clearRect(0, 0, W, H); running = false; return; }   // the flurry is over: stop drawing
       running = true;
+      t = t || performance.now();
+      var fps = t - lastScroll < 250 ? 15 : FPS;
+      if (lastDraw && t - lastDraw < 1000 / fps - 2) { raf = requestAnimationFrame(frame); return; }
+      var k = lastDraw ? Math.min(4, (t - lastDraw) / 16.7) : 1; lastDraw = t;          // move as far as at 60 frames a second
       if (!document.hidden) {
-        ctx.clearRect(0, 0, W, H); var dk = opts.night || dark();
+        if (t - dkAt > 1000) { dk = dark(); dkAt = t; }                                  // light or dark page: checked once a second
+        ctx.clearRect(0, 0, W, H); var night = opts.night || dk;
         for (var i = 0; i < flakes.length; i++) {
-          var f = flakes[i]; f.y += f.vy * (opts.speed || 1); f.ph += 0.012; f.x += Math.sin(f.ph) * f.sw * 0.6;
+          var f = flakes[i]; f.y += f.vy * (opts.speed || 1) * k; f.ph += 0.012 * k; f.x += Math.sin(f.ph) * f.sw * 0.6 * k;
           if (f.y > H + 6) { if (opts.once) { flakes.splice(i, 1); i--; } else flakes[i] = flake(false); continue; }
           if (sprite) { ctx.globalAlpha = 0.55 + f.r * 0.08; ctx.drawImage(sprite, f.x - f.r * 2.2, f.y - f.r * 2.2, f.r * 4.4, f.r * 4.4); ctx.globalAlpha = 1; continue; }
           ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.283);
-          ctx.fillStyle = dk ? 'rgba(255,255,255,' + (0.45 + f.r * 0.12) + ')' : 'rgba(126,150,190,' + (0.25 + f.r * 0.08) + ')'; ctx.fill();
+          ctx.fillStyle = night ? 'rgba(255,255,255,' + (0.45 + f.r * 0.12) + ')' : 'rgba(126,150,190,' + (0.25 + f.r * 0.08) + ')'; ctx.fill();
         }
       }
       raf = requestAnimationFrame(frame);
     }
     size(); var onR = function () { size(); }; addEventListener('resize', onR);
     if (reduced) { frame(); stopped = true; cancelAnimationFrame(raf); } else frame();
-    return {stop: function () { stopped = true; cancelAnimationFrame(raf); removeEventListener('resize', onR); },
+    return {stop: function () { stopped = true; cancelAnimationFrame(raf); removeEventListener('resize', onR); removeEventListener('scroll', onScroll, {capture: true}); },
       burst: function (n) {
         for (var i = 0; i < n; i++) { var f = flake(true); if (opts.once) f.y = -Math.random() * H * 0.4 - 10; flakes.push(f); }   // a flurry comes in from the top
         if (!running && !stopped && !reduced) frame();
@@ -363,6 +376,12 @@
     if (top < below) r.style.marginTop = Math.ceil(below - top) + 'px';
   }
   addEventListener('resize', function () { setTimeout(placeRibbon, 150); });
+  var scrollT = 0;
+  addEventListener('scroll', function () {
+    var root = document.documentElement; if (!root.classList.contains('pt-xm-on')) return;
+    if (!scrollT) root.classList.add('pt-xm-scrolling');
+    clearTimeout(scrollT); scrollT = setTimeout(function () { root.classList.remove('pt-xm-scrolling'); scrollT = 0; }, 220);
+  }, {passive: true, capture: true});
   function off() {
     document.documentElement.classList.remove('pt-xm-on');
     timers.forEach(clearTimeout); timers = []; if (snow) { snow.stop(); snow = null; }
