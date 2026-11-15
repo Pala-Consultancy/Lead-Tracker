@@ -145,7 +145,17 @@
     // the homepage: the ribbon under the menu, and the ❄️ button for visitors
     '.xm-ribbon{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 auto;padding:9px 16px;font:600 13.5px Inter,sans-serif;color:#8E1D2A;background:linear-gradient(90deg,rgba(214,40,57,.08),rgba(244,197,66,.12),rgba(42,157,92,.08));border-bottom:1px solid rgba(214,40,57,.14);}',
     '.xm-toggle{position:fixed;left:18px;bottom:18px;z-index:' + (Z + 1) + ';width:44px;height:44px;border-radius:50%;border:1px solid rgba(58,134,255,.3);background:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 6px 16px -6px rgba(16,24,40,.3);transition:transform .15s;}',
-    '.xm-toggle:hover{transform:scale(1.08);} .xm-toggle.off{filter:grayscale(1);opacity:.6;}',
+    '.xm-toggle:hover{transform:scale(1.08);} .xm-toggle.off .xm-flake{filter:grayscale(1);opacity:.6;}',
+    '.xm-toggle .xm-flake{display:inline-block;transition:transform .6s cubic-bezier(.2,1.3,.4,1);}',
+    '.xm-toggle:hover .xm-flake,.xm-toggle:focus-visible .xm-flake{transform:rotate(180deg) scale(1.12);}',
+    '.xm-tip{position:absolute;left:56px;bottom:50%;transform:translate(-8px,50%) scale(.92);transform-origin:0 50%;opacity:0;pointer-events:none;white-space:nowrap;display:flex;align-items:center;gap:10px;padding:10px 14px 10px 12px;border-radius:14px;background:#fff;color:#1B2430;font:500 13px/1.35 Inter,system-ui,sans-serif;text-align:left;box-shadow:0 14px 34px -12px rgba(16,24,40,.35),0 0 0 1px rgba(58,134,255,.18);transition:opacity .2s ease,transform .35s cubic-bezier(.2,1.4,.4,1);}',
+    '.xm-tip::before{content:"";position:absolute;left:-6px;top:50%;width:12px;height:12px;background:#fff;transform:translateY(-50%) rotate(45deg);box-shadow:-1px 1px 0 0 rgba(58,134,255,.18);border-radius:2px;}',
+    '.xm-tip b{display:block;font-weight:700;color:#0F3D2A;} .xm-tip small{display:block;color:#5B6576;font-size:12px;}',
+    '.xm-tip .xm-tip-ic{font-size:20px;line-height:1;}',
+    '.xm-tip kbd{display:inline-block;margin-left:2px;padding:1px 6px;border-radius:6px;font:700 11px Inter,system-ui,sans-serif;color:#B23A3A;background:#FDECEC;}',
+    '.xm-toggle.off .xm-tip kbd{color:#1F7A4D;background:#E3F6EC;}',
+    '.xm-toggle:hover .xm-tip,.xm-toggle:focus-visible .xm-tip{opacity:1;transform:translate(0,50%) scale(1);}',
+    '@media (prefers-reduced-motion: reduce){ .xm-toggle .xm-flake,.xm-tip{transition:none;} }',
     '.xm-preview{position:fixed;right:14px;bottom:14px;z-index:2147482000;display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:#0F3D2A;color:#FFE7A3;font:600 12px Inter,system-ui,sans-serif;box-shadow:0 8px 20px -8px rgba(0,0,0,.45);pointer-events:none;}',
     '.xm-preview small{font-weight:500;color:#CDE8D8;}',
     '@media (max-width:600px){.xm-preview small{display:none;}.xm-preview{right:12px;bottom:18px;}}',
@@ -364,9 +374,16 @@
   function button() {
     if (PLACE === 'site') {
       var b = document.getElementById('xmToggle');
-      if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'xmToggle'; b.className = 'xm-toggle'; b.textContent = '\u2744\uFE0F'; document.body.appendChild(b);
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'xmToggle'; b.className = 'xm-toggle';
+        b.innerHTML = '<span class="xm-flake" aria-hidden="true">\u2744\uFE0F</span><span class="xm-tip" role="tooltip"></span>'; document.body.appendChild(b);
         b.addEventListener('click', function () { set(!wanted()); }); }
-      b.classList.toggle('off', !wanted()); b.title = wanted() ? 'Turn off the Christmas decorations' : 'Turn on the Christmas decorations'; b.setAttribute('aria-label', b.title);
+      var on = wanted();
+      b.classList.toggle('off', !on); b.removeAttribute('title');
+      b.setAttribute('aria-label', on ? 'Turn off the Christmas theme' : 'Turn the Christmas theme back on');
+      var tip = b.querySelector('.xm-tip');
+      if (tip) tip.innerHTML = on
+        ? '<span class="xm-tip-ic">\uD83C\uDF84</span><span><b>Not feeling festive?</b><small>Click here to turn the Christmas theme <kbd>off</kbd></small></span>'
+        : '<span class="xm-tip-ic">\u2728</span><span><b>Missing the snow?</b><small>Click here to turn the Christmas theme back <kbd>on</kbd></small></span>';
     }
     if (PLACE === 'client') {
       var c = document.getElementById('xmBtn'), anchor = document.getElementById('themeBtn');
