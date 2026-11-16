@@ -1259,7 +1259,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   .gc-ad.over{background:rgba(55,48,179,.07);}
   .gc-scroll{height:calc(100vh - 250px);min-height:420px;overflow-y:auto;position:relative;}
   .gc-grid{display:grid;position:relative;}
-  .gc-hours .h{height:var(--hpx, 48px);position:relative;}
+  .gc-hours .h{height:var(--hpx, 100px);position:relative;}
   .gc-hours .h span{position:absolute;top:-7px;right:8px;font:500 10.5px 'Inter',sans-serif;color:var(--slate-light);background:var(--panel);padding:0 2px;white-space:nowrap;}
   .gc-col{position:relative;border-left:1px solid var(--border-soft);touch-action:none;}
   .gc-col .s{height:var(--hpx, 48px);border-top:1px solid var(--border-soft);}
@@ -1690,14 +1690,14 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     lavender:  {label: 'Lavender',  accent: '#7986CB', background: 'gradient'},
     rose:      {label: 'Rose',      accent: '#E67C73', background: 'tint'},
     graphite:  {label: 'Graphite',  accent: '#616161', background: 'dots'}};
-  const DENSITY_PX = {compact: 36, comfortable: 48, spacious: 64};
+  const DENSITY_PX = {compact: 64, comfortable: 100, spacious: 136};   // px per hour: even a 15-minute item shows its title and time
   let theme = (()=>{ try{ return {...THEME_DEFAULT, ...(JSON.parse(localStorage.getItem('ptCalTheme') || 'null') || {})}; }catch(e){ return {...THEME_DEFAULT}; } })();
-  let HPX = DENSITY_PX[theme.density] || 48;
+  let HPX = DENSITY_PX[theme.density] || 100;
   function applyTheme(){
     const root = document.documentElement.style, a = /^#[0-9A-F]{6}$/i.test(theme.accent) ? theme.accent : THEME_DEFAULT.accent;
     root.setProperty('--cal-accent', a);
     root.setProperty('--gc-r', {sharp: '3px', rounded: '7px', round: '12px'}[theme.corners] || '7px');
-    HPX = DENSITY_PX[theme.density] || 48;
+    HPX = DENSITY_PX[theme.density] || 100;
     root.setProperty('--hpx', HPX + 'px');
     const b = document.body.classList;
     ['plain', 'tint', 'gradient', 'dots'].forEach(k=> b.toggle('cal-bg-' + k, theme.background === k));
@@ -1865,7 +1865,13 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     holCountries = list; holSaved = true; render();
     db.doc(`workspaces/${wsId}/members/${myUid}`).update({holidayCountries: list}).catch(()=>{});
   }
-  let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gEvents = {}, gLoading = {}, gStale = {};
+  let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gEvents = {}, gLoading = {}, gStale = {}, gcanEdit = false;
+  // Asks once for permission to edit Google events (needed to change the time of, say, a call that ran longer)
+  function askGoogleEdit(){
+    if(!confirm('To change the time of your Google Calendar events, PalaTrack needs permission to edit them.\n\nConnect Google Calendar again now and allow editing events?')) return;
+    firebase.functions().httpsCallable('startGoogleCalendarConnect')({tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Brussels'})
+      .then(res=>{ location.href = res.data.url; }).catch(err=> showToast('Could not connect to Google right now: ' + (err.message || ''), true));
+  }
   let byKey = {};
   const templateOwners = {};
 
@@ -1914,7 +1920,8 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     });
     if(gcalConn && gcalShow) (gEvents[rangeKey()] || []).forEach((g, k)=>{
       const end = g.end && g.end.length > 10 ? g.end.slice(11, 16) : null;
-      out.push({type: 'google', id: 'g' + k, date: g.date, time: g.allDay ? null : g.time, end: g.allDay ? null : (end && end > g.time ? end : fromMins(toMins(g.time) + 60)), allDay: !!g.allDay || !g.time, title: g.title,
+      out.push({type: 'google', id: 'g' + k, gid: g.id || null, gk: k, date: g.date, time: g.allDay ? null : g.time, end: g.allDay ? null : (end && end > g.time ? end : fromMins(toMins(g.time) + 60)), allDay: !!g.allDay || !g.time, title: g.title,
+        resizable: !!g.id && !g.allDay && !!g.time && g.mine !== false,
         color: GOOGLE_COLOR[g.colorId] || TYPES.google.color, link: g.link || null, raw: {location: g.location || null, meet: g.meet || null}});
     });
     if(holCountries){
@@ -2000,7 +2007,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   // HPX (the height of one hour) comes from the theme's density
   function evHTML(x, left, width, z){
     const s = x.time ? toMins(x.time) : 0, e = Math.max(s + 15, x.end ? toMins(x.end) : s + 30);
-    const top = s / 60 * HPX, h = Math.max(20, (e - s) / 60 * HPX - 2), short = h < 38;
+    const top = s / 60 * HPX, h = Math.max(22, (e - s) / 60 * HPX - 2), short = h < 38;
     // how many lines of title fit above the time (≈15px a line, 6px padding, 14px for the time)
     const tl = Math.max(1, Math.floor((h - 6 - 14) / 15));
     const soft = x.type !== 'event' && x.type !== 'task' && x.type !== 'google' ? ' soft' : '';
@@ -2638,7 +2645,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     const ev = e.target.closest('.gc-ev'), col = e.target.closest('.gc-col');
     if(ev){
       const x = byKey[ev.dataset.key]; if(!x) return;
-      if(!x.editable){ drag = {mode: 'click', el: ev, key: ev.dataset.key, x0: e.clientX, y0: e.clientY}; return; }
+      if(!x.editable && !(x.resizable && e.target.closest('.rz'))){ drag = {mode: 'click', el: ev, key: ev.dataset.key, x0: e.clientX, y0: e.clientY}; return; }
       const s = toMins(x.time), en = x.end ? toMins(x.end) : s + 30;
       drag = {mode: e.target.closest('.rz') ? 'resize' : 'move', el: ev, key: ev.dataset.key, x, s, e: en, x0: e.clientX, y0: e.clientY, moved: false, col: ev.parentElement, date: x.date,
         copy: e.altKey && !e.target.closest('.rz') && (x.type === 'event' || x.type === 'task')};
@@ -2707,6 +2714,19 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
       if(d.date === d.x.date && newStart === d.x.time){ render(); return; }
       moveItem(d.x, d.date, newStart, newEnd).then(()=> showToast(`Moved to ${fmtDay(d.date, {weekday: 'short', day: 'numeric', month: 'short'})}, ${fmtTime(newStart)}.`))
         .catch(err=>{ showToast('Could not move that: ' + (err.message || ''), true); render(); });
+    }
+    if(d.mode === 'resize' && d.ne !== undefined && d.x.type === 'google'){
+      if(!gcanEdit){ render(); askGoogleEdit(); return; }
+      const newEnd = fromMins(Math.min(d.ne, 24 * 60 - 1));
+      firebase.functions().httpsCallable('updateGoogleCalendarEvent')({id: d.x.gid, date: d.x.date, start: d.x.time, end: newEnd}).then(()=>{
+        const list = gEvents[rangeKey()] || [], g = list[d.x.gk]; if(g) g.end = `${d.x.date}T${newEnd}:00`;
+        render(); showToast(`Now until ${fmtTime(newEnd)}, in Google Calendar too.`);
+      }).catch(err=>{
+        render();
+        if(String(err.message || '').includes('needs-permission')){ gcanEdit = false; askGoogleEdit(); }
+        else showToast(err.code === 'functions/permission-denied' || /organiser/i.test(err.message || '') ? 'Only the organiser can change this event in Google Calendar.' : 'Could not change that: ' + (err.message || ''), true);
+      });
+      return;
     }
     if(d.mode === 'resize' && d.ne !== undefined && d.x.type === 'task'){
       db.collection('tasks').doc(d.x.id).update({dueEndTime: fromMins(Math.min(d.ne, 24 * 60 - 1))})
@@ -2830,6 +2850,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     gLoading[key] = true; const r = range();
     firebase.functions().httpsCallable('listGoogleCalendarEvents')({timeMin: r.start.toISOString(), timeMax: r.end.toISOString()}).then(res=>{
       const fresh = (res.data && res.data.events) || [], before = JSON.stringify(gEvents[key] || null);
+      gcanEdit = !!(res.data && res.data.canEditEvents);
       gEvents[key] = fresh; gLoading[key] = false; delete gStale[key];
       if(JSON.stringify(fresh) !== before) render();              // redraw only when something changed
     }).catch(err=>{ gLoading[key] = false; console.warn('Could not load Google events (keeping the ones we have)', err); });
