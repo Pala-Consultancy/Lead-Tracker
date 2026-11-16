@@ -575,6 +575,22 @@
   @media (max-width:440px){
     .board-picker-list{grid-template-columns:1fr;}
   }
+
+  /* ---------- An in-app question (replaces the browser's own pop-up) ---------- */
+  .pt-ask-bg{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.42);backdrop-filter:blur(3px);opacity:0;transition:opacity .18s ease;}
+  .pt-ask-bg.in{opacity:1;}
+  .pt-ask{width:min(440px,100%);padding:26px 26px 22px;border-radius:20px;background:var(--panel);color:var(--ink);border:1px solid var(--border);
+    box-shadow:0 30px 70px -24px rgba(15,23,42,.45);transform:translateY(8px) scale(.98);transition:transform .2s cubic-bezier(.2,.8,.2,1);font-family:'Inter',sans-serif;}
+  .pt-ask-bg.in .pt-ask{transform:none;}
+  .pt-ask-ic{display:flex;width:46px;height:46px;border-radius:14px;align-items:center;justify-content:center;margin-bottom:14px;background:var(--paper);border:1px solid var(--border);}
+  .pt-ask-ic svg{width:24px;height:24px;}
+  .pt-ask h3{margin:0 0 8px;font:700 18px/1.3 'Inter',sans-serif;letter-spacing:-.01em;}
+  .pt-ask p{margin:0;font-size:14px;line-height:1.55;color:var(--slate);}
+  .pt-ask-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+  .pt-ask-btns button{height:40px;padding:0 16px;border-radius:11px;font:600 14px 'Inter',sans-serif;cursor:pointer;transition:filter .15s,background .15s;}
+  .pt-ask-no{border:1px solid var(--border);background:var(--panel);color:var(--ink);} .pt-ask-no:hover{background:var(--paper);}
+  .pt-ask-yes{border:none;color:#fff;background:linear-gradient(135deg,#2753AE,#6A4CC8);box-shadow:0 10px 22px -12px rgba(76,29,149,.7);} .pt-ask-yes:hover{filter:brightness(1.07);}
+  .pt-ask-btns button:focus-visible{outline:2px solid #6A4CC8;outline-offset:2px;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1868,8 +1884,26 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   }
   let gcalConn = null, gcalShow = localStorage.getItem('ptGcalShow') !== '0', gEvents = {}, gLoading = {}, gStale = {}, gcanEdit = false;
   // Asks once for permission to edit Google events (needed to change the time of, say, a call that ran longer)
-  function askGoogleEdit(){
-    if(!confirm('To change the time of your Google Calendar events, PalaTrack needs permission to edit them.\n\nConnect Google Calendar again now and allow editing events?')) return;
+  // An in-app question (instead of the browser's own pop-up): resolves true or false
+  function ptAsk(o){
+    return new Promise(resolve=>{
+      const bg = document.createElement('div'); bg.className = 'pt-ask-bg';
+      bg.innerHTML = `<div class="pt-ask" role="dialog" aria-modal="true" aria-labelledby="ptAskT">
+        ${o.icon ? `<div class="pt-ask-ic">${o.icon}</div>` : ''}<h3 id="ptAskT">${o.title}</h3><p>${o.body}</p>
+        <div class="pt-ask-btns"><button type="button" class="pt-ask-no">${o.cancel || 'Cancel'}</button><button type="button" class="pt-ask-yes">${o.ok || 'OK'}</button></div></div>`;
+      document.body.appendChild(bg); requestAnimationFrame(()=> bg.classList.add('in'));
+      const done = v=>{ document.removeEventListener('keydown', onKey, true); bg.classList.remove('in'); setTimeout(()=> bg.remove(), 180); resolve(v); };
+      const onKey = e=>{ if(e.key === 'Escape'){ e.preventDefault(); done(false); } };
+      document.addEventListener('keydown', onKey, true);
+      bg.addEventListener('click', e=>{ if(e.target === bg || e.target.closest('.pt-ask-no')) done(false); else if(e.target.closest('.pt-ask-yes')) done(true); });
+      setTimeout(()=>{ const y = bg.querySelector('.pt-ask-yes'); if(y) y.focus(); }, 60);
+    });
+  }
+  async function askGoogleEdit(){
+    const yes = await ptAsk({icon: GICON, title: 'Allow PalaTrack to edit your events',
+      body: 'To change the time of a Google Calendar event, like a call that ran longer, PalaTrack needs permission to edit your events. You’ll connect Google Calendar again and tick “edit events”. PalaTrack only changes an event when you do it yourself.',
+      ok: 'Connect Google Calendar', cancel: 'Not now'});
+    if(!yes) return;
     firebase.functions().httpsCallable('startGoogleCalendarConnect')({tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Brussels'})
       .then(res=>{ location.href = res.data.url; }).catch(err=> showToast('Could not connect to Google right now: ' + (err.message || ''), true));
   }
