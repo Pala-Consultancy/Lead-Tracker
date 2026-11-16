@@ -1259,7 +1259,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   .gc-ad.over{background:rgba(55,48,179,.07);}
   .gc-scroll{height:calc(100vh - 250px);min-height:420px;overflow-y:auto;position:relative;}
   .gc-grid{display:grid;position:relative;}
-  .gc-hours .h{height:var(--hpx, 100px);position:relative;}
+  .gc-hours .h{height:var(--hpx, 72px);position:relative;}
   .gc-hours .h span{position:absolute;top:-7px;right:8px;font:500 10.5px 'Inter',sans-serif;color:var(--slate-light);background:var(--panel);padding:0 2px;white-space:nowrap;}
   .gc-col{position:relative;border-left:1px solid var(--border-soft);touch-action:none;}
   .gc-col .s{height:var(--hpx, 48px);border-top:1px solid var(--border-soft);}
@@ -1274,6 +1274,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   .gc-ev .tt{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .gc-ev .tm{display:block;font-weight:500;opacity:.9;font-size:10.5px;}
   .gc-ev.short .tt,.gc-ev.short .tm{display:inline;}
+  .gc-ev.short{padding-top:1px;padding-bottom:1px;line-height:15px;}
   .gc-ev.short .tm{margin-left:4px;}
   .gc-ev.dragging{opacity:.9;box-shadow:0 10px 24px -6px rgba(0,0,0,.45);z-index:6;}
   .gc-ev .rz{position:absolute;left:0;right:0;bottom:0;height:8px;cursor:ns-resize;}
@@ -1690,14 +1691,14 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     lavender:  {label: 'Lavender',  accent: '#7986CB', background: 'gradient'},
     rose:      {label: 'Rose',      accent: '#E67C73', background: 'tint'},
     graphite:  {label: 'Graphite',  accent: '#616161', background: 'dots'}};
-  const DENSITY_PX = {compact: 64, comfortable: 100, spacious: 136};   // px per hour: even a 15-minute item shows its title and time
+  const DENSITY_PX = {compact: 54, comfortable: 72, spacious: 96};   // px per hour: a 15-minute item still shows its title and time
   let theme = (()=>{ try{ return {...THEME_DEFAULT, ...(JSON.parse(localStorage.getItem('ptCalTheme') || 'null') || {})}; }catch(e){ return {...THEME_DEFAULT}; } })();
-  let HPX = DENSITY_PX[theme.density] || 100;
+  let HPX = DENSITY_PX[theme.density] || 72;
   function applyTheme(){
     const root = document.documentElement.style, a = /^#[0-9A-F]{6}$/i.test(theme.accent) ? theme.accent : THEME_DEFAULT.accent;
     root.setProperty('--cal-accent', a);
     root.setProperty('--gc-r', {sharp: '3px', rounded: '7px', round: '12px'}[theme.corners] || '7px');
-    HPX = DENSITY_PX[theme.density] || 100;
+    HPX = DENSITY_PX[theme.density] || 72;
     root.setProperty('--hpx', HPX + 'px');
     const b = document.body.classList;
     ['plain', 'tint', 'gradient', 'dots'].forEach(k=> b.toggle('cal-bg-' + k, theme.background === k));
@@ -2007,7 +2008,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   // HPX (the height of one hour) comes from the theme's density
   function evHTML(x, left, width, z){
     const s = x.time ? toMins(x.time) : 0, e = Math.max(s + 15, x.end ? toMins(x.end) : s + 30);
-    const top = s / 60 * HPX, h = Math.max(22, (e - s) / 60 * HPX - 2), short = h < 38;
+    const top = s / 60 * HPX, h = Math.max(17, (e - s) / 60 * HPX - 2), short = h < 34;
     // how many lines of title fit above the time (≈15px a line, 6px padding, 14px for the time)
     const tl = Math.max(1, Math.floor((h - 6 - 14) / 15));
     const soft = x.type !== 'event' && x.type !== 'task' && x.type !== 'google' ? ' soft' : '';
