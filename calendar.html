@@ -591,6 +591,11 @@
   .pt-ask-no{border:1px solid var(--border);background:var(--panel);color:var(--ink);} .pt-ask-no:hover{background:var(--paper);}
   .pt-ask-yes{border:none;color:#fff;background:linear-gradient(135deg,#2753AE,#6A4CC8);box-shadow:0 10px 22px -12px rgba(76,29,149,.7);} .pt-ask-yes:hover{filter:brightness(1.07);}
   .pt-ask-btns button:focus-visible{outline:2px solid #6A4CC8;outline-offset:2px;}
+
+  .gc-paste{display:block;width:calc(100% - 34px);margin:0 0 10px;padding:9px 12px;border:1px dashed #A5B4FC;border-radius:10px;background:rgba(99,102,241,.07);color:#4338CA;
+    font:600 13px 'Inter',sans-serif;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gc-paste:hover{background:rgba(99,102,241,.13);}
+  html[data-theme="dark"] .gc-paste{color:#C7D2FE;border-color:#4C51A8;background:rgba(129,140,248,.1);}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -1095,6 +1100,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
 <!-- Quick create (like Google's small window) -->
 <div class="gc-pop" id="gcQuick" role="dialog" aria-label="Create" hidden>
   <button type="button" class="gc-x" data-close="quick" aria-label="Close">✕</button>
+  <button type="button" class="gc-paste" id="qPaste" hidden>Paste “<b></b>” here</button>
   <input type="text" id="qTitle" class="gc-title-in" maxlength="200" placeholder="Add title" aria-label="Title">
   <div class="gc-tabs" role="tablist">
     <button type="button" data-qtype="event" role="tab">Event</button>
@@ -2134,7 +2140,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     $('qDate').value = s.date; showHolWarn($('qHolWarn'), s.date); $('qStart').value = quickState.start; $('qEnd').value = quickState.end; $('qAllDay').checked = quickState.allDay;
     $('qTaskTime').value = s.allDay ? '' : quickState.start;
     $('qTaskEnd').value = s.allDay ? '' : (quickState.end || fromMins(Math.min(toMins(quickState.start) + 60, 24 * 60 - 1)));
-    syncQuick(); place(quick, x, y);
+    renderPasteHint(); syncQuick(); place(quick, x, y);
     setTimeout(()=> $('qTitle').focus(), 20);
   }
   function syncQuick(){
@@ -2156,6 +2162,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
   });
   $('qEnd').addEventListener('change', ()=>{ quickState.end = $('qEnd').value || quickState.end; });
   $('qTitle').addEventListener('keydown', e=>{ if(e.key === 'Enter') $('qSave').click(); });
+  $('qPaste').addEventListener('click', ()=>{ const st = quickState.allDay ? null : $('qStart').value || quickState.start; const d = $('qDate').value || quickState.date; closePops(); if(clip) pasteClip(clip, d, clip.time ? st : null); });
   $('qSave').addEventListener('click', ()=>{
     const title = $('qTitle').value.trim(), date = $('qDate').value || todayISO();
     if(quickState.type === 'task'){
@@ -2216,6 +2223,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     detail.innerHTML = `
       <div class="tools">
         ${canEdit ? `<button type="button" data-d="edit" title="Edit" aria-label="Edit">${IC.edit}</button>` : ''}
+        ${x.type === 'event' || x.type === 'task' ? `<button type="button" data-d="copy" title="Copy (Ctrl+C)" aria-label="Copy"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>` : ''}
         ${canDel ? `<button type="button" data-d="delete" title="Delete" aria-label="Delete">${IC.del}</button>` : ''}
         ${x.link ? `<button type="button" data-d="open" title="${x.type === 'google' ? 'Open in Google Calendar' : 'Open'}" aria-label="${x.type === 'google' ? 'Open in Google Calendar' : 'Open'}">${IC.open}</button>` : ''}
         <button type="button" data-close="detail" title="Close" aria-label="Close">${IC.close}</button>
@@ -2230,7 +2238,7 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
       ${e.description || (x.type === 'task' && e.notes) ? `<div class="line"><span class="ic">📝</span><span class="v">${esc(e.description || e.notes)}</span></div>` : ''}
       ${showGuests && guests.length ? `<div class="line"><span class="ic">👥</span><span class="v">${guests.length} guest${guests.length === 1 ? '' : 's'}: ${esc(guests.join(', '))}</span></div>` : ''}
       <div class="line"><span class="ic">📅</span><span class="v">${x.type === 'event' ? esc(mineEv ? myName : (e.createdByName || 'A teammate') + ' (you’re a guest)') : x.type === 'task' ? 'Tasks · ' + esc(myName) : esc(TYPES[x.type].label)}${x.type === 'google' ? ' (read only)' : ''}</span></div>
-      ${x.type === 'task' ? `<div class="acts"><button type="button" data-d="done">${x.done ? 'Mark as not done' : '✓ Mark as done'}</button></div>` : ''}`;
+      ${x.type === 'task' || x.type === 'event' ? `<div class="acts">${x.type === 'task' ? `<button type="button" data-d="done">${x.done ? 'Mark as not done' : '✓ Mark as done'}</button>` : ''}<button type="button" data-d="nextweek">Copy to next week</button></div>` : ''}`;
     detail.dataset.key = key;
     place(detail, r.right, r.top + 40);
   }
@@ -2385,6 +2393,8 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     if(b.dataset.d === 'color'){ openPalette(b, x.type === 'event' ? (x.raw.color || '') : (x.raw.calColor || ''), hex=>{ closePops(); saveColor(x, hex); }); return; }
     if(b.dataset.d === 'open'){ if(x.type === 'google') window.open(x.link, '_blank', 'noopener'); else location.href = x.link; return; }
     if(b.dataset.d === 'edit'){ closePops(); openEditor(x.type, x.id, x.raw); }
+    if(b.dataset.d === 'copy'){ closePops(); copyToClip(x); return; }
+    if(b.dataset.d === 'nextweek'){ closePops(); pasteClip(x, addDaysISO(x.date, 7), x.time || null); return; }
     if(b.dataset.d === 'delete'){ closePops(); if(x.type === 'event') deleteEvent(x.id, x.title); else deleteTask(x.id, x.title); }
     if(b.dataset.d === 'done'){
       const done = !x.done; closePops();
@@ -2631,6 +2641,45 @@ html[data-theme="dark"] .gc-bell .bl-all:hover{color:#EC8E9B}
     stack.appendChild(el); setTimeout(()=>{ el.style.transition = 'opacity .2s'; el.style.opacity = '0'; setTimeout(()=> el.remove(), 200); }, 7000);
   }
   // A copy of an event or a task at a new date/time (Alt + drag). A copy of a repeating event is a one-off.
+  // ---------- Copy and paste (events and tasks) ----------
+  let clip = null, hoverSlot = null;
+  function copyToClip(x){
+    if(!x || (x.type !== 'event' && x.type !== 'task')){ showToast('Only PalaTrack events and tasks can be copied.', true); return; }
+    clip = x; renderPasteHint();
+    showToast(`Copied “${x.title}”. Point at a time slot and press Ctrl+V, or click an empty slot and choose Paste.`);
+  }
+  // paste x on date at start (keeping its length); without a start time it keeps its own time (or stays all day)
+  function pasteClip(x, date, start){
+    if(!x) return;
+    const len = x.time && x.end ? Math.max(15, toMins(x.end) - toMins(x.time)) : 60;
+    const st = x.time ? (start || x.time) : null;
+    const en = st ? fromMins(Math.min(toMins(st) + len, 24 * 60 - 1)) : null;
+    return copyItem(x, date, st, en);
+  }
+  // where Ctrl+V pastes: the slot under the pointer, or else the same weekday (and time) in the week you're looking at
+  function pasteTarget(x){
+    if(hoverSlot) return hoverSlot;
+    const r = range(), wd = fromISO(x.date).getDay();
+    for(let i = 0; i < r.days; i++){ const d = new Date(r.start); d.setDate(r.start.getDate() + i); if(d.getDay() === wd) return {date: toISO(d), start: x.time || null}; }
+    return {date: toISO(r.start), start: x.time || null};
+  }
+  function renderPasteHint(){ const qp = $('qPaste'); if(qp){ qp.hidden = !clip; if(clip) qp.querySelector('b').textContent = clip.title; } }
+  document.addEventListener('pointermove', e=>{
+    const col = e.target.closest && e.target.closest('.gc-col');
+    if(col && !e.target.closest('.gc-ev')){ hoverSlot = {date: col.dataset.col, start: fromMins(snap15((e.clientY - col.getBoundingClientRect().top) / HPX * 60))}; return; }
+    const md = e.target.closest && e.target.closest('[data-mday]');
+    hoverSlot = md ? {date: md.dataset.mday, start: null} : null;
+  }, {passive: true});
+  document.addEventListener('keydown', e=>{
+    if(!(e.ctrlKey || e.metaKey) || e.altKey || e.target.closest('input,textarea,select,[contenteditable]')) return;
+    const k = e.key.toLowerCase();
+    if(k === 'c'){
+      const focusEv = document.activeElement && document.activeElement.closest && document.activeElement.closest('.gc-ev,.gc-chip');
+      const x = !detail.hidden ? byKey[detail.dataset.key] : focusEv ? byKey[focusEv.dataset.key] : null;
+      if(x && window.getSelection && String(window.getSelection()) === ''){ e.preventDefault(); closePops(); copyToClip(x); }
+    }
+    if(k === 'v' && clip){ e.preventDefault(); closePops(); const t = pasteTarget(clip); pasteClip(clip, t.date, t.start); }
+  });
   function copyItem(x, date, start, end){
     const r = x.raw || {};
     const when = fmtDay(date, {weekday: 'short', day: 'numeric', month: 'short'}) + (start ? ', ' + fmtTime(start) : '');
