@@ -2238,6 +2238,36 @@
   .pt-meteor{position:absolute;height:2px;width:170px;border-radius:2px;opacity:0;
     background:linear-gradient(90deg, rgba(255,255,255,0), rgba(214,211,255,.55) 60%, #fff);
     box-shadow:0 0 10px 1px rgba(190,185,255,.7);transform-origin:right center;}
+
+/* ===================== The welcome banner: richer, with depth and a progress card ===================== */
+.hero-bg{background:
+  radial-gradient(70% 90% at 0% 0%,color-mix(in srgb,var(--accent) 55%,#60A5FA),transparent 70%),
+  radial-gradient(60% 80% at 100% 100%,color-mix(in srgb,var(--accent) 50%,#C026D3),transparent 70%),
+  linear-gradient(125deg,color-mix(in srgb,var(--accent) 80%,#0B1033) 0%,var(--accent) 50%,color-mix(in srgb,var(--accent) 75%,#6D28D9) 100%);}
+/* fine rings of light and a dot grid on the right, fading out */
+.hero-bg::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:repeating-radial-gradient(circle at 84% 62%,transparent 0 46px,rgba(255,255,255,.075) 47px 48px),
+                   radial-gradient(rgba(255,255,255,.16) 1px,transparent 1.4px);
+  background-size:auto,22px 22px;
+  -webkit-mask-image:radial-gradient(60% 95% at 84% 62%,#000 15%,transparent 75%);mask-image:radial-gradient(60% 95% at 84% 62%,#000 15%,transparent 75%);}
+.hero-bg.has-img::before{display:none;}
+.hero-bg::after{background:linear-gradient(115deg,rgba(0,0,0,.22),rgba(0,0,0,0) 55%,rgba(255,255,255,.05));}
+.hero{box-shadow:0 40px 80px -40px color-mix(in srgb,var(--accent) 70%,transparent),0 0 0 1px rgba(255,255,255,.08) inset;}
+/* "Welcome, Emma 👋": a frosted pill */
+.hero .hello{display:inline-flex;align-items:center;gap:6px;width:max-content;padding:6px 14px;border-radius:999px;margin-bottom:14px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);color:#fff;font-weight:700;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+/* the title: a soft white-to-lavender shine */
+.hero h1.title{background:linear-gradient(100deg,#FFFFFF 30%,color-mix(in srgb,#FFFFFF 70%,var(--accent)) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+/* the progress card on the right (without the Start button: the floating Next button does that) */
+.hero-prog{display:flex !important;flex-direction:column;align-items:center;gap:10px;padding:20px 22px;min-width:200px;border-radius:24px;text-align:center;
+  background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.26);box-shadow:0 20px 44px -24px rgba(0,0,0,.55);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.hero-prog .hero-go{display:none !important;}
+.hero-prog .hring{display:block !important;width:96px;height:96px;filter:drop-shadow(0 0 14px rgba(255,255,255,.25));}
+.hero-prog .hring svg{width:96px;height:96px;} .hero-prog .hring b{font-size:20px;color:#fff;} .hero-prog .hring circle{stroke-width:8;}
+.hero-prog #heroStat{display:block !important;}
+.hero-prog .hstat{display:flex;flex-direction:column;gap:2px;} .hero-prog .hstat b{color:#fff;font-size:14px;} .hero-prog .hstat small{color:rgba(255,255,255,.75);font-size:12.5px;max-width:200px;}
+@media (max-width:760px){ .hero-prog{flex-direction:row;min-width:0;padding:14px;text-align:left;} .hero-prog .hring,.hero-prog .hring svg{width:64px;height:64px;} .hero-prog .hring b{font-size:15px;} }
 </style>
 <script>
 (function(){
