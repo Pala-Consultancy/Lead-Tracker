@@ -406,6 +406,15 @@
   .inb-h{font-size:13.5px;} .inb-h small{margin-left:8px;color:var(--slate-light);font-size:12px;}
   .inb-msg{margin:8px 0 4px;padding:10px 12px;border-radius:10px;background:var(--panel-alt);border-left:3px solid #6A4CC8;font-size:13.5px;line-height:1.5;white-space:pre-wrap;}
   .inb-new{margin:8px 0 2px;font-size:12.5px;font-weight:700;color:#5B21B6;}
+
+  .form-fold > summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none;}
+  .form-fold > summary::-webkit-details-marker{display:none;}
+  .form-fold > summary > span{min-width:0;}
+  .form-fold .ff-t{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;font-style:normal;font-size:12px;font-weight:700;color:#4338CA;background:rgba(99,102,241,.1);border-radius:999px;padding:4px 10px;}
+  .form-fold .ff-t i{width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translate(-1px,-1px);transition:transform .2s;}
+  .form-fold[open] .ff-t i{transform:rotate(-135deg) translate(-1px,-1px);}
+  .form-fold > summary:hover .ff-t{background:rgba(99,102,241,.18);}
+  .form-fold[open] > summary{margin-bottom:4px;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -2083,6 +2092,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // ---------- One client's process ----------
   let shownPin = '';
   function openDetail(p, pin) { current = p; shownPin = pin || ''; renderDetail(); $('dtOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0; if (p.unseenClientActivity || p.unseenInbox) db.collection('clientProcesses').doc(p.id).update({unseenClientActivity: 0, unseenInbox: 0}).catch(() => {}); }
+  const openForms = new Set();
   function renderDetail() {
     const p = current, steps = tasksOf(p), prog = p.progress || {};
     const {done, total, pct, optional} = progressOf(p);
@@ -2126,7 +2136,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           const val = (fd) => { const v = sub.values[fd.id]; if (v == null || v === '') return '<i style="color:var(--slate-light)">–</i>';
             if (fd.type === 'socials' && typeof v === 'object') { const L = Object.fromEntries(SOCIAL_NETS); const rows = Object.entries(v).filter(([, u]) => /^https?:\/\//.test(u || ''));
               return rows.length ? rows.map(([k, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(L[k] || k)} ↗</a>`).join(' · ') : '<i style="color:var(--slate-light)">–</i>'; } if (Array.isArray(v)) return esc(v.join(', ')); if (fd.type === 'signature') return `✍️ <b>${esc(v.name)}</b> (agreed)`; if (fd.type === 'yesno') return v === 'yes' ? 'Yes' : 'No'; return esc(v).replace(/\n/g, '<br>'); };
-          return `<div class="ans form-ans"><span>📝 ${esc(a.form.title || 'Form')} · filled in by ${esc(sub.by)} ${ago(sub.at)}</span>${a.form.fields.filter((fd) => !['heading', 'paragraph'].includes(fd.type)).map((fd) => `<div><span>${esc(fd.label || 'Field')}</span>${val(fd)}</div>`).join('')}</div>`;
+          const fk = `${p.id}:${s.id}:${a.id}`, nf = a.form.fields.filter((fd) => !['heading', 'paragraph'].includes(fd.type)).length;
+          return `<details class="ans form-ans form-fold" data-fold="${esc(fk)}"${openForms.has(fk) ? ' open' : ''}><summary><span>📝 ${esc(a.form.title || 'Form')} · filled in by ${esc(sub.by)} ${ago(sub.at)}</span><em class="ff-t">${nf} answer${nf === 1 ? '' : 's'}<i></i></em></summary>${a.form.fields.filter((fd) => !['heading', 'paragraph'].includes(fd.type)).map((fd) => `<div><span>${esc(fd.label || 'Field')}</span>${val(fd)}</div>`).join('')}</details>`;
         }).join('');
       const ups = (r.uploads || []).map((u, j) => `<div class="fitem"><span class="nm">📎 ${esc(u.name)}</span><small>${fsize(u.size)} · ${esc(u.by)}</small><button class="link" data-dl="${esc(s.id)}:${j}">Download</button></div>`).join('');
       return head + `<div class="dstep${r.done ? ' done' : ''}${afterSet.has(s.id) && !p.callDone ? ' later' : ''}" data-sid="${esc(s.id)}"><span class="n">${r.done ? '✓' : i + 1}</span><div class="body"><b>${ICON[s.type]} ${esc(labelOf(s))}</b>
@@ -2149,6 +2160,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (!f) return;
     try { const url = await storage.ref(f.path).getDownloadURL(); window.open(url, '_blank', 'noopener'); } catch (err) { console.error(err); showToast('Couldn\u2019t open this file.', true); }
   });
+  $('dtSteps').addEventListener('toggle', (e) => { const d = e.target; if (d && d.dataset && d.dataset.fold) { if (d.open) openForms.add(d.dataset.fold); else openForms.delete(d.dataset.fold); } }, true);
   $('dtSteps').addEventListener('click', async (e) => {
     const m = e.target.closest('[data-mark]');
     if (m) {
