@@ -401,6 +401,11 @@
   .be-logo.add:hover{border-color:var(--teal);}
   .be-logo-spin{flex:0 0 16px !important;width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--teal);animation:beSpin .8s linear infinite;}
   @keyframes beSpin{to{transform:rotate(360deg);}}
+
+  .inb{padding:12px;border:1px solid var(--border-soft);border-radius:12px;margin-bottom:10px;background:var(--panel);}
+  .inb-h{font-size:13.5px;} .inb-h small{margin-left:8px;color:var(--slate-light);font-size:12px;}
+  .inb-msg{margin:8px 0 4px;padding:10px 12px;border-radius:10px;background:var(--panel-alt);border-left:3px solid #6A4CC8;font-size:13.5px;line-height:1.5;white-space:pre-wrap;}
+  .inb-new{margin:8px 0 2px;font-size:12.5px;font-weight:700;color:#5B21B6;}
 </style>
 <!-- pt-dark-theme:start -->
 <script>window.addEventListener('storage',function(e){if(e.key!=='theme')return;if(e.newValue==='dark')document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');});</script>
@@ -925,6 +930,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div style="flex:1;min-width:0"><b id="dtProg" class="dt-count"></b><div class="pbar"><i id="dtBar"></i></div><div class="meta"><span id="dtOpt"></span><span id="dtLast"></span></div></div></div>
       <div class="dt-call hidden" id="dtCall"></div>
       <div id="dtSteps" style="margin-top:8px"></div></div>
+    <div class="sec" id="dtInboxSec"><h3>📥 Files from your client</h3><div id="dtInbox"></div></div>
     <div class="sec"><h3>Activity</h3><div id="dtAct"></div></div>
   </div>
   <div class="acts-row"><button class="btn" id="dtEdit">Edit page</button><button class="btn" id="dtArchive">Archive</button><span style="flex:1"></span><button class="btn danger" id="dtDelete">Delete</button></div>
@@ -1039,6 +1045,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <div class="row"><span class="av">${esc(initials(p.clientName))}</span><div style="min-width:0;flex:1"><b>${esc(p.clientName || 'Client')}</b><small>${esc(p.title)}${p.clientContact ? ' · ' + esc(p.clientContact) : ''}</small></div>
         <span class="chip ${st}">${{active: 'Active', completed: 'Completed', archived: 'Archived', paused: 'Paused'}[st]}</span></div>
         <div class="pc-prog"><div class="pbar"><i style="width:${pct}%"></i></div><b>${pct}%</b></div>
+        ${p.unseenInbox ? `<div class="inb-new">📥 ${p.unseenInbox} new ${p.unseenInbox === 1 ? 'delivery' : 'deliveries'} of files</div>` : ''}
         <div class="meta"><span>${done} of ${total} done</span>${activeNow(p) ? '<span class="live-now"><i></i>Active now</span>' : `<span>${p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span>`}</div></button>`;
     }).join('') : `<div class="card empty" style="grid-column:1/-1"><span class="ic">🤝</span><b>${procs.length ? 'Nothing here' : 'No client processes yet'}</b>
         <p>${procs.length ? 'Try another filter.' : templates.length ? 'Start your first one: pick a template, fill in the client’s name, and share the link.' : 'First build a template with the steps every new client goes through. Then start it for a client and share the link.'}</p>
@@ -2075,7 +2082,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   // ---------- One client's process ----------
   let shownPin = '';
-  function openDetail(p, pin) { current = p; shownPin = pin || ''; renderDetail(); $('dtOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0; if (p.unseenClientActivity) db.collection('clientProcesses').doc(p.id).update({unseenClientActivity: 0}).catch(() => {}); }
+  function openDetail(p, pin) { current = p; shownPin = pin || ''; renderDetail(); $('dtOv').classList.add('open'); document.body.classList.add('cp-inpage'); document.querySelector('.seq-main').scrollTop = 0; if (p.unseenClientActivity || p.unseenInbox) db.collection('clientProcesses').doc(p.id).update({unseenClientActivity: 0, unseenInbox: 0}).catch(() => {}); }
   function renderDetail() {
     const p = current, steps = tasksOf(p), prog = p.progress || {};
     const {done, total, pct, optional} = progressOf(p);
@@ -2127,10 +2134,21 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         ${answer}${ups ? `<div class="flist">${ups}</div>` : ''}</div>
         ${s.type === 'todo' ? `<button class="btn sm" data-mark="${esc(s.id)}">${r.done ? 'Undo' : 'Mark done'}</button>` : ''}</div>`;
     }).join('') : '<div class="hint">This page has nothing for your client to do. Add a to-do, an upload request or a question with “Edit page”.</div>';
+    const inbox = (p.inbox || []).slice().reverse(), FI = (t) => /^video\//.test(t) ? '🎬' : /^image\//.test(t) ? '🖼️' : /^audio\//.test(t) ? '🎵' : /pdf/.test(t) ? '📕' : /zip/.test(t) ? '🗜️' : '📄';
+    $('dtInbox').innerHTML = inbox.length ? inbox.map((x, i) => `<div class="inb"><div class="inb-h"><b>${esc(x.by || 'Your client')}</b> sent ${x.files && x.files.length ? `${x.files.length} file${x.files.length === 1 ? '' : 's'}` : 'a message'}<small>${ago(x.at)}</small></div>
+      ${x.message ? `<div class="inb-msg">${esc(x.message)}</div>` : ''}
+      ${(x.files || []).length ? `<div class="flist">${x.files.map((f, j) => `<div class="fitem"><span class="nm">${FI(f.contentType || '')} ${esc(f.name)}</span><small>${fsize(f.size)}</small><button class="link" data-inb="${inbox.length - 1 - i}:${j}">Download</button></div>`).join('')}</div>` : ''}</div>`).join('')
+      : '<div class="hint">Nothing yet. On their page, your client can send you documents and videos with a message, under “Send us files”. You’ll see them here.</div>';
     const act = (p.activity || []).slice().reverse().slice(0, 40);
     $('dtAct').innerHTML = act.length ? act.map((a) => `<div class="act-item"><b>${esc(a.by)}</b> ${esc(a.text)}<small>${ago(a.at)}${a.client ? '' : ' · your team'}</small></div>`).join('') : '<div class="hint">Nothing yet. Activity from your client shows up here.</div>';
   }
   $('dtCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('dtLink').value); showToast('Link copied.' + (current.hasPin ? ' Send the PIN separately.' : '')); } catch (e) { $('dtLink').select(); document.execCommand('copy'); showToast('Link copied.'); } });
+  $('dtInbox').addEventListener('click', async (e) => {
+    const d = e.target.closest('[data-inb]'); if (!d) return;
+    const [i, j] = d.dataset.inb.split(':').map(Number), f = ((current.inbox || [])[i] || {}).files[j];
+    if (!f) return;
+    try { const url = await storage.ref(f.path).getDownloadURL(); window.open(url, '_blank', 'noopener'); } catch (err) { console.error(err); showToast('Couldn\u2019t open this file.', true); }
+  });
   $('dtSteps').addEventListener('click', async (e) => {
     const m = e.target.closest('[data-mark]');
     if (m) {
@@ -2196,6 +2214,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     try {
       await db.collection('clientProcessLinks').doc(p.shareToken).update({revoked: true}).catch(() => {});
       for (const s of tasksOf(p)) for (const u of ((p.progress || {})[s.id] || {}).uploads || []) await storage.ref(u.path).delete().catch(() => {});
+      for (const x of p.inbox || []) for (const f of x.files || []) await storage.ref(f.path).delete().catch(() => {});
       await db.collection('clientProcesses').doc(p.id).delete();
       closeOv('dtOv'); current = null; showToast('Deleted.');
     } catch (err) { console.error(err); showToast('Couldn\u2019t delete it.', true); }
