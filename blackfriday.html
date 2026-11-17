@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Friday · 2 months of PalaTrack free</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="palatrack-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#F5C451;--gold2:#E8A33D;--gold3:#FFE7A3;--ink:#0A0A0C;--panel:#121216;--line:rgba(245,196,81,.22);--muted:rgba(255,255,255,.62);}
+  *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:var(--ink);color:#fff;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  body{overflow-x:hidden;}
+  /* the stage: deep black with a warm golden glow and slow drifting light */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(60% 50% at 50% 0%,rgba(245,196,81,.16),transparent 70%),radial-gradient(40% 40% at 85% 85%,rgba(232,163,61,.10),transparent 70%),radial-gradient(35% 35% at 10% 70%,rgba(255,231,163,.06),transparent 70%),#08080A;}
+  .bg::before{content:"";position:absolute;inset:-20%;background:conic-gradient(from 0deg at 50% 50%,transparent 0 70deg,rgba(245,196,81,.07) 90deg,transparent 110deg 250deg,rgba(245,196,81,.05) 270deg,transparent 290deg);animation:spin 40s linear infinite;}
+  .bg::after{content:"";position:absolute;inset:0;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  canvas#sparks{position:fixed;inset:0;z-index:1;pointer-events:none;}
+  .wrap{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;}
+  .top{position:fixed;top:18px;left:22px;z-index:3;display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font:700 16px 'Sora',sans-serif;opacity:0;animation:fade .6s ease 3.2s forwards;}
+  .top img{width:30px;height:30px;border-radius:9px;}
+  .back{position:fixed;top:22px;right:24px;z-index:3;color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;opacity:0;animation:fade .6s ease 3.2s forwards;}
+  .back:hover{color:#fff;}
+  /* ---------- the intro ---------- */
+  .intro{text-align:center;}
+  .kicker{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);color:var(--gold3);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:rgba(245,196,81,.06);opacity:0;animation:fade .6s ease .2s forwards;}
+  .kicker i{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{50%{opacity:.35}}
+  h1.bf{margin:22px 0 0;font:800 clamp(52px,11vw,132px)/.92 'Sora',sans-serif;letter-spacing:-.04em;position:relative;}
+  h1.bf .l{display:inline-block;opacity:0;transform:translateY(40px) scale(.9);filter:blur(8px);animation:letter .7s cubic-bezier(.2,.8,.2,1) forwards;
+    background:linear-gradient(180deg,#FFF6D6 0%,var(--gold) 45%,var(--gold2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  h1.bf .sp{display:inline-block;width:.28em;}
+  h1.bf .row{display:block;}
+  @keyframes letter{to{opacity:1;transform:none;filter:none}}
+  /* a shimmer of light running through the gold letters */
+  h1.bf .l{background:linear-gradient(105deg,#FFF6D6 0%,var(--gold) 28%,var(--gold2) 46%,#FFF8DE 52%,var(--gold) 58%,var(--gold2) 100%);background-size:260% 100%;background-position:100% 0;
+    -webkit-background-clip:text;background-clip:text;}
+  h1.bf.shine .l{animation:shimmer 2.8s ease-in-out infinite;opacity:1;transform:none;filter:none;}
+  @keyframes shimmer{0%{background-position:100% 0}55%,100%{background-position:0 0}}
+  .deal{margin:22px 0 0;font:700 clamp(20px,3.2vw,30px)/1.25 'Sora',sans-serif;opacity:0;transform:translateY(14px);animation:up .7s cubic-bezier(.2,.8,.2,1) 2.0s forwards;}
+  .deal b{color:var(--gold);}
+  @keyframes up{to{opacity:1;transform:none}} @keyframes fade{to{opacity:1}}
+  /* ---------- the code card ---------- */
+  .card{width:min(560px,100%);margin-top:38px;padding:30px;border-radius:26px;position:relative;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)),var(--panel);border:1px solid var(--line);
+    box-shadow:0 40px 90px -40px rgba(245,196,81,.35),0 0 0 1px rgba(255,255,255,.03) inset;opacity:0;transform:translateY(30px);animation:up .8s cubic-bezier(.2,.8,.2,1) 2.5s forwards;}
+  .card::before{content:"";position:absolute;inset:-1px;border-radius:27px;padding:1px;background:linear-gradient(120deg,transparent 20%,rgba(245,196,81,.8),transparent 60%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;background-size:250% 100%;animation:edge 4s linear infinite;}
+  @keyframes edge{from{background-position:120% 0}to{background-position:-120% 0}}
+  .card h2{margin:0;font:700 20px 'Sora',sans-serif;} .card p.sub{margin:6px 0 20px;color:var(--muted);font-size:14.5px;line-height:1.55;}
+  label.lbl{display:block;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold3);margin-bottom:8px;}
+  .code{width:100%;height:62px;border-radius:16px;border:1.5px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);color:#fff;text-align:center;
+    font:700 clamp(18px,4.4vw,24px) ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.14em;outline:none;transition:border-color .2s,box-shadow .2s;}
+  .code::placeholder{color:rgba(255,255,255,.22);}
+  .code:focus{border-color:var(--gold);box-shadow:0 0 0 5px rgba(245,196,81,.15);}
+  .code.bad{border-color:#F87171;box-shadow:0 0 0 5px rgba(248,113,113,.14);animation:shake .45s ease;}
+  @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+  .err{min-height:22px;margin:10px 2px 0;color:#FCA5A5;font-size:14px;font-weight:600;}
+  .go{margin-top:8px;width:100%;height:56px;border:none;border-radius:16px;cursor:pointer;color:#1A1205;font:800 17px 'Sora',sans-serif;
+    background:linear-gradient(120deg,#FFE7A3,var(--gold) 40%,var(--gold2));box-shadow:0 18px 40px -16px rgba(245,196,81,.7);position:relative;overflow:hidden;transition:transform .2s,filter .2s;}
+  .go:hover{transform:translateY(-1px);filter:brightness(1.05);} .go:disabled{opacity:.6;cursor:wait;transform:none;}
+  .go::after{content:"";position:absolute;top:0;bottom:0;width:35%;left:-50%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-20deg);animation:shine 2.8s ease-in-out 3.4s infinite;}
+  @keyframes shine{0%{left:-50%}45%,100%{left:130%}}
+  .fine{margin:16px 0 0;color:rgba(255,255,255,.45);font-size:12.5px;line-height:1.5;text-align:center;}
+  .perks{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:22px;opacity:0;animation:fade .6s ease 3.0s forwards;}
+  .perks span{font-size:13px;color:var(--muted);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);}
+  /* signed out */
+  .signin{display:none;text-align:center;} .signin a{display:inline-block;margin-top:12px;padding:14px 22px;border-radius:14px;background:linear-gradient(120deg,#FFE7A3,var(--gold) 40%,var(--gold2));color:#1A1205;font:800 15px 'Sora',sans-serif;text-decoration:none;}
+  /* ---------- success ---------- */
+  .done{display:none;text-align:center;}
+  .done .medal{width:84px;height:84px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;
+    background:radial-gradient(circle at 30% 30%,#FFF6D6,var(--gold) 55%,var(--gold2));box-shadow:0 0 0 8px rgba(245,196,81,.12),0 20px 50px -14px rgba(245,196,81,.8);animation:pop .7s cubic-bezier(.2,1.4,.3,1);}
+  @keyframes pop{from{transform:scale(.4);opacity:0}}
+  .done h2{font:800 28px/1.15 'Sora',sans-serif;margin:0;} .done h2 b{color:var(--gold);}
+  .done p{color:var(--muted);margin:10px 0 22px;font-size:15px;line-height:1.55;}
+  .done a.go{display:flex;align-items:center;justify-content:center;text-decoration:none;}
+  @media (prefers-reduced-motion:reduce){ *{animation-duration:.01s !important;animation-delay:0s !important;} }
+</style>
+</head>
+<body>
+<div class="bg"></div><canvas id="sparks"></canvas>
+<a class="top" href="home.html"><img src="palatrack-logo.png" alt="">PalaTrack</a>
+<a class="back" href="home.html">← Back to PalaTrack</a>
+
+<main class="wrap">
+  <div class="intro">
+    <div class="kicker"><i></i>Exclusive for course members</div>
+    <h1 class="bf" id="bfTitle" aria-label="Black Friday"></h1>
+    <p class="deal">Get <b>2 months of PalaTrack</b> for free.</p>
+  </div>
+
+  <section class="card" id="card">
+    <div id="formBox">
+      <h2>Redeem your Black Friday code</h2>
+      <p class="sub">You received a code with your course. Enter it below to unlock 2 months of PalaTrack Premium for your workspace.</p>
+      <label class="lbl" for="code">Your code</label>
+      <input class="code" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="19" placeholder="BLCK-XXXX-XXXX-XXXX" inputmode="text">
+      <div class="err" id="err" role="alert"></div>
+      <button class="go" id="go" type="button">Unlock my 2 months</button>
+      <p class="fine">Each code works once. Your free months start today and end automatically: no card needed, nothing is charged.</p>
+    </div>
+    <div class="signin" id="signinBox">
+      <h2>Sign in to redeem your code</h2>
+      <p class="sub">Your free months are added to your PalaTrack workspace, so sign in (or create your account) first. Then click the Black Friday banner on your Home page.</p>
+      <a href="home.html">Sign in to PalaTrack</a>
+    </div>
+    <div class="done" id="doneBox">
+      <div class="medal">🎉</div>
+      <h2>2 months of PalaTrack <b>unlocked!</b></h2>
+      <p id="doneText">Everything in PalaTrack Premium is now open for your workspace.</p>
+      <a class="go" href="home.html">Go to PalaTrack →</a>
+    </div>
+  </section>
+
+  <div class="perks"><span>✨ Every Premium feature</span><span>🧩 The Chrome extension</span><span>🤖 AI writing tools</span><span>📈 Analytics &amp; leads</span></div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
+<script>
+(function(){
+  // ---------- the title, letter by letter ----------
+  const t=document.getElementById('bfTitle'); let i=0;
+  setTimeout(()=>t.classList.add('shine'), 2100);
+  t.innerHTML=['BLACK','FRIDAY'].map(w=>'<span class="row">'+[...w].map(ch=>`<span class="l" style="animation-delay:${(0.35+(i++)*0.07).toFixed(2)}s">${ch}</span>`).join('')+'</span>').join('');
+
+  // ---------- golden sparks drifting up ----------
+  const cv=document.getElementById('sparks'), cx=cv.getContext('2d'); let W,H,parts=[],burst=[];
+  const size=()=>{W=cv.width=innerWidth*devicePixelRatio;H=cv.height=innerHeight*devicePixelRatio;}; size(); addEventListener('resize',size);
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for(let k=0;k<(reduce?0:55);k++) parts.push({x:Math.random(),y:Math.random(),r:.6+Math.random()*1.8,v:.0004+Math.random()*.0012,a:.2+Math.random()*.6,w:Math.random()*6.28});
+  function frame(){
+    cx.clearRect(0,0,W,H);
+    for(const p of parts){ p.y-=p.v; p.w+=.02; if(p.y<-.02){p.y=1.02;p.x=Math.random();}
+      cx.globalAlpha=p.a*(.6+.4*Math.sin(p.w)); cx.fillStyle='#F5C451'; cx.beginPath(); cx.arc((p.x+Math.sin(p.w)*.004)*W,p.y*H,p.r*devicePixelRatio,0,6.283); cx.fill(); }
+    for(const c of burst){ c.vy+=.12; c.x+=c.vx; c.y+=c.vy; c.rot+=c.vr; c.life-=1;
+      cx.globalAlpha=Math.max(0,Math.min(1,c.life/60)); cx.save(); cx.translate(c.x,c.y); cx.rotate(c.rot); cx.fillStyle=c.col; cx.fillRect(-c.s/2,-c.s/4,c.s,c.s/2); cx.restore(); }
+    burst=burst.filter(c=>c.life>0); requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  function confetti(){
+    if(reduce) return; const cols=['#FFE7A3','#F5C451','#E8A33D','#FFFFFF','#C9A24A'];
+    for(let k=0;k<180;k++){ const a=Math.random()*Math.PI*2, sp=(4+Math.random()*9)*devicePixelRatio;
+      burst.push({x:W/2,y:H*0.42,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-6*devicePixelRatio,s:(6+Math.random()*8)*devicePixelRatio,rot:Math.random()*6,vr:(Math.random()-.5)*.3,life:90+Math.random()*60,col:cols[k%cols.length]}); }
+  }
+
+  // ---------- the code field: capitals, dashes in the right places ----------
+  const input=document.getElementById('code'), err=document.getElementById('err'), go=document.getElementById('go');
+  input.addEventListener('input',()=>{
+    const raw=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,16);
+    input.value=raw.match(/.{1,4}/g)?.join('-')||''; input.classList.remove('bad'); err.textContent='';
+  });
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter') go.click(); });
+  const params=new URLSearchParams(location.search); if(params.get('code')){ input.value=params.get('code'); input.dispatchEvent(new Event('input')); }
+
+  // ---------- Firebase ----------
+  firebase.initializeApp({apiKey:"AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",authDomain:"lead-tracker-c5c3a.firebaseapp.com",projectId:"lead-tracker-c5c3a",
+    storageBucket:"lead-tracker-c5c3a.firebasestorage.app",messagingSenderId:"720572896285",appId:"1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"});
+  const redeem=firebase.functions().httpsCallable('redeemPromoCode');
+  firebase.auth().onAuthStateChanged(u=>{
+    document.getElementById('formBox').style.display=u?'block':'none';
+    document.getElementById('signinBox').style.display=u?'none':'block';
+  });
+  function fail(msg){ err.textContent=msg; input.classList.remove('bad'); void input.offsetWidth; input.classList.add('bad'); }
+  go.addEventListener('click',async()=>{
+    const code=input.value.replace(/[^A-Z0-9]/gi,'');
+    if(code.length!==16){ fail('Enter your full code: 16 letters and numbers, like BLCK-XXXX-XXXX-XXXX.'); return; }
+    go.disabled=true; go.textContent='Checking your code…'; err.textContent='';
+    try{
+      const r=(await redeem({code})).data;
+      const until=new Date(r.until).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
+      document.getElementById('doneText').innerHTML=r.appliedToSubscription
+        ? `Your subscription skips the next 2 months of charges. Your next payment is on <b>${until}</b>.`
+        : `Everything in PalaTrack Premium is open for your workspace until <b>${until}</b>. Nothing is charged.`;
+      document.getElementById('formBox').style.display='none'; document.getElementById('doneBox').style.display='block'; confetti();
+    }catch(e){
+      const m=(e && e.message)||''; fail(e && e.code==='functions/already-exists' ? 'This code is already in use.' : m || 'Something went wrong. Please try again.');
+    }finally{ go.disabled=false; go.textContent='Unlock my 2 months'; }
+  });
+})();
+</script>
+</body>
+</html>
