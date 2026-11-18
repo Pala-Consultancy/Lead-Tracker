@@ -618,7 +618,7 @@
   .tk-ghead .cnt{font-size:12.5px;color:var(--slate);}
   .tk-table{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);}
   .tk-group.collapsed .tk-table{display:none;}
-  .tk-row{display:grid;grid-template-columns:6px 38px minmax(240px,1fr) 118px 140px 132px 112px minmax(130px,190px) 40px;align-items:stretch;
+  .tk-row{display:grid;grid-template-columns:6px 38px minmax(240px,1fr) 118px 140px 132px 112px minmax(130px,190px) 64px;align-items:stretch;
     border-top:1px solid var(--border-soft);min-height:42px;}
   .tk-row.hdr{border-top:0;min-height:36px;font:600 12px 'Inter',sans-serif;color:var(--slate);background:var(--panel-alt);}
   .tk-row.hdr > div{display:flex;align-items:center;justify-content:center;}
@@ -664,12 +664,19 @@
   .tk-muted{color:var(--slate-light);font-size:12.5px;}
   .tk-more{border:0;background:none;color:var(--slate-light);font-size:18px;cursor:pointer;border-radius:6px;width:28px;height:28px;}
   .tk-more:hover{background:var(--panel-alt);color:var(--ink);}
+  .c-more{display:flex;align-items:center;justify-content:flex-end;gap:2px;}
+  .tk-trash{border:0;background:none;color:var(--slate-light);cursor:pointer;border-radius:6px;width:28px;height:28px;display:grid;place-items:center;opacity:0;transition:opacity .15s,color .15s,background .15s;}
+  .tk-row:hover .tk-trash,.tk-trash:focus-visible{opacity:1;}
+  .tk-trash:hover{color:#D83A52;background:rgba(216,58,82,.1);}
+  @media (hover:none){ .tk-trash{opacity:1;} }
+  .tk-clear{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--slate);font:600 12.5px 'Inter',sans-serif;cursor:pointer;}
+  .tk-clear:hover{color:#D83A52;border-color:rgba(216,58,82,.45);background:rgba(216,58,82,.06);}
   .tk-addrow{display:grid;grid-template-columns:6px 38px 1fr;border-top:1px solid var(--border-soft);min-height:40px;}
   .tk-addrow > .bar{background:var(--gcolor);opacity:.45;}
   .tk-addrow input{grid-column:3;border:0;background:transparent;font:13px 'Inter',sans-serif;color:var(--ink);padding:0 14px;outline:none;}
   .tk-addrow input::placeholder{color:var(--slate-light);}
   .tk-addrow:focus-within{background:var(--panel-alt);}
-  .tk-battery{display:grid;grid-template-columns:6px 38px minmax(240px,1fr) 118px 140px 132px 112px minmax(130px,190px) 40px;border-top:1px solid var(--border-soft);min-height:34px;background:var(--panel-alt);}
+  .tk-battery{display:grid;grid-template-columns:6px 38px minmax(240px,1fr) 118px 140px 132px 112px minmax(130px,190px) 64px;border-top:1px solid var(--border-soft);min-height:34px;background:var(--panel-alt);}
   .tk-battery .bat{grid-column:5;display:flex;align-items:center;padding:0 8px;}
   .tk-battery .bat-in{flex:1;height:18px;border-radius:5px;overflow:hidden;display:flex;background:var(--border-soft);}
   .tk-battery .bat-in i{display:block;height:100%;}
@@ -1648,6 +1655,18 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
       .then(ref=>{ const others = (doc.assignees || []).filter(u=> u !== myUid); if(others.length && ref && ref.id) sendNotif(others, {type: 'assigned', title: `${myName} assigned you: ${doc.title || 'a task'}`, body: doc.dueDate ? `Due ${prettyDate(doc.dueDate)}` : '', taskId: ref.id}); return ref; })
       .catch(err=>{ console.error(err); showToast('Could not add that task: ' + (err.message || ''), true); });
   }
+  // delete all the done tasks shown (after a confirmation that says how many)
+  async function clearDone(){
+    const list = doneShown.filter((t)=> statusOf(t) === 'done'); if(!list.length) return;
+    const ok = await showConfirmModal({title: `Delete ${list.length} done task${list.length === 1 ? '' : 's'}?`, message: `All ${list.length} task${list.length === 1 ? '' : 's'} in Done will be deleted for everyone. This can’t be undone.`, confirmLabel: 'Delete all'});
+    if(!ok) return;
+    let done = 0, failed = 0;
+    for(let i = 0; i < list.length; i += 400){
+      const batch = db.batch(); list.slice(i, i + 400).forEach((t)=> batch.delete(col().doc(t.id)));
+      try { await batch.commit(); done += Math.min(400, list.length - i); } catch(err){ console.error(err); failed += Math.min(400, list.length - i); }
+    }
+    showToast(failed ? `Deleted ${done} task${done === 1 ? '' : 's'}; ${failed} couldn’t be deleted.` : `${done} done task${done === 1 ? '' : 's'} deleted.`, !!failed);
+  }
   async function deleteTask(t){
     const ok = await showConfirmModal({title:'Delete this task?', message:`"${t.title || 'Untitled task'}" will be deleted for everyone.`, confirmLabel:'Delete'});
     if(!ok) return;
@@ -1703,6 +1722,7 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
 
   // ---------- Table view (grouped by when it's due, like monday's groups) ----------
   const COLS = `<div class="tk-row hdr"><div class="bar"></div><div></div><div class="l">Task</div><div>Owner</div><div>Status</div><div>Due date</div><div>Priority</div><div>Lead</div><div></div></div>`;
+  let doneShown = [];                     // the done tasks in the table right now (for "Delete all done tasks")
   function renderTable(list){
     if(!list.length && !search){ view$.innerHTML = emptyHTML(); return; }
     const by = Object.fromEntries(GROUPS.map(g=>[g.id, []]));
@@ -1715,9 +1735,10 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
         <div class="tk-ghead" data-act="toggle-group" role="button" tabindex="0" aria-expanded="${!collapsed.has(g.id)}">
           <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></span>
           <h3>${g.label}</h3><span class="cnt">${items.length} ${items.length === 1 ? 'task' : 'tasks'}</span>
+          ${g.id === 'done' && items.length ? `<button type="button" class="tk-clear" data-act="clear-done" title="Delete all the tasks in Done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Delete all done tasks</button>` : ''}
         </div>
         <div class="tk-table">${COLS}
-          ${items.map(rowHTML).join('')}
+          ${(g.id === 'done' ? (doneShown = items.slice(), items) : items).map(rowHTML).join('')}
           ${canAdd ? `<div class="tk-addrow"><div class="bar"></div><input type="text" data-add="${g.id}" placeholder="+ Add task${g.id === 'nodate' ? '' : ' for ' + g.label.toLowerCase()}" maxlength="200"></div>` : ''}
           ${items.length ? `<div class="tk-battery"><div class="bat"><div class="bat-in" title="${counts.map(([s, n])=>`${s.label}: ${n}`).join(' · ')}">${counts.map(([s, n])=>`<i style="width:${n / items.length * 100}%;background:${s.color}"></i>`).join('')}</div></div></div>` : ''}
         </div>
@@ -1734,7 +1755,7 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
       <div class="cell click" data-act="date">${dateCell(t)}</div>
       <div class="cell c-prio">${prioCell(t)}</div>
       <div class="cell c-lead" style="padding:0 8px">${leadCell(t)}</div>
-      <div class="cell c-more"><button type="button" class="tk-more" data-act="more" aria-label="More">⋯</button></div>
+      <div class="cell c-more">${statusOf(t) === 'done' ? `<button type="button" class="tk-trash" data-act="trash" aria-label="Delete this task" title="Delete"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>` : ''}<button type="button" class="tk-more" data-act="more" aria-label="More">⋯</button></div>
     </div>`;
   }
   function emptyHTML(){
@@ -1907,6 +1928,8 @@ html[data-theme="dark"] .tk-gcal-dis:hover{color:#EC8E9B}
     if(act === 'toggle-group'){ const g = el.closest('.tk-group').dataset.group; collapsed.has(g) ? collapsed.delete(g) : collapsed.add(g);
       localStorage.setItem('ptTasksCollapsed', JSON.stringify([...collapsed])); render(); return; }
     if(act === 'new'){ openDrawer(null, {status: el.dataset.status || 'todo', dueDate: el.dataset.date || null}); return; }
+    if(act === 'trash'){ if(t) deleteTask(t); return; }
+    if(act === 'clear-done'){ e.stopPropagation(); clearDone(); return; }
     if(act === 'cal-prev'){ calMonth.setMonth(calMonth.getMonth() - 1); render(); return; }
     if(act === 'cal-next'){ calMonth.setMonth(calMonth.getMonth() + 1); render(); return; }
     if(act === 'gcal-connect'){ startGcalConnect(el); return; }

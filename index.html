@@ -729,7 +729,56 @@
   .pv-lib-gd{display:inline-block;margin-top:12px;font-size:11px;font-weight:700;color:#1B59A5;background:#E3EEFA;padding:3px 9px;border-radius:7px;}
   .pv-lib-board{position:relative;border-radius:12px;border:1px solid var(--border);background:radial-gradient(#D9DEE8 1px,transparent 1px) 0 0/14px 14px,#FAFBFD;min-height:140px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:10px;padding:12px;}
   .pv-lib-board .st{background:var(--c);transform:rotate(var(--r));padding:12px 14px;font-size:12.5px;font-weight:800;border-radius:4px;box-shadow:0 6px 12px -8px rgba(0,0,0,.35);}
-  .pv-cal-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:22px repeat(3,34px);gap:6px;font-size:11.5px;font-weight:700;color:var(--slate);text-align:center;}
+  /* ---------- the detailed calendar & tasks preview ---------- */
+.pv-cal2{font-size:11px;color:#1D2433;}
+.c2-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.c2-head b{font-size:13.5px;font-weight:800;} .c2-head b span{color:var(--slate);font-weight:600;}
+.c2-head .sync{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#E8F7EF;color:#1E7F4F;font-size:10.5px;font-weight:700;}
+.c2-head .sync i{width:6px;height:6px;border-radius:50%;background:#22A06B;box-shadow:0 0 0 3px rgba(34,160,107,.18);}
+.c2-body{display:flex;flex-direction:column;gap:10px;}
+.c2-days{display:grid;grid-template-columns:30px repeat(5,1fr);gap:4px;margin-bottom:4px;}
+.c2-days span{font-size:10.5px;font-weight:700;color:var(--slate);text-align:center;padding:3px 0;border-radius:7px;}
+.c2-days span em{font-style:normal;color:#1D2433;margin-left:2px;}
+.c2-days span.today{background:#1B4FA0;color:#fff;} .c2-days span.today em{color:#fff;}
+.c2-grid{position:relative;display:grid;grid-template-columns:30px repeat(5,1fr);gap:4px;height:206px;
+  background:repeating-linear-gradient(180deg,transparent 0 50.5px,#EEF2F8 50.5px 51.5px);}
+.c2-hours{display:flex;flex-direction:column;justify-content:space-between;font-size:9px;color:#9AA4B5;font-weight:600;padding:0 0 2px;}
+.c2-col{position:relative;border-radius:8px;background:rgba(246,250,254,.6);}
+.c2-col.now{background:rgba(27,79,160,.05);}
+.c2-col .e{position:absolute;left:2px;right:2px;top:calc(var(--t) * 12.875px);height:calc(var(--h) * 12.875px - 2px);min-height:14px;border-radius:6px;padding:2px 5px;
+  font-style:normal;overflow:hidden;line-height:1.15;display:flex;flex-direction:column;justify-content:center;border-left:3px solid var(--bd);background:var(--bg);}
+.c2-col .e b{font-size:9px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.c2-col .e small{font-size:8.5px;color:#5B6472;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.c2-col .e .g,.c2-col .e .li{display:inline-block;flex:0 0 auto;width:11px;height:11px;border-radius:3px;font-size:7.5px;line-height:11px;text-align:center;font-weight:900;color:#fff;margin-right:3px;vertical-align:-1px;}
+.c2-col .e .row{display:flex;align-items:center;min-width:0;}
+.c2-col .e .g{background:linear-gradient(135deg,#4285F4,#34A853 50%,#FBBC05 75%,#EA4335);}
+.c2-col .e .li{background:#0A66C2;}
+.c2-col .e.g-ev{--bg:#E3E9FF;--bd:#4F6BDE;}
+.c2-col .e.kick{--bg:#FFF1C9;--bd:#E8A33D;}
+.c2-col .e.post{--bg:#DDF5EA;--bd:#22A06B;flex-direction:row;align-items:center;gap:4px;justify-content:flex-start;}
+.c2-col .e.post small{font-weight:800;color:#1E7F4F;flex:0 0 auto;}
+.c2-col .e.post b,.c2-col .e.post .li{flex:0 0 auto;}
+.c2-col .e.post{gap:3px;padding:2px 4px;}
+.c2-col .e.task{--bg:#FDE9F0;--bd:#E05A86;}
+.c2-col .e.task.done{opacity:.55;} .c2-col .e.task.done b{text-decoration:line-through;}
+.c2-col .e.auto{--bg:#FFEBDD;--bd:#F07B2E;}
+.c2-col .nowline{position:absolute;left:-2px;right:-2px;top:calc(var(--t) * 12.875px);height:2px;background:#E5484D;z-index:2;font-style:normal;}
+.c2-col .nowline::before{content:"";position:absolute;left:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:#E5484D;}
+.c2-tasks{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff;display:grid;grid-template-columns:1fr 1fr;column-gap:16px;}
+.c2-tasks .t-h,.c2-tasks .t-bar{grid-column:1/-1;}
+.t-h{display:flex;justify-content:space-between;align-items:baseline;} .t-h b{font-size:12.5px;font-weight:800;} .t-h span{font-size:10px;color:var(--slate);font-weight:600;}
+.t-bar{height:5px;border-radius:99px;background:#EEF2F8;margin:6px 0 8px;overflow:hidden;} .t-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1B4FA0,#7C3AED);}
+.c2-tasks .t{display:flex;gap:7px;align-items:flex-start;padding:6px 0;border-top:1px solid #F0F3F8;}
+.c2-tasks .t:nth-of-type(-n+2){border-top:0;}
+.c2-tasks .ck{flex:0 0 auto;width:13px;height:13px;border-radius:4px;border:1.5px solid #B9C3D3;margin-top:1px;font-size:9px;line-height:11px;text-align:center;color:#fff;font-weight:900;}
+.c2-tasks .t.done .ck{background:#22A06B;border-color:#22A06B;}
+.c2-tasks .t div{flex:1;min-width:0;} .c2-tasks .t b{display:block;font-size:10.5px;font-weight:700;line-height:1.25;}
+.c2-tasks .t small{display:block;font-size:9px;color:var(--slate);line-height:1.3;margin-top:1px;}
+.c2-tasks .t.done b{color:#9AA4B5;text-decoration:line-through;}
+.c2-tasks .t.auto{background:#FFF6EE;padding:6px;border-radius:8px;border-top:0;} .c2-tasks .t.auto small{color:#C2581B;font-weight:600;}
+.c2-tasks .av{flex:0 0 auto;width:18px;height:18px;border-radius:50%;background:var(--a);color:#fff;font-size:7.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+@media (max-width:640px){ .c2-body{grid-template-columns:1fr;} }
+.pv-cal-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:22px repeat(3,34px);gap:6px;font-size:11.5px;font-weight:700;color:var(--slate);text-align:center;}
   .pv-cal-grid .ev{grid-column:var(--col);grid-row:var(--row);font-style:normal;background:var(--c);color:#1D2433;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;}
   .pv-cal-task{margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:13px;font-weight:700;} .pv-cal-task small{display:block;font-size:11.5px;font-weight:500;color:var(--slate);margin-top:2px;}
 
@@ -1312,11 +1361,32 @@
         </div>
         <div class="topic-panel-visual">
           <div class="pv-window"><div class="pv-window-bar"></div><div class="pv-window-body">
-            <div class="pv-cal">
-              <div class="pv-cal-grid"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
-                <i class="ev" style="--col:1;--row:2;--c:#DDE3FF">Sales call</i><i class="ev" style="--col:2;--row:3;--c:#C9F2E3">Post: MOFU</i><i class="ev" style="--col:4;--row:2;--c:#FFE7A3">Kickoff</i><i class="ev" style="--col:3;--row:4;--c:#FDE6EE">Follow-up</i></div>
-              <div class="pv-cal-task">⚡ Follow up with Emma <small>created automatically · due Thu</small></div>
-            </div>
+            <div class="pv-cal2">
+  <div class="c2-head"><b>Week 47 <span>· Nov 16–20</span></b><span class="sync"><i></i>Synced with Google Calendar</span></div>
+  <div class="c2-body">
+    <div class="c2-week">
+      <div class="c2-days"><span></span><span>Mon <em>16</em></span><span>Tue <em>17</em></span><span class="today">Wed <em>18</em></span><span>Thu <em>19</em></span><span>Fri <em>20</em></span></div>
+      <div class="c2-grid">
+        <div class="c2-hours"><span>9:00</span><span>11:00</span><span>13:00</span><span>15:00</span><span>17:00</span></div>
+        <div class="c2-col"><i class="e g-ev" style="--t:0;--h:2"><span class="row"><b class="g" title="Google Calendar">G</b><b>Sales call</b></span><small>9:00–10:00</small></i><i class="e post" style="--t:4;--h:1"><b class="li">in</b><b>Post</b><small>TOFU</small></i><i class="e task done" style="--t:12;--h:1"><b>✓ Proposal</b></i></div>
+        <div class="c2-col"><i class="e post" style="--t:0;--h:1"><b class="li">in</b><b>Post</b><small>MOFU</small></i><i class="e g-ev" style="--t:6;--h:3"><span class="row"><b class="g" title="Google Calendar">G</b><b>Strategy</b></span><small>12:00–13:30</small></i><i class="e task" style="--t:12;--h:1"><b>☐ Prep deck</b></i></div>
+        <div class="c2-col now"><i class="nowline" style="--t:9.5"></i><i class="e task" style="--t:2;--h:1"><b>☐ Follow up</b></i><i class="e g-ev" style="--t:8;--h:2"><span class="row"><b class="g" title="Google Calendar">G</b><b>Discovery</b></span><small>13:00–14:00</small></i><i class="e post" style="--t:12;--h:1"><b class="li">in</b><b>Post</b><small>BOFU</small></i></div>
+        <div class="c2-col"><i class="e kick" style="--t:2;--h:4"><span class="row"><b class="g" title="Google Calendar">G</b><b>Kickoff</b></span><small>10:00–12:00</small></i><i class="e task auto" style="--t:10;--h:1"><b>⚡ Follow up</b></i></div>
+        <div class="c2-col"><i class="e post" style="--t:0;--h:1"><b class="li">in</b><b>Post</b><small>MOFU</small></i><i class="e g-ev" style="--t:10;--h:2"><span class="row"><b class="g" title="Google Calendar">G</b><b>Team sync</b></span><small>14:00–15:00</small></i></div>
+      </div>
+    </div>
+    <div class="c2-tasks">
+      <div class="t-h"><b>Tasks</b><span>2 of 6 done</span></div>
+      <div class="t-bar"><i style="width:33%"></i></div>
+      <div class="t auto"><span class="ck"></span><div><b>Follow up with Emma</b><small>⚡ Created automatically when she replied · due Thu</small></div></div>
+      <div class="t"><span class="ck"></span><div><b>Prep kickoff deck</b><small>Northwind · due Tue</small></div><span class="av" style="--a:#7C3AED">LC</span></div>
+      <div class="t"><span class="ck"></span><div><b>Call back Nora</b><small>Today · 16:00</small></div><span class="av" style="--a:#0EA5E9">AM</span></div>
+      <div class="t done"><span class="ck">✓</span><div><b>Send proposal</b><small>Done Monday</small></div></div>
+      <div class="t done"><span class="ck">✓</span><div><b>Schedule this week’s posts</b><small>Done Monday</small></div></div>
+      <div class="t"><span class="ck"></span><div><b>Review LinkedIn stats</b><small>Fri · 10 min</small></div></div>
+    </div>
+  </div>
+</div>
           </div></div>
         </div>
       </div>
