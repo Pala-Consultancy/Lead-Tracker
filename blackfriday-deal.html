@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Black Friday deal · PalaTrack</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="palatrack-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#F5C451;--gold2:#E8A33D;--gold3:#FFE7A3;--ink:#0A0A0C;--muted:rgba(255,255,255,.62);--line:rgba(245,196,81,.22);}
+  *{box-sizing:border-box} html,body{margin:0;background:#0B0B0E;color:#fff;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  textarea{-webkit-user-select:text;user-select:text;}
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(60% 40% at 50% 0%,rgba(245,196,81,.14),transparent 70%),radial-gradient(40% 40% at 90% 90%,rgba(232,163,61,.08),transparent 70%),#0A0A0C;}
+  header.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 22px;background:rgba(10,10,12,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(245,196,81,.15);}
+  .brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font:700 16px 'Sora',sans-serif;} .brand img{width:28px;height:28px;border-radius:8px;}
+  .tb{display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--muted);}
+  .tb .pg{font-variant-numeric:tabular-nums;color:#fff;font-weight:600;}
+  .tb .sv{display:inline-flex;align-items:center;gap:6px;} .tb .sv i{width:7px;height:7px;border-radius:50%;background:#34D399;}
+  .tb .sv.busy i{background:var(--gold);animation:p 1s infinite;} @keyframes p{50%{opacity:.3}}
+  .tb a{color:var(--muted);text-decoration:none;font-weight:600;} .tb a:hover{color:#fff;}
+  main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:34px 18px 80px;}
+  .hero{text-align:center;padding:26px 0 30px;}
+  .kick{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);color:var(--gold3);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:rgba(245,196,81,.06);}
+  .hero h1{margin:16px 0 8px;font:800 clamp(30px,5vw,52px)/1.05 'Sora',sans-serif;letter-spacing:-.035em;}
+  .hero h1 b{background:linear-gradient(180deg,#FFF6D6,var(--gold) 50%,var(--gold2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p{margin:0;color:var(--muted);font-size:16px;}
+  .perks{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0 34px;}
+  .perk{display:flex;gap:14px;align-items:center;padding:18px 20px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));}
+  .perk .ic{flex:0 0 auto;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(120deg,#FFE7A3,var(--gold) 45%,var(--gold2));}
+  .perk b{display:block;font:700 16px 'Sora',sans-serif;} .perk small{color:var(--muted);font-size:13.5px;}
+  .perk a{color:var(--gold);font-weight:700;text-decoration:none;}
+  @media (max-width:700px){ .perks{grid-template-columns:1fr;} .tb .hide-m{display:none;} }
+  .note{margin:0 auto 18px;max-width:760px;text-align:center;color:rgba(255,255,255,.5);font-size:13px;line-height:1.5;}
+  /* the pages */
+  .pages{display:flex;flex-direction:column;align-items:center;gap:18px;}
+  .page{position:relative;width:100%;max-width:860px;aspect-ratio:595.28/841.89;border-radius:6px;overflow:hidden;background:#1A1A1F;box-shadow:0 30px 70px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);}
+  .page.loading::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.05) 50%,transparent 70%);background-size:220% 100%;animation:sh 1.3s linear infinite;}
+  @keyframes sh{from{background-position:120% 0}to{background-position:-120% 0}}
+  .page .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.25);font:700 15px 'Sora',sans-serif;}
+  .page img{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;-webkit-user-drag:none;}
+  .page textarea{position:absolute;margin:0;padding:.35em .5em;border:0;outline:none;resize:none;background:transparent;color:#0B1A33;font-family:Inter,Arial,sans-serif;line-height:1.35;overflow:auto;border-radius:4px;transition:background .2s,box-shadow .2s;}
+  .page textarea:hover{background:rgba(245,196,81,.07);} .page textarea:focus{background:rgba(255,255,255,.55);box-shadow:0 0 0 2px rgba(232,163,61,.55);}
+  .page textarea::placeholder{color:rgba(11,26,51,.35);}
+  /* protection */
+  body.away .pages{filter:blur(22px);} body.away .shield{display:flex;}
+  .shield{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:rgba(10,10,12,.55);text-align:center;}
+  .shield b{font:700 20px 'Sora',sans-serif;} .shield span{color:var(--muted);font-size:14px;}
+  .gate{display:none;text-align:center;padding:70px 20px;} .gate h2{font:800 28px 'Sora',sans-serif;margin:0 0 10px;} .gate p{color:var(--muted);margin:0 0 22px;}
+  .btn{display:inline-block;padding:14px 22px;border-radius:14px;color:#1A1205;font:800 15px 'Sora',sans-serif;text-decoration:none;background:linear-gradient(120deg,#FFE7A3,var(--gold) 40%,var(--gold2));}
+  @media print{ body *{display:none !important;} body::after{content:"This playbook can only be read in PalaTrack.";display:block;padding:40px;font:16px Arial;color:#000;} }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<header class="top">
+  <a class="brand" href="home.html"><img src="palatrack-logo.png" alt="">PalaTrack</a>
+  <div class="tb"><span class="pg" id="pgNow">Page 1 of 34</span><span class="sv hide-m" id="sv"><i></i><span id="svT">Answers saved</span></span><a href="home.html">Back to PalaTrack</a></div>
+</header>
+<main>
+  <div id="app" style="display:none">
+    <section class="hero">
+      <span class="kick">Your Black Friday deal</span>
+      <h1>Welcome, <b id="who">there</b></h1>
+      <p>Your personal copy of The Killer Offer Playbook is ready below.</p>
+    </section>
+    <div class="perks">
+      <div class="perk"><span class="ic">📘</span><div><b>The Killer Offer Playbook</b><small>34 pages. Type your answers right in the boxes: they’re saved to your account.</small></div></div>
+      <div class="perk"><span class="ic">✨</span><div><b>PalaTrack Premium</b><small id="until">Unlocked for 2 months.</small> <a href="home.html">Open PalaTrack →</a></div></div>
+    </div>
+    <p class="note">This is your personal, licensed copy: each page carries your name, email and code. It can be read here at any time, but not downloaded, printed or shared.</p>
+    <div class="pages" id="pages"></div>
+  </div>
+  <div class="gate" id="gate"><h2 id="gateT">Loading your deal…</h2><p id="gateP"></p><a class="btn" id="gateA" href="blackfriday.html" style="display:none">Redeem your code</a></div>
+</main>
+<div class="shield"><b>Your playbook is paused</b><span>Click here to continue reading.</span></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
+<script>
+(function(){
+  const PAGES=34, PW=595.28, PH=841.89;
+  const FIELDS=[{"n": "f001", "p": 9, "r": [65.2, 89.97, 539.15, 130.79]}, {"n": "f002", "p": 10, "r": [65.2, 87.03, 539.15, 127.85]}, {"n": "f003", "p": 11, "r": [65.2, 214.74, 539.15, 255.55]}, {"n": "f004", "p": 17, "r": [65.2, 245.22, 539.15, 286.03]}, {"n": "f005", "p": 18, "r": [65.2, 94.95, 539.15, 135.77]}, {"n": "f006", "p": 19, "r": [65.2, 174.26, 539.15, 215.08]}, {"n": "f007", "p": 20, "r": [65.2, 188.49, 539.15, 249.72]}, {"n": "f008", "p": 21, "r": [65.2, 230.38, 539.15, 271.2]}, {"n": "f009", "p": 23, "r": [65.2, 177.76, 539.15, 218.58]}, {"n": "f010", "p": 28, "r": [65.2, 334.08, 539.15, 374.89]}, {"n": "f011", "p": 31, "r": [62.65, 630.07, 288.85, 672.59]}, {"n": "f012", "p": 31, "r": [315.5, 630.07, 541.7, 672.59]}, {"n": "f013", "p": 31, "r": [62.65, 542.79, 288.85, 585.31]}, {"n": "f014", "p": 31, "r": [315.5, 542.79, 541.7, 585.31]}, {"n": "f015", "p": 31, "r": [62.65, 455.51, 541.7, 498.03]}, {"n": "f016", "p": 31, "r": [62.65, 368.23, 288.85, 410.75]}, {"n": "f017", "p": 31, "r": [315.5, 368.23, 541.7, 410.75]}, {"n": "f018", "p": 31, "r": [62.65, 238.44, 541.7, 323.48]}, {"n": "f019", "p": 31, "r": [62.65, 151.16, 288.85, 193.68]}, {"n": "f020", "p": 31, "r": [315.5, 151.16, 541.7, 193.68]}];
+  const $=id=>document.getElementById(id);
+  firebase.initializeApp({apiKey:"AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",authDomain:"lead-tracker-c5c3a.firebaseapp.com",projectId:"lead-tracker-c5c3a",
+    storageBucket:"lead-tracker-c5c3a.firebasestorage.app",messagingSenderId:"720572896285",appId:"1:720572896285:web:db5d8f4fc9cccb3ab3a2f4"});
+  const db=firebase.firestore(), getPage=firebase.functions().httpsCallable('getPlaybookPage');
+  function gate(t,p,showBtn){ $('app').style.display='none'; $('gate').style.display='block'; $('gateT').textContent=t; $('gateP').textContent=p||''; $('gateA').style.display=showBtn?'inline-block':'none'; }
+  $('gate').style.display='block';
+
+  firebase.auth().onAuthStateChanged(async u=>{
+    if(!u){ gate('Sign in to open your deal','Your playbook is linked to your PalaTrack account.',false); $('gateA').href='home.html'; $('gateA').textContent='Sign in to PalaTrack'; $('gateA').style.display='inline-block'; return; }
+    const acc=await db.doc('playbookAccess/'+u.uid).get().catch(()=>null);
+    if(!acc || !acc.exists){ gate('Redeem your code first','Enter the code from your Black Friday access card to unlock your playbook.',true); return; }
+    const a=acc.data(); $('gate').style.display='none'; $('app').style.display='block';
+    $('who').textContent=(a.name||'').split(' ')[0]||'there';
+    if(a.until && a.until.toDate) $('until').textContent='Unlocked until '+a.until.toDate().toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})+'.';
+    build(u.uid);
+  });
+
+  // ---------- the pages, loaded one by one as you scroll ----------
+  function build(uid){
+    const host=$('pages'); const els=[];
+    for(let n=1;n<=PAGES;n++){
+      const d=document.createElement('div'); d.className='page loading'; d.dataset.n=n; d.innerHTML=`<span class="num">${n}</span>`;
+      host.appendChild(d); els.push(d);
+    }
+    // the fill-in boxes at their exact place on the page
+    const answersRef=db.doc('playbookAnswers/'+uid); let saved={};
+    answersRef.get().then(s=>{ saved=s.exists?s.data():{}; document.querySelectorAll('.page textarea').forEach(t=>{ if(saved[t.name]!=null) t.value=saved[t.name]; }); }).catch(()=>{});
+    FIELDS.forEach(f=>{
+      const [x1,y1,x2,y2]=f.r, t=document.createElement('textarea');
+      t.name=f.n; t.placeholder='Type your answer here…'; t.maxLength=4000; t.spellcheck=true;
+      Object.assign(t.style,{left:(x1/PW*100)+'%',top:((PH-y2)/PH*100)+'%',width:((x2-x1)/PW*100)+'%',height:((y2-y1)/PH*100)+'%'});
+      els[f.p-1].appendChild(t);
+      t.addEventListener('input',()=>queue(t.name,t.value));
+    });
+    const fit=()=>{ const w=els[0].getBoundingClientRect().width; document.querySelectorAll('.page textarea').forEach(t=>t.style.fontSize=(w*10/PW)+'px'); };
+    fit(); addEventListener('resize',fit);
+    let pend={}, timer=0;
+    function queue(k,v){ pend[k]=v; $('sv').classList.add('busy'); $('svT').textContent='Saving…'; clearTimeout(timer); timer=setTimeout(flush,700); }
+    async function flush(){ const p=pend; pend={}; try{ await answersRef.set(p,{merge:true}); $('svT').textContent='Answers saved'; $('sv').classList.remove('busy'); }catch(e){ $('svT').textContent='Not saved, retrying…'; Object.assign(pend,p); timer=setTimeout(flush,3000); } }
+    addEventListener('beforeunload',e=>{ if(Object.keys(pend).length){ flush(); e.preventDefault(); e.returnValue=''; } });
+    // load pages near the screen, a few at a time
+    const want=new Set(), busy=new Set(); let running=0;
+    async function pump(){
+      while(running<3 && want.size){
+        const n=[...want].sort((a,b)=>a-b)[0]; want.delete(n); if(busy.has(n)) continue; busy.add(n); running++;
+        getPage({page:n}).then(r=>{ const el=els[n-1]; const img=new Image(); img.alt=''; img.draggable=false; img.src=r.data.img;
+            el.insertBefore(img, el.querySelector('textarea')); el.classList.remove('loading'); const s=el.querySelector('.num'); if(s) s.remove(); })
+          .catch(e=>{ busy.delete(n); if(e && e.code==='functions/permission-denied') gate('Redeem your code first','',true); })
+          .finally(()=>{ running--; pump(); });
+      }
+    }
+    const io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ const n=+e.target.dataset.n; if(!busy.has(n)) want.add(n); } }); pump(); },{rootMargin:'1400px 0px'});
+    els.forEach(e=>io.observe(e));
+    // "Page x of 34"
+    const io2=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting) $('pgNow').textContent=`Page ${e.target.dataset.n} of ${PAGES}`; }); },{rootMargin:'-45% 0px -45% 0px'});
+    els.forEach(e=>io2.observe(e));
+  }
+
+  // ---------- protection: no saving, printing, copying or dragging; blur when you leave ----------
+  document.addEventListener('contextmenu',e=>{ if(!e.target.closest('textarea')) e.preventDefault(); });
+  document.addEventListener('dragstart',e=>e.preventDefault());
+  document.addEventListener('copy',e=>{ if(!e.target.closest || !e.target.closest('textarea')) e.preventDefault(); });
+  document.addEventListener('keydown',e=>{
+    const k=(e.key||'').toLowerCase();
+    if((e.ctrlKey||e.metaKey) && ['s','p','u'].includes(k)){ e.preventDefault(); e.stopPropagation(); }
+    if(k==='printscreen'){ try{ navigator.clipboard.writeText(''); }catch(_){} document.body.classList.add('away'); }
+  },true);
+  document.addEventListener('keyup',e=>{ if((e.key||'').toLowerCase()==='printscreen'){ try{ navigator.clipboard.writeText(''); }catch(_){} } },true);
+  addEventListener('blur',()=>document.body.classList.add('away'));
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) document.body.classList.add('away'); });
+  const back=()=>document.body.classList.remove('away');
+  addEventListener('focus',back); document.querySelector('.shield').addEventListener('click',back);
+})();
+</script>
+</body>
+</html>

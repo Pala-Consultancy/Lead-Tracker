@@ -4913,5 +4913,15 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
   if(document.readyState === 'complete') start(); else window.addEventListener('load', start);
 })();
 </script>
+<script>
+  // Black Friday: once a code is redeemed, the banner opens the playbook instead
+  (function(){ try{ firebase.auth().onAuthStateChanged(function(u){ if(!u) return;
+    firebase.firestore().doc('playbookAccess/'+u.uid).get().then(function(d){ if(!d.exists) return;
+      var a=document.querySelector('.bf-deal'); if(!a) return; a.href='blackfriday-deal.html';
+      a.querySelector('.bf-kick').innerHTML='<i></i>Your Black Friday deal';
+      a.querySelector('.bf-h').innerHTML='Your Killer Offer Playbook <em>is ready</em>';
+      a.querySelector('.bf-sub').textContent='Continue reading, and fill in the boxes: your answers are saved to your account.';
+      a.querySelector('.bf-cta').firstChild.textContent='Open your playbook '; }).catch(function(){}); }); }catch(e){} })();
+</script>
 </body>
 </html>
