@@ -48,6 +48,8 @@
   .page .lic{position:absolute;left:0;right:0;bottom:0;height:2.2%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.82);
     color:rgba(59,47,14,.85);font:700 clamp(7px,1.15cqw,12px)/1 Arial,Helvetica,sans-serif;pointer-events:none;white-space:nowrap;overflow:hidden;}
   .page{container-type:inline-size;}
+  .page a.lnk{position:absolute;z-index:2;display:block;border-radius:6px;cursor:pointer;transition:background .15s,box-shadow .15s;}
+  .page a.lnk:hover{background:rgba(245,196,81,.12);box-shadow:0 0 0 2px rgba(232,163,61,.45);}
   .page .retry{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:none;flex-direction:column;align-items:center;gap:10px;color:rgba(255,255,255,.7);font-size:14px;text-align:center;}
   .page.failed .retry{display:flex;} .page.failed .num{display:none;}
   .page .retry button{border:0;border-radius:12px;padding:11px 18px;cursor:pointer;color:#1A1205;font:800 14px 'Sora',sans-serif;background:linear-gradient(120deg,#FFE7A3,var(--gold) 40%,var(--gold2));}
@@ -90,7 +92,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
 (function(){
-  const PAGES=34, PW=595.28, PH=841.89; let LIC='';
+  const PAGES=34, PW=595.28, PH=841.89; let LIC='', CODE='';
+  const LINKS=[{"p": 16, "r": [435.49, 258.64, 530.08, 223.08], "u": "mailto:info@palatrack.com?subject=Killer%20Offer%20Playbook%20bonus%20-%20code%20{CODE}", "to": null}, {"p": 22, "r": [68.03, 350.9, 265.47, 315.35], "u": "https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session", "to": null}, {"p": 33, "r": [233.63, 423.89, 361.65, 388.34], "u": "https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session", "to": null}, {"p": 34, "r": [48.19, 695.71, 547.09, 415.08], "u": "https://www.youtube.com/watch?v=L9vFmHo-6cU&t=9s", "to": null}, {"p": 34, "r": [48.19, 695.71, 547.09, 415.08], "u": "https://www.youtube.com/watch?v=L9vFmHo-6cU&t=9s", "to": null}, {"p": 34, "r": [260.79, 580.9, 334.49, 529.88], "u": "https://www.youtube.com/watch?v=L9vFmHo-6cU&t=9s", "to": null}, {"p": 34, "r": [290.27, 569.56, 314.08, 541.22], "u": "https://www.youtube.com/watch?v=L9vFmHo-6cU&t=9s", "to": null}, {"p": 34, "r": [48.19, 356.0, 188.4, 320.44], "u": "https://www.youtube.com/watch?v=L9vFmHo-6cU&t=9s", "to": null}, {"p": 34, "r": [82.88, 309.1, 230.95, 296.67], "u": "https://www.youtube.com/watch?v=L9vFmHo-6cU&t=9s", "to": null}];
   const FIELDS=[{"n": "f001", "p": 9, "r": [65.2, 89.97, 539.15, 130.79]}, {"n": "f002", "p": 10, "r": [65.2, 87.03, 539.15, 127.85]}, {"n": "f003", "p": 11, "r": [65.2, 214.74, 539.15, 255.55]}, {"n": "f004", "p": 17, "r": [65.2, 245.22, 539.15, 286.03]}, {"n": "f005", "p": 18, "r": [65.2, 94.95, 539.15, 135.77]}, {"n": "f006", "p": 19, "r": [65.2, 174.26, 539.15, 215.08]}, {"n": "f007", "p": 20, "r": [65.2, 188.49, 539.15, 249.72]}, {"n": "f008", "p": 21, "r": [65.2, 230.38, 539.15, 271.2]}, {"n": "f009", "p": 23, "r": [65.2, 177.76, 539.15, 218.58]}, {"n": "f010", "p": 28, "r": [65.2, 334.08, 539.15, 374.89]}, {"n": "f011", "p": 31, "r": [62.65, 630.07, 288.85, 672.59]}, {"n": "f012", "p": 31, "r": [315.5, 630.07, 541.7, 672.59]}, {"n": "f013", "p": 31, "r": [62.65, 542.79, 288.85, 585.31]}, {"n": "f014", "p": 31, "r": [315.5, 542.79, 541.7, 585.31]}, {"n": "f015", "p": 31, "r": [62.65, 455.51, 541.7, 498.03]}, {"n": "f016", "p": 31, "r": [62.65, 368.23, 288.85, 410.75]}, {"n": "f017", "p": 31, "r": [315.5, 368.23, 541.7, 410.75]}, {"n": "f018", "p": 31, "r": [62.65, 238.44, 541.7, 323.48]}, {"n": "f019", "p": 31, "r": [62.65, 151.16, 288.85, 193.68]}, {"n": "f020", "p": 31, "r": [315.5, 151.16, 541.7, 193.68]}];
   const $=id=>document.getElementById(id);
   firebase.initializeApp({apiKey:"AIzaSyD4f-ko4mhSIcc0RHC0pq370tccpTSzIGM",authDomain:"lead-tracker-c5c3a.firebaseapp.com",projectId:"lead-tracker-c5c3a",
@@ -108,7 +111,7 @@
     const a=acc.data(); $('gate').style.display='none'; $('app').style.display='block'; document.querySelector('.tb').classList.add('on');
     $('who').textContent=(a.name||'').split(' ')[0]||'there';
     if(a.until && a.until.toDate) $('until').textContent='Unlocked until '+a.until.toDate().toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})+'.';
-    LIC='Licensed to '+[a.name,a.email,a.code].filter(Boolean).join(' · ')+' · personal copy, do not share';
+    CODE=a.code||''; LIC='Licensed to '+[a.name,a.email,a.code].filter(Boolean).join(' · ')+' · personal copy, do not share';
     build(u.uid);
   });
 
@@ -126,11 +129,19 @@
     const answersRef=db.doc('playbookAnswers/'+uid); let saved={};
     answersRef.get().then(s=>{ saved=s.exists?s.data():{}; document.querySelectorAll('.page textarea').forEach(t=>{ if(saved[t.name]!=null) t.value=saved[t.name]; }); }).catch(()=>{});
     FIELDS.forEach(f=>{
-      const [x1,y1,x2,y2]=f.r, t=document.createElement('textarea');
+      const x1=Math.min(f.r[0],f.r[2]), x2=Math.max(f.r[0],f.r[2]), y1=Math.min(f.r[1],f.r[3]), y2=Math.max(f.r[1],f.r[3]), t=document.createElement('textarea');
       t.name=f.n; t.placeholder='Type your answer here…'; t.maxLength=4000; t.spellcheck=true;
       Object.assign(t.style,{left:(x1/PW*100)+'%',top:((PH-y2)/PH*100)+'%',width:((x2-x1)/PW*100)+'%',height:((y2-y1)/PH*100)+'%'});
       els[f.p-1].appendChild(t);
       t.addEventListener('input',()=>queue(t.name,t.value));
+    });
+    // the PDF's links, clickable at the same spot (the email button carries the reader's own code)
+    LINKS.forEach(l=>{
+      const x1=Math.min(l.r[0],l.r[2]), x2=Math.max(l.r[0],l.r[2]), y1=Math.min(l.r[1],l.r[3]), y2=Math.max(l.r[1],l.r[3]), a=document.createElement('a'); a.className='lnk';
+      Object.assign(a.style,{left:(x1/PW*100)+'%',top:((PH-y2)/PH*100)+'%',width:((x2-x1)/PW*100)+'%',height:((y2-y1)/PH*100)+'%'});
+      if(l.u){ a.href=l.u.replace('{CODE}', encodeURIComponent(CODE)); if(!/^mailto:/.test(l.u)){ a.target='_blank'; a.rel='noopener'; } a.title=/youtube/.test(l.u)?'Watch the video':/aura-app/.test(l.u)?'Book your call':'Open'; }
+      else if(l.to){ a.href='#'; a.addEventListener('click',e=>{ e.preventDefault(); els[l.to-1].scrollIntoView({behavior:'smooth'}); }); }
+      els[l.p-1].appendChild(a);
     });
     const fit=()=>{ const w=els[0].getBoundingClientRect().width; document.querySelectorAll('.page textarea').forEach(t=>t.style.fontSize=(w*10/PW)+'px'); };
     fit(); addEventListener('resize',fit);
