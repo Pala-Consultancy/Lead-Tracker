@@ -559,8 +559,8 @@
   .pricing-card:hover::before{opacity:1;}
   .pricing-card.featured{
     border-color:var(--teal);background:linear-gradient(160deg,#F3F9FF 0%,var(--panel) 55%);
-    box-shadow:0 24px 48px rgba(55,48,179,0.18), 0 0 0 1px rgba(55,48,179,0.08);
-    animation:featured-glow 3.2s ease-in-out infinite;
+    /* a steady glow (animating a shadow repaints the whole card on every frame) */
+    box-shadow:0 25px 51px rgba(55,48,179,0.23), 0 0 0 1px rgba(55,48,179,0.12), 0 0 30px rgba(122,79,181,0.07);
   }
   @keyframes featured-glow{
     0%,100%{box-shadow:0 24px 48px rgba(55,48,179,0.18), 0 0 0 1px rgba(55,48,179,0.08);}
@@ -570,14 +570,11 @@
     content:"";position:absolute;top:0;left:-160%;width:60%;height:100%;z-index:2;pointer-events:none;
     background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
     transform:skewX(-20deg);
-    animation:featured-shine 3.2s ease-in-out infinite;
+    animation:featured-shine 3.2s ease-in-out infinite;will-change:transform;
   }
   [data-theme="dark"] .pricing-card.featured::after{background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.14) 50%, transparent 100%);}
-  @keyframes featured-shine{
-    0%{left:-160%;}
-    38%{left:160%;}
-    100%{left:160%;}
-  }
+  /* the shine moves with transform (no layout or repaint per frame); same path as before */
+  @keyframes featured-shine{0%{transform:translateX(0) skewX(-20deg);}38%{transform:translateX(533.33%) skewX(-20deg);}100%{transform:translateX(533.33%) skewX(-20deg);}}
   @media (prefers-reduced-motion: reduce){
     .pricing-card.featured{animation:none;}
     .pricing-card.featured::after{display:none;}
