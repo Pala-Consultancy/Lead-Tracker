@@ -545,6 +545,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   .quick button{border:1px solid var(--border);background:var(--paper);color:var(--ink);font:600 13px Inter,sans-serif;padding:9px 15px;border-radius:999px;cursor:pointer;transition:border-color .15s,color .15s,background .15s,transform .15s}
   .quick button:hover{border-color:var(--teal);color:var(--teal);background:var(--panel);transform:translateY(-1px)}
   .post{margin:14px 0 6px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--panel);white-space:normal;box-shadow:0 10px 26px -18px rgba(16,24,40,.35)}
+  .post-meta{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .qc{font:700 11px Inter,sans-serif;padding:3px 8px;border-radius:999px;cursor:help;white-space:nowrap;} .qc.ok{background:#E7F7EE;color:#0F7A45;} .qc.warn{background:#FFF1DC;color:#9A5B00;}
+  html[data-theme="dark"] .qc.ok{background:rgba(16,185,129,.16);color:#6EE7B7;} html[data-theme="dark"] .qc.warn{background:rgba(245,158,11,.16);color:#FCD34D;}
   .post-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 16px;border-bottom:1px solid var(--border);font:700 12.5px Inter,sans-serif;color:var(--slate);
     background:linear-gradient(180deg,var(--paper),var(--panel))}
   .post-t{padding:18px 20px;white-space:pre-wrap;font-size:15px;line-height:1.6;color:var(--ink)}
@@ -687,13 +690,26 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     return parts;
   }
   const plainOf=(text)=>splitReply(text).map(p=>p.v).join('\n\n').replace(/\n{3,}/g,'\n\n').trim();
-  function renderAI(text){
+  function qcChip(qc){
+    if(!qc) return '';
+    let out=(qc.remaining||[]).length?`<span class="qc warn" title="Check before posting">⚠ Check: ${esc(qc.remaining.join(', '))}</span>`
+      :`<span class="qc ok" title="Checked for em dashes, banned phrases, comment-bait CTAs, hashtags, markdown, hook length, phone-friendly lines and length${(qc.fixed||[]).length?'. Fixed: '+esc(qc.fixed.join(', ')):''}">✓ Quality checked</span>`;
+    const r=qc.review;
+    if(r&&typeof r.hook==='number'){
+      const names={hook:'Hook',specificity:'Specifics',human:'Sounds human',clarity:'Clarity',structure:'Structure',grammar:'Grammar'};
+      const tip=Object.keys(names).filter(k=>typeof r[k]==='number').map(k=>`${names[k]}: ${r[k]}/10`).join(' · ')+(r.rewritten?' · Improved once after the review':'');
+      const low=['hook','specificity','human','clarity'].some(k=>typeof r[k]==='number'&&r[k]<6);
+      out+=`<span class="qc ${low?'warn':'ok'}" title="${esc(tip)}">${r.rewritten?'✓ Reviewed and improved':'✓ Reviewed'} · hook ${r.hook}/10</span>`;
+    }
+    return out;
+  }
+  function renderAI(text, qc){
     let html='';
     const parts=splitReply(text);
     parts.forEach(p=>{
       if(p.t==='text'){ const v=p.v.replace(/^\n+|\n+$/g,''); if(v) html+=esc(v).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'); }
       else if(p.t==='post'){ const words=(p.v.match(/\S+/g)||[]).length;
-        html+=`<div class="post"><div class="post-h"><span>Your post</span><span>${words} words</span></div><div class="post-t">${esc(p.v)}</div>
+        html+=`<div class="post"><div class="post-h"><span>Your post</span><span class="post-meta">${qcChip(qc)}<span>${words} words</span></span></div><div class="post-t">${esc(p.v)}</div>
           <div class="post-a"><button type="button" class="btn" data-copy>Copy</button><button type="button" class="btn pri" data-use>Use in the composer →</button></div></div>`; }
       else { const name=(FILES.find(f=>p.f.startsWith(f[0]))||[0,'My brand'])[1];
         html+=`<div class="entry" data-file="${esc(p.f)}"><b>New for your ${esc(name.toLowerCase())}</b><pre>${esc(p.v)}</pre><button type="button" class="btn pri" data-add>＋ Add to My brand</button></div>`; }
@@ -702,10 +718,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if(hooks.length>=2) html+=`<div class="quick">${hooks.map(n=>`<button type="button" data-say="${n}">Use hook ${n}</button>`).join('')}</div>`;
     return html;
   }
-  function msgEl(role, text){
+  function msgEl(role, text, qc){
     const d=document.createElement('div'); d.className='msg '+(role==='user'?'me':'ai');
     const COPY='<div class="m-act"><button type="button" data-copymsg title="Copy message"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy</span></button></div>';
-    d.innerHTML=role==='user'?`<div class="u-wrap"><div class="bubble">${esc(text)}</div>${COPY}</div>`:`<div class="who"><img src="palatrack-logo.png" alt=""></div><div class="ai-wrap"><div class="ai-name">PalaTrack writer</div><div class="bubble">${renderAI(text)}</div>${COPY}</div>`;
+    d.innerHTML=role==='user'?`<div class="u-wrap"><div class="bubble">${esc(text)}</div>${COPY}</div>`:`<div class="who"><img src="palatrack-logo.png" alt=""></div><div class="ai-wrap"><div class="ai-name">PalaTrack writer</div><div class="bubble">${renderAI(text, qc)}</div>${COPY}</div>`;
     d._text=text; return d;
   }
   // ---------- typing a new reply out, letter by letter ----------
@@ -746,7 +762,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function renderThread(){
     const t=$('thread'); t.innerHTML='';
     if(!current || !(current.messages||[]).length){ welcome(); return; }
-    current.messages.forEach(m=>t.appendChild(msgEl(m.role,m.text)));
+    current.messages.forEach(m=>t.appendChild(msgEl(m.role,m.text,m.qc)));
     requestAnimationFrame(()=>{ $('msgs').scrollTop=$('msgs').scrollHeight; });
   }
   function renderList(){
@@ -769,9 +785,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     $('inp').value=''; fit();
     try{
       const r=(await chatFn({chatId, message:text, projectId:pid})).data;
-      clearInterval(ticker); const el=msgEl('assistant',r.reply); wait.replaceWith(el); typeOut(el);
+      clearInterval(ticker); const el=msgEl('assistant',r.reply,r.qc); wait.replaceWith(el); typeOut(el);
       if(!current) current={messages:[]};
-      current.messages=[...(current.messages||[]),{role:'user',text},{role:'assistant',text:r.reply}];
+      current.messages=[...(current.messages||[]),{role:'user',text},{role:'assistant',text:r.reply,...(r.qc?{qc:r.qc}:{})}];
       if(chatId!==r.chatId){ chatId=r.chatId; renderList(); }
       $('msgs').scrollTop=$('msgs').scrollHeight;
     }catch(e){
