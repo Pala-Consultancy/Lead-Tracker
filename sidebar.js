@@ -19,7 +19,7 @@
   var ACTIVE = {'home.html': 'navHome', 'boards.html': 'navDashboard', 'dashboard.html': 'navDashboard', 'statistics.html': 'navDashboard', 'boards-trash.html': 'navDashboard',
     'tasks.html': 'navTasks', 'calendar.html': 'navCalendar', 'sequences.html': 'navSequences', 'sequence-builder.html': 'navSequences', 'campaigns.html': 'navCampaigns',
     'scheduled-emails.html': 'navScheduled', 'linkedin-dm-log.html': 'navLinkedinSeq', 'linkedin-post-composer.html': 'navLinkedinPost',
-    'chat.html': 'navChat', 'client-processes.html': 'navClients', 'call-pages.html': 'navCallPages', 'offer-doc.html': 'navOfferDoc', 'library.html': 'navLibrary', 'whiteboard.html': 'navWhiteboard', 'team.html': 'navTeam', 'trash.html': 'navTrash', 'account.html': 'navSettings', 'email-settings.html': 'navSettings',
+    'chat.html': 'navChat', 'client-processes.html': 'navClients', 'call-pages.html': 'navCallPages', 'offer-doc.html': 'navOfferDoc', 'content-writer.html': 'navContentWriter', 'library.html': 'navLibrary', 'whiteboard.html': 'navWhiteboard', 'team.html': 'navTeam', 'trash.html': 'navTrash', 'account.html': 'navSettings', 'email-settings.html': 'navSettings',
     'notification-settings.html': 'navSettings', 'billing.html': 'navBilling', 'help-center.html': 'navHelp', 'feedback.html': 'navHelp'};
   var active = ACTIVE[here] || '';
   // The current board (if the page was opened for one) is carried along.
@@ -49,6 +49,7 @@
       '<div class="seq-sidebar-label">LinkedIn</div>' +
       link('navLinkedinSeq', 'linkedin-dm-log.html' + q, 'LinkedIn DM log') +
       link('navLinkedinPost', 'linkedin-post-composer.html' + q, 'LinkedIn Post') +
+      link('navContentWriter', 'content-writer.html', 'Content writer') +
       '<div class="seq-sidebar-label">Clients</div>' +
       link('navClients', 'client-processes.html', 'Client processes') +
       link('navCallPages', 'call-pages.html', 'Pre Call Conversion System') +

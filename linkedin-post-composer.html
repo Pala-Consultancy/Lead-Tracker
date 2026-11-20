@@ -5867,5 +5867,22 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
   if(document.readyState === 'complete') start(); else window.addEventListener('load', start);
 })();
 </script>
+<script>
+  // A post from the content writer: fill the editor with it once the page is ready
+  (function(){
+    let t=null; try{ t=localStorage.getItem('ptWriterPost'); }catch(e){}
+    if(!t) return;
+    let tries=0;
+    (function fill(){
+      const ta=document.getElementById('postTextInput');
+      if(!ta || !ta.offsetParent){ if(++tries<60) setTimeout(fill,400); return; }
+      setTimeout(function(){
+        try{ localStorage.removeItem('ptWriterPost'); }catch(e){}
+        if(ta.value.trim() && ta.value.trim()!==t.trim() && !confirm('Replace the text in the editor with the post from the content writer?')) return;
+        ta.value=t; ta.dispatchEvent(new Event('input',{bubbles:true})); ta.focus(); ta.setSelectionRange(0,0); ta.scrollTop=0;
+      }, 500);
+    })();
+  })();
+</script>
 </body>
 </html>
