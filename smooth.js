@@ -146,7 +146,45 @@
     addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
     addEventListener('scroll', close, {passive: true, capture: true});
   })();
-  // ---------- 4. smooth scrolling: the page's background on its own fixed layer ----------
+  // ---------- 5. looping animations rest while they're off screen ----------
+  // A pulsing dot or a shimmer far down the page still costs work on every frame, even when nobody can see it. Each part
+  // of the page with a never-ending animation is watched, and its animations pause while it's out of view (they carry
+  // on where they were when it scrolls back in). Fixed things (the snow, a loader, a toast) are never paused.
+  (function () {
+    if (!('IntersectionObserver' in window) || !window.getComputedStyle) return;
+    try { var ps = document.createElement('style'); ps.textContent = '.pt-offscreen,.pt-offscreen *,.pt-offscreen *::before,.pt-offscreen *::after{animation-play-state:paused!important;}'; (document.head || document.documentElement).appendChild(ps); } catch (e) { return; }
+    var io = new IntersectionObserver(function (list) {
+      list.forEach(function (en) { en.target.classList.toggle('pt-offscreen', !en.isIntersecting); });
+    }, {rootMargin: '150px 0px'});
+    var watched = new WeakSet();
+    function zoneOf(el) {
+      for (var n = el; n && n !== document.body; n = n.parentElement) {
+        var pos = getComputedStyle(n).position; if (pos === 'fixed' || pos === 'sticky') return null;      // on screen whatever the scroll
+      }
+      var z = el.closest('section,header,footer,article,aside,li,[data-pt-zone]') || el;
+      return z === document.body || z === document.documentElement ? null : z;
+    }
+    // the browser lists the animations that are running: only the never-ending ones are looked at (a handful)
+    function scan() {
+      if (!document.getAnimations) return;
+      var list = document.getAnimations();
+      for (var i = 0; i < list.length; i++) {
+        var an = list[i], t = an.effect && an.effect.target, timing = an.effect && an.effect.getTiming && an.effect.getTiming();
+        if (!t || !timing || timing.iterations !== Infinity || watched.has(t)) continue;
+        watched.add(t);
+        if (t.closest('#ptXmas,#ptHalloween,dialog,[role="dialog"]')) continue;
+        try { var z = zoneOf(t); if (z && !watched.has(z)) { watched.add(z); io.observe(z); } } catch (e) { /* ignore */ }
+      }
+    }
+    function start() {
+      scan();
+      // parts added later (the app builds most of its page after loading) are checked too, a little after they appear
+      var t = null;
+      try { new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { (window.requestIdleCallback || setTimeout)(scan); }, 1000); }).observe(document.body, {childList: true, subtree: true}); } catch (e) { /* fine */ }
+    }
+    if (document.readyState === 'complete') setTimeout(start, 300); else addEventListener('load', function () { setTimeout(start, 300); });
+  })();
+  // ---------- 6. smooth scrolling: the page's background on its own fixed layer ----------
   // Pages give <body> a soft gradient with "background-attachment: fixed". Browsers repaint such a background on every
   // frame while scrolling (across the whole screen), which makes scrolling lag on big screens. Here the same background
   // goes onto its own fixed layer behind the page: painted once, it stays put while the page slides over it. It looks the

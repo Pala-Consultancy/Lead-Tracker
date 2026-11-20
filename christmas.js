@@ -87,8 +87,9 @@
     '#ptXmas .xm-bulb.aside{visibility:hidden;}',
     '#ptXmas .xm-lights svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}',
     '#ptXmas .xm-bulb{position:absolute;width:9px;height:14px;margin-left:-4.5px;border-radius:50% 50% 45% 45%;}',
-    '#ptXmas .xm-bulb:nth-of-type(3n){animation:xmTwinkle 3.4s ease-in-out infinite;}',
-    'html.pt-xm-scrolling #ptXmas .xm-bulb,html.pt-xm-scrolling #ptXmas .xm-orn{animation-play-state:paused;}',
+    '#ptXmas .xm-bulb:nth-of-type(3n){animation:xmTwinkle 3.4s ease-in-out infinite;will-change:opacity;}',
+    '#ptXmas .xm-orn{will-change:transform;}',
+    '#ptXmas.xm-scrolling .xm-bulb,#ptXmas.xm-scrolling .xm-orn{animation-play-state:paused;}',
     '#ptXmas .xm-bulb::before{content:"";position:absolute;left:2px;top:-4px;width:6px;height:5px;border-radius:2px;background:#3B4A3F;}',
     '#ptXmas .xm-bulb.r{background:radial-gradient(circle at 40% 35%,#FFD3D7,#E63946 60%);box-shadow:0 0 10px 3px rgba(230,57,70,.5);}',
     '#ptXmas .xm-bulb.g{background:radial-gradient(circle at 40% 35%,#D2F7E1,#2A9D5C 60%);box-shadow:0 0 10px 3px rgba(42,157,92,.45);}',
@@ -211,6 +212,38 @@
         if (!running && !stopped && !reduced) frame();
       }};
   }
+  // The snow that keeps falling (website and client pages) is drawn on a separate thread (a Web Worker with an
+  // OffscreenCanvas): it looks exactly like before, but the page's own thread, the one that handles scrolling and clicks,
+  // does no snow work at all. Measured on the homepage: the page was busy about 27% of the time doing nothing but snow.
+  // Browsers without OffscreenCanvas get the canvas on the page thread, as before. A flurry (click an ornament) uses a
+  // second canvas that only runs while those flakes fall.
+  var SNOW_WORKER = 'var c,x,W=0,H=0,dpr=.5,flakes=[],o={},night=false,last=0,raf=self.requestAnimationFrame?self.requestAnimationFrame.bind(self):function(f){return setTimeout(function(){f(performance.now())},16)};' +
+    'function flake(any){var r=.9+Math.random()*2.4;return{x:Math.random()*W,y:any?Math.random()*H:-10,r:r,vy:.25+r*.22+Math.random()*.25,ph:Math.random()*6.28,sw:.3+Math.random()*.6}}' +
+    'function size(w,h){W=w;H=h;c.width=Math.max(1,Math.round(W*dpr));c.height=Math.max(1,Math.round(H*dpr));x.setTransform(dpr,0,0,dpr,0,0);var n=Math.round(Math.min(o.max||70,W*H/o.density));while(flakes.length<n)flakes.push(flake(true));flakes.length=n}' +
+    'function frame(t){var k=last?Math.min(4,(t-last)/16.7):1;last=t;x.clearRect(0,0,W,H);for(var i=0;i<flakes.length;i++){var f=flakes[i];f.y+=f.vy*(o.speed||1)*k;f.ph+=.012*k;f.x+=Math.sin(f.ph)*f.sw*.6*k;if(f.y>H+6){flakes[i]=flake(false);continue}x.beginPath();x.arc(f.x,f.y,f.r,0,6.283);x.fillStyle=night?"rgba(255,255,255,"+(.45+f.r*.12)+")":"rgba(126,150,190,"+(.25+f.r*.08)+")";x.fill()}raf(frame)}' +
+    'onmessage=function(e){var d=e.data;if(d.type==="init"){c=d.canvas;x=c.getContext("2d");o=d;night=d.night;size(d.w,d.h);raf(frame)}else if(d.type==="size")size(d.w,d.h);else if(d.type==="night")night=d.night}';
+  function makeAmbientSnow(host, canvas, density, opts) {
+    if (reduced || !canvas.transferControlToOffscreen || !window.Worker || !window.Blob || !window.URL) return makeSnow(canvas, density, opts);
+    var worker, url;
+    try {
+      url = URL.createObjectURL(new Blob([SNOW_WORKER], {type: 'text/javascript'})); worker = new Worker(url);
+      var off = canvas.transferControlToOffscreen();
+      worker.postMessage({type: 'init', canvas: off, w: canvas.clientWidth, h: canvas.clientHeight, density: density, max: opts.max, speed: opts.speed, night: dark()}, [off]);
+    } catch (e) { if (worker) worker.terminate(); if (url) URL.revokeObjectURL(url); return makeSnow(canvas, density, opts); }
+    var flurry = null, extra = null;
+    var onR = function () { worker.postMessage({type: 'size', w: canvas.clientWidth, h: canvas.clientHeight}); };
+    addEventListener('resize', onR);
+    var night = dark(), mo = null;                     // light or dark page: told to the worker when it changes
+    try { mo = new MutationObserver(function () { var n = dark(); if (n !== night) { night = n; worker.postMessage({type: 'night', night: n}); } });
+      mo.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme', 'class']}); } catch (e) { /* fine */ }
+    return {
+      stop: function () { worker.terminate(); URL.revokeObjectURL(url); removeEventListener('resize', onR); if (mo) mo.disconnect(); if (flurry) flurry.stop(); if (extra) extra.remove(); },
+      burst: function (n) {
+        if (!flurry) { extra = document.createElement('canvas'); extra.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;'; host.insertBefore(extra, canvas.nextSibling);
+          flurry = makeSnow(extra, density, {once: true, max: opts.max, speed: opts.speed}); }
+        flurry.burst(n);
+      }};
+  }
   // a string of lights along the top (in the app: next to the side panel)
   function lights() {
     if (!layer) return;
@@ -242,28 +275,30 @@
     for (var i = 0; i < els.length; i++) { var el = els[i]; if (layer.contains(el)) continue; return !!(el.closest && el.closest(CLICKABLE)); }
     return false;
   }
-  function clearBulbs() {
-    if (!layer) return;
-    var bulbs = layer.querySelectorAll('.xm-lights .xm-bulb'); if (!bulbs.length) return;
-    bulbs.forEach(function (bl) {
-      var r = bl.getBoundingClientRect(); if (!r.width) return;
-      var hit = clickableAt(r.left + r.width / 2, r.top + r.height / 2) || clickableAt(r.left + r.width / 2, r.bottom - 1);
-      bl.classList.toggle('aside', hit);
-    });
-  }
+  // Checks every bulb and ornament against what's underneath. All the measuring happens first and all the class
+  // changes after, so the browser lays the page out once instead of once per bulb. It's skipped when nothing moved.
+  var lastCheck = '', changes = 0;
   function clearOrnaments() {
     if (!layer) return;
-    clearBulbs();
-    layer.querySelectorAll('.xm-orn').forEach(function (o) {
-      var was = o.classList.contains('aside'); if (was) o.classList.remove('aside');
-      var svg = o.querySelector('svg'); if (!svg) { if (was) o.classList.add('aside'); return; }
-      var r = svg.getBoundingClientRect(); if (!r.width) { if (was) o.classList.add('aside'); return; }
-      var m = 14, xs = [r.left - m, r.left + r.width / 2, r.right + m], ys = [r.top + 4, r.top + r.height / 2, r.bottom + m];
-      var hit = false;
-      for (var a = 0; a < 3 && !hit; a++) for (var c = 0; c < 3 && !hit; c++) hit = clickableAt(xs[a], ys[c]);
-      if (hit) o.classList.add('aside');
+    var key = scrollX + '|' + scrollY + '|' + innerWidth + '|' + innerHeight + '|' + changes;
+    if (key === lastCheck) return; lastCheck = key;
+    var bulbs = [].slice.call(layer.querySelectorAll('.xm-lights .xm-bulb')), orns = [].slice.call(layer.querySelectorAll('.xm-orn'));
+    bulbs.concat(orns).forEach(function (el) { el.classList.remove('aside'); });          // measure them where they belong
+    var bulbHit = bulbs.map(function (bl) {
+      var r = bl.getBoundingClientRect(); if (!r.width) return false;
+      return clickableAt(r.left + r.width / 2, r.top + r.height / 2) || clickableAt(r.left + r.width / 2, r.bottom - 1);
     });
+    var ornHit = orns.map(function (o) {
+      var svg = o.querySelector('svg'); if (!svg) return false;
+      var r = svg.getBoundingClientRect(); if (!r.width) return false;
+      var m = 14, xs = [r.left - m, r.left + r.width / 2, r.right + m], ys = [r.top + 4, r.top + r.height / 2, r.bottom + m];
+      for (var a = 0; a < 3; a++) for (var c = 0; c < 3; c++) if (clickableAt(xs[a], ys[c])) return true;
+      return false;
+    });
+    bulbs.forEach(function (bl, i) { if (bulbHit[i]) bl.classList.add('aside'); });
+    orns.forEach(function (o, i) { if (ornHit[i]) o.classList.add('aside'); });
   }
+  function clearBulbs() { lastCheck = ''; clearOrnaments(); }
   var lastScroll = 0, clearT = null;
   addEventListener('scroll', function () { lastScroll = Date.now(); }, {passive: true, capture: true});
   function clearSoon() {
@@ -274,7 +309,7 @@
       (window.requestIdleCallback || function (f) { return setTimeout(f, 1); })(clearOrnaments);
     }, 500);
   }
-  try { new MutationObserver(clearSoon).observe(document.body, {childList: true, subtree: true}); } catch (e) { /* fine */ }
+  try { new MutationObserver(function () { changes++; clearSoon(); }).observe(document.body, {childList: true, subtree: true}); } catch (e) { /* fine */ }
   addEventListener('load', clearSoon);
   setInterval(function () { if (!document.hidden && Date.now() - lastScroll > 1000) clearOrnaments(); }, 10000);
   clearSoon();
@@ -340,7 +375,8 @@
       '<div class="xm-orn o3"><span class="str"></span>' + ornament('n', '#9BE3B4', '#2A9D5C', '#145A33', '#FFE08A') + '</div>' +
       '<div class="xm-orn"><span class="str"></span>' + ORNAMENT + '</div>');
     document.body.appendChild(layer);
-    snow = makeSnow(layer.querySelector('canvas'), PLACE === 'client' ? 34000 : 24000, {max: PLACE === 'client' ? 40 : 70, once: PLACE === 'app', speed: PLACE === 'app' ? 2.6 : 1});
+    snow = PLACE === 'app' ? makeSnow(layer.querySelector('canvas'), 24000, {max: 70, once: true, speed: 2.6})
+      : makeAmbientSnow(layer, layer.querySelector('canvas'), PLACE === 'client' ? 34000 : 24000, {max: PLACE === 'client' ? 40 : 70, speed: 1});
     layer.querySelectorAll('.xm-orn').forEach(function (orn) {
       orn.querySelector('svg').addEventListener('click', function () {   // click an ornament: it spins and jingles
         orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); if (snow) snow.burst(PLACE === 'app' ? 40 : 18);
@@ -382,8 +418,9 @@
   var scrollT = 0;
   addEventListener('scroll', function () {
     var root = document.documentElement; if (!root.classList.contains('pt-xm-on')) return;
-    if (!scrollT) root.classList.add('pt-xm-scrolling');
-    clearTimeout(scrollT); scrollT = setTimeout(function () { root.classList.remove('pt-xm-scrolling'); scrollT = 0; }, 220);
+    // the class sits on the decoration only, so the browser doesn't recheck the whole page twice per scroll
+    if (!scrollT && layer) layer.classList.add('xm-scrolling');
+    clearTimeout(scrollT); scrollT = setTimeout(function () { if (layer) layer.classList.remove('xm-scrolling'); scrollT = 0; }, 220);
   }, {passive: true, capture: true});
   function off() {
     document.documentElement.classList.remove('pt-xm-on');
