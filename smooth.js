@@ -146,6 +146,55 @@
     addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
     addEventListener('scroll', close, {passive: true, capture: true});
   })();
+  // ---------- 4b. Undo: one way to take back a delete, on every page ----------
+  // window.ptUndo.offer(message, undo, {commit}) shows "message · Undo" at the bottom and lets Ctrl+Z (Cmd+Z) take it
+  // back for 8 seconds. commit (optional) runs when the time is up, for deletes that can only happen later. Leaving the
+  // page commits right away. While you're typing in a field, Ctrl+Z keeps undoing your typing.
+  (function () {
+    if (window.ptUndo) return;
+    var ucss = '.pt-undo{position:fixed;left:50%;bottom:24px;z-index:2147483000;transform:translate(-50%,12px);opacity:0;display:flex;align-items:center;gap:14px;' +
+      'padding:11px 12px 11px 18px;border-radius:14px;background:#16202C;color:#fff;font:600 14px Inter,system-ui,-apple-system,"Segoe UI",sans-serif;' +
+      'box-shadow:0 18px 40px -14px rgba(16,24,40,.55);transition:opacity .2s ease,transform .2s ease;pointer-events:none;max-width:calc(100vw - 32px);}' +
+      '.pt-undo.show{opacity:1;transform:translate(-50%,0);pointer-events:auto;}' +
+      '.pt-undo button{border:0;border-radius:9px;padding:7px 12px;background:rgba(255,255,255,.12);color:#C7D2FE;font:700 13px inherit;font-family:inherit;cursor:pointer;}' +
+      '.pt-undo button:hover{background:rgba(255,255,255,.2);color:#fff;}' +
+      '.pt-undo kbd{font:600 11px inherit;font-family:inherit;opacity:.6;margin-left:6px;}' +
+      'html[data-theme="dark"] .pt-undo{background:#EAF0F8;color:#16202C;} html[data-theme="dark"] .pt-undo button{background:rgba(22,32,44,.08);color:#3B49C9;}';
+    try { var us = document.createElement('style'); us.textContent = ucss; (document.head || document.documentElement).appendChild(us); } catch (e) { return; }
+    var cur = null, box = null;
+    function hide() { if (box) box.classList.remove('show'); }
+    function settle() { if (!cur) return; var c = cur; cur = null; clearTimeout(c.timer); if (c.commit) { try { c.commit(); } catch (e) { console.error(e); } } }
+    function run() {
+      if (!cur) return; var c = cur; cur = null; clearTimeout(c.timer); hide();
+      Promise.resolve().then(c.undo).catch(function (e) { console.error(e); alertBox('Couldn\u2019t undo that. Please try again.'); });
+    }
+    function alertBox(msg) { ensure(); box.firstChild.textContent = msg; box.lastChild.style.display = 'none'; box.classList.add('show'); setTimeout(hide, 3500); }
+    function ensure() {
+      if (box && box.isConnected) return;
+      box = document.createElement('div'); box.className = 'pt-undo'; box.setAttribute('role', 'status'); box.setAttribute('aria-live', 'polite');
+      box.innerHTML = '<span></span><button type="button">Undo<kbd>Ctrl+Z</kbd></button>';
+      box.lastChild.addEventListener('click', run); document.body.appendChild(box);
+    }
+    window.ptUndo = {
+      offer: function (msg, undo, opts) {
+        settle(); ensure();
+        box.firstChild.textContent = msg; box.lastChild.style.display = '';
+        if (/Mac|iPhone|iPad/.test(navigator.platform || '')) box.querySelector('kbd').textContent = '\u2318Z';
+        box.classList.add('show');
+        var c = {undo: undo, commit: opts && opts.commit};
+        c.timer = setTimeout(function () { if (cur === c) { hide(); settle(); } }, 8000);
+        cur = c;
+      },
+      run: run
+    };
+    document.addEventListener('keydown', function (e) {
+      if (!cur || e.defaultPrevented || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || String(e.key).toLowerCase() !== 'z') return;
+      var a = document.activeElement;
+      if (a && (a.isContentEditable || /^(INPUT|TEXTAREA)$/.test(a.tagName)) && String(a.value || a.textContent || '').trim()) return;
+      e.preventDefault(); run();
+    });
+    addEventListener('pagehide', settle);
+  })();
   // ---------- 5. looping animations rest while they're off screen ----------
   // A pulsing dot or a shimmer far down the page still costs work on every frame, even when nobody can see it. Each part
   // of the page with a never-ending animation is watched, and its animations pause while it's out of view (they carry

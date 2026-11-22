@@ -765,8 +765,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     current.messages.forEach(m=>t.appendChild(msgEl(m.role,m.text,m.qc)));
     requestAnimationFrame(()=>{ $('msgs').scrollTop=$('msgs').scrollHeight; });
   }
+  const hiddenChats=new Set();   // deleted, waiting for the Undo time to pass
   function renderList(){
-    const list=chats.filter(inProject);
+    const list=chats.filter(c=>inProject(c)&&!hiddenChats.has(c.id));
     $('chatList').innerHTML=list.length?list.map(c=>`<button type="button" class="cw-chat${c.id===chatId?' on':''}" data-id="${esc(c.id)}"><span>${esc(c.title||'New post')}</span><i data-del title="Delete">✕</i></button>`).join('')
       :'<div class="cw-empty-list">No conversations in this project yet.</div>';
   }
@@ -816,9 +817,14 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   });
   $('chatList').addEventListener('click',async e=>{
     const row=e.target.closest('.cw-chat'); if(!row) return;
-    if(e.target.closest('[data-del]')){ if(!confirm('Delete this conversation?')) return;
-      await db.collection('contentChats').doc(uid).collection('chats').doc(row.dataset.id).delete().catch(()=>{});
-      if(chatId===row.dataset.id){ chatId=null; current=null; renderThread(); } return; }
+    if(e.target.closest('[data-del]')){
+      // gone from the list at once; really deleted after the Undo time (only the server may write conversations)
+      const id=row.dataset.id, ref=db.collection('contentChats').doc(uid).collection('chats').doc(id), wasOpen=chatId===id, keep=current;
+      hiddenChats.add(id); if(wasOpen){ chatId=null; current=null; renderThread(); } renderList();
+      const commit=()=>{ ref.delete().catch(()=>{}).then(()=>hiddenChats.delete(id)); };
+      if(!window.ptUndo){ commit(); return; }
+      window.ptUndo.offer('Conversation deleted.', ()=>{ hiddenChats.delete(id); if(wasOpen){ chatId=id; current=keep; renderThread(); } renderList(); }, {commit});
+      return; }
     chatId=row.dataset.id; current=chats.find(c=>c.id===chatId)||null; renderList(); renderThread();
   });
 

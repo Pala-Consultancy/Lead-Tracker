@@ -927,10 +927,15 @@ html[data-theme="dark"] .bk-btn.lost{color:#FCA5A5;border-color:rgba(248,113,113
     if(e.target.closest('#stBtn')){ openStatus(e.target.closest('#stBtn')); return; }
     if(e.target.closest('#pasteBtn')){ openPaste(cur()); return; }
     if(e.target.closest('#fuDone')){ const c = cur(); if(!c) return; c.followUp = null; save(c, {followUp: null}); renderThread(true); renderList(); toast('Follow-up done.'); return; }
-    if(e.target.closest('#delC')){ const c = cur(); if(!c) return; if(!confirm(`Delete your conversation with ${c.prospect.name}? This can’t be undone.`)) return;
-      db.collection('linkedinDmLogs').doc(c.id).delete().then(()=>{ openId = null; toast('Conversation deleted.'); }).catch(()=> toast('Couldn’t delete.', true)); return; }
-    const del = e.target.closest('[data-del]'); if(del){ const c = cur(); if(!c) return; const msgs = (c.messages || []).filter((m)=> m.id !== del.dataset.del);
-      c.messages = msgs; Object.assign(c, summary(msgs)); save(c, Object.assign({messages: msgs}, summary(msgs))); renderThread(true); renderList(); return; }
+    if(e.target.closest('#delC')){ const c = cur(); if(!c) return; const ref = db.collection('linkedinDmLogs').doc(c.id);
+      // deleted at once; Undo (or Ctrl+Z) puts the whole conversation back, exactly as it was
+      ref.get().then((snap)=>{ const saved = snap.exists ? snap.data() : null; return ref.delete().then(()=>{ openId = null;
+        if(window.ptUndo && saved) window.ptUndo.offer(`Conversation with ${c.prospect.name || 'this person'} deleted.`, ()=> ref.set(saved).then(()=>{ openId = c.id; toast('Conversation restored.'); }));
+        else toast('Conversation deleted.'); }); }).catch(()=> toast('Couldn’t delete.', true)); return; }
+    const del = e.target.closest('[data-del]'); if(del){ const c = cur(); if(!c) return; const before = (c.messages || []).slice(); const msgs = before.filter((m)=> m.id !== del.dataset.del);
+      c.messages = msgs; Object.assign(c, summary(msgs)); save(c, Object.assign({messages: msgs}, summary(msgs))); renderThread(true); renderList();
+      if(window.ptUndo) window.ptUndo.offer('Message deleted.', ()=>{ c.messages = before; Object.assign(c, summary(before)); save(c, Object.assign({messages: before}, summary(before))); renderThread(true); renderList(); });
+      return; }
     const ed = e.target.closest('[data-edit]'); if(ed){ const c = cur(), m = c && (c.messages || []).find((x)=> x.id === ed.dataset.edit); if(!m) return;
       const box = document.querySelector(`.msg[data-mid="${CSS.escape(m.id)}"]`);
       box.innerHTML = `<textarea>${esc(m.text)}</textarea><div class="edit-b"><button type="button" class="btn sm primary" data-esave="${esc(m.id)}">Save</button><button type="button" class="btn sm" data-ecancel>Cancel</button></div>`;
