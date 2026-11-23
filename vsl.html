@@ -736,7 +736,14 @@
   .footer-info { flex-direction: row !important; align-items: center; gap: 1rem; font-size: .8rem; }
   .footer-info strong { font-weight: 600; }
   .footer-link { font-size: .8rem !important; }
+
+  /* Wistia video frame */
+  .vsl-frame { aspect-ratio: auto !important; height: auto; background: #000; }
+  .vsl-frame wistia-player { display: block; width: 100%; }
 </style>
+<script src="https://fast.wistia.com/player.js" async></script>
+<script src="https://fast.wistia.com/embed/u1h0rd4kfe.js" async type="module"></script>
+<style>wistia-player[media-id='u1h0rd4kfe']:not(:defined) { background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/u1h0rd4kfe/swatch'); display: block; filter: blur(5px); padding-top: 56.25%; }</style>
 </head>
 <body>
 
@@ -748,36 +755,10 @@
         <h1 class="reveal r1">How I closed over <span>$1.5M in sales</span> and have <span class="nowrap">high-ticket</span> clients pay me <span>$24K in full</span> on a monthly basis</h1>
       </div>
       <div class="vsl-frame reveal r2">
-        <!-- Upload your video to a folder called "video" in your repository and name it vsl.mp4 -->
-        <video id="vsl" preload="auto" playsinline muted loop>
-          <source src="video/vsl.mp4" type="video/mp4">
-        </video>
-        <button class="vsl-poster" id="vslPlay" type="button" aria-label="Play the video">
-          <span class="vsl-shade" aria-hidden="true"></span>
-          <span class="vsl-text">
-            <span class="vsl-tag">Free training</span>
-            <span class="vsl-title">The pre-selling system behind consistent <span class="nowrap">high-ticket</span> clients</span>
-            <span class="vsl-by">With Gabriele Oizaz, Co-Founder</span>
-            <span class="vsl-go" aria-hidden="true">
-              <span class="vsl-play"><i></i><i></i><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></svg></span>
-              <span class="vsl-go-text">Watch the video</span>
-            </span>
-          </span>
-        </button>
-        <button class="vsl-sound" id="vslSound" type="button">
-          <span class="vsl-sound-ic" aria-hidden="true">
-            <i></i><i></i>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z" fill="currentColor"/><path d="M23 9l-6 6M17 9l6 6"/></svg>
-          </span>
-          <b>Click to turn on the sound</b>
-          <span>The video will start from the beginning</span>
-        </button>
-        <div class="vsl-missing" id="vslMissing">
-          <b>Video coming soon</b>
-          <span>Add your video as video/vsl.mp4 to show it here.</span>
-        </div>
+        <!-- Wistia video -->
+        <wistia-player media-id="u1h0rd4kfe" aspect="1.7777777777777777"></wistia-player>
       </div>
-    <div class="book reveal r3">
+      <div class="book reveal r3">
         <a class="btn btn-orange book-btn" href="#book">Book your 1:1 call
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
         </a>
@@ -1156,9 +1137,7 @@
   /* ---------- Start ---------- */
   function startPage() {
     observeReveals();
-    setTimeout(() => window.startVsl && window.startVsl(), 50);
   }
-  // The video script further down defines startVsl, so start once everything is ready
   window.addEventListener('DOMContentLoaded', startPage);
 
   /* ---------- Scroll reveals ---------- */
@@ -1211,45 +1190,6 @@
 
   })();
 
-  /* ---------- Video (VSL) ---------- */
-  (function () {
-    const frame = document.querySelector('.vsl-frame');
-    const video = document.getElementById('vsl');
-    const play = document.getElementById('vslPlay');
-    const sound = document.getElementById('vslSound');
-    let noFile = false;
-    const flag = () => { noFile = true; frame.classList.remove('autoplay'); };
-    video.querySelector('source').addEventListener('error', flag);
-    video.addEventListener('error', flag);
-
-    // Start playing silently (browsers only allow autoplay without sound)
-    window.startVsl = function () {
-      if (noFile || frame.classList.contains('with-sound')) return;
-      video.muted = true;
-      const p = video.play();
-      if (p && p.then) p.then(() => frame.classList.add('autoplay')).catch(() => {});
-    };
-
-    // Turning the sound on restarts the video from the beginning
-    function withSound() {
-      if (noFile) { frame.classList.add('missing'); return; }
-      frame.classList.remove('autoplay');
-      frame.classList.add('playing', 'with-sound');
-      video.loop = false;
-      video.muted = false;
-      video.currentTime = 0;
-      video.controls = true;
-      const p = video.play();
-      if (p && p.catch) p.catch(() => { if (noFile) { frame.classList.remove('playing'); frame.classList.add('missing'); } });
-    }
-    new IntersectionObserver(([e]) => {
-      if (frame.classList.contains('with-sound') || noFile) return;
-      if (e.isIntersecting) { if (frame.classList.contains('autoplay')) video.play().catch(() => {}); }
-      else video.pause();
-    }, { threshold: 0.15 }).observe(frame);
-    sound.addEventListener('click', withSound);
-    play.addEventListener('click', withSound);
-  })();
 
   /* ---------- Client revenue count-up ---------- */
   (function () {
