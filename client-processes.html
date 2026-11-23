@@ -70,6 +70,9 @@
   .pc{padding:16px 18px;cursor:pointer;text-align:left;width:100%;color:var(--ink);transition:transform .12s,box-shadow .12s;position:relative;}
   .pc:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);}
   .pc .row{display:flex;align-items:center;gap:10px;}
+  .dt-name{cursor:text;border-radius:10px;padding:0 6px;margin-left:-6px;transition:background .15s;}
+  .dt-name:hover,.dt-name:focus-visible{background:var(--panel-alt);} .dt-name:hover::after{content:'✎';font-size:.55em;margin-left:8px;color:var(--slate);vertical-align:middle;}
+  .dt-name-in{font:inherit;color:inherit;width:min(520px,100%);padding:2px 8px;margin:-2px 0;border-radius:10px;border:2px solid var(--teal,#3B49C9);background:var(--panel,#fff);outline:none;box-sizing:border-box;}
   .pc-copy{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:var(--slate);flex-shrink:0;opacity:.75;transition:background .15s,color .15s,opacity .15s;}
   .pc:hover .pc-copy,.pc-copy:focus-visible{opacity:1;} .pc-copy:hover{background:var(--panel-alt);color:var(--ink);}
   .pc-del:hover{color:#B42318;background:rgba(180,35,24,.08);}
@@ -310,7 +313,7 @@
   .pc-prog{display:flex;align-items:center;gap:10px;margin:14px 0 7px;} .pc-prog .pbar{flex:1;margin:0;} .pc-prog b{font-size:12.5px;color:var(--ink);min-width:34px;text-align:right;}
   .live-now{display:inline-flex;align-items:center;gap:6px;color:var(--success);font-weight:700;}
   .live-now i{width:8px;height:8px;border-radius:50%;background:#1E9E74;box-shadow:0 0 0 0 rgba(30,158,116,.5);animation:livepulse 1.6s infinite;}
-  @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(30,158,116,.5);}70%{box-shadow:0 0 0 8px rgba(30,158,116,0);}100%{box-shadow:0 0 0 0 rgba(30,158,116,0);}}
+  @keyframes livepulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.8);}}   /* a calm pulse the graphics card draws (a growing shadow repainted every frame) */
   .live-badge{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--success);background:var(--success-soft);border-radius:999px;padding:4px 10px;}
   .live-badge i{width:7px;height:7px;border-radius:50%;background:#1E9E74;animation:livepulse 1.6s infinite;}
   .dt-prog{display:flex;align-items:center;gap:16px;padding:12px 14px;border-radius:14px;background:var(--panel-alt);border:1px solid var(--border-soft);margin-bottom:6px;}
@@ -931,7 +934,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <!-- one client's process -->
 <div class="ov inpage" id="dtOv" role="dialog" aria-modal="true" aria-labelledby="dtTitle"><div class="dlg">
   <button class="back" data-close>← Back to clients</button>
-  <div class="dlg-top"><div class="av" id="dtAv">A</div><div style="min-width:0"><h2 id="dtTitle"></h2><p id="dtSub"></p></div></div>
+  <div class="dlg-top"><div class="av" id="dtAv">A</div><div style="min-width:0"><h2 id="dtTitle" class="dt-name" tabindex="0" role="button" title="Click to change the name"></h2><p id="dtSub"></p></div></div>
   <div class="sec"><h3>Share with your client</h3>
     <div class="share"><input class="in" id="dtLink" readonly><button class="btn primary sm" id="dtCopy">Copy link</button><a class="btn sm" id="dtPreview" target="_blank" rel="noopener">Open as client ↗</a><a class="btn sm" id="dtWelcome" target="_blank" rel="noopener" title="See and hear the welcome your client gets the first time. Nothing is saved.">▶ Preview welcome</a></div>
     <div class="share" style="margin-top:10px"><span class="pin" id="dtPin"></span><button class="link" id="dtPinChange">Set a PIN</button><button class="link hidden" id="dtPinRemove">Remove PIN</button>
@@ -1037,6 +1040,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const videoTag = (v) => !v ? '' : v.kind === 'file' ? `<video controls preload="metadata" src="${esc(v.url + (!v.poster && v.posterAt > 0 ? '#t=' + v.posterAt : ''))}"${v.poster ? ` poster="${esc(v.poster)}"` : ''}></video>` : v.embedUrl ? `<iframe src="${esc(v.embedUrl)}" allow="fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>` : '';
 
   // ---------- Lists ----------
+  let nameEditing = false;               // the client's name is being changed (live updates leave it alone)
   const pendingDel = new Set();          // deleted, waiting for the Undo time to pass
   function renderAll() {
     const paused = pausedIds();
@@ -2117,7 +2121,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const {done, total, pct, optional} = progressOf(p);
     const paused = pausedIds().has(p.id);
     $('dtAv').textContent = initials(p.clientName);
-    $('dtTitle').textContent = p.clientName || 'Client';
+    if (!nameEditing) $('dtTitle').textContent = p.clientName || 'Client';
     $('dtSub').textContent = p.title + (p.clientContact ? ' · ' + p.clientContact : '') + (p.lead && p.lead.name && p.lead.name !== p.clientContact ? ' · lead: ' + p.lead.name : '') + (p.lead ? ' · linked to a lead' : '');
     const link = `${PORTAL}?t=${p.shareToken}`;
     $('dtLink').value = link; $('dtPreview').href = link; $('dtWelcome').href = link + (link.includes('?') ? '&' : '?') + 'welcome=preview';
@@ -2276,6 +2280,32 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const c = e.target.closest && e.target.closest('[data-copyproc]'); if (!c || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault(); e.stopPropagation(); const p = procs.find((x) => x.id === c.dataset.copyproc); if (p) openStart(null, p);
   }, true);
+  // the client's name: click it, type, Enter (or click elsewhere) saves, Esc cancels
+  function startNameEdit() {
+    if (!current || nameEditing) return;
+    nameEditing = true;
+    const h = $('dtTitle'), p = current, old = p.clientName || '';
+    h.innerHTML = `<input class="dt-name-in" maxlength="120" value="${esc(old)}" aria-label="Client name">`;
+    const inp = h.querySelector('input'); inp.focus(); inp.select();
+    let done = false;
+    const finish = async (save) => {
+      if (done) return; done = true; nameEditing = false;
+      const v = inp.value.trim();
+      h.textContent = (save && v) ? v : old || 'Client';
+      if (!save || !v || v === old) return;
+      $('dtAv').textContent = initials(v); p.clientName = v; renderAll();
+      try { await db.collection('clientProcesses').doc(p.id).update({clientName: v, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); showToast('Name changed.'); }
+      catch (err) { console.error(err); p.clientName = old; h.textContent = old || 'Client'; $('dtAv').textContent = initials(old); renderAll(); showToast('Couldn\u2019t save the name.', true); }
+    };
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+    });
+    inp.addEventListener('blur', () => finish(true));
+    inp.addEventListener('click', (e) => e.stopPropagation());
+  }
+  $('dtTitle').addEventListener('click', startNameEdit);
+  $('dtTitle').addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === $('dtTitle')) { e.preventDefault(); startNameEdit(); } });
   $('dtCopyNew').addEventListener('click', () => { const p = current; if (!p) return; closeOv('dtOv'); openStart(null, p); });
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('button'); if (!b) return;
