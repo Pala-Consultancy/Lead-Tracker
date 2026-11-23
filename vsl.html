@@ -739,7 +739,6 @@
 
   /* Wistia video frame */
   .vsl-frame { aspect-ratio: auto !important; height: auto; background: #000; }
-  .vsl-frame wistia-player { display: block; width: 100%; }
 
   /* Headline highlights in orange, booking button under the video in blue */
   .vsl-head h1 span:not(.nowrap) { color: var(--orange) !important; }
@@ -748,11 +747,18 @@
 
   /* Video keeps one fixed size from the first moment, so nothing jumps while it loads */
   .vsl-frame { aspect-ratio: 16 / 9 !important; position: relative; }
-  .vsl-frame wistia-player { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; padding: 0 !important; filter: none !important; }
+  .vsl-frame wistia-player { position: absolute; top: 0; left: 0; width: 100%; }
+  .vsl-frame wistia-player:not(:defined) { height: 100%; }
 
   /* Less rounded video frame so the player controls sit cleanly in the corners */
   .vsl-frame { border-radius: 12px !important; }
   @media (max-width: 640px) { .vsl-frame { border-radius: 10px !important; } }
+
+  /* Smoother scrolling: keep the moving rows cheap to draw */
+  .pay-row, .cl-marquee { contain: layout paint; }
+  .pay-track .pay-card { box-shadow: none !important; border: 1px solid rgba(13,39,71,.12); transition: none; }
+  .pay-track .pay-card:hover { transform: none !important; box-shadow: none !important; }
+  .marquee-paused .pay-track, .marquee-paused .cl-track { animation-play-state: paused !important; }
 </style>
 <script src="https://fast.wistia.com/player.js" async></script>
 <script src="https://fast.wistia.com/embed/u1h0rd4kfe.js" async type="module"></script>
@@ -1132,8 +1138,8 @@
         if (!e.isIntersecting) return; o.disconnect();
         if (calm) { num.textContent = fmt(target); return; }
         const t0 = performance.now();
-        (function f(t) { const k = Math.min(1, (t - t0) / 1600), ease = 1 - Math.pow(1 - k, 3); num.textContent = fmt(target * ease); if (k < 1) requestAnimationFrame(f); })(t0);
-      }, { threshold: .6 }).observe(num);
+        (function f(t) { const k = Math.min(1, (t - t0) / 4000), ease = 1 - Math.pow(1 - k, 3); num.textContent = fmt(target * ease); if (k < 1) requestAnimationFrame(f); })(t0);
+      }, { threshold: .3 }).observe(num);
     }
     const zoom = document.getElementById('payZoom'), zimg = zoom.querySelector('img');
     document.querySelectorAll('.pay-track').forEach(t => {
@@ -1146,6 +1152,12 @@
     const close = () => { zoom.hidden = true; };
     zoom.addEventListener('click', close);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  })();
+
+  /* ---------- Only animate the moving rows while they are on screen ---------- */
+  (function () {
+    const io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('marquee-paused', !e.isIntersecting)), { rootMargin: '100px 0px' });
+    document.querySelectorAll('.pay-row, .cl-marquee').forEach(el => io.observe(el));
   })();
   /* ---------- Start ---------- */
   function startPage() {
@@ -1233,7 +1245,7 @@
         if (t < 1) requestAnimationFrame(f);
       })(start);
     };
-    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { run(e.target); io.unobserve(e.target); } }), { threshold: .6 });
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { run(e.target); io.unobserve(e.target); } }), { threshold: .3 });
     nums.forEach(n => io.observe(n));
   })();
 
