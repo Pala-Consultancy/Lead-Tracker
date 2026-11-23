@@ -70,6 +70,9 @@
   .pc{padding:16px 18px;cursor:pointer;text-align:left;width:100%;color:var(--ink);transition:transform .12s,box-shadow .12s;position:relative;}
   .pc:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);}
   .pc .row{display:flex;align-items:center;gap:10px;}
+  .pc-copy{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:var(--slate);flex-shrink:0;opacity:.75;transition:background .15s,color .15s,opacity .15s;}
+  .pc:hover .pc-copy,.pc-copy:focus-visible{opacity:1;} .pc-copy:hover{background:var(--panel-alt);color:var(--ink);}
+  .st-copy-note{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:var(--panel-alt);font-size:13px;line-height:1.5;color:var(--slate);} .st-copy-note b{color:var(--ink);}
   .av{width:40px;height:40px;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .pc b{display:block;font-size:15px;} .pc small{display:block;font-size:12.5px;color:var(--slate);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .chip{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;margin-left:auto;}
@@ -942,7 +945,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="sec" id="dtInboxSec"><h3>📥 Files from your client</h3><div id="dtInbox"></div></div>
     <div class="sec"><h3>Activity</h3><div id="dtAct"></div></div>
   </div>
-  <div class="acts-row"><button class="btn" id="dtEdit">Edit page</button><button class="btn" id="dtArchive">Archive</button><span style="flex:1"></span><button class="btn danger" id="dtDelete">Delete</button></div>
+  <div class="acts-row"><button class="btn" id="dtEdit">Edit page</button><button class="btn" id="dtCopy">Copy for a new client</button><button class="btn" id="dtArchive">Archive</button><span style="flex:1"></span><button class="btn danger" id="dtDelete">Delete</button></div>
 </div></div>
 
 </div>
@@ -953,7 +956,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 <div class="ov" id="stOv" role="dialog" aria-modal="true" aria-labelledby="stTitle"><div class="dlg sm">
   <div class="dlg-top"><div><h2 id="stTitle">Start for a client</h2><p>You’ll get one link to share. Everyone with it can work on it together.</p></div><button class="x" data-close aria-label="Close">×</button></div>
   <div class="sec">
-    <label class="f"><span>Template</span><select class="in" id="stTpl"></select></label>
+    <p class="st-copy-note hidden" id="stCopyNote"></p>
+    <label class="f" id="stTplRow"><span>Template</span><select class="in" id="stTpl"></select></label>
     <div class="two"><label class="f"><span>Client name</span><input class="in" id="stClient" placeholder="e.g. Acme Inc." maxlength="120"></label>
       <label class="f"><span>Contact person (optional)</span><input class="in" id="stContact" placeholder="e.g. Jane Doe" maxlength="120"></label></div>
     <label class="f"><span>Link to a lead (optional)</span><div class="two"><select class="in" id="stBoard"><option value="">No lead</option></select><select class="in" id="stLead" disabled><option value="">Pick a board first</option></select></div></label>
@@ -1052,7 +1056,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const st = paused.has(p.id) ? 'paused' : p.status;
       return `<button class="card pc ${esc(p.status)}" data-open="${esc(p.id)}">${p.unseenClientActivity ? '<span class="new-dot" title="New activity from the client"></span>' : ''}
         <div class="row"><span class="av">${esc(initials(p.clientName))}</span><div style="min-width:0;flex:1"><b>${esc(p.clientName || 'Client')}</b><small>${esc(p.title)}${p.clientContact ? ' · ' + esc(p.clientContact) : ''}</small></div>
-        <span class="chip ${st}">${{active: 'Active', completed: 'Completed', archived: 'Archived', paused: 'Paused'}[st]}</span></div>
+        <span class="chip ${st}">${{active: 'Active', completed: 'Completed', archived: 'Archived', paused: 'Paused'}[st]}</span>
+        <span class="pc-copy" role="button" tabindex="0" data-copyproc="${esc(p.id)}" title="Copy for a new client" aria-label="Copy for a new client"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></span></div>
         <div class="pc-prog"><div class="pbar"><i style="width:${pct}%"></i></div><b>${pct}%</b></div>
         ${p.unseenInbox ? `<div class="inb-new">📥 ${p.unseenInbox} new ${p.unseenInbox === 1 ? 'delivery' : 'deliveries'} of files</div>` : ''}
         <div class="meta"><span>${done} of ${total} done</span>${activeNow(p) ? '<span class="live-now"><i></i>Active now</span>' : `<span>${p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span>`}</div></button>`;
@@ -2012,8 +2017,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   // ---------- Start for a client ----------
   let boardsLoaded = false;
-  async function openStart(tplId) {
-    if (!templates.length) { showToast('First build a template with the steps.'); openEditor('template', null); return; }
+  // copySrc: an existing client process to copy for a new client (its page, not its progress)
+  let copySrc = null;
+  async function openStart(tplId, src) {
+    copySrc = src || null;
+    $('stTitle').textContent = copySrc ? 'Copy for a new client' : 'Start for a client';
+    $('stTplRow').classList.toggle('hidden', !!copySrc);
+    $('stCopyNote').classList.toggle('hidden', !copySrc);
+    if (copySrc) $('stCopyNote').innerHTML = `Copies the page of <b>${esc(copySrc.clientName || 'this client')}</b> (${esc(copySrc.title || 'client process')}), including the changes you made for them. Their progress, answers, uploads and activity are not copied: the new client starts fresh, with their own link.`;
+    if (!copySrc && !templates.length) { showToast('First build a template with the steps.'); openEditor('template', null); return; }
     const active = procs.filter((p) => p.status === 'active').length;
     $('stErr').classList.add('hidden');
     if (isFree() && active >= FREE_ACTIVE_LIMIT) {
@@ -2045,8 +2057,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   async function sha256(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join(''); }
   async function pinFields(pin) { const salt = randToken().slice(0, 16); return {pinSalt: salt, pinHash: await sha256(salt + ':' + pin)}; }
   $('stGo').addEventListener('click', async () => {
-    const t = templates.find((x) => x.id === $('stTpl').value), client = $('stClient').value.trim();
-    if (!t) return; if (!client) { $('stClient').focus(); showToast('Fill in the client\u2019s name.', true); return; }
+    const src = copySrc, t = src ? null : templates.find((x) => x.id === $('stTpl').value), client = $('stClient').value.trim();
+    if (!src && !t) return; if (!client) { $('stClient').focus(); showToast('Fill in the client\u2019s name.', true); return; }
     const pin = $('stPinOn').checked ? $('stPin').value.trim() : '';
     if (pin && !/^\d{4,8}$/.test(pin)) { showToast('The PIN must be 4 to 8 digits.', true); return; }
     const btn = $('stGo'); btn.disabled = true;
@@ -2054,13 +2066,17 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       const token = randToken(), ref = db.collection('clientProcesses').doc(), now = firebase.firestore.FieldValue.serverTimestamp();
       const lead = $('stLead').value ? {boardId: $('stBoard').value, leadId: $('stLead').value, name: $('stLead').selectedOptions[0].dataset.name || ''} : null;
       const batch = db.batch();
-      batch.set(ref, {workspaceId: wsId, createdBy: uid, templateId: t.id, title: t.name, senderName: t.senderName || '',
-        clientName: client, clientContact: $('stContact').value.trim(), lead, blocks: blocksOf(t), brand: t.brand || {}, progress: {}, activity: [],
+      const page = src
+        ? {templateId: src.templateId || '', title: src.title || 'Client process', senderName: src.senderName || '', blocks: JSON.parse(JSON.stringify(src.blocks || [])), brand: JSON.parse(JSON.stringify(src.brand || {}))}
+        : {templateId: t.id, title: t.name, senderName: t.senderName || '', blocks: blocksOf(t), brand: t.brand || {}};
+      batch.set(ref, {workspaceId: wsId, createdBy: uid, ...page,
+        clientName: client, clientContact: $('stContact').value.trim(), lead, progress: {}, activity: [],
         status: 'active', shareToken: token, hasPin: !!pin, unseenClientActivity: 0, createdAt: now, updatedAt: now});
       batch.set(db.collection('clientProcessLinks').doc(token), {workspaceId: wsId, processId: ref.id, createdBy: uid, createdAt: now, revoked: false, ...(pin ? await pinFields(pin) : {})});
       await batch.commit();
       closeOv('stOv');
-      showToast(`Started for ${client}! Copy the link and send it to them.`);
+      showToast(src ? `Copied for ${client}! Copy the new link and send it to them.` : `Started for ${client}! Copy the link and send it to them.`);
+      copySrc = null;
       setTimeout(() => { const p = procs.find((x) => x.id === ref.id); if (p) openDetail(p, pin); }, 400);
     } catch (err) { console.error(err); showToast('Couldn\u2019t start it. Check your connection and try again.', true); }
     finally { btn.disabled = false; }
@@ -2233,6 +2249,16 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   });
 
   // ---------- Templates ----------
+  document.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-copyproc]'); if (!c) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    const p = procs.find((x) => x.id === c.dataset.copyproc); if (p) openStart(null, p);
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    const c = e.target.closest && e.target.closest('[data-copyproc]'); if (!c || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation(); const p = procs.find((x) => x.id === c.dataset.copyproc); if (p) openStart(null, p);
+  }, true);
+  $('dtCopy').addEventListener('click', () => { const p = current; if (!p) return; closeOv('dtOv'); openStart(null, p); });
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.closest('#pgBlocks') || b.closest('#slashMenu') || b.closest('#fmtBar')) return;
