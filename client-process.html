@@ -1420,7 +1420,10 @@
     const wasHidden = $('doneNote').classList.contains('hidden');
     $('doneNote').classList.toggle('hidden', proc.status !== 'completed');
     if (wasHidden && proc.status === 'completed' && !firstPaint) { $('doneNote').classList.remove('fresh'); void $('doneNote').offsetWidth; $('doneNote').classList.add('fresh'); }
-    const hl = $('hello'); if (hl) { hl.classList.toggle('hidden', !name); if (name) hl.textContent = `Welcome, ${name.split(/\s+/)[0]} 👋`; }
+    // greet with the client's name as set in PalaTrack (so it changes when you rename them); the name someone typed on
+    // this device is only the fallback (it still marks who did what in the activity)
+    const greet = String(proc.clientName || name || '').trim();
+    const hl = $('hello'); if (hl) { hl.classList.toggle('hidden', !greet); if (greet) hl.textContent = `Welcome, ${greet.split(/\s+/)[0]} 👋`; }
     $('whoLine').innerHTML = name ? `Working as <b>${esc(name)}</b> · <button type="button" class="link" id="changeName" style="padding:0">Not you?</button>` : '';
     const cn = $('changeName'); if (cn) cn.onclick = () => { name = ''; try { localStorage.removeItem(NAME_KEY); } catch (e) { /* ignore */ } needName(() => {}); render(); };
     const introHTML = intro.map(contentHTML).join('');
@@ -1519,10 +1522,12 @@
     if (!nx || proc.status === 'completed') { pill.classList.remove('show'); return; }
     const el = document.querySelector(`.step[data-id="${CSS.escape(nx.task.id)}"]`); if (!el) return;
     const r = el.getBoundingClientRect(), vh = window.innerHeight, offBelow = r.top > vh - 60, offAbove = r.bottom < 70;
-    $('nextPillT').textContent = titleOf(nx.task);
+    // only write when something changed: rewriting the same text on every scroll frame made the browser redraw (the lag)
+    const want = (offBelow && window.scrollY > 120) || offAbove, key = nx.task.id + '|' + offAbove + '|' + want;
+    if (pill.__k === key) return; pill.__k = key;
+    if (pill.dataset.id !== nx.task.id) { $('nextPillT').textContent = titleOf(nx.task); pill.dataset.id = nx.task.id; }
     pill.classList.toggle('up', offAbove);
-    pill.classList.toggle('show', (offBelow && window.scrollY > 120) || offAbove);
-    pill.dataset.id = nx.task.id;
+    pill.classList.toggle('show', want);
   }
   $('heroGo').addEventListener('click', () => { const nx = nextGroup(); if (nx) goTo(nx.task.id); });
   // the titles under the dots never overlap: each gets the room up to the next dot; when that's too tight,
@@ -2808,6 +2813,20 @@ html[data-theme="dark"] .bar-in{box-shadow:0 10px 40px -16px rgba(0,0,0,.7),inse
 :root{--rd-glass-solid:rgba(255,255,255,.95);}
 html[data-theme="dark"]{--rd-glass-solid:rgba(18,20,42,.95);}
 .hero-prog,.hero .from,.hero .hello,.wc-card{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
+/* a full-screen grain texture (3.5%) blended over the whole page forced a re-blend of everything on every frame */
+body::after{display:none !important;}
+/* the dimming layer for pop-ups: really gone while nothing is open (not just transparent) */
+.scrim:not(.open){visibility:hidden;transition:opacity .25s,visibility 0s linear .25s;} .scrim.open{visibility:visible;transition:opacity .25s;}
+</style>
+<style id="ptSmoothPulse">
+/* the "next step" dots pulse with size and transparency (the graphics card), not with a growing shadow (repainted every frame) */
+.step.is-next::before{animation:none !important;box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 14%,transparent),0 0 16px var(--accent) !important;}
+.step.is-next::after{content:"";position:absolute;left:-36px;top:26px;width:14px;height:14px;border-radius:50%;z-index:1;pointer-events:none;
+  background:color-mix(in srgb,var(--accent) 40%,transparent);animation:ptDotPulse 2.4s ease-out infinite;}
+@keyframes ptDotPulse{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(2.4);opacity:0}}
+.step.is-next .tag::before{animation:ptTagPulse 2s ease-in-out infinite !important;box-shadow:none !important;}
+@keyframes ptTagPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+@media (prefers-reduced-motion: reduce){.step.is-next::after,.step.is-next .tag::before{animation:none !important;}}
 </style>
 </body>
 </html>
