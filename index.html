@@ -774,7 +774,20 @@ html[data-theme="dark"] .hd-win{background:#1C2042;} html[data-theme="dark"] .hd
 .keyf .section-eyebrow{font-size:18px;letter-spacing:.14em;margin-bottom:12px;}
 @media (max-width:520px){ .keyf .section-eyebrow{font-size:14.5px;} }
 .keyf h2{margin:6px 0 34px;font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(28px,3.6vw,44px);letter-spacing:-.03em;line-height:1.1;color:var(--ink,#1B2430);}
-.keyf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:left;}
+.keyf-wrap{position:relative;margin:0 -24px;}
+.keyf-wrap::before,.keyf-wrap::after{content:"";position:absolute;top:0;bottom:0;width:40px;z-index:2;pointer-events:none;transition:opacity .25s;}
+.keyf-wrap::before{left:0;background:linear-gradient(90deg,var(--paper,#EFF5FC),transparent);opacity:0;} .keyf-wrap::after{right:0;background:linear-gradient(270deg,var(--paper,#EFF5FC),transparent);}
+.keyf-wrap.at-start::before{opacity:0;} .keyf-wrap.scrolled::before{opacity:1;} .keyf-wrap.at-end::after{opacity:0;}
+.keyf-grid{display:flex;gap:20px;text-align:left;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:8px 24px 26px;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}
+.keyf-grid::-webkit-scrollbar{display:none;}
+.keyf-grid > .kf{flex:0 0 auto;width:min(372px,84vw);min-width:0;scroll-snap-align:start;scroll-margin-left:24px;}
+.keyf-grid .kf-vis{min-width:0;overflow:hidden;}
+.keyf-grid:focus-visible{outline:2px solid #6A4CC8;outline-offset:4px;border-radius:24px;}
+.keyf-nav{display:flex;justify-content:flex-end;gap:10px;max-width:1180px;margin:-18px auto 14px;}
+.kn-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--border,#D3E0EF);background:#fff;color:#1D2433;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 16px -10px rgba(16,24,40,.4);transition:transform .15s,box-shadow .15s,opacity .2s,border-color .15s;}
+.kn-btn svg{width:18px;height:18px;} .kn-btn:hover{transform:translateY(-1px);border-color:#6A4CC8;box-shadow:0 10px 22px -12px rgba(79,70,229,.6);} .kn-btn:disabled{opacity:.35;cursor:default;transform:none;}
+html[data-theme="dark"] .kn-btn{background:var(--panel,#161934);color:#ECEEFF;border-color:#2B3060;}
+html[data-theme="dark"] .keyf-wrap::before{background:linear-gradient(90deg,var(--paper,#0D0F1F),transparent);} html[data-theme="dark"] .keyf-wrap::after{background:linear-gradient(270deg,var(--paper,#0D0F1F),transparent);}
 .kf{display:flex;flex-direction:column;background:#fff;border:1px solid var(--border,#D3E0EF);border-radius:22px;padding:26px 24px 22px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 22px 44px -30px rgba(16,24,40,.35);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s;}
 .kf:hover{transform:translateY(-4px);box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 54px -30px rgba(79,70,229,.45);}
 .kf.star{border-color:rgba(106,76,200,.35);background:linear-gradient(180deg,rgba(106,76,200,.06),#fff 42%);}
@@ -797,7 +810,7 @@ html[data-theme="dark"] .hd-win{background:#1C2042;} html[data-theme="dark"] .hd
 .kv-icp{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 8px;padding:4px 0 10px;border-bottom:1px solid #EAEFF7;margin-bottom:2px;}
 .kv-icp b{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;color:#1F7A5C;letter-spacing:-.02em;} .kv-icp span{font-weight:600;color:#4B5563;}
 .kv-icp i{grid-column:1/-1;height:7px;border-radius:99px;background:#E3E8F1;overflow:hidden;} .kv-icp em{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#22A06B,#4FD1A5);}
-@media (max-width:980px){ .keyf-grid{grid-template-columns:1fr;max-width:560px;margin:0 auto;} }
+@media (max-width:640px){ .keyf-nav{display:none;} .keyf-grid > .kf{width:84vw;} .keyf-wrap::before,.keyf-wrap::after{width:18px;} }
 html[data-theme="dark"] .kf{background:var(--panel,#161934);border-color:var(--border,#2B3060);}
 html[data-theme="dark"] .kf.star{background:linear-gradient(180deg,rgba(106,76,200,.16),var(--panel,#161934) 42%);}
 html[data-theme="dark"] .kf-vis{background:#1C2042;border-color:#2B3060;color:#ECEEFF;} html[data-theme="dark"] .kv-row{border-color:#2B3060;} html[data-theme="dark"] .kv-foot b{color:#ECEEFF;}
@@ -818,6 +831,12 @@ html[data-theme="dark"] .wa-d,html[data-theme="dark"] .wa-r b{color:#ECEEFF;} ht
 .dl-m em{display:block;font-style:normal;font-size:10.5px;color:#5B6472;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dl-s{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:2px;} .dl-s b{font-size:10px;padding:2px 7px;border-radius:999px;} .dl-s small{font-size:9.5px;color:#9AA3B2;}
 .dl-s b.ok{background:#E8F7EF;color:#1E7F4F} .dl-s b.warn{background:#FFF4E5;color:#B45309} .dl-s b.pur{background:#EFE5FA;color:#6D28D9}
+.dl-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+.dl-stats span{padding:6px 8px;border-radius:9px;background:#fff;border:1px solid #EAEFF7;min-width:0;}
+.dl-stats small{display:block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9AA3B2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dl-stats b{font-size:13.5px;color:#1D2433;} .dl-stats .won b{color:#1E7F4F;}
+@media (max-width:640px){ .dl-stats{grid-template-columns:repeat(2,1fr);} }
+html[data-theme="dark"] .dl-stats span{background:#161934;border-color:#2B3060;} html[data-theme="dark"] .dl-stats b{color:#ECEEFF;}
 .dl-f{display:grid;grid-template-columns:auto auto 1fr;gap:10px;margin-top:8px;padding-top:2px;}
 .dl-f small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9AA3B2;} .dl-f b{font-size:13px;color:#1D2433;} .dl-f .best b{font-size:11px;color:#1E7F4F;}
 .wk-ai{font-size:10.5px;font-weight:700;color:#6A4CC8;background:#F1ECFE;padding:3px 8px;border-radius:999px;}
@@ -1046,17 +1065,30 @@ html[data-theme="dark"] .wk-p.t{--bg:rgba(34,160,107,.14)} html[data-theme="dark
   <section class="keyf" aria-labelledby="keyfTitle">
     <div class="section-eyebrow">Why people choose PalaTrack</div>
     <h2 id="keyfTitle">Built to turn LinkedIn into clients</h2>
-    <div class="keyf-grid">
+    <div class="keyf-nav"><button type="button" class="kn-btn" data-dir="-1" aria-label="Previous feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><button type="button" class="kn-btn" data-dir="1" aria-label="Next feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></div>
+    <div class="keyf-wrap"><div class="keyf-grid" id="keyfTrack" tabindex="0" aria-label="Key features, scroll sideways">
       <article class="kf">
         <span class="kf-ic" style="background:#E3EEFA;color:#1B59A5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.6-.8L3 20.5l1.4-4.6A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg></span>
         <h3>Every LinkedIn DM, in your CRM</h3>
-        <p>Save any LinkedIn conversation to PalaTrack in one click. See who replied, who needs a follow-up and your reply rate, at a glance.</p>
+        <p>Save any LinkedIn conversation to PalaTrack in one click. See who replied and who needs a follow-up, plus your new conversations per day, total conversations, reply rate, median reply time, calls booked and deals won.</p>
         <div class="kf-vis dl">
           <div class="dl-h"><b>LinkedIn DM log</b><span class="dl-tabs"><i class="on">All</i><i>Follow-up</i><i>Replied</i></span></div>
           <div class="dl-r"><i class="av" style="--h:212">EC</i><span class="dl-m"><b>Emma Collins <small>Founder · Collins Studio</small></b><em>“Sounds great, what does it cost?”</em></span><span class="dl-s"><b class="ok">Replied</b><small>2m</small></span></div>
           <div class="dl-r"><i class="av" style="--h:32">LC</i><span class="dl-m"><b>Liam Carter <small>CEO · Carter Growth</small></b><em>You: “Saw your post on hiring…”</em></span><span class="dl-s"><b class="warn">Follow up</b><small>3d</small></span></div>
           <div class="dl-r"><i class="av" style="--h:268">NP</i><span class="dl-m"><b>Nora Patel <small>Owner · Patel Digital</small></b><em>“Thursday 10:00 works for me”</em></span><span class="dl-s"><b class="pur">Call booked</b><small>1h</small></span></div>
-          <div class="dl-f"><span><small>Reply rate</small><b>38%</b></span><span><small>Follow-ups due</small><b>3</b></span><span class="best"><small>Best icebreaker</small><b>52% reply</b></span></div>
+          <div class="dl-stats"><span><small>New today</small><b>6</b></span><span><small>Total</small><b>248</b></span><span><small>Reply rate</small><b>38%</b></span><span><small>Median reply</small><b>3h 12m</b></span><span><small>Calls booked</small><b>14</b></span><span class="won"><small>Deals won</small><b>5</b></span></div>
+        </div>
+      </article>
+      <article class="kf">
+        <span class="kf-ic" style="background:#FBE4E2;color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></svg></span>
+        <h3>Every email conversation, in one place</h3>
+        <p>All your email conversations with prospects live in PalaTrack. See who replied and who needs a follow-up, plus your new conversations per day, total conversations, reply rate, median reply time, calls booked and deals won.</p>
+        <div class="kf-vis dl">
+          <div class="dl-h"><b>Email conversations</b><span class="dl-tabs"><i class="on">All</i><i>Waiting</i><i>Replied</i></span></div>
+          <div class="dl-r"><i class="av" style="--h:190">JW</i><span class="dl-m"><b>Jonas Weber <small>Nordkap AS</small></b><em>Re: Your proposal · “Looks good, next steps?”</em></span><span class="dl-s"><b class="ok">Replied</b><small>12m</small></span></div>
+          <div class="dl-r"><i class="av" style="--h:300">SM</i><span class="dl-m"><b>Sofia Marchetti <small>Brightline</small></b><em>Re: Quick question · “Tuesday 14:00 works”</em></span><span class="dl-s"><b class="pur">Call booked</b><small>2h</small></span></div>
+          <div class="dl-r"><i class="av" style="--h:20">AM</i><span class="dl-m"><b>Alex Morgan <small>Northwind Studio</small></b><em>You: “Following up on my last email…”</em></span><span class="dl-s"><b class="warn">Waiting</b><small>4d</small></span></div>
+          <div class="dl-stats"><span><small>New today</small><b>9</b></span><span><small>Total</small><b>412</b></span><span><small>Reply rate</small><b>31%</b></span><span><small>Median reply</small><b>5h 40m</b></span><span><small>Calls booked</small><b>11</b></span><span class="won"><small>Deals won</small><b>4</b></span></div>
         </div>
       </article>
       <article class="kf star">
@@ -1087,7 +1119,7 @@ html[data-theme="dark"] .wk-p.t{--bg:rgba(34,160,107,.14)} html[data-theme="dark
           <div class="kv-row"><i class="av" style="--h:340">DB</i><span>Daniel Brooks<small>CEO · Brooks Digital · commented</small></span><b class="msg">Message</b></div>
         </div>
       </article>
-    </div>
+    </div></div>
   </section>
 
   <section class="demo-video" id="demoVideo" aria-labelledby="demoVideoTitle">
@@ -2369,5 +2401,19 @@ html[data-theme="dark"] .wk-p.t{--bg:rgba(34,160,107,.14)} html[data-theme="dark
 </script>
 <!-- Christmas (November 3 – January 6): snow, lights and a ❄️ button to turn it off -->
 <script src="christmas.js?v=2026-11-15" data-place="site" defer></script>
+
+<script>
+  // key features: sideways scrolling with arrows (swipe on phones)
+  (function(){
+    const track=document.getElementById('keyfTrack'); if(!track) return;
+    const wrap=track.parentNode, btns=document.querySelectorAll('.kn-btn');
+    const step=()=>{ const c=track.querySelector('.kf'); return c ? c.getBoundingClientRect().width+20 : 380; };
+    btns.forEach(b=>b.addEventListener('click',()=>track.scrollBy({left:step()*Number(b.dataset.dir),behavior:'smooth'})));
+    const upd=()=>{ const max=track.scrollWidth-track.clientWidth-2; wrap.classList.toggle('scrolled',track.scrollLeft>2); wrap.classList.toggle('at-end',track.scrollLeft>=max);
+      btns[0].disabled=track.scrollLeft<=2; btns[1].disabled=track.scrollLeft>=max; };
+    track.addEventListener('scroll',upd,{passive:true}); addEventListener('resize',upd); upd();
+    track.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'){ e.preventDefault(); track.scrollBy({left:step(),behavior:'smooth'}); } if(e.key==='ArrowLeft'){ e.preventDefault(); track.scrollBy({left:-step(),behavior:'smooth'}); } });
+  })();
+</script>
 </body>
 </html>
