@@ -377,8 +377,10 @@
       '<div class="xm-orn o3"><span class="str"></span>' + ornament('n', '#9BE3B4', '#2A9D5C', '#145A33', '#FFE08A') + '</div>' +
       '<div class="xm-orn"><span class="str"></span>' + ORNAMENT + '</div>');
     document.body.appendChild(layer);
+    // the home page gets lighter snow (about 40% of the other pages), so the page itself gets the attention
+    var HOME = PLACE === 'site' && /^\/(index(\.html)?)?$/.test(location.pathname);
     snow = PLACE === 'app' ? makeSnow(layer.querySelector('canvas'), 24000, {max: 70, once: true, speed: 2.6})
-      : makeAmbientSnow(layer, layer.querySelector('canvas'), PLACE === 'client' ? 34000 : 24000, {max: PLACE === 'client' ? 40 : 70, speed: 1});
+      : makeAmbientSnow(layer, layer.querySelector('canvas'), PLACE === 'client' ? 34000 : HOME ? 60000 : 24000, {max: PLACE === 'client' ? 40 : HOME ? 25 : 70, speed: 1});
     layer.querySelectorAll('.xm-orn').forEach(function (orn) {
       orn.querySelector('svg').addEventListener('click', function () {   // click an ornament: it spins and jingles
         orn.classList.remove('spin'); void orn.offsetWidth; orn.classList.add('spin'); jingle(); if (snow) snow.burst(PLACE === 'app' ? 40 : 18);
