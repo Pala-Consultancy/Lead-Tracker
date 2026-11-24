@@ -15,7 +15,10 @@
     var q = new URLSearchParams(location.search), t = q.get('t');
     if (!t || q.get('preview') === '1') return;
     var pin = ''; try { pin = sessionStorage.getItem('ptCpPin:' + t) || ''; } catch (e) {}
-    window.__cpFirst = fetch('https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/getClientProcess', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({data: {token: t, pin: pin}})})
+    // this visit is reported once (not when you open it yourself with "Open as client" or a welcome preview)
+    var nm = ''; try { nm = localStorage.getItem('ptCpName:' + t) || ''; } catch (e) {}
+    window.__cpVisit = q.get('me') !== '1' && q.get('welcome') !== 'preview';
+    window.__cpFirst = fetch('https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/getClientProcess', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({data: {token: t, pin: pin, visit: window.__cpVisit, name: nm}})})
       .then(function (r) { return r.json().then(function (j) { return {ok: r.ok, j: j}; }); });
     window.__cpFirst.catch(function () {});
   })();
@@ -1115,7 +1118,8 @@
       let r;
       const early = first && window.__cpFirst; window.__cpFirst = null;   // the request started in <head>
       if (early) { const x = await early; if (!x.ok || x.j.error) throw callErr(x.j, x.ok ? 200 : 500); r = x.j.result; }
-      else r = (await getFn({token, pin})).data;
+      else r = (await getFn(Object.assign({token, pin}, window.__cpVisit ? {visit: true, name} : {}))).data;
+      if (r && r.process) window.__cpVisit = false;          // this visit has been reported
       if (r.needsPin) {
         cacheDrop(); proc = null;
         try { sessionStorage.removeItem(PIN_KEY); } catch (e) { /* ignore */ }
@@ -1369,9 +1373,12 @@
   // ---------- Drawing ----------
   const nextGroup = () => groups.find((g) => !g.task.state.done && !isLater(g));
   // focus: the current step is open, the others are slim rows; your client opens or folds any of them
+  // Everything starts closed when the page opens; your client opens the step they want. Once they finish a step during
+  // their visit (guided), the next one opens for them.
   const openSteps = new Set(), closedSteps = new Set();
+  let guided = false;
   const isExpanded = (g, next) => { const id = g.task.id; if (openSteps.has(id)) return true; if (closedSteps.has(id)) return false;
-    return g === next || g.forms.some((a) => openDocs.has(a.id)) || !!busy[id]; };
+    return (guided && g === next) || g.forms.some((a) => openDocs.has(a.id)) || !!busy[id]; };
   function setStepOpen(id, open) {
     if (open) { openSteps.add(id); closedSteps.delete(id); } else { closedSteps.add(id); openSteps.delete(id); }
     const el = document.querySelector(`.step[data-id="${CSS.escape(id)}"]`); if (el) { el.classList.toggle('collapsed', !open); el.querySelector('.s-head').setAttribute('aria-expanded', String(open)); }
@@ -1976,6 +1983,7 @@
   async function act(key, taskId, fn, after) {
     if (PREVIEW) { toast('This is a preview. Your client does this on their own page.'); return false; }
     const before = groups.find((g) => g.task.id === taskId), wasDone = !!(before && before.task.state.done);
+    guided = true;
     busy[key] = true; render();
     let ok = false;
     try { const r = (await fn()).data; if (r.process) { proc = r.process; build(); ok = true; } else if (r.needsPin) { load(true); return false; } }
@@ -2003,6 +2011,7 @@
     if (PREVIEW) { toast('This is a preview. Your client does this on their own page.'); return; }
     const b = (proc.blocks || []).find((x) => x.id === taskId); if (!b || !b.state) return;
     const prevState = JSON.parse(JSON.stringify(b.state)), prevStatus = proc.status, doing = action === 'complete';
+    if (doing) guided = true;
     b.state.done = doing; b.state.doneBy = doing ? name : ''; b.state.doneAt = doing ? new Date().toISOString() : null;
     const req = proc.blocks.filter((x) => x.state && x.required !== false);
     proc.status = req.length && req.every((x) => x.state.done) ? 'completed' : (proc.status === 'completed' ? 'active' : proc.status);

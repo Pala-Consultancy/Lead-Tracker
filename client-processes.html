@@ -70,6 +70,12 @@
   .pc{padding:16px 18px;cursor:pointer;text-align:left;width:100%;color:var(--ink);transition:transform .12s,box-shadow .12s;position:relative;}
   .pc:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg);}
   .pc .row{display:flex;align-items:center;gap:10px;}
+  .dt-visits{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--slate);}
+  .dtv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;} .dtv-head b{color:var(--ink);}
+  .dtv-tog{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--teal,#3B49C9);cursor:pointer;} .dtv-tog:hover{text-decoration:underline;}
+  .dtv-list{list-style:none;margin:10px 0 0;padding:0;max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:6px;}
+  .dtv-list li{display:flex;justify-content:space-between;gap:12px;padding:7px 10px;border-radius:9px;background:var(--panel-alt);color:var(--ink);} .dtv-list i{font-style:normal;color:var(--slate);}
+  .dtv-more{margin:8px 0 0;font-size:12px;}
   .dt-name{cursor:text;border-radius:10px;padding:0 6px;margin-left:-6px;transition:background .15s;}
   .dt-name:hover,.dt-name:focus-visible{background:var(--panel-alt);} .dt-name:hover::after{content:'✎';font-size:.55em;margin-left:8px;color:var(--slate);vertical-align:middle;}
   .dt-name-in{font:inherit;color:inherit;width:min(520px,100%);padding:2px 8px;margin:-2px 0;border-radius:10px;border:2px solid var(--teal,#3B49C9);background:var(--panel,#fff);outline:none;box-sizing:border-box;}
@@ -945,6 +951,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     <div class="sec"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><h3 style="margin:0">What your client does</h3><span class="chip" id="dtChip"></span><span class="live-badge" title="Updates the moment your client does something"><i></i>Live</span></div>
       <div class="dt-prog"><div class="dt-ring"><svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="27"/><circle class="vl" id="dtRing" cx="32" cy="32" r="27"/></svg><b id="dtPct">0%</b></div>
         <div style="flex:1;min-width:0"><b id="dtProg" class="dt-count"></b><div class="pbar"><i id="dtBar"></i></div><div class="meta"><span id="dtOpt"></span><span id="dtLast"></span></div></div></div>
+        <div class="dt-visits" id="dtVisits"></div>
       <div class="dt-call hidden" id="dtCall"></div>
       <div id="dtSteps" style="margin-top:8px"></div></div>
     <div class="sec" id="dtInboxSec"><h3>📥 Files from your client</h3><div id="dtInbox"></div></div>
@@ -1004,7 +1011,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   function showToast(m, danger) { const el = document.createElement('div'); el.className = 'toast' + (danger ? ' danger' : ''); el.textContent = m; $('toastStack').appendChild(el); setTimeout(() => el.remove(), 3600); }
   const uidGen = () => 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  const ms = (t) => (t && t.toMillis ? t.toMillis() : 0);
+  const ms = (t) => (t && t.toMillis ? t.toMillis() : typeof t === 'string' ? (Date.parse(t) || 0) : 0);   // database time or a date like "2026-11-24T09:14:00Z"
   const ago = (t) => { const m = Math.round((Date.now() - ms(t)) / 60000); if (!ms(t)) return ''; if (m < 1) return 'just now'; if (m < 60) return m + ' min ago'; if (m < 1440) return Math.round(m / 60) + ' h ago'; return new Date(ms(t)).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}); };
   const initials = (n) => (n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   const fsize = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
@@ -1067,7 +1074,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
         <span class="pc-copy pc-del" role="button" tabindex="0" data-delproc="${esc(p.id)}" title="Delete" aria-label="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></span><span class="pc-copy" role="button" tabindex="0" data-copyproc="${esc(p.id)}" title="Copy for a new client" aria-label="Copy for a new client"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></span></div>
         <div class="pc-prog"><div class="pbar"><i style="width:${pct}%"></i></div><b>${pct}%</b></div>
         ${p.unseenInbox ? `<div class="inb-new">📥 ${p.unseenInbox} new ${p.unseenInbox === 1 ? 'delivery' : 'deliveries'} of files</div>` : ''}
-        <div class="meta"><span>${done} of ${total} done</span>${activeNow(p) ? '<span class="live-now"><i></i>Active now</span>' : `<span>${p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span>`}</div></button>`;
+        <div class="meta"><span>${done} of ${total} done</span>${activeNow(p) ? '<span class="live-now"><i></i>Active now</span>' : `<span>${p.lastViewedAt && (!p.lastClientActivityAt || ms(p.lastViewedAt) > ms(p.lastClientActivityAt)) ? 'Viewed ' + ago(p.lastViewedAt) : p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Started ' + ago(p.createdAt)}</span>`}</div></button>`;
     }).join('') : `<div class="card empty" style="grid-column:1/-1"><span class="ic">🤝</span><b>${procs.length ? 'Nothing here' : 'No client processes yet'}</b>
         <p>${procs.length ? 'Try another filter.' : templates.length ? 'Start your first one: pick a template, fill in the client’s name, and share the link.' : 'First build a template with the steps every new client goes through. Then start it for a client and share the link.'}</p>
         ${procs.length ? '' : templates.length ? '<button class="btn primary" data-start>Start for a client</button>' : '<button class="btn primary" data-newtpl>+ New template</button>'}</div>`;
@@ -2124,7 +2131,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (!nameEditing) $('dtTitle').textContent = p.clientName || 'Client';
     $('dtSub').textContent = p.title + (p.clientContact ? ' · ' + p.clientContact : '') + (p.lead && p.lead.name && p.lead.name !== p.clientContact ? ' · lead: ' + p.lead.name : '') + (p.lead ? ' · linked to a lead' : '');
     const link = `${PORTAL}?t=${p.shareToken}`;
-    $('dtLink').value = link; $('dtPreview').href = link; $('dtWelcome').href = link + (link.includes('?') ? '&' : '?') + 'welcome=preview';
+    $('dtLink').value = link; $('dtPreview').href = link + (link.includes('?') ? '&' : '?') + 'me=1'; $('dtWelcome').href = link + (link.includes('?') ? '&' : '?') + 'welcome=preview';
     $('dtPin').textContent = p.hasPin ? (shownPin ? '🔒 PIN: ' + shownPin : '🔒 Protected with a PIN') : '🔓 No PIN';
     $('dtPinChange').textContent = p.hasPin ? 'Change PIN' : 'Set a PIN';
     $('dtPinRemove').classList.toggle('hidden', !p.hasPin);
@@ -2135,7 +2142,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     $('dtPct').textContent = pct + '%';
     $('dtProg').textContent = `${done} of ${total} required step${total === 1 ? '' : 's'} done`;
     $('dtOpt').textContent = optional ? `+ ${optional} optional` : '';
-    $('dtLast').innerHTML = activeNow(p) ? '<span class="live-now"><i></i>Your client is active right now</span>' : p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : 'Not opened yet';
+    $('dtLast').innerHTML = activeNow(p) ? '<span class="live-now"><i></i>Your client is active right now</span>' : p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : p.lastViewedAt ? 'Viewed ' + ago(p.lastViewedAt) : 'Not opened yet';
+    renderVisits(p);
     $('dtArchive').textContent = p.status === 'archived' ? 'Reopen' : 'Archive';
     const ICON = {todo: '☑', upload: '📤', question: '✍️'};
     // the onboarding call: one click unlocks the "After our call" tasks for the client
@@ -2280,6 +2288,18 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const c = e.target.closest && e.target.closest('[data-copyproc]'); if (!c || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault(); e.stopPropagation(); const p = procs.find((x) => x.id === c.dataset.copyproc); if (p) openStart(null, p);
   }, true);
+  // ---------- visits: each time your client opened their page ----------
+  let visitsOpen = false;
+  function renderVisits(p) {
+    const box = $('dtVisits'); if (!box) return;
+    const v = (Array.isArray(p.visits) ? p.visits : []).slice().reverse(), n = p.viewCount || v.length;
+    if (!n) { box.innerHTML = '<span class="dtv-none">👀 Your client hasn’t opened their page yet.</span>'; return; }
+    const when = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric', month: 'short'}) + ', ' + d.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'}); };
+    box.innerHTML = `<div class="dtv-head"><span>👀 Opened their page <b>${n} ${n === 1 ? 'time' : 'times'}</b>${v[0] ? ` · last visit <b>${esc(ago(v[0].at))}</b>` : ''}</span>
+        ${v.length ? `<button type="button" class="dtv-tog" id="dtvTog">${visitsOpen ? 'Hide visits' : 'Show visits'}</button>` : ''}</div>
+      ${visitsOpen ? `<ul class="dtv-list">${v.map((x) => `<li><span>${esc(when(x.at))}</span>${x.name ? `<i>${esc(x.name)}</i>` : ''}</li>`).join('')}</ul>${n > v.length ? `<p class="dtv-more">Showing the latest ${v.length}.</p>` : ''}` : ''}`;
+    const t = $('dtvTog'); if (t) t.onclick = () => { visitsOpen = !visitsOpen; renderVisits(p); };
+  }
   // the client's name: click it, type, Enter (or click elsewhere) saves, Esc cancels
   function startNameEdit() {
     if (!current || nameEditing) return;
