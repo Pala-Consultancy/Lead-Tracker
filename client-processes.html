@@ -202,6 +202,10 @@
   .be-btnprev{padding:9px 16px;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
   .be-client{border-color:#D6D2FA;background:#F7F6FF;} .be-client .in{margin-top:6px;}
   .be-tag{font-size:12px;font-weight:700;color:var(--teal);}
+  .be-badge{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:6px 0 2px;font-size:12.5px;color:var(--slate);} .bb-l{font-weight:700;margin-right:2px;}
+  .bb-pre{border:1px dashed var(--line);background:transparent;border-radius:999px;padding:3px 10px;font:700 12px inherit;font-family:inherit;color:var(--slate);cursor:pointer;}
+  .bb-pre.on.bb-update{background:#E0EAFF;color:#1D4ED8;border:1px solid #BFD3FF;} .bb-pre.on.bb-new{background:#DCFCE7;color:#047857;border:1px solid #A7F3D0;} .bb-pre.on.bb-important{background:#FEF3C7;color:#B45309;border:1px solid #FCD34D;}
+  .bb-in{max-width:190px;padding:5px 9px !important;font-size:12.5px !important;} .bb-x{border:0;background:none;color:var(--slate);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px;} .bb-x:hover{background:var(--panel-alt);color:var(--ink);}
   .pg-add{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:12px 2px 2px;color:var(--slate);font-size:14px;font-weight:600;text-align:left;}
   .pg-add span{font-weight:500;color:var(--slate-light);font-size:13px;} .pg-add:hover{color:var(--teal);}
   .slash-menu{position:fixed;z-index:400;width:290px;max-height:min(420px,60vh);overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:6px;display:none;}
@@ -1417,7 +1421,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
           <input class="in" data-f="beforeText" maxlength="200" placeholder="Complete these first, then book your call." value="${esc(b.beforeText || '')}" aria-label="Text of the section above"></div>
         <div class="be-side after"><span class="be-side-tag">⬇ Below the line · after the call 🔒</span><input class="in" data-f="label" maxlength="80" placeholder="After our call" value="${esc(b.label || '')}" aria-label="Title of the section below">
           <input class="in" data-f="afterText" maxlength="200" placeholder="These open after our onboarding call. You can already look at them." value="${esc(b.afterText || '')}" aria-label="Text of the section below"></div></div></div>`;
-    else if (b.type === 'todo') body = `<div class="be-task"><div class="be-tag">☑ To-do for your client</div><div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>${attHTML(b)}</div>`;
+    else if (b.type === 'todo') body = `<div class="be-task"><div class="be-tag">☑ To-do for your client</div>${badgeEd(b)}<div class="be-todo"><span class="be-box" aria-hidden="true"></span>${ce('todotext')}${reqToggle(b)}</div>${attHTML(b)}</div>`;
     else if (b.type === 'video') {
       const v = b.video;
       body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="videoLink" placeholder="Paste a video link (most video sites work)" value="${esc(v && !v.path ? v.url : '')}"><span class="or">or</span>
@@ -1435,10 +1439,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     } else if (b.type === 'button') {
       body = `<div class="be-panel"><div class="be-row"><input class="in" data-f="label" placeholder="Button text, e.g. Book your kick-off call" value="${esc(b.label || '')}"><input class="in" data-f="url" data-link="1" placeholder="https://calendly.com/…" value="${esc(b.url || '')}"><span class="be-btnprev">${esc(b.label || 'Button')}</span></div>${linkNote(b.url)}${gateBox(b, 'data-gate="block"')}${logoBox(b, 'blk')}</div>`;
     } else if (b.type === 'upload') {
-      body = `<div class="be-panel be-client"><div class="be-tag">📤 Your client uploads a file here</div><input class="in" data-f="label" placeholder="What should they send? e.g. The signed contract" value="${esc(b.label || '')}">
+      body = `<div class="be-panel be-client"><div class="be-tag">📤 Your client uploads a file here</div>${badgeEd(b)}<input class="in" data-f="label" placeholder="What should they send? e.g. The signed contract" value="${esc(b.label || '')}">
         <input class="in" data-f="help" placeholder="Extra explanation (optional)" value="${esc(b.help || '')}">${reqToggle(b)}${attHTML(b)}</div>`;
     } else if (b.type === 'question') {
-      body = `<div class="be-panel be-client"><div class="be-tag">✍️ Your client answers here</div><div class="be-row"><input class="in" data-f="label" placeholder="Your question, e.g. How many people are on your team?" value="${esc(b.label || '')}">
+      body = `<div class="be-panel be-client"><div class="be-tag">✍️ Your client answers here</div>${badgeEd(b)}<div class="be-row"><input class="in" data-f="label" placeholder="Your question, e.g. How many people are on your team?" value="${esc(b.label || '')}">
         <select class="in" data-f="qtype" style="max-width:150px"><option value="text" ${b.qtype !== 'longtext' ? 'selected' : ''}>Short answer</option><option value="longtext" ${b.qtype === 'longtext' ? 'selected' : ''}>Long answer</option></select></div>${reqToggle(b)}${attHTML(b)}</div>`;
     }
     return `<div class="blk blk-${b.type}" data-id="${esc(b.id)}"><div class="blk-g"><button class="g-add" data-gadd title="Add below (or type /)" aria-label="Add a block below">+</button><span class="g-drag" draggable="true" title="Drag to move" aria-label="Drag to move">⋮⋮</span></div>
@@ -1527,6 +1531,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       <button type="button" role="radio" aria-checked="${!g}" ${attr} data-gateval="0">🔓 Always</button>
       <button type="button" role="radio" aria-checked="${g}" ${attr} data-gateval="1">🔒 After all other steps</button></div>`; };
   const linkNote = (u) => !u ? '' : normUrl(u) ? '' : '<div class="be-warn">This isn’t a link that can open. Paste the full link, e.g. https://calendly.com/your-name</div>';
+  // a label your client sees on this step (e.g. "Updated" after you changed an SOP): a quick choice or your own text
+  const BADGES = {Updated: 'update', New: 'new', Important: 'important'};
+  const badgeEd = (b) => { const t = b.badge && b.badge.text ? b.badge.text : '', own = t && !BADGES[t] ? t : '';
+    return `<div class="be-badge"><span class="bb-l">🏷 Label for your client:</span>${Object.keys(BADGES).map((k) => `<button type="button" class="bb-pre bb-${BADGES[k]}${t === k ? ' on' : ''}" data-badge="${k}">${k}</button>`).join('')}
+      <input class="in bb-in" data-f="badgeText" maxlength="40" placeholder="Or type your own" value="${esc(own)}" aria-label="Your own label">
+      ${t ? `<button type="button" class="bb-x" data-badge="" title="Remove the label">✕</button>` : ''}</div>`; };
   const reqToggle = (b) => `<label class="req be-req"><input type="checkbox" data-f="required" ${b.required !== false ? 'checked' : ''}> Required</label>`;
   const upBar = (b) => `<div class="hint">Uploading ${esc(b._up.name)}… <span data-pct>${b._up.pct}</span>%</div><div class="upbar"><i style="width:${b._up.pct}%"></i></div>`;
   const findB = (id) => editing.data.blocks.findIndex((b) => b.id === id);
@@ -1634,6 +1644,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       return;
     }
     const f = e.target.dataset.f;
+    if (f === 'badgeText') { const v = e.target.value.trim(); b.badge = v ? {text: v, tone: BADGES[v] || 'info', at: (b.badge && b.badge.text === v && b.badge.at) || new Date().toISOString()} : null; changed();
+      blk.querySelectorAll('.bb-pre').forEach((x) => x.classList.toggle('on', !!b.badge && x.dataset.badge === b.badge.text)); return; }
     if (f === 'videoLink') { b.video = videoFromLink(e.target.value); changed(); clearTimeout(e.target._h); e.target._h = setTimeout(() => { const pos = e.target.selectionStart; renderPage(); const el = document.querySelector(`.blk[data-id="${CSS.escape(b.id)}"] [data-f=videoLink]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } }, 700); return; }
     if (f && f !== 'required' && f !== 'preview' && f !== 'gate') { b[f] = e.target.value; changed(); if (f === 'label' && b.type === 'button') { const pv = blk.querySelector('.be-btnprev'); if (pv) pv.textContent = e.target.value || 'Button'; } }
   });
@@ -1723,6 +1735,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const lx = e.target.closest('[data-logox]');
     if (lx) { const b = editing.data.blocks[findB(blk.dataset.id)], ref = lx.dataset.logox, owner = ref === 'blk' ? b : (b.attachments || []).find((x) => x.id === ref.slice(4));
       if (owner) { delete owner.logo; changed(); renderPage(); } return; }
+    const bdg = e.target.closest('[data-badge]');
+    if (bdg) { const b = editing.data.blocks[findB(blk.dataset.id)], t = bdg.dataset.badge;
+      b.badge = t && !(b.badge && b.badge.text === t) ? {text: t, tone: BADGES[t] || 'info', at: new Date().toISOString()} : null; changed(); renderPage(); return; }
     const add = e.target.closest('[data-addatt]');
     if (add) {
       const b = editing.data.blocks[findB(blk.dataset.id)];
