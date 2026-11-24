@@ -14,6 +14,8 @@
 (function () {
   'use strict';
   var me = document.currentScript, PLACE = (me && me.dataset && me.dataset.place) || 'app';
+  // the client page shown as a live preview inside PalaTrack's editor: no decoration there (it slowed the editor down)
+  if (PLACE === 'client' && /[?&]preview=1(&|$)/.test(location.search)) return;
   var KEY = {app: 'ptChristmas', site: 'ptChristmasSite', client: 'ptChristmasClient'}[PLACE] || 'ptChristmas';
   // The season: November 15 – January 6. Before that, only a preview:
   //  - the owner's own account sees it in the app (recognised by a one-way fingerprint of the email, so no address is in this file);

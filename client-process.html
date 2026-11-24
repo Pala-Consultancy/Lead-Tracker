@@ -981,6 +981,8 @@
   const token = new URLSearchParams(location.search).get('t') || '';
   // ?preview=1: the live preview inside the tracker's editor (content comes from the editor, nothing is saved)
   const PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
+  // as a live preview inside the editor: the same look, but nothing loops or animates (it shares the editor's thread)
+  if (PREVIEW) document.documentElement.classList.add('cp-preview');
   const PIN_KEY = 'ptCpPin:' + token, NAME_KEY = 'ptCpName:' + token, DRAFT_KEY = (fid) => 'ptCpDraft:' + token + ':' + fid;
   let pin = ''; try { pin = sessionStorage.getItem(PIN_KEY) || ''; } catch (e) { /* ignore */ }
   let name = ''; try { name = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* ignore */ }
@@ -2859,5 +2861,6 @@ html[data-theme="dark"] .s-badge.t-update{background:rgba(59,130,246,.18);color:
 html[data-theme="dark"] .s-badge.t-new{background:rgba(16,185,129,.18);color:#6EE7B7;border-color:rgba(110,231,183,.3);}
 html[data-theme="dark"] .s-badge.t-important{background:rgba(245,158,11,.18);color:#FCD34D;border-color:rgba(252,211,77,.3);}
 </style>
+<style id="ptPreviewCalm">html.cp-preview *,html.cp-preview *::before,html.cp-preview *::after{animation:none !important;transition:none !important;}</style>
 </body>
 </html>

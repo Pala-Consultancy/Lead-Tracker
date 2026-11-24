@@ -1334,7 +1334,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
 
   // ---------- Live preview: the real client page, fed with what's in the editor ----------
   let pvDevice = (() => { try { return localStorage.getItem('ptCpPvDevice') || 'desktop'; } catch (e) { return 'desktop'; } })();
-  let pvOpen = (() => { try { const v = localStorage.getItem('ptCpPvOpen'); return v ? v === '1' : innerWidth >= 1200; } catch (e) { return true; } })();
+  // the live preview is a whole second page running next to the editor: it's off until you click "Preview" (it made editing slow)
+  let pvOpen = (() => { try { return localStorage.getItem('ptCpPvOpen2') === '1'; } catch (e) { return false; } })();
   let pvReady = false, pvTimer = null;
   function previewData() {
     if (!editing) return null;
@@ -1383,7 +1384,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     document.querySelectorAll('[data-pvd]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.pvd === pvDevice)));
   }
   function showPreview(open) {
-    pvOpen = open; try { localStorage.setItem('ptCpPvOpen', open ? '1' : '0'); } catch (e) { /* ignore */ }
+    pvOpen = open; try { localStorage.setItem('ptCpPvOpen2', open ? '1' : '0'); } catch (e) { /* ignore */ }
     $('edSplit').classList.toggle('with-pv', open); $('pvToggle').setAttribute('aria-pressed', String(open));
     $('pvToggle').textContent = open ? '👁 Hide preview' : '👁 Show preview';
     document.body.classList.toggle('cp-pv', open && !!editing);
