@@ -1053,7 +1053,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     if (/^https:\/\//i.test(u)) return {kind: 'link', url: u, embedUrl: ''};
     return null;
   }
-  const videoTag = (v) => !v ? '' : v.kind === 'file' ? `<video controls preload="metadata" src="${esc(v.url + (!v.poster && v.posterAt > 0 ? '#t=' + v.posterAt : ''))}"${v.poster ? ` poster="${esc(v.poster)}"` : ''}></video>` : v.embedUrl ? `<iframe src="${esc(v.embedUrl)}" allow="fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>` : '';
+  const videoTag = (v) => !v ? '' : v.kind === 'file' ? `<video controls preload="${v.poster ? 'none' : 'metadata'}" src="${esc(v.url + (!v.poster && v.posterAt > 0 ? '#t=' + v.posterAt : ''))}"${v.poster ? ` poster="${esc(v.poster)}"` : ''}></video>` : v.embedUrl ? `<iframe src="${esc(v.embedUrl)}" allow="fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>` : '';
 
   // ---------- Lists ----------
   let nameEditing = false;               // the client's name is being changed (live updates leave it alone)
@@ -1206,8 +1206,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   function previewOf(f) {
     if (!f || !f.url) return '';
     if (/^image\//.test(f.contentType || '') || /\.(png|jpe?g|gif|webp)$/i.test(f.name)) return `<img src="${esc(f.url)}" alt="">`;
-    if (/pdf/.test(f.contentType || '') || /\.pdf$/i.test(f.name)) return `<iframe src="${esc(f.url)}#toolbar=0" title="${esc(f.name)}"></iframe>`;
-    if (OFFICE.test(f.name)) return `<iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}" title="${esc(f.name)}"></iframe>`;
+    if (/pdf/.test(f.contentType || '') || /\.pdf$/i.test(f.name)) return `<iframe loading="lazy" src="${esc(f.url)}#toolbar=0" title="${esc(f.name)}"></iframe>`;   // loads when you scroll near it
+    if (OFFICE.test(f.name)) return `<iframe loading="lazy" src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}" title="${esc(f.name)}"></iframe>`;
     return '';
   }
 
