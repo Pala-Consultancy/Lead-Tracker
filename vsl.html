@@ -820,7 +820,7 @@
       </div>
       <div class="vsl-frame">
         <!-- Wistia video -->
-        <wistia-player media-id="u1h0rd4kfe" aspect="1.7777777777777777" player-color="1B59A5" controls-visible-on-load="false" playbar="false" settings-control="false" playback-rate-control="false" quality-control="false" chapters-on="false" chapters-control="false"></wistia-player>
+        <wistia-player media-id="u1h0rd4kfe" autoplay="true" silent-auto-play="allow" aspect="1.7777777777777777" player-color="1B59A5" controls-visible-on-load="false" playbar="false" settings-control="false" playback-rate-control="false" quality-control="false" chapters-on="false" chapters-control="false"></wistia-player>
       </div>
       <div class="book reveal r3">
         <a class="btn btn-orange book-btn book-blue" href="#book">Book your 1:1 call
@@ -1183,6 +1183,26 @@
   (function () {
     const io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('marquee-paused', !e.isIntersecting)), { rootMargin: '100px 0px' });
     document.querySelectorAll('.pay-row, .cl-marquee').forEach(el => io.observe(el));
+  })();
+
+  /* ---------- Video: restart from the beginning when the sound is turned on ---------- */
+  (function () {
+    let restarted = false;
+    function restart(player) {
+      if (restarted) return; restarted = true;
+      try {
+        if (typeof player.time === 'function') { player.time(0); player.play(); }
+        else { player.currentTime = 0; player.play && player.play(); }
+      } catch (e) {}
+    }
+    // Wistia player API: fires when the viewer turns the sound on or off
+    window._wq = window._wq || [];
+    window._wq.push({ id: 'u1h0rd4kfe', onReady: function (video) {
+      video.bind('mutechange', function (isMuted) { if (!isMuted) restart(video); });
+    }});
+    // Same for the newer player element, as a backup
+    const el = document.querySelector('wistia-player[media-id="u1h0rd4kfe"]');
+    if (el) el.addEventListener('mute-change', e => { if (e.detail && e.detail.isMuted === false) restart(el); });
   })();
   /* ---------- Start ---------- */
   function startPage() {
