@@ -1084,6 +1084,7 @@
     if (li) li.onload = () => {
       const square = li.naturalWidth / li.naturalHeight < 1.8;
       if (square && company) $('brand').querySelector('.wm-side').classList.remove('hidden');
+      const r = li.naturalWidth / li.naturalHeight; if (r >= 0.8 && r <= 1.25) li.classList.add('sq');   // a square logo is shown full, not on a tile
       if (square && li.naturalWidth / li.naturalHeight > 0.6) $('favicon').href = b.logo;   // your logo in the browser tab
     };
     $('from').innerHTML = `${b.photo ? `<img class="ph" src="${esc(b.photo)}" alt="">` : `<span class="mono">${esc(initials(person || company))}</span>`}
@@ -2817,6 +2818,8 @@ html[data-theme="dark"]{--rd-glass-solid:rgba(18,20,42,.95);}
 body::after{display:none !important;}
 /* the activity list is for you (in Client processes), not for your client */
 #actBtn,#drawer{display:none !important;}
+/* a square logo fills its space (rounded), in light and dark mode; a wide logo keeps the light tile in dark mode */
+.brand img.sq{width:36px !important;height:36px !important;max-height:none !important;max-width:none !important;object-fit:cover !important;padding:0 !important;background:none !important;border-radius:9px !important;}
 /* the dimming layer for pop-ups: really gone while nothing is open (not just transparent) */
 .scrim:not(.open){visibility:hidden;transition:opacity .25s,visibility 0s linear .25s;} .scrim.open{visibility:visible;transition:opacity .25s;}
 </style>
