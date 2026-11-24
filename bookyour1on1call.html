@@ -804,7 +804,13 @@
   /* booking */
   .booking-frame { background: var(--card) !important; border-color: var(--line-d) !important; box-shadow: 0 30px 70px rgba(0,0,0,.45) !important; }
   .footer .container { border-color: var(--line-d) !important; }
+
+  /* Keep the first screen calm while the video starts */
+  .vsl-head h1, .vsl-frame { animation: none !important; transition: none !important; }
 </style>
+<link rel="preconnect" href="https://fast.wistia.com" crossorigin>
+<link rel="preconnect" href="https://embed-ssl.wistia.com" crossorigin>
+<link rel="preconnect" href="https://fast.wistia.net" crossorigin>
 <script src="https://fast.wistia.com/player.js" async></script>
 <script src="https://fast.wistia.com/embed/u1h0rd4kfe.js" async type="module"></script>
 <style>wistia-player[media-id='u1h0rd4kfe']:not(:defined) { background: center / cover no-repeat url('https://fast.wistia.com/embed/medias/u1h0rd4kfe/swatch'); }</style>
@@ -1296,6 +1302,20 @@
 
 
 </script>
-<script src="https://app.aura-app.ai/embed/aura.js" async></script>
+<script>
+  /* Load the booking form only when it's needed, so the video gets the full connection first */
+  (function () {
+    const target = document.getElementById('book');
+    let loaded = false;
+    function load() {
+      if (loaded) return; loaded = true;
+      const s = document.createElement('script'); s.src = 'https://app.aura-app.ai/embed/aura.js'; s.async = true; document.body.appendChild(s);
+    }
+    if (!target || !('IntersectionObserver' in window)) { load(); return; }
+    new IntersectionObserver((es, o) => { if (es.some(e => e.isIntersecting)) { o.disconnect(); load(); } }, { rootMargin: '1200px 0px' }).observe(target);
+    // booking buttons jump straight to the form, so start loading it on click too
+    document.querySelectorAll('a[href="#book"]').forEach(a => a.addEventListener('click', load));
+  })();
+</script>
 </body>
 </html>
