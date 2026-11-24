@@ -1025,12 +1025,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const initials = (n) => (n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   const fsize = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
 
-  // Same rule as the functions and the other pages: paid, or the first 7 days, else Free.
+  // Same rule as the functions and the other pages: paid, or the first 14 days, else Free.
   function effectivePlan(w) {
     w = w || {};
     if (w.billingExempt === true) return w.plan && w.plan !== 'free' ? w.plan : 'premium';
     if (w.subscriptionActive === true) return w.plan || 'premium';
-    const c = ms(w.createdAt); return c && Date.now() < c + 7 * 86400000 ? 'premium' : 'free';
+    const c = ms(w.createdAt); return c && Date.now() < c + 14 * 86400000 ? 'premium' : 'free';
   }
   const isFree = () => effectivePlan(ws) === 'free';
   // On Free only the 3 oldest active processes work for clients (the functions check this too).

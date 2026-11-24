@@ -2387,10 +2387,10 @@ html[data-theme="dark"] .trial-banner.ended a{color:#F8CB81}
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <script>
   // Effective plan: an active subscription (or billing-exempt) = the paid plan;
-  // otherwise the first 7 days after the workspace was created = Premium trial;
+  // otherwise the first 14 days after the workspace was created = Premium trial;
   // after that (and after cancelling) = Free. Same rule as the Cloud Functions
   // and the Firestore rules.
-  const PT_TRIAL_DAYS = 7;
+  const PT_TRIAL_DAYS = 14;
   function ptTrialEndsAt(ws){
     const c = ws && ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
     return c ? c + PT_TRIAL_DAYS * 86400000 : 0;

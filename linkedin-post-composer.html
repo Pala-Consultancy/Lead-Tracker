@@ -4229,17 +4229,17 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
 
   // ---------- Plan: the AI tools aren't on Free ----------
   // Effective plan, same rule as every page, the Cloud Functions and the rules:
-  // paid plan with an active subscription; else Premium for the first 7 days; then Free.
+  // paid plan with an active subscription; else Premium for the first 14 days; then Free.
   let composerPlan = null; // unknown until the workspace is loaded (the server checks too)
   function effectivePlanOf(ws){
     ws = ws || {};
     if(ws.billingExempt === true) return ws.plan && ws.plan !== 'free' ? ws.plan : 'premium';
     if(ws.subscriptionActive === true) return ws.plan || 'premium';
     const c = ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
-    return c && Date.now() < c + 7 * 86400000 ? 'premium' : 'free';
+    return c && Date.now() < c + 14 * 86400000 ? 'premium' : 'free';
   }
   function aiLocked(){ return composerPlan === 'free'; }
-  const AI_LOCK_MSG = "The AI tools (post ideas, AI edit and the AI post check) are part of the 7-day trial and the paid plans. Upgrade in Billing to keep using them.";
+  const AI_LOCK_MSG = "The AI tools (post ideas, AI edit and the AI post check) are part of the 14-day trial and the paid plans. Upgrade in Billing to keep using them.";
   function applyAiLock(){
     const locked = aiLocked();
     ['ideasBtn', 'aiEditBtn'].forEach(id=>{
@@ -4589,7 +4589,7 @@ It named my last post, asked one question, and didn't pitch anything. I booked t
       const ISSUE_LABELS = {grammar: 'Grammar', clarity: 'Clarity', specificity: 'Be specific', ai: 'Sounds like AI', structure: 'Structure', goal: 'Goal', reader: 'Your reader'};
       let body = '';
       if(aiReviewBusy && !hasAi) body = aiReadingHtml(false);
-      else if(!hasAi && aiLocked()) body = `<div class="pc-detail">The AI review (sense, grammar, hook, specificity, structure, goal and reader) is part of the 7-day trial and the paid plans. Your score below comes from the writing checks only. <a href="billing.html">Upgrade in Billing</a></div>`;
+      else if(!hasAi && aiLocked()) body = `<div class="pc-detail">The AI review (sense, grammar, hook, specificity, structure, goal and reader) is part of the 14-day trial and the paid plans. Your score below comes from the writing checks only. <a href="billing.html">Upgrade in Billing</a></div>`;
       else if(!hasAi) body = `<div class="pc-detail">${text.replace(/\s+$/, '').length < AI_REVIEW_MIN_CHARS ? 'The AI reads your post once it has at least 30 characters.'
         : outdated ? 'Your post (or its goal) changed since the last AI check. Click “Check with AI” to update the score.'
         : 'The AI reads your post only when you click “Check with AI”, so it never scans while you type.'}</div>`;

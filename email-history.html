@@ -934,13 +934,13 @@ html[data-theme="dark"] .bulk-bar-btn:hover{background:rgba(22,25,52,0.20)}
   // about what's actually available.
 
   // Effective plan (same rule as every page, the Cloud Functions and the rules):
-  // paid plan with an active subscription; otherwise Premium for the first 7 days; then Free.
+  // paid plan with an active subscription; otherwise Premium for the first 14 days; then Free.
   function effectivePlanOf(ws){
     ws = ws || {};
     if(ws.billingExempt === true) return ws.plan && ws.plan !== 'free' ? ws.plan : 'premium';
     if(ws.subscriptionActive === true) return ws.plan || 'premium';
     const c = ws.createdAt && typeof ws.createdAt.toMillis === 'function' ? ws.createdAt.toMillis() : 0;
-    return c && Date.now() < c + 7 * 86400000 ? 'premium' : 'free';
+    return c && Date.now() < c + 14 * 86400000 ? 'premium' : 'free';
   }
   function applyPlanGating(plan){
     const isPaidPlan = plan === 'starter' || plan === 'premium' || plan === 'growth';
