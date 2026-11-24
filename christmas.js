@@ -104,6 +104,8 @@
     '#ptXmas .xm-orn.o2{right:' + (PLACE === 'site' ? 70 : 46) + 'px;width:26px;animation-duration:7s;animation-delay:-2s;} #ptXmas .xm-orn.o2 .str{height:' + (PLACE === 'site' ? 30 : 54) + 'px;} #ptXmas .xm-orn.o2 svg{width:26px;height:35px;}',
     '#ptXmas .xm-orn.o3{right:' + (PLACE === 'site' ? 100 : 74) + 'px;width:22px;animation-duration:8s;animation-delay:-4s;} #ptXmas .xm-orn.o3 .str{height:' + (PLACE === 'site' ? 44 : 74) + 'px;} #ptXmas .xm-orn.o3 svg{width:22px;height:30px;}',
     '@media (max-width:760px){#ptXmas .xm-orn{display:none;}}',
+    // on the website (and client pages) the ornaments are small and quiet, so they don't distract from the page
+    PLACE !== 'app' ? '#ptXmas .xm-orn svg{scale:.6;transform-origin:50% 0;filter:drop-shadow(0 3px 5px rgba(140,18,32,.18));} #ptXmas .xm-orn .str{height:34px;} #ptXmas .xm-orn.o2 .str{height:18px;} #ptXmas .xm-orn.o3 .str{height:26px;} #ptXmas .xm-orn{opacity:.9;}' : '',
     '#ptXmas .xm-orn.spin svg{animation:xmSpin .9s cubic-bezier(.3,1.4,.5,1);}',
     '@keyframes xmSwing{0%,100%{transform:rotate(4deg);}50%{transform:rotate(-4deg);}}',
     '@keyframes xmSpin{0%{transform:rotate(0) scale(1);}40%{transform:rotate(200deg) scale(1.18);}100%{transform:rotate(360deg) scale(1);}}',
