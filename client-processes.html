@@ -202,6 +202,11 @@
   .be-btnprev{padding:9px 16px;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
   .be-client{border-color:#D6D2FA;background:#F7F6FF;} .be-client .in{margin-top:6px;}
   .be-tag{font-size:12px;font-weight:700;color:var(--teal);}
+  .vt-status{margin:10px 0 2px;} .vt-st-row{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);} .vt-st-row b{margin-left:auto;font-variant-numeric:tabular-nums;}
+  .vt-st-bar{height:6px;border-radius:99px;background:var(--panel-alt);overflow:hidden;margin-top:7px;} .vt-st-bar i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#3B49C9,#7C5CFF);transition:width .2s ease;}
+  .vt-spin{width:15px;height:15px;border-radius:50%;border:2px solid rgba(59,73,201,.2);border-top-color:#3B49C9;animation:vtSpin .8s linear infinite;flex-shrink:0;} @keyframes vtSpin{to{transform:rotate(360deg)}}
+  .vt-cur-img{position:relative;display:inline-block;} .vt-cur-img img{display:block;} .vt-cur-img em{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 11px inherit;font-style:normal;color:#fff;background:rgba(15,18,40,.45);border-radius:7px;}
+  .btn.is-off{opacity:.5;pointer-events:none;}
   .be-badge{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:6px 0 2px;font-size:12.5px;color:var(--slate);} .bb-l{font-weight:700;margin-right:2px;}
   .bb-pre{border:1px dashed var(--line);background:transparent;border-radius:999px;padding:3px 10px;font:700 12px inherit;font-family:inherit;color:var(--slate);cursor:pointer;}
   .bb-pre.on.bb-update{background:#E0EAFF;color:#1D4ED8;border:1px solid #BFD3FF;} .bb-pre.on.bb-new{background:#DCFCE7;color:#047857;border:1px solid #A7F3D0;} .bb-pre.on.bb-important{background:#FEF3C7;color:#B45309;border:1px solid #FCD34D;}
@@ -1947,10 +1952,12 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     ov.querySelectorAll('[data-vt-close]').forEach((b)=> b.addEventListener('click', close));
     return {ov, close};
   }
-  async function vtUpload(blob, name) {
+  async function vtUpload(blob, name, onPct) {
     const folder = (editing.kind === 'template' ? 'tpl-' : 'proc-') + editing.id;
     const path = `workspaces/${wsId}/clientProcessFiles/${folder}/${Date.now()}-${name}`;
-    await storage.ref(path).put(blob, {contentType: blob.type || 'image/jpeg'});
+    const task = storage.ref(path).put(blob, {contentType: blob.type || 'image/jpeg'});
+    if (onPct) task.on('state_changed', (sn) => { if (sn.totalBytes) onPct(Math.round(sn.bytesTransferred / sn.totalBytes * 100)); });
+    await task;
     return storage.ref(path).getDownloadURL();
   }
   // --- 🖼 thumbnail: a frame from the video, or your own image ---
@@ -1959,20 +1966,31 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const {ov, close} = vtDialog('Thumbnail', `<p class="vt-p">Pause the video on the moment you want, then click <b>Use this frame</b>. Or upload your own image.</p>
       <div class="vt-vid"><video controls preload="auto" playsinline muted src="${esc(local || v.url)}"></video></div>
       <div class="vt-cur">${v.poster ? `<img src="${esc(v.poster)}" alt=""><span>Your current thumbnail</span>` : v.posterAt != null ? `<span>Current thumbnail: the frame at <b>${fmtT(v.posterAt)}</b></span>` : '<span>No thumbnail chosen yet: the first frame shows.</span>'}</div>
+      <div class="vt-status" hidden><div class="vt-st-row"><span class="vt-spin" aria-hidden="true"></span><span class="vt-st-t">Uploading your thumbnail…</span><b class="vt-st-p">0%</b></div><div class="vt-st-bar"><i></i></div></div>
       <div class="vt-actions"><button type="button" class="btn sm primary" data-vt="frame">Use this frame</button>
         <label class="btn sm">Upload an image<input type="file" accept="image/*" class="hidden" data-vt="img"></label>
         ${v.poster || v.posterAt != null ? '<button type="button" class="btn sm" data-vt="none">Remove thumbnail</button>' : ''}</div>`);
     const vid = ov.querySelector('video');
     if (v.posterAt != null) vid.addEventListener('loadedmetadata', ()=>{ vid.currentTime = v.posterAt; }, {once: true});
     const done = (msg)=>{ changed(); renderPage(); close(); showToast(msg); };
+    // while uploading: the new image shows right away (dimmed, "Uploading…"), a progress bar counts up, buttons wait
+    const st = ov.querySelector('.vt-status'), cur = ov.querySelector('.vt-cur');
+    const pct = (n) => { st.querySelector('.vt-st-p').textContent = n + '%'; st.querySelector('.vt-st-bar i').style.width = n + '%'; };
+    const busy = (on, previewBlob, label) => {
+      ov.querySelectorAll('.vt-actions .btn, .vt-actions input').forEach((x) => { x.disabled = on; const b = x.closest('.btn'); if (b) b.classList.toggle('is-off', on); });
+      st.hidden = !on; if (!on) return;
+      st.querySelector('.vt-st-t').textContent = label || 'Uploading your thumbnail…'; pct(0);
+      if (previewBlob && cur) { const u = URL.createObjectURL(previewBlob); cur.innerHTML = `<span class="vt-cur-img"><img src="${u}" alt=""><em>Uploading…</em></span><span>Your new thumbnail</span>`; }
+    };
     ov.querySelector('[data-vt="frame"]').addEventListener('click', async (e)=>{
-      const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Saving…';
-      const t = vid.currentTime || 0;
+      const btn = e.currentTarget; btn.textContent = 'Saving…';
+      const t = vid.currentTime || 0; vid.pause();
       try {
         const w = Math.min(1280, vid.videoWidth || 1280), h = Math.round(w * (vid.videoHeight || 720) / (vid.videoWidth || 1280));
         const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(vid, 0, 0, w, h);
         const blob = await new Promise((res, rej)=>{ try { c.toBlob((b)=> b ? res(b) : rej(new Error('no image')), 'image/jpeg', 0.86); } catch (err) { rej(err); } });
-        v.poster = await vtUpload(blob, 'thumbnail.jpg'); delete v.posterAt;
+        busy(true, blob, 'Saving this frame as your thumbnail…');
+        v.poster = await vtUpload(blob, 'thumbnail.jpg', pct); delete v.posterAt;
         done('Thumbnail saved.');
       } catch (err) {
         // the video comes from storage the browser won't let us take a picture of: remember the moment instead
@@ -1982,8 +2000,9 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     });
     ov.querySelector('[data-vt="img"]').addEventListener('change', async (e)=>{
       const f = e.target.files[0]; if (!f) return; if (!/^image\//.test(f.type)) { showToast('That isn’t an image.', true); return; }
-      try { v.poster = await vtUpload(f, 'thumbnail-' + f.name.replace(/[^\w.-]+/g, '_').slice(-60)); delete v.posterAt; done('Thumbnail saved.'); }
-      catch (err) { showToast('Couldn’t upload the image.', true); }
+      busy(true, f, 'Uploading your thumbnail…');
+      try { v.poster = await vtUpload(f, 'thumbnail-' + f.name.replace(/[^\w.-]+/g, '_').slice(-60), pct); delete v.posterAt; done('Thumbnail saved.'); }
+      catch (err) { busy(false); showToast('Couldn’t upload the image. Please try again.', true); }
     });
     const none = ov.querySelector('[data-vt="none"]'); if (none) none.addEventListener('click', ()=>{ delete v.poster; delete v.posterAt; done('Thumbnail removed.'); });
   }
