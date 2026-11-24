@@ -185,7 +185,7 @@
     function size() { W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (opts.once) return;                                   // snow that only falls in short flurries: nothing falls by itself
       var n = Math.round(Math.min(opts.max || 70, W * H / density)); while (flakes.length < n) flakes.push(flake(true)); flakes.length = n; }
-    function flake(anywhere) { var r = 0.9 + Math.random() * (opts.big ? 3.4 : 2.4); return {x: Math.random() * W, y: anywhere ? Math.random() * H : -10, r: r, vy: 0.25 + r * 0.22 + Math.random() * 0.25, ph: Math.random() * 6.28, sw: 0.3 + Math.random() * 0.6}; }
+    function flake(anywhere) { var r = 0.9 + Math.random() * (opts.big ? 3.4 : 2.4); return {x: 8 + Math.random() * Math.max(1, W - 16), y: anywhere ? Math.random() * H : -10, r: r, vy: 0.25 + r * 0.22 + Math.random() * 0.25, ph: Math.random() * 6.28, sw: 0.3 + Math.random() * 0.6}; }
     var running = false;
     function frame(t) {
       if (stopped) { running = false; return; }
@@ -197,7 +197,7 @@
         if (t - dkAt > 1000) { dk = dark(); dkAt = t; }                                  // light or dark page: checked once a second
         ctx.clearRect(0, 0, W, H); var night = opts.night || dk;
         for (var i = 0; i < flakes.length; i++) {
-          var f = flakes[i]; f.y += f.vy * (opts.speed || 1) * k; f.ph += 0.012 * k; f.x += Math.sin(f.ph) * f.sw * 0.6 * k;
+          var f = flakes[i]; f.y += f.vy * (opts.speed || 1) * k; f.ph += 0.012 * k; f.x += Math.sin(f.ph) * f.sw * 0.6 * k; if (f.x < -6) f.x += W + 12; else if (f.x > W + 6) f.x -= W + 12;   // never cut off at an edge
           if (f.y > H + 6) { if (opts.once) { flakes.splice(i, 1); i--; } else flakes[i] = flake(false); continue; }
           if (sprite) { ctx.globalAlpha = 0.55 + f.r * 0.08; ctx.drawImage(sprite, f.x - f.r * 2.2, f.y - f.r * 2.2, f.r * 4.4, f.r * 4.4); ctx.globalAlpha = 1; continue; }
           ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.283);
@@ -220,9 +220,9 @@
   // Browsers without OffscreenCanvas get the canvas on the page thread, as before. A flurry (click an ornament) uses a
   // second canvas that only runs while those flakes fall.
   var SNOW_WORKER = 'var c,x,W=0,H=0,dpr=.5,flakes=[],o={},night=false,last=0,raf=self.requestAnimationFrame?self.requestAnimationFrame.bind(self):function(f){return setTimeout(function(){f(performance.now())},16)};' +
-    'function flake(any){var r=.9+Math.random()*2.4;return{x:Math.random()*W,y:any?Math.random()*H:-10,r:r,vy:.25+r*.22+Math.random()*.25,ph:Math.random()*6.28,sw:.3+Math.random()*.6}}' +
+    'function flake(any){var r=.9+Math.random()*2.4;return{x:8+Math.random()*Math.max(1,W-16),y:any?Math.random()*H:-10,r:r,vy:.25+r*.22+Math.random()*.25,ph:Math.random()*6.28,sw:.3+Math.random()*.6}}' +
     'function size(w,h){W=w;H=h;c.width=Math.max(1,Math.round(W*dpr));c.height=Math.max(1,Math.round(H*dpr));x.setTransform(dpr,0,0,dpr,0,0);var n=Math.round(Math.min(o.max||70,W*H/o.density));while(flakes.length<n)flakes.push(flake(true));flakes.length=n}' +
-    'function frame(t){var k=last?Math.min(4,(t-last)/16.7):1;last=t;x.clearRect(0,0,W,H);for(var i=0;i<flakes.length;i++){var f=flakes[i];f.y+=f.vy*(o.speed||1)*k;f.ph+=.012*k;f.x+=Math.sin(f.ph)*f.sw*.6*k;if(f.y>H+6){flakes[i]=flake(false);continue}x.beginPath();x.arc(f.x,f.y,f.r,0,6.283);x.fillStyle=night?"rgba(255,255,255,"+(.45+f.r*.12)+")":"rgba(126,150,190,"+(.25+f.r*.08)+")";x.fill()}raf(frame)}' +
+    'function frame(t){var k=last?Math.min(4,(t-last)/16.7):1;last=t;x.clearRect(0,0,W,H);for(var i=0;i<flakes.length;i++){var f=flakes[i];f.y+=f.vy*(o.speed||1)*k;f.ph+=.012*k;f.x+=Math.sin(f.ph)*f.sw*.6*k;if(f.x<-6)f.x+=W+12;else if(f.x>W+6)f.x-=W+12;if(f.y>H+6){flakes[i]=flake(false);continue}x.beginPath();x.arc(f.x,f.y,f.r,0,6.283);x.fillStyle=night?"rgba(255,255,255,"+(.45+f.r*.12)+")":"rgba(126,150,190,"+(.25+f.r*.08)+")";x.fill()}raf(frame)}' +
     'onmessage=function(e){var d=e.data;if(d.type==="init"){c=d.canvas;x=c.getContext("2d");o=d;night=d.night;size(d.w,d.h);raf(frame)}else if(d.type==="size")size(d.w,d.h);else if(d.type==="night")night=d.night}';
   function makeAmbientSnow(host, canvas, density, opts) {
     if (reduced || !canvas.transferControlToOffscreen || !window.Worker || !window.Blob || !window.URL) return makeSnow(canvas, density, opts);
