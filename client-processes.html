@@ -1345,7 +1345,10 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const leftExcept = (id) => blocks.filter((x) => isTask(x) && x.required !== false && x.id !== id && !doneOf(x.id)).length;
     const out = blocks.map((b) => {
       const o = {...b};
-      if (b.type === 'video' && b.video) o.video = {kind: b.video.kind, url: b.video.url || '', embedUrl: b.video.embedUrl || '', name: b.video.name || ''};
+      // the preview gets the whole video, thumbnail included (it showed a black frame before), like your client's page
+      if (b.type === 'video' && b.video) { const v = b.video; o.video = {kind: v.kind, url: v.url || '', embedUrl: v.embedUrl || '', name: v.name || '',
+        ...(v.poster ? {poster: v.poster} : {}), ...(typeof v.posterAt === 'number' ? {posterAt: v.posterAt} : {}),
+        ...(Array.isArray(v.chapters) ? {chapters: v.chapters} : {}), ...(v.subs ? {subs: v.subs} : {})}; }
       if (b.type === 'button') { o.url = normUrl(b.url); if (o.url && isGated(b) && leftExcept(null) > 0) Object.assign(o, {url: '', locked: true, left: leftExcept(null)}); }
       if (isTask(b)) {
         const p = prog[b.id] || {};
