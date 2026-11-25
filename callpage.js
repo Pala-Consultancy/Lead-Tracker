@@ -103,7 +103,12 @@
       if (!ov.isConnected || ov._closing) return;
       var pl = v.kind === 'file' ? document.createElement('video') : document.createElement('iframe');
       if (v.kind === 'file') { pl.src = v.src; pl.controls = true; pl.autoplay = true; pl.playsInline = true; pl.setAttribute('controlslist', 'nofullscreen'); pl.disablePictureInPicture = true; }
-      else { pl.src = v.embed + (v.embed.indexOf('?') < 0 ? '?' : '&') + (v.kind === 'wistia' ? 'autoPlay=true' : 'autoplay=1'); pl.allow = 'autoplay; encrypted-media'; pl.title = label || 'Video'; }
+      else {
+        // the small videos play clean, without a control bar (click the video to pause); the main video keeps its controls
+        var clean = v.kind === 'wistia' ? 'autoPlay=true&playbar=false&smallPlayButton=false&volumeControl=false&settingsControl=false&fullscreenButton=false&playbackRateControl=false&qualityControl=false&controlsVisibleOnLoad=false&chaptersOn=false'
+          : v.kind === 'youtube' ? 'autoplay=1&controls=0&modestbranding=1&rel=0&playsinline=1'
+          : v.kind === 'vimeo' ? 'autoplay=1&controls=0' : 'autoplay=1';
+        pl.src = v.embed + (v.embed.indexOf('?') < 0 ? '?' : '&') + clean; pl.allow = 'autoplay; encrypted-media'; pl.title = label || 'Video'; }
       pl.className = 'cp-vlb-player'; box.appendChild(pl);
       setTimeout(function () { pl.classList.add('on'); }, v.kind === 'file' ? 80 : 400);    // fades in over the cover once it has loaded a bit
     };
