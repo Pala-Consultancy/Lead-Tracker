@@ -148,6 +148,8 @@
   .add-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
   .imgs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
   .imgs div{position:relative;aspect-ratio:3/4;border-radius:8px;overflow:hidden;background:var(--panel-alt);}
+  .imgs div.bad{border:2px dashed #DC2626;background:#FEF2F2;} .imgs div.bad img{display:none;}
+  .imgs div.bad::after{content:'⚠ Can’t be loaded';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:11px;font-weight:700;color:#B91C1C;}
   .imgs img{width:100%;height:100%;object-fit:cover;display:block;}
   .imgs button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:11px;}
   .drop{margin-top:8px;border:1.5px dashed var(--border);border-radius:10px;padding:14px;text-align:center;font-size:13px;color:var(--slate);cursor:pointer;}
@@ -616,7 +618,7 @@
         f += `<div class="add-row"><button type="button" class="btn sm" data-addurl="${i}">+ Add a client video</button></div>`;
       }
       if (b.type === 'results') {
-        f += `${(b.images || []).length > 1 ? '<div class="hint">Drag the screenshots to change their order.</div>' : ''}<div class="imgs">${(b.images || []).map((src, j) => `<div data-ii="${j}" data-bi="${i}" title="Drag to move"><img src="${esc(src)}" alt="" draggable="false"><button type="button" data-rmimg="${i}:${j}" title="Remove">✕</button></div>`).join('')}</div>
+        f += `${(b.images || []).length > 1 ? '<div class="hint">Drag the screenshots to change their order.</div>' : ''}<div class="imgs">${(b.images || []).map((src, j) => `<div data-ii="${j}" data-bi="${i}" title="Drag to move"><img src="${esc(src)}" alt="" draggable="false" onerror="this.parentNode.classList.add('bad')"><button type="button" data-rmimg="${i}:${j}" title="Remove">✕</button></div>`).join('')}</div>
           <div class="drop" data-drop="${i}">📤 Click or drop screenshots here (results, reviews, messages)</div><input type="file" accept="image/*" multiple hidden data-file="${i}">`;
       }
       if (b.type === 'button') f += `<label class="f">Button text</label><input class="in" data-b="${i}" data-k="label" value="${esc(b.label || '')}" placeholder="Add the call to your calendar"><label class="f">Button link</label><input class="in" data-b="${i}" data-k="href" value="${esc(b.href || '')}" placeholder="https://…">`;
@@ -721,14 +723,29 @@
   $('fName').addEventListener('input', () => { cur.name = $('fName').value; changed(); });
 
   // result screenshots: uploaded to this workspace's storage, shown on the page through their link
+  // JPG, PNG, WebP and GIF go up as they are; anything else (HEIC from an iPhone, TIFF, …) is turned into a JPG
+  // first if this browser can read it, and refused if not, so every visitor can see every screenshot.
+  async function webSafe(f) {
+    if (/^image\/(jpeg|png|webp|gif)$/i.test(f.type)) return f;
+    try {
+      const bmp = await createImageBitmap(f), c = document.createElement('canvas');
+      const k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height)); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+      const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.9)); if (!blob) return null;
+      return new File([blob], f.name.replace(/\.[^.]+$/, '') + '.jpg', {type: 'image/jpeg'});
+    } catch (e) { return null; }
+  }
   async function upload(i, files) {
     const list = [...(files || [])].filter((f) => /^image\//.test(f.type));
     if (!list.length) return;
     const big = list.filter((f) => f.size > 10 * 1024 * 1024); if (big.length) showToast('Images must be smaller than 10 MB.', true);
     const ok = list.filter((f) => f.size <= 10 * 1024 * 1024); if (!ok.length) return;
     showToast('Uploading ' + ok.length + (ok.length === 1 ? ' image…' : ' images…'));
-    for (const f of ok) {
+    for (const f0 of ok) {
+      let f = f0;
       try {
+        f = await webSafe(f0);
+        if (!f) { showToast(`${f0.name} can’t be shown in browsers (it’s probably an iPhone photo in HEIC format). Save it as JPG or PNG and upload it again.`, true); continue; }
         const name = Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_').slice(-60);
         const ref = storage.ref(`workspaces/${wsId}/callPageImages/${cur.id}/${name}`);
         await ref.put(f, {contentType: f.type});

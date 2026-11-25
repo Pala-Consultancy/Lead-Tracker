@@ -360,7 +360,7 @@
           var rows = Math.min(3, Math.max(1, Math.ceil(imgs.length / 4))), per = Math.ceil(imgs.length / rows), rs = '';
           for (var r = 0; r < rows; r++) {
             var set = imgs.slice(r * per, r * per + per); while (set.length < 4 && imgs.length) set = set.concat(imgs.slice(0, 4 - set.length));
-            var cells = set.map(function (src) { return '<button type="button" class="cp-shot" data-full="' + esc(src) + '"><img src="' + esc(src) + '" alt="Client result" loading="lazy"></button>'; }).join('');
+            var cells = set.map(function (src) { return '<button type="button" class="cp-shot" data-full="' + esc(src) + '"><img src="' + esc(src) + '" alt="Client result" loading="lazy" onerror="this.parentNode.classList.add(' + (ED ? '\'cp-bad\',\'cp-bad-ed\'' : '\'cp-bad\'') + ')"></button>'; }).join('');
             rs += '<div class="cp-row' + (r % 2 ? ' rev' : '') + '" style="--cp-dur:' + (28 + set.length * 4) + 's"><div class="cp-track">' + cells + cells + '</div></div>';
           }
           body = '<div class="cp-wall">' + rs + '</div>';
@@ -538,6 +538,11 @@
     '.cpv .cp-shot{flex:0 0 auto;width:clamp(180px,24cqw,280px);height:clamp(220px,30cqw,340px);border:2px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;padding:0;background:var(--cp-card);cursor:zoom-in}',
     '.cpv.cp-light .cp-shot{border-color:rgba(16,24,40,.08)}',
     '.cpv .cp-shot img{width:100%;height:100%;object-fit:cover;display:block}',
+    // a screenshot that can't be loaded: left out on the live page; marked in the editor so it can be replaced
+    '.cpv .cp-shot.cp-bad{display:none}',
+    '.cpv .cp-shot.cp-bad-ed{display:flex;align-items:center;justify-content:center;padding:16px;border:2px dashed #F87171;background:rgba(248,113,113,.08)}',
+    '.cpv .cp-shot.cp-bad-ed img{display:none}',
+    '.cpv .cp-shot.cp-bad-ed::after{content:"\\26A0  This image can\\2019t be loaded.\\A Remove it and upload it again as JPG or PNG.";white-space:pre-wrap;text-align:center;font:700 13px/1.5 inherit;color:#F87171}',
     '.cpv .cp-cta{margin-top:28px} .cpv .cp-cta a{display:inline-flex;align-items:center;justify-content:center;min-height:58px;padding:0 34px;border-radius:14px;background:var(--cp-accent);color:#fff;font-weight:800;font-size:18px;text-decoration:none;box-shadow:0 18px 40px -18px var(--cp-accent);transition:transform .15s}',
     '.cpv .cp-cta a:hover{transform:translateY(-2px)}',
     '@media (prefers-reduced-motion:reduce){.cpv .cp-track{animation:none}.cpv .cp-continue span{animation:none}}',
