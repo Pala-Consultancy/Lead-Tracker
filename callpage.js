@@ -359,7 +359,9 @@
         if (imgs.length) {
           var rows = Math.min(3, Math.max(1, Math.ceil(imgs.length / 4))), per = Math.ceil(imgs.length / rows), rs = '';
           for (var r = 0; r < rows; r++) {
-            var set = imgs.slice(r * per, r * per + per); while (set.length < 4 && imgs.length) set = set.concat(imgs.slice(0, 4 - set.length));
+            var set = imgs.slice(r * per, r * per + per), extra = imgs.filter(function (x) { return set.indexOf(x) < 0; });
+            while (set.length < 4 && extra.length) set.push(extra.shift());
+            while (set.length < 4 && imgs.length) set = set.concat(imgs.slice(0, 4 - set.length));
             var cells = set.map(function (src) { return '<button type="button" class="cp-shot" data-full="' + esc(src) + '"><img src="' + esc(src) + '" alt="Client result" loading="lazy" onerror="this.parentNode.classList.add(' + (ED ? '\'cp-bad\',\'cp-bad-ed\'' : '\'cp-bad\'') + ')"></button>'; }).join('');
             rs += '<div class="cp-row' + (r % 2 ? ' rev' : '') + '" style="--cp-dur:' + (28 + set.length * 4) + 's"><div class="cp-track">' + cells + cells + '</div></div>';
           }
@@ -542,6 +544,9 @@
     '.cpv .cp-track{align-items:center}',
     // the size you choose per block: Small (logos), Medium (the default), Large
     '.cpv .cp-sz-s .cp-shot img{max-height:clamp(90px,12cqw,140px);max-width:min(300px,60cqw)}',
+    // logos (Small): no frame around them, they sit straight on the page
+    '.cpv .cp-sz-s .cp-shot{border:0;background:none;border-radius:0;box-shadow:none;overflow:visible}',
+    '.cpv .cp-sz-s .cp-track{gap:clamp(28px,4cqw,56px)}',
     '.cpv .cp-sz-l .cp-shot img{max-height:clamp(260px,34cqw,420px);max-width:min(760px,90cqw)}',
     // a screenshot that can't be loaded: left out on the live page; marked in the editor so it can be replaced
     '.cpv .cp-shot.cp-bad{display:none}',
