@@ -535,9 +535,11 @@
     '.cpv .cp-row.rev .cp-track{animation-direction:reverse}',
     '.cpv .cp-row:hover .cp-track{animation-play-state:paused}',
     '@keyframes cpScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}',
-    '.cpv .cp-shot{flex:0 0 auto;width:clamp(180px,24cqw,280px);height:clamp(220px,30cqw,340px);border:2px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;padding:0;background:var(--cp-card);cursor:zoom-in}',
+    // every screenshot is shown whole: the same height for all, the width follows each screenshot's own shape (never cropped)
+    '.cpv .cp-shot{flex:0 0 auto;width:auto;height:auto;align-self:center;border:2px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;padding:0;background:var(--cp-card);cursor:zoom-in;line-height:0}',
     '.cpv.cp-light .cp-shot{border-color:rgba(16,24,40,.08)}',
-    '.cpv .cp-shot img{width:100%;height:100%;object-fit:cover;display:block}',
+    '.cpv .cp-shot img{height:auto;width:auto;max-height:clamp(200px,26cqw,300px);max-width:min(560px,86cqw);display:block}',
+    '.cpv .cp-track{align-items:center}',
     // a screenshot that can't be loaded: left out on the live page; marked in the editor so it can be replaced
     '.cpv .cp-shot.cp-bad{display:none}',
     '.cpv .cp-shot.cp-bad-ed{display:flex;align-items:center;justify-content:center;padding:16px;border:2px dashed #F87171;background:rgba(248,113,113,.08)}',
