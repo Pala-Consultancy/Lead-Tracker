@@ -519,7 +519,7 @@
     '.cpv .cp-hl::after{content:"";position:absolute;left:0;right:0;bottom:-.1em;height:.12em;border-radius:4px;background:var(--cp-accent)}',
     '.cpv .cp-sub{margin:22px auto 0;max-width:760px;font-size:clamp(15px,1.75cqw,22px);line-height:1.6;color:var(--cp-muted);text-align:center}',
     '.cpv .cp-sec{margin-top:clamp(56px,7.5cqw,104px);text-align:center}',   // more room between sections
-    '.cpv .cp-sec.cp-results{margin-top:clamp(84px,11cqw,150px)}',   // extra room above the screenshot walls
+    '.cpv .cp-sec.cp-results{margin-top:clamp(66px,8.5cqw,116px)}',   // extra room above the screenshot walls
     '.cpv .cp-step{display:inline-block;padding:8px 20px;border-radius:999px;background:var(--cp-accent);color:#fff;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase}',
     '.cpv h2{margin:22px 0 0;font-weight:800;font-size:clamp(24px,3.6cqw,48px);line-height:1.15;letter-spacing:-.01em}',
     '.cpv h3{margin:0 0 16px;font-weight:700;font-size:clamp(15px,1.7cqw,21px);line-height:1.35;min-height:2.7em;display:flex;align-items:flex-end;justify-content:center}',
