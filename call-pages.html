@@ -186,7 +186,11 @@
   .rt-pop.rt-fonts button{justify-content:flex-start;font-size:15px;font-weight:500;}
   .rt-pop button.sw{width:26px;min-width:26px;height:26px;padding:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);}
   .rich-note{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 11px;border-radius:9px;background:rgba(122,79,181,.08);border:1px dashed rgba(122,79,181,.35);font-size:12.5px;color:var(--ink);}
-  .rich-note button{margin-left:auto;border:0;background:none;color:var(--teal);font-weight:600;font-size:12px;text-decoration:underline;padding:0;}
+  .rich-note{flex-direction:column;align-items:stretch;}
+  .rich-note .rich-show{display:block;width:100%;text-align:left;border:1px solid var(--border-soft);background:var(--panel);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px;line-height:1.45;color:var(--ink);cursor:text;white-space:pre-wrap;word-break:break-word;}
+  .rich-note .rich-show:hover{border-color:var(--teal);}
+  .rich-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--slate);}
+  .rich-note .rich-foot button{margin-left:auto;border:0;background:none;color:var(--teal);font-weight:600;font-size:12px;text-decoration:underline;padding:0;}
   .pv-tip{font-size:12px;color:var(--slate);}
   @media (max-width:1100px){ .ed-body{grid-template-columns:1fr;} .pv-wrap{display:none;} .pv-wrap.show{display:flex;position:fixed;inset:0;z-index:200;} }
 
@@ -923,11 +927,16 @@
       else if (el.dataset.item != null && k === 'q') path = `q:${el.dataset.b}:${el.dataset.item}`;
       else if (el.dataset.b != null && el.dataset.item == null && ['title', 'text', 'label'].includes(k)) path = `b:${el.dataset.b}:${k}`;
       if (!path || !CallPage.isRich(getPath(path))) return;
-      el.outerHTML = `<div class="rich-note">✨ Formatted text: click it in the preview to edit it.<button type="button" data-plain="${path}">Remove formatting</button></div>`;
+      // the text itself stays visible here (with its formatting); clicking it opens it for editing in the preview
+      el.outerHTML = `<div class="rich-note"><button type="button" class="rich-show" data-richedit="${path}" title="Click to edit it in the preview">${CallPage.clean(getPath(path))}</button>
+        <div class="rich-foot"><span>✨ Formatted text · click it to edit it in the preview</span><button type="button" data-plain="${path}">Remove formatting</button></div></div>`;
     });
     if (CallPage.isRich(cur.hero.title)) { const h = document.querySelector('#form [data-k="hero.highlight"]'); if (h) { const hint = h.nextElementSibling; h.previousElementSibling.remove(); h.remove(); if (hint && hint.classList.contains('hint')) hint.remove(); } }
   }
   document.getElementById('form').addEventListener('click', (e) => {
+    const re = e.target.closest('[data-richedit]');
+    if (re) { const path = re.dataset.richedit, t = document.querySelector(`#pv [data-edit="${CSS.escape(path)}"]`);
+      if (t) { t.scrollIntoView({block: 'center', behavior: 'smooth'}); setTimeout(() => startEdit(path), 250); } return; }
     const b = e.target.closest('[data-plain]'); if (!b) return;
     setPath(b.dataset.plain, CallPage.plain(getPath(b.dataset.plain))); renderForm(); changed();
   });
