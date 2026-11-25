@@ -731,7 +731,8 @@
   // JPG, PNG, WebP and GIF go up as they are; anything else (HEIC from an iPhone, TIFF, …) is turned into a JPG
   // first if this browser can read it, and refused if not, so every visitor can see every screenshot.
   async function webSafe(f) {
-    if (/^image\/(jpeg|png|webp|gif)$/i.test(f.type)) return f;
+    // every file is read first: one that's named .png or .jpg but isn't a real image is refused, not uploaded broken
+    if (/^image\/(jpeg|png|webp|gif)$/i.test(f.type)) { try { const b = await createImageBitmap(f); if (b.close) b.close(); return f; } catch (e) { return null; } }
     try {
       const bmp = await createImageBitmap(f), c = document.createElement('canvas');
       const k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height)); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
@@ -750,7 +751,7 @@
       let f = f0;
       try {
         f = await webSafe(f0);
-        if (!f) { showToast(`${f0.name} can’t be shown in browsers (it’s probably an iPhone photo in HEIC format). Save it as JPG or PNG and upload it again.`, true); continue; }
+        if (!f) { showToast(`${f0.name} isn’t an image browsers can show (a damaged file, or an iPhone photo in HEIC format). Open it and save it again as JPG or PNG, then upload it.`, true); continue; }
         const name = Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_').slice(-60);
         const ref = storage.ref(`workspaces/${wsId}/callPageImages/${cur.id}/${name}`);
         await ref.put(f, {contentType: f.type});
