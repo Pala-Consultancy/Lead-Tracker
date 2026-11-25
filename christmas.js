@@ -148,7 +148,7 @@
     // the Santa hat on the logo (app side panel, Account/Billing, the homepage): its brim rests on top of the P's stem
     // and the tip slumps over towards the ring; placed in % of the logo, so it fits every logo size
     '.pts-host.pt-xm .pts-logo,html.pt-xm-on .logo-badge,html.pt-xm-on .nav-logo{position:relative;overflow:visible;}',
-    'html.pt-xm-hat .pts-host.pt-xm .pts-logo::before,html.pt-xm-on.pt-xm-hat .logo-badge::before,html.pt-xm-on .nav-logo::before{content:"";position:absolute;left:18.5%;top:-3.8%;width:41.6%;height:35.1%;background:url("' + HAT + '") center/contain no-repeat;transform:rotate(7deg);transform-origin:34% 80%;z-index:2;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));}',
+    'html.pt-xm-hat .pts-host.pt-xm .pts-logo::before,html.pt-xm-on.pt-xm-hat .logo-badge::before,html.pt-xm-on .nav-logo::before{content:"";position:absolute;left:40%;top:-8%;width:42%;height:35.4%;background:url("' + HAT + '") center/contain no-repeat;transform:rotate(10deg);transform-origin:30% 85%;z-index:2;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));}',
     // the homepage: the ribbon under the menu, and the ❄️ button for visitors
     '.xm-ribbon{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 auto;padding:9px 16px;font:600 13.5px Inter,sans-serif;color:#8E1D2A;background:linear-gradient(90deg,rgba(214,40,57,.08),rgba(244,197,66,.12),rgba(42,157,92,.08));border-bottom:1px solid rgba(214,40,57,.14);}',
     '.xm-toggle{position:fixed;left:18px;bottom:18px;z-index:' + (Z + 1) + ';width:44px;height:44px;border-radius:50%;border:1px solid rgba(58,134,255,.3);background:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 6px 16px -6px rgba(16,24,40,.3);transition:transform .15s;}',
@@ -252,6 +252,7 @@
   function lights() {
     if (!layer) return;
     var old = layer.querySelector('.xm-lights'); if (old) old.remove();
+    return;   // no garland any more (it was too much); the ornaments, snow and hat stay
     var side = PLACE === 'app' ? document.querySelector('.pts-host') : null, left = side ? Math.round(side.getBoundingClientRect().right) : 0;
     var W = Math.max(200, innerWidth - left - 6), n = Math.max(4, Math.round(W / 120)), seg = W / n, cols = ['r', 'g', 'y', 'b'];
     // inside the app a slim garland along the very top edge (the page's top bar stays free); elsewhere the full one
@@ -951,7 +952,7 @@
     var logo = document.querySelector('.pts-host .pts-logo') || document.querySelector('.logo-badge');
     if (!logo || reduced) { introRunning = false; document.documentElement.classList.add('pt-xm-hat'); return; }
     var a = from.getBoundingClientRect(), b = logo.getBoundingClientRect(), h = document.createElement('div'); h.className = 'xi-hatfly'; document.body.appendChild(h);
-    var sx = a.left + a.width / 2 - 30, sy = a.top + 30, ex = b.left - 12, ey = b.top - 18;
+    var sx = a.left + a.width / 2 - 30, sy = a.top + 30, ex = b.left + b.width * 0.40, ey = b.top - b.height * 0.08;   // lands on the head of the p
     h.animate([{transform: 'translate(' + sx + 'px,' + sy + 'px) scale(1.6) rotate(0deg)'}, {transform: 'translate(' + ((sx + ex) / 2) + 'px,' + (Math.min(sy, ey) - 120) + 'px) scale(1.2) rotate(-200deg)', offset: 0.55}, {transform: 'translate(' + ex + 'px,' + ey + 'px) scale(.55) rotate(-378deg)'}],
       {duration: 1100, easing: 'cubic-bezier(.4,0,.2,1)'}).onfinish = function () { h.remove(); introRunning = false; document.documentElement.classList.add('pt-xm-hat'); if (ac) bell(ac.currentTime, 1568, 0.12, null, 1.2); };
   }
