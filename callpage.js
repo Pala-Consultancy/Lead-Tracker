@@ -363,7 +363,7 @@
             var cells = set.map(function (src) { return '<button type="button" class="cp-shot" data-full="' + esc(src) + '"><img src="' + esc(src) + '" alt="Client result" loading="lazy" onerror="this.parentNode.classList.add(' + (ED ? '\'cp-bad\',\'cp-bad-ed\'' : '\'cp-bad\'') + ')"></button>'; }).join('');
             rs += '<div class="cp-row' + (r % 2 ? ' rev' : '') + '" style="--cp-dur:' + (28 + set.length * 4) + 's"><div class="cp-track">' + cells + cells + '</div></div>';
           }
-          body = '<div class="cp-wall">' + rs + '</div>';
+          body = '<div class="cp-wall cp-sz-' + ({s: 's', l: 'l'}[b.size] || 'm') + '">' + rs + '</div>';
         } else body = '<div class="cp-frame cp-empty cp-short"><div>🖼️ Add screenshots of client results</div></div>';
       }
       else if (b.type === 'button') {
@@ -508,7 +508,7 @@
     '.cpv .cp-hl{position:relative;white-space:nowrap}',
     '.cpv .cp-hl::after{content:"";position:absolute;left:0;right:0;bottom:-.1em;height:.12em;border-radius:4px;background:var(--cp-accent)}',
     '.cpv .cp-sub{margin:22px auto 0;max-width:760px;font-size:clamp(15px,1.75cqw,22px);line-height:1.6;color:var(--cp-muted);text-align:center}',
-    '.cpv .cp-sec{margin-top:clamp(36px,5cqw,64px);text-align:center}',
+    '.cpv .cp-sec{margin-top:clamp(56px,7.5cqw,104px);text-align:center}',   // more room between sections
     '.cpv .cp-step{display:inline-block;padding:8px 20px;border-radius:999px;background:var(--cp-accent);color:#fff;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase}',
     '.cpv h2{margin:22px 0 0;font-weight:800;font-size:clamp(24px,3.6cqw,48px);line-height:1.15;letter-spacing:-.01em}',
     '.cpv h3{margin:0 0 16px;font-weight:700;font-size:clamp(15px,1.7cqw,21px);line-height:1.35;min-height:2.7em;display:flex;align-items:flex-end;justify-content:center}',
@@ -540,6 +540,9 @@
     '.cpv.cp-light .cp-shot{border-color:rgba(16,24,40,.08)}',
     '.cpv .cp-shot img{height:auto;width:auto;max-height:clamp(200px,26cqw,300px);max-width:min(560px,86cqw);display:block}',
     '.cpv .cp-track{align-items:center}',
+    // the size you choose per block: Small (logos), Medium (the default), Large
+    '.cpv .cp-sz-s .cp-shot img{max-height:clamp(90px,12cqw,140px);max-width:min(300px,60cqw)}',
+    '.cpv .cp-sz-l .cp-shot img{max-height:clamp(260px,34cqw,420px);max-width:min(760px,90cqw)}',
     // a screenshot that can't be loaded: left out on the live page; marked in the editor so it can be replaced
     '.cpv .cp-shot.cp-bad{display:none}',
     '.cpv .cp-shot.cp-bad-ed{display:flex;align-items:center;justify-content:center;padding:16px;border:2px dashed #F87171;background:rgba(248,113,113,.08)}',
