@@ -542,6 +542,7 @@
     $('fName').value = cur.name || ''; $('saved').textContent = '';
     history.replaceState(null, '', '#' + id);
     renderForm(); renderPreview(); renderTop();
+    autoSizeAll();
   }
   function closeEditor() { if (editEl) { readEdit(); editEl = null; $('rtBar').classList.add('hidden'); } flushSave(); cur = null; $('edView').classList.remove('open'); $('listView').classList.remove('hidden'); history.replaceState(null, '', location.pathname); renderList(); }
   $('backBtn').addEventListener('click', closeEditor);
@@ -723,7 +724,7 @@
     else if (d.addurl) { cur.blocks[+d.addurl].urls.push(''); renderBlocks(); changed(); }
     else if (d.rmurl) { const [i, j] = d.rmurl.split(':').map(Number); cur.blocks[i].urls.splice(j, 1); renderBlocks(); changed(); }
     else if (d.rmimg) { const [i, j] = d.rmimg.split(':').map(Number); cur.blocks[i].images.splice(j, 1); renderBlocks(); changed(); }
-    else if (d.shotsize) { const [i, k] = d.shotsize.split(':'); cur.blocks[+i].size = k; renderBlocks(); changed(); }
+    else if (d.shotsize) { const [i, k] = d.shotsize.split(':'); cur.blocks[+i].size = k; delete cur.blocks[+i].sizeAuto; renderBlocks(); changed(); }
     else if (d.rmbad != null) { const i = +d.rmbad, bad = new Set([...document.querySelectorAll(`.imgs [data-bi="${i}"].bad`)].map((x) => +x.dataset.ii));
       const before = cur.blocks[i].images.length; cur.blocks[i].images = cur.blocks[i].images.filter((_, j) => !bad.has(j)); const n = before - cur.blocks[i].images.length; renderBlocks(); changed();
       showToast(`Removed ${n} screenshot${n === 1 ? '' : 's'}. Upload them again as JPG or PNG.`); }
@@ -735,6 +736,29 @@
   }));
   $('fName').addEventListener('input', () => { cur.name = $('fName').value; changed(); });
 
+  // ---------- logos are shown smaller automatically ----------
+  // A logo almost always has a transparent background; a screenshot never does. If most images of a block are logos
+  // and you haven't chosen a size yourself, the block is shown Small. Your own choice is never changed.
+  async function looksLikeLogo(src) {
+    try {
+      const blob = src instanceof Blob ? src : await (await fetch(src)).blob();
+      const bmp = await createImageBitmap(blob), c = document.createElement('canvas'); c.width = 48; c.height = 48;
+      const x = c.getContext('2d'); x.drawImage(bmp, 0, 0, 48, 48); if (bmp.close) bmp.close();
+      const d = x.getImageData(0, 0, 48, 48).data; let clear = 0;
+      for (let i = 3; i < d.length; i += 4) if (d[i] < 40) clear++;
+      const a = (px, py) => d[(py * 48 + px) * 4 + 3] < 40, corners = [a(1, 1), a(46, 1), a(1, 46), a(46, 46)].filter(Boolean).length;
+      return corners >= 3 || clear / (48 * 48) > 0.15;
+    } catch (e) { return null; }                     // can't tell: leave it as it is
+  }
+  async function autoSizeBlock(i, sources) {
+    const b = cur && cur.blocks[i]; if (!b || b.type !== 'results' || (b.size && !b.sizeAuto)) return;
+    const looks = (await Promise.all(sources.slice(0, 12).map(looksLikeLogo))).filter((v) => v !== null);
+    if (looks.length < 2 && sources.length > 1) return;
+    const logos = looks.filter(Boolean).length / Math.max(1, looks.length) >= 0.6;
+    if (!cur || cur.blocks[i] !== b || (b.size && !b.sizeAuto)) return;
+    if (logos && b.size !== 's') { b.size = 's'; b.sizeAuto = true; renderBlocks(); changed(); showToast('These look like logos, so they’re shown Small. You can change it under “Size on the page”.'); }
+  }
+  function autoSizeAll() { (cur && cur.blocks || []).forEach((b, i) => { if (b.type === 'results' && (b.images || []).length && !b.size) autoSizeBlock(i, b.images); }); }
   // result screenshots: uploaded to this workspace's storage, shown on the page through their link
   // JPG, PNG, WebP and GIF go up as they are; anything else (HEIC from an iPhone, TIFF, …) is turned into a JPG
   // first if this browser can read it, and refused if not, so every visitor can see every screenshot.
@@ -755,6 +779,7 @@
     const big = list.filter((f) => f.size > 10 * 1024 * 1024); if (big.length) showToast('Images must be smaller than 10 MB.', true);
     const ok = list.filter((f) => f.size <= 10 * 1024 * 1024); if (!ok.length) return;
     showToast('Uploading ' + ok.length + (ok.length === 1 ? ' image…' : ' images…'));
+    const sent = [];
     for (const f0 of ok) {
       let f = f0;
       try {
@@ -764,9 +789,10 @@
         const ref = storage.ref(`workspaces/${wsId}/callPageImages/${cur.id}/${name}`);
         await ref.put(f, {contentType: f.type});
         const url = await ref.getDownloadURL();
-        if (cur && cur.blocks[i]) { cur.blocks[i].images.push(url); renderBlocks(); changed(); }
+        if (cur && cur.blocks[i]) { cur.blocks[i].images.push(url); sent.push(f); renderBlocks(); changed(); }
       } catch (e) { showToast('Could not upload ' + f.name + '.', true); }
     }
+    if (sent.length) autoSizeBlock(i, sent);
   }
 
   // a background image: uploaded like the result screenshots
