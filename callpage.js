@@ -362,7 +362,7 @@
             var set = imgs.slice(r * per, r * per + per), extra = imgs.filter(function (x) { return set.indexOf(x) < 0; });
             while (set.length < 4 && extra.length) set.push(extra.shift());
             while (set.length < 4 && imgs.length) set = set.concat(imgs.slice(0, 4 - set.length));
-            var cells = set.map(function (src) { return '<button type="button" class="cp-shot" data-full="' + esc(src) + '"><img src="' + esc(src) + '" alt="Client result" loading="lazy" onerror="this.parentNode.classList.add(' + (ED ? '\'cp-bad\',\'cp-bad-ed\'' : '\'cp-bad\'') + ')"></button>'; }).join('');
+            var cells = set.map(function (src) { return '<button type="button" class="cp-shot" data-full="' + esc(src) + '"><img src="' + esc(src) + '" alt="Client result" loading="lazy" decoding="async" onerror="this.parentNode.classList.add(' + (ED ? '\'cp-bad\',\'cp-bad-ed\'' : '\'cp-bad\'') + ')"></button>'; }).join('');
             rs += '<div class="cp-row' + (r % 2 ? ' rev' : '') + '" style="--cp-dur:' + (28 + set.length * 4) + 's"><div class="cp-track">' + cells + cells + '</div></div>';
           }
           body = '<div class="cp-wall cp-sz-' + ({s: 's', l: 'l'}[b.size] || 'm') + '">' + rs + '</div>';
@@ -377,6 +377,14 @@
     if (!blocks.length) out += '<section class="cp-sec"><div class="cp-frame cp-empty cp-short"><div>➕ Add your first step</div></div></section>';
     root.innerHTML = '<div class="cp-in">' + out + '</div>';
     try { loadThumbs(root); } catch (e) {}
+    // a moving wall that's off screen stands still (and starts again when it scrolls into view)
+    try {
+      if (root.__cpWallIO) root.__cpWallIO.disconnect();
+      if ('IntersectionObserver' in window) {
+        root.__cpWallIO = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('cp-off', !e.isIntersecting); }); }, {rootMargin: '200px 0px'});
+        root.querySelectorAll('.cp-wall').forEach(function (w) { root.__cpWallIO.observe(w); });
+      }
+    } catch (e) {}
     root.classList.toggle('cp-editing', ED);
     ED = false; BK = null;
   }
@@ -511,6 +519,7 @@
     '.cpv .cp-hl::after{content:"";position:absolute;left:0;right:0;bottom:-.1em;height:.12em;border-radius:4px;background:var(--cp-accent)}',
     '.cpv .cp-sub{margin:22px auto 0;max-width:760px;font-size:clamp(15px,1.75cqw,22px);line-height:1.6;color:var(--cp-muted);text-align:center}',
     '.cpv .cp-sec{margin-top:clamp(56px,7.5cqw,104px);text-align:center}',   // more room between sections
+    '.cpv .cp-sec.cp-results{margin-top:clamp(84px,11cqw,150px)}',   // extra room above the screenshot walls
     '.cpv .cp-step{display:inline-block;padding:8px 20px;border-radius:999px;background:var(--cp-accent);color:#fff;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase}',
     '.cpv h2{margin:22px 0 0;font-weight:800;font-size:clamp(24px,3.6cqw,48px);line-height:1.15;letter-spacing:-.01em}',
     '.cpv h3{margin:0 0 16px;font-weight:700;font-size:clamp(15px,1.7cqw,21px);line-height:1.35;min-height:2.7em;display:flex;align-items:flex-end;justify-content:center}',
@@ -531,9 +540,15 @@
     '@keyframes cpBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}',
     '.cpv .cp-results{margin-top:clamp(28px,4cqw,44px)}',
     '.cpv .cp-results h2{font-size:clamp(15px,1.8cqw,22px);font-weight:600;color:var(--cp-muted)}',
-    '.cpv .cp-wall{margin:22px calc(-1 * clamp(16px,4cqw,40px)) 0;display:grid;gap:16px;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}',
-    '.cpv .cp-row{overflow:hidden}',
-    '.cpv .cp-track{display:flex;gap:16px;width:max-content;animation:cpScroll var(--cp-dur,40s) linear infinite}',
+    // the moving walls: the soft fade at the edges is a still gradient laid over them (a mask over moving content was
+    // redrawn every frame), each row slides on its own layer, and a wall that's off screen stands still
+    '.cpv .cp-wall{position:relative;margin:22px calc(-1 * clamp(16px,4cqw,40px)) 0;display:grid;gap:16px}',
+    '.cpv .cp-wall::before,.cpv .cp-wall::after{content:"";position:absolute;top:0;bottom:0;width:8%;z-index:2;pointer-events:none}',
+    '.cpv .cp-wall::before{left:0;background:linear-gradient(90deg,var(--cp-bg),transparent)}',
+    '.cpv .cp-wall::after{right:0;background:linear-gradient(270deg,var(--cp-bg),transparent)}',
+    '.cpv .cp-row{overflow:hidden;contain:paint}',
+    '.cpv .cp-track{display:flex;gap:16px;width:max-content;animation:cpScroll var(--cp-dur,40s) linear infinite;will-change:transform;backface-visibility:hidden}',
+    '.cpv .cp-wall.cp-off .cp-track{animation-play-state:paused}',
     '.cpv .cp-row.rev .cp-track{animation-direction:reverse}',
     '.cpv .cp-row:hover .cp-track{animation-play-state:paused}',
     '@keyframes cpScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}',
