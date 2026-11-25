@@ -148,8 +148,10 @@
   .add-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
   .imgs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
   .imgs div{position:relative;aspect-ratio:3/4;border-radius:8px;overflow:hidden;background:var(--panel-alt);}
+  .rm-bad{margin-top:8px;}
   .imgs div.bad{border:2px dashed #DC2626;background:#FEF2F2;} .imgs div.bad img{display:none;}
-  .imgs div.bad::after{content:'⚠ Can’t be loaded';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:11px;font-weight:700;color:#B91C1C;}
+  .imgs div button{z-index:2;}
+  .imgs div.bad::after{pointer-events:none;content:'⚠ Can’t be loaded';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:11px;font-weight:700;color:#B91C1C;}
   .imgs img{width:100%;height:100%;object-fit:cover;display:block;}
   .imgs button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:11px;}
   .drop{margin-top:8px;border:1.5px dashed var(--border);border-radius:10px;padding:14px;text-align:center;font-size:13px;color:var(--slate);cursor:pointer;}
@@ -618,8 +620,8 @@
         f += `<div class="add-row"><button type="button" class="btn sm" data-addurl="${i}">+ Add a client video</button></div>`;
       }
       if (b.type === 'results') {
-        f += `${(b.images || []).length > 1 ? '<div class="hint">Drag the screenshots to change their order.</div>' : ''}<div class="imgs">${(b.images || []).map((src, j) => `<div data-ii="${j}" data-bi="${i}" title="Drag to move"><img src="${esc(src)}" alt="" draggable="false" onerror="this.parentNode.classList.add('bad')"><button type="button" data-rmimg="${i}:${j}" title="Remove">✕</button></div>`).join('')}</div>
-          <div class="drop" data-drop="${i}">📤 Click or drop screenshots here (results, reviews, messages)</div><input type="file" accept="image/*" multiple hidden data-file="${i}">`;
+        f += `${(b.images || []).length > 1 ? '<div class="hint">Drag the screenshots to change their order.</div>' : ''}<div class="imgs">${(b.images || []).map((src, j) => `<div data-ii="${j}" data-bi="${i}" title="Drag to move"><img src="${esc(src)}" alt="" draggable="false" onerror="this.parentNode.classList.add('bad');var r=this.closest('.blk'),x=r&&r.querySelector('[data-rmbad]');if(x)x.hidden=false;"><button type="button" data-rmimg="${i}:${j}" title="Remove">✕</button></div>`).join('')}</div>
+          <button type="button" class="btn sm danger rm-bad" data-rmbad="${i}" hidden>🗑 Remove all screenshots that can’t be loaded</button><div class="drop" data-drop="${i}">📤 Click or drop screenshots here (results, reviews, messages)</div><input type="file" accept="image/*" multiple hidden data-file="${i}">`;
       }
       if (b.type === 'button') f += `<label class="f">Button text</label><input class="in" data-b="${i}" data-k="label" value="${esc(b.label || '')}" placeholder="Add the call to your calendar"><label class="f">Button link</label><input class="in" data-b="${i}" data-k="href" value="${esc(b.href || '')}" placeholder="https://…">`;
       if (b.type === 'button') {
@@ -714,6 +716,9 @@
     else if (d.addurl) { cur.blocks[+d.addurl].urls.push(''); renderBlocks(); changed(); }
     else if (d.rmurl) { const [i, j] = d.rmurl.split(':').map(Number); cur.blocks[i].urls.splice(j, 1); renderBlocks(); changed(); }
     else if (d.rmimg) { const [i, j] = d.rmimg.split(':').map(Number); cur.blocks[i].images.splice(j, 1); renderBlocks(); changed(); }
+    else if (d.rmbad != null) { const i = +d.rmbad, bad = new Set([...document.querySelectorAll(`.imgs [data-bi="${i}"].bad`)].map((x) => +x.dataset.ii));
+      const before = cur.blocks[i].images.length; cur.blocks[i].images = cur.blocks[i].images.filter((_, j) => !bad.has(j)); const n = before - cur.blocks[i].images.length; renderBlocks(); changed();
+      showToast(`Removed ${n} screenshot${n === 1 ? '' : 's'}. Upload them again as JPG or PNG.`); }
     else if (d.drop != null) { const f = document.querySelector(`[data-file="${d.drop}"]`); if (f) f.click(); }
   });
   ['dragover', 'dragleave', 'drop'].forEach((ev) => $('form').addEventListener(ev, (e) => {
