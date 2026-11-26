@@ -148,7 +148,7 @@
     // the Santa hat on the logo (app side panel, Account/Billing, the homepage): its brim rests on top of the P's stem
     // and the tip slumps over towards the ring; placed in % of the logo, so it fits every logo size
     '.pts-host.pt-xm .pts-logo,html.pt-xm-on .logo-badge,html.pt-xm-on .nav-logo{position:relative;overflow:visible;}',
-    'html.pt-xm-hat .pts-host.pt-xm .pts-logo::before,html.pt-xm-on.pt-xm-hat .logo-badge::before,html.pt-xm-on .nav-logo::before{content:"";position:absolute;left:40%;top:-8%;width:42%;height:35.4%;background:url("' + HAT + '") center/contain no-repeat;transform:rotate(10deg);transform-origin:30% 85%;z-index:2;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));}',
+    'html.pt-xm-hat .pts-host.pt-xm .pts-logo::before,html.pt-xm-on.pt-xm-hat .logo-badge::before,html.pt-xm-on .nav-logo::before{content:"";position:absolute;left:30%;top:-12%;width:58%;height:48.9%;background:url("' + HAT + '") center/contain no-repeat;transform:rotate(12deg);transform-origin:30% 85%;z-index:2;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));}',
     // the homepage: the ribbon under the menu, and the ❄️ button for visitors
     '.xm-ribbon{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 auto;padding:9px 16px;font:600 13.5px Inter,sans-serif;color:#8E1D2A;background:linear-gradient(90deg,rgba(214,40,57,.08),rgba(244,197,66,.12),rgba(42,157,92,.08));border-bottom:1px solid rgba(214,40,57,.14);}',
     '.xm-toggle{position:fixed;left:18px;bottom:18px;z-index:' + (Z + 1) + ';width:44px;height:44px;border-radius:50%;border:1px solid rgba(58,134,255,.3);background:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 6px 16px -6px rgba(16,24,40,.3);transition:transform .15s;}',
@@ -375,10 +375,7 @@
     document.documentElement.classList.add('pt-xm-on');
     if (!document.getElementById('ptXmasCss')) { var st = document.createElement('style'); st.id = 'ptXmasCss'; st.textContent = CSS; document.head.appendChild(st); }
     layer = document.createElement('div'); layer.id = 'ptXmas'; layer.setAttribute('aria-hidden', 'true');
-    layer.innerHTML = '<div class="xm-glow"></div><canvas></canvas>' + (PLACE === 'client' ? '' :
-      '<div class="xm-orn o2"><span class="str"></span>' + ornament('g', '#FFF1B8', '#E9B949', '#9A6B12', '#FFFFFF') + '</div>' +
-      '<div class="xm-orn o3"><span class="str"></span>' + ornament('n', '#9BE3B4', '#2A9D5C', '#145A33', '#FFE08A') + '</div>' +
-      '<div class="xm-orn"><span class="str"></span>' + ORNAMENT + '</div>');
+    layer.innerHTML = '<div class="xm-glow"></div><canvas></canvas>';   // no hanging ornaments any more
     document.body.appendChild(layer);
     // the home page gets light snow (about 20% of the other pages), so the page itself gets the attention
     var HOME = PLACE === 'site' && /^\/(index(\.html)?)?$/.test(location.pathname);
@@ -952,7 +949,7 @@
     var logo = document.querySelector('.pts-host .pts-logo') || document.querySelector('.logo-badge');
     if (!logo || reduced) { introRunning = false; document.documentElement.classList.add('pt-xm-hat'); return; }
     var a = from.getBoundingClientRect(), b = logo.getBoundingClientRect(), h = document.createElement('div'); h.className = 'xi-hatfly'; document.body.appendChild(h);
-    var sx = a.left + a.width / 2 - 30, sy = a.top + 30, ex = b.left + b.width * 0.40, ey = b.top - b.height * 0.08;   // lands on the head of the p
+    var sx = a.left + a.width / 2 - 30, sy = a.top + 30, ex = b.left + b.width * 0.30, ey = b.top - b.height * 0.12;   // lands on the head of the p
     h.animate([{transform: 'translate(' + sx + 'px,' + sy + 'px) scale(1.6) rotate(0deg)'}, {transform: 'translate(' + ((sx + ex) / 2) + 'px,' + (Math.min(sy, ey) - 120) + 'px) scale(1.2) rotate(-200deg)', offset: 0.55}, {transform: 'translate(' + ex + 'px,' + ey + 'px) scale(.55) rotate(-378deg)'}],
       {duration: 1100, easing: 'cubic-bezier(.4,0,.2,1)'}).onfinish = function () { h.remove(); introRunning = false; document.documentElement.classList.add('pt-xm-hat'); if (ac) bell(ac.currentTime, 1568, 0.12, null, 1.2); };
   }
