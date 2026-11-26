@@ -298,3 +298,23 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
+
+// ---------- new accounts confirm their email address first ----------
+// On the app pages (the ones with the PalaTrack menu): an account made with email and password after this went live,
+// whose email isn't confirmed yet, is taken to verify-email.html. Google sign-ups and older accounts are never affected.
+(function () {
+  var SINCE = Date.UTC(2026, 10, 26);                                       // accounts created from 26 Nov 2026
+  if (/verify-email\.html|signup\.html|login\.html/.test(location.pathname)) return;
+  if (!document.querySelector('script[src*="sidebar.js"]')) return;          // only the app, not the website or client pages
+  var tries = 0;
+  (function wait() {
+    if (!(window.firebase && firebase.apps && firebase.apps.length && firebase.auth)) { if (++tries < 60) setTimeout(wait, 250); return; }
+    var off = firebase.auth().onAuthStateChanged(function (u) {
+      off && off();
+      if (!u || u.emailVerified) return;
+      var viaPassword = (u.providerData || []).some(function (p) { return p && p.providerId === 'password'; });
+      var made = Date.parse((u.metadata && u.metadata.creationTime) || '') || 0;
+      if (viaPassword && made >= SINCE) location.replace('verify-email.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search));
+    });
+  })();
+})();

@@ -283,6 +283,8 @@
   .field-row{display:flex;gap:16px;}
   @media (max-width:640px){ .field-row{flex-direction:column;gap:0;} .login-card{max-width:440px;} }
   .pw-match.ok{color:#15803D;} .pw-match.bad{color:#B42318;}
+  .em-hint.warn{color:#B45309;} .em-hint.bad{color:#B42318;} .em-hint b{color:inherit;}
+  .em-fix{border:0;background:none;padding:0;margin-left:4px;font:inherit;font-weight:700;color:#3730B3;text-decoration:underline;cursor:pointer;}
   .field-row .field{flex:1;min-width:0;}
   .login-divider{
     display:flex;align-items:center;gap:12px;margin:18px 34px 16px;
@@ -790,6 +792,7 @@
           <input id="signupEmail" type="email" placeholder="you@company.com" required>
           <svg class="field-check" id="emailCheckIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
+        <div class="field-hint em-hint" id="emailHint" aria-live="polite"></div>
       </div>
       <div class="field-row">
       <div class="field">
@@ -1069,6 +1072,52 @@
     lastNameEl.addEventListener('input', updateProgress);
   })();
 
+  // ---------- a real email address ----------
+  // 1) typos in well-known providers get a suggestion ("gmial.com" → gmail.com), 2) throwaway addresses are refused,
+  // 3) the domain must be able to receive email (asked to Google's public DNS; if that can't be checked, sign-up continues).
+  const EM_COMMON = ['gmail.com','googlemail.com','hotmail.com','outlook.com','live.com','msn.com','yahoo.com','icloud.com','me.com','aol.com','proton.me','protonmail.com','gmx.com','gmx.de','web.de',
+    'telenet.be','skynet.be','proximus.be','hotmail.be','outlook.be','live.be','yahoo.fr','hotmail.fr','orange.fr','free.fr','laposte.net','ziggo.nl','kpnmail.nl','xs4all.nl','planet.nl','hotmail.nl','libero.it','hotmail.co.uk','yahoo.co.uk'];
+  const EM_THROWAWAY = ['mailinator.com','guerrillamail.com','guerrillamail.net','sharklasers.com','10minutemail.com','10minutemail.net','tempmail.com','temp-mail.org','temp-mail.io','tempmailo.com','throwawaymail.com','yopmail.com','yopmail.net',
+    'trashmail.com','trashmail.de','getnada.com','nada.email','dispostable.com','maildrop.cc','mailnesia.com','mintemail.com','mohmal.com','emailondeck.com','fakeinbox.com','spamgourmet.com','mytemp.email','tempinbox.com','tempr.email',
+    'discard.email','burnermail.io','inboxkitten.com','moakt.com','tmail.ws','tmpmail.org','tmpmail.net','minuteinbox.com','mailcatch.com','spambox.us','33mail.com','owlymail.com','luxusmail.org','emailfake.com','crazymailing.com','fexbox.org','byom.de','mail.tm','tempail.com'];
+  function emLev(a, b){ const d = Array.from({length: a.length + 1}, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)); return d[a.length][b.length]; }
+  function emSuggest(email){
+    const m = /^([^@\s]+)@([^@\s]+)$/.exec(String(email || '').trim().toLowerCase()); if (!m) return '';
+    let dom = m[2].replace(/\.(con|cmo|ocm|cpm|vom|comm|co)$/, (x, t) => t === 'co' && !/\.(co\.uk)$/.test(m[2]) ? '.co' : '.com');
+    if (EM_COMMON.includes(dom)) return dom !== m[2] ? m[1] + '@' + dom : '';
+    let best = '', bd = 3; EM_COMMON.forEach((c) => { const d = emLev(dom, c); if (d < bd && d > 0) { bd = d; best = c; } });
+    return best && bd <= 2 ? m[1] + '@' + best : (dom !== m[2] ? m[1] + '@' + dom : '');
+  }
+  const emDomain = (e) => (String(e || '').trim().toLowerCase().split('@')[1] || '');
+  function emThrowaway(e){ const d = emDomain(e); return EM_THROWAWAY.some((x) => d === x || d.endsWith('.' + x)); }
+  const emMxCache = {};
+  function emCanReceive(e){
+    const d = emDomain(e); if (!d) return Promise.resolve(false); if (d in emMxCache) return Promise.resolve(emMxCache[d]);
+    if (EM_COMMON.includes(d)) return Promise.resolve(true);
+    const ask = (type) => fetch('https://dns.google/resolve?name=' + encodeURIComponent(d) + '&type=' + type, {cache: 'no-store'}).then((r) => r.json());
+    return Promise.race([
+      ask('MX').then((j) => { if (j.Status === 3) return false; if (j.Answer && j.Answer.length) return true; return ask('A').then((a) => !!(a.Answer && a.Answer.length)); }),
+      new Promise((res) => setTimeout(() => res(true), 4000))]).then((ok) => { emMxCache[d] = ok; return ok; }, () => true);   // can't check: don't block
+  }
+  // the full check before an account is made
+  function emailReady(e){
+    if (emThrowaway(e)) return Promise.reject({code: 'email-bad', msg: 'Please use your own email address, not a temporary one.'});
+    return emCanReceive(e).then((ok) => { if (!ok) throw {code: 'email-bad', msg: 'This email address can’t receive email. Check the part after the @.'}; });
+  }
+  (function(){
+    const el = document.getElementById('signupEmail'), hint = document.getElementById('emailHint');
+    const show = () => {
+      const v = el.value.trim(); hint.className = 'field-hint em-hint'; hint.innerHTML = '';
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return;
+      if (emThrowaway(v)) { hint.classList.add('bad'); hint.textContent = 'Temporary email addresses can’t be used. Please use your own email.'; return; }
+      const s2 = emSuggest(v);
+      if (s2) { hint.classList.add('warn'); hint.innerHTML = 'Did you mean <b></b>? <button type="button" class="em-fix">Use it</button>'; hint.querySelector('b').textContent = s2;
+        hint.querySelector('.em-fix').onclick = () => { el.value = s2; el.dispatchEvent(new Event('input', {bubbles: true})); show(); }; return; }
+      emCanReceive(v).then((ok) => { if (el.value.trim() !== v) return; if (!ok) { hint.classList.add('bad'); hint.textContent = 'This email address can’t receive email. Check the part after the @.'; } });
+    };
+    let tm = null; el.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(show, 600); }); el.addEventListener('blur', show);
+  })();
   // ---------- confirm password: live note while typing ----------
   (function(){
     const a = document.getElementById('signupPassword'), b = document.getElementById('signupPassword2'), m = document.getElementById('pwMatch');
@@ -1141,7 +1190,7 @@
     const dirRef = db.collection('workspaceDirectory').doc(slug);
     let username = '';
 
-    unReady().then((v)=>{ username = v; return dirRef.get(); }).then(dirDoc=>{
+    emailReady(email).then(()=> unReady()).then((v)=>{ username = v; return dirRef.get(); }).then(dirDoc=>{
       if(dirDoc.exists){
         throw {code: 'company-exists', companyName: dirDoc.data().companyName};
       }
@@ -1153,12 +1202,14 @@
       // unavailable, so both should actually hold the name, not just one.
       return cred.user.updateProfile({displayName: name}).then(()=>cred);
     }).then(cred=>{
-      return createWorkspaceForUser(cred, name, company).then(()=> claimUsername(cred.user.uid, username, name, company));
+      return createWorkspaceForUser(cred, name, company).then(()=> claimUsername(cred.user.uid, username, name, company))
+        .then(()=> cred.user.sendEmailVerification({url: location.origin + '/home.html'}).catch(()=>{}));   // the confirmation link
     }).then(()=>{
       afterSignup(submitBtn);
     }).catch(err=>{
       signingUp = false;
-      if(err && err.code === 'username-invalid'){ showLoginError('Choose a username: 3–24 characters, lowercase letters, numbers, dots and underscores.'); unEl.focus(); }
+      if(err && err.code === 'email-bad'){ showLoginError(err.msg); document.getElementById('signupEmail').focus(); }
+      else if(err && err.code === 'username-invalid'){ showLoginError('Choose a username: 3–24 characters, lowercase letters, numbers, dots and underscores.'); unEl.focus(); }
       else if(err && err.code === 'username-taken'){ showLoginError('@' + err.name + ' is already taken. Choose another username.'); unCheck(); unEl.focus(); }
       else reportSignupError(err);
       submitBtn.disabled = false;
@@ -1203,7 +1254,8 @@
       afterSignup(googleBtn);
     }).catch(err=>{
       signingUp = false;
-      if(err && err.code === 'username-invalid'){ showLoginError('Choose a username: 3–24 characters, lowercase letters, numbers, dots and underscores.'); unEl.focus(); }
+      if(err && err.code === 'email-bad'){ showLoginError(err.msg); document.getElementById('signupEmail').focus(); }
+      else if(err && err.code === 'username-invalid'){ showLoginError('Choose a username: 3–24 characters, lowercase letters, numbers, dots and underscores.'); unEl.focus(); }
       else if(err && err.code === 'username-taken'){ showLoginError('@' + err.name + ' is already taken. Choose another username.'); unCheck(); unEl.focus(); }
       else reportSignupError(err);
       googleBtn.disabled = false;
