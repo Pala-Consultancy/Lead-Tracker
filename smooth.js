@@ -273,3 +273,28 @@
     if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
   })();
 })();
+
+// ---------- the "Content writer" menu item gets its icon (a pen with a small sparkle), like the other items ----------
+(function () {
+  var SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/><path d="M19 13.5l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z" fill="currentColor" stroke="none"/></svg>';
+  function fix() {
+    var links = document.querySelectorAll('a[href*="content-writer"]');
+    for (var i = 0; i < links.length; i++) {
+      var a = links[i]; if (!a.closest('.seq-sidebar-nav, nav, aside')) continue;
+      var ic = a.querySelector('.icon');
+      if (ic && ic.querySelector('svg, img')) continue;                     // it already has one
+      if (!ic) {                                                             // match the other items: <span class="icon">…</span> label
+        ic = document.createElement('span'); ic.className = 'icon';
+        var label = a.querySelector('.pts-label');
+        if (!label) { label = document.createElement('span'); label.className = 'pts-label'; while (a.firstChild) label.appendChild(a.firstChild); a.appendChild(label); }
+        a.insertBefore(ic, a.firstChild); a.insertBefore(document.createTextNode(' '), ic.nextSibling);
+      }
+      ic.innerHTML = SVG;
+    }
+  }
+  function start() {
+    fix();
+    try { var mo = new MutationObserver(function () { fix(); }); mo.observe(document.body, {childList: true, subtree: true}); setTimeout(function () { mo.disconnect(); }, 15000); } catch (e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
