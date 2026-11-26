@@ -44,6 +44,15 @@
   .pt-meteor{position:absolute;height:2px;width:170px;border-radius:2px;opacity:0;
     background:linear-gradient(90deg, rgba(255,255,255,0), rgba(214,211,255,.55) 60%, #fff);
     box-shadow:0 0 10px 1px rgba(190,185,255,.7);transform-origin:right center;}
+
+  /* My brand before anything is uploaded: one clear message and one button */
+  .br-empty{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+  .br-empty.hidden{display:none;}
+  .br-empty-card{max-width:520px;text-align:center;}
+  .br-empty-ic{width:60px;height:60px;margin:0 auto 18px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;background:linear-gradient(135deg,#1B59A5,#3730B3 55%,#7B3FE4);box-shadow:0 14px 30px -14px rgba(55,48,179,.6);}
+  .br-empty-card h2{margin:0 0 10px;font-size:22px;line-height:1.3;letter-spacing:-.01em;}
+  .br-empty-card p{margin:0 0 22px;font-size:14.5px;line-height:1.6;color:var(--slate,#647084);}
+  .br-empty-card small{display:block;margin-top:14px;font-size:12px;color:var(--slate,#647084);}
 </style>
 <script>
 (function(){
@@ -626,6 +635,15 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       </section>
     </div>
     <div class="cw-body hidden" id="vBrand">
+      <div class="br-empty hidden" id="brEmpty">
+        <div class="br-empty-card">
+          <div class="br-empty-ic" aria-hidden="true">⤒</div>
+          <h2>Upload all your documents to create your personal LinkedIn expert content writer</h2>
+          <p>Upload your 7 documents (brand identity, story bank, voice and style, objection bank, proof bank, offer doc and ICP doc). The writer learns your story, your voice and your offer from them, and writes every post the way you would.</p>
+          <button type="button" class="btn pri" id="brEmptyUp" style="padding:12px 22px;font-size:14px">Upload your documents</button>
+          <small>Markdown or text files, named 01 to 07 (for example 01-brand-identity.md).</small>
+        </div>
+      </div>
       <aside class="br-files"><div class="br-prog" id="brProg"></div><div id="brFiles"></div></aside>
       <section class="br-ed">
         <div class="br-top"><div><h2 id="brTitle"></h2><p id="brSub"></p></div>
@@ -831,6 +849,8 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   // ---------- my brand ----------
   function renderBrand(){
     const filled=FILES.filter(([k])=>(brand[k]||'').trim()).length;
+    const none=!filled; $('brEmpty').classList.toggle('hidden',!none);
+    document.querySelectorAll('#vBrand > .br-files, #vBrand > .br-ed').forEach(x=>x.classList.toggle('hidden',none));
     $('brProg').innerHTML=`<div class="bp-t"><b>${filled} of 7</b> files filled</div><div class="bp-bar"><i style="width:${Math.round(filled/7*100)}%"></i></div>`;
     $('brFiles').innerHTML=FILES.map(([k,n])=>`<button type="button" class="br-file${k===brFile?' on':''}" data-k="${k}"><i class="dot${(brand[k]||'').trim()?' ok':''}"></i><span>${k} · ${esc(n)}<small>${(brand[k]||'').trim()?((brand[k].match(/\S+/g)||[]).length+' words'):'Empty'}</small></span></button>`).join('');
     const f=FILES.find(x=>x[0]===brFile); $('brTitle').textContent=f[0]+' · '+f[1]; $('brSub').textContent=f[2]+'  ·  Project: '+((projects.find(x=>x.id===pid)||{}).name||'');
@@ -847,6 +867,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('brText').addEventListener('input',()=>{ brand[brFile]=$('brText').value; $('brSaved').textContent='Editing…'; $('brCount').textContent=(($('brText').value).match(/\S+/g)||[]).length+' words'; clearTimeout(saveT); saveT=setTimeout(()=>{ saveBrand(); renderBrandList(); },900); });
   function renderBrandList(){ const a=document.activeElement; renderBrand(); if(a===$('brText')) $('brText').focus(); }
   $('brImport').addEventListener('click',()=>$('brPick').click());
+  $('brEmptyUp').addEventListener('click',()=>$('brPick').click());
   $('brPick').addEventListener('change',async()=>{
     const files=[...$('brPick').files]; let n=0, skipped=[];
     for(const f of files){ const m=f.name.match(/^0?([1-7])[\s._-]/); if(!m){ skipped.push(f.name); continue; }
