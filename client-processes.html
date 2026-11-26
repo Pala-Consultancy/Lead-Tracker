@@ -76,6 +76,9 @@
   .dtv-list{list-style:none;margin:10px 0 0;padding:0;max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:6px;}
   .dtv-list li{display:flex;justify-content:space-between;gap:12px;padding:7px 10px;border-radius:9px;background:var(--panel-alt);color:var(--ink);} .dtv-list i{font-style:normal;color:var(--slate);}
   .dtv-more{margin:8px 0 0;font-size:12px;}
+  .dtvid-list{display:flex;flex-direction:column;gap:6px;margin-top:10px;} .dtvid{padding:9px 12px;border-radius:10px;background:var(--panel-alt);display:flex;flex-direction:column;gap:2px;}
+  .dtvid b{color:var(--ink);font-size:13.5px;} .dtvid span{font-size:12.5px;color:var(--slate);} .dtvid span b{font-size:12.5px;} .dtvid-none{font-style:italic;} .dtvid-done{color:#1F7A5C;font-weight:700;}
+  .dtvid ul{margin:4px 0 0;padding-left:16px;font-size:12px;color:var(--slate);} .dtvid small{font-size:11.5px;color:var(--slate);}
   .dt-name{cursor:text;border-radius:10px;padding:0 6px;margin-left:-6px;transition:background .15s;}
   .dt-name:hover,.dt-name:focus-visible{background:var(--panel-alt);} .dt-name:hover::after{content:'✎';font-size:.55em;margin-left:8px;color:var(--slate);vertical-align:middle;}
   .dt-name-in{font:inherit;color:inherit;width:min(520px,100%);padding:2px 8px;margin:-2px 0;border-radius:10px;border:2px solid var(--teal,#3B49C9);background:var(--panel,#fff);outline:none;box-sizing:border-box;}
@@ -961,6 +964,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       <div class="dt-prog"><div class="dt-ring"><svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="27"/><circle class="vl" id="dtRing" cx="32" cy="32" r="27"/></svg><b id="dtPct">0%</b></div>
         <div style="flex:1;min-width:0"><b id="dtProg" class="dt-count"></b><div class="pbar"><i id="dtBar"></i></div><div class="meta"><span id="dtOpt"></span><span id="dtLast"></span></div></div></div>
         <div class="dt-visits" id="dtVisits"></div>
+        <div class="dt-visits" id="dtVideos"></div>
       <div class="dt-call hidden" id="dtCall"></div>
       <div id="dtSteps" style="margin-top:8px"></div></div>
     <div class="sec" id="dtInboxSec"><h3>📥 Files from your client</h3><div id="dtInbox"></div></div>
@@ -2181,7 +2185,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     $('dtProg').textContent = `${done} of ${total} required step${total === 1 ? '' : 's'} done`;
     $('dtOpt').textContent = optional ? `+ ${optional} optional` : '';
     $('dtLast').innerHTML = activeNow(p) ? '<span class="live-now"><i></i>Your client is active right now</span>' : p.lastClientActivityAt ? 'Client active ' + ago(p.lastClientActivityAt) : p.lastViewedAt ? 'Viewed ' + ago(p.lastViewedAt) : 'Not opened yet';
-    renderVisits(p);
+    renderVisits(p); renderVideos(p);
     $('dtArchive').textContent = p.status === 'archived' ? 'Reopen' : 'Archive';
     const ICON = {todo: '☑', upload: '📤', question: '✍️'};
     // the onboarding call: one click unlocks the "After our call" tasks for the client
@@ -2326,6 +2330,32 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const c = e.target.closest && e.target.closest('[data-copyproc]'); if (!c || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault(); e.stopPropagation(); const p = procs.find((x) => x.id === c.dataset.copyproc); if (p) openStart(null, p);
   }, true);
+  // ---------- videos: how your client watched the videos on their page ----------
+  const videoKey = (u) => { let h = 5381; const s0 = String(u || '').split('#')[0]; for (let i = 0; i < s0.length; i++) h = ((h << 5) + h + s0.charCodeAt(i)) >>> 0; return 'v' + h.toString(36); };
+  const dur = (sec) => { sec = Math.round(sec || 0); if (sec < 60) return sec + 's'; const m = Math.floor(sec / 60), r = sec % 60; return m < 60 ? `${m}m ${String(r).padStart(2, '0')}s` : `${Math.floor(m / 60)}h ${m % 60}m`; };
+  function videosOf(p) {                        // every video on the page, with a name you recognise
+    const out = []; let heading = '';
+    (p.blocks || []).forEach((b) => {
+      if (/^h[123]$/.test(b.type)) heading = textOf(b.html || '').slice(0, 80);
+      const add = (v, label) => { if (!v) return; const url = (v.kind === 'file' ? v.url : v.embedUrl) || ''; if (url) out.push({url, label, link: v.kind !== 'file'}); };
+      if (b.type === 'video') add(b.video, b.video && b.video.name ? b.video.name : heading || 'Video');
+      (b.attachments || []).forEach((a) => { if (a.kind === 'video') add(a.video, (labelOf(b) || 'Step') + ' · video'); });
+    });
+    return out;
+  }
+  function renderVideos(p) {
+    const box = $('dtVideos'); if (!box) return;
+    const vids = videosOf(p), stats = p.videoStats || {};
+    if (!vids.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="dtv-head"><span>🎬 <b>Videos</b></span></div><div class="dtvid-list">' + vids.map((v) => {
+      const st = stats[videoKey(v.url)];
+      if (!st || !(st.plays || st.seconds)) return `<div class="dtvid"><b>${esc(v.label)}</b><span class="dtvid-none">Not watched yet</span></div>`;
+      const people = Object.values(st.by || {});
+      const line = v.link ? `Played ${st.plays}×` : `Played ${st.plays}× · watched <b>${dur(st.seconds)}</b> · got to <b>${st.maxPct || 0}%</b>${st.completed ? ' · <span class="dtvid-done">finished</span>' : ''}`;
+      const who = people.length > 1 ? `<ul>${people.map((x) => `<li>${esc(x.name)}: ${v.link ? `played ${x.plays}×` : `${dur(x.seconds)}, ${x.maxPct || 0}%`}${x.completed ? ' ✓' : ''}</li>`).join('')}</ul>` : '';
+      return `<div class="dtvid"><b>${esc(v.label)}</b><span>${line} · last ${esc(ago(st.lastAt))}</span>${who}${v.link ? '<small>A YouTube, Vimeo or Loom link: plays only, not how long.</small>' : ''}</div>`;
+    }).join('') + '</div>';
+  }
   // ---------- visits: each time your client opened their page ----------
   let visitsOpen = false;
   function renderVisits(p) {

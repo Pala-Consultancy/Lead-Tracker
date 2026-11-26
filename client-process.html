@@ -986,6 +986,33 @@
   const PIN_KEY = 'ptCpPin:' + token, NAME_KEY = 'ptCpName:' + token, DRAFT_KEY = (fid) => 'ptCpDraft:' + token + ':' + fid;
   let pin = ''; try { pin = sessionStorage.getItem(PIN_KEY) || ''; } catch (e) { /* ignore */ }
   let name = ''; try { name = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* ignore */ }
+  // ---------- video viewing, reported to the sender (not when they open it themselves or as a preview) ----------
+  // Uploaded videos: time actually playing (jumps don't count), the furthest point and finishing. Links: plays only.
+  (function () {
+    const q = new URLSearchParams(location.search), OWN = PREVIEW || q.get('me') === '1' || q.get('welcome') === 'preview';
+    const FN = 'https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/trackClientVideo', VT = new Map();
+    const st = (v) => { let x = VT.get(v); if (!x) { x = {plays: 0, sec: 0, last: null, pct: 0, done: false, playing: false}; VT.set(v, x); } return x; };
+    const send = (url, x, keep) => {
+      const sec = Math.floor(x.sec), plays = x.plays, done = x.done; if (!sec && !plays && !done) return;
+      x.sec -= sec; x.plays = 0; x.done = false; if (OWN || !token || !url) return;
+      try { fetch(FN, {method: 'POST', keepalive: !!keep, headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({data: {token, pin, url: url.split('#')[0], seconds: sec, plays, pct: x.pct, completed: done, name}})}).catch(() => {}); } catch (e) { /* ignore */ }
+    };
+    const urlOf = (v) => v.currentSrc || v.getAttribute('src') || '';
+    const isV = (t) => t && t.tagName === 'VIDEO';
+    document.addEventListener('play', (e) => { if (!isV(e.target)) return; const x = st(e.target); if (!x.playing) { x.plays++; x.playing = true; } x.last = e.target.currentTime; }, true);
+    document.addEventListener('timeupdate', (e) => { const v = e.target; if (!isV(v)) return; const x = st(v);
+      if (!v.paused && x.last != null) { const dlt = v.currentTime - x.last; if (dlt > 0 && dlt < 2.5) x.sec += dlt; }
+      x.last = v.currentTime; if (v.duration) x.pct = Math.max(x.pct, Math.min(100, Math.round(v.currentTime / v.duration * 100)));
+      if (x.sec >= 30) send(urlOf(v), x); }, true);
+    document.addEventListener('pause', (e) => { if (!isV(e.target)) return; const x = st(e.target); x.playing = false; send(urlOf(e.target), x); }, true);
+    document.addEventListener('ended', (e) => { if (!isV(e.target)) return; const x = st(e.target); x.playing = false; x.done = true; x.pct = 100; send(urlOf(e.target), x); }, true);
+    const flushAll = () => VT.forEach((x, v) => send(urlOf(v), x, true));
+    addEventListener('pagehide', flushAll); document.addEventListener('visibilitychange', () => { if (document.hidden) flushAll(); });
+    // YouTube, Vimeo or Loom: the play click
+    document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('.vf[data-embed] .vf-play'); if (!b) return;
+      send(b.closest('.vf').getAttribute('data-embed'), {plays: 1, sec: 0, pct: 0, done: false}); }, true);
+  })();
   let firstPaint = true;
   let proc = null, groups = [], intro = [], more = new Set(), openDocs = new Set(), busy = {}, pendingAction = null, brandKey = '';
 
