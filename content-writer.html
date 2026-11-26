@@ -53,6 +53,7 @@
   .br-empty-card h2{margin:0 0 10px;font-size:22px;line-height:1.3;letter-spacing:-.01em;}
   .br-empty-card p{margin:0 0 22px;font-size:14.5px;line-height:1.6;color:var(--slate,#647084);}
   .br-empty-card small{display:block;margin-top:14px;font-size:12px;color:var(--slate,#647084);}
+  .btn.br-del:hover{border-color:#DC2626;color:#B42318;}
 </style>
 <script>
 (function(){
@@ -647,7 +648,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
       <aside class="br-files"><div class="br-prog" id="brProg"></div><div id="brFiles"></div></aside>
       <section class="br-ed">
         <div class="br-top"><div><h2 id="brTitle"></h2><p id="brSub"></p></div>
-          <div style="display:flex;gap:8px"><button type="button" class="btn" id="brImport">⤒ Import files</button><input type="file" id="brPick" accept=".md,.txt,text/markdown,text/plain" multiple hidden></div></div>
+          <div style="display:flex;gap:8px"><button type="button" class="btn" id="brDown" title="Download this document">⤓ Download</button><button type="button" class="btn br-del" id="brDel" title="Delete this document">🗑 Delete</button><button type="button" class="btn" id="brImport">⤒ Import files</button><input type="file" id="brPick" accept=".md,.txt,text/markdown,text/plain" multiple hidden></div></div>
         <textarea id="brText" spellcheck="true"></textarea>
         <div class="br-foot"><span id="brCount"></span><span id="brSaved">Saved</span></div>
       </section>
@@ -866,6 +867,20 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   $('brFiles').addEventListener('click',e=>{ const b=e.target.closest('.br-file'); if(!b) return; brFile=b.dataset.k; $('brText').blur(); renderBrand(); });
   $('brText').addEventListener('input',()=>{ brand[brFile]=$('brText').value; $('brSaved').textContent='Editing…'; $('brCount').textContent=(($('brText').value).match(/\S+/g)||[]).length+' words'; clearTimeout(saveT); saveT=setTimeout(()=>{ saveBrand(); renderBrandList(); },900); });
   function renderBrandList(){ const a=document.activeElement; renderBrand(); if(a===$('brText')) $('brText').focus(); }
+  // download the open document (named like the originals, so it can be imported again), or delete it (with Undo)
+  const fileName=k=>{ const f=FILES.find(x=>x[0]===k); return k+'-'+f[1].toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'.md'; };
+  $('brDown').addEventListener('click',()=>{
+    const t=brand[brFile]||''; if(!t.trim()){ toast('This document is empty.'); return; }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([t],{type:'text/markdown;charset=utf-8'})); a.download=fileName(brFile);
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+  });
+  $('brDel').addEventListener('click',async()=>{
+    const k=brFile, old=brand[k]||''; if(!old.trim()){ toast('This document is already empty.'); return; }
+    const name=FILES.find(x=>x[0]===k)[1];
+    brand[k]=''; await saveBrand(); renderBrand();
+    if(window.ptUndo) window.ptUndo.offer(name+' deleted.', async()=>{ brand[k]=old; brFile=k; await saveBrand(); renderBrand(); });
+    else toast(name+' deleted.');
+  });
   $('brImport').addEventListener('click',()=>$('brPick').click());
   $('brEmptyUp').addEventListener('click',()=>$('brPick').click());
   $('brPick').addEventListener('change',async()=>{
