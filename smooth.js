@@ -318,3 +318,39 @@
     });
   })();
 })();
+
+// ---------- account emails in PalaTrack's own design ----------
+// Every page that asks Firebase for a password reset or an email confirmation gets PalaTrack's designed email
+// (sent by the sendAccountEmail function) instead of Firebase's plain one. If that fails for any reason, Firebase's
+// own email goes out, so nobody is ever left without one.
+(function () {
+  var FN = 'https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/sendAccountEmail', tries = 0;
+  function call(data, token) {
+    var h = {'Content-Type': 'application/json'}; if (token) h.Authorization = 'Bearer ' + token;
+    return fetch(FN, {method: 'POST', headers: h, body: JSON.stringify({data: data})}).then(function (r) { return r.json(); })
+      .then(function (j) { if (!(j && j.result && j.result.ok)) throw new Error('not sent'); });
+  }
+  (function wait() {
+    var fb = window.firebase;
+    if (!(fb && fb.auth && fb.auth.Auth && fb.auth.Auth.prototype)) { if (++tries < 80) setTimeout(wait, 250); return; }
+    var A = fb.auth.Auth.prototype;
+    if (A.__ptMail) return; A.__ptMail = true;
+    var reset = A.sendPasswordResetEmail;
+    if (reset) A.sendPasswordResetEmail = function (email, settings) { var self = this;
+      return call({kind: 'reset', email: email}).catch(function () { return reset.call(self, email, settings); }); };
+    // the confirmation email: attached to the signed-in user itself (Firebase has no shared User class to hook into)
+    function patchUser(u) {
+      var P = u && Object.getPrototypeOf(u); if (!P || P.__ptMail || typeof P.sendEmailVerification !== 'function') return;
+      P.__ptMail = true; var verify = P.sendEmailVerification;
+      P.sendEmailVerification = function (settings) { var me = this;
+        return me.getIdToken().then(function (t) { return call({kind: 'verify'}, t); }).catch(function () { return verify.call(me, settings); }); };
+    }
+    var create = A.createUserWithEmailAndPassword;                       // right after a new account is made
+    if (create) A.createUserWithEmailAndPassword = function () {
+      return create.apply(this, arguments).then(function (cred) { if (cred && cred.user) patchUser(cred.user); return cred; }); };
+    var n = 0, iv = setInterval(function () {                             // and whoever is signed in on this page
+      try { if (fb.apps && fb.apps.length && fb.auth().currentUser) { patchUser(fb.auth().currentUser); clearInterval(iv); } } catch (e) { /* not ready */ }
+      if (++n > 120) clearInterval(iv);
+    }, 250);
+  })();
+})();
