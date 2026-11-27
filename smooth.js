@@ -331,9 +331,11 @@
       .then(function (j) { if (!(j && j.result && j.result.ok)) throw new Error('not sent'); });
   }
   (function wait() {
-    var fb = window.firebase;
-    if (!(fb && fb.auth && fb.auth.Auth && fb.auth.Auth.prototype)) { if (++tries < 80) setTimeout(wait, 250); return; }
-    var A = fb.auth.Auth.prototype;
+    // Firebase doesn't expose its Auth class, so the hook goes on the sign-in object the page itself uses
+    var fb = window.firebase, inst = null;
+    try { if (fb && fb.auth && fb.apps && fb.apps.length) inst = fb.auth(); } catch (e) { inst = null; }
+    if (!inst) { if (++tries < 240) setTimeout(wait, 250); return; }
+    var A = Object.getPrototypeOf(inst);
     if (A.__ptMail) return; A.__ptMail = true;
     var reset = A.sendPasswordResetEmail;
     if (reset) A.sendPasswordResetEmail = function (email, settings) { var self = this;
