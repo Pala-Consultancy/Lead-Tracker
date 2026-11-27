@@ -325,10 +325,20 @@
 // own email goes out, so nobody is ever left without one.
 (function () {
   var FN = 'https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/sendAccountEmail', tries = 0;
+  // if the designed email can't be sent, a small note says exactly why (Firebase's plain email still goes out)
+  function why(msg) {
+    try { console.warn('PalaTrack email:', msg);
+      var n = document.createElement('div'); n.setAttribute('role', 'status');
+      n.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483647;max-width:min(560px,92vw);padding:10px 14px;border-radius:12px;background:#1E1B4B;color:#fff;font:500 12.5px/1.45 Inter,system-ui,sans-serif;box-shadow:0 12px 30px -12px rgba(0,0,0,.5)';
+      n.textContent = 'Sent with Firebase’s standard email instead (reason: ' + msg + ')'; document.body.appendChild(n); setTimeout(function () { n.remove(); }, 12000); } catch (e) { /* ignore */ }
+  }
   function call(data, token) {
     var h = {'Content-Type': 'application/json'}; if (token) h.Authorization = 'Bearer ' + token;
-    return fetch(FN, {method: 'POST', headers: h, body: JSON.stringify({data: data})}).then(function (r) { return r.json(); })
-      .then(function (j) { if (!(j && j.result && j.result.ok)) throw new Error('not sent'); });
+    return fetch(FN, {method: 'POST', headers: h, body: JSON.stringify({data: data})})
+      .then(function (r) { return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) { /* not JSON */ }
+        if (!r.ok || !(j && j.result && j.result.ok)) throw new Error('HTTP ' + r.status + (j && j.error ? ' ' + (j.error.status || '') + ' ' + (j.error.message || '') : ' ' + t.slice(0, 120)));
+      }); }, function (e) { throw new Error('could not reach the server: ' + (e && e.message || e)); })
+      .catch(function (e) { why(String(e && e.message || e)); throw e; });
   }
   (function wait() {
     // Firebase doesn't expose its Auth class, so the hook goes on the sign-in object the page itself uses
