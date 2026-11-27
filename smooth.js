@@ -413,3 +413,64 @@
     }, 250);
   })();
 })();
+
+// ---------- sign-in: say exactly what's wrong (the email or the password) ----------
+// Firebase gives one combined error; when a sign-in fails, PalaTrack asks the checkSignInEmail function whether an
+// account exists for the email and how it signs in, then shows the exact reason in the sign-in screen's message spot.
+(function () {
+  var FN = 'https://us-central1-lead-tracker-c5c3a.cloudfunctions.net/checkSignInEmail', tries = 0;
+  var M = {
+    en: {noAccount: 'There\u2019s no PalaTrack account with this email address. Check it for typos, or create an account.',
+      badPassword: 'That password is incorrect. Try again, or use \u201cForgot password?\u201d to choose a new one.',
+      google: 'This account signs in with Google. Use \u201cSign in with Google\u201d instead of a password.',
+      badEmail: 'That doesn\u2019t look like a valid email address. Check it and try again.',
+      tooMany: 'Too many attempts. Please wait a few minutes, or use \u201cForgot password?\u201d.',
+      disabled: 'This account has been switched off. Contact info@palatrack.com for help.',
+      offline: 'No internet connection. Check your connection and try again.'},
+    nl: {noAccount: 'Er bestaat geen PalaTrack-account met dit e-mailadres. Controleer het op typfouten, of maak een account aan.',
+      badPassword: 'Dat wachtwoord klopt niet. Probeer het opnieuw, of gebruik \u201cWachtwoord vergeten?\u201d om een nieuw te kiezen.',
+      google: 'Dit account meldt zich aan met Google. Gebruik \u201cAanmelden met Google\u201d in plaats van een wachtwoord.',
+      badEmail: 'Dat lijkt geen geldig e-mailadres. Controleer het en probeer opnieuw.',
+      tooMany: 'Te veel pogingen. Wacht enkele minuten, of gebruik \u201cWachtwoord vergeten?\u201d.',
+      disabled: 'Dit account is uitgeschakeld. Neem contact op via info@palatrack.com.',
+      offline: 'Geen internetverbinding. Controleer je verbinding en probeer opnieuw.'}
+  };
+  function msg(k) { var l = ''; try { l = (localStorage.getItem('preferredLanguage') || document.documentElement.lang || 'en').slice(0, 2).toLowerCase(); } catch (e) { /* ignore */ }
+    return (M[l] || M.en)[k]; }
+  function show(text) {          // after the page has shown its own general message, replace it with the exact one
+    var put = function () { var el = document.getElementById('loginError'); if (el && text) { el.textContent = text; el.classList.add('show'); el.style.display = ''; } };
+    setTimeout(put, 30); setTimeout(put, 350);
+  }
+  function why(email, err) {
+    var c = String(err && err.code || '');
+    if (c === 'auth/invalid-email') return Promise.resolve('badEmail');
+    if (c === 'auth/user-not-found') return Promise.resolve('noAccount');
+    if (c === 'auth/wrong-password') return Promise.resolve('badPassword');
+    if (c === 'auth/too-many-requests') return Promise.resolve('tooMany');
+    if (c === 'auth/user-disabled') return Promise.resolve('disabled');
+    if (c === 'auth/network-request-failed') return Promise.resolve('offline');
+    if (!/invalid-credential|invalid-login-credentials|internal-error/.test(c)) return Promise.resolve('');
+    return fetch(FN, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({data: {email: String(email || '')}})})
+      .then(function (r) { return r.json(); }).then(function (j) { var d = j && j.result || {};
+        if (d.valid === false) return 'badEmail';
+        if (d.limited) return '';
+        if (d.exists === false) return 'noAccount';
+        if (d.disabled) return 'disabled';
+        if (d.google && !d.password) return 'google';
+        return d.exists ? 'badPassword' : ''; }, function () { return ''; });
+  }
+  (function wait() {
+    var fb = window.firebase, inst = null;
+    try { if (fb && fb.auth && fb.apps && fb.apps.length) inst = fb.auth(); } catch (e) { inst = null; }
+    if (!inst) { if (++tries < 240) setTimeout(wait, 250); return; }
+    var A = Object.getPrototypeOf(inst); if (A.__ptSignIn) return; A.__ptSignIn = true;
+    var signIn = A.signInWithEmailAndPassword; if (!signIn) return;
+    A.signInWithEmailAndPassword = function (email) {
+      return signIn.apply(this, arguments).catch(function (err) {
+        why(email, err).then(function (k) { if (k) show(msg(k)); });
+        throw err;                                   // the page still handles the failure as before
+      });
+    };
+  })();
+})();
+
