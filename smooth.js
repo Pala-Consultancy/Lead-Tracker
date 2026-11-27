@@ -437,10 +437,15 @@
   };
   function msg(k) { var l = ''; try { l = (localStorage.getItem('preferredLanguage') || document.documentElement.lang || 'en').slice(0, 2).toLowerCase(); } catch (e) { /* ignore */ }
     return (M[l] || M.en)[k]; }
-  function show(text) {          // after the page has shown its own general message, replace it with the exact one
-    var put = function () { var el = document.getElementById('loginError'); if (el && text) { el.textContent = text; el.classList.add('show'); el.style.display = ''; } };
-    setTimeout(put, 30); setTimeout(put, 350);
-  }
+  // The exact message is ready BEFORE the page reacts to the failed sign-in. The moment the page writes its own general
+  // message, it's swapped for the exact one in the same instant (before the screen is drawn), so the general one never shows.
+  var pending = '', until = 0;
+  function put() { var el = document.getElementById('loginError');
+    if (!el || !pending || Date.now() > until) return;
+    if (el.textContent !== pending) el.textContent = pending; el.classList.add('show'); el.style.display = ''; }
+  try { new MutationObserver(function () { if (pending && Date.now() <= until) put(); })
+    .observe(document.documentElement, {childList: true, subtree: true, characterData: true}); } catch (e) { /* old browser: the timers below still do it */ }
+  function show(text) { pending = text; until = Date.now() + 1500; Promise.resolve().then(put); setTimeout(put, 0); setTimeout(put, 60); }
   function why(email, err) {
     var c = String(err && err.code || '');
     if (c === 'auth/invalid-email') return Promise.resolve('badEmail');
@@ -467,8 +472,8 @@
     var signIn = A.signInWithEmailAndPassword; if (!signIn) return;
     A.signInWithEmailAndPassword = function (email) {
       return signIn.apply(this, arguments).catch(function (err) {
-        why(email, err).then(function (k) { if (k) show(msg(k)); });
-        throw err;                                   // the page still handles the failure as before
+        // first find out exactly what's wrong (the button keeps saying "Signing in" for that moment), then let the page react
+        return why(email, err).then(function (k) { if (k) show(msg(k)); else pending = ''; throw err; });
       });
     };
   })();
