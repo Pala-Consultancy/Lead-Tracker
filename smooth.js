@@ -1,4 +1,4 @@
-/* PalaTrack · smooth.js
+/* PalaTrack \u00B7 smooth.js
    One shared file, loaded at the top of every page, that makes the whole tracker feel smoother:
    1. faster loading   - Firebase keeps a copy of your data in the browser, and pages are fetched ahead
                          when you point at a link, so opening them feels instant;
@@ -147,7 +147,7 @@
     addEventListener('scroll', close, {passive: true, capture: true});
   })();
   // ---------- 4b. Undo: one way to take back a delete, on every page ----------
-  // window.ptUndo.offer(message, undo, {commit}) shows "message · Undo" at the bottom and lets Ctrl+Z (Cmd+Z) take it
+  // window.ptUndo.offer(message, undo, {commit}) shows "message \u00B7 Undo" at the bottom and lets Ctrl+Z (Cmd+Z) take it
   // back for 8 seconds. commit (optional) runs when the time is up, for deletes that can only happen later. Leaving the
   // page commits right away. While you're typing in a field, Ctrl+Z keeps undoing your typing.
   (function () {
@@ -283,7 +283,7 @@
       var a = links[i]; if (!a.closest('.seq-sidebar-nav, nav, aside')) continue;
       var ic = a.querySelector('.icon');
       if (ic && ic.querySelector('svg, img')) continue;                     // it already has one
-      if (!ic) {                                                             // match the other items: <span class="icon">…</span> label
+      if (!ic) {                                                             // match the other items: <span class="icon">\u2026</span> label
         ic = document.createElement('span'); ic.className = 'icon';
         var label = a.querySelector('.pts-label');
         if (!label) { label = document.createElement('span'); label.className = 'pts-label'; while (a.firstChild) label.appendChild(a.firstChild); a.appendChild(label); }
@@ -299,24 +299,71 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 
-// ---------- new accounts confirm their email address first ----------
-// On the app pages (the ones with the PalaTrack menu): an account made with email and password after this went live,
-// whose email isn't confirmed yet, is taken to verify-email.html. Google sign-ups and older accounts are never affected.
+// ---------- new accounts: a reminder to confirm their email, on every PalaTrack page, until they do ----------
+// For accounts made with email and password after this went live whose email isn't confirmed yet. It stays on screen
+// (it can't be closed), offers to send the email again, and disappears by itself as soon as the link has been clicked.
+// Google sign-ups and older accounts never see it.
 (function () {
-  var SINCE = Date.UTC(2026, 10, 26);                                       // accounts created from 26 Nov 2026
-  if (/verify-email\.html|signup\.html|login\.html/.test(location.pathname)) return;
-  if (!document.querySelector('script[src*="sidebar.js"]')) return;          // only the app, not the website or client pages
-  var tries = 0;
-  (function wait() {
-    if (!(window.firebase && firebase.apps && firebase.apps.length && firebase.auth)) { if (++tries < 60) setTimeout(wait, 250); return; }
-    var off = firebase.auth().onAuthStateChanged(function (u) {
-      off && off();
-      if (!u || u.emailVerified) return;
-      var viaPassword = (u.providerData || []).some(function (p) { return p && p.providerId === 'password'; });
-      var made = Date.parse((u.metadata && u.metadata.creationTime) || '') || 0;
-      if (viaPassword && made >= SINCE) location.replace('verify-email.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search));
-    });
-  })();
+  var SINCE = Date.UTC(2026, 10, 26), tries = 0, timer = null;
+  function appPage() { return !!document.querySelector('script[src*="sidebar.js"], #sidebar, .seq-sidebar, .seq-sidebar-nav'); }
+  function css() {
+    if (document.getElementById('ptVerifyCss')) return;
+    var st = document.createElement('style'); st.id = 'ptVerifyCss';
+    st.textContent = '#ptVerify{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2147483600;width:min(680px,calc(100vw - 28px));display:flex;align-items:center;gap:14px;padding:14px 16px 14px 18px;border-radius:18px;color:#fff;font:500 13.5px/1.45 Inter,system-ui,sans-serif;' +
+      'background:linear-gradient(135deg,#1E2A78 0%,#3B2F9E 55%,#5B36B8 100%);box-shadow:0 22px 50px -18px rgba(20,14,80,.7),inset 0 0 0 1px rgba(255,255,255,.14);animation:ptVin .4s cubic-bezier(.2,.8,.2,1) both}' +
+      '@keyframes ptVin{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}' +
+      '#ptVerify .ic{flex-shrink:0;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(255,255,255,.14)}' +
+      '#ptVerify .tx{flex:1;min-width:0} #ptVerify b{display:block;font-size:14.5px;font-weight:700} #ptVerify span{color:rgba(232,236,255,.82)}' +
+      '#ptVerify button{flex-shrink:0;border:0;border-radius:11px;padding:9px 14px;font:700 13px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}' +
+      '#ptVerify .again{background:#fff;color:#2A2380} #ptVerify .done{background:rgba(255,255,255,.14);color:#fff} #ptVerify button:disabled{opacity:.6;cursor:default}' +
+      '#ptVerify.ok{background:linear-gradient(135deg,#0E7A4E,#16A34A)}' +
+      '@media (max-width:640px){#ptVerify{flex-wrap:wrap;bottom:12px} #ptVerify .tx{flex-basis:calc(100% - 52px)} #ptVerify button{flex:1}}' +
+      '@media (prefers-reduced-motion:reduce){#ptVerify{animation:none}}';
+    document.head.appendChild(st);
+  }
+  function show(u) {
+    if (document.getElementById('ptVerify')) return;
+    css();
+    var bar = document.createElement('div'); bar.id = 'ptVerify'; bar.setAttribute('role', 'status');
+    bar.innerHTML = '<div class="ic" aria-hidden="true">\u2709\uFE0F</div><div class="tx"><b>Confirm your email address</b><span>We sent a link to <strong></strong>. Click it to confirm your account.</span></div>' +
+      '<button type="button" class="again">Send again</button><button type="button" class="done">I\u2019ve confirmed</button>';
+    bar.querySelector('strong').textContent = u.email || 'your email';
+    document.body.appendChild(bar);
+    var say = function (t) { bar.querySelector('span').textContent = t; };
+    bar.querySelector('.again').onclick = function (e) { var b = e.currentTarget; b.disabled = true;
+      u.sendEmailVerification().then(function () { say('A new link is on its way to ' + (u.email || 'your inbox') + '. Check your spam folder too.'); },
+        function () { say('We just sent one. Please wait a minute before asking again.'); });
+      setTimeout(function () { b.disabled = false; }, 45000); };
+    bar.querySelector('.done').onclick = function () { check(u, true); };
+    clearInterval(timer); timer = setInterval(function () { check(u, false); }, 8000);   // goes away by itself once confirmed
+  }
+  function check(u, asked) {
+    u.reload().then(function () {
+      var bar = document.getElementById('ptVerify'); if (!bar) return;
+      if (u.emailVerified) {
+        clearInterval(timer); u.getIdToken(true).catch(function () {});
+        bar.className = 'ok'; bar.querySelector('.tx').innerHTML = '<b>Email confirmed. Thank you!</b><span>Your account is all set.</span>';
+        bar.querySelectorAll('button').forEach(function (b) { b.remove(); });
+        setTimeout(function () { bar.remove(); }, 2600);
+      } else if (asked) { bar.querySelector('span').textContent = 'Not confirmed yet. Click the link in the email first (it can take a minute to arrive).'; }
+    }, function () { /* offline for a moment */ });
+  }
+  function start() {
+    if (/verify-email\.html|signup\.html|login\.html|auth-action\.html/.test(location.pathname) || !appPage()) return;
+    (function wait() {
+      var fb = window.firebase, inst = null;
+      try { if (fb && fb.apps && fb.apps.length && fb.auth) inst = fb.auth(); } catch (e) { inst = null; }
+      if (!inst) { if (++tries < 120) setTimeout(wait, 250); return; }
+      inst.onAuthStateChanged(function (u) {
+        if (!u || u.emailVerified) { var b = document.getElementById('ptVerify'); if (b) b.remove(); return; }
+        var viaPassword = (u.providerData || []).some(function (p) { return p && p.providerId === 'password'; });
+        var made = Date.parse((u.metadata && u.metadata.creationTime) || '') || 0;
+        if (viaPassword && made >= SINCE) show(u);
+      });
+    })();
+  }
+  // the page is read fully first (the menu's script comes after this one: checking too early skipped everything before)
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 
 // ---------- account emails in PalaTrack's own design ----------
@@ -330,7 +377,7 @@
     try { console.warn('PalaTrack email:', msg);
       var n = document.createElement('div'); n.setAttribute('role', 'status');
       n.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483647;max-width:min(560px,92vw);padding:10px 14px;border-radius:12px;background:#1E1B4B;color:#fff;font:500 12.5px/1.45 Inter,system-ui,sans-serif;box-shadow:0 12px 30px -12px rgba(0,0,0,.5)';
-      n.textContent = 'Sent with Firebase’s standard email instead (reason: ' + msg + ')'; document.body.appendChild(n); setTimeout(function () { n.remove(); }, 12000); } catch (e) { /* ignore */ }
+      n.textContent = 'Sent with Firebase\u2019s standard email instead (reason: ' + msg + ')'; document.body.appendChild(n); setTimeout(function () { n.remove(); }, 12000); } catch (e) { /* ignore */ }
   }
   function call(data, token) {
     var h = {'Content-Type': 'application/json'}; if (token) h.Authorization = 'Bearer ' + token;
