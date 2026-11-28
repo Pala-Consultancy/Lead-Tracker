@@ -188,6 +188,8 @@
   function stepProfile() {
     show(`${steps(2)}<h1>Set up your account</h1><p class="sub">So your team knows who you are, and you can sign in with a password next time.</p>
       <label for="nm">Your full name</label><input id="nm" type="text" autocomplete="name" placeholder="Jane Doe">
+      <label for="un">Username</label><div class="pw"><input id="un" type="text" autocomplete="username" spellcheck="false" placeholder="yourname" style="padding-left:32px"><span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:700;color:#94A3B8">@</span></div>
+      <div class="hint" id="hu">Others in PalaTrack can find and message you with this.</div>
       <label for="p1">Choose a password</label><div class="pw"><input id="p1" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye aria-label="Show password">${EYE}</button></div>
       <div class="meter" id="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="hint" id="h1">At least 6 characters.</div>
       <label for="p2">Confirm password</label><div class="pw"><input id="p2" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye aria-label="Show password">${EYE}</button></div>
@@ -198,11 +200,30 @@
     const strength = () => { const v = p1.value; const n = !v ? 0 : Math.max(1, [v.length >= 8, /\d/.test(v), /[A-Z]/.test(v), /[^A-Za-z0-9]/.test(v)].filter(Boolean).length - (v.length < 6 ? 1 : 0)); meter.className = 'meter' + (n ? ' s' + n : ''); };
     const match = () => { if (!p2.value) { h2.className = 'hint'; h2.textContent = ''; return; } const ok = p1.value === p2.value; h2.className = 'hint ' + (ok ? 'ok' : 'bad'); h2.textContent = ok ? '✓ Passwords match' : 'Passwords don’t match yet'; };
     p1.addEventListener('input', () => { strength(); match(); }); p2.addEventListener('input', match);
+    // the username, exactly as on the sign-up page: 3–24 characters, lowercase letters, numbers, dots and underscores
+    const UN_RE = /^[a-z0-9](?:[a-z0-9._]{1,22})[a-z0-9]$/, un = document.getElementById('un'), hu = document.getElementById('hu');
+    const clean = (v) => String(v || '').toLowerCase().replace(/^@+/, '').replace(/[^a-z0-9._]/g, '');
+    let unOk = '', touched = false, tm = null;
+    const say = (cls, t) => { hu.className = 'hint ' + cls; hu.textContent = t; };
+    function check() {
+      const v = clean(un.value); if (un.value !== v) un.value = v; unOk = ''; clearTimeout(tm);
+      if (!v) { say('', 'Others in PalaTrack can find and message you with this.'); return; }
+      if (!UN_RE.test(v)) { say('bad', '3–24 characters: lowercase letters, numbers, dots and underscores.'); return; }
+      say('', 'Checking…');
+      tm = setTimeout(() => db.doc('usernames/' + v).get().then((d) => { if (clean(un.value) !== v) return;
+        if (d.exists && d.data().uid !== (user && user.uid)) say('bad', '@' + v + ' is already taken. Try another one.'); else { unOk = v; say('ok', '✓ @' + v + ' is available.'); } },
+        () => say('bad', 'Couldn’t check right now. Try again in a moment.')), 350);
+    }
+    un.addEventListener('input', () => { touched = true; check(); });
+    nm.addEventListener('input', () => { if (touched) return;
+      const parts = nm.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).map(clean).filter(Boolean);
+      un.value = parts.slice(0, 2).join('.').slice(0, 24); check(); });
     document.querySelectorAll('[data-eye]').forEach((b) => b.addEventListener('click', () => { const t = p1.type === 'password' ? 'text' : 'password'; p1.type = t; p2.type = t; }));
     document.getElementById('save').addEventListener('click', async (ev) => {
       const b = ev.currentTarget, err = document.getElementById('err'); err.textContent = '';
       const name = nm.value.trim();
       if (name.replace(/[^\p{L}]/gu, '').length < 2 || /\d/.test(name)) { err.textContent = 'Please enter your real name.'; nm.focus(); return; }
+      if (!unOk || unOk !== clean(un.value)) { err.textContent = 'Choose an available username first.'; un.focus(); return; }
       if (p1.value.length < 6) { err.textContent = 'Use at least 6 characters for your password.'; p1.focus(); return; }
       if (p1.value !== p2.value) { err.textContent = 'The two passwords don’t match. Type the same password twice.'; p2.focus(); return; }
       b.disabled = true; b.innerHTML = '<span class="sp"></span>Saving…';
@@ -210,6 +231,12 @@
         await user.updatePassword(p1.value);
         await user.updateProfile({displayName: name});
         if (ws) await db.collection('workspaces').doc(ws).collection('members').doc(user.uid).set({name, company: company || ''}, {merge: true});
+        // the username: saved exactly like the sign-up page does (so the "choose your username" pop-up never appears)
+        const now = firebase.firestore.FieldValue.serverTimestamp(), b2 = db.batch();
+        b2.set(db.doc('usernames/' + unOk), {uid: user.uid, createdAt: now});
+        b2.set(db.doc('profiles/' + user.uid), {uid: user.uid, username: unOk, name, nameLower: name.toLowerCase(), photoURL: '', headline: String(company || '').slice(0, 120), updatedAt: now}, {merge: true});
+        try { await b2.commit(); }
+        catch (e2) { b.disabled = false; b.textContent = 'Finish and open PalaTrack →'; unOk = ''; say('bad', '@' + clean(un.value) + ' was just taken. Choose another one.'); un.focus(); return; }
         stepDone(name);
       } catch (e) {
         b.disabled = false; b.textContent = 'Finish and open PalaTrack →';
