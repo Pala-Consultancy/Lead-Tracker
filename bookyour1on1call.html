@@ -564,7 +564,9 @@
   .who-list li span { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--white); margin-top: .05rem; }
   .who-list li svg { width: 13px; height: 13px; }
 
-  .problem, .who { content-visibility: auto; contain-intrinsic-size: auto 900px; }
+  .problem { content-visibility: auto; contain-intrinsic-size: auto 900px; }
+  .clients { content-visibility: auto; contain-intrinsic-size: auto 700px; }
+  .payments { content-visibility: auto; contain-intrinsic-size: auto 900px; }
   /* Phone tweaks */
   @media (max-width: 640px) {
     .vsl-frame.autoplay, .vsl-frame.playing { aspect-ratio: 16 / 9; }
@@ -682,7 +684,11 @@
   .booking-alt { text-align: center; margin: 1rem 0 0; font-size: var(--fs-small); color: var(--muted); }
   .booking-alt a { color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
   @media (max-width: 640px) { .booking-frame { border-radius: 16px; } }
-  .aura-fallback { display: flex; align-items: center; justify-content: center; min-height: 560px; font-weight: 700; color: var(--brand); }
+  .aura-fallback { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .7rem; min-height: 560px; color: var(--muted-d, #98A3B8); text-align: center; }
+  .aura-fallback b { color: #EEF2F8; font-weight: 600; }
+  .aura-fallback a { font-size: .85rem; color: #7FB0F0; text-decoration: underline; text-underline-offset: 3px; }
+  .aura-spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.12); border-top-color: var(--orange); animation: auraSpin .8s linear infinite; }
+  @keyframes auraSpin { to { transform: rotate(360deg); } }
 
   /* Payments proof */
   .payments { background: var(--white); padding-top: 0 !important; padding-bottom: clamp(4.5rem, 9vw, 7rem) !important; }
@@ -826,10 +832,25 @@
   @media (max-width: 900px) { .v-profile { grid-template-columns: 1fr; } }
 </style>
 <link rel="preconnect" href="https://fast.wistia.com" crossorigin>
+<link rel="preconnect" href="https://app.aura-app.ai" crossorigin>
+<link rel="dns-prefetch" href="https://app.aura-app.ai">
 <link rel="preconnect" href="https://embed-ssl.wistia.com" crossorigin>
 <link rel="preconnect" href="https://fast.wistia.net" crossorigin>
-<script src="https://fast.wistia.com/player.js" async></script>
-<script src="https://fast.wistia.com/embed/u1h0rd4kfe.js" async type="module"></script>
+<script>
+  /* Show the page first, then start the video player right after, so the page appears instantly */
+  (function () {
+    function loadPlayer() {
+      if (window.__wistiaLoaded) return; window.__wistiaLoaded = true;
+      var a = document.createElement('script'); a.src = 'https://fast.wistia.com/player.js'; a.async = true;
+      var b = document.createElement('script'); b.src = 'https://fast.wistia.com/embed/u1h0rd4kfe.js'; b.async = true; b.type = 'module';
+      document.head.appendChild(a); document.head.appendChild(b);
+    }
+    if (document.readyState === 'complete') setTimeout(loadPlayer, 0);
+    else window.addEventListener('load', function () { setTimeout(loadPlayer, 0); });
+    // if someone interacts before that, load it immediately
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { window.addEventListener(ev, loadPlayer, { once: true, passive: true }); });
+  })();
+</script>
 <style>wistia-player[media-id='u1h0rd4kfe']:not(:defined) { background: center / cover no-repeat url('https://fast.wistia.com/embed/medias/u1h0rd4kfe/swatch'); }</style>
 </head>
 <body>
@@ -920,57 +941,57 @@
       <div class="pay-rows reveal r2">
         <div class="pay-row"><div class="pay-track">
           <button class="pay-card" style="--h:472" type="button" aria-label="Enlarge payment of $25,698.31">
-            <img src="images/payments/payment-01.webp" width="757" height="472" alt="Payment received: $25,698.31" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-01.webp" width="757" height="472" alt="Payment received: $25,698.31" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:328" type="button" aria-label="Enlarge payment of $24,000.00">
-            <img src="images/payments/payment-02.webp" width="759" height="328" alt="Payment received: $24,000.00" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-02.webp" width="759" height="328" alt="Payment received: $24,000.00" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:475" type="button" aria-label="Enlarge payment of $23,895.46">
-            <img src="images/payments/payment-03.webp" width="757" height="475" alt="Payment received: $23,895.46" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-03.webp" width="757" height="475" alt="Payment received: $23,895.46" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:477" type="button" aria-label="Enlarge payment of $22,992.56">
-            <img src="images/payments/payment-04.webp" width="757" height="477" alt="Payment received: $22,992.56" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-04.webp" width="757" height="477" alt="Payment received: $22,992.56" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:477" type="button" aria-label="Enlarge payment of $22,840.35">
-            <img src="images/payments/payment-05.webp" width="757" height="477" alt="Payment received: $22,840.35" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-05.webp" width="757" height="477" alt="Payment received: $22,840.35" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:472" type="button" aria-label="Enlarge payment of $21,405.38">
-            <img src="images/payments/payment-06.webp" width="754" height="472" alt="Payment received: $21,405.38" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-06.webp" width="754" height="472" alt="Payment received: $21,405.38" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:475" type="button" aria-label="Enlarge payment of $21,292.13">
-            <img src="images/payments/payment-07.webp" width="759" height="475" alt="Payment received: $21,292.13" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-07.webp" width="759" height="475" alt="Payment received: $21,292.13" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:478" type="button" aria-label="Enlarge payment of $21,178.87">
-            <img src="images/payments/payment-08.webp" width="757" height="478" alt="Payment received: $21,178.87" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-08.webp" width="757" height="478" alt="Payment received: $21,178.87" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:478" type="button" aria-label="Enlarge payment of $20,837.07">
-            <img src="images/payments/payment-09.webp" width="759" height="478" alt="Payment received: $20,837.07" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-09.webp" width="759" height="478" alt="Payment received: $20,837.07" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
         </div></div>
         <div class="pay-row rev"><div class="pay-track">
           <button class="pay-card" style="--h:328" type="button" aria-label="Enlarge payment of $20,000.00">
-            <img src="images/payments/payment-10.webp" width="745" height="328" alt="Payment received: $20,000.00" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-10.webp" width="745" height="328" alt="Payment received: $20,000.00" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:475" type="button" aria-label="Enlarge payment of $19,563.75">
-            <img src="images/payments/payment-11.webp" width="756" height="475" alt="Payment received: $19,563.75" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-11.webp" width="756" height="475" alt="Payment received: $19,563.75" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:330" type="button" aria-label="Enlarge payment of $19,000.00">
-            <img src="images/payments/payment-12.webp" width="760" height="330" alt="Payment received: $19,000.00" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-12.webp" width="760" height="330" alt="Payment received: $19,000.00" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:475" type="button" aria-label="Enlarge payment of $18,798.46">
-            <img src="images/payments/payment-13.webp" width="756" height="475" alt="Payment received: $18,798.46" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-13.webp" width="756" height="475" alt="Payment received: $18,798.46" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:475" type="button" aria-label="Enlarge payment of $16,184.12">
-            <img src="images/payments/payment-14.webp" width="757" height="475" alt="Payment received: $16,184.12" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-14.webp" width="757" height="475" alt="Payment received: $16,184.12" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:475" type="button" aria-label="Enlarge payment of $15,402.82">
-            <img src="images/payments/payment-15.webp" width="757" height="475" alt="Payment received: $15,402.82" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-15.webp" width="757" height="475" alt="Payment received: $15,402.82" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:337" type="button" aria-label="Enlarge payment of $10,000.00">
-            <img src="images/payments/payment-16.webp" width="762" height="337" alt="Payment received: $10,000.00" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-16.webp" width="762" height="337" alt="Payment received: $10,000.00" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
           <button class="pay-card" style="--h:475" type="button" aria-label="Enlarge payment of $7,566.92">
-            <img src="images/payments/payment-17.webp" width="757" height="475" alt="Payment received: $7,566.92" loading="lazy" decoding="async" fetchpriority="low">
+            <img src="images/payments/payment-17.webp" width="757" height="475" alt="Payment received: $7,566.92" loading="lazy" decoding="async" fetchpriority="low" draggable="false">
           </button>
         </div></div>
       </div>
@@ -1153,7 +1174,11 @@
       <div class="booking-frame reveal r2">
         <!-- Aura scheduler (official embed) -->
         <div data-aura-scheduler data-url="https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session?theme_preset=dark" data-mode="inline">
-          <a class="aura-fallback" href="https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session?theme_preset=dark" target="_blank" rel="noopener">Book a time</a>
+          <div class="aura-fallback">
+            <span class="aura-spin" aria-hidden="true"></span>
+            <b>Loading available times…</b>
+            <a href="https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session?theme_preset=dark" target="_blank" rel="noopener">Or open the booking page</a>
+          </div>
         </div>
       </div>
       <p class="booking-alt">Booking form not loading? <a href="https://app.aura-app.ai/pala-consultancy/1-hour-strategy-session" target="_blank" rel="noopener">Open the booking page</a></p>
@@ -1330,7 +1355,12 @@
       const s = document.createElement('script'); s.src = 'https://app.aura-app.ai/embed/aura.js'; s.async = true; document.body.appendChild(s);
     }
     if (!target || !('IntersectionObserver' in window)) { load(); return; }
-    new IntersectionObserver((es, o) => { if (es.some(e => e.isIntersecting)) { o.disconnect(); load(); } }, { rootMargin: '1200px 0px' }).observe(target);
+    new IntersectionObserver((es, o) => { if (es.some(e => e.isIntersecting)) { o.disconnect(); load(); } }, { rootMargin: '2500px 0px' }).observe(target);
+    // quietly prepare the form in the background once the page and video have had their head start
+    window.addEventListener('load', () => {
+      const idle = window.requestIdleCallback || (cb => setTimeout(cb, 1));
+      setTimeout(() => idle(load, { timeout: 2000 }), 3500);
+    });
     // booking buttons jump straight to the form, so start loading it on click too
     document.querySelectorAll('a[href="#book"]').forEach(a => a.addEventListener('click', load));
   })();
