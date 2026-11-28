@@ -404,6 +404,12 @@
       P.sendEmailVerification = function (settings) { var me = this;
         return me.getIdToken().then(function (t) { return call({kind: 'verify'}, t); }).catch(function () { return verify.call(me, settings); }); };
     }
+    // invitations from the Team page: PalaTrack's designed invite instead of Firebase's plain sign-in email
+    var invite = A.sendSignInLinkToEmail;
+    if (invite) A.sendSignInLinkToEmail = function (email, settings) { var self = this, u = self.currentUser;
+      if (!u || !settings || !settings.url) return invite.call(self, email, settings);
+      return u.getIdToken().then(function (t) { return call({kind: 'invite', email: email, continueUrl: settings.url}, t); })
+        .catch(function () { return invite.call(self, email, settings); }); };
     var create = A.createUserWithEmailAndPassword;                       // right after a new account is made
     if (create) A.createUserWithEmailAndPassword = function () {
       return create.apply(this, arguments).then(function (cred) { if (cred && cred.user) patchUser(cred.user); return cred; }); };

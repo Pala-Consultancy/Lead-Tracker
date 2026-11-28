@@ -234,6 +234,14 @@
   else if (mode === 'resetPassword') resetPassword();
   else if (mode === 'recoverEmail') recoverEmail();
   else if (mode === 'verifyAndChangeEmail') changeEmail();
+  else if (mode === 'signIn') {
+    // an invitation: pass straight on to PalaTrack with the sign-in code, exactly like Firebase's own page does
+    let target; try { target = new URL(q.get('continueUrl') || 'boards.html', location.href); } catch (e) { target = new URL('boards.html', location.href); }
+    if (target.origin !== location.origin) target = new URL('boards.html', location.href);
+    ['apiKey', 'oobCode', 'mode', 'lang'].forEach((k) => { if (q.get(k)) target.searchParams.set(k, q.get(k)); });
+    show(`<div class="spin" aria-hidden="true"></div><h1>Opening your invitation…</h1><p>One moment, we’re taking you into PalaTrack.</p>`);
+    location.replace(target.toString());
+  }
   else problem('This link isn’t valid', 'Open the link straight from the email you received.');
 </script>
 </body>
