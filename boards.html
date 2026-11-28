@@ -2042,8 +2042,8 @@ html[data-theme="dark"] .ob-ai-reply-text{background:var(--c-blue-bg, rgba(91,15
 <div class="confirm-overlay" id="emailConfirmOverlay" style="display:none">
   <div class="confirm-modal">
     <div class="confirm-modal-icon" style="background:var(--c-blue-bg);color:var(--c-blue-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg></div>
-    <h3>Confirm your email</h3>
-    <p>Please confirm your email address to finish signing in.</p>
+    <h3 id="emailConfirmTitle">Confirm your email</h3>
+    <p id="emailConfirmText">Please confirm your email address to finish signing in.</p>
     <input type="email" id="emailConfirmInput" placeholder="you@example.com" style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--c-blue-tint2, var(--paper));color:var(--ink);margin-bottom:16px;box-sizing:border-box">
     <div class="confirm-modal-actions">
       <button type="button" class="btn btn-primary" id="emailConfirmSubmitBtn">Continue</button>
@@ -3769,7 +3769,15 @@ html[data-theme="dark"] .ob-ai-reply-text{background:var(--c-blue-bg, rgba(91,15
       } else {
         const emailConfirmOverlay = document.getElementById('emailConfirmOverlay');
         const emailConfirmInput = document.getElementById('emailConfirmInput');
+        // an invitation carries the invited address: it's filled in already, so one click on Continue is enough
+        const invitee = (new URLSearchParams(window.location.search).get('invitee') || '').trim();
+        if(invitee){
+          emailConfirmInput.value = invitee;
+          document.getElementById('emailConfirmTitle').textContent = 'Join your team on PalaTrack';
+          document.getElementById('emailConfirmText').textContent = 'You’re joining as ' + invitee + '. Click Continue to accept the invitation.';
+        }
         emailConfirmOverlay.style.display = 'flex';
+        setTimeout(()=>{ try{ (invitee ? document.getElementById('emailConfirmSubmitBtn') : emailConfirmInput).focus(); }catch(e){} }, 50);
         document.getElementById('emailConfirmSubmitBtn').addEventListener('click', ()=>{
           const email = emailConfirmInput.value.trim();
           if(!email) return;
