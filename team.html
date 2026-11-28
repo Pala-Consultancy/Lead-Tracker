@@ -371,6 +371,8 @@
   .team-manager-toggle-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .15s;}
   .team-manager-toggle.active{background:var(--c-purple-bg);color:var(--c-purple-fg);border-color:var(--c-purple-fg);}
   .team-manager-toggle.active .team-manager-toggle-dot{background:var(--c-purple-fg);}
+  .team-setter-toggle{margin-left:6px;} .team-setter-toggle.active{background:#E6F6EE;color:#0E7A4E;border-color:#0E7A4E;} .team-setter-toggle.active .team-manager-toggle-dot{background:#0E7A4E;}
+  .team-setter-badge{background:#E6F6EE !important;color:#0E7A4E !important;}
   .team-manager-toggle:hover{opacity:.85;}
   .team-role-select{
     font-family:'Inter',sans-serif;font-size:13px;padding:8px 11px;
@@ -1600,13 +1602,19 @@
               <span class="team-manager-toggle-dot"></span> Can remove members
             </button>`
           : '';
+        // Setter: in the extension they only see Analytics, Leads and Messages (no writing, posting or scheduling)
+        const setterToggleHtml = (currentUserIsAdmin && !isYou && !m.isAdmin)
+          ? `<button type="button" class="team-manager-toggle team-setter-toggle${m.setter ? ' active' : ''}" title="Setter: in the Chrome extension they only see Analytics, Leads and Messages. Writing, posts, the calendar and the AI writer are hidden." onclick="window.__teamActions.toggleSetter('${m.id}', ${m.setter ? 'true' : 'false'})">
+              <span class="team-manager-toggle-dot"></span> Setter access only
+            </button>`
+          : '';
         return `<div class="team-row">
           <div class="team-avatar">${m.photoURL ? `<img src="${m.photoURL}" alt="">` : esc(initials(m.name, m.email))}</div>
           <div class="team-info">
-            <div class="team-name">${esc(m.name || m.email || 'Team member')}${isYou ? `<span class="team-you-badge">${t('youBadge')}</span>` : ''}${m.isAdmin ? `<span class="team-admin-badge">${t('adminBadge')}</span>` : ''}${(!m.isAdmin && m.canManageTeam) ? `<span class="team-admin-badge team-manager-badge">Can remove members</span>` : ''}</div>
+            <div class="team-name">${esc(m.name || m.email || 'Team member')}${isYou ? `<span class="team-you-badge">${t('youBadge')}</span>` : ''}${m.isAdmin ? `<span class="team-admin-badge">${t('adminBadge')}</span>` : ''}${(!m.isAdmin && m.setter) ? `<span class="team-admin-badge team-setter-badge">Setter</span>` : ''}${(!m.isAdmin && m.canManageTeam) ? `<span class="team-admin-badge team-manager-badge">Can remove members</span>` : ''}</div>
             <div class="team-email">${esc(m.email || '')}</div>
             ${m.company ? `<div class="team-company">${esc(m.company)}</div>` : ''}
-            ${managerToggleHtml}
+            ${managerToggleHtml}${setterToggleHtml}
           </div>
           ${roleControlHtml}
           ${removeBtnHtml}
@@ -1668,7 +1676,16 @@
     });
   }
 
-  window.__teamActions = { updateRole, openRolePanel, selectRole, confirmRemoveMember, toggleCanManageTeam };
+  function toggleSetter(uid, currentlyOn){
+    if(!currentUserIsAdmin) return;
+    usersCollection.doc(uid).set({ setter: !currentlyOn }, {merge:true}).then(()=>{
+      showToast(!currentlyOn ? 'Setter access on: in the extension they now only see Analytics, Leads and Messages.' : 'Setter access off: they see everything again.');
+    }).catch(err=>{
+      showToast('Could not update permission: ' + friendlyErr(err), true);
+    });
+  }
+
+  window.__teamActions = { updateRole, openRolePanel, selectRole, confirmRemoveMember, toggleCanManageTeam, toggleSetter };
 
   // ---------- Remove team member ----------
   let removeMemberUid = null;
