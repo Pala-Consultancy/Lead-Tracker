@@ -155,10 +155,14 @@
       const err = document.getElementById('err'); err.textContent = '';
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Enter the email address the invitation was sent to.'; return; }
       go.disabled = true; go.innerHTML = '<span class="sp"></span>Joining…';
+      let stage = 'signing in';
       try {
+        // signed in as someone else in this browser (for example the person who sent the invite)? sign out first
+        if (auth.currentUser && (auth.currentUser.email || '').toLowerCase() !== email.toLowerCase()) await auth.signOut();
         const cred = await auth.signInWithEmailLink(email, location.href);
         user = cred.user; try { localStorage.removeItem('emailForSignIn'); } catch (e) { /* ignore */ }
-        history.replaceState({}, document.title, location.pathname);
+        history.replaceState({}, document.title, location.pathname + '?workspace=' + encodeURIComponent(ws) + (company ? '&company=' + encodeURIComponent(company) : ''));
+        stage = 'joining the team';
         // add them to the workspace (unless they already have one), exactly as the boards page did
         if (ws) {
           const dir = await db.collection('userDirectory').doc(user.uid).get();
@@ -174,7 +178,8 @@
         go.disabled = false; go.textContent = 'Accept invitation →';
         if (e && /invalid-action-code|expired-action-code/.test(e.code || '')) problem('This invitation has expired', `Invitation links work once, for a limited time. Ask ${esc(from || 'your teammate')} to send you a new one.`);
         else if (e && e.code === 'auth/invalid-email') err.textContent = 'That email doesn’t match the invitation. Use the address it was sent to.';
-        else err.textContent = 'Couldn’t join right now. Please try again.';
+        else if (user) { console.error('join', e); stepProfile(); }    // signed in fine; joining the team is retried when they open PalaTrack
+        else { console.error('join', stage, e); err.textContent = `Couldn’t join right now (${stage}: ${(e && (e.code || e.message)) || 'unknown error'}). Please try again, or send this message to whoever invited you.`; }
       }
     });
   }
