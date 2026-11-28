@@ -613,6 +613,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   @media (max-width:900px){ .cw-list,.br-files{width:210px} .starters{grid-template-columns:1fr} }
 </style>
 <script src="voice-note.js"></script>
+<script src="post-stage.js"></script>
 </head>
 <body>
 <div id="pageLoader"><div class="spin"></div></div>
@@ -803,16 +804,20 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
     const steps=['Reading your brand files…','Checking your story bank…','Looking for the right proof…','Choosing the blueprint…','Writing your hooks…','Polishing every line…']; let si=0;
     const ticker=setInterval(()=>{ const t=wait.querySelector('.think-t'); if(!t) return clearInterval(ticker); si=(si+1)%steps.length; t.classList.remove('in'); void t.offsetWidth; t.textContent=steps[si]; t.classList.add('in'); },2200);
     $('thread').appendChild(wait); $('msgs').scrollTop=$('msgs').scrollHeight;
+    // the creation stage: a post card being prepared and the steps lighting up (post-stage.js)
+    const meInfo=()=>{ const u=firebase.auth().currentUser; return {name:(u&&u.displayName)||'', photo:(u&&u.photoURL)||''}; };
+    const stage=window.ptStage?window.ptStage.wait(wait,{me:meInfo()}):null;
     $('inp').value=''; fit();
     try{
       const r=(await chatFn({chatId, message:text, projectId:pid})).data;
-      clearInterval(ticker); const el=msgEl('assistant',r.reply,r.qc); wait.replaceWith(el); typeOut(el);
+      clearInterval(ticker); if(stage) stage.stop(); const el=msgEl('assistant',r.reply,r.qc); wait.replaceWith(el);
+      if(!(window.ptStage&&window.ptStage.reveal(el,{post:'.post',text:'.post-t',head:'.post-h',actions:'.post-a',scroller:$('msgs'),me:meInfo()}))) typeOut(el);
       if(!current) current={messages:[]};
       current.messages=[...(current.messages||[]),{role:'user',text},{role:'assistant',text:r.reply,...(r.qc?{qc:r.qc}:{})}];
       if(chatId!==r.chatId){ chatId=r.chatId; renderList(); }
       $('msgs').scrollTop=$('msgs').scrollHeight;
     }catch(e){
-      clearInterval(ticker); wait.remove(); const m=(e&&e.message)||'Something went wrong. Please try again.';
+      clearInterval(ticker); if(stage) stage.stop(); wait.remove(); const m=(e&&e.message)||'Something went wrong. Please try again.';
       $('err').textContent=m; $('err').classList.remove('hidden'); $('inp').value=text; fit();
     }finally{ busy=false; $('send').disabled=false; $('inp').focus(); }
   }
