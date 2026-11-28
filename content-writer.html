@@ -612,6 +612,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   html[data-theme="dark"] .msg.me .bubble{background:linear-gradient(135deg,#3B3FA8,#5B4FE0)}
   @media (max-width:900px){ .cw-list,.br-files{width:210px} .starters{grid-template-columns:1fr} }
 </style>
+<script src="voice-note.js"></script>
 </head>
 <body>
 <div id="pageLoader"><div class="spin"></div></div>
@@ -818,6 +819,7 @@ html[data-theme="dark"] .pt-meteor{background:linear-gradient(90deg, rgba(22,25,
   const fit=()=>{ const t=$('inp'); t.style.height='auto'; t.style.height=Math.min(200,t.scrollHeight)+'px'; };
   $('inp').addEventListener('input',fit);
   $('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); send($('inp').value); } });
+  if(window.ptVoiceNote){ const box=$('inp').closest('.cw-box'); window.ptVoiceNote.attach({box, input:$('inp'), sendBtn: $('send'), send:(t)=>send(t)}); }   // voice notes
   $('send').addEventListener('click',()=>send($('inp').value));
   $('newChat').addEventListener('click',()=>{ chatId=null; current=null; renderList(); renderThread(); $('inp').focus(); });
 
